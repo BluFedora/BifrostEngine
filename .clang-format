@@ -1,0 +1,102 @@
+
+# Shareef's Fully Custom Style Guide That will Automatically be applied to
+# the code through clang-format.
+
+BasedOnStyle:                                   Mozilla
+AccessModifierOffset:                           -1
+AlignAfterOpenBracket:                          Align
+AlignConsecutiveAssignments:                    true
+AlignConsecutiveDeclarations:                   true
+AlignEscapedNewlines:                           Left
+AlignOperands:                                  true
+AlignTrailingComments:                          true
+AllowAllParametersOfDeclarationOnNextLine:      false
+AllowShortBlocksOnASingleLine:                  true
+AllowShortCaseLabelsOnASingleLine:              true
+AllowShortFunctionsOnASingleLine:               All
+AllowShortIfStatementsOnASingleLine:            true
+AllowShortLoopsOnASingleLine:                   true
+AlwaysBreakAfterDefinitionReturnType:           None
+AlwaysBreakAfterReturnType:                     None
+AlwaysBreakBeforeMultilineStrings:              false
+AlwaysBreakTemplateDeclarations:                true
+AlwaysBreakAfterDefinitionReturnType:           None
+BinPackArguments:                               false
+BinPackParameters:                              false
+
+BraceWrapping:
+  AfterClass:                                   true
+  AfterControlStatement:                        true
+  AfterEnum:                                    true
+  AfterFunction:                                true
+  AfterNamespace:                               true
+  AfterObjCDeclaration:                         true
+  AfterStruct:                                  true
+  AfterUnion:                                   true
+  BeforeCatch:                                  true
+  BeforeElse:                                   true
+  IndentBraces:                                 false
+  SplitEmptyFunction:                           true
+  SplitEmptyRecord:                             false
+  SplitEmptyNamespace:                          true
+
+BreakAfterJavaFieldAnnotations:                 false
+BreakBeforeBinaryOperators:                     None
+BreakBeforeBraces:                              Custom           # related to 'BraceWrapping'
+BreakBeforeTernaryOperators:                    false
+BreakConstructorInitializers:                   AfterColon
+BreakStringLiterals:                            true
+ColumnLimit:                                    0
+#CommentPragmas(std:string) : 
+CompactNamespaces:                              false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth:              2
+ContinuationIndentWidth:                        1
+Cpp11BracedListStyle:                           true
+DerivePointerAlignment:                         true
+DisableFormat:                                  false
+#ExperimentalAutoDetectBinPacking (bool)
+FixNamespaceComments:                           true
+ForEachMacros:                                  ['TIDE_FOREACH', 'foreach']
+#IncludeCategories (std::vector<IncludeCategory>)
+#IncludeIsMainRegex (std::string)
+IndentCaseLabels:                               true
+IndentWidth:                                    2
+IndentWrappedFunctionNames:                     false
+JavaScriptQuotes:                               Leave
+JavaScriptWrapImports:                          false
+KeepEmptyLinesAtTheStartOfBlocks:               false
+Language:                                       Cpp
+#MacroBlockBegin (std::string)
+#MacroBlockEnd (std::string)
+MaxEmptyLinesToKeep:                            1
+NamespaceIndentation:                           All
+ObjCBlockIndentWidth:                           4
+ObjCSpaceAfterProperty:                         false
+ObjCSpaceBeforeProtocolList:                    false
+PenaltyBreakAssignment:                         0
+PenaltyBreakBeforeFirstCallParameter:           0
+PenaltyBreakComment:                            0
+PenaltyBreakFirstLessLess:                      0
+PenaltyBreakString:                             0
+PenaltyExcessCharacter:                         0
+PenaltyReturnTypeOnItsOwnLine:                  0
+PointerAlignment:                               Left
+#RawStringFormats (std::vector<RawStringFormat>)
+ReflowComments:                                 true
+SortIncludes:                                   true
+SortUsingDeclarations:                          true
+SpaceAfterCStyleCast:                           false
+SpaceAfterTemplateKeyword:                      false
+SpaceBeforeAssignmentOperators:                 true
+SpaceBeforeParens:                              ControlStatements
+SpaceInEmptyParentheses:                        false
+SpacesBeforeTrailingComments:                   2
+SpacesInAngles:                                 false
+SpacesInCStyleCastParentheses:                  false
+SpacesInContainerLiterals:                      true
+SpacesInParentheses:                            false
+SpacesInSquareBrackets:                         false
+Standard:                                       Cpp11
+TabWidth:                                       2
+UseTab:                                         Never

@@ -1,0 +1,63 @@
+Multiviewport / Viewport Array requires Geometry shader. So it's practically useless.
+
+Platforms (Game Wise) that C/C++ Can Target:
+
+Languages Per Platform;
+
+Normal Platforms:
+  0 = [  Javascript  ] Web     : C / C++ -> SDL2 + Emscripten.
+  1 = [Java / Kotlin ] Android : C / C++ -> SDL2 + JNI using C linkage.
+  2 = [ Swift / ObjC ] iOS     : C / C++ -> SDL2 + (Swift using C linkage || ObjC++ (ObjC is basically C pwith garbage added on top))
+  3 = [ C + C++ / C# ] Windows : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
+  4 = [C + C++ / ObjC] macOS   : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
+  5 = [   C + C++    ] Linux   : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
+
+Consoles:
+  Switch   : Vulkan, OpenGL 4.5, OpenGL ES
+  3DS      : OpenGL ES Subset
+  PS4      : GNM (low Level) / GNMX (High Level) (Custom)
+  XBox One : DirectX12
+
+Graphics APIs:
+  ///////////////////////////////////////////////////////////////
+  // 0 - WebGL1     / WebGL2           /           /           //
+  // 1 - OpenGL ES  / Vulkan           /           /           //
+  // 2 - OpenGL ES  / Metal (MoltenVK) /           /           //
+  // 4 - OpenGL 4.6 / Vulkan           / DirectX12 / DirectX11 //
+  // 5 - OpenGL 4.1 / Metal (MoltenVK) /           /           //
+  // 6 - OpenGL 4.6 / Vulkan           /           /           //
+  ///////////////////////////////////////////////////////////////
+
+// Another Web C++ Compiler: https://www.leaningtech.com/cheerp/
+
+typedef union {
+
+  char *__p;
+
+  double __d;
+
+  long double __ld;
+
+  long int __i;
+} max_align_t;
+
+#ifdef HAVE_TYPEOF
+
+/*
+* Can use arbitrary expressions
+*/
+#define alignof(t) \
+((sizeof (t) > 1)? offsetof(struct { char c; typeof(t) x; }, x) : 1)
+
+#else
+
+/*
+* Can only use types
+*/
+#define alignof(t) \
+((sizeof (t) > 1)? offsetof(struct { char c; t x; }, x) : 1)
+
+#endif
+
+[https://github.com/KhronosGroup/OpenGL-Registry]
+[https://blog.codef00.com/2014/12/06/portable-bitfields-using-c11]

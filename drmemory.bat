@@ -1,0 +1,1 @@
+D:\DrMemory_v2.1.0\bin64\drmemory.exe -show_reachable -- bin\vm.exe test_script.bts

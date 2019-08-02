@@ -1,0 +1,22 @@
+{
+  "render": {
+    "bfShaderProgram": [
+      {
+        "return": "bfShaderProgram",
+        "name": "bfShaderProgram_new",
+        "args": [
+          "const bfShaderProgramCreateParams*"
+        ]
+      },
+      {
+        "return": "void",
+        "name": "bfShaderProgram_loadData",
+        "args": [
+          "bfShaderProgram*",
+          "BifrostShaderType",
+          "filename"
+        ]
+      }
+    ]
+  }
+}

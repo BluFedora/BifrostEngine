@@ -1,0 +1,1 @@
+cloc-1.76 --by-file --csv --exclude-dir=lib --force-lang-def=cloc_definitions.txt ..\ -out=code_count_bifrost.csv

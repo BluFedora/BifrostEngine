@@ -1,0 +1,32 @@
+[
+{
+  "directory": "C:/Users/rshar/Documents/BifrostDev/build",
+  "command": "C:/MinGW/bin/gcc.exe -DTIDE_COMPUTE_OPENCL=1 @CMakeFiles/BifrostEngine.dir/includes_C.rsp /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj -g   -o CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.obj   -c C:/Users/rshar/Documents/BifrostDev/lib/include/glad/glad.c",
+  "file": "C:/Users/rshar/Documents/BifrostDev/lib/include/glad/glad.c"
+},
+{
+  "directory": "C:/Users/rshar/Documents/BifrostDev/build",
+  "command": "C:/MinGW/bin/g++.exe  -DTIDE_COMPUTE_OPENCL=1 @CMakeFiles/BifrostEngine.dir/includes_CXX.rsp /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj -g   -std=gnu++17 -o CMakeFiles/BifrostEngine.dir/main.cpp.obj -c C:/Users/rshar/Documents/BifrostDev/main.cpp",
+  "file": "C:/Users/rshar/Documents/BifrostDev/main.cpp"
+},
+{
+  "directory": "C:/Users/rshar/Documents/BifrostDev/build",
+  "command": "C:/MinGW/bin/gcc.exe -DTIDE_COMPUTE_OPENCL=1 @CMakeFiles/BifrostEngine.dir/includes_C.rsp /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj -g   -o CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.obj   -c C:/Users/rshar/Documents/BifrostDev/src/bifrost/data_structures/bifrost_array_t.c",
+  "file": "C:/Users/rshar/Documents/BifrostDev/src/bifrost/data_structures/bifrost_array_t.c"
+},
+{
+  "directory": "C:/Users/rshar/Documents/BifrostDev/build",
+  "command": "C:/MinGW/bin/gcc.exe -DTIDE_COMPUTE_OPENCL=1 @CMakeFiles/BifrostEngine.dir/includes_C.rsp /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj -g   -o CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.obj   -c C:/Users/rshar/Documents/BifrostDev/src/bifrost/data_structures/bifrost_dynamic_string.c",
+  "file": "C:/Users/rshar/Documents/BifrostDev/src/bifrost/data_structures/bifrost_dynamic_string.c"
+},
+{
+  "directory": "C:/Users/rshar/Documents/BifrostDev/build",
+  "command": "C:/MinGW/bin/gcc.exe -DTIDE_COMPUTE_OPENCL=1 @CMakeFiles/BifrostEngine.dir/includes_C.rsp /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj -g   -o CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.obj   -c C:/Users/rshar/Documents/BifrostDev/src/bifrost/data_structures/bifrost_hash_map.c",
+  "file": "C:/Users/rshar/Documents/BifrostDev/src/bifrost/data_structures/bifrost_hash_map.c"
+},
+{
+  "directory": "C:/Users/rshar/Documents/BifrostDev/build",
+  "command": "C:/MinGW/bin/gcc.exe -DTIDE_COMPUTE_OPENCL=1 @CMakeFiles/BifrostEngine.dir/includes_C.rsp /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj -g   -o CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.obj   -c C:/Users/rshar/Documents/BifrostDev/src/bifrost/script/bifrost_vm_build.c",
+  "file": "C:/Users/rshar/Documents/BifrostDev/src/bifrost/script/bifrost_vm_build.c"
+}
+]

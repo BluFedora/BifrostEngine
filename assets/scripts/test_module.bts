@@ -1,0 +1,8 @@
+// test_module.bts
+
+func hello()
+{
+  print "Hello from another module.";
+}
+
+hello();

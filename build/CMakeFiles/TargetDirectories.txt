@@ -1,0 +1,3 @@
+C:/Users/rshar/Documents/BifrostDev/build/CMakeFiles/BifrostEngine.dir
+C:/Users/rshar/Documents/BifrostDev/build/CMakeFiles/edit_cache.dir
+C:/Users/rshar/Documents/BifrostDev/build/CMakeFiles/rebuild_cache.dir
