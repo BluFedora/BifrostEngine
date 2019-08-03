@@ -101,10 +101,10 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 # add_subdirectory("game")
 
   # NOTE(Shareef): This makes is you can #include engine / game / library code without doing the "../" thing.
-include_directories(BifrostEngine "${PROJECT_SOURCE_DIR}")
-include_directories(BifrostEngine "${PROJECT_SOURCE_DIR}/lib/include")
-include_directories(BifrostEngine "${PROJECT_SOURCE_DIR}/include")
-include_directories(BifrostEngine "C:/Users/rshar/Documents/bifrost-core/bifrost_core")
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
+include_directories(BifrostEngine C:/Users/rshar/Documents/bifrost-core/bifrost_core)
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
