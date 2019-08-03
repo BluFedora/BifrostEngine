@@ -1,4 +1,4 @@
-#include <bifrost/bifrost_vm.hpp>
+#include "bifrost/bifrost_vm.hpp"
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream> /*  */

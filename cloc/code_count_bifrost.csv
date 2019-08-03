@@ -1,0 +1,50 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=1.00 s (49.0 files/s, 9833.0 lines/s)"
+C,..\src\bifrost\script\bifrost_vm_parser.c,284,91,1295
+C,..\src\bifrost\script\bifrost_vm_api.c,245,50,1095
+C,..\build\CMakeFiles\3.12.18081601-MSVC_2\CompilerIdC\CMakeCCompilerId.c,101,51,471
+C++,..\build\CMakeFiles\3.12.18081601-MSVC_2\CompilerIdCXX\CMakeCXXCompilerId.cpp,99,53,450
+C,..\src\bifrost\script\bifrost_vm_lexer.c,78,15,428
+C++,..\build\CMakeFiles\feature_tests.cxx,3,0,402
+C,..\src\bifrost\script\bifrost_vm_gc.c,71,35,346
+C,..\main.c,116,174,298
+C,..\src\bifrost\data_structures\bifrost_dynamic_string.c,79,40,280
+C,..\src\bifrost\data_structures\bifrost_hash_map.c,46,4,222
+C,..\src\bifrost\data_structures\bifrost_array_t.c,52,20,202
+C,..\src\bifrost\script\bifrost_vm_function_builder.c,47,21,198
+make,..\build\Makefile,98,58,172
+C,..\src\bifrost\script\bifrost_vm_obj.c,33,7,145
+C,..\src\bifrost\script\bifrost_vm_debug.c,25,0,140
+C++,..\main.cpp,40,184,135
+C,..\src\bifrost\script\bifrost_vm_value.c,25,1,103
+C++,..\src\bifrost\render\opengl\bifrost_opengl_es3.cpp,23,5,97
+CMake,..\CMakeLists.txt,32,90,85
+DOS Batch,..\build.bat,11,8,76
+JSON,..\.vscode\settings.json,0,0,75
+CMake,..\build\CMakeFiles\3.12.18081601-MSVC_2\CMakeCXXCompiler.cmake,16,1,59
+CMake,..\build\CMakeFiles\3.12.18081601-MSVC_2\CMakeCCompiler.cmake,16,1,56
+JSON,..\CMakeSettings.json,0,0,53
+CMake,..\build\CMakeFiles\Makefile.cmake,5,7,48
+CMake,..\build\CMakeFiles\BifrostEngine.dir\DependInfo.cmake,6,8,41
+JSON,..\build\compile_commands.json,0,0,32
+C,..\build\CMakeFiles\feature_tests.c,3,0,31
+C,..\src\bifrost\render\bifrost_shader_common.c,6,1,31
+JSON,..\.vscode\launch.json,0,0,28
+JSON,..\.vscode\c_cpp_properties.json,0,0,25
+DOS Batch,..\build_em.bat,0,3,24
+CMake,..\build\cmake_install.cmake,5,5,24
+C,..\src\bifrost\memory\bifrost_memory_manip.c,9,6,23
+JSON,..\docs\bifrost_api_spec.json,0,0,22
+JSON,..\.vscode\tasks.json,0,0,19
+CMake,..\build\CMakeFiles\BifrostEngine.dir\cmake_clean.cmake,1,1,15
+JSON,..\.vs\VSWorkspaceState.json,0,0,12
+CMake,..\build\CMakeFiles\3.12.18081601-MSVC_2\CMakeSystem.cmake,5,0,10
+C,..\src\bifrost\script\bifrost_vm_build.c,1,2,8
+CMake,..\build\CMakeFiles\CMakeDirectoryInformation.cmake,4,5,7
+CMake,..\build\CMakeFiles\3.12.18081601-MSVC_2\CMakeRCCompiler.cmake,0,0,6
+JSON,..\.vs\ProjectSettings.json,0,0,3
+DOS Batch,..\build\msvc.bat,0,0,2
+DOS Batch,..\docs\build_docs.bat,0,0,1
+C,..\docs\bifrost_template.c,0,0,1
+DOS Batch,..\open_server.bat,0,2,1
+DOS Batch,..\drmemory.bat,0,0,1
+DOS Batch,..\cloc\cloc.bat,0,0,1

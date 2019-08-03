@@ -3,7 +3,7 @@
  * @file   bifrost_vm.h
  * @author Shareef Raheem (http://blufedora.github.io)
  * @par
- *    Bifrost Scriping Language
+ *    Bifrost Scripting Language
  *
  * @brief
  *  The main API for the Bifrost Scripting Language.

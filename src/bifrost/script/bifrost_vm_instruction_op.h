@@ -3,7 +3,7 @@
  * @file   bifrost_vm_instruction_op.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @par
- *    Bifrost Scriping Language
+ *    Bifrost Scripting Language
  *
  * @brief
  *
@@ -14,8 +14,8 @@
  * @copyright Copyright (c) 2019 Shareef Raheem
  */
 /******************************************************************************/
-#ifndef BIFROST_VM_INSTRCUTION_OP_H
-#define BIFROST_VM_INSTRCUTION_OP_H
+#ifndef BIFROST_VM_INSTRUCTION_OP_H
+#define BIFROST_VM_INSTRUCTION_OP_H
 
 #include <stdint.h> /* uint32_t */
 
@@ -146,4 +146,4 @@ const char* bfInstOpToString(bfInstructionOp op);
 }
 #endif
 
-#endif /* BIFROST_VM_INSTRCUTION_OP_H */
+#endif /* BIFROST_VM_INSTRUCTION_OP_H */

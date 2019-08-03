@@ -47,6 +47,7 @@ void for_each_argument(F f, Args&&... args) {
         else
         {
           static_assert(always_false<T>, "Type could not be automatrically converted.");
+          return {};
         }
       }
     };
@@ -320,7 +321,7 @@ void for_each_argument(F f, Args&&... args) {
     }
     else
     {
-      throw "Invalid number of paramters passed to a native function.";
+      throw "Invalid number of parameters passed to a native function.";
     }
   }
 
@@ -368,8 +369,6 @@ void for_each_argument(F f, Args&&... args) {
 
     return clz_bind;
   }
-
-  // BifrostVM* self, size_t idx, size_t args_start, int32_t num_args
 
   struct bfFunctionCallResult
   {
