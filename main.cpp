@@ -1,4 +1,4 @@
-#include "bifrost/bifrost_vm.hpp"
+#include <bifrost/bifrost_vm.hpp>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream> /*  */
@@ -25,6 +25,7 @@
 //   * References to C/++ owned Objects (references / lightuserdata)
 //   * References to C/++ owned Objects + Class information? (userdata)
 //   * User defined callable objects. This would make "Closure" better. define a 'call' function?
+//   * Module variables apparently. (Statics also solve the problem)
 
 // TODO(SR): Bifrost DS
 //   * Array needs a 'shrink to fit' function to make it use less memory.
@@ -197,19 +198,24 @@ class TestClass
   int var;
 
   TestClass(int f) :
-    var(f)
-  {
-  }
+    var(f){}
 
-  const char* printf(float h) const
+     [[nodiscard]] const char *
+    printf(float h) const
   {
     std::cout << "h = " << h << ", my var = " << var << "\n";
     return "__ Return from printf __";
   }
 
-  ~TestClass() noexcept(true)
+  ~TestClass() noexcept
   {
-    std::cout << "~TestClass(" << var << ")\n";
+    try
+    {
+      std::cout << "~TestClass(" << var << ")\n";
+    }
+    catch (...)
+    {
+    }
   }
 };
 
@@ -244,9 +250,16 @@ print "ret from t = " +  t:printf(54);
 
 hello();
 
+class GameState
+{
+  static var i = 2;
+};
+
 func update()
 {
-  print "I am updating!";
+  var gs = GameState;
+  print "I am updating!" + GameState.i;
+  GameState.i = GameState.i + 1;
 }
 
 func callMeFromCpp(arg0, arg1, arg2)
@@ -272,7 +285,7 @@ int main(int argc, const char* argv[])
     goto shutdown_exit;  // NOLINT(hicpp-avoid-goto)
   }
 
-  auto main_window = glfwCreateWindow(1280, 720, "Bifrost Engine", nullptr, nullptr);
+  const auto main_window = glfwCreateWindow(1280, 720, "Bifrost Engine", nullptr, nullptr);
 
   glfwMakeContextCurrent(main_window);
 
@@ -293,7 +306,8 @@ int main(int argc, const char* argv[])
   vm_params.print_fn = [](BifrostVM*, const char* message) {
     std::cout << message << "\n";
   };
-
+  vm_params.min_heap_size = 50;
+  vm_params.heap_size = 100;
   BifrostVM* const vm = bfVM_new(&vm_params);
 
   const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
@@ -344,11 +358,7 @@ int main(int argc, const char* argv[])
     glfwSwapBuffers(main_window);
   }
 
-  // TODO(Shareef): Decide if I want destroying a null handle be ok.
-  if (update_fn)
-  {
-    bfVM_stackDestroyHandle(vm, update_fn);
-  }
+  bfVM_stackDestroyHandle(vm, update_fn);
   bfVM_delete(vm);
 
 shutdown_glfw:

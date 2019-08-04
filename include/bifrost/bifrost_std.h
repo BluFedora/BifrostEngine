@@ -44,6 +44,21 @@ static inline bfStringRange bfMakeStringRangeC(const char* str)
 #endif
 }
 
+static inline bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
+{
+#if __cplusplus
+  return {
+   bgn,
+   bgn + length,
+  };
+#else
+  return (bfStringRange){
+   .bgn = bgn,
+   .end = bgn + length,
+  };
+#endif
+}
+
 // This is used to clearly mark flexible-sized arrays that appear at the end of
 // some dynamically-allocated structs, known as the "struct hack".
 #if __STDC_VERSION__ >= 199901L

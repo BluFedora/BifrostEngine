@@ -547,31 +547,34 @@ void bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle)
 
 void bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle)
 {
-  if (self->handles == handle)
+  if (handle)
   {
-    self->handles = handle->next;
-  }
+    if (self->handles == handle)
+    {
+      self->handles = handle->next;
+    }
 
-  if (handle->next)
-  {
-    handle->next->prev = handle->prev;
-  }
+    if (handle->next)
+    {
+      handle->next->prev = handle->prev;
+    }
 
-  if (handle->prev)
-  {
-    handle->prev->next = handle->next;
-  }
+    if (handle->prev)
+    {
+      handle->prev->next = handle->next;
+    }
 
-  /*
+    /*
     TODO(SR):
       Only do this for debug extra security builds.
    */
-  handle->value = VAL_NULL;
-  handle->next  = NULL;
-  handle->prev  = NULL;
+    handle->value = VAL_NULL;
+    handle->next  = NULL;
+    handle->prev  = NULL;
 
-  handle->next       = self->free_handles;
-  self->free_handles = handle;
+    handle->next       = self->free_handles;
+    self->free_handles = handle;
+  }
 }
 
 // TODO(SR): Optimize the main interpreter loop.
@@ -730,8 +733,18 @@ frame_start:;
       }
       case BIFROST_VM_OP_LOAD_SYMBOL:
       {
-        BifrostObj*    obj    = AS_POINTER(locals[regs[REG_RB]]);
-        const uint32_t symbol = regs[REG_RC];
+        const bfVMValue obj_value  = locals[regs[REG_RB]];
+        const uint32_t  symbol     = regs[REG_RC];
+        BifrostString   symbol_str = self->symbols[symbol];
+
+        if (!IS_POINTER(obj_value))
+        {
+          char error_buffer[512];
+          bfDbgValueToString(obj_value, error_buffer, 512);
+          BF_RUNTIME_ERROR("Cannot load symbol (%s) into non object %s\n", symbol_str, error_buffer);
+        }
+
+        BifrostObj* obj = AS_POINTER(obj_value);
 
         if (obj->type == BIFROST_VM_OBJ_INSTANCE)
         {
@@ -753,7 +766,7 @@ frame_start:;
             }
             else
             {
-              // BF_RUNTIME_ERROR("WARNING: instance class does not have this field (%s)\n", self->symbols[symbol]);
+              BF_RUNTIME_ERROR("WARNING: instance class does not have this field (%s)\n", self->symbols[symbol]);
             }
           }
         }
@@ -783,17 +796,24 @@ frame_start:;
           BF_RUNTIME_ERROR("Cannot store symbol into non object\n");
         }
 
-        BifrostObj* obj = AS_POINTER(locals[regs[REG_RA]]);
+        BifrostObj*         obj     = AS_POINTER(locals[regs[REG_RA]]);
+        const BifrostString sym_str = self->symbols[regs[REG_RB]];
+        bfVMValue*          value   = locals + regs[REG_RC];
 
         if (obj->type == BIFROST_VM_OBJ_INSTANCE)
         {
-          BifrostObjInstance* inst    = (BifrostObjInstance*)obj;
-          BifrostString       sym_str = self->symbols[regs[REG_RB]];
-          bfHashMap_set(&inst->fields, sym_str, locals + regs[REG_RC]);
+          BifrostObjInstance* inst = (BifrostObjInstance*)obj;
+
+          bfHashMap_set(&inst->fields, sym_str, value);
+        }
+        else if (obj->type == BIFROST_VM_OBJ_CLASS)
+        {
+          BifrostObjClass* clz = (BifrostObjClass*)obj;
+          bfVM_xSetVariable(&clz->symbols, self, bfMakeStringRangeLen(sym_str, String_length(sym_str)), value[0]);
         }
         else
         {
-          BF_RUNTIME_ERROR("ERRRO, storing a symbol on a non instance obj.\n");
+          BF_RUNTIME_ERROR("ERRRO, storing a symbol on a non instance or class obj.\n");
         }
         break;
       }
@@ -1281,12 +1301,12 @@ static BifrostVMError bfVM_runModule(BifrostVM* self, BifrostObjModule* module)
 
 static BifrostVMError bfVM_compileIntoModule(BifrostVM* self, BifrostObjModule* module, const char* source, size_t source_len)
 {
-#define KEYWORD(kw, tt)              \
-  {                                  \
-    kw, sizeof(kw) - 1,              \
-    {                                \
+#define KEYWORD(kw, tt)                  \
+  {                                      \
+    kw, sizeof(kw) - 1,                  \
+    {                                    \
       .type = (tt), .as = {.str = (kw) } \
-    }                                \
+    }                                    \
   }
   /* TODO(SR): Order should based on how often each keyword is used on average. */
   static const bfKeyword s_Keywords[] =

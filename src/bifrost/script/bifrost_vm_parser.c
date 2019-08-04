@@ -98,7 +98,7 @@ static bfStringRange parserBeginFunction(BifrostParser* self, bfBool32 require_n
 static int           parserParseFunction(BifrostParser* self);
 static void          parserEndFunction(BifrostParser* self, BifrostObjFn* out, int arity);
 static void          parseClassDecl(BifrostParser* self);
-static void          parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz);
+static void          parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz, bfBool32 is_static);
 static void          parseClassFunc(BifrostParser* self, BifrostObjClass* clz, bfBool32 is_static);
 static void          parseGroup(BifrostParser* self, ExprInfo* expr, const bfToken* token);
 static void          parseLiteral(BifrostParser* self, ExprInfo* expr, const bfToken* token);
@@ -1065,7 +1065,7 @@ static void parseDotOp(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs,
 
       ExprInfo rhs_expr = exprMakeTemp(rhs_loc);
 
-      parseExpr(self, &rhs_expr, prec);
+      parseExpr(self, &rhs_expr, PREC_ASSIGN);
 
       parserVariableLoad(self, lhs_var, var_loc);
 
@@ -1105,7 +1105,7 @@ static void parseCall(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs, 
   (void)prec;
 
   const uint16_t function_loc      = bfVMFunctionBuilder_pushTemp(builder(), 1);
-  const uint16_t real_function_loc = (lhs->var.kind == V_LOCAL) ? lhs->var.location : function_loc;
+  const uint16_t real_function_loc = lhs->var.kind == V_LOCAL ? lhs->var.location : function_loc;
 
   if (lhs->var.kind != V_LOCAL)
   {
@@ -1149,8 +1149,8 @@ static void parseMethodCall(BifrostParser* self, ExprInfo* expr, const ExprInfo*
    real_var_loc,
    (uint16_t)sym);
 
-  VariableInfo function_var = parserVariableMakeTemp(function_loc);
-  VariableInfo return_var   = parserVariableMakeTemp(expr->write_loc);
+  const VariableInfo function_var = parserVariableMakeTemp(function_loc);
+  const VariableInfo return_var   = parserVariableMakeTemp(expr->write_loc);
 
   bfParser_eat(self, BIFROST_TOKEN_L_PAREN, bfFalse, "Function call must start with an open parenthesis.");
   parserFinishCall(self, function_var, return_var, real_var_loc);
@@ -1344,7 +1344,7 @@ static void parseClassDecl(BifrostParser* self)
   {
     if (bfParser_match(self, BIFROST_TOKEN_VAR_DECL))
     {
-      parseClassVarDecl(self, clz);
+      parseClassVarDecl(self, clz, bfFalse);
     }
     else if (bfParser_match(self, BIFROST_TOKEN_FUNC_DECL))
     {
@@ -1352,8 +1352,18 @@ static void parseClassDecl(BifrostParser* self)
     }
     else if (bfParser_match(self, BIFROST_TOKEN_STATIC))
     {
-      bfParser_eat(self, BIFROST_TOKEN_FUNC_DECL, bfFalse, "func keyword must be used after the static keyword.");
-      parseClassFunc(self, clz, bfTrue);
+      if (bfParser_match(self, BIFROST_TOKEN_FUNC_DECL))
+      {
+        parseClassFunc(self, clz, bfTrue);
+      }
+      else if (bfParser_match(self, BIFROST_TOKEN_VAR_DECL))
+      {
+        parseClassVarDecl(self, clz, bfTrue);
+      }
+      else
+      {
+        bfEmitError(self, "'static' keyword must be followed by either a function or variable declaration.");
+      }
     }
     else
     {
@@ -1370,7 +1380,12 @@ static void parseClassDecl(BifrostParser* self)
   bfParser_eat(self, BIFROST_TOKEN_SEMI_COLON, bfFalse, "Class definition must have a semi colon at the end.");
 }
 
-static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz)
+void bfVM_classSetVar(BifrostVM* self, BifrostObjClass* clz, bfStringRange name, bfVMValue value)
+{
+  parserClassSetVariable(self, clz, name, value);
+}
+
+static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz, bfBool32 is_static)
 {
   /* GRAMMAR(Shareef):
       var <identifier> = <constexpr>;
@@ -1381,15 +1396,13 @@ static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz)
 
   bfParser_eat(self, BIFROST_TOKEN_IDENTIFIER, bfFalse, "Expected name after var keyword.");
 
-  const size_t     symbol   = parserGetSymbol(self, name_str);
-  BifrostVMSymbol* var_init = Array_emplace(&clz->field_initializers);
-  var_init->name            = self->vm->symbols[symbol];
+  bfVMValue initial_value = VAL_NULL;
 
   if (bfParser_match(self, BIFROST_TOKEN_EQUALS))
   {
     if (parserIsConstexpr(self))
     {
-      var_init->value = parserConstexprValue(self);
+      initial_value = parserConstexprValue(self);
       bfParser_match(self, self->current_token.type);
     }
     else
@@ -1397,17 +1410,20 @@ static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz)
       bfEmitError(self, "Variable initializer must be a constant expression.");
     }
   }
+
+  if (is_static)
+  {
+    bfVM_classSetVar(self->vm, clz, name_str, initial_value);
+  }
   else
   {
-    var_init->value = VAL_NULL;
+    const size_t     symbol   = parserGetSymbol(self, name_str);
+    BifrostVMSymbol* var_init = Array_emplace(&clz->field_initializers);
+    var_init->name            = self->vm->symbols[symbol];
+    var_init->value           = initial_value;
   }
 
   bfParser_eat(self, BIFROST_TOKEN_SEMI_COLON, bfFalse, "Expected semi-colon after variable declaration.");
-}
-
-void bfVM_classSetVar(BifrostVM* self, BifrostObjClass* clz, bfStringRange name, bfVMValue value)
-{
-  parserClassSetVariable(self, clz, name, value);
 }
 
 static void parseClassFunc(BifrostParser* self, BifrostObjClass* clz, bfBool32 is_static)
@@ -1463,7 +1479,7 @@ static inline void parserPatchJumpHelper(BifrostParser* self, size_t jump_idx, s
 static void parserPatchJump(BifrostParser* self, size_t jump_idx, size_t cond_var, bfBool32 if_not)
 {
   const uint32_t current_loc = (uint32_t)Array_size(&self->fn_builder->instructions);
-  parserPatchJumpHelper(self, jump_idx, cond_var, current_loc - (uint32_t)jump_idx, if_not);
+  parserPatchJumpHelper(self, jump_idx, cond_var, (int)current_loc - (uint32_t)jump_idx, if_not);
 }
 
 static void parserPatchJumpRev(BifrostParser* self, size_t jump_idx, size_t cond_var, bfBool32 if_not)
@@ -1617,8 +1633,8 @@ static void parserFinishCall(BifrostParser* self, VariableInfo fn, VariableInfo 
     parserVariableLoad(self, fn, function_loc);
   }
 
-  int      num_params = 0;
-  uint16_t temp_first = bfVMFunctionBuilder_pushTemp(builder(), 1);
+  int            num_params = 0;
+  const uint16_t temp_first = bfVMFunctionBuilder_pushTemp(builder(), 1);
 
   if (zero_slot != BIFROST_VM_INVALID_SLOT)
   {

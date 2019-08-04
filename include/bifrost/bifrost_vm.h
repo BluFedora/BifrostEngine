@@ -195,7 +195,7 @@ BifrostVMType  bfVM_stackGetType(BifrostVM* self, size_t idx);
 int32_t        bfVM_stackGetArity(BifrostVM* self, size_t idx);
 bfValueHandle  bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
 void           bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle);
-void           bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);
+void           bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle); // Freeing a null handle is safe.
 int32_t        bfVM_handleGetArity(bfValueHandle handle);
 BifrostVMType  bfVM_handleGetType(bfValueHandle handle);
 BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
