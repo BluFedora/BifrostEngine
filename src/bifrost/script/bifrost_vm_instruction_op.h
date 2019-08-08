@@ -33,11 +33,15 @@ typedef enum
   BIFROST_VM_OP_LOAD_CONSTANT,    // rA = K[rBx]
   BIFROST_VM_OP_LOAD_SYMBOL,      // rA = rB.SYMBOLS[rC]
   BIFROST_VM_OP_LOAD_MODULE_VAR,  // rA = module.SYMBOLS[rBx]
+
+  // TODO(Shareef): If I have space for this optimization OP that would be great.
   // BIFROST_VM_OP_LOAD_BASIC, // rA = (rBx == 1 : VAL_TRUE) || (rBx == 2 : VAL_FALSE) || (rBx == 3 : VAL_NULL)
 
   /* Store OPs */
   BIFROST_VM_OP_STORE_MOVE,        // rA     = rBx
   BIFROST_VM_OP_STORE_SYMBOL,      // rA.SYMBOLS[rB]  = rC
+
+  // TODO(SR): This can be removed in favor of exclusively static variables for Module state.
   BIFROST_VM_OP_STORE_MODULE_VAR,  // module.SYMBOLS[rA] = rBx
 
   /* System OPs */
@@ -51,6 +55,18 @@ typedef enum
   BIFROST_VM_OP_MATH_MOD,  // rA = rB % rC
   BIFROST_VM_OP_MATH_POW,  // rA = rB ^ rC
   BIFROST_VM_OP_MATH_INV,  // rA = -rB
+
+  // TODO(Shareef): No integer div, guess you have to do:
+  //   rA = Math.floor(rB / rC);
+
+  // Additional Logical Ops
+  // BIFROST_VM_OP_LOGIC_OR,   // rA = rB | rC
+  // BIFROST_VM_OP_LOGIC_AND,  // rA = rB & rC
+  // BIFROST_VM_OP_LOGIC_XOR,  // rA = rB ^ rC
+  // BIFROST_VM_OP_LOGIC_NOT,  // rA = ~rB
+  // BIFROST_VM_OP_LOGIC_LS,   // rA = (rB << rC)
+  // BIFROST_VM_OP_LOGIC_RS,   // rA = (rB >> rC)
+
   // Comparisons
   BIFROST_VM_OP_CMP_EE,   // rA = rB == rC
   BIFROST_VM_OP_CMP_NE,   // rA = rB != rC
@@ -62,7 +78,9 @@ typedef enum
   BIFROST_VM_OP_CMP_OR,   // rA = rB || rC
   BIFROST_VM_OP_NOT,      // rA = !rBx
   // Control Flow
-  BIFROST_VM_OP_CALL_FN,      // call(local[rBx]) (params-start = rA)
+  BIFROST_VM_OP_CALL_FN,      // call(local[rB]) (params-start = rA, num-args = rC)
+
+  // TODO(SR): If I need another OP JUMP can be a JUMP_IF with a hardcoded true.
   BIFROST_VM_OP_JUMP,         // ip += rsBx
   BIFROST_VM_OP_JUMP_IF,      // if (rA) ip += rsBx
   BIFROST_VM_OP_JUMP_IF_NOT,  // if (!rA) ip += rsBx

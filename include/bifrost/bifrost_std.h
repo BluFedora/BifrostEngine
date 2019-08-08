@@ -1,6 +1,7 @@
 #ifndef BIFROST_STD_H
 #define BIFROST_STD_H
 
+#include <stddef.h> /* size_t             */
 #include <stdint.h> /* uint32_t, uint64_t */
 
 #if __cplusplus

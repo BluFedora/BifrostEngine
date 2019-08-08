@@ -1,4 +1,5 @@
 #include <bifrost/bifrost_vm.hpp>
+#include <bifrost/graphics/bifrost_gfx_api.h>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream> /*  */
@@ -13,7 +14,7 @@
 //   * Error throwing in native functions.
 //   * Do while loop.
 //   * Standard Lib
-//   * Class inhericance.
+//   * Class inheritance.
 //   * Unary Not
 //   * Unary Minus
 //   * +=, -=, *=, /=
@@ -24,8 +25,14 @@
 //   * Preprocessor for some extra fun.
 //   * References to C/++ owned Objects (references / lightuserdata)
 //   * References to C/++ owned Objects + Class information? (userdata)
-//   * User defined callable objects. This would make "Closure" better. define a 'call' function?
+//   [X] * User defined callable objects. This would make "Closure" better. define a 'call' function?
 //   * Module variables apparently. (Statics also solve the problem)
+//   * Integer Div
+//   * Bin / Oct / Hex Numbers
+//   * Unicode chars?
+//   * foreach (with user defined iterators)
+//   * Ternary branch
+//   * For more efficient execution all string functions must be a lib rather than on the object itself.
 
 // TODO(SR): Bifrost DS
 //   * Array needs a 'shrink to fit' function to make it use less memory.
@@ -41,7 +48,7 @@
 //     -> Debug Drawer
 //     -> Input System
 //     -> Camera FBO
-//     -> A lot of Gameplay garabage
+//     -> A lot of Game-play garbage
 //
 //  Bad Ideas That happened because of Time:
 //    * The Engine has GLFW in it.
@@ -55,7 +62,7 @@ Critique Per Subsystem:
   -> ANIMATION (Frame/SpriteSheet):
     * Seemed fine for the most part. (SpriteSheet was good)
     * Make more data private in the component (People poked around)
-    * There are 3 bools in the component. Bitfield time.
+    * There are 3 booleans in the component. Bitfield time.
     * Maybe rather than using a 'HashTable' an array with a linear find is better? (O(N) but N is very low?)
       -> This can be a be a compiler define based off of game type.
   -> ANIMATION (Ease):
@@ -70,8 +77,8 @@ Critique Per Subsystem:
     * I set up the bg then it got copied and pasted that means it was too hard to use.
   -> ANIMATION (Timeline)
     * One of the latest system written over the summer.
-    * Overall pretty nice and modular. + Lifetime management is interetsing.
-    * Needs less jank serilization of tracks.
+    * Overall pretty nice and modular. + Lifetime management is interesting.
+    * Needs less jank serialization of tracks.
     * Needs to decide on how to manage complex animations in editor.
     * How can we use multiple objects?
     * How would the object IDs work?
@@ -80,8 +87,8 @@ Critique Per Subsystem:
     * Bitflags for the Booleans.
     * Memory Layout is bad and the classes seem heavy.
   -> ASSET_IO (Area)
-    * Fine, the way the enine used them was bad though.
-    * Lifetime management waas bad.
+    * Fine, the way the engine used them was bad though.
+    * Lifetime management was bad.
     * Bounds editor could have been better.
     * Terrible for a multi-doc setup. (Practically only 3-5 Areas max used for Project Gemini)
     * Should the Camera be per area? (Yes for multi-doc setup?)
@@ -111,7 +118,7 @@ Critique Per Subsystem:
     * Positional audio would have been nice.
     * Good that the component lets the behaviors declare what they want.
     * No way to transition easily.
-  -> COLLLISION (General + Raycast)
+  -> COLLISION (General + Raycast)
     * It's good, need to review the polygon code for more bugs.
     * Raycast could have a more consistent API.
   -> COMBAT
@@ -122,7 +129,7 @@ Critique Per Subsystem:
     * Gamestate system was much to fickle and awkward.
     * The Engine maybe did too much?
     * Gamestate's need the engine in the event handle.
-  -> DATA_STRCUTURES (All)
+  -> DATA_STRUCTURES (All)
     * Very good and nice to use.
   -> DEBUG (Drawer)
     * Replace the global state with a system on the engine.
@@ -153,7 +160,7 @@ Critique Per Subsystem:
     * Color          - Color8u + Color4f
     * RenderMaterial - A fairly weak abstraction could be better but how?
     * TextComponent  - Heavier Caching + Semi-awkward editing of box.
-    * Tetxure        - Turned into a cluster f**k w/ Gifs.
+    * Texture        - Turned into a cluster f**k w/ Gifs.
     * Transform      - Could be more data oriented  + quaternions are better.
     *                - Bad global Node storage.
     * Vertex         - There should be more types of verts.
@@ -168,7 +175,7 @@ Critique Per Subsystem:
     * Camera issues are from other systems.
     * Leaks memory with the FBO.
     * Better 3D culling.
-    * More native postprocesisng.
+    * More native postprocessing.
   -> MEMORY (All)
     * Great, just needs a more cosistent API cuz it's super easy to use wrong.
   -> PHYSICS (RigidBody)
@@ -198,10 +205,10 @@ class TestClass
   int var;
 
   TestClass(int f) :
-    var(f){}
+    var(f) {}
 
-     [[nodiscard]] const char *
-    printf(float h) const
+  [[nodiscard]] const char*
+  printf(float h) const
   {
     std::cout << "h = " << h << ", my var = " << var << "\n";
     return "__ Return from printf __";
@@ -257,9 +264,8 @@ class GameState
 
 func update()
 {
-  var gs = GameState;
-  print "I am updating!" + GameState.i;
-  GameState.i = GameState.i + 1;
+  //print "I am updating!" + GameState.i;
+  //GameState.i = GameState.i + 1;
 }
 
 func callMeFromCpp(arg0, arg1, arg2)
@@ -269,6 +275,82 @@ func callMeFromCpp(arg0, arg1, arg2)
 }
 )";
 
+template<typename T>
+class bfNonCopyable  // NOLINT(hicpp-special-member-functions)
+{
+ public:
+  bfNonCopyable(const bfNonCopyable&) = delete;
+  bfNonCopyable& operator=(const T&) = delete;
+
+ protected:
+  bfNonCopyable()  = default;
+  ~bfNonCopyable() = default;
+};
+
+template<typename T>
+class bfNonMoveable  // NOLINT(hicpp-special-member-functions)
+{
+ public:
+  bfNonMoveable(const bfNonMoveable&) = delete;
+  bfNonMoveable& operator=(const T&) = delete;
+
+ protected:
+  bfNonMoveable()  = default;
+  ~bfNonMoveable() = default;
+};
+
+struct BifrostEngineCreateParams
+{
+  const char*   app_name;
+  std::uint32_t app_version;
+  std::uint32_t width;
+  std::uint32_t height;
+};
+
+// clang-format off
+class BifrostEngine : private bfNonCopyable<BifrostEngine>, private bfNonMoveable<BifrostEngine>
+// clang-format on
+{
+ private:
+  std::pair<int, const char**> m_CmdlineArgs;
+  bfGfxContextHandle           m_GfxBackend;
+
+ public:
+  BifrostEngine(int argc, const char* argv[]) :
+    m_CmdlineArgs{argc, argv},
+    m_GfxBackend{nullptr}
+  {
+  }
+
+  void init(const BifrostEngineCreateParams& params)
+  {
+    const bfGfxContextCreateParams gfx_create_params = {
+     params.app_name,
+     params.app_version,
+    };
+
+    m_GfxBackend = bfGfxContext_new(&gfx_create_params);
+    bfGfxContext_onResize(m_GfxBackend, params.width, params.height);
+  }
+
+  [[nodiscard]] bool beginFrame() const
+  {
+    return bfGfxContext_beginFrame(m_GfxBackend);
+  }
+
+  void endFrame() const
+  {
+    bfGfxContext_endFrame(m_GfxBackend);
+  }
+
+  void deinit()
+  {
+    bfGfxDevice_flush(bfGfxContext_device(m_GfxBackend));
+    bfGfxContext_delete(m_GfxBackend);
+    m_GfxBackend = nullptr;
+  }
+};
+
 namespace ErrorCodes
 {
   static constexpr int GLFW_FAILED_TO_INIT = -1;
@@ -277,6 +359,8 @@ namespace ErrorCodes
 
 int main(int argc, const char* argv[])
 {
+  static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
+
   int error_code = 0;
 
   if (!glfwInit())
@@ -285,7 +369,7 @@ int main(int argc, const char* argv[])
     goto shutdown_exit;  // NOLINT(hicpp-avoid-goto)
   }
 
-  const auto main_window = glfwCreateWindow(1280, 720, "Bifrost Engine", nullptr, nullptr);
+  const auto main_window = glfwCreateWindow(INITIAL_WINDOW_SIZE[0], INITIAL_WINDOW_SIZE[1], "Bifrost Engine", nullptr, nullptr);
 
   glfwMakeContextCurrent(main_window);
 
@@ -297,9 +381,6 @@ int main(int argc, const char* argv[])
 
   namespace bf = bifrost;
 
-  (void)argc;
-  (void)argv;
-
   BifrostVMParams vm_params;
   bfVMParams_init(&vm_params);
   vm_params.error_fn = &userErrorFn;
@@ -307,8 +388,8 @@ int main(int argc, const char* argv[])
     std::cout << message << "\n";
   };
   vm_params.min_heap_size = 50;
-  vm_params.heap_size = 100;
-  BifrostVM* const vm = bfVM_new(&vm_params);
+  vm_params.heap_size     = 100;
+  BifrostVM* const vm     = bfVM_new(&vm_params);
 
   const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
    "TestClass",
@@ -337,25 +418,126 @@ int main(int argc, const char* argv[])
     update_fn = bfVM_stackMakeHandle(vm, 0);
   }
 
-  while (!glfwWindowShouldClose(main_window))
   {
-    glfwPollEvents();
+    BifrostEngine engine{argc, argv};
 
-    glClearColor(0.4f, 0.5f, 0.7f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    const BifrostEngineCreateParams params = {
+     argv[0],
+     0,
+     INITIAL_WINDOW_SIZE[0],
+     INITIAL_WINDOW_SIZE[1],
+    };
 
-    if (update_fn)
-    {
-      bfVM_stackResize(vm, 1);
-      bfVM_stackLoadHandle(vm, 0, update_fn);
+    engine.init(params);
 
-      if (bfVM_stackGetType(vm, 0) == BIFROST_VM_FUNCTION)
+    // clang-format off
+    static const float vertices[] = {
+      -0.5f, -0.5f, 0.0f,
+       0.5f, -0.5f, 0.0f,
+       0.0f,  0.5f, 0.0f,
+    };
+    // clang-format on
+
+    const char* vertexShaderSource = "#version 330 core\n"
+                                     "layout (location = 0) in vec3 aPos;\n"
+                                     "void main()\n"
+                                     "{\n"
+                                     "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+                                     "}\0";
+
+    const char* fragmentShaderSource = "#version 330 core\n"
+                                       "out vec4 FragColor;\n"
+                                       "void main()\n"
+                                       "{\n"
+                                       "   FragColor = vec4(0.5f, 0.8f, 0.2f, 1.0f);\n"
+                                       "}\n\0";
+
+    const auto createShader = [](int type, const char* source) {
+      const int vertexShader = glCreateShader(type);
+      glShaderSource(vertexShader, 1, &source, nullptr);
+      glCompileShader(vertexShader);
+
+      int  success;
+      char infoLog[512];
+      glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+      if (!success)
       {
-        bf::vmCall(vm, 0);
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+                  << infoLog << std::endl;
       }
+
+      return vertexShader;
+    };
+
+    const auto vertexShader   = createShader(GL_VERTEX_SHADER, vertexShaderSource);
+    const auto fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+
+    const int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    int  success;
+    char infoLog[512];
+    // check for linking errors
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+      glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+      std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+                << infoLog << std::endl;
+    }
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindVertexArray(VAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), static_cast<void*>(0));
+    glEnableVertexAttribArray(0);
+
+    while (!glfwWindowShouldClose(main_window))
+    {
+      int window_width, window_height;
+      glfwGetWindowSize(main_window, &window_width, &window_height);
+
+      glfwPollEvents();
+
+      if (engine.beginFrame())
+      {
+        glViewport(0, 0, window_width, window_height);
+        glClearColor(0.4f, 0.5f, 0.7f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        if (update_fn)
+        {
+          bfVM_stackResize(vm, 1);
+          bfVM_stackLoadHandle(vm, 0, update_fn);
+
+          if (bfVM_stackGetType(vm, 0) == BIFROST_VM_FUNCTION)
+          {
+            bf::vmCall(vm, 0);
+          }
+        }
+
+        engine.endFrame();
+      }
+
+      glfwSwapBuffers(main_window);
     }
 
-    glfwSwapBuffers(main_window);
+    engine.deinit();
+
+    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &VAO);
   }
 
   bfVM_stackDestroyHandle(vm, update_fn);
@@ -364,6 +546,7 @@ int main(int argc, const char* argv[])
 shutdown_glfw:
   glfwDestroyWindow(main_window);
   glfwTerminate();
+
 shutdown_exit:
   return error_code;
 }

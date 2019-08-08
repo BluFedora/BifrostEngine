@@ -30,29 +30,9 @@ keywords:    [engine, architecture, bifrost, c, c++, game, api]
   > The member variables on any class is a suggestion while the __member functions are a requirement__.
   <!-- > If you are contributing to the Engine layer of this project you must follow the [Style Guide](rising_tide_style_guide_2018.pdf) -->
 
-/*
-void                        BifrostShaderProgram_loadFile(bfShaderProgram self, BifrostShaderType type, const char* filename);
-void                        BifrostShaderProgram_loadData(bfShaderProgram self, BifrostShaderType type, const char* code, size_t code_size);
-void                        BifrostShaderProgram_registerUniformBuffer(bfShaderProgram self,
-  const char* name,
-  uint32_t how_many,
-  BifrostShaderStageFlags stages);
-void                        BifrostShaderProgram_registerUniformBufferAt(bfShaderProgram self,
-  uint32_t binding,
-  const char* name,
-  uint32_t how_many,
-  BifrostShaderStageFlags stages);
-void                        BifrostShaderprogram_registerImageSampler(bfShaderProgram self,
-  const char* name,
-  uint32_t how_many,
-  BifrostShaderStageFlags stages);
-void                        BifrostShaderprogram_registerImageSamplerAt(bfShaderProgram self,
-  uint32_t binding,
-  const char* name,
-  uint32_t how_many,
-  BifrostShaderStageFlags stages);
-void                        BifrostShaderprogram_compile(bfShaderProgram self);
-void                        BifrostShaderProgram_delete(bfShaderProgram self);
-*/
+---
+
 
 ---
+
+> 2019-2020 &copy; All Rights Reserved Shareef Raheem

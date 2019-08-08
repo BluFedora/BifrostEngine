@@ -742,89 +742,6 @@ if (current_area)
 <!-- Link Definitions -->
 
 <!--
----
-
-# Custom Scripting Language Spec. (Very Low Priority Project)
-
-## API
-
-## Low Level Implementation
-
-- Bytecode Format
-  - 32bits of awesome
-    ```
-    0     5        14        23        32
-    [ooooo|aaaaaaaaa|bbbbbbbbb|ccccccccc]
-    [ooooo|aaaaaaaaa|bxbxbxbxbxbxbxbxbxb]
-    [ooooo|aaaaaaaaa|sBxbxbxbxbxbxbxbxbx]
-    opcode  =       0 -  32
-    rA      =       0 - 512
-    rB      =       0 - 512
-    rBx     =       0 - 262143
-    rsBx    = -131072 - 131071
-    rC      =       0 - 512
-    ```
-
-- Instruction Set (Max 32)
-
-  - Load Instructions
-    - LOAD_GLOBAL
-      - rA = _G[rB]
-    - LOAD_CONSTANT     (Numbers or Strings)
-      - rA = K[rB]
-    - LOAD_BOOLEAN
-      - rA = (Boolean)B
-      - if (C) PC++
-    - LOAD_NULL
-      - rA...(rA + B) = null
-    - LOAD_OBJECT_KEY
-      - rA = rB[rC]
-    - LOAD_ARRAY_INDEX
-      - rA = rB[rC]
-
-  - Store Instructions
-    - STORE_GLOBAL
-      - rB[rC] = rA
-    - STORE_ARRAY_INDEX
-      - rB[rC] = rA
-    - STORE_OBJECT_KEY
-      - rB[rC] = rA
-    - MOVE
-      - rA = rB
-
-  - Boolean Logic Instructions
-    - CMP_LE
-    - CMP_LT
-    - CMP_EQ
-    - CMP_OR
-    - CMP_AND
-    - LOGICAL_NOT
-
-    - CMP_GT = (LOGICAL_NOT + CMP_LE)
-    - CMP_GE = (LOGICAL_NOT + CMP_LT)
-
-  - Arithmetic Instructions
-    - ADD
-    - SUB
-    - DIV
-    - MULT
-    - MODULO
-    - POW
-    - UNARY_MINUS
-
-  - System Instructions
-    - MAKE_OBJECT
-    - RETURN
-    - PUSH_PARAM
-    - TAIL_CALL
-    - CALL
-    - JUMP
-      - if ((rA & CPU_STATE) == CPU_STATE) PC += rsBx
-    - GET_RETURN
-
----
-
-
 # RANDOM NOTES NOT THAT USEFUL FOR NOW
 - Each  draw  item  is  a  very  compact  structure,  containing  state  IDs.
 - XOR’ing two  draw  items  creates  a  bitmask  that  highlights  any  changes.
@@ -858,6 +775,8 @@ if (current_area)
 | Transient  | UI, Text             ||
 | Temporary  | Particles (Streamed) ||
 | Constants  | Shader Uniforms      ||
+
+
 
 - Long Lived
   - The average case so use the defaults for this.

@@ -7,7 +7,7 @@ Languages Per Platform;
 Normal Platforms:
   0 = [  Javascript  ] Web     : C / C++ -> SDL2 + Emscripten.
   1 = [Java / Kotlin ] Android : C / C++ -> SDL2 + JNI using C linkage.
-  2 = [ Swift / ObjC ] iOS     : C / C++ -> SDL2 + (Swift using C linkage || ObjC++ (ObjC is basically C pwith garbage added on top))
+  2 = [ Swift / ObjC ] iOS     : C / C++ -> SDL2 + (Swift using C linkage || ObjC++ (ObjC is basically C with garbage added on top))
   3 = [ C + C++ / C# ] Windows : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
   4 = [C + C++ / ObjC] macOS   : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
   5 = [   C + C++    ] Linux   : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
@@ -61,3 +61,203 @@ typedef union {
 
 [https://github.com/KhronosGroup/OpenGL-Registry]
 [https://blog.codef00.com/2014/12/06/portable-bitfields-using-c11]
+[https://www.guerrilla-games.com/read/creating-a-tools-pipeline-for-horizon-zero-dawn]
+[https://devblogs.nvidia.com/vulkan-dos-donts/]
+[https://stackoverflow.com/questions/15275023/clang-force-loop-unroll-for-specific-loop]
+
+MSVC Define:
+https://docs.microsoft.com/en-us/cpp/standard-library/iterator-debug-level?view=vs-2019
+_ITERATOR_DEBUG_LEVEL=0 if you want to have decent debug vector performance.
+
+// Better Swap and pop
+https://ourmachinery.com/post/data-structures-part-1-bulk-data/
+std::swap(a[i], a[a.size() - 1]);
+a.pop_back();
+
+g++ = gcc -xc++ -lstdc++ -shared-libgcc
+
+Compiler Option
+-x <langauge>
+
+gcc will compile: *.c/*.cpp files as C and C++ respectively.
+g++ will compile: *.c/*.cpp files but they will all be treated as C++ files.
+Also if you use g++ to link the object files it automatically links in the std C++ libraries (gcc does not do this).
+gcc compiling C files has fewer predefined macros.
+gcc compiling *.cpp and g++ compiling *.c/*.cpp files has a few extra macros.
+#define __GXX_WEAK__ 1
+#define __cplusplus 1
+#define __DEPRECATED 1
+#define __GNUG__ 4
+#define __EXCEPTIONS 1
+#define __private_extern__ extern
+
+Scripted Particles:
+
+How do you do branches in the bytes code?
+
+
+Render Graph:
+
+[https://github.com/acdemiralp/fg]
+
+This is a graph designed to be compiled once and executed many times.
+
+/* These Map To Vulkan's Subpasses */
+
+RenderGraph {
+	void compile()
+	{
+		// Update ref counts
+
+		// Cull Unused Resources and passes.
+
+		Stack<IResource<T>*> unused_res = [...all rez with ref count of 0...];
+
+		while (!unused_res.empty())
+		{
+			IResource<T>* res = unused_res.pop();
+			IPass<T>* parent = res->parent;
+
+			--parent->ref_count;
+
+			// Can also add a check to see if this is actually immune from being culled.
+			if (parent->ref_count == 0)
+			{
+				foreach (read_res : parent->reads)
+				{
+					--read_res->ref_count;
+
+					if (read_res->ref_count == 0 && read_res->isTransient())
+					{
+						unused_res.push(read_res);
+					}
+				}
+			}
+
+			foreach (writer_res : res->writers)
+			{
+				--writer_res->ref_count;
+
+				// Can also add a check to see if this is actually immune from being culled.
+				if (writer_res->ref_count == 0)
+				{
+					// Repeated code as above.
+					foreach (read_res : writer_res->reads)
+					{
+						--read_res->ref_count;
+
+						if (read_res->ref_count == 0 && read_res->isTransient())
+						{
+							unused_res.push(read_res);
+						}
+					}
+				}
+			}
+		}
+
+		// Compilation of Passes
+
+		IResource<T>* creates = {};
+		IResource<T>* destroy = {};
+		Int current_index = 0;
+
+		foreach (render_task : this->render_tasks)
+		{
+			if (render_task->ref_count != 0)
+			{
+				creates.clear();
+				destroy.clear();
+
+				foreach (res : render_task->created_resources)
+				{
+					creates.push(res);
+
+					if (res.readers.empty() && res.writers.empty())
+					{
+						destroy.push(res);
+					}
+				}
+
+				foreach(res : (render_task->reads + render_task->writes))
+				{
+					if (res.isTransient())
+					{
+						Bool is_valid = false;
+						Int  last_index = Max(
+							findIndexOf(this->render_tasks, res.readers.back(), &is_valid),
+							findIndexOf(this->render_tasks, res.writers.back(), &is_valid)
+						);
+
+						if (is_valid && last_index == current_index)
+						{
+							destroy.push(res);
+						}
+					}
+				}
+
+				this->actions.push(render_task, creates, destroy);
+			}
+
+			++current_index;
+		}
+	}
+
+	void exec(CommandBuffer& cmds)
+	{
+		foreach (pass : this->actions)
+		{
+			foreach (res : pass.creates) { res.create(); }
+			pass.execute(this->builder, cmds, pass.data);
+			foreach (res : pass.destroy) { res.destroy(); }
+		}
+	}
+};
+
+IPass<T> {
+	reads:Vector<IResource*>;
+	writes:Vector<IResource*>;
+	created_resources:Vector<IResource*>;
+	render_priority:Int;
+
+	void setup(GraphBuilder& builder, T& data);
+	void execute(GraphBuilder& builder, CommandBuffer& cmds, T& data);
+};
+
+IResource<T> {
+	readers:Vector<IPass*>;
+	writers:Vector<IPass*>;
+	name:String;
+	params:T;
+	parent:IPass<T>*;
+
+	void create(const T& params);
+	bool isTransient() const;
+	void destroy(void);
+};
+
+What in Vulkan Needs Barriers:
+
+Y - Yes we need a barrier.
+N - No barrier is needed.
+
+Color / Depth Attachments:
+	- Any yes here requires a layout transition as well.
+	[Y] Read  -> Write
+	[Y] Write -> Read
+	[Y] Write -> Write
+	[N] Read  -> Read
+
+Buffer Update
+
+
+
+
+
+
+
+
+
+
+Random:
+	A variant with a unique_ptr and a raw pointer to the type is a good way of having both owned and non owned resources for the same class.
+	This is a bit better than storing a raw pointer with a boolean from a cognitive load perspective.

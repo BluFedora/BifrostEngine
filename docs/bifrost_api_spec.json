@@ -1,6 +1,6 @@
 {
-  "render": {
-    "bfShaderProgram": [
+  "graphics": {
+    "ShaderProgram": [
       {
         "return": "bfShaderProgram",
         "name": "bfShaderProgram_new",

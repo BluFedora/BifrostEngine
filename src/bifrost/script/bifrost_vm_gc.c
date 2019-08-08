@@ -42,11 +42,14 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
 
   const size_t frames_size = Array_size(&self->frames);
 
+    // TODO(SR): Is this really needed?
   for (size_t i = 0; i < frames_size; ++i)
   {
-    if (self->frames[i].fn)
+    BifrostObjFn* const fn = self->frames[i].fn;
+
+    if (fn)
     {
-      bfGCMarkObj(&self->frames[i].fn->super);
+      bfGCMarkObj(&fn->super);
     }
   }
 

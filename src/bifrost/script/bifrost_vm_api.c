@@ -741,7 +741,7 @@ frame_start:;
         {
           char error_buffer[512];
           bfDbgValueToString(obj_value, error_buffer, 512);
-          BF_RUNTIME_ERROR("Cannot load symbol (%s) into non object %s\n", symbol_str, error_buffer);
+          BF_RUNTIME_ERROR("Cannot load symbol (%s) from non object %s\n", symbol_str, error_buffer);
         }
 
         BifrostObj* obj = AS_POINTER(obj_value);
@@ -766,7 +766,8 @@ frame_start:;
             }
             else
             {
-              BF_RUNTIME_ERROR("WARNING: instance class does not have this field (%s)\n", self->symbols[symbol]);
+              // TODO(Shareef): Decide on how strict this language will be with undefined fields.
+              // BF_RUNTIME_ERROR("WARNING: instance class does not have this field (%s)\n", self->symbols[symbol]);
             }
           }
         }

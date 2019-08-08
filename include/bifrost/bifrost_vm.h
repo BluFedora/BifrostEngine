@@ -4,6 +4,10 @@
  * @author Shareef Raheem (http://blufedora.github.io)
  * @par
  *    Bifrost Scripting Language
+ *    Dependencies:
+ *      > C99 or later.
+ *      > Bifrost Data Structures Library
+ *      > C Runtime Library
  *
  * @brief
  *  The main API for the Bifrost Scripting Language.
@@ -17,10 +21,9 @@
 #ifndef BIFROST_VM_API_H
 #define BIFROST_VM_API_H
 
-#include "bifrost_std.h"                                    /* bfStringRange, int32_t */
-#include <bifrost/data_structures/bifrost_dynamic_string.h> /* BifrostString          */
-#include <bifrost/data_structures/bifrost_hash_map.h>       /* BifrostHashMap         */
-#include <stddef.h>                                         /* size_t                 */
+#include "bifrost_std.h"                                    /* bfStringRange, int32_t, size_t */
+#include <bifrost/data_structures/bifrost_dynamic_string.h> /* BifrostString                  */
+#include <bifrost/data_structures/bifrost_hash_map.h>       /* BifrostHashMap                 */
 
 #if __cplusplus
 extern "C" {

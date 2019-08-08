@@ -1,4 +1,4 @@
-// An arity of -1 indicates infinite params
+// An arity of -1 indicates infinite (read: 0-511) params
 
 #ifndef BIFROST_VM_OBJ_H
 #define BIFROST_VM_OBJ_H
@@ -21,8 +21,10 @@ typedef enum
   BIFROST_VM_OBJ_INSTANCE,   // 0b011
   BIFROST_VM_OBJ_STRING,     // 0b100
   BIFROST_VM_OBJ_NATIVE_FN,  // 0b101
+
+  // These next two types would be C/++ owned memory.
   // BIFROST_VM_OBJ_REFERENCE,  // 0b110
-  // BIFROST_VM_OBJ_XXXXX,  // 0b111
+  // BIFROST_VM_OBJ_WEAK_REF,  // 0b111
 
 } BifrostVMObjType;
 
@@ -108,10 +110,10 @@ typedef struct BifrostObjNativeFn_t
 
 typedef struct BifrostVMStackFrame_t
 {
-  BifrostObjFn* fn;
-  uint32_t*     ip;
-  size_t        old_stack;
-  size_t        stack;
+  BifrostObjFn* fn;        /*!< Needed for addition debug info for stack traces. */
+  uint32_t*     ip;        /*!< The current instruction being executed.          */
+  size_t        old_stack; /*!< The top of the stack to restore to.              */
+  size_t        stack;     /*!< The place where this stacks locals start.        */
 
 } BifrostVMStackFrame;
 

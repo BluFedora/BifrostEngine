@@ -96,12 +96,25 @@ func class_create()
 {
   var inst = new Hello(420);
 
-  inst.new_field = new Hello(11);
+  // inst.new_field = new Hello(11);
+  // print inst.new_field.h;
 
   inst.h = "New Value";
   print inst.h;
 
-  print inst.new_field.h;
+/*
+  switch (value)
+  {
+    case 0:
+    {
+      break;
+    }
+    default:
+    {
+      break;
+    }
+  }
+*/
 
   var test0 = new Hello.differentCtor("Hello good sir");
 

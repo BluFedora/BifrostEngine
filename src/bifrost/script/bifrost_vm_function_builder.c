@@ -5,7 +5,7 @@
 #include <bifrost/data_structures/bifrost_array_t.h>
 #include <stdio.h>
 
-#define bfAssert(cond, msg) assert((cond) && msg)
+#define bfAssert(cond, msg) assert((cond) && (msg))
 
 #define DEFAULT_ARRAY_SIZE 5
 
@@ -78,7 +78,7 @@ static inline size_t bfVMFunctionBuilder__getVariable(BifrostVMFunctionBuilder* 
 
 size_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length)
 {
-  size_t prev_decl = bfVMFunctionBuilder__getVariable(self, name, length, bfTrue);
+  const size_t prev_decl = bfVMFunctionBuilder__getVariable(self, name, length, bfTrue);
 
   if (prev_decl != BIFROST_ARRAY_INVALID_INDEX)
   {

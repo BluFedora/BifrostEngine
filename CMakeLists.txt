@@ -88,8 +88,14 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/data_structures/bifrost_dynamic_string.c"
   "src/bifrost/data_structures/bifrost_hash_map.c"
 
+  # Bifrost Graphics Module
+  "src/bifrost/graphics/bifrost_gfx_opengl.cpp"
+
   # Bfrost Script Module
   "src/bifrost/script/bifrost_vm_build.c"
+
+  # Misc
+  "src/bifrost/utility/bifrost_hash.cpp"
 
   "main.cpp"
  )
