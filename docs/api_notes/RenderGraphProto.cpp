@@ -1,10 +1,10 @@
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <unordered_map>
-#include <string>
-#include <variant>
 #include <algorithm>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 
 using namespace std;
 
@@ -12,7 +12,7 @@ struct RenderGraph;
 struct RenderpassBase;
 struct GraphResourceBase;
 
-using VkAccess = string;
+using VkAccess        = string;
 using VkPipelineStage = string;
 
 // "Transfer Dependencies" need to be abstracted (multi-queue case):
@@ -50,54 +50,54 @@ using VkPipelineStage = string;
 enum class BufferReadUsage
 {
   COMPUTE_SSBO,
-    // VK_ACCESS_SHADER_READ_BIT
-    // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+  // VK_ACCESS_SHADER_READ_BIT
+  // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
   COMPUTE_UNIFORM,
-    // VK_ACCESS_UNIFORM_READ_BIT
-    // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+  // VK_ACCESS_UNIFORM_READ_BIT
+  // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
   GRAPHICS_VERTEX,
-    // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
-    // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+  // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+  // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
   GRAPHICS_INDEX,
-    // VK_ACCESS_INDEX_READ_BIT
-    // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+  // VK_ACCESS_INDEX_READ_BIT
+  // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
   GRAPHICS_UNIFORM,
-    // VK_ACCESS_UNIFORM_READ_BIT
-    // VK_PIPELINE_STAGE_VERTEX_SHADER_BIT or VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+  // VK_ACCESS_UNIFORM_READ_BIT
+  // VK_PIPELINE_STAGE_VERTEX_SHADER_BIT or VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
   GRAPHICS_DRAW_INDIRECT,
-    // VK_ACCESS_INDIRECT_COMMAND_READ_BIT
-    // VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+  // VK_ACCESS_INDIRECT_COMMAND_READ_BIT
+  // VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
 };
 
 enum class BufferWriteUsage
 {
   COMPUTE_SSBO,
-    // VK_ACCESS_SHADER_WRITE_BIT
-    // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+  // VK_ACCESS_SHADER_WRITE_BIT
+  // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
   COMPUTE_IMAGE,
-    // VK_ACCESS_SHADER_WRITE_BIT
-    // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-    // VK_IMAGE_LAYOUT_GENERAL
+  // VK_ACCESS_SHADER_WRITE_BIT
+  // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+  // VK_IMAGE_LAYOUT_GENERAL
 };
 
 enum class ImageReadUsage
 {
   // GRAPHICS_FRAGMENT_*
-    // VK_ACCESS_SHADER_READ_BIT
-    // VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+  // VK_ACCESS_SHADER_READ_BIT
+  // VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
   GRAPHICS_FRAGMENT_SAMPLE,
-    // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+  // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
   GRAPHICS_FRAGMENT_SAMPLE_DEPTH_STENCIL_RW,
-    // VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
+  // VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
   GRAPHICS_FRAGMENT_SAMPLE_DEPTH_STENCIL_WR,
-    // VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
+  // VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
   GRAPHICS_FRAGMENT_SAMPLE_DEPTH_STENCIL_RR,
-    // VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+  // VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
   GRAPHICS_FRAGMENT_STORAGE_IMAGE,
-    // VK_IMAGE_LAYOUT_GENERAL
+  // VK_IMAGE_LAYOUT_GENERAL
 
-  // Repeat for GRAPHCICS_VERTEX
-    // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+  // Repeat for GRAPHICS_VERTEX
+  // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
 
   // Compute needs a layout of VK_IMAGE_LAYOUT_GENERAL
 };
@@ -115,9 +115,9 @@ enum class ImageWriteUsage
   // VK_IMAGE_LAYOUT_GENERAL -> X
 
   GRAPHICS_FRAGMENT_WRITE,
-    // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-    // VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-    // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL -> X
+  // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+  // VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+  // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL -> X
 
   GRAPHCICS_DEPTH_STENCIL,
   // VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
@@ -132,40 +132,10 @@ enum class ImageWriteUsage
 // If the renderpass is a graphics type then the pipeline barrier
 // can be replaced with an eqivalient external subpass dep.
 
-struct BufferReadInfo
-{
-  BufferReadUsage usage;
-  size_t          offset;
-  size_t          size;
-};
-
-struct BufferWriteInfo
-{
-  BufferWriteUsage usage;
-  size_t           offset;
-  size_t           size;
-};
-
-enum class BarrierType
-{
-  EXECUTION,
-  MEMORY,
-  IMAGE,
-  BUFFER,
-};
-
-// Can only be merged if this
-// has the same targets AND
-// not "BarrierType::IMAGE" or "BarrierType::BUFFER"
-// also the queues need to match.
-
 struct MemBarrierAction
 {
   string                     desc;
   vector<GraphResourceBase*> targets;
-  BarrierType                type;
-  VkAccess                   access[2];
-  VkPipelineStage            stages[2];
 
   MemBarrierAction(string str) :
     desc{str},
@@ -180,11 +150,15 @@ struct MemBarrierAction
 };
 
 using RenderpassAction = int;
+using GraphAction      = variant<MemBarrierAction, RenderpassAction>;
 
-using GraphAction = variant<MemBarrierAction, RenderpassAction>;
-
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+template<class... Ts>
+struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+template<class... Ts>
+overloaded(Ts...)->overloaded<Ts...>;
 
 enum class RenderpassType
 {
@@ -209,8 +183,8 @@ struct RenderpassBase
   RenderpassType             type;
   vector<GraphResourceBase*> reads;
   vector<GraphResourceBase*> writes;
-  size_t barrier;
-  size_t queue_family;
+  size_t                     barrier;
+  size_t                     queue_family;
 
   explicit RenderpassBase(const char* name, RenderpassType type) :
     name{name},
@@ -286,7 +260,7 @@ struct RenderGraph
 {
   unordered_map<string, std::unique_ptr<GraphResourceBase>> resources;
   vector<std::unique_ptr<RenderpassBase>>                   passes;
-  vector<GraphAction> actions;
+  vector<GraphAction>                                       actions;
 
   template<typename T>
   GraphResource<T>& addResource(const char* name)
@@ -300,7 +274,7 @@ struct RenderGraph
   T& addPass(const char* name, RenderpassType type, SetupFn&& setup, ExecFn&& exec)
   {
     auto* const rp = new RenderPass<T, ExecFn>(name, type, std::forward<ExecFn>(exec));
-    rp->index = passes.size();
+    rp->index      = passes.size();
     passes.emplace_back(rp);
     GraphBuilder builder{this, rp};
     setup(builder, rp->data);
@@ -317,23 +291,21 @@ struct RenderGraph
 
       for (size_t i = 1; i < num_passes; ++i)
       {
-        const auto prev_idx = i - 1;
+        const auto  prev_idx  = i - 1;
         const auto& prev_pass = passes[prev_idx];
-        const auto& pass = passes[i];
+        const auto& pass      = passes[i];
 
-        bool needs_barrier = false;
-        MemBarrierAction barrier_info = {""};
+        bool             needs_barrier = false;
+        MemBarrierAction barrier_info  = {""};
 
-        const auto pushBarrier = [this, &barrier_info, &pass](const string& desc, const vector<GraphResourceBase*>& targets)
-        {
+        const auto pushBarrier = [this, &barrier_info, &pass](const string& desc, const vector<GraphResourceBase*>& targets) {
           barrier_info.desc += "[" + desc + "]";
           barrier_info.targets.insert(barrier_info.targets.end(), targets.begin(), targets.end());
           pass->barrier = actions.size();
           actions.emplace_back(barrier_info);
         };
 
-        const auto lastOf = [i](vector<RenderpassBase*>& list, RenderpassBase*& ret)
-        {
+        const auto lastOf = [i](vector<RenderpassBase*>& list, RenderpassBase*& ret) {
           for (auto reader_pass : list)
           {
             if (reader_pass->index >= i)
@@ -347,7 +319,7 @@ struct RenderGraph
 
         // Reads
         {
-          string read_barrier;
+          string                     read_barrier;
           vector<GraphResourceBase*> targets = {};
 
           for (auto res : pass->reads)
@@ -396,7 +368,7 @@ struct RenderGraph
 
         // Writes
         {
-          string read_barrier;
+          string                     read_barrier;
           vector<GraphResourceBase*> targets = {};
 
           for (auto write : pass->writes)
@@ -406,8 +378,7 @@ struct RenderGraph
             lastOf(write->readers, last_reader_pass);
             lastOf(write->writers, last_writer_pass);
 
-            RenderpassBase* const last_reader_writer_pass = [last_reader_pass, last_writer_pass](){
-
+            RenderpassBase* const last_reader_writer_pass = [last_reader_pass, last_writer_pass]() {
               if (last_reader_pass && last_writer_pass)
               {
                 return last_reader_pass->index > last_writer_pass->index ? last_reader_pass : last_writer_pass;
@@ -446,22 +417,17 @@ struct RenderGraph
     for (const auto& action : actions)
     {
       visit(
-        overloaded{
-          [](auto arg)
-          {
-            cout << "Invalid Action\n";
-          },
-          [](const MemBarrierAction& mem_barrier)
-          {
-            cout << "MEMORY_BARRIER: " << mem_barrier.desc << "\n";
-          },
-          [](const RenderpassAction& render_pass)
-          {
-            cout << "RENDER_PASS: " << render_pass << "\n";
-          }
+       overloaded{
+        [](auto arg) {
+          cout << "Invalid Action\n";
         },
-        action
-      );
+        [](const MemBarrierAction& mem_barrier) {
+          cout << "MEMORY_BARRIER: " << mem_barrier.desc << "\n";
+        },
+        [](const RenderpassAction& render_pass) {
+          cout << "RENDER_PASS: " << render_pass << "\n";
+        }},
+       action);
     }
   }
 };
@@ -500,65 +466,36 @@ int main()
   graph.addResource<int>("Buffer0");
   graph.addResource<int>("Buffer1");
 
-  const auto makeWrite = [&graph](const char* name)
-  {
-    graph.addPass<GPass>(name, RenderpassType::COMPUTE,
-      [](GraphBuilder& builder, GPass& data)
-      {
+  const auto makeWrite = [&graph](const char* name) {
+    graph.addPass<GPass>(name, RenderpassType::COMPUTE, [](GraphBuilder& builder, GPass& data) {
         data.i = builder.writeBuffer("Buffer0");
-        data.i->data = 3;
-      },
-      [](RenderGraph& graph, const GPass& data)
-      {
-      });
+        data.i->data = 3; }, [](RenderGraph& graph, const GPass& data) {});
   };
 
-  const auto makeRead = [&graph](const char* name)
-  {
-    graph.addPass<GPass>(name, RenderpassType::COMPUTE,
-      [](GraphBuilder& builder, GPass& data)
-      {
-        data.i = builder.readBuffer("Buffer0");
-      },
-      [](RenderGraph& graph, const GPass& data)
-      {
-      });
+  const auto makeRead = [&graph](const char* name) {
+    graph.addPass<GPass>(name, RenderpassType::COMPUTE, [](GraphBuilder& builder, GPass& data) { data.i = builder.readBuffer("Buffer0"); }, [](RenderGraph& graph, const GPass& data) {
+
+    });
   };
 
-  graph.addPass<GPass>("RP0", RenderpassType::COMPUTE,
-      [](GraphBuilder& builder, GPass& data)
-      {
+  graph.addPass<GPass>("RP0", RenderpassType::COMPUTE, [](GraphBuilder& builder, GPass& data) {
         data.i = builder.writeBuffer("Buffer0");
-        data.i->data = 3;
-      },
-      [](RenderGraph& graph, const GPass& data)
-      {
-      });
+        data.i->data = 3; }, [](RenderGraph& graph, const GPass& data) {
+
+  });
 
   makeRead("RP1");
   makeWrite("RP2");
 
-  graph.addPass<GPass>("RP3", RenderpassType::COMPUTE,
-      [](GraphBuilder& builder, GPass& data)
-      {
+  graph.addPass<GPass>("RP3", RenderpassType::COMPUTE, [](GraphBuilder& builder, GPass& data) {
         data.i = builder.readBuffer("Buffer0");
-        data.i = builder.writeBuffer("Buffer1");
-      },
-      [](RenderGraph& graph, const GPass& data)
-      {
-      });
+        data.i = builder.writeBuffer("Buffer1"); }, [](RenderGraph& graph, const GPass& data) {});
 
   makeRead("RP4");
 
-  graph.addPass<GPass>("RP5", RenderpassType::COMPUTE,
-      [](GraphBuilder& builder, GPass& data)
-      {
+  graph.addPass<GPass>("RP5", RenderpassType::COMPUTE, [](GraphBuilder& builder, GPass& data) {
         data.i = builder.readBuffer("Buffer0");
-        data.i = builder.readBuffer("Buffer1");
-      },
-      [](RenderGraph& graph, const GPass& data)
-      {
-      });
+        data.i = builder.readBuffer("Buffer1"); }, [](RenderGraph& graph, const GPass& data) {});
 
   graph.compile();
   graph.execute();

@@ -7,6 +7,14 @@
 
 namespace bifrost::meta
 {
+  template<class... Ts>
+  struct overloaded : Ts...
+  {
+    using Ts::operator()...;
+  };
+  template<class... Ts>
+  overloaded(Ts...)->overloaded<Ts...>;
+
   template<typename Tuple, typename F, std::size_t... Indices>
   constexpr void for_each_impl(Tuple&& tuple, F&& f, std::index_sequence<Indices...>)
   {

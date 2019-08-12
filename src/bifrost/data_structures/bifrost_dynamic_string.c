@@ -344,8 +344,8 @@ void String_sprintf(BifrostString* self, const char* format, ...)
   va_end(args_cpy);
   //#pragma clang diagnostic pop
 
-  String_reserve(self, num_chars + 2);
-  vsnprintf(*self, num_chars + 1, format, args);
+  String_reserve(self, num_chars + 2ul);
+  vsnprintf(*self, num_chars + 1ul, format, args);
   String_getHeader(*self)->length = num_chars;
 
   va_end(args);

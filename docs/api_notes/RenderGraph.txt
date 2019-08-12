@@ -311,3 +311,28 @@ Uniform Texel Buffer:   A descriptor type that represents a buffer view, and sup
 Storage Buffer:         A descriptor type that represents a buffer, and supports reads, writes, and atomics in a shader.
 Dynamic Storage Buffer: A storage buffer whose offset is specified each time the storage buffer is bound to a command buffer via a descriptor set.
 Storage Texel Buffer:   A descriptor type that represents a buffer view, and supports unfiltered, formatted reads, writes, and atomics in a shader.
+
+
+Full screen Quad is better than a Blit Operation:
+It's possible that the swapchain image does not support being a blit destination.
+Only being a COLOR_ATTACHMENT is required to be supported.
+
+A Framebuffer is just a list of ImageViews + Renderpass.
+Easy to generate on the fly.
+
+Can Rendepass be generated too?
+	> Color Inputs
+	> Color Outputs
+	> Depth Inputs
+	> Depth Outputs
+	> Load Ops
+	> Store Ops
+	> Stencil Load Ops
+	> Stencil Store Ops
+	> Subpass dependencies
+Should be easy ASSUMING the FrameGraph has enough context.
+
+Pipeline can be generated to.
+
+Buffers can just use a chain of free blocks. (This is simple but should be effective)
+Maybe evict after X frames of unuse.
