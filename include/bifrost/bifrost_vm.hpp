@@ -352,7 +352,6 @@ void for_each_argument(F f, Args&&... args) {
     BifrostVMError error;
   };
 
-  // Returns the index of the return value.
   template<typename... Args>
   bfFunctionCallResult vmCall(BifrostVM* self, size_t fn_idx, Args&&... args)
   {

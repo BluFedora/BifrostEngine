@@ -291,8 +291,6 @@ struct RenderGraph
 
       for (size_t i = 1; i < num_passes; ++i)
       {
-        const auto  prev_idx  = i - 1;
-        const auto& prev_pass = passes[prev_idx];
         const auto& pass      = passes[i];
 
         bool             needs_barrier = false;

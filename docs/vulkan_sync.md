@@ -105,7 +105,7 @@ then you need an 'VkImageMemoryBarrier' with an empty 'srcAccessMask'.
 
 Always needs a memory dep.
 Needs use of 'VK_SUBPASS_EXTERNAL' because of the automatic transition.
-Use pipeline stages with the gramment tests as those use the depth buffer.
+Use pipeline stages with the fragments tests as those use the depth buffer.
 .dependencyFlags should be 0.
 
 ## Memory Transfer

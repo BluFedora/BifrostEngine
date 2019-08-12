@@ -142,7 +142,6 @@ typedef enum BifrostSamplerAddressMode_t
   BIFROST_SAM_CLAMP_TO_EDGE,
   BIFROST_SAM_MIRROR_CLAMP_TO_EDGE,
   BIFROST_SAM_CLAMP_TO_BORDER,
-  BIFROST_SAM_MAX
 
 } BifrostSamplerAddressMode;
 

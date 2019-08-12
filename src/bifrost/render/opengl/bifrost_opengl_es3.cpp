@@ -60,8 +60,8 @@ void BifrostShaderProgram_loadData(BifrostShaderProgramHandle self, BifrostShade
   glShaderSource(shader, 3, source, counts);
   glCompileShader(shader);
 
-int  success;
-    char infoLog[1024];
+  int  success;
+  char infoLog[1024];
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
   if (!success)
   {

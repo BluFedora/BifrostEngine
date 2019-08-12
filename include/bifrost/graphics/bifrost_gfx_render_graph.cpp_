@@ -1,0 +1,6 @@
+#include "bifrost_gfx_render_graph.hpp"
+
+namespace bifrost
+{
+
+}

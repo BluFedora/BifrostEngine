@@ -19,17 +19,6 @@ namespace bifrost::meta
 
     [[nodiscard]] const char* name() const { return m_Name; }
   };
-  /*
-  is_writeable: bool;
-    is_function:  bool;
-    is_writable:  bool;
-    is_readable:  bool;
-    is_class:     bool;
-    is_field:     bool;
-    is_pointer:   bool;
-    is_enum:      bool;
-    name:         string;
-   */
 
   template<typename Class, typename PropertyT>
   class RawMember final : public BaseMember

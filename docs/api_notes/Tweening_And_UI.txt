@@ -1,0 +1,17 @@
+Need to have a good tweening lib. Easy to use with built in ways to tween: ("position", "scale", "rotation")
+With a callback: OnComplete(DestroyPopup)
+
+[https://assetstore.unity.com/packages/tools/animation/leantween-3595]
+
+Ex:
+
+startButton.onClick(
+  [](const MouseEvent& evt)
+  {
+    Tween.doStartScreenAnimation(
+      ...
+    );
+
+    evt.target.removeEventListener(evt.self/currentListener);
+  }
+);
