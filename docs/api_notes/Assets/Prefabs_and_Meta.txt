@@ -1,0 +1,105 @@
+One major problem with the old prefab system is the inability to be able to override specific properties.
+This is because from the editor's POV it has no context on what is being edited. To give the editor more
+context the API for inspecting variables need to reflect (kinda a joke here) the file structure.
+
+If this is automatic as it 'should' be then how would custom controls work?
+
+Tide Engine Custom Control List:
+
+* Sprite/'Scale To Texture Aspect Ratio'
+* All bitmasks that had labels on them.
+* Sprite/'mask layers'
+* Sprite/'mask layers'/'<add layer>'
+* Collider/'edit collider mode'
+* ParticleEmitter/'Restart Emitter'
+* ParticleEmitter/'Export Particle Fx'
+* ParticleEmitter/'Import Particle Fx'
+* ParticleEmitter/'Animation Properties'/'animation'
+* Animation/'time left from frame'
+* Animation/'current animation'
+* Audio/name sound table
+* Literally anything that dynamically shows and hides.
+
+** Most of these can probably be solved by having 'type tags' IE more wrapper types with sematic meaning **
+
+But how do you solve:
+  * Custom Buttons
+  * Extra custom text.
+
+Looks like this needs all the info at data bindting time aka meta needs a lot more info.
+
+Where Meta System Is Used in the Tide Engine:
+  > Timeline Animation System
+    - Just needed a list of all the members and what type it is.
+    - Also needed to set and get ofc.
+    - Must be Gotten By <T>
+  > Serialization
+    - Get, Set, IsProperty, IsRef, Name. Must be Gotten By <T>
+    - Lots of specialization based off of T.
+  > Automatic binding of Functions.
+    - Would be nice to have Functions aswell.
+    - Get, Set, Name.
+
+Meta system Should have been more specialized:
+
+  IMetaField<T> {
+    using type:   T;
+    is_writeable: bool;
+    is_function:  bool;
+    is_writable:  bool;
+    is_readable:  bool;
+    is_class:     bool;
+    is_field:     bool;
+    is_pointer:   bool;
+    is_enum:      bool;
+    name:         string;
+
+    // Extra Info:
+    is_serialized: bool;
+
+  };
+
+  // Shoudl be all fundamental types...
+  using BasicType = Variant<void*, int, String, float, etc...>;
+
+  meta::begin<T>();
+  meta::class_info();
+  meta::field();
+  meta::read_only();
+  meta::property();
+  meta::function();
+  meta::const_function();
+
+  Maybe for the editor have a:
+
+  inspector.push("COMPONENT_NAME", ...flags...);
+
+  inspector.addAfter("field_name", []()
+  {
+    if (ImGui::Button("..."))
+    {
+
+    }
+  });
+  // Also: "inspector.addBefore".
+
+  inspector.onChange<T>("field_name", [](const T& old_value, const T& new_value)
+  {
+
+  });
+
+  inspector.bitfieldNames("field_name", BITFIELD_NAMES_ARRAY);
+  inspector.enumNames("field_name", ENUM_NAMES_ARRAY);
+  inspector.combo<String>("field_names", OPTIONS_ARRAY);
+  // custom would be an implicit "inspector::hide".
+  inspector.custom("field_name", [](const auto& raw_member)
+  {
+
+  });
+  inspector.hide("field_name");
+
+  inspector.onAnyChange([](const Array<String>& field_path, const Variant<...>& data)
+  {
+
+  });
+  inspector.pop();

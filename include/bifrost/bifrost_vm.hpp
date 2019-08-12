@@ -3,6 +3,7 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
+#include "meta/bifrost_meta_utils.hpp"  /* for_each                 */
 #include "script/bifrost_vm_internal.h" /*                          */
 #include <string>                       /* string                   */
 #include <tuple>                        /* tuple                    */
@@ -123,36 +124,11 @@ void for_each_argument(F f, Args&&... args) {
        std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
     }
 
-    template<typename T>
-    struct TypeHolder
-    {
-      using type = T;
-    };
-
-    template<typename Tuple, typename F, std::size_t... Indices>
-    constexpr void for_each_impl(Tuple&& tuple, F&& f, std::index_sequence<Indices...>)
-    {
-      //using swallow = int[];
-      //(void)swallow{1,
-      //              (f(std::get<Indices>(std::forward<Tuple>(tuple))), void(), int{})...};
-
-      (f(std::get<Indices>(tuple), TypeHolder<std::tuple_element_t<Indices, std::decay_t<Tuple>>>{}), ...);
-    }
-
-    template<typename Tuple, typename F>
-    constexpr void for_each(Tuple&& tuple, F&& f)
-    {
-      constexpr std::size_t N = std::tuple_size<std::remove_reference_t<Tuple>>::value;
-      for_each_impl(std::forward<Tuple>(tuple), std::forward<F>(f), std::make_index_sequence<N>{});
-    }
-
     template<typename... Args>
     void generateArgs(std::tuple<Args...>& arguments, BifrostVM* vm, size_t i = 1)
     {
-      for_each(arguments, [vm, &i](auto&& arg, auto&& type_holder) {
-        using THolderT     = std::decay_t<decltype(type_holder)>;
-        using OriginalType = typename THolderT::type;
-        arg                = ValueConvert<OriginalType>::convert(vm->stack_top[i]);
+      meta::for_each(arguments, [vm, &i](auto&& arg) {
+        arg = ValueConvert<std::decay_t<decltype(arg)>>::convert(vm->stack_top[i]);
         ++i;
       });
     }

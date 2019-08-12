@@ -36,3 +36,32 @@ static void* std_align(const size_t alignment, const size_t size, void** ptr, si
 
   return NULL;
 }
+
+typedef union {
+
+  char *__p;
+
+  double __d;
+
+  long double __ld;
+
+  long int __i;
+} max_align_t;
+
+#ifdef HAVE_TYPEOF
+
+/*
+* Can use arbitrary expressions
+*/
+#define alignof(t) \
+((sizeof (t) > 1)? offsetof(struct { char c; typeof(t) x; }, x) : 1)
+
+#else
+
+/*
+* Can only use types
+*/
+#define alignof(t) \
+((sizeof (t) > 1)? offsetof(struct { char c; t x; }, x) : 1)
+
+#endif

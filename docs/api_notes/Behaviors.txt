@@ -1,0 +1,13 @@
+The behavior system should NOT rely on Ctors and Dtors.
+
+Rather Behaviors must have a ctor that takes in nothing.
+
+Like Unity we should have:
+
+[https://docs.unity3d.com/Manual/ExecutionOrder.html]
+> Awake  - The first time the object is made active (called before Start).
+> Start  - Called the first frame that this Behavior is active.
+> Update - Called every frame on an active behavior.
+
+The separation between Awake and Start is that with Awake you do some initializaton but you cannot assume other Behaviors have been initialized.
+Then in Start you can assume all 'Awake's have been called so that you can do some inter object communication.

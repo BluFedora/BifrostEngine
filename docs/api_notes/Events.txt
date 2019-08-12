@@ -1,0 +1,51 @@
+------------------------
+----- Event System -----
+------------------------
+
+EventHandler evt_handler = entity->addEventListener(
+  Event::ON_ENTITY_DELETE,
+  [](const EntityDeleteEvent& evt)
+  {
+    ... event code here ...
+  }
+);
+
+entity->removeEventListener(evt_handler);
+
+EventManager {
+  // User Facing API
+  EventHandler addEventListener(EventType, IListener);
+  // This overload will subscribe the listener to all event types?
+  EventHandler addEventListener(IListener);
+  bool         hasEventListener(EventType, EventHandler);
+  void         removeEventListener(EventHandler);
+
+  // Event Dispatcher API
+  void processEvents();
+  void queueEvent(const Event*, int delay);
+  void dispatchEvent(const Event*);
+};
+
+// Better Words?
+//   'subscribe' and 'unsubscribe'
+//   'register'  and 'unregister'
+//   'add'       and 'remove'
+//   'connect'   and 'disconnect'
+
+
+The event system can store a contiguous list of EventData,
+  uint8_t header;
+  char    event_data[...];
+
+All events should be trivially destuctable. (otherwise we need to keep track of a dtor for all events regardless of if it's needed)
+String Data can be stored inline to the EventBuffer.
+
+There needs to be a way to signify the event has been captured / cancelled.
+This feature must be independent of Gamestate / Behavior order in some way (EventHanlder layers???).
+
+If we limit the amount of events to 32 or less then the type can be a flag adn event handlers can just "filter"
+out what it listens to. Otherwise we need a lot of lists of each type of listener / checking each listener for the type it wants.
+Maybe multiple lists would be a good thing? Instead of per object event managers we do a per system event management.
+You find out if an entity dies from the Scene rather than the object itself? (or both???)
+
+Should this system be thread friendly? I can't imagine why you would use events and threads at the same time.

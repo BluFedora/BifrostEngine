@@ -72,7 +72,6 @@ read after write.
 A simpler execution dependency solves the write after read issue.
 'vkCmdPipelineBarrier' with no memory barrier.
 
-
 ## Compute -> Graphics
 
 ### Write (C) -> Read (G)
@@ -122,9 +121,8 @@ Otherwise:
 	A 'VkBufferMemoryBarrier' is needed.
 	End and submit to the queue. (Must have a semaphore the gfx queue waints on)
 	Begin commands
-	Another 'VkBufferMemoryBarrier' with the cirrect dst Access.
-	End cm and submit to gfx queue.
+	Another 'VkBufferMemoryBarrier' with the correct dst Access.
+	End cmd and submit to gfx queue.
 
 > Images have the same story except they can use 'VkImageMemoryBarrier'
   as they also have the family queue indices field. (unified uses: VK_QUEUE_FAMILY_IGNORED)
-

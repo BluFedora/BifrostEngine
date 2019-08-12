@@ -1,3 +1,4 @@
+#include "bifrost/meta/bifrost_meta_member.hpp"
 #include <bifrost/bifrost_vm.hpp>
 #include <bifrost/graphics/bifrost_gfx_api.h>
 #include <glad/glad.h>
@@ -9,7 +10,7 @@
 // TODO(SR):
 //   This is a feature list that will be tackled
 //   on a need-be basis for development of an indie engine / game.
-//   [3987 lines. (But doesn't include bifrost ds lib.)]
+//   [4273 lines of vm + ds]
 //   * Error handling in scripts.
 //   * Error throwing in native functions.
 //   * Do while loop.
@@ -357,8 +358,90 @@ namespace ErrorCodes
   static constexpr int GLAD_FAILED_TO_INIT = -2;
 }  // namespace ErrorCodes
 
+class MetaTest
+{
+ public:
+  float x;
+
+ private:
+  std::string y;
+
+ public:
+  MetaTest(float v, std::string msg) :
+    x{v},
+    y{std::move(msg)}
+  {
+  }
+
+  void myRandomFn(int hello) const
+  {
+    std::cout << "(" << x << ") Hello is " << hello << "\n";
+  }
+
+  void myRandomFn2(int hello)
+  {
+    std::cout << "Changing x to: " << hello << "\n";
+    x = float(hello);
+  }
+
+  const std::string& getY() const
+  {
+    return y;
+  }
+
+  void setY(const std::string& val)
+  {
+    y = val;
+  }
+};
+
+namespace bifrost::meta
+{
+  template<>
+  const auto& Meta::registerMembers<MetaTest>()
+  {
+    static auto member_ptrs = members(
+     field("x", &MetaTest::x),
+     property("y", &MetaTest::getY, &MetaTest::setY),
+     function("myRandomFn", &MetaTest::myRandomFn),
+     function("myRandomFn2", &MetaTest::myRandomFn2));
+
+    return member_ptrs;
+  }
+}  // namespace bifrost::meta
+
 int main(int argc, const char* argv[])
 {
+  namespace bfmeta = bifrost::meta;
+  using namespace bifrost;
+
+  MetaTest my_obj = {74.0f, "This message will be in Y"};
+
+  try
+  {
+    std::cout << "Meta Testing Bed: \n";
+
+    for_each(meta::membersOf<MetaTest>(), [&my_obj](const auto& member) {
+      std::cout << member.name() << " : ";
+
+      if constexpr (bfmeta::is_function_v<decltype(member)>)
+      {
+        member.call(my_obj, 6);
+      }
+      else
+      {
+        std::cout << member.get(my_obj) << std::endl;
+      }
+    });
+
+    std::cout << "x = " << my_obj.x << "\n";
+
+    std::cout << "Meta Testing End: \n\n";
+  }
+  catch (...)
+  {
+  }
+
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
   int error_code = 0;

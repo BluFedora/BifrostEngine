@@ -74,7 +74,20 @@
 			"bifrost_shader_api.h": "c",
 			"bifrost_material_api.h": "c",
 			"bifrost_material_common.h": "c",
-			"bifrost_vulkan_material.h": "c"
+			"bifrost_vulkan_material.h": "c",
+			"ios": "cpp",
+			"iostream": "cpp",
+			"memory": "cpp",
+			"string": "cpp",
+			"xfacet": "cpp",
+			"xiosbase": "cpp",
+			"xlocale": "cpp",
+			"xlocinfo": "cpp",
+			"xlocnum": "cpp",
+			"xstring": "cpp",
+			"list": "cpp",
+			"variant": "cpp",
+			"xhash": "cpp"
 		}
 	}
 }
