@@ -5,7 +5,11 @@
 #ifndef BIFROST_GFX_API_H
 #define BIFROST_GFX_API_H
 
-#include "bifrost/bifrost_std.h"        /* bfBool32 */
+#if BIFROST_GFX_RENDER_GRAPH_TEST
+#include "../bifrost_std.h" /* bfBool32 */
+#else
+#include "bifrost/bifrost_std.h" /* bfBool32 */
+#endif
 #include "bifrost_gfx_pipeline_state.h" /* */
 #include "bifrost_gfx_types.h"          /* */
 #include <stdint.h>                     /* uint32_t */
@@ -286,16 +290,18 @@ typedef struct
 
 } bfSubpassDependency;
 
+typedef uint16_t bfLoadStoreFlags;
+
 // VK_ATTACHMENT_LOAD_OP_LOAD
 // VK_ATTACHMENT_LOAD_OP_CLEAR
 // VK_ATTACHMENT_LOAD_OP_DONT_CARE
 // VK_ATTACHMENT_STORE_OP_STORE
 // VK_ATTACHMENT_STORE_OP_DONT_CARE
-void     bfRenderpass_setLoadOps(bfRenderpassHandle self, uint16_t attachment_mask);
-void     bfRenderpass_setStencilLoadOps(bfRenderpassHandle self, uint16_t attachment_mask);
-void     bfRenderpass_setClearOps(bfRenderpassHandle self, uint16_t attachment_mask);
-void     bfRenderpass_setStencilClearOps(bfRenderpassHandle self, uint16_t attachment_mask);
-void     bfRenderpass_setStoreOps(bfRenderpassHandle self, uint16_t attachment_mask);
+void     bfRenderpass_setLoadOps(bfRenderpassHandle self, bfLoadStoreFlags attachment_mask);
+void     bfRenderpass_setStencilLoadOps(bfRenderpassHandle self, bfLoadStoreFlags attachment_mask);
+void     bfRenderpass_setClearOps(bfRenderpassHandle self, bfLoadStoreFlags attachment_mask);
+void     bfRenderpass_setStencilClearOps(bfRenderpassHandle self, bfLoadStoreFlags attachment_mask);
+void     bfRenderpass_setStoreOps(bfRenderpassHandle self, bfLoadStoreFlags attachment_mask);
 void     bfRenderpass_setStencilStoreOps(bfRenderpassHandle self, uint16_t attachment_mask);
 void     bfRenderpass_addColorAttachment(bfRenderpassHandle self, const bfAttachmentInfo* info);
 void     bfRenderpass_addDepthAttachment(bfRenderpassHandle self, const bfAttachmentInfo* info);
@@ -331,22 +337,25 @@ void bfDescriptorSet_addUniformBuffers(bfDescriptorSetHandle self, const char** 
 // void bfDescriptorSet_addUniformBuffer(bfDescriptorSetHandle self);
 
 /* Textures */
-uint32_t bfTexture_width(bfTextureHandle self);
-uint32_t bfTexture_height(bfTextureHandle self);
-uint32_t bfTexture_depth(bfTextureHandle self);
-bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file);
-bfBool32 bfTexture_loadData(bfTextureHandle self, const char* source, size_t source_length);
-void     bfTexture_setSampler(bfTextureHandle self, const bfTextureCreateParams* sampler_properties);
+uint32_t           bfTexture_width(bfTextureHandle self);
+uint32_t           bfTexture_height(bfTextureHandle self);
+uint32_t           bfTexture_depth(bfTextureHandle self);
+BifrostImageLayout bfTexture_layout(BifrostImageLayout self);
+void               bfTexture_setLayout(BifrostImageLayout self, BifrostImageLayout layout); // TODO(SR): Maybe this should solely be internal, it will be punlic to help me rember what I need to do. The reason this is a bad way to have in the public API is because of the needed syncronzation needed to transiotion in vulkan but we should never need to change layout unless for a backend like RenderGraph and Texture_setData.
+bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
+bfBool32           bfTexture_loadData(bfTextureHandle self, const char* source, size_t source_length);
+void               bfTexture_setSampler(bfTextureHandle self, const bfTextureCreateParams* sampler_properties);
 
 // Transient Resources
+// Also need a temp Framebuffer / Attachment API for effective framegraph use.
 // void bfGfxCmdList_createFramebuffer(bfGfxCommandListHandle self);
 // void bfGfxCmdList_createVertexBuffer(bfGfxCommandListHandle self);
 // void bfGfxCmdList_createIndexBuffer(bfGfxCommandListHandle self);
 // void bfGfxCmdList_pipelineBarrier(bfGfxCommandListHandle self);
 // void bfGfxCmdList_memoryBarrier(bfGfxCommandListHandle self);
-// void bfGfxCmdList_fence(bfGfxCommandListHandle self);
+// void bfGfxCmdList_event(bfGfxCommandListHandle self);
 
-  // if 'VkDescriptorSetLayout' is the same for two pipelines then the layout can be shared.
+// if 'VkDescriptorSetLayout' is the same for two pipelines then the layout can be shared.
 
 /* CommandList */
 void     bfGfxCmdList_begin(bfGfxCommandListHandle self, bfBool32 reset_after_done);
@@ -356,7 +365,7 @@ void     bfGfxCmdList_setRenderArea(const BifrostScissorRect* render_area);
 void     bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass, bfFramebufferHandle framebuffer);
 void     bfGfxCmdList_beginFramebuffer(bfGfxCommandListHandle self, bfFramebufferHandle framebuffer);
 uint32_t bfGfxCmdList_saveState(bfGfxCommandListHandle self);  // Pipeline Static State
-void     bfGfxCmdList_loadState(bfGfxCommandListHandle self, const bfPipelineCreation* pipeline_info);
+void     bfGfxCmdList_loadState(bfGfxCommandListHandle self, uint32_t save_index);
 void     bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, BifrostDrawMode draw_mode);
 void     bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, BifrostBlendFactor factor);
 void     bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, BifrostBlendFactor factor);

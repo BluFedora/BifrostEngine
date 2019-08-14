@@ -1,0 +1,45 @@
+Framebuffer Creation Info:
+
+Framebuffer:
+  VkImageView[] views;
+  uint32_t      width;
+  uint32_t      height;
+  uint32_t      layers;
+
+VkImageView:
+  BifrostImageFormat format;    // Should just always match the VkImage::format
+  uint32_t           mip_levels;
+  uint32_t           num_layers;
+  uint32_t           base_mip_level;
+  uint32_t           base_array_layer;
+  VkImage            image;
+  @Optional ComponentMapping mapping;
+  Aspect
+    VK_IMAGE_ASPECT_COLOR_BIT = 0x00000001,
+    VK_IMAGE_ASPECT_DEPTH_BIT = 0x00000002,
+    VK_IMAGE_ASPECT_STENCIL_BIT = 0x00000004,
+
+VkImage:
+  width,
+  height,
+  depth,
+  VkImageTiling tiling; (should walys be optimal, Linear is useless)
+  usage:
+    VK_IMAGE_USAGE_TRANSFER_SRC_BIT = 0x00000001,
+    VK_IMAGE_USAGE_TRANSFER_DST_BIT = 0x00000002,
+    VK_IMAGE_USAGE_SAMPLED_BIT = 0x00000004,
+    VK_IMAGE_USAGE_STORAGE_BIT = 0x00000008,
+    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT = 0x00000010,
+    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT = 0x00000020,
+    VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT = 0x00000040,
+    VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT = 0x00000080,
+  Image Type,
+  mipLevels,
+  arrayLayers,
+  BifrostImageFormat format;
+
+To make it so framebuffers can use textures then I would need to Separate Sampler from the 
+definition of a Texture. Technically in the API calling setSampler is optional soooo.
+
+This can make automagic framebuffer creation easy since the Swapchain can be exposed as a 
+TextureHandle but internally just not free in the traditional way.

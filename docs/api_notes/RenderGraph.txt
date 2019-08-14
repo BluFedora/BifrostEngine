@@ -1,13 +1,9 @@
-Render Graph:
-
 [https://github.com/acdemiralp/fg]
 [https://stackoverflow.com/questions/47226029/vulkan-compute-shader-reading-only-parts-of-the-uniform-buffer]
 [http://www.asawicki.info/news.php5?x=all&page=2]
 [https://github.com/KhronosGroup/SPIRV-Cross]
 
 // per-resource barriers should usually be used for queue ownership transfers and image layout transitions
-
-This is a graph designed to be compiled once and executed many times.
 
 /* These Map To Vulkan's Subpasses */
 
@@ -118,28 +114,6 @@ RenderGraph {
 			foreach (res : pass.destroy) { res.destroy(); }
 		}
 	}
-};
-
-IPass<T> {
-	reads:Vector<IResource*>;
-	writes:Vector<IResource*>;
-	created_resources:Vector<IResource*>;
-	render_priority:Int;
-
-	void setup(GraphBuilder& builder, T& data);
-	void execute(GraphBuilder& builder, CommandBuffer& cmds, T& data);
-};
-
-IResource<T> {
-	readers:Vector<IPass*>;
-	writers:Vector<IPass*>;
-	name:String;
-	params:T;
-	parent:IPass<T>*;
-
-	void create(const T& params);
-	bool isTransient() const;
-	void destroy(void);
 };
 
 What in Vulkan Needs Barriers:
@@ -323,8 +297,8 @@ Easy to generate on the fly.
 Can Rendepass be generated too?
 	> Color Inputs
 	> Color Outputs
-	> Depth Inputs
-	> Depth Outputs
+	> Depth Input
+	> Depth Output
 	> Load Ops
 	> Store Ops
 	> Stencil Load Ops
@@ -336,3 +310,26 @@ Pipeline can be generated to.
 
 Buffers can just use a chain of free blocks. (This is simple but should be effective)
 Maybe evict after X frames of unuse.
+
+Queue Info:
+
+If doing a lot of cross queue sync you are using them wrong.
+
+Host -> Device:   Use a Transfer Queue.
+Device -> Device: Your normal Graphics Queue is fine.
+
+IF the Compute feeds gfx then use the same queue.
+
+Only use more queues if you submit completely independent work.
+
+Present and Graphics Queue could actually be diff according to the spec.
+
+// Compute needs a layout of VK_IMAGE_LAYOUT_GENERAL
+
+
+So I was having issues understanding subpass deps since I did not know aquiring and image 
+basically counts as a command.
+
+When you write to the Swapchain's image you need to wait for the image to be available
+which I have been using ".waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}"
+so the renderpass that uses this 

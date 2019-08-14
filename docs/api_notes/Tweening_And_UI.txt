@@ -15,3 +15,7 @@ startButton.onClick(
     evt.target.removeEventListener(evt.self/currentListener);
   }
 );
+
+To have animations be able to be undone after an interaction (press) we should always be animating towards a goal.
+To "Undo" the goal is the starting value.
+

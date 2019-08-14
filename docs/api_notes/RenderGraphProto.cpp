@@ -15,38 +15,6 @@ struct GraphResourceBase;
 using VkAccess        = string;
 using VkPipelineStage = string;
 
-// "Transfer Dependencies" need to be abstracted (multi-queue case):
-// Buffer -> Buffer: vkCmdCopyBuffer
-// Buffer -> Image
-// Image  -> Buffer
-
-// ----------------------------------------------//
-// Required Layout Table for Access from Shaders //
-// ----------------------------------------------//
-// (1) Storage Image
-//   VK_IMAGE_LAYOUT_GENERAL
-//
-// (2) Sampled Image:
-//   VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
-//   VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_GENERAL
-//
-// (3) Combined Image Sampler:
-//   VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
-//   VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_GENERAL
-//
-// (4) Input Attachment:
-//   VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
-//   VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-//   VK_IMAGE_LAYOUT_GENERAL
-
 enum class BufferReadUsage
 {
   COMPUTE_SSBO,
@@ -128,9 +96,6 @@ enum class ImageWriteUsage
   GRAPHCICS_DEPTH,
   // VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
 };
-
-// If the renderpass is a graphics type then the pipeline barrier
-// can be replaced with an eqivalient external subpass dep.
 
 struct MemBarrierAction
 {

@@ -304,7 +304,7 @@ typedef struct
   } depth;
 
   float    min_sample_shading;
-  uint32_t sample_count_flags;  // VK_SAMPLE_COUNT_1_BIT // 4bytes
+  uint32_t sample_count_flags;  // VK_SAMPLE_COUNT_1_BIT 
   uint32_t subpass_index;
   /* bfShaderProgram program; */
   // VkVertexInputBindingDescription[]   { binding, stride, VK_VERTEX_INPUT_RATE_VERTEX / VK_VERTEX_INPUT_RATE_INSTANCE }

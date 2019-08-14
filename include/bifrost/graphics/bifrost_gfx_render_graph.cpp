@@ -1,9 +1,15 @@
+// Usage Notes:
+//   This Rendergraph will not allocate / create resources for you.
+//   To handle transient resources the 'bfGfxCmdList_*' API should be used then registered with the graph.
+
+// TODO(Shareef): Add unused resource culling.
+//   THis isn't super high priority since I think that's the job of the person calling these functiuons.
+
 #ifndef BIFROST_GFX_RENDER_GRAPH_HPP
 #define BIFROST_GFX_RENDER_GRAPH_HPP
 
 // IF you compile with g++ on windows with a single header you will get an error sayin incpompatible vertion.
-
-// build w: 'g++ -std=c++17 -m32 bifrost_gfx_render_graph.cpp -o RenderGraphTest'
+// build: g++ -std=c++17 bifrost_gfx_render_graph.cpp -o RenderGraphTest
 
 #include <algorithm>
 #include <cassert>
@@ -12,20 +18,27 @@
 #include <string>
 #include <vector> /* vector<T> */
 
-#define PRINT_OUT(c) std::cout << (c) << "\n"
+#define PRINT_OUT(c) std::cout << c << "\n"
 
 #define BIFROST_GFX_RENDER_GRAPH_TEST 1
+#include "bifrost_gfx_api.h"
 
 namespace bifrost
 {
 #ifndef bfBit
 #define bfBit(index) (1ULL << (index))
 #endif
+
+  // What 64 Characters look like:
+  //   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
   static constexpr unsigned int BIFROST_RENDERPASS_DEBUG_NAME_LEN = 64u;
   static constexpr unsigned int BIFROST_RESOURCE_NAME_LEN         = 128u;
+  static constexpr unsigned int BIFROST_SUBPASS_EXTERNAL          = ~0u;
+  static constexpr std::size_t  INVALID_BARRIER_IDX               = std::numeric_limits<std::size_t>::max();
 
   class FrameGraph;
   struct GraphResourceBase;
+  struct RenderpassBase;
 
   template<typename T>
   using Vector = std::vector<T>;
@@ -57,23 +70,22 @@ namespace bifrost
         ++length;
       }
 
+      assert(length < N && "The passed in name was too long.");
+
       str[length] = '\0';
     }
   };
 
   enum class BytecodeInst : std::uint8_t
   {
-    RENDERPASS,
-    /*
-    EXECUTION_BARRIER,
-    MEMORY_BARRIER,
-    IMAGE_BARRIER,
-    BUFFER_BARRIER,
-    */
-    BARRIER,
-    NEXT_PASS,
-    CREATE_BUFFER,
-    CREATE_IMAGE,
+    RENDERPASS,         // [uint32_t : RenderpassIdx, uint32_t : SubpassIdx]
+    EXECUTION_BARRIER,  // [uint32_t : ExecBarrierIdx]
+    MEMORY_BARRIER,     // [uint32_t : MemBarrierIdx]
+    IMAGE_BARRIER,      // [uint32_t : ImageBarrierIdx]
+    BUFFER_BARRIER,     // [uint32_t : BufferBarrierIdx]
+    NEXT_PASS,          // []
+    CREATE_BUFFER,      // [uint32_t : RenderpassIdx, uint32_t : SubpassIdx, uint32_t : ResDescIdx]
+    CREATE_IMAGE,       // [uint32_t : RenderpassIdx, uint32_t : SubpassIdx, uint32_t : ResDescIdx]
   };
 
   enum class BarrierType
@@ -82,211 +94,126 @@ namespace bifrost
     MEMORY,
     IMAGE,
     BUFFER,
+    SUBPASS_DEP,
+  };
+
+  struct BarrierRef
+  {
+    BarrierType type  = BarrierType::EXECUTION;
+    std::size_t index = INVALID_BARRIER_IDX;
+
+    bool isValid() const
+    {
+      return index != INVALID_BARRIER_IDX;
+    }
   };
 
   // Can only be merged if this
-  // has the same targets AND
-  // not "BarrierType::IMAGE" or "BarrierType::BUFFER"
-  // also the queues need to match.
+  // has the same targets AND not "BarrierType::IMAGE" or "BarrierType::BUFFER" also the queues need to match.
 
-  class GraphBarrier final
+  struct BarrierExecution
   {
-   private:
-    BarrierType                m_Type;
-    Vector<GraphResourceBase*> m_Targets;
+    BifrostPipelineStageFlags src_stage;
+    BifrostPipelineStageFlags dst_stage;
 
-   public:
-    explicit GraphBarrier(BarrierType type) :
-      m_Type{type},
-      m_Targets{}
-    {
-    }
-
-    bool hasTarget(const GraphResourceBase* t) const
-    {
-      const auto it = std::find(m_Targets.begin(), m_Targets.end(), t);
-      return it != m_Targets.end();
-    }
-  };
-
-  struct SubpassBase
-  {
-    Vector<GraphResourceBase*> color_refs[2];
-    Vector<GraphResourceBase*> depth_refs[2];
-
-    SubpassBase() :
-      color_refs{},
-      depth_refs{}
-    {
-    }
-
-    void addColorOut(GraphResourceBase* res)
-    {
-      color_refs[0].push_back(res);
-    }
-
-    void addColorIn(GraphResourceBase* res)
-    {
-      color_refs[1].push_back(res);
-    }
-
-    void addDepthOut(GraphResourceBase* res)
-    {
-      depth_refs[0].push_back(res);
-    }
-
-    void addDepthIn(GraphResourceBase* res)
-    {
-      depth_refs[1].push_back(res);
-    }
-
-    virtual void execute(FrameGraph& graph, void* data) = 0;
-
-    virtual ~SubpassBase() = default;
-  };
-
-  template<typename TData, typename TExecFn>
-  struct Subpass final : public SubpassBase
-  {
-    TExecFn exec_fn;
-
-    explicit Subpass(TExecFn&& fn) :
-      SubpassBase(),
-      exec_fn{std::move(fn)}
-    {
-    }
-
-    void execute(FrameGraph& graph, void* data) override
-    {
-      exec_fn(graph, *static_cast<const TData*>(data));
-    }
-  };
-
-  struct RenderpassBase
-  {
-    NameString<BIFROST_RENDERPASS_DEBUG_NAME_LEN> name;
-    Vector<SubpassBase*>                          subpasses;
-    Vector<GraphResourceBase*>                    reads;
-    Vector<GraphResourceBase*>                    writes;
-    Vector<GraphResourceBase*>                    attachments;
-    GraphResourceBase*                            depth_attachment;
-    std::size_t                                   queue_family;
-    std::size_t                                   barrier_index;
-    std::size_t                                   index;
-    void* const                                   data_ptr;
-
-    explicit RenderpassBase(const char* name, std::size_t index, void* data_ptr) :
-      name{name},
-      subpasses{},
-      reads{},
-      writes{},
-      attachments{},
-      depth_attachment{nullptr},
-      queue_family(-1),
-      barrier_index(-1),
-      index{index},
-      data_ptr{data_ptr}
-    {
-    }
-
-    virtual void compile(FrameGraph& graph) = 0;
-
-    // This is bad...
-    void execute(FrameGraph& graph)
-    {
-      for (SubpassBase* const pass : subpasses)
-      {
-        pass->execute(graph, data_ptr);
-      }
-    }
-
-    virtual ~RenderpassBase()
-    {
-      deleteList(subpasses);
-    }
-  };
-
-  template<typename TData, bool is_compute>
-  struct Renderpass final : public RenderpassBase
-  {
-    TData data;
-
-    explicit Renderpass(const char* name, std::size_t index) :
-      RenderpassBase(name, index, &data),
-      data{}
-    {
-    }
-
-    void compile(FrameGraph& graph) override
-    {
-      if constexpr (is_compute)
-      {
-        assert(subpasses.size() == 1 && "A compute pass must have a exactly one subpass.");
-
-        PRINT_OUT("Compile Compute Pass");
-      }
-      else
-      {
-        assert(subpasses.size() >= 1 && "A graphics pass must have a atleast one subpass.");
-        // TODO(Shareef): Compiling of subpasses.
-
-        PRINT_OUT("Compile Graphics Pass");
-      }
-    }
-
-    template<typename TSetupFn, typename TExecFn>
-    void addPass(TSetupFn&& setup, TExecFn&& exec_fn)
-    {
-      auto* const subpass = new Subpass<TData, TExecFn>(std::forward<TExecFn>(exec_fn));
-      subpasses.push_back(subpass);
-      setup(*subpass, data);
-    }
-  };
-
-  struct GraphResourceBase
-  {
-    NameString<BIFROST_RESOURCE_NAME_LEN> name;
-    Vector<RenderpassBase*>               readers;
-    Vector<RenderpassBase*>               writers;
-
-    explicit GraphResourceBase(const char* name_in) :
-      name{name_in},
-      readers{},
-      writers{}
+    explicit BarrierExecution(BifrostPipelineStageFlags src, BifrostPipelineStageFlags dst) :
+      src_stage{src},
+      dst_stage{dst}
     {
     }
   };
 
-  template<typename T, typename TCreate>
-  struct GraphResource final : public GraphResourceBase
+  struct BarrierMemory : public BarrierExecution
   {
-    T       data;
-    TCreate desc;
+    BifrostAccessFlags src_access;
+    BifrostAccessFlags dst_access;
 
-    explicit GraphResource(const char* name, const T& data) :
-      GraphResourceBase(name),
-      data{data},
-      desc{}
+    explicit BarrierMemory(
+     BifrostPipelineStageFlags src_stage,
+     BifrostPipelineStageFlags dst_stage,
+     BifrostAccessFlags        src,
+     BifrostAccessFlags        dst) :
+      BarrierExecution(src_stage, dst_stage),
+      src_access{src},
+      dst_access{dst}
     {
     }
   };
 
-  // Could either be read or wrote.
+  struct BarrierImage final : public BarrierMemory
+  {
+    BifrostImageLayout old_layout;
+    BifrostImageLayout new_layout;
+    std::uint32_t      src_queue;
+    std::uint32_t      dst_queue;
+    bfTextureHandle    image;  // TODO(Shareef): This isn't exactly right since images can be from Framebuffers aswell.
+    std::uint32_t      aspect;
+    // BIFROST_IMAGE_ASPECT_COLOR_BIT   = 0x00000001,
+    // BIFROST_IMAGE_ASPECT_DEPTH_BIT   = 0x00000002,
+    // BIFROST_IMAGE_ASPECT_STENCIL_BIT = 0x00000004,
+    std::uint32_t base_mip_level;
+    std::uint32_t level_count;
+    std::uint32_t base_array_layer;
+    std::uint32_t layer_count;
+  };
+
+  struct BarrierSubpassDep final : public BarrierMemory
+  {
+    std::uint32_t src_pass;
+    std::uint32_t dst_pass;
+    // .dependencyFlags = BIFROST_DEPENDENCY_BY_REGION_BIT,
+
+    explicit BarrierSubpassDep(
+     BifrostPipelineStageFlags src_stage,
+     BifrostPipelineStageFlags dst_stage,
+     BifrostAccessFlags        src_access,
+     BifrostAccessFlags        dst_access,
+     std::uint32_t             src,
+     std::uint32_t             dst) :
+      BarrierMemory(src_stage, dst_stage, src_access, dst_access),
+      src_pass{src},
+      dst_pass{dst}
+    {
+    }
+  };
+
+  struct BarrierBuffer final : public BarrierMemory
+  {
+    std::uint32_t  src_queue;
+    std::uint32_t  dst_queue;
+    bfBufferHandle buffer;
+    std::uint64_t  offset;
+    std::uint64_t  size;
+  };
+
+  // Could either be read or write.
   namespace BufferUsage
   {
     enum
     {
-      STORAGE       = bfBit(0),
-      UNIFORM       = bfBit(1),
-      VERTEX        = bfBit(2),
-      INDEX         = bfBit(3),
-      DRAW_INDIRECT = bfBit(4),
+      // NOTE(Shareef):
+      //   These first two should not be used directly as
+      //   they do not specify what shader is using them.
+      STORAGE_         = bfBit(0),  // read / write
+      UNIFORM_         = bfBit(1),  // read
+      VERTEX           = bfBit(2),  // read
+      INDEX            = bfBit(3),  // read
+      DRAW_INDIRECT    = bfBit(4),  // read
+      SHADER_COMPUTE   = bfBit(5),
+      SHADER_VERTEX    = bfBit(6),
+      SHADER_FRAGMENT  = bfBit(7),
+      UNIFORM_COMPUTE  = UNIFORM_ | SHADER_COMPUTE,
+      UNIFORM_VERTEX   = UNIFORM_ | SHADER_VERTEX,
+      UNIFORM_FRAGMENT = UNIFORM_ | SHADER_FRAGMENT,
+      STORAGE_COMPUTE  = STORAGE_ | SHADER_COMPUTE,
+      STORAGE_VERTEX   = STORAGE_ | SHADER_VERTEX,
+      STORAGE_FRAGMENT = STORAGE_ | SHADER_FRAGMENT,
     };
 
     using type = std::uint8_t;
   };  // namespace BufferUsage
 
-  enum class ImageStage : std::uint8_t
+  enum class PipelineStage : std::uint8_t
   {
     COMPUTE,   // For Compute passes
     VERTEX,    // For Gfx Passes
@@ -308,54 +235,448 @@ namespace bifrost
 
   struct BufferDesc final
   {
-    typename BufferUsage::type usage  = BufferUsage::STORAGE;
+    typename BufferUsage::type usage  = BufferUsage::STORAGE_COMPUTE;
     std::size_t                offset = 0;
-    std::size_t                size   = 0;
+    std::size_t                size   = INVALID_BARRIER_IDX;  // TODO(Shareef): Replace with whole size constant.
+
+    std::uint32_t pipelineStage() const
+    {
+      std::uint32_t ret = 0x0;
+
+      if (usage & BufferUsage::SHADER_COMPUTE)
+      {
+        ret |= BIFROST_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+      }
+
+      if (usage & BufferUsage::SHADER_VERTEX)
+      {
+        ret |= BIFROST_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+      }
+
+      if (usage & BufferUsage::SHADER_FRAGMENT)
+      {
+        ret |= BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+      }
+
+      if (usage & (BufferUsage::VERTEX | BufferUsage::INDEX))
+      {
+        ret |= BIFROST_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+      }
+
+      if (usage & BufferUsage::DRAW_INDIRECT)
+      {
+        ret |= BIFROST_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+      }
+
+      return ret;
+    }
+
+    std::uint32_t accessFlags(bool is_read) const
+    {
+      std::uint32_t ret = 0x0;
+
+      if (usage & (BufferUsage::STORAGE_COMPUTE | BufferUsage::STORAGE_VERTEX | BufferUsage::STORAGE_FRAGMENT))
+      {
+        ret |= (is_read ? BIFROST_ACCESS_SHADER_READ_BIT : BIFROST_ACCESS_SHADER_WRITE_BIT);
+      }
+
+      if (usage & (BufferUsage::UNIFORM_VERTEX | BufferUsage::UNIFORM_FRAGMENT))
+      {
+        ret |= BIFROST_ACCESS_UNIFORM_READ_BIT;
+      }
+
+      if (usage & (BufferUsage::VERTEX))
+      {
+        ret |= BIFROST_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+      }
+
+      if (usage & (BufferUsage::INDEX))
+      {
+        ret |= BIFROST_ACCESS_INDEX_READ_BIT;
+      }
+
+      if (usage & (BufferUsage::DRAW_INDIRECT))
+      {
+        ret |= BIFROST_ACCESS_INDIRECT_COMMAND_READ_BIT;
+      }
+
+      return ret;
+    }
   };
 
-  enum class ImageSizeType
-  {
-    SIZE_FRAMEBUFFER_RELATIVE,
-    SIZE_ABSOLUTE,
-  };
-
-  // format
-  // loadOp
-  // storeOp
   struct ImageDesc final
   {
-    ImageStage    stage       = ImageStage::FRAGMENT;
-    ImageUsage    usage       = ImageUsage::WRITE_COLOR;
-    float         size_dim[2] = {1.0f, 1.0f}; /* width, height */
-    ImageSizeType size_type   = ImageSizeType::SIZE_FRAMEBUFFER_RELATIVE;
-    unsigned int  samples     = 1;
-    unsigned int  mip_levels  = 1;
-    unsigned int  depth       = 1;
+    PipelineStage stage = PipelineStage::FRAGMENT;
+    ImageUsage    usage = ImageUsage::WRITE_COLOR;
+
+    std::uint32_t pipelineStage() const
+    {
+      std::uint32_t ret = 0x0;
+
+      switch (usage)
+      {
+        case ImageUsage::READ_GENERAL:
+        {
+          switch (stage)
+          {
+            case PipelineStage::COMPUTE:
+              ret |= BIFROST_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+              break;
+            case PipelineStage::VERTEX:
+              ret |= BIFROST_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+              break;
+            case PipelineStage::FRAGMENT:
+              ret |= BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+              break;
+          }
+          break;
+        }
+        case ImageUsage::READ_COLOR:
+        case ImageUsage::WRITE_COLOR:
+        {
+          ret |= BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+          break;
+        }
+        case ImageUsage::READ_DEPTH_READ_STENCIL:
+        case ImageUsage::READ_DEPTH_WRITE_STENCIL:
+        case ImageUsage::WRITE_DEPTH_READ_STENCIL:
+        case ImageUsage::WRITE_DEPTH_WRITE_STENCIL:
+        {
+          ret |= BIFROST_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | BIFROST_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+          break;
+        }
+        case ImageUsage::WRITE_GENERAL:
+        {
+          break;
+        }
+      }
+
+      return ret;
+    }
+
+    std::uint32_t accessFlags() const
+    {
+      std::uint32_t ret = 0x0;
+
+      switch (usage)
+      {
+        case ImageUsage::READ_COLOR:
+        {
+          ret |= BIFROST_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+          break;
+        }
+        case ImageUsage::WRITE_COLOR:
+        {
+          ret |= BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+          break;
+        }
+        case ImageUsage::READ_DEPTH_READ_STENCIL:
+        {
+          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          break;
+        }
+        case ImageUsage::READ_DEPTH_WRITE_STENCIL:
+        {
+          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          break;
+        }
+        case ImageUsage::WRITE_DEPTH_READ_STENCIL:
+        {
+          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          break;
+        }
+        case ImageUsage::WRITE_DEPTH_WRITE_STENCIL:
+        {
+          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          break;
+        }
+        case ImageUsage::READ_GENERAL:
+        {
+          ret |= BIFROST_ACCESS_SHADER_READ_BIT;
+          break;
+        }
+        case ImageUsage::WRITE_GENERAL:
+        {
+          ret |= BIFROST_ACCESS_SHADER_WRITE_BIT;
+          break;
+        }
+      }
+
+      return ret;
+    }
+
+    BifrostImageLayout imageLayout() const
+    {
+      switch (usage)
+      {
+        case ImageUsage::READ_COLOR: return BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        case ImageUsage::WRITE_COLOR: return BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        case ImageUsage::READ_DEPTH_READ_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        case ImageUsage::READ_DEPTH_WRITE_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+        case ImageUsage::WRITE_DEPTH_READ_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+        case ImageUsage::WRITE_DEPTH_WRITE_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case ImageUsage::READ_GENERAL: return BIFROST_IMAGE_LAYOUT_GENERAL;
+        case ImageUsage::WRITE_GENERAL: return BIFROST_IMAGE_LAYOUT_GENERAL;
+      }
+
+      return BIFROST_IMAGE_LAYOUT_GENERAL;
+    }
   };
 
-  // TODO(Shareef): Fill this with actual data.
-  using bfBuffer       = void*;
-  using bfImage        = void*;
-  using BufferResource = GraphResource<bfBuffer, BufferDesc>;
-  using ImageResource  = GraphResource<bfImage, ImageDesc>;
-
-  struct GraphBuilder final
+  enum class ResourceType
   {
-    FrameGraph*     graph;
-    RenderpassBase* pass;
+    BUFFER,
+    IMAGE,
+  };
 
-    BufferResource* createBuffer(const char* name, const BufferDesc& desc);
+  struct GraphResourceBase
+  {
+    ResourceType                          type;
+    NameString<BIFROST_RESOURCE_NAME_LEN> name;
+    Vector<RenderpassBase*>               readers;
+    Vector<RenderpassBase*>               writers;
+
+    explicit GraphResourceBase(ResourceType type, const char* name) :
+      type{type},
+      name{name},
+      readers{},
+      writers{}
+    {
+    }
+  };
+
+  // TODO(Shareef): This was a bad generic abstraction.
+  //   A Framegraph Absolutlely cannot be reused by another app
+  //   since the barriers require pretty intimate knowlege of
+  //   the way resoucres are acceses.
+
+  template<typename T>
+  struct GraphResource : public GraphResourceBase
+  {
+    T data;
+
+    explicit GraphResource(ResourceType type, const char* name, const T& data) :
+      GraphResourceBase(type, name),
+      data{data}
+    {
+    }
+  };
+
+  struct BufferResource final : public GraphResource<bfBufferHandle>
+  {
+    explicit BufferResource(const char* name, const bfBufferHandle& data) :
+      GraphResource(ResourceType::BUFFER, name, data)
+    {
+    }
+  };
+
+  struct ImageResource final : public GraphResource<bfTextureHandle>
+  {
+    explicit ImageResource(const char* name, const bfTextureHandle& data) :
+      GraphResource(ResourceType::IMAGE, name, data)
+    {
+    }
+  };
+
+  struct ResourceRef final
+  {
+    static ResourceRef create(BufferResource* resource, const BufferDesc& desc, bool is_read)
+    {
+      ResourceRef ret;
+      ret.pipeline_stage_flags = desc.pipelineStage();
+      ret.access_flags         = desc.accessFlags(is_read);
+      // ret.image_layout = N/A;
+      ret.as.buffer = resource;
+      return ret;
+    }
+
+    // TODO(Shareef): Find somethign better than the comemnt below. (Maybe add is_read to the actual BufferDesc)
+    // NOTE(Shareef): The unused 'is_read' is so these two create functions can
+    //   use deduction for which one to use.
+    static ResourceRef create(ImageResource* resource, const ImageDesc& desc, bool /*is_read*/)
+    {
+      ResourceRef ret;
+      ret.pipeline_stage_flags = desc.pipelineStage();
+      ret.access_flags         = desc.accessFlags();
+      ret.image_layout         = desc.imageLayout();
+      ret.as.image             = resource;
+      return ret;
+    }
+
+    std::uint32_t      pipeline_stage_flags;
+    BifrostImageLayout image_layout;
+    std::uint32_t      access_flags;
+
+    // TODO(Shareef): See if I can make the pointer const.
+    union
+    {
+      GraphResourceBase* resource;
+      BufferResource*    buffer;
+      ImageResource*     image;
+    } as;
+
+    GraphResourceBase* operator->() const
+    {
+      return as.resource;
+    }
+
+    GraphResourceBase& operator*() const
+    {
+      return *as.resource;
+    }
+  };
+
+  struct SubpassBase
+  {
+    // protected:
+    
+    RenderpassBase&        parent;
+    Vector<ImageResource*> refs[2];
+    std::size_t            index;
+    Vector<BarrierRef>     subpass_deps;
+
+    SubpassBase(RenderpassBase& parent, std::size_t idx) :
+      parent{parent},
+      refs{},
+      index{idx},
+      subpass_deps{}
+    {
+    }
+
+    const Vector<ImageResource*>& writes() const
+    {
+      return refs[0];
+    }
+
+    const Vector<ImageResource*>& reads() const
+    {
+      return refs[1];
+    }
+
+    virtual void execute(FrameGraph& graph, void* data) = 0;
+
+    BarrierRef& getBarrier(std::size_t index)
+    {
+      subpass_deps.resize(std::max(index + 1u, subpass_deps.size()));
+      return subpass_deps[index];
+    }
+
+    virtual ~SubpassBase() = default;
+
+   public:
+    void refAttachment(std::int32_t attachment_index, PipelineStage stage, ImageUsage usage);
+  };
+
+  template<typename TData, typename TExecFn>
+  struct Subpass final : public SubpassBase
+  {
+    // protected:
+    TExecFn exec_fn;
+
+    explicit Subpass(RenderpassBase& parent, TExecFn&& fn, size_t index) :
+      SubpassBase(parent, index),
+      exec_fn{std::move(fn)}
+    {
+    }
+
+    // TODO(Shareef): This being virtual is exclsusively for the type safety.
+    //   Can maybe replace it with a function pointer with a template.
+    //   This will lead to a smaller runtime since we only need
+    //
+
+    void execute(FrameGraph& graph, void* data) override
+    {
+      exec_fn(graph, *static_cast<const TData*>(data));
+    }
+  };
+
+  struct RenderpassBase
+  {
+    friend class FrameGraph;
+    friend class SubpassBase;
+
+    template<typename T>
+    friend inline void deleteList(const Vector<T>& items);
+
+    template<typename TRes, typename TDesc>
+    friend void readResource(RenderpassBase* pass, TRes* res, const TDesc& desc);
+
+    template<typename TRes, typename TDesc>
+    friend void writeResource(RenderpassBase* pass, TRes* res, const TDesc& desc);
+
+   protected:
+    FrameGraph&                                   parent;
+    NameString<BIFROST_RENDERPASS_DEBUG_NAME_LEN> name;
+    Vector<SubpassBase*>                          subpasses;
+    Vector<ResourceRef>                           reads;
+    Vector<ResourceRef>                           writes;
+    Vector<ImageResource*>                        attachments;
+    ImageResource*                                depth_attachment;
+    std::size_t                                   queue_family;
+    std::size_t                                   barrier_index;
+    std::size_t                                   index;
+    void* const                                   data_ptr;
+    bfLoadStoreFlags                              load_ops[2];       /*!< The bit being set means you want to load the data.  (if no load or clear dont care is implied) */
+    bfLoadStoreFlags                              load_clear_ops[2]; /*!< The bit being set means you want to clear the data. (if no load or clear dont care is implied) */
+    bfLoadStoreFlags                              store_ops[2];      /*!< The bit being set means you want to store the data.                                            */
+    bool                                          is_compute;
+
+    explicit RenderpassBase(FrameGraph& parent, const char* name, std::size_t index, void* data_ptr, bool is_compute) :
+      parent{parent},
+      name{name},
+      subpasses{},
+      reads{},
+      writes{},
+      attachments{},
+      depth_attachment{nullptr},
+      queue_family(-1),
+      barrier_index(-1),
+      index{index},
+      data_ptr{data_ptr},
+      load_ops{0x0, 0x0},
+      load_clear_ops{0x0, 0x0},
+      store_ops{0x0, 0x0},
+      is_compute{is_compute}
+    {
+    }
+
+    void compile(FrameGraph& graph);
+
+    virtual ~RenderpassBase()
+    {
+      deleteList(subpasses);
+    }
+
+   public:
     BufferResource* readBuffer(const char* name, const BufferDesc& desc);
     BufferResource* writeBuffer(const char* name, const BufferDesc& desc);
-    ImageResource*  createImage(const char* name, const ImageDesc& desc);
-    ImageResource*  refImage(const char* name, const ImageDesc& desc);
+    ImageResource*  addColorAttachment(const char* name);
+    ImageResource*  addDepthAttachment(const char* name);
   };
 
   template<typename TData>
-  using ComputePass = Renderpass<TData, true>;
+  struct Renderpass final : public RenderpassBase
+  {
+    friend class FrameGraph;
 
-  template<typename TData>
-  using GraphicsPass = Renderpass<TData, false>;
+   protected:
+    TData data;
+
+    explicit Renderpass(FrameGraph& parent, const char* name, std::size_t index, bool is_compute) :
+      RenderpassBase(parent, name, index, &data, is_compute),
+      data{}
+    {
+    }
+
+   public:
+    template<typename TSetupFn, typename TExecFn>
+    void addPass(TSetupFn&& setup, TExecFn&& exec_fn)
+    {
+      auto* const subpass = new Subpass<TData, TExecFn>(*this, std::forward<TExecFn>(exec_fn), subpasses.size());
+      subpasses.push_back(subpass);
+      setup(*subpass, data);
+    }
+  };
 
   // TODO(Shareef): This should use a custom allocator (Linear Seems appropriate)
   class FrameGraph final
@@ -363,9 +684,12 @@ namespace bifrost
    private:
     Vector<RenderpassBase*>    m_Renderpasses;
     Vector<GraphResourceBase*> m_Resources;  // There should be little amount of resources generally so HashTable may not be needed??
-    Vector<GraphBarrier>       m_Barriers;
     Vector<std::uint8_t>       m_Bytecode;
     std::uint8_t*              m_BytecodePos;
+    Vector<BarrierExecution>   m_ExecutionBarriers;
+    Vector<BarrierMemory>      m_MemoryBarriers;
+    Vector<BarrierImage>       m_ImageBarriers;
+    Vector<BarrierSubpassDep>  m_SubpassBarriers;
 
    public:
     explicit FrameGraph() :
@@ -374,12 +698,24 @@ namespace bifrost
     {
     }
 
-    void registerBuffer(const char* name, bfBuffer buffer)
+    void clear()
+    {
+      deleteList(m_Renderpasses);
+      deleteList(m_Resources);
+      m_Bytecode.clear();
+      m_BytecodePos = nullptr;
+      m_ExecutionBarriers.clear();
+      m_MemoryBarriers.clear();
+      m_ImageBarriers.clear();
+      m_SubpassBarriers.clear();
+    }
+
+    void registerResource(const char* name, bfBufferHandle buffer)
     {
       m_Resources.emplace_back(new BufferResource(name, buffer));
     }
 
-    void registerImage(const char* name, bfImage image)
+    void registerResource(const char* name, bfTextureHandle image)
     {
       m_Resources.emplace_back(new ImageResource(name, image));
     }
@@ -387,17 +723,39 @@ namespace bifrost
     template<typename TData, typename RSetupFn>
     void addComputePass(const char* name, RSetupFn&& setup_fn)
     {
-      addPass<ComputePass<TData>, TData>(name, std::forward<RSetupFn>(setup_fn));
+      addPass<TData>(name, std::forward<RSetupFn>(setup_fn), true);
     }
 
     template<typename TData, typename RSetupFn>
     void addGraphicsPass(const char* name, RSetupFn&& setup_fn)
     {
-      addPass<GraphicsPass<TData>, TData>(name, std::forward<RSetupFn>(setup_fn));
+      addPass<TData>(name, std::forward<RSetupFn>(setup_fn), false);
     }
 
     void compile()
     {
+      struct BarrierRefEXT : public BarrierRef
+      {
+        // TempList Would be great here.
+        Vector<GraphResourceBase*> targets = {};
+
+        void copyFrom(const BarrierRef& b)
+        {
+          this->type  = b.type;
+          this->index = b.index;
+        }
+
+        bool hasTarget(const GraphResourceBase* target) const
+        {
+          const auto end = targets.cend();
+          const auto it  = std::find(targets.cbegin(), end, target);
+          return it != end;
+        }
+      };
+
+      // TempList Would be great here too.
+      Vector<BarrierRefEXT> barriers = {};
+
       std::size_t index = 0;
       for (const auto& pass : m_Renderpasses)
       {
@@ -422,7 +780,7 @@ namespace bifrost
           // string                     read_barrier;
           // vector<GraphResourceBase*> targets = {};
 
-          for (auto* const res : pass->reads)
+          for (const auto& res : pass->reads)
           {
             auto* const last_reader_pass = lastOf(res->readers);
             auto* const last_writer_pass = lastOf(res->writers);
@@ -468,7 +826,7 @@ namespace bifrost
           // string                     read_barrier;
           // vector<GraphResourceBase*> targets = {};
 
-          for (auto* const res : pass->writes)
+          for (const auto& res : pass->writes)
           {
             auto* const last_reader_pass        = lastOf(res->readers);
             auto* const last_writer_pass        = lastOf(res->writers);
@@ -525,20 +883,25 @@ namespace bifrost
       return nullptr;
     }
 
+    BarrierRef addSubpassBarrier(const BarrierSubpassDep& dep)
+    {
+      BarrierRef ret = {BarrierType::SUBPASS_DEP, m_SubpassBarriers.size()};
+      m_SubpassBarriers.push_back(dep);
+      return ret;
+    }
+
     ~FrameGraph()
     {
-      deleteList(m_Renderpasses);
-      deleteList(m_Resources);
+      clear();
     }
 
    private:
-    template<typename PassType, typename TData, typename RSetupFn>
-    void addPass(const char* name, RSetupFn&& setup_fn)
+    template<typename TData, typename RSetupFn>
+    void addPass(const char* name, RSetupFn&& setup_fn, bool is_compute)
     {
-      auto* const rp = new GraphicsPass<TData>(name, m_Renderpasses.size());
+      auto* const rp = new Renderpass<TData>(*this, name, m_Renderpasses.size(), is_compute);
       m_Renderpasses.push_back(rp);
-      GraphBuilder builder{this, rp};
-      setup_fn(builder, *rp, rp->data);
+      setup_fn(*rp, rp->data);
     }
 
     std::uint32_t bytecodeReadUint32()
@@ -556,84 +919,178 @@ namespace bifrost
     }
   };
 
-  // CONCRETE IMPL HERE AFTER THIS POINT ABOVE IS ABSTRACT REUSEABLE 'Library' Code.
-
-  template<typename T, typename T2>
-  static T* getResource(FrameGraph* graph, const char* name, const T2& desc)
+  template<typename T>
+  static T* getResource(FrameGraph* graph, const char* name)
   {
-    auto* const res = (T*)graph->findResource(name);
-    res->desc       = desc;
-    return res;
+    return (T*)graph->findResource(name);
   }
 
-  static void readResource(RenderpassBase* pass, GraphResourceBase* res)
+  template<typename TRes, typename TDesc>
+  static void readResource(RenderpassBase* pass, TRes* res, const TDesc& desc)
   {
     res->readers.push_back(pass);
-    pass->reads.push_back(res);
+    pass->reads.push_back(ResourceRef::create(res, desc, true));
   }
 
-  static void writeResource(RenderpassBase* pass, GraphResourceBase* res)
+  template<typename TRes, typename TDesc>
+  static void writeResource(RenderpassBase* pass, TRes* res, const TDesc& desc)
   {
     res->writers.push_back(pass);
-    pass->writes.push_back(res);
+    pass->writes.push_back(ResourceRef::create(res, desc, false));
   }
 
-  BufferResource* GraphBuilder::createBuffer(const char* name, const BufferDesc& desc)
+  // -1 means the depth attachment
+  void SubpassBase::refAttachment(std::int32_t attachment_index, PipelineStage stage, ImageUsage usage)
   {
-    auto* const res = getResource<BufferResource>(graph, name, desc);
-    // This would crash actually.
-    // TODO(Shareef): Semantics??
-    return res;
-  }
+    const ImageDesc desc{stage, usage};
+    auto* const     res = (attachment_index == -1) ? parent.depth_attachment : parent.attachments[attachment_index];
 
-  BufferResource* GraphBuilder::readBuffer(const char* name, const BufferDesc& desc)
-  {
-    auto* const res = getResource<BufferResource>(graph, name, desc);
-    readResource(pass, res);
-    return res;
-  }
-
-  BufferResource* GraphBuilder::writeBuffer(const char* name, const BufferDesc& desc)
-  {
-    auto* const res = getResource<BufferResource>(graph, name, desc);
-    writeResource(pass, res);
-    return res;
-  }
-
-  ImageResource* GraphBuilder::createImage(const char* name, const ImageDesc& desc)
-  {
-    auto* const res = getResource<ImageResource>(graph, name, desc);
-    // This would crash actually.
-    // TODO(Shareef): Semantics??
-    return res;
-  }
-
-  ImageResource* GraphBuilder::refImage(const char* name, const ImageDesc& desc)
-  {
-    auto* const res = getResource<ImageResource>(graph, name, desc);
-
-    if (desc.usage == ImageUsage::WRITE_COLOR)
+    switch (usage)
     {
-      pass->attachments.push_back(res);
-      writeResource(pass, res);
-    }
-    else if (desc.usage == ImageUsage::WRITE_DEPTH_WRITE_STENCIL || desc.usage == ImageUsage::WRITE_DEPTH_READ_STENCIL || desc.usage == ImageUsage::READ_DEPTH_WRITE_STENCIL)
-    {
-      assert(pass->depth_attachment == nullptr && "Only one depth attachment per renderpass.");
-      pass->depth_attachment = res;
-      writeResource(pass, res);
-    }
-    else if (desc.usage == ImageUsage::WRITE_GENERAL)
-    {
-      writeResource(pass, res);
+      case ImageUsage::WRITE_GENERAL:
+      case ImageUsage::WRITE_COLOR:
+      case ImageUsage::WRITE_DEPTH_WRITE_STENCIL:
+      case ImageUsage::WRITE_DEPTH_READ_STENCIL:
+      case ImageUsage::READ_DEPTH_WRITE_STENCIL:
+      {
+        writeResource(&parent, res, desc);
+        break;
+      }
+      case ImageUsage::READ_COLOR:
+      case ImageUsage::READ_DEPTH_READ_STENCIL:
+      case ImageUsage::READ_GENERAL:
+      {
+        readResource(&parent, res, desc);
+        break;
+      }
     }
 
-    if (desc.usage == ImageUsage::READ_COLOR || desc.usage == ImageUsage::READ_DEPTH_READ_STENCIL || desc.usage == ImageUsage::READ_GENERAL)
+    switch (usage)
     {
-      readResource(pass, res);
+      case ImageUsage::WRITE_COLOR:
+      {
+        refs[0].push_back(res);
+        break;
+      }
+      case ImageUsage::READ_COLOR:
+      {
+        refs[1].push_back(res);
+        break;
+      }
+      case ImageUsage::WRITE_DEPTH_WRITE_STENCIL:
+      case ImageUsage::WRITE_DEPTH_READ_STENCIL:
+      case ImageUsage::READ_DEPTH_WRITE_STENCIL:
+      {
+        assert(attachment_index == -1 && "Can only use depth attachment for depth usage.");
+        refs[0].push_back(res);
+        break;
+      }
+      case ImageUsage::READ_DEPTH_READ_STENCIL:
+      {
+        assert(attachment_index == -1 && "Can only use depth attachment for depth usage.");
+        refs[1].push_back(res);
+        break;
+      }
+      case ImageUsage::WRITE_GENERAL:
+      case ImageUsage::READ_GENERAL:
+      {
+        assert(parent.is_compute && stage == PipelineStage::COMPUTE && "General reads and writes are exclusive to compute passes.");
+        break;
+      }
     }
+  }
 
+  BufferResource* RenderpassBase::readBuffer(const char* name, const BufferDesc& desc)
+  {
+    auto* const res = getResource<BufferResource>(&parent, name);
+    readResource(this, res, desc);
     return res;
+  }
+
+  BufferResource* RenderpassBase::writeBuffer(const char* name, const BufferDesc& desc)
+  {
+    auto* const res = getResource<BufferResource>(&parent, name);
+    writeResource(this, res, desc);
+    return res;
+  }
+
+  ImageResource* RenderpassBase::addColorAttachment(const char* name)
+  {
+    auto* const res = getResource<ImageResource>(&parent, name);
+    this->attachments.push_back(res);
+    return res;
+  }
+
+  ImageResource* RenderpassBase::addDepthAttachment(const char* name)
+  {
+    auto* const res = getResource<ImageResource>(&parent, name);
+    assert(this->depth_attachment == nullptr && "Only one depth attachment per renderpass.");
+    this->depth_attachment = res;
+    return res;
+  }
+
+  void RenderpassBase::compile(FrameGraph& graph)
+  {
+    assert(subpasses.size() >= 1 && "A render pass must have a atleast one subpass.");
+
+    if (is_compute)
+    {
+      PRINT_OUT("Compile Compute Pass");
+      PRINT_OUT("Compile SubPass" << 0);
+    }
+    else
+    {
+      PRINT_OUT("Compile Graphics Pass: '" << name.str << "'");
+
+      const auto num_subpasses = subpasses.size();
+
+      for (size_t index = 1; index < num_subpasses; ++index)
+      {
+        auto* const pass = subpasses[index];
+
+        const auto addBarrier = [index, pass, &graph](const Vector<RenderpassBase*>& renderpass_list) {
+          for (auto* const renderpass : renderpass_list)
+          {
+            if (renderpass->index < index)
+            {
+              auto& barrier = pass->getBarrier(renderpass->index);
+
+              if (!barrier.isValid())
+              {
+                // TODO(Shareef): Incorrect paramters.
+                barrier = graph.addSubpassBarrier(
+                 BarrierSubpassDep(
+                  BIFROST_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                  BIFROST_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                  BIFROST_ACCESS_INDIRECT_COMMAND_READ_BIT,
+                  BIFROST_ACCESS_INDIRECT_COMMAND_READ_BIT,
+                  renderpass->index,
+                  index));
+
+                PRINT_OUT("Subpass Dep: " << renderpass->index << " -> " << index);
+              }
+              else
+              {
+                PRINT_OUT("Upgrade Older Barrier.");
+              }
+            }
+          }
+        };
+
+        PRINT_OUT("Compile SubPass" << index);
+
+        for (auto* const read_res : pass->reads())
+        {
+          addBarrier(read_res->writers);
+        }
+
+        for (auto* const write_res : pass->writes())
+        {
+          addBarrier(write_res->writers);
+          addBarrier(write_res->readers);
+        }
+      }
+    }
   }
 }  // namespace bifrost
 
@@ -653,37 +1110,41 @@ int main()
     ImageResource* outputs[5];
   };
 
-  bfImage physical_resources[5];
+  bfTextureHandle physical_resources[5];
 
-  graph.registerImage("g_Pos", physical_resources[0]);
-  graph.registerImage("g_Normal", physical_resources[1]);
-  graph.registerImage("g_Spec", physical_resources[2]);
-  graph.registerImage("g_Mat", physical_resources[3]);
-  graph.registerImage("g_Depth", physical_resources[4]);
+  // Additionally Needed Data(Can be handled by a better framebuffer / texture intertop abstraction):
+  //   format           :
+  //   samples          : Can be handled by a better framebuffer / texture intertop abstraction
+  //   initial_layout   : last layout it was in or VK_IMAGE_LAYOUT_UNDEFINED.
+  //     optimization: Always VK_IMAGE_LAYOUT_UNDEFINED if we loadOp::Clear or loadOpDontCare
+  graph.registerResource("g_Pos", physical_resources[0]);
+  graph.registerResource("g_Normal", physical_resources[1]);
+  graph.registerResource("g_Spec", physical_resources[2]);
+  graph.registerResource("g_Mat", physical_resources[3]);
+  graph.registerResource("g_Depth", physical_resources[4]);
 
   graph.addGraphicsPass<GBufferData>(
    "GPass",
-   [](GraphBuilder& builder, GraphicsPass<GBufferData>& pass, GBufferData& data) {
-     ImageDesc pos, normal, spec, mat, depth;
+   [](Renderpass<GBufferData>& pass, GBufferData& data) {
+     // Additionally Needed Data:
+     //   load_op          : can be flags
+     //   store_op         : can be flags
+     //   stencil_load_op  : can be flags
+     //   stencil_store_op : can be flags
+     //   final_layout     : Ok easy to specify ithout the retarded 'initial_layout' part
 
-     pos.usage    = ImageUsage::WRITE_COLOR;
-     normal.usage = ImageUsage::WRITE_COLOR;
-     spec.usage   = ImageUsage::WRITE_COLOR;
-     mat.usage    = ImageUsage::WRITE_COLOR;
-     depth.usage  = ImageUsage::WRITE_DEPTH_WRITE_STENCIL;
-
-     data.outputs[0] = builder.refImage("g_Pos", pos);
-     data.outputs[1] = builder.refImage("g_Normal", normal);
-     data.outputs[2] = builder.refImage("g_Spec", spec);
-     data.outputs[3] = builder.refImage("g_Mat", mat);
-     data.outputs[4] = builder.refImage("g_Depth", depth);
+     data.outputs[0] = pass.addColorAttachment("g_Pos");
+     data.outputs[1] = pass.addColorAttachment("g_Normal");
+     data.outputs[2] = pass.addColorAttachment("g_Spec");
+     data.outputs[3] = pass.addColorAttachment("g_Mat");
+     data.outputs[4] = pass.addColorAttachment("g_Depth");
 
      pass.addPass(
       [](SubpassBase& subpass, GBufferData& data) {
-        subpass.addColorOut(data.outputs[0]);
-        subpass.addColorOut(data.outputs[1]);
-        subpass.addColorOut(data.outputs[2]);
-        subpass.addColorOut(data.outputs[3]);
+        subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
       },
       [](FrameGraph& graph, const GBufferData& data) {
         // Do Draw Code Here
@@ -692,27 +1153,44 @@ int main()
 
   graph.addGraphicsPass<GBufferData>(
    "GPass0",
-   [](GraphBuilder& builder, GraphicsPass<GBufferData>& pass, GBufferData& data) {
-     ImageDesc pos, normal, spec, mat, depth;
+   [](Renderpass<GBufferData>& pass, GBufferData& data) {
+     data.outputs[0] = pass.addColorAttachment("g_Pos");
+     data.outputs[1] = pass.addColorAttachment("g_Normal");
+     data.outputs[2] = pass.addColorAttachment("g_Spec");
+     data.outputs[3] = pass.addColorAttachment("g_Mat");
+     data.outputs[4] = pass.addColorAttachment("g_Depth");
 
-     pos.usage    = ImageUsage::WRITE_COLOR;
-     normal.usage = ImageUsage::WRITE_COLOR;
-     spec.usage   = ImageUsage::WRITE_COLOR;
-     mat.usage    = ImageUsage::WRITE_COLOR;
-     depth.usage  = ImageUsage::WRITE_DEPTH_WRITE_STENCIL;
-
-     data.outputs[0] = builder.refImage("g_Pos", pos);
-     data.outputs[1] = builder.refImage("g_Normal", normal);
-     data.outputs[2] = builder.refImage("g_Spec", spec);
-     data.outputs[3] = builder.refImage("g_Mat", mat);
-     data.outputs[4] = builder.refImage("g_Depth", depth);
-
+     // Main G Pass
      pass.addPass(
       [](SubpassBase& subpass, GBufferData& data) {
-        subpass.addColorOut(data.outputs[0]);
-        subpass.addColorOut(data.outputs[1]);
-        subpass.addColorOut(data.outputs[2]);
-        subpass.addColorOut(data.outputs[3]);
+        subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+      },
+      [](FrameGraph& graph, const GBufferData& data) {
+        // Do Draw Code Here
+      });
+
+     // Lighting Pass
+     pass.addPass(
+      [](SubpassBase& subpass, GBufferData& data) {
+        subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+        subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+        subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
+        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+      },
+      [](FrameGraph& graph, const GBufferData& data) {
+        // Do Draw Code Here
+      });
+
+     // Extra Pass
+     pass.addPass(
+      [](SubpassBase& subpass, GBufferData& data) {
+        subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+        subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+        subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
       },
       [](FrameGraph& graph, const GBufferData& data) {
         // Do Draw Code Here
