@@ -1,5 +1,10 @@
 Framebuffer Creation Info:
 
+[https://vulkan-tutorial.com/Multisampling]
+
+Multisampling is only useful for Framebuffers.
+Using it on a normal texture has no benefit.
+
 Framebuffer:
   VkImageView[] views;
   uint32_t      width;
@@ -23,7 +28,7 @@ VkImage:
   width,
   height,
   depth,
-  VkImageTiling tiling; (should walys be optimal, Linear is useless)
+  VkImageTiling tiling; (should always be optimal, Linear is useless)
   usage:
     VK_IMAGE_USAGE_TRANSFER_SRC_BIT = 0x00000001,
     VK_IMAGE_USAGE_TRANSFER_DST_BIT = 0x00000002,
@@ -43,3 +48,16 @@ definition of a Texture. Technically in the API calling setSampler is optional s
 
 This can make automagic framebuffer creation easy since the Swapchain can be exposed as a 
 TextureHandle but internally just not free in the traditional way.
+
+A Cube Map just has 6 "arrayLayers" w/ VK_IMAGE_TYPE_2D.
+
+Types Of Textures:
+Texture2D
+TextureArray
+TextureCube
+
+OpenGL:
+glDrawBuffers is part of the Actual Frame buffers state.
+
+Rendering Features:
+  Directional Shadow Mapping needs to be able to make a Framebuffer with just a Depth buffer.

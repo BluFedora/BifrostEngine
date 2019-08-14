@@ -529,7 +529,7 @@ namespace bifrost
   struct SubpassBase
   {
     // protected:
-    
+
     RenderpassBase&        parent;
     Vector<ImageResource*> refs[2];
     std::size_t            index;
@@ -1113,8 +1113,8 @@ int main()
   bfTextureHandle physical_resources[5];
 
   // Additionally Needed Data(Can be handled by a better framebuffer / texture intertop abstraction):
-  //   format           :
-  //   samples          : Can be handled by a better framebuffer / texture intertop abstraction
+  //   format           : Gotten by the texture.
+  //   samples          : Gotten by the texture.
   //   initial_layout   : last layout it was in or VK_IMAGE_LAYOUT_UNDEFINED.
   //     optimization: Always VK_IMAGE_LAYOUT_UNDEFINED if we loadOp::Clear or loadOpDontCare
   graph.registerResource("g_Pos", physical_resources[0]);

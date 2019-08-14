@@ -204,15 +204,40 @@ typedef struct bfDescriptorSetCreateParams_t
 
 } bfDescriptorSetCreateParams;
 
+#define BIFROST_CALC_MIPMAP (uint32_t) ~0u
+
+typedef enum BifrostTexFeatureBits_t
+{
+  BIFROST_TEX_IS_TRANSFER_SRC     = bfBit(0),
+  BIFROST_TEX_IS_TRANSFER_DST     = bfBit(1),
+  BIFROST_TEX_IS_SAMPLED          = bfBit(2),
+  BIFROST_TEX_IS_STORAGE          = bfBit(3),
+  BIFROST_TEX_IS_COLOR_ATTACHMENT = bfBit(4),
+  BIFROST_TEX_IS_DEPTH_ATTACHMENT = bfBit(5),
+  BIFROST_TEX_IS_TRANSIENT        = bfBit(6),
+  BIFROST_TEX_IS_INPUT_ATTACHMENT = bfBit(7),
+
+} BifrostTexFeatureBits;
+
+typedef uint8_t BifrostTexFeatureFlags;
+
 typedef struct bfTextureCreateParams_t
 {
-  BifrostTextureType type;
-  uint32_t           width;
-  uint32_t           height;
-  uint32_t           depth;
-  uint32_t           mip_levels;
+  BifrostTextureType     type;
+  BifrostImageFormat     format;
+  uint32_t               width;
+  uint32_t               height;
+  uint32_t               depth;
+  uint32_t               mip_levels;  // if set to 'BIFROST_CALC_MIPMAP' then it will be automatically calculates as : 1 + floor(log2((float)max(max(width, height), depth))
+  uint32_t               num_layers;
+  BifrostTexFeatureFlags flags;
 
 } bfTextureCreateParams;
+
+bfTextureCreateParams bfTextureCreateParams_init2D(uint32_t width, uint32_t height, BifrostImageFormat format);
+bfTextureCreateParams bfTextureCreateParams_initCubeMap(uint32_t width, uint32_t height, BifrostImageFormat format);
+bfTextureCreateParams bfTextureCreateParams_initColorAttachment(uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
+bfTextureCreateParams bfTextureCreateParams_initDepthAttachment(uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
 
 typedef struct bfGfxCommandListCreateParams_t
 {
@@ -329,10 +354,10 @@ void bfShaderProgram_addImageSamplerAt(bfShaderProgramHandle self, const char* n
 void bfShaderProgram_compile(bfShaderProgramHandle self);
 
 /* Descriptor Set */
-void bfDescriptorSet_addTextures(bfDescriptorSetHandle self, const char** names, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
+void bfDescriptorSet_addTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
 // void bfDescriptorSet_addTextureI(bfDescriptorSetHandle self);
 // void bfDescriptorSet_addTexture(bfDescriptorSetHandle self);
-void bfDescriptorSet_addUniformBuffers(bfDescriptorSetHandle self, const char** names, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, uint64_t* sizes, bfBuffer* buffers, uint32_t num_buffers);
+void bfDescriptorSet_addUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, uint64_t* sizes, bfBuffer* buffers, uint32_t num_buffers);
 // void bfDescriptorSet_addUniformBufferI(bfDescriptorSetHandle self);
 // void bfDescriptorSet_addUniformBuffer(bfDescriptorSetHandle self);
 
@@ -341,7 +366,7 @@ uint32_t           bfTexture_width(bfTextureHandle self);
 uint32_t           bfTexture_height(bfTextureHandle self);
 uint32_t           bfTexture_depth(bfTextureHandle self);
 BifrostImageLayout bfTexture_layout(BifrostImageLayout self);
-void               bfTexture_setLayout(BifrostImageLayout self, BifrostImageLayout layout); // TODO(SR): Maybe this should solely be internal, it will be punlic to help me rember what I need to do. The reason this is a bad way to have in the public API is because of the needed syncronzation needed to transiotion in vulkan but we should never need to change layout unless for a backend like RenderGraph and Texture_setData.
+void               bfTexture_setLayout(BifrostImageLayout self, BifrostImageLayout layout);  // TODO(SR): Maybe this should solely be internal, it will be punlic to help me rember what I need to do. The reason this is a bad way to have in the public API is because of the needed syncronzation needed to transiotion in vulkan but we should never need to change layout unless for a backend like RenderGraph and Texture_setData.
 bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
 bfBool32           bfTexture_loadData(bfTextureHandle self, const char* source, size_t source_length);
 void               bfTexture_setSampler(bfTextureHandle self, const bfTextureCreateParams* sampler_properties);
