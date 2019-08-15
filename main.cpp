@@ -1,6 +1,4 @@
-#include "bifrost/meta/bifrost_meta_member.hpp"
-#include <bifrost/bifrost_vm.hpp>
-#include <bifrost/graphics/bifrost_gfx_api.h>
+#include <bifrost/bifrost.hpp>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream> /*  */
@@ -26,7 +24,6 @@
 //   * Preprocessor for some extra fun.
 //   * References to C/++ owned Objects (references / lightuserdata)
 //   * References to C/++ owned Objects + Class information? (userdata)
-//   [X] * User defined callable objects. This would make "Closure" better. define a 'call' function?
 //   * Module variables apparently. (Statics also solve the problem)
 //   * Integer Div
 //   * Bin / Oct / Hex Numbers
@@ -34,6 +31,7 @@
 //   * foreach (with user defined iterators)
 //   * Ternary branch
 //   * For more efficient execution all string functions must be a lib rather than on the object itself.
+//   * A Lua Regisirty type thing w/o garbage collection and NO string keys.
 
 // TODO(SR): Bifrost DS
 //   * Array needs a 'shrink to fit' function to make it use less memory.
@@ -197,7 +195,6 @@ Critique Per Subsystem:
 
 /* GOOD:
  *  Engine Run very liked feature by designers.
- *
  */
 
 class TestClass
@@ -265,8 +262,8 @@ class GameState
 
 func update()
 {
-  //print "I am updating!" + GameState.i;
-  //GameState.i = GameState.i + 1;
+  // print "I am updating!" + GameState.i;
+  // GameState.i = GameState.i + 1;
 }
 
 func callMeFromCpp(arg0, arg1, arg2)
@@ -325,30 +322,58 @@ class BifrostEngine : private bfNonCopyable<BifrostEngine>, private bfNonMoveabl
 
   void init(const BifrostEngineCreateParams& params)
   {
+    IBifrostDbgLogger logger_config{
+     nullptr,
+     [](void* data, const BifrostDbgLogInfo* info) {
+       (void)data;
+
+       if (info->level != BIFROST_LOGGER_LVL_POP)
+       {
+         static constexpr unsigned int TAB_SIZE = 4;
+
+#if 0
+         std::printf("%*c%s(%u): \n", TAB_SIZE * info->indent_level, ' ', info->func, info->line);
+         std::printf("%*c", TAB_SIZE * info->indent_level * 2, ' ');
+#else
+         std::printf("%*c", TAB_SIZE * info->indent_level, ' ');
+
+#endif
+         std::vprintf(info->format, info->args);
+         std::printf("\n");
+       }
+     }};
+
+    bfLogger_init(&logger_config);
+
+    bfLogPush("Engine Init of App: %s", params.app_name);
+
     const bfGfxContextCreateParams gfx_create_params = {
      params.app_name,
      params.app_version,
     };
 
     m_GfxBackend = bfGfxContext_new(&gfx_create_params);
-    bfGfxContext_onResize(m_GfxBackend, params.width, params.height);
+    // bfGfxContext_onResize(m_GfxBackend, params.width, params.height);
+
+    bfLogPop();
   }
 
   [[nodiscard]] bool beginFrame() const
   {
-    return bfGfxContext_beginFrame(m_GfxBackend);
+    return false;  //bfGfxContext_beginFrame(m_GfxBackend);
   }
 
   void endFrame() const
   {
-    bfGfxContext_endFrame(m_GfxBackend);
+    // bfGfxContext_endFrame(m_GfxBackend);
   }
 
   void deinit()
   {
-    bfGfxDevice_flush(bfGfxContext_device(m_GfxBackend));
-    bfGfxContext_delete(m_GfxBackend);
+    // bfGfxDevice_flush(bfGfxContext_device(m_GfxBackend));
+    // bfGfxContext_delete(m_GfxBackend);
     m_GfxBackend = nullptr;
+    bfLogger_deinit();
   }
 };
 
@@ -452,8 +477,9 @@ int main(int argc, const char* argv[])
     goto shutdown_exit;  // NOLINT(hicpp-avoid-goto)
   }
 
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   const auto main_window = glfwCreateWindow(INITIAL_WINDOW_SIZE[0], INITIAL_WINDOW_SIZE[1], "Bifrost Engine", nullptr, nullptr);
-
+  /*
   glfwMakeContextCurrent(main_window);
 
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
@@ -461,7 +487,7 @@ int main(int argc, const char* argv[])
     error_code = ErrorCodes::GLAD_FAILED_TO_INIT;
     goto shutdown_glfw;  // NOLINT(hicpp-avoid-goto)
   }
-
+  */
   namespace bf = bifrost;
 
   BifrostVMParams vm_params;
@@ -512,7 +538,7 @@ int main(int argc, const char* argv[])
     };
 
     engine.init(params);
-
+    /*
     // clang-format off
     static const float vertices[] = {
       -0.5f, -0.5f, 0.0f,
@@ -582,7 +608,7 @@ int main(int argc, const char* argv[])
     glBindVertexArray(VAO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), static_cast<void*>(0));
     glEnableVertexAttribArray(0);
-
+    */
     while (!glfwWindowShouldClose(main_window))
     {
       int window_width, window_height;
@@ -592,6 +618,7 @@ int main(int argc, const char* argv[])
 
       if (engine.beginFrame())
       {
+        /*
         glViewport(0, 0, window_width, window_height);
         glClearColor(0.4f, 0.5f, 0.7f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -599,6 +626,7 @@ int main(int argc, const char* argv[])
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        */
 
         if (update_fn)
         {
@@ -619,14 +647,14 @@ int main(int argc, const char* argv[])
 
     engine.deinit();
 
-    glDeleteBuffers(1, &VBO);
-    glDeleteVertexArrays(1, &VAO);
+    // glDeleteBuffers(1, &VBO);
+    // glDeleteVertexArrays(1, &VAO);
   }
 
   bfVM_stackDestroyHandle(vm, update_fn);
   bfVM_delete(vm);
 
-shutdown_glfw:
+  // shutdown_glfw:
   glfwDestroyWindow(main_window);
   glfwTerminate();
 

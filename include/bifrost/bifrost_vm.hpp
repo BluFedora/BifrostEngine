@@ -13,13 +13,6 @@ namespace bifrost
 {
   namespace detail
   {
-    /* C++11 Compliant Backup
-    template <class F, class... Args>
-void for_each_argument(F f, Args&&... args) {
-    [](...){}((f(std::forward<Args>(args)), 0)...);
-}
-     */
-
     template<class...>
     constexpr std::false_type always_false{};
 
@@ -78,7 +71,7 @@ void for_each_argument(F f, Args&&... args) {
       else
       {
         // TODO(SR): When we add 'light userdata' aka references then we can just return that.
-        static_assert(always_false<T>, "Type could not be automatrically converted.");
+        static_assert(always_false<T>, "Type could not be automatically converted.");
       }
     }
 

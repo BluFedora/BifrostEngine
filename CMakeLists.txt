@@ -67,6 +67,8 @@ else()
   set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -Wall -g")
 endif()
 
+
+
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based
   #   of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
@@ -88,8 +90,15 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/data_structures/bifrost_dynamic_string.c"
   "src/bifrost/data_structures/bifrost_hash_map.c"
 
+  # Bifrost Debug Module
+  "src/bifrost/debug/bifrost_dbg_logger.c"
+
   # Bifrost Graphics Module
-  "src/bifrost/graphics/bifrost_gfx_opengl.cpp"
+  "src/bifrost/graphics/bifrost_gfx_common.cpp"
+  ## OpenGL Backend
+  # "src/bifrost/graphics/bifrost_gfx_opengl.cpp"
+  ## Vulkan Backend
+  "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
 
   # Bfrost Script Module
   "src/bifrost/script/bifrost_vm_build.c"
@@ -106,11 +115,18 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 # add_subdirectory("unit_tests")
 # add_subdirectory("game")
 
+# NOTE(Shareef):
+#   Add the libraries we are linking against to the target.
+find_package(OpenGL REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(OpenCL)
+
   # NOTE(Shareef): This makes is you can #include engine / game / library code without doing the "../" thing.
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
 include_directories(BifrostEngine C:/Users/rshar/Documents/bifrost-core/bifrost_core)
+include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
@@ -123,14 +139,12 @@ set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${C
   # NOTE(Shareef): Make the console not pop up.
 # set_target_properties(BifrostEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
-##Uncomment to inject these options into the command line when preforming a code analysis, it just works
-##add_compile_definitions( "dummyDefine=0 /DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /GR /EHsc /std:c++17 /Zc:__cplusplus /DDummy2")
-
-# NOTE(Shareef):
-#   Add the libraries we are linking against to the target.
-find_package(OpenGL REQUIRED)
+## Uncomment to inject these options into the command line when preforming a code analysis, it just works
+## add_compile_definitions( "dummyDefine=0 /DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /GR /EHsc /std:c++17 /Zc:__cplusplus /DDummy2")
 
 if (WIN32)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
+
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
 		set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
@@ -149,6 +163,7 @@ target_link_libraries(BifrostEngine "${BIFROST_ENGINE_GLFW_LIB}")
 
 if (WIN32)
   target_link_libraries(BifrostEngine "opengl32.lib")
+  target_link_libraries(BifrostEngine "D:/Vulkan/1.1.106.0/Lib32/vulkan-1.lib")
 elseif (APPLE)
   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/libfmod.dylib")
@@ -156,19 +171,15 @@ elseif (APPLE)
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/liblua.a")
 endif()
 
-# NOTE(Shareef):
-#   Find OpenCL and add all the includes and such.
-
-# find_package(OpenCL REQUIRED)
-find_package(OpenCL)
+target_link_libraries(BifrostEngine ${Vulkan_LIBRARIES})
 
 if(OpenCL_FOUND)
 	include_directories(${OPENCL_INCLUDE_DIR})
 	target_link_libraries(BifrostEngine OpenCL::OpenCL)
 	#target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
-	add_compile_definitions(TIDE_COMPUTE_OPENCL=1)
+	add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
 else()
-	add_compile_definitions(TIDE_COMPUTE_OPENCL=0)
+	add_compile_definitions(BIFROST_COMPUTE_OPENCL=0)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -209,5 +220,3 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/fmod.dll"  "${EXECUTABLE_OUTPUT_PATH}fmod.dll"  COPYONLY)
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.dll" "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 endif()
-
-

@@ -1,5 +1,6 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
+#if 0
 // TODO(Shareef): Replace with custom logging solution.
 #include <cstdio> /* printf */
 // TODO(Shareef): Replace with custom memory solution.
@@ -266,3 +267,4 @@ namespace
   }
 
 }  // namespace
+#endif
