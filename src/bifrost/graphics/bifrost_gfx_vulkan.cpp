@@ -16,6 +16,31 @@
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
 
+// [ ] bifrost_vulkan_backend.h
+// [ ] bifrost_vulkan_framebuffer.c
+// [ ] bifrost_vulkan_pool_allocator.c
+// [ ] bifrost_vulkan_buffer.c
+// [ ] bifrost_vulkan_framebuffer.h
+// [ ] bifrost_vulkan_pool_allocator.h
+// [ ] bifrost_vulkan_buffer.h
+// [ ] bifrost_vulkan_logical_device.c
+// [ ] bifrost_vulkan_render_pass.c
+// [ ] bifrost_vulkan_command_buffer.c
+// [ ] bifrost_vulkan_material.c
+// [ ] bifrost_vulkan_render_pass.h
+// [ ] bifrost_vulkan_context.c
+// [ ] bifrost_vulkan_material.h
+// [ ] bifrost_vulkan_shader.c
+// [ ] bifrost_vulkan_context.h
+// [ ] bifrost_vulkan_shader.h
+// [ ] bifrost_vulkan_conversions.c
+// [ ] bifrost_vulkan_pipeline.c
+// [ ] bifrost_vulkan_texture.c
+// [ ] bifrost_vulkan_conversions.h
+// [ ] bifrost_vulkan_pipeline.h
+// [ ] bifrost_vulkan_texture.h
+// [X] bifrost_vulkan_physical_device.h
+
 namespace
 {
   // Memory Functions (To Be Replaced)
@@ -63,8 +88,7 @@ namespace
       return m_Data[index];
     }
 
-    [[nodiscard]] std::size_t size() const
-    {
+    [[nodiscard]] std::size_t size() const {
       return m_Size;
     }
 
@@ -94,6 +118,14 @@ namespace
   bfBool32    gfxContextCheckLayers(const char* const needed_layers[], size_t num_layers);
   bfBool32    gfxContextSetDebugCallback(bfGfxContextHandle self, PFN_vkDebugReportCallbackEXT callback);
   const char* gfxContextSetupPhysicalDevices(bfGfxContextHandle self);
+  const char* gfxContextSelectPhysicalDevice(bfGfxContextHandle self);
+  const char* gfxContextInitSurface(bfGfxContextHandle self);
+  const char* gfxContextSelectLogicalDevice(bfGfxContextHandle self);
+  const char* gfxContextInitAllocator(bfGfxContextHandle self);
+  const char* gfxContextInitCommandPool(bfGfxContextHandle self);
+  const char* gfxContextInitSemaphores(bfGfxContextHandle self);
+  const char* gfxContextInitSwapchainInfo(bfGfxContextHandle self);
+  const char* gfxContextInitMaterialPool(bfGfxContextHandle self);
 }  // namespace
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL gfcContextDbgCallback(
@@ -118,6 +150,13 @@ BIFROST_DEFINE_HANDLE(GfxContext)
 #if BIFROST_USE_DEBUG_CALLBACK
   VkDebugReportCallbackEXT debug_callback;
 #endif
+};
+
+BIFROST_DEFINE_HANDLE(GfxDevice)
+{
+  VulkanPhysicalDevice* parent;
+  VkDevice              handle;
+  VkQueue               queues[BIFROST_GFX_QUEUE_MAX];
 };
 
 bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
@@ -286,7 +325,7 @@ namespace
       return "find a Vulkan enabled device.";
     }
 
-    FixedArray<VkPhysicalDevice> device_list{ num_devices };
+    FixedArray<VkPhysicalDevice> device_list{num_devices};
     self->physical_devices.setSize(num_devices);
 
     err = vkEnumeratePhysicalDevices(self->instance, &num_devices, &device_list[0]);
@@ -296,15 +335,148 @@ namespace
       return "enumerate devices";
     }
 
+    bfDbgPush("Physical Device Listing (%u)", (unsigned)num_devices);
     size_t index = 0;
     for (auto& device : self->physical_devices)
     {
       device.handle = device_list[index];
 
+      vkGetPhysicalDeviceMemoryProperties(vk_phys_dev, &device.memory_properties);
+      vkGetPhysicalDeviceProperties(vk_phys_dev, &device.device_properties);
+      vkGetPhysicalDeviceFeatures(vk_phys_dev, &device.device_features);
 
+      vkGetPhysicalDeviceQueueFamilyProperties(device.handle, &device.queue_list.size, NULL);
+      device.queue_list.queues = calloc(device.queue_list.size, sizeof(VkQueueFamilyProperties));
+      vkGetPhysicalDeviceQueueFamilyProperties(device.handle, &device.queue_list.size, device.queue_list.queues);
+
+      vkEnumerateDeviceExtensionProperties(device.handle, NULL, &device.extension_list.size, NULL);
+      device.extension_list.extensions = malloc(sizeof(VkExtensionProperties) * device.extension_list.size);
+      vkEnumerateDeviceExtensionProperties(device.handle, NULL, &device.extension_list.size, device.extension_list.extensions);
+
+      // printf("VULKAN_PHYSICAL_DEVICE[%i / %i]:\n", (i + 1), devices->size);
+      printf("---- Device Memory Properties ----\n");
+      printf("\t Heap Count:        %i\n", device.memory_properties.memoryHeapCount);
+
+      for (uint32_t j = 0; j < device.memory_properties.memoryHeapCount; ++j)
+      {
+        const VkMemoryHeap* const memory_heap = &device.memory_properties.memoryHeaps[j];
+
+        printf("\t\t HEAP[%i].flags = %i\n", j, (int)memory_heap->flags);
+        printf("\t\t HEAP[%i].size  = %u\n", j, (uint32_t)memory_heap->size);
+
+        if (memory_heap->flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_HEAP_DEVICE_LOCAL_BIT = true;\n");
+        }
+
+        if (memory_heap->flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_HEAP_MULTI_INSTANCE_BIT = true;\n");
+        }
+      }
+
+      printf("\t Memory Type Count: %i\n", device.memory_properties.memoryTypeCount);
+
+      for (uint32_t j = 0; j < device.memory_properties.memoryTypeCount; ++j)
+      {
+        const VkMemoryType* const memory_type = &device.memory_properties.memoryTypes[j];
+
+        printf("\t\t MEM_TYPE[%2i].heapIndex     = %u\n", j, memory_type->heapIndex);
+        printf("\t\t MEM_TYPE[%2i].propertyFlags = %u\n", j, memory_type->propertyFlags);
+
+        if (memory_type->propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT = true;\n");
+        }
+
+        if (memory_type->propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT = true;\n");
+        }
+
+        if (memory_type->propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_PROPERTY_HOST_COHERENT_BIT = true;\n");
+        }
+
+        if (memory_type->propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_PROPERTY_HOST_CACHED_BIT = true;\n");
+        }
+
+        if (memory_type->propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT = true;\n");
+        }
+
+        if (memory_type->propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT)
+        {
+          printf("\t\t\t VK_MEMORY_PROPERTY_PROTECTED_BIT = true;\n");
+        }
+      }
+
+      printf("------- Device  Properties -------\n");
+
+      printf("\t API VERSION: %u.%u.%u\n",
+             VK_VERSION_MAJOR(device.device_properties.apiVersion),
+             VK_VERSION_MINOR(device.device_properties.apiVersion),
+             VK_VERSION_PATCH(device.device_properties.apiVersion));
+      printf("\t API VERSION: %u.%u.%u\n",
+             VK_VERSION_MAJOR(device.device_properties.driverVersion),
+             VK_VERSION_MINOR(device.device_properties.driverVersion),
+             VK_VERSION_PATCH(device.device_properties.driverVersion));
+      printf("\t DRIVER VERSION: %u\n", device.device_properties.driverVersion);
+      printf("\t Device ID: %u\n", device.device_properties.deviceID);
+      printf("\t Vendor ID: %u\n", device.device_properties.vendorID);
+
+      switch (device.device_properties.deviceType)
+      {
+        case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+        {
+          printf("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_OTHER\n");
+          break;
+        }
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        {
+          printf("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU\n");
+          break;
+        }
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        {
+          printf("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU\n");
+          break;
+        }
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+        {
+          printf("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU\n");
+          break;
+        }
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:
+        {
+          printf("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_CPU\n");
+          break;
+        }
+        default:
+        {
+          printf("\t DEVICE_TYPE = DEVICE_TYPE_UNKNOWN\n");
+          break;
+        }
+      }
+
+      printf("\t DEVICE_NAME: \"%s\"\n", device.device_properties.deviceName);
+
+      printf("\t PIPELINE_CACHE_UUID:\n");
+      for (uint32_t j = 0; j < VK_UUID_SIZE; ++j)
+      {
+        printf("\t\t [%u] = %i\n", j, (int)device.device_properties.pipelineCacheUUID[j]);
+      }
+
+      // TODO: Device Limits    (VkPhysicalDeviceLimits)(limits)
+      // TODO: sparseProperties (VkPhysicalDeviceSparseProperties)(sparseProperties)
 
       ++index;
     }
+    bfDbgPop();
 
     return nullptr;
   }
