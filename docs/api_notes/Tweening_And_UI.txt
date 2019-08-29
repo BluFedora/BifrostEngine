@@ -19,3 +19,10 @@ startButton.onClick(
 To have animations be able to be undone after an interaction (press) we should always be animating towards a goal.
 To "Undo" the goal is the starting value.
 
+
+
+-------------------------------- Scripted Particles -------------------------------- 
+
+To boot strap the first version an actual scripting language can be used with binding functions
+with the sole purpose of emitting a simple particle bytecode.
+

@@ -107,7 +107,7 @@ BifrostObjStr* bfVM_createString(struct BifrostVM_t* self, bfStringRange value)
   return obj;
 }
 
-static inline void bfVMObject__delete(struct BifrostVM_t* self, BifrostObj* obj)
+void bfVMObject__delete(struct BifrostVM_t* self, BifrostObj* obj)
 {
   switch (obj->type & BifrostVMObjType_mask)
   {

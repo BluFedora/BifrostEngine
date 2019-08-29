@@ -1,0 +1,3 @@
+Dialog Boxes:
+
+MacOS has the 'OK' / 'Confirm' on the right while windows on the left.

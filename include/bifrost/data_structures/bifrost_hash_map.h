@@ -38,16 +38,16 @@ extern "C"
     NOTE(Shareef):
       The defaults assume the following.
 
-      dtor - Does nothing and assumes ypu will handle deallcation of
-             key and values yourself before you call "bfHashMap_remove"
-             or "bfHashMap_clear". Easiest way is through the iterator API.
-
-      hash - Assumes the keys are nul terminated strings. So if you use a
-             different datatype you MUST pass in a valid hash function. 
-
-      cmp  - Like [hash] assumes a nul terminated string and will compare each
-             character. So if you use a different datatype you MUST pass in a 
-             valid compare function.
+      dtor       - Does nothing and assumes you will handle deallocation of
+                   key and values yourself before you call "bfHashMap_remove"
+                   or "bfHashMap_clear". Easiest way is through the iterator API.
+                 
+      hash       - Assumes the keys are nul terminated strings. So if you use a
+                   different data-type you MUST pass in a valid hash function. 
+                 
+      cmp        - Like [hash] assumes a nul terminated string and will compare each
+                   character. So if you use a different data-type you MUST pass in a 
+                   valid compare function.
 
       value_size - By default is the size of a pointer.
   */

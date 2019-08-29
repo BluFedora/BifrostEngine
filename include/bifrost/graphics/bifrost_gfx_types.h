@@ -7,7 +7,7 @@ extern "C" {
 typedef enum BifrostIndexType_t
 {
   BIFROST_INDEX_TYPE_UINT16,
-  BIFROST_INDEX_TYPE_UINT32
+  BIFROST_INDEX_TYPE_UINT32,
 
 } BifrostIndexType;
 
@@ -50,7 +50,7 @@ typedef enum BifrostVertexFormatAttribute_t
   BIFROST_VFA_SCHAR8_1,
   // NOTE(Shareef):
   //   For Color packed as 8 bit chars but need to be converted to floats
-  BIFROST_VFA_UCHAR8_4_UNORM
+  BIFROST_VFA_UCHAR8_4_UNORM,
 
 } BifrostVertexFormatAttribute;
 

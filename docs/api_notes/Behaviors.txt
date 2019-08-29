@@ -11,3 +11,9 @@ Like Unity we should have:
 
 The separation between Awake and Start is that with Awake you do some initializaton but you cannot assume other Behaviors have been initialized.
 Then in Start you can assume all 'Awake's have been called so that you can do some inter object communication.
+
+----- Action List Design -----
+
+The message board is not needed since the state could have been stored in the behavior itself.
+Also maybe it should have a more immediate API like the RenderGraph / FrameGraph, this would
+allow more dynamic behaviors since the actions.

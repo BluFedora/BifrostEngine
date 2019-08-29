@@ -8,7 +8,7 @@
 namespace bifrost::meta
 {
   template<class... Ts>
-  struct overloaded : Ts...
+  struct overloaded : public Ts...
   {
     using Ts::operator()...;
   };

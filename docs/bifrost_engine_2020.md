@@ -32,6 +32,28 @@ keywords:    [engine, architecture, bifrost, c, c++, game, api]
 
 ---
 
+### Dependencies
+
+| Library                       | Explanation                                                                    |
+|:----------------------------- |:------------------------------------------------------------------------------:|
+| C++ STL (C++11, C++14, C++17) | Provides template containers so that we don't need to reinvent the wheel.      |
+| C Runtime Library             | Provides a good set of utility functions such as 'cos', and 'sin'.             |
+| glfw (w/ glad)                | Provides windowing (w/ OpenGL context creation) and input to our game.         |
+| glm                           | Provides a very optimized and stable set of vector / matrix math operations.   |
+| OpenGL v4.4                   | Provides a way to interface with the GPU Pipeline.                             |
+| FMOD                          | Provides audio output and other sound utilities.                               |
+| DEAR ImGui                    | Provides an easy way to create GUIs for in engine editing of our game.         |
+| stb_image                     | Provides 2D asset loading utilities for use with OpenGL.                       |
+
+
+## Engine Overview / Ideals
+
+- Cmake 3.8 used for our build system.
+  - "BifrostEngine/CmakeLists.txt"
+- GitHub used for source control
+  - 'BifrostEngine/*'
+- Visual Studio for compiling and debugging although not strictly required by our setup.
+- Clangformat is used for enforcing the styleguide.
 
 ---
 

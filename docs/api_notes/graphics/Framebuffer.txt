@@ -4,6 +4,7 @@ Framebuffer Creation Info:
 
 Multisampling is only useful for Framebuffers.
 Using it on a normal texture has no benefit.
+Multisampling requires a mip_level of 1.
 
 Framebuffer:
   VkImageView[] views;
@@ -42,6 +43,7 @@ VkImage:
   mipLevels,
   arrayLayers,
   BifrostImageFormat format;
+  samples;
 
 To make it so framebuffers can use textures then I would need to Separate Sampler from the 
 definition of a Texture. Technically in the API calling setSampler is optional soooo.
@@ -61,3 +63,76 @@ glDrawBuffers is part of the Actual Frame buffers state.
 
 Rendering Features:
   Directional Shadow Mapping needs to be able to make a Framebuffer with just a Depth buffer.
+
+
+--- On Demand Resources (+ Hashed Contents) ---
+
+> Framebuffer
+  Array<TextureHandles> textures;
+
+> Renderpass
+  // dependencies do not need to be hashed since if you have the same arrangement
+  // of subpasses (namely) 'bfAttachmentRefCache'
+  // Maybe I am wrong but there should never be a case where you have the same 
+  // arrangement of subpasses (aka same ins vs outs) but not need the same dependencies. 
+
+  uint16_t                load_ops;         
+  uint16_t                stencil_load_ops; 
+  uint16_t                clear_ops;        
+  uint16_t                stencil_clear_ops;
+  uint16_t                store_ops;        
+  uint16_t                stencil_store_ops;
+  uint16_t                num_attachments;
+  Array<bfAttachmentInfo> attachments;
+  bfAttachmentInfo        depth_attachment;
+  uint32_t                num_subpasses;
+  Array<bfSubpassCache>   subpasses;
+  
+  bfAttachmentInfo {
+    bfTextureHandle    texture;
+    BifrostImageLayout final_layout;
+    bool32             may_alias;
+  }
+
+  bfSubpassCache {
+    uint32_t                    num_out_attachment_refs;
+    Array<bfAttachmentRefCache> out_attachment_refs;
+    uint32_t                    num_in_attachment_refs;
+    Array<bfAttachmentRefCache> in_attachment_refs;
+    bfAttachmentRefCache        depth_att;
+  }
+
+  bfAttachmentRefCache {
+    uint32_t           attachment_index;
+    BifrostImageLayout layout;
+  }
+
+> Pipeline
+  bfPipelineStaticState static_state; [Hashed as 4 uint64_t]
+  uint16_t              dynamic_state; // (Viewport / Scissor Rect / Blend Constants)
+  BifrostViewport       viewport;
+  BifrostScissorRect    scissor_rect;
+  float                 blend_constants[4];
+  float                 line_width;
+  struct
+  {
+    float bias_constant_factor;
+    float bias_clamp;
+    float bias_slope_factor;
+
+  } depth;
+
+  float    min_sample_shading;
+  uint32_t sample_count_flags;  // VK_SAMPLE_COUNT_1_BIT 
+  uint32_t subpass_index;
+  bfShaderProgram program;
+  bfVertexLayoutSetHandle vertex_layout;
+  bfRenderpassHandle renderpass;
+
+
+  Desc Descriptor and Crap
+
+  Per Shader:
+	A VkDescriptorSetLayoutBinding is a single array of a certain resource.  (determines binding)
+	A VkDescriptorSetLayout is a list of 'VkDescriptorSetLayoutBinding'.     (defines a set)
+	A VkPipelineLayout has list of 'VkDescriptorSetLayout' + push constants. (determines set)

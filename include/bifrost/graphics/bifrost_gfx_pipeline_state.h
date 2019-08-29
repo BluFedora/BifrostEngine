@@ -1,7 +1,8 @@
-#ifndef BIFROST_GFX_PIPELINE_STATE
-#define BIFROST_GFX_PIPELINE_STATE
+#ifndef BIFROST_GFX_PIPELINE_STATE_H
+#define BIFROST_GFX_PIPELINE_STATE_H
 
-#include <stdint.h>
+#include "bifrost_gfx_handle.h" /* */
+#include <stdint.h>             /* uint64_t, uint32_t */
 
 #define MASK_FOR_BITS(n) ((1ULL << (n)) - 1)
 
@@ -78,10 +79,9 @@ typedef enum BifrostCompareOp_t
 
 // NOTE(Shareef): StencilTest (1-bit)
 
-// 3 + 5 + 5 + 1 + 2 + 1 + 1 + 3 + 1 + 7 + 4 + 2 + 3 + 3 + 5 + 5 + 4 + (36 * 2)
 enum
 {
-  BIFROST_PIPELINE_STATE_DRAWMODE_BITS     = 3,
+  BIFROST_PIPELINE_STATE_DRAW_MODE_BITS    = 3,
   BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS = 5,
   BIFROST_PIPELINE_STATE_FRONT_FACE_BITS   = 1,
   BIFROST_PIPELINE_STATE_CULL_FACE_BITS    = 2,
@@ -90,8 +90,8 @@ enum
   BIFROST_PIPELINE_STATE_DEPTH_OP_BITS     = 3,
   BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS = 1,
 
-  BIFROST_PIPELINE_STATE_DRAWMODE_OFFSET     = 0x0000000000000000ull,
-  BIFROST_PIPELINE_STATE_BLEND_SRC_OFFSET    = BIFROST_PIPELINE_STATE_DRAWMODE_OFFSET + BIFROST_PIPELINE_STATE_DRAWMODE_BITS,
+  BIFROST_PIPELINE_STATE_DRAW_MODE_OFFSET    = 0x0000000000000000ull,
+  BIFROST_PIPELINE_STATE_BLEND_SRC_OFFSET    = BIFROST_PIPELINE_STATE_DRAW_MODE_OFFSET + BIFROST_PIPELINE_STATE_DRAW_MODE_BITS,
   BIFROST_PIPELINE_STATE_BLEND_DST_OFFSET    = BIFROST_PIPELINE_STATE_BLEND_SRC_OFFSET + BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS,
   BIFROST_PIPELINE_STATE_FRONT_FACE_OFFSET   = BIFROST_PIPELINE_STATE_BLEND_DST_OFFSET + BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS,
   BIFROST_PIPELINE_STATE_CULL_FACE_OFFSET    = BIFROST_PIPELINE_STATE_FRONT_FACE_OFFSET + BIFROST_PIPELINE_STATE_FRONT_FACE_BITS,
@@ -100,7 +100,7 @@ enum
   BIFROST_PIPELINE_STATE_DEPTH_OP_OFFSET     = BIFROST_PIPELINE_STATE_DEPTH_WRITE_OFFSET + BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS,
   BIFROST_PIPELINE_STATE_STENCIL_TEST_OFFSET = BIFROST_PIPELINE_STATE_DEPTH_OP_OFFSET + BIFROST_PIPELINE_STATE_DEPTH_OP_BITS,
 
-  BIFROST_PIPELINE_STATE_DRAWMODE_MASK     = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_DRAWMODE_BITS) << BIFROST_PIPELINE_STATE_DRAWMODE_OFFSET,
+  BIFROST_PIPELINE_STATE_DRAW_MODE_MASK    = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_DRAW_MODE_BITS) << BIFROST_PIPELINE_STATE_DRAW_MODE_OFFSET,
   BIFROST_PIPELINE_STATE_BLEND_SRC_MASK    = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS) << BIFROST_PIPELINE_STATE_BLEND_SRC_OFFSET,
   BIFROST_PIPELINE_STATE_BLEND_DST_MASK    = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS) << BIFROST_PIPELINE_STATE_BLEND_DST_OFFSET,
   BIFROST_PIPELINE_STATE_FRONT_FACE_MASK   = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_FRONT_FACE_BITS) << BIFROST_PIPELINE_STATE_FRONT_FACE_OFFSET,
@@ -110,9 +110,6 @@ enum
   BIFROST_PIPELINE_STATE_DEPTH_OP_MASK     = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_DEPTH_OP_BITS) << BIFROST_PIPELINE_STATE_DEPTH_OP_OFFSET,
   BIFROST_PIPELINE_STATE_STENCIL_TEST_MASK = MASK_FOR_BITS(BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS) << BIFROST_PIPELINE_STATE_STENCIL_TEST_OFFSET,
 };
-typedef uint64_t bfPipelineState;
-
-// Here at 22 bits
 
 typedef enum BifrostPipelineDynamicFlags_t
 {
@@ -142,18 +139,6 @@ typedef enum BifrostStencilOp_t
   BIFROST_STENCIL_OP_DECREMENT_AND_WRAP  = 7,
 
 } BifrostStencilOp;  // 3 bits
-
-typedef struct BifrostPipelineStencilFaceState_t
-{
-  uint32_t fail_op : 3;        // BifrostStencilOp
-  uint32_t pass_op : 3;        // BifrostStencilOp
-  uint32_t depth_fail_op : 3;  // BifrostStencilOp
-  uint32_t compare_op : 3;     // BifrostCompareOp
-  uint32_t compare_mask : 8;
-  uint32_t write_mask : 8;
-  uint32_t reference : 8;
-
-} BifrostPipelineStencilFaceState;  // this is 36 bits. * 2
 
 typedef enum
 {
@@ -205,15 +190,26 @@ typedef enum BifrostColorMask_t
 
 typedef struct
 {
-  uint64_t draw_mode : BIFROST_PIPELINE_STATE_DRAWMODE_BITS;
-  uint64_t blend_src : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;
-  uint64_t blend_dst : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;
-  uint64_t front_face : BIFROST_PIPELINE_STATE_FRONT_FACE_BITS;
-  uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;
-  uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;
-  uint64_t depth_write : BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS;
-  uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;
-  uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS;
+  // 30 Bits
+  uint64_t color_write_mask : 4;
+  uint32_t color_blend_op : 3;
+  uint32_t color_blend_src : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
+  uint32_t color_blend_dst : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
+  uint32_t alpha_blend_op : 3;
+  uint32_t alpha_blend_src : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
+  uint32_t alpha_blend_dst : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
+
+} bfFramebufferBlending;
+
+typedef struct
+{
+  uint64_t draw_mode : BIFROST_PIPELINE_STATE_DRAW_MODE_BITS;           // 3
+  uint64_t front_face : BIFROST_PIPELINE_STATE_FRONT_FACE_BITS;         // 1
+  uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;           // 2
+  uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;      // 1
+  uint64_t depth_write : BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS;       // 1
+  uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;        // 3
+  uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS;  // 1
   uint64_t primitive_restart : 1;
   uint64_t rasterizer_discard : 1;
   uint64_t depth_bias : 1;
@@ -223,12 +219,6 @@ typedef struct
   uint64_t do_logic_op : 1;
   uint64_t logic_op : 4;
   uint64_t fill_mode : 2;
-  uint64_t color_blend_op : 3;
-  uint64_t alpha_blend_op : 3;
-  uint64_t blend_src_alpha : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;
-  uint64_t blend_dst_alpha : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;
-
-  uint64_t color_write_mask : 4;
 
   // 36bits
   uint64_t stencil_face_front_fail_op : 3;        // BifrostStencilOp
@@ -248,9 +238,19 @@ typedef struct
   uint64_t stencil_face_back_write_mask : 8;
   uint64_t stencil_face_back_reference : 8;
 
-} bfPipelineStaticState;  // 127 bits
+  uint64_t dynamic_viewport : 1;
+  uint64_t dynamic_scissor : 1;
+  uint64_t dynamic_line_width : 1;
+  uint64_t dynamic_depth_bias : 1;
+  uint64_t dynamic_blend_constants : 1;
+  uint64_t dynamic_depth_bounds : 1;
+  uint64_t dynamic_stencil_cmp_mask : 1;
+  uint64_t dynamic_stencil_write_mask : 1;
+  uint64_t dynamic_stencil_reference : 1;
 
-// TODO(SR): If I steal a bit from 'bfPipelineStaticState' then I can store 'dynamic_state' as a 'uint8_t'!
+  uint64_t pad : 22; // Padding may be important for consistent hashing behavior.
+
+} bfPipelineState;  // 106 bits (22 extra bits)
 
 typedef struct BifrostViewport_t
 {
@@ -287,40 +287,35 @@ typedef union BifrostClearValue_t
 
 } BifrostClearValue;
 
-typedef struct
+typedef struct BifrostPipelineDepthInfo_t
 {
-  bfPipelineStaticState static_state;
-  uint16_t              dynamic_state; // (Viewport / Scissor Rect / Blend Constants)
-  BifrostViewport       viewport;
-  BifrostScissorRect    scissor_rect;
-  float                 blend_constants[4];
-  float                 line_width;
-  struct
-  {
-    float bias_constant_factor;
-    float bias_clamp;
-    float bias_slope_factor;
+  float bias_constant_factor;
+  float bias_clamp;
+  float bias_slope_factor;
 
-  } depth;
+} BifrostPipelineDepthInfo;
 
-  float    min_sample_shading;
-  uint32_t sample_count_flags;  // VK_SAMPLE_COUNT_1_BIT 
-  uint32_t subpass_index;
-  /* bfShaderProgram program; */
-  // VkVertexInputBindingDescription[]   { binding, stride, VK_VERTEX_INPUT_RATE_VERTEX / VK_VERTEX_INPUT_RATE_INSTANCE }
-  // VkVertexInputAttributeDescription[] { binding, BifrostVertexFormatAttribute, offset                                }
-  // RenderPass?
+typedef struct bfPipelineCache_t
+{
+  bfPipelineState          state;
+  BifrostViewport          viewport;
+  BifrostScissorRect       scissor_rect;
+  float                    blend_constants[4];
+  float                    line_width;
+  BifrostPipelineDepthInfo depth;
+  float                    min_sample_shading;
+  uint64_t                 sample_mask;  // must default to 0xFFFFFFFFFFFFFFFF
+  uint32_t                 subpass_index;
+  bfFramebufferBlending    blending[16];
+  bfShaderProgramHandle    program;
+  bfRenderpassHandle       renderpass;
+  bfVertexLayoutSetHandle  vertex_set_layout;
+  // uint32_t              sample_count_flags;  // Can be gotten from the currently bound framebuffer
 
-} bfPipelineCreation;
+} bfPipelineCache;
 
-// IF you remove: BifrostPipelineDynamicFlags (9 bits)
-// Then we can store all of this in a hot (137 - 9) = 128 bits!
-// Compare / Hash:
-//   bfPipelineState
-//   ShaderProgram
-//   RenderPass.
 #if __cplusplus
 }
 #endif
 
-#endif /* BIFROST_GFX_PIPELINE_STATE */
+#endif /* BIFROST_GFX_PIPELINE_STATE_H */

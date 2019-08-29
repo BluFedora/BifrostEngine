@@ -12,7 +12,7 @@
 #elif PLATFORM_EMSCRIPTEN
 #include <GLES2/gl2.h>
 #elif PLATFORM_WINDOWS
-/* TODO: Other Platforms */
+/* TODO(Shareef): Other Platforms */
 #endif
 
 #endif /* BIFROST_PLATFORM_GL_H */

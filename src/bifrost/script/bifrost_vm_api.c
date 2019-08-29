@@ -99,8 +99,9 @@ void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params)
   */
   BifrostHashMapParams hash_params;
   bfHashMapParams_init(&hash_params);
-  hash_params.hash = ModuleMap_hash;
-  hash_params.cmp  = ModuleMap_cmp;
+  hash_params.hash       = ModuleMap_hash;
+  hash_params.cmp        = ModuleMap_cmp;
+  hash_params.value_size = sizeof(BifrostObjModule*);
   bfHashMap_ctor(&self->modules, &hash_params);
 
   self->build_in_symbols[BIFROST_VM_SYMBOL_CTOR] = bfVM_getSymbol(self, bfMakeStringRangeC("ctor"));
@@ -1180,12 +1181,13 @@ void bfVM_gc(BifrostVM* self)
 const char* bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol)
 {
   (void)self;
-  static const char* const ENUM_TO_STR[] = {
-   "ctor",
-   "dtor",
-   "call",
-   "__error__",
-  };
+  static const char* const ENUM_TO_STR[] =
+   {
+    "ctor",
+    "dtor",
+    "call",
+    "__error__",
+   };
 
   return ENUM_TO_STR[symbol];
 }

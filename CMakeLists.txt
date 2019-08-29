@@ -17,6 +17,19 @@ set(BIFROST_ENGINE_VERSION_MAJOR 1)
 set(BIFROST_ENGINE_VERSION_MINOR 0)
 set(BIFROST_ENGINE_VERSION_PATCH 0)
 
+  # This will generate a header file with the version info.
+  # The file will be made in the build directory hence why the build
+  # dir needs to be added to the includes.
+configure_file(
+  "${PROJECT_SOURCE_DIR}/docs/bifrost_version.h.in"
+  "${PROJECT_BINARY_DIR}/bifrost/bifrost_version.h"
+)
+include_directories("${PROJECT_BINARY_DIR}")
+
+message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
+
+set(CMAKE_CXX_STANDARD 17)
+
 # set(CMAKE_GENERATOR_PLATFORM x64)
 
   # NOTE(Shareef): Sets the output directory to be in a reasonable place.
@@ -98,6 +111,11 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   ## OpenGL Backend
   # "src/bifrost/graphics/bifrost_gfx_opengl.cpp"
   ## Vulkan Backend
+  "src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp"
+  "src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c"
+  "src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp"
+  "src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp"
+  "src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp"
   "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
 
   # Bfrost Script Module
@@ -131,7 +149,7 @@ include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
 # NOTE(Shareef): Allows Visual Studio to detect the use of C++17 while doing static analysis.
-set_target_properties (BifrostEngine PROPERTIES CXX_STANDARD 17)
+set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
   # NOTE(Shareef): Sets the working directory of the exe to be at the exe
   #   allowing us to load stuff from the assets folder.
@@ -220,3 +238,5 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/fmod.dll"  "${EXECUTABLE_OUTPUT_PATH}fmod.dll"  COPYONLY)
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.dll" "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 endif()
+
+add_subdirectory(include/bifrost/graphics/)

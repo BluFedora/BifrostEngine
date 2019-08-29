@@ -9,10 +9,6 @@
 #include <stdarg.h> /* va_list, va_start, va_copy, va_end */
 #include <stdio.h>
 
-// TODO(SR): Add static variables to classes.
-//   Technically already possible if you just add vars after class declaration but that's akward.
-//   plus it gets rid of my ability to maybe make this a fully static langauge.
-
 static const uint16_t BIFROST_VM_INVALID_SLOT = 0xFFFF;
 
 struct LoopInfo_t
@@ -161,6 +157,7 @@ typedef struct
   IPrefixParseletFn prefix;
   IInfixParseletFn  infix;
   int               precedence;
+
 } GrammarRule;
 
 #define GRAMMAR_NONE()    \
@@ -401,10 +398,24 @@ bfBool32 bfParser_compile(BifrostParser* self)
   return self->has_error;
 }
 
+extern void bfVMObject__delete(struct BifrostVM_t* self, BifrostObj* obj);
+
 void bfParser_dtor(BifrostParser* self)
 {
   self->vm->parser_stack = self->parent;
-  bfParser_popBuilder(self, &self->current_module->init_fn, 0);
+
+  // NOTE(Shareef): Handles the case where a script is recompiled into 
+  //   The same module.
+  // TODO(Shareef): This is probably horrible broken and since other
+  //   thinsg probably need to be cleared from the module during a recompile.
+  BifrostObjFn* const module_fn = &self->current_module->init_fn;
+  if (module_fn->name)
+  {
+    bfVMObject__delete(self->vm, &module_fn->super);
+    module_fn->name = NULL;
+  }
+
+  bfParser_popBuilder(self, module_fn, 0);
   Array_delete(&self->fn_builder_stack);
 }
 
@@ -594,15 +605,15 @@ bfBool32 bfParser_parse(BifrostParser* self)
       loopPop(self);
       break;
     }
-    case VAR_DECL:
+    case BIFROST_TOKEN_VAR_DECL:
     {
-      bfParser_match(self, VAR_DECL);
+      bfParser_match(self, BIFROST_TOKEN_VAR_DECL);
       parseVarDecl(self);
       break;
     }
-    case FUNC:
+    case BIFROST_TOKEN_FUNC_DECL:
     {
-      bfParser_match(self, FUNC);
+      bfParser_match(self, BIFROST_TOKEN_FUNC_DECL);
       parseFunctionDecl(self);
       break;
     }
@@ -691,8 +702,8 @@ extern BifrostObjModule* bfVM_importModule(BifrostVM* self, const char* from, co
 static void parseImport(BifrostParser* self)
 {
   /* GRAMMAR(Shareef):
-      import <const-string> for <identifier>, <identifier> = <identifier>, <identifier> as <identifier>, ...;
-
+      import <const-string> for <identifier>, <identifier> (= | as) <identifier>, ...;
+      
       TODO(SR): The second version imports all of the modules variables??
       import <const-string>;
   */
@@ -1666,8 +1677,7 @@ static void parserFinishCall(BifrostParser* self, VariableInfo fn, VariableInfo 
 
 static void parseBlock(BifrostParser* self)
 {
-  // TODO(SR):
-  //   Add one liner blocks?
+  // TODO(SR): Add one liner blocks?
   bfParser_eat(self, BIFROST_TOKEN_L_CURLY, bfFalse, "Block must start with an opening curly boi.");
 
   bfVMFunctionBuilder_pushScope(builder());
