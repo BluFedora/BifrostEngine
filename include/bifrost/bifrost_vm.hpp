@@ -3,15 +3,18 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
-#include "meta/bifrost_meta_utils.hpp"       /* for_each                 */
-#include "script/bifrost_vm_internal.h"      /* bfVM__value*             */
-#include "utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable        */
-#include <string>                            /* string                   */
-#include <tuple>                             /* tuple                    */
-#include <type_traits>                       /* decay_t, is_arithmetic_v */
+#include "meta/bifrost_meta_function_traits.hpp" /* function_traits          */
+#include "meta/bifrost_meta_utils.hpp"           /* for_each                 */
+#include "script/bifrost_vm_internal.h"          /* bfVM__value*             */
+#include "utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
+#include <string>                                /* string                   */
+#include <tuple>                                 /* tuple                    */
+#include <type_traits>                           /* decay_t, is_arithmetic_v */
 
 namespace bifrost
 {
+  using StringRange = bfStringRange;
+
   namespace detail
   {
     template<class...>
@@ -52,7 +55,6 @@ namespace bifrost
     {
       using RawT = std::decay_t<T>;
 
-      // TODO(SR): Add bfStringRange
       if constexpr (std::is_same_v<RawT, std::string>)
       {
         bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
@@ -136,26 +138,24 @@ namespace bifrost
       });
     }
 
-    template<typename ClzT, ClzT>
-    struct ProxyMemFn;
-
-    template<typename ClzT, typename Ret, typename... Args, Ret (ClzT::*memfn)(Args...)>
-    struct ProxyMemFn<Ret (ClzT::*)(Args...), memfn>
+    template<auto memfn>
+    struct ProxyMemFn
     {
-      static constexpr std::size_t arity = sizeof...(Args);
+      using fn_traits                    = meta::function_traits<decltype(memfn)>;
+      using return_type                  = typename fn_traits::return_type;
+      using class_type                   = typename fn_traits::class_type;
+      static constexpr std::size_t arity = fn_traits::arity;
 
       static void apply(BifrostVM* vm, int32_t num_args)
       {
-        static constexpr std::size_t kNumArgs = sizeof...(Args);
-
-        if (int32_t(kNumArgs + 1) == num_args)
+        if (int32_t(arity) == num_args)
         {
-          std::tuple<Args...> arguments;
+          typename fn_traits::tuple_type_raw arguments;
           generateArgs(arguments, vm);
 
-          ClzT* obj = reinterpret_cast<ClzT*>(bfVM_stackReadInstance(vm, 0));
+          class_type* obj = reinterpret_cast<class_type*>(bfVM_stackReadInstance(vm, 0));
 
-          if constexpr (std::is_same_v<Ret, void>)
+          if constexpr (std::is_same_v<return_type, void>)
           {
             callMember(obj, memfn, arguments);
             bfVM_stackSetNil(vm, 0);
@@ -163,41 +163,7 @@ namespace bifrost
           else
           {
             const auto& ret = callMember(obj, memfn, arguments);
-            writeToSlot<Ret>(vm, 0, ret);
-          }
-        }
-        else
-        {
-          throw "Function called with invalid number of parameters.";
-        }
-      }
-    };
-
-    template<typename ClzT, typename Ret, typename... Args, Ret (ClzT::*memfn)(Args...) const>
-    struct ProxyMemFn<Ret (ClzT::*)(Args...) const, memfn>
-    {
-      static constexpr std::size_t arity = sizeof...(Args);
-
-      static void apply(BifrostVM* vm, int32_t num_args)
-      {
-        static constexpr std::size_t kNumArgs = sizeof...(Args);
-
-        if (int32_t(kNumArgs + 1) == num_args)
-        {
-          std::tuple<Args...> arguments;
-          generateArgs(arguments, vm);
-
-          ClzT* obj = reinterpret_cast<ClzT*>(bfVM_stackReadInstance(vm, 0));
-
-          if constexpr (std::is_same_v<Ret, void>)
-          {
-            callMember(obj, memfn, arguments);
-            bfVM_stackSetNil(vm, 0);
-          }
-          else
-          {
-            const auto& ret = callMember(obj, memfn, arguments);
-            writeToSlot<Ret>(vm, 0, ret);
+            writeToSlot<return_type>(vm, 0, ret);
           }
         }
         else
@@ -221,38 +187,14 @@ namespace bifrost
     detail::construct_from_tuple(obj, arguments);
   }
 
-  using GetArityT = unsigned;
-
-  template<typename T>
-  struct get_arity;
-
-  template<typename R, typename... Args>
-  struct get_arity<R(Args...)> : public std::integral_constant<GetArityT, sizeof...(Args)>
-  {
-    using FRet      = R;
-    using TuplePack = std::tuple<Args...>;
-  };
-  template<typename R, typename C, typename... Args>
-  struct get_arity<R (C::*)(Args...)> : public std::integral_constant<GetArityT, sizeof...(Args)>
-  {
-    using FRet      = R;
-    using TuplePack = std::tuple<Args...>;
-  };
-  template<typename R, typename C, typename... Args>
-  struct get_arity<R (C::*)(Args...) const> : public std::integral_constant<GetArityT, sizeof...(Args)>
-  {
-    using FRet      = R;
-    using TuplePack = std::tuple<Args...>;
-  };
-
-  template<typename FnT, FnT* fn>
+  template<auto fn>
   void vmNativeFnWrapper(BifrostVM* vm, int32_t num_args)
   {
-    (void)num_args;
+    using fn_traits = meta::function_traits<decltype(fn)>;
 
-    if (static_cast<GetArityT>(num_args) == get_arity<FnT>::value)
+    if (static_cast<std::size_t>(num_args) == fn_traits::arity)
     {
-      typename get_arity<FnT>::TuplePack arguments;
+      typename fn_traits::tuple_type arguments;
       detail::generateArgs(arguments, vm, 0);
       detail::callFn(fn, arguments);
     }
@@ -262,10 +204,11 @@ namespace bifrost
     }
   }
 
-  template<typename FnT, FnT* fn>
+  template<auto fn>
   void vmBindNativeFn(BifrostVM* self, size_t idx, const char* variable)
   {
-    bfVM_moduleBindNativeFn(self, idx, variable, &vmNativeFnWrapper<FnT, fn>, static_cast<int32_t>(get_arity<FnT>::value));
+    using fn_traits = meta::function_traits<decltype(fn)>;
+    bfVM_moduleBindNativeFn(self, idx, variable, &vmNativeFnWrapper<fn>, static_cast<int32_t>(fn_traits::arity));
   }
 
   template<typename ClzT, typename... Args>
@@ -275,13 +218,19 @@ namespace bifrost
     return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1u};
   }
 
-#define bfVM_makeMemberFunction(mem_fn) (&bifrost::detail::ProxyMemFn<decltype(mem_fn), mem_fn>::apply)
-#define bfVM_makeMemberBinding(name, mem_fn)                           \
-  BifrostMethodBind                                                    \
-  {                                                                    \
-    (name),                                                            \
-     (&bifrost::detail::ProxyMemFn<decltype(mem_fn), mem_fn>::apply),  \
-     bifrost::detail::ProxyMemFn<decltype(mem_fn), mem_fn>::arity + 1u \
+  template<auto mem_fn>
+  bfNativeFnT bfVM_makeMemberFunction()
+  {
+    return &detail::ProxyMemFn<mem_fn>::apply;
+  }
+
+  template<auto mem_fn>
+  BifrostMethodBind bfVM_makeMemberBinding(const char* name)
+  {
+    return {
+     name,
+     bfVM_makeMemberFunction<mem_fn>(),
+     detail::ProxyMemFn<mem_fn>::arity};
   }
 
   template<typename ClzT>
@@ -374,10 +323,10 @@ namespace bifrost
       bfVM_moduleBindClass(self(), idx, &clz_bind);
     }
 
-    template<typename FnT, FnT* fn>
+    template<auto fn>
     void moduleBind(size_t idx, const char* variable) noexcept
     {
-      vmBindNativeFn<FnT, fn>(self(), idx, variable);
+      vmBindNativeFn<fn>(self(), idx, variable);
     }
 
     void moduleStoreVariable(size_t module_idx, const char* variable_name, size_t value_src_idx) noexcept
@@ -522,6 +471,14 @@ namespace bifrost
     [[nodiscard]] const char* errorString() const noexcept
     {
       return bfVM_errorString(self());
+    }
+
+    // TODO(SR): This should be part of the C-API as well.
+    [[nodiscard]] bfStringRange errorStringRange() const noexcept
+    {
+      const char* err_str = bfVM_errorString(self());
+
+      return {err_str, err_str + String_length(err_str)};
     }
   };
 

@@ -202,24 +202,26 @@ namespace ErrorCodes
 
 namespace bifrost::meta
 {
-    template<>
-    const auto& Meta::registerMembers<TestClass>()
-    {
-      static auto member_ptrs = members(
-        field("x", &TestClass::x),
-        property("y", &TestClass::getY, &TestClass::setY),
-        function("myRandomFn", &TestClass::myRandomFn),
-        function("myRandomFn2", &TestClass::myRandomFn2));
+  template<>
+  const auto& Meta::registerMembers<TestClass>()
+  {
+    static auto member_ptrs = members(
+     field("x", &TestClass::x),
+     property("y", &TestClass::getY, &TestClass::setY),
+     function("myRandomFn", &TestClass::myRandomFn),
+     function("myRandomFn2", &TestClass::myRandomFn2));
 
-      return member_ptrs;
-    }
-} // namespace bifrost::meta
+    return member_ptrs;
+  }
+}  // namespace bifrost::meta
 
 int main(int argc, const char* argv[])
 {
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
   std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
+
+  std::cout << __cplusplus << "\n";
 
   namespace bfmeta = bifrost::meta;
   using namespace bifrost;
@@ -283,12 +285,12 @@ int main(int argc, const char* argv[])
   const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
    "TestClass",
    bifrost::vmMakeCtorBinding<TestClass, int>("ctor"),
-   bfVM_makeMemberBinding("printf", &TestClass::printf));
+   bfVM_makeMemberBinding<&TestClass::printf>("printf"));
 
   vm.stackResize(1);
   vm.moduleMake(0, "main");
   vm.moduleBind(0, clz_bind);
-  vm.moduleBind<decltype(testFN), testFN>(0, "cppFn");
+  vm.moduleBind<testFN>(0, "cppFn");
 
   const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
 

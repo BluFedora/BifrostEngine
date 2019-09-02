@@ -53,7 +53,8 @@ else()
 endif()
 
   # NOTE(Shareef): Setting the compiler flags we will be using.
-  #
+  #    
+  #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
   #   "/WX"   - treat warnings as errors.
   #   "/EHsc" - is for enabling C++ exceptions which we will NOT be using.
   #     Reason being the C++ STL uses exceptions like a mother f*cker and with warnings as
@@ -69,8 +70,8 @@ endif()
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
 if (WIN32)
-  set(CMAKE_CXX_FLAGS "/GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj")
-  set(CMAKE_C_FLAGS "/GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj")
+  set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj")
+  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj")
 else()
   # GCC / Clang
   #   "/GR-"                      - Not needed since GCC / Clang isn't retarded like MSVC.

@@ -502,13 +502,13 @@ static void flushPipeline(bfGfxCommandListHandle self)
 
     // TODO
     //
-    // const void*                             pNext;
     // VkPipelineInputAssemblyStateCreateFlags flags;
     // VkPrimitiveTopology                     topology;
     // VkBool32                                primitiveRestartEnable;
     //
     VkPipelineInputAssemblyStateCreateInfo input_asm;
     input_asm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_asm.pNext = nullptr;
 
     // TODO
     //
@@ -518,12 +518,13 @@ static void flushPipeline(bfGfxCommandListHandle self)
     // uint32_t                               patchControlPoints;
     //
     VkPipelineTessellationStateCreateInfo tess;
+    tess.pNext = nullptr;
+
     // https://erkaman.github.io/posts/tess_opt.html
     // https://computergraphics.stackexchange.com/questions/7955/why-are-tessellation-shaders-disliked
 
     // TODO
     //
-    // const void*                        pNext;
     // VkPipelineViewportStateCreateFlags flags;
     // uint32_t                           viewportCount;
     // const VkViewport*                  pViewports;
@@ -532,10 +533,11 @@ static void flushPipeline(bfGfxCommandListHandle self)
     //
     VkPipelineViewportStateCreateInfo viewport;
     viewport.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport.pNext = nullptr;
+
 
     // TODO
     //
-    // const void*                             pNext;
     // VkPipelineRasterizationStateCreateFlags flags;
     // VkBool32                                depthClampEnable;
     // VkBool32                                rasterizerDiscardEnable;
@@ -550,10 +552,11 @@ static void flushPipeline(bfGfxCommandListHandle self)
     //
     VkPipelineRasterizationStateCreateInfo rasterization;
     rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterization.pNext = nullptr;
+
 
     // TODO
     //
-    // const void*                           pNext;
     // VkPipelineMultisampleStateCreateFlags flags;
     // VkSampleCountFlagBits                 rasterizationSamples;
     // VkBool32                              sampleShadingEnable;
@@ -564,10 +567,11 @@ static void flushPipeline(bfGfxCommandListHandle self)
     //
     VkPipelineMultisampleStateCreateInfo multisample;
     multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisample.pNext = nullptr;
+
 
     // TODO
     //
-    // const void*                            pNext;
     // VkPipelineDepthStencilStateCreateFlags flags;
     // VkBool32                               depthTestEnable;
     // VkBool32                               depthWriteEnable;
@@ -580,11 +584,12 @@ static void flushPipeline(bfGfxCommandListHandle self)
     // float                                  maxDepthBounds;
     //
     VkPipelineDepthStencilStateCreateInfo depth_stencil;
+    depth_stencil.pNext = nullptr;
+
 
     // TODO
     //
     // VkStructureType                            sType;
-    // const void*                                pNext;
     // VkPipelineColorBlendStateCreateFlags       flags;
     // VkBool32                                   logicOpEnable;
     // VkLogicOp                                  logicOp;
@@ -593,16 +598,19 @@ static void flushPipeline(bfGfxCommandListHandle self)
     // float                                      blendConstants[4];
     //
     VkPipelineColorBlendStateCreateInfo   color_blend;
+    color_blend.pNext = nullptr;
+
 
     // TODO
     //
-    // const void*                       pNext;
     // VkPipelineDynamicStateCreateFlags flags;
     // uint32_t                          dynamicStateCount;
     // const VkDynamicState*             pDynamicStates;
     //
     VkPipelineDynamicStateCreateInfo      dynamic_state;
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state.pNext = nullptr;
+
 
     // TODO(SR): Look into pipeline derivatives?
     //   @PipelineDerivative
