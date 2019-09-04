@@ -38,7 +38,7 @@ void bfVMParams_init(BifrostVMParams* self)
   self->user_data          = NULL;                 /* User data for the memory allocator, and maybe other future things.     */
 }
 
-static inline void bfVM_assertStackIndex(BifrostVM* self, size_t idx)
+static inline void bfVM_assertStackIndex(const BifrostVM* self, size_t idx)
 {
   const size_t size = Array_size(&self->stack);
 
@@ -366,10 +366,15 @@ void bfVM_stackSetNil(BifrostVM* self, size_t idx)
   self->stack_top[idx] = VAL_NULL;
 }
 
-void* bfVM_stackReadInstance(BifrostVM* self, size_t idx)
+void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx)
 {
   bfVM_assertStackIndex(self, idx);
   const bfVMValue value = self->stack_top[idx];
+
+  if (IS_NULL(value))
+  {
+    return NULL;
+  }
 
   assert(IS_POINTER(value) && "The value being read is not an object.");
 
@@ -382,7 +387,7 @@ void* bfVM_stackReadInstance(BifrostVM* self, size_t idx)
   return inst->extra_data;
 }
 
-const char* bfVM_stackReadString(BifrostVM* self, size_t idx, size_t* out_size)
+const char* bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size)
 {
   bfVM_assertStackIndex(self, idx);
   bfVMValue value = self->stack_top[idx];
@@ -399,7 +404,7 @@ const char* bfVM_stackReadString(BifrostVM* self, size_t idx, size_t* out_size)
   return str->value;
 }
 
-bfVMNumberT bfVM_stackReadNumber(BifrostVM* self, size_t idx)
+bfVMNumberT bfVM_stackReadNumber(const BifrostVM* self, size_t idx)
 {
   bfVM_assertStackIndex(self, idx);
   const bfVMValue value = self->stack_top[idx];
@@ -409,7 +414,7 @@ bfVMNumberT bfVM_stackReadNumber(BifrostVM* self, size_t idx)
   return bfVmValue_asNumber(value);
 }
 
-bfBool32 bfVM_stackReadBool(BifrostVM* self, size_t idx)
+bfBool32 bfVM_stackReadBool(const BifrostVM* self, size_t idx)
 {
   bfVM_assertStackIndex(self, idx);
   const bfVMValue value = self->stack_top[idx];

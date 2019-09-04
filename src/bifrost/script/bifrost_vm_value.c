@@ -93,16 +93,6 @@ bfBool32 bfVMValue_ge(bfVMValue lhs, bfVMValue rhs)
   return bfFalse;
 }
 
-void* bfVM__valueToPointer(bfVMValue value)
-{
-  return AS_POINTER(value);
-}
-
-double bfVM__valueToNumber(bfVMValue value)
-{
-  return bfVmValue_asNumber(value);
-}
-
 bfBool32 bfVM__valueToBool(bfVMValue value)
 {
   return IS_TRUE(value);

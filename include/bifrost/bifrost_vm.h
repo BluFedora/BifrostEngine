@@ -196,10 +196,10 @@ void           bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* v
 void           bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value);
 void           bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
 void           bfVM_stackSetNil(BifrostVM* self, size_t idx);
-void*          bfVM_stackReadInstance(BifrostVM* self, size_t idx);
-const char*    bfVM_stackReadString(BifrostVM* self, size_t idx, size_t* out_size);
-bfVMNumberT    bfVM_stackReadNumber(BifrostVM* self, size_t idx);
-bfBool32       bfVM_stackReadBool(BifrostVM* self, size_t idx);
+void*          bfVM_stackReadInstance(const BifrostVM* self, size_t idx); // Also works on null values, just returns NULL
+const char*    bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);
+bfVMNumberT    bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
+bfBool32       bfVM_stackReadBool(const BifrostVM* self, size_t idx);
 BifrostVMType  bfVM_stackGetType(BifrostVM* self, size_t idx);
 int32_t        bfVM_stackGetArity(BifrostVM* self, size_t idx); // This should be const
 bfValueHandle  bfVM_stackMakeHandle(BifrostVM* self, size_t idx);

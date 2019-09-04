@@ -17,161 +17,110 @@ namespace bifrost
 
   namespace detail
   {
-    template<class...>
+    template<typename...>
     constexpr std::false_type always_false{};
 
-    template<typename T>
-    struct ValueConvert
+    //
+    // Tag type for 'writeToSlot' so that the stack is not written to.
+    //
+    struct RetainStack final
     {
-      static T convert(bfVMValue value)
-      {
-        if constexpr (std::is_arithmetic_v<T>)
-        {
-          return static_cast<T>(bfVM__valueToNumber(value));
-        }
-        else if constexpr (std::is_pointer_v<T>)
-        {
-          if (bfVM__valueIsNull(value))
-          {
-            return nullptr;
-          }
-
-          return reinterpret_cast<T*>(bfVM__valueToPointer(value));
-        }
-        else if constexpr (std::is_reference_v<T>)
-        {
-          return *reinterpret_cast<T*>(bfVM__valueToPointer(value));
-        }
-        else
-        {
-          static_assert(always_false<T>, "Type could not be automatically converted.");
-          return {};
-        }
-      }
     };
+
+    template<typename T>
+    static T readFromSlot(const BifrostVM* self, std::size_t slot)
+    {
+      // TODO(SR): This needs some type checking.
+      if constexpr (std::is_arithmetic_v<T>)
+      {
+        return static_cast<T>(bfVM_stackReadNumber(self, slot));
+      }
+      else if constexpr (std::is_pointer_v<T>)
+      {
+        return reinterpret_cast<T>(bfVM_stackReadInstance(self, slot));
+      }
+      // TODO(SR): Currently this could never be hit because of the impl. This is bad.
+      else if constexpr (std::is_reference_v<T>)
+      {
+        static_assert(always_false<T>, "Bifrost Script does not support references similar to Lua in a way.");
+        return *reinterpret_cast<T*>(bfVM_stackReadInstance(self, slot));
+      }
+      else
+      {
+        static_assert(always_false<T>, "Type could not be automatically converted.");
+        return {};
+      }
+    }
 
     template<typename T>
     static void writeToSlot(BifrostVM* self, std::size_t slot, const T& value)
     {
       using RawT = std::decay_t<T>;
 
-      if constexpr (std::is_same_v<RawT, std::string>)
+      if constexpr (!std::is_same_v<RawT, RetainStack>)
       {
-        bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
-      }
-      else if constexpr (std::is_same_v<RawT, bfStringRange>)
-      {
-        bfVM_stackSetStringLen(self, slot, value.bgn, value.end - value.bgn);
-      }
-      else if constexpr (std::is_same_v<RawT, char*> || std::is_same_v<RawT, const char*>)
-      {
-        bfVM_stackSetString(self, slot, value);
-      }
-      else if constexpr (std::is_same_v<RawT, bool>)
-      {
-        bfVM_stackSetBool(self, slot, value);
-      }
-      else if constexpr (std::is_same_v<RawT, std::nullptr_t>)
-      {
-        bfVM_stackSetNil(self, slot);
-      }
-      else if constexpr (std::is_arithmetic_v<RawT>)
-      {
-        bfVM_stackSetNumber(self, slot, static_cast<bfVMNumberT>(value));
-      }
-      else
-      {
-        // TODO(SR): When we add 'light userdata' aka references then we can just return that.
-        static_assert(always_false<T>, "Type could not be automatically converted.");
-        bfVM_stackSetNil(self, slot);
-      }
-    }
-
-    template<typename ObjT, typename Function, typename Tuple, size_t... I>
-    auto callMember(ObjT* obj, Function f, Tuple t, std::index_sequence<I...>)
-    {
-      return (obj->*f)(std::get<I>(t)...);
-    }
-
-    template<typename ObjT, typename Function, typename Tuple>
-    auto callMember(ObjT* obj, Function f, Tuple t)
-    {
-      static constexpr auto size = std::tuple_size<Tuple>::value;
-      return callMember(obj, f, t, std::make_index_sequence<size>{});
-    }
-
-    template<typename Function, typename Tuple, size_t... I>
-    auto callFn(Function f, Tuple t, std::index_sequence<I...>)
-    {
-      (void)t;
-      return f(std::get<I>(t)...);
-    }
-
-    template<typename Function, typename Tuple>
-    auto callFn(Function f, Tuple t)
-    {
-      static constexpr auto size = std::tuple_size<Tuple>::value;
-      return callFn(f, t, std::make_index_sequence<size>{});
-    }
-
-    template<class T, class Tuple, size_t... Is>
-    void construct_from_tuple(T* obj, Tuple&& tuple, std::index_sequence<Is...>)
-    {
-      new (obj) T(std::get<Is>(std::forward<Tuple>(tuple))...);
-    }
-
-    template<class T, class Tuple>
-    void construct_from_tuple(T* obj, Tuple&& tuple)
-    {
-      construct_from_tuple<T>(
-       obj,
-       std::forward<Tuple>(tuple),
-       std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
-    }
-
-    template<typename... Args>
-    void generateArgs(std::tuple<Args...>& arguments, BifrostVM* vm, size_t i = 1)
-    {
-      meta::for_each(arguments, [vm, &i](auto&& arg) {
-        arg = ValueConvert<std::decay_t<decltype(arg)>>::convert(vm->stack_top[i]);
-        ++i;
-      });
-    }
-
-    template<auto memfn>
-    struct ProxyMemFn
-    {
-      using fn_traits                    = meta::function_traits<decltype(memfn)>;
-      using return_type                  = typename fn_traits::return_type;
-      using class_type                   = typename fn_traits::class_type;
-      static constexpr std::size_t arity = fn_traits::arity;
-
-      static void apply(BifrostVM* vm, int32_t num_args)
-      {
-        if (int32_t(arity) == num_args)
+        if constexpr (std::is_same_v<RawT, std::string>)
         {
-          typename fn_traits::tuple_type_raw arguments;
-          generateArgs(arguments, vm);
-
-          class_type* obj = reinterpret_cast<class_type*>(bfVM_stackReadInstance(vm, 0));
-
-          if constexpr (std::is_same_v<return_type, void>)
-          {
-            callMember(obj, memfn, arguments);
-            bfVM_stackSetNil(vm, 0);
-          }
-          else
-          {
-            const auto& ret = callMember(obj, memfn, arguments);
-            writeToSlot<return_type>(vm, 0, ret);
-          }
+          bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
+        }
+        else if constexpr (std::is_same_v<RawT, StringRange>)
+        {
+          bfVM_stackSetStringLen(self, slot, value.bgn, value.end - value.bgn);
+        }
+        else if constexpr (std::is_same_v<RawT, char*> || std::is_same_v<RawT, const char*>)
+        {
+          bfVM_stackSetString(self, slot, value);
+        }
+        else if constexpr (std::is_same_v<RawT, bool>)
+        {
+          bfVM_stackSetBool(self, slot, value);
+        }
+        else if constexpr (std::is_same_v<RawT, std::nullptr_t>)
+        {
+          bfVM_stackSetNil(self, slot);
+        }
+        else if constexpr (std::is_arithmetic_v<RawT>)
+        {
+          bfVM_stackSetNumber(self, slot, static_cast<bfVMNumberT>(value));
         }
         else
         {
-          throw "Function called with invalid number of parameters.";
+          // TODO(SR): When we add 'light userdata' aka references then we can just return that.
+          static_assert(always_false<T>, "Type could not be automatically converted.");
+          bfVM_stackSetNil(self, slot);
         }
       }
-    };
+    }
+
+    template<typename... Args>
+    void generateArgs(std::tuple<Args...>& arguments, const BifrostVM* vm)
+    {
+      std::size_t i = 0;
+      meta::for_each(arguments, [vm, &i](auto&& arg) {
+        arg = readFromSlot<std::decay_t<decltype(arg)>>(vm, i++);
+      });
+    }
+
+    template<typename F>
+    void vmCallImpl(BifrostVM* vm, F&& fn)
+    {
+      using fn_traits   = meta::function_traits<decltype(fn)>;
+      using return_type = typename fn_traits::return_type;
+
+      typename fn_traits::tuple_type arguments;
+      generateArgs(arguments, vm);
+
+      if constexpr (std::is_same_v<return_type, void>)
+      {
+        meta::apply(fn, arguments);
+        bfVM_stackSetNil(vm, 0);
+      }
+      else
+      {
+        const auto& ret = meta::apply(fn, arguments);
+        writeToSlot<return_type>(vm, 0, ret);
+      }
+    }
   }  // namespace detail
 
   template<typename ClzT, typename... Args>
@@ -179,12 +128,12 @@ namespace bifrost
   {
     (void)num_args;
 
-    ClzT* const obj = reinterpret_cast<ClzT*>(bfVM_stackReadInstance(vm, 0));
-
-    std::tuple<Args...> arguments;
-    detail::generateArgs(arguments, vm);
-
-    detail::construct_from_tuple(obj, arguments);
+    detail::vmCallImpl(
+     vm,
+     [](ClzT* obj, Args... args) -> detail::RetainStack {
+       new (obj) ClzT(std::forward<Args>(args)...);
+       return {};
+     });
   }
 
   template<auto fn>
@@ -194,9 +143,7 @@ namespace bifrost
 
     if (static_cast<std::size_t>(num_args) == fn_traits::arity)
     {
-      typename fn_traits::tuple_type arguments;
-      detail::generateArgs(arguments, vm, 0);
-      detail::callFn(fn, arguments);
+      detail::vmCallImpl(vm, fn);
     }
     else
     {
@@ -215,22 +162,17 @@ namespace bifrost
   BifrostMethodBind vmMakeCtorBinding(const char* name)
   {
     /* NOTE(Shareef): +1 for the self argument */
-    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1u};
+    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1};
   }
 
   template<auto mem_fn>
-  bfNativeFnT bfVM_makeMemberFunction()
-  {
-    return &detail::ProxyMemFn<mem_fn>::apply;
-  }
-
-  template<auto mem_fn>
-  BifrostMethodBind bfVM_makeMemberBinding(const char* name)
+  BifrostMethodBind vmMakeMemberBinding(const char* name)
   {
     return {
      name,
-     bfVM_makeMemberFunction<mem_fn>(),
-     detail::ProxyMemFn<mem_fn>::arity};
+     &vmNativeFnWrapper<mem_fn>,
+     meta::function_traits<decltype(mem_fn)>::arity,
+    };
   }
 
   template<typename ClzT>
@@ -245,10 +187,11 @@ namespace bifrost
     static BifrostMethodBind s_Methods[] = {methods..., {nullptr, nullptr, 0}};
 
     BifrostVMClassBind clz_bind;
+
     clz_bind.name            = name;
     clz_bind.extra_data_size = sizeof(ClzT);
     clz_bind.methods         = s_Methods;
-    clz_bind.finalizer       = &bifrost::vmMakeFinalizer<ClzT>;
+    clz_bind.finalizer       = &vmMakeFinalizer<ClzT>;
 
     return clz_bind;
   }
@@ -298,6 +241,11 @@ namespace bifrost
       m_Self{self}
     {
     }
+
+    VMView(const VMView& rhs) = default;
+    VMView(VMView&& rhs)      = default;
+    VMView& operator=(const VMView& rhs) = default;
+    VMView& operator=(VMView&& rhs) = default;
 
     [[nodiscard]] BifrostVM*       self() { return m_Self; }
     [[nodiscard]] const BifrostVM* self() const noexcept { return m_Self; }
@@ -384,12 +332,12 @@ namespace bifrost
       bfVM_stackSetNil(self(), idx);
     }
 
-    [[nodiscard]] void* stackReadInstance(size_t idx) noexcept
+    [[nodiscard]] void* stackReadInstance(size_t idx) const noexcept
     {
       return bfVM_stackReadInstance(self(), idx);
     }
 
-    [[nodiscard]] bfStringRange stackReadString(size_t idx) noexcept
+    [[nodiscard]] StringRange stackReadString(size_t idx) const noexcept
     {
       size_t      str_len;
       const char* str = bfVM_stackReadString(self(), idx, &str_len);
@@ -397,12 +345,12 @@ namespace bifrost
       return bfMakeStringRangeLen(str, str_len);
     }
 
-    [[nodiscard]] bfVMNumberT stackReadNumber(size_t idx) noexcept
+    [[nodiscard]] bfVMNumberT stackReadNumber(size_t idx) const noexcept
     {
       return bfVM_stackReadNumber(self(), idx);
     }
 
-    [[nodiscard]] bfBool32 stackReadBool(size_t idx) noexcept
+    [[nodiscard]] bfBool32 stackReadBool(size_t idx) const noexcept
     {
       return bfVM_stackReadBool(self(), idx);
     }
@@ -474,7 +422,7 @@ namespace bifrost
     }
 
     // TODO(SR): This should be part of the C-API as well.
-    [[nodiscard]] bfStringRange errorStringRange() const noexcept
+    [[nodiscard]] StringRange errorStringRange() const noexcept
     {
       const char* err_str = bfVM_errorString(self());
 

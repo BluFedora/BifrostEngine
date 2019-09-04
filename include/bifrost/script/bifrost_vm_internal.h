@@ -6,8 +6,6 @@
 #if __cplusplus
 extern "C" {
 #endif
-void*    bfVM__valueToPointer(bfVMValue value);
-double   bfVM__valueToNumber(bfVMValue value);
 bfBool32 bfVM__valueToBool(bfVMValue value);
 bfBool32 bfVM__valueIsPointer(bfVMValue value);
 bfBool32 bfVM__valueIsNumber(bfVMValue value);

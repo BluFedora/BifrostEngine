@@ -22,6 +22,13 @@ class TestClass
     x(f),
     y{std::move(msg)}
   {
+    try
+    {
+      std::cout << "TestClass(f = " << x << ")\n";
+    }
+    catch (...)
+    {
+    }
   }
 
   [[nodiscard]] const char* printf(float h) const
@@ -76,6 +83,7 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
     printf("%s", message);
   }
 }
+
 void testFN()
 {
   std::cout << "does this work?" << std::endl;
@@ -89,7 +97,7 @@ static const char source[] = R"(
     print "Hello from another module.";
   }
 
-  var t = new TestClass.ctor(29);
+  var t = new TestClass.ctor(28);
   print "ret from t = " +  t:printf(54);
 
   hello();
@@ -177,7 +185,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 
   [[nodiscard]] bool beginFrame() const
   {
-    return false;  //bfGfxContext_beginFrame(m_GfxBackend);
+    return true;  //bfGfxContext_beginFrame(m_GfxBackend);
   }
 
   void endFrame() const
@@ -217,14 +225,15 @@ namespace bifrost::meta
 
 int main(int argc, const char* argv[])
 {
+  namespace bfmeta = bifrost::meta;
+  using namespace bifrost;
+  namespace bf                               = bifrost;
+
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
   std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
 
   std::cout << __cplusplus << "\n";
-
-  namespace bfmeta = bifrost::meta;
-  using namespace bifrost;
 
   TestClass my_obj = {74, "This message will be in Y"};
 
@@ -273,19 +282,21 @@ int main(int argc, const char* argv[])
     goto shutdown_glfw;  // NOLINT(hicpp-avoid-goto)
   }
   */
-  namespace bf = bifrost;
+
+  std::cout << "\n\nScripting Language Test Begin\n";
 
   VMParams vm_params;
-  vm_params.error_fn      = &userErrorFn;
-  vm_params.print_fn      = [](BifrostVM*, const char* message) { std::cout << message << "\n"; };
-  vm_params.min_heap_size = 50;
-  vm_params.heap_size     = 100;
+  vm_params.error_fn           = &userErrorFn;
+  vm_params.print_fn           = [](BifrostVM*, const char* message) { std::cout << message << "\n"; };
+  vm_params.min_heap_size      = 20;
+  vm_params.heap_size          = 200;
+  vm_params.heap_growth_factor = 0.1f;
   VM vm{vm_params};
 
   const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
    "TestClass",
-   bifrost::vmMakeCtorBinding<TestClass, int>("ctor"),
-   bfVM_makeMemberBinding<&TestClass::printf>("printf"));
+   bf::vmMakeCtorBinding<TestClass, int>("ctor"),
+   bf::vmMakeMemberBinding<&TestClass::printf>("printf"));
 
   vm.stackResize(1);
   vm.moduleMake(0, "main");
@@ -308,6 +319,8 @@ int main(int argc, const char* argv[])
     vm.stackLoadVariable(0, 0, "update");
     update_fn = vm.stackMakeHandle(0);
   }
+
+  std::cout << "\n\nScripting Language Test End\n";
 
   {
     BifrostEngine engine{argc, argv};
