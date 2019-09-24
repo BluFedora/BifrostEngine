@@ -108,7 +108,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/debug/bifrost_dbg_logger.c"
 
   # Bifrost Graphics Module
-  "src/bifrost/graphics/bifrost_gfx_common.cpp"
+  "src/bifrost/graphics/bifrost_gfx_common.c"
   ## OpenGL Backend
   # "src/bifrost/graphics/bifrost_gfx_opengl.cpp"
   ## Vulkan Backend

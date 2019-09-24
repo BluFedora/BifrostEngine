@@ -1,4 +1,7 @@
-#if 0  /* TODO(Shareef): Logging Colors. */
+#ifndef BIFROST_DBG_LOGGER_H
+#define BIFROST_DBG_LOGGER_H
+
+#if 0               /* TODO(Shareef): Logging Colors. */
 // clang-format off
 #define RESET                   "\033[0m"
 #define BLACK                   "\033[30m"        /* Black */
@@ -18,10 +21,7 @@
 #define BOLDCYAN                "\033[1m\033[36m" /* Bold Cyan */
 #define BOLDWHITE               "\033[1m\033[37m" /* Bold White */
 // clang-format on
-#endif /* 0 */
-
-#ifndef BIFROST_DBG_LOGGER_H
-#define BIFROST_DBG_LOGGER_H
+#endif              /* 0 */
 
 #include <stdarg.h> /* va_list, va_start, va_end */
 
@@ -31,7 +31,7 @@ extern "C" {
 typedef enum BifrostLoggerLevel_t
 {
   BIFROST_LOGGER_LVL_VERBOSE,  // Normal logging
-  BIFROST_LOGGER_LVL_WARNING,  // When the user does an action that is undeserirable but not neccesarily bad.
+  BIFROST_LOGGER_LVL_WARNING,  // When the user does an action that is undesirable but not necessarily bad.
   BIFROST_LOGGER_LVL_ERROR,    // A recoverable error.
   BIFROST_LOGGER_LVL_FATAL,    // An unrecoverable error and the program must be shut down.
   BIFROST_LOGGER_LVL_PUSH,     // Meta Data Needed For The Callback (Editor graphical handling)

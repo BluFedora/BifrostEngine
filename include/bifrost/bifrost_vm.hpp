@@ -35,9 +35,29 @@ namespace bifrost
       {
         return static_cast<T>(bfVM_stackReadNumber(self, slot));
       }
+      else if constexpr (std::is_same_v<T, bool>)
+      {
+        return bfVM_stackReadBool(self, slot);
+      }
+      else if constexpr (std::is_same_v<T, StringRange> || std::is_same_v<T, std::string>)
+      {
+        std::size_t       str_size;
+        const char* const str = bfVM_stackReadString(self, slot, &str_size);
+
+        // NOTE(Shareef): Both 'StringRange' and 'std::string' have a iterator / pointer style ctor.
+        return {str, str + str_size};
+      }
       else if constexpr (std::is_pointer_v<T>)
       {
-        return reinterpret_cast<T>(bfVM_stackReadInstance(self, slot));
+        if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
+        {
+          std::size_t str_size;
+          return bfVM_stackReadString(self, slot, &str_size);
+        }
+        else
+        {
+          return reinterpret_cast<T>(bfVM_stackReadInstance(self, slot));
+        }
       }
       // TODO(SR): Currently this could never be hit because of the impl. This is bad.
       else if constexpr (std::is_reference_v<T>)
@@ -124,10 +144,8 @@ namespace bifrost
   }  // namespace detail
 
   template<typename ClzT, typename... Args>
-  void vmNativeCtor(BifrostVM* vm, int32_t num_args)
+  void vmNativeCtor(BifrostVM* vm, int32_t /*num_args*/)
   {
-    (void)num_args;
-
     detail::vmCallImpl(
      vm,
      [](ClzT* obj, Args... args) -> detail::RetainStack {
@@ -198,7 +216,7 @@ namespace bifrost
 
   struct FunctionCallResult
   {
-    size_t         return_slot;
+    std::size_t    return_slot;
     BifrostVMError error;
   };
 
@@ -431,7 +449,7 @@ namespace bifrost
   };
 
   // clang-format off
-  // This call is movable but not copyable.
+  // This class is movable but not copyable.
   class VM final : private bfNonCopyable<VM>, public VMView
   // clang-format on
   {
@@ -443,6 +461,7 @@ namespace bifrost
       VMView(&m_VM),
       m_VM{}
     {
+      // Doesn't call 'VM::create' because of the 'noexcept' guarantee.
       bfVM_ctor(self(), &params);
     }
 
@@ -498,7 +517,7 @@ namespace bifrost
     //   Is that good behavior considering 'create' must be called
     //   be called in an invalid state thus this API is unbalanced.
     //
-    void destroy()
+    void destroy() noexcept
     {
       if (isValid())
       {

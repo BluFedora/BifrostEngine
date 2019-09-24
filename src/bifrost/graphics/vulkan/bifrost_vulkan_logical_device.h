@@ -20,9 +20,10 @@ extern "C" {
 #endif
 BIFROST_DEFINE_HANDLE(Renderpass)
 {
-  VkRenderPass     handle;
-  bfRenderpassInfo info;
-  uint64_t         hash_code;
+  BifrostGfxObjectBase super;
+  VkRenderPass         handle;
+  bfRenderpassInfo     info;
+  uint64_t             hash_code;
 };
 
 BIFROST_DEFINE_HANDLE(Framebuffer)
@@ -46,11 +47,12 @@ BIFROST_DEFINE_HANDLE(GfxCommandList)
   bfFramebufferHandle framebuffer;
   bfPipelineHandle    pipeline;
   bfPipelineCache     pipeline_state;
-  VkClearValue        clear_colors[16];
+  VkClearValue        clear_colors[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
 };
 
 BIFROST_DEFINE_HANDLE(Buffer)
 {
+  BifrostGfxObjectBase super;
   // PoolAllocator* alloc_pool;
   VkBuffer handle;
   // Allocation     alloc_info;  // This has the aligned size.
@@ -61,7 +63,7 @@ BIFROST_DEFINE_HANDLE(ShaderModule)
 {
   BifrostShaderType type;
   VkShaderModule    handle;
-  char              entry_point[32];
+  char              entry_point[BIFROST_GFX_SHADER_ENTRY_POINT_NAME_LENGTH];
 };
 
 typedef struct
@@ -73,21 +75,23 @@ typedef struct
 
 BIFROST_DEFINE_HANDLE(ShaderProgram)
 {
-  VkPipelineLayout   layout;
-  bfShaderModuleList modules;
+  BifrostGfxObjectBase super;
+  VkPipelineLayout     layout;
+  bfShaderModuleList   modules;
 };
 
 BIFROST_DEFINE_HANDLE(DescriptorSet)
 {
-  VkDescriptorSet handle;
+  BifrostGfxObjectBase super;
+  VkDescriptorSet      handle;
 };
 
 BIFROST_DEFINE_HANDLE(VertexLayoutSet)
 {
-  VkVertexInputBindingDescription   buffer_bindings[16];
-  VkVertexInputAttributeDescription attrib_bindings[16];
-  uint32_t                          num_buffer_bindings;
-  uint32_t                          num_attrib_bindings;
+  VkVertexInputBindingDescription   buffer_bindings[BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS];
+  VkVertexInputAttributeDescription attrib_bindings[BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS];
+  uint8_t                           num_buffer_bindings;
+  uint8_t                           num_attrib_bindings;
 };
 #if __cplusplus
 }

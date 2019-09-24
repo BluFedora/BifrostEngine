@@ -65,10 +65,66 @@ VkShaderStageFlagBits bfVkConvertShaderType(BifrostShaderType type)
     case BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION: return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     case BIFROST_SHADER_TYPE_GEOMETRY: return VK_SHADER_STAGE_GEOMETRY_BIT;
     case BIFROST_SHADER_TYPE_FRAGMENT: return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case BIFROST_SHADER_TYPE_COMPUTE: return VK_SHADER_STAGE_COMPUTE_BIT;
-    // case BIFROST_SHADER_TYPE_MAX: assert(0);
+    case BIFROST_SHADER_TYPE_COMPUTE:
+      return VK_SHADER_STAGE_COMPUTE_BIT;
+      // case BIFROST_SHADER_TYPE_MAX: assert(0);
   }
 
   assert(0);
   return VK_SHADER_STAGE_ALL;
+}
+
+VkPrimitiveTopology bfVkConvertTopology(BifrostDrawMode draw_mode)
+{
+  switch (draw_mode)
+  {
+    case BIFROST_DRAW_MODE_POINT_LIST: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    case BIFROST_DRAW_MODE_LINE_LIST: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    case BIFROST_DRAW_MODE_LINE_STRIP: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    case BIFROST_DRAW_MODE_TRIANGLE_LIST: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    case BIFROST_DRAW_MODE_TRIANGLE_STRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    case BIFROST_DRAW_MODE_TRIANGLE_FAN: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+  }
+
+  assert(0);
+  return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+}
+
+VkViewport bfVkConvertViewport(const BifrostViewport* viewport)
+{
+  VkViewport ret;
+
+  ret.x        = viewport->x;
+  ret.y        = viewport->y;
+  ret.width    = viewport->width;
+  ret.height   = viewport->height;
+  ret.minDepth = viewport->min_depth;
+  ret.maxDepth = viewport->max_depth;
+
+  return ret;
+}
+
+VkRect2D bfVkConvertScissorRect(const BifrostScissorRect* viewport)
+{
+  VkRect2D ret;
+
+  ret.offset.x      = viewport->x;
+  ret.offset.y      = viewport->y;
+  ret.extent.width  = viewport->width;
+  ret.extent.height = viewport->height;
+
+  return ret;
+}
+
+VkPolygonMode bfVkConvertPolygonMode(BifrostPolygonFillMode polygon_mode)
+{
+  switch (polygon_mode)
+  {
+    case BIFROST_POLYGON_MODE_FILL: return VK_POLYGON_MODE_FILL;
+    case BIFROST_POLYGON_MODE_LINE: return VK_POLYGON_MODE_LINE;
+    case BIFROST_POLYGON_MODE_POINT: return VK_POLYGON_MODE_POINT;
+  }
+
+  assert(0);
+  return VK_POLYGON_MODE_FILL;
 }

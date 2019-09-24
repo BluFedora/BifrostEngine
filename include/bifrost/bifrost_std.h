@@ -5,18 +5,27 @@
 #include <stdint.h> /* uint32_t, uint64_t */
 
 #if __cplusplus
+#undef bfCArraySize
+template<typename T, size_t N>
+static constexpr size_t bfCArraySize(const T((&)[N]))
+{
+  return N;
+}
+#else
+#define bfCArraySize(arr) ((sizeof(arr) / sizeof(0 [arr])) / ((size_t)(!(sizeof(arr) % sizeof(0 [arr])))))  //(sizeof((arr)) / sizeof((arr)[0]))
+#endif
+
+#if __cplusplus
 extern "C" {
 #endif
-#define bfCArraySize(arr) ((sizeof(arr) / sizeof(0 [arr])) / ((size_t)(!(sizeof(arr) % sizeof(0 [arr])))))  //(sizeof((arr)) / sizeof((arr)[0]))
 #define bfBit(index) (1ULL << (index))
-#define BIFROST_C_ARRAY_SIZE(arr) bfCArraySize(arr)
 typedef uint32_t bfBool32;
 typedef float    bfFloat32;
 typedef double   bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
 
-typedef struct
+typedef struct bfStringRange_t
 {
   const char* bgn;
   const char* end;

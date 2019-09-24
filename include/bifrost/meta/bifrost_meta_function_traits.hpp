@@ -155,6 +155,18 @@ namespace bifrost::meta
   {
     construct_from_tuple_(obj, std::forward<Tuple>(tuple), std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
   }
+
+  // https://dev.krzaq.cc/post/you-dont-need-a-stateful-deleter-in-your-unique_ptr-usually/
+  // This is useful for stateless unique_ptrs.
+  template<auto func>
+  struct function_caller final
+  {
+    template<typename... Us>
+    auto operator()(Us&&... us) const
+    {
+      return func(std::forward<Us...>(us...));
+    }
+  };
 }  // namespace bifrost::meta
 
 #endif /* BIFROST_META_FUNCTION_TRAIT_HPP */

@@ -1,7 +1,7 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
-#include <assert.h>               /* assert */
-#include <string.h> /* memcpy */  // TODO(Shareef): Use the Bifrost Versions
+#include <assert.h> /* assert         */
+#include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions
 
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, uint32_t num_layers);
 static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
@@ -40,7 +40,8 @@ bfRenderpassInfo bfRenderpassInfo_init(uint16_t num_subpasses)
 {
   assert(num_subpasses < BIFROST_GFX_RENDERPASS_MAX_SUBPASSES);
 
-  bfRenderpassInfo ret = {};
+  bfRenderpassInfo ret;
+  memset(&ret, 0x0, sizeof(ret));
 
   ret.load_ops          = 0x0000;
   ret.stencil_load_ops  = 0x0000;

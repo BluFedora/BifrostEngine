@@ -181,7 +181,7 @@ void bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 val
 
 void bfGfxCmdList_setDepthBias(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).depth_bias = value;
+  state(self).do_depth_bias = value;
 }
 
 void bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value)
@@ -409,6 +409,7 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t bindin
 {
   assert(num_buffers < 16);
 
+  // TODO(Shareef): This constant should be definedin the limits header.
   VkBuffer binded_buffers[16];
 
   for (uint32_t i = 0; i < num_buffers; ++i)
@@ -500,79 +501,66 @@ static void flushPipeline(bfGfxCommandListHandle self)
     vertex_input.vertexAttributeDescriptionCount = state.vertex_set_layout->num_attrib_bindings;
     vertex_input.pVertexAttributeDescriptions    = state.vertex_set_layout->attrib_bindings;
 
-    // TODO
-    //
-    // VkPipelineInputAssemblyStateCreateFlags flags;
-    // VkPrimitiveTopology                     topology;
-    // VkBool32                                primitiveRestartEnable;
-    //
     VkPipelineInputAssemblyStateCreateInfo input_asm;
-    input_asm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_asm.pNext = nullptr;
+    input_asm.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_asm.pNext                  = nullptr;
+    input_asm.flags                  = 0x0;
+    input_asm.topology               = bfVkConvertTopology((BifrostDrawMode)state.state.draw_mode);
+    input_asm.primitiveRestartEnable = state.state.primitive_restart;
 
-    // TODO
-    //
-    // VkStructureType                        sType;
-    // const void*                            pNext;
-    // VkPipelineTessellationStateCreateFlags flags;
-    // uint32_t                               patchControlPoints;
-    //
     VkPipelineTessellationStateCreateInfo tess;
-    tess.pNext = nullptr;
+    tess.sType              = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    tess.pNext              = nullptr;
+    tess.flags              = 0x0;
+    tess.patchControlPoints = 0;  // TODO: Figure this out.
 
     // https://erkaman.github.io/posts/tess_opt.html
     // https://computergraphics.stackexchange.com/questions/7955/why-are-tessellation-shaders-disliked
 
-    // TODO
-    //
-    // VkPipelineViewportStateCreateFlags flags;
-    // uint32_t                           viewportCount;
-    // const VkViewport*                  pViewports;
-    // uint32_t                           scissorCount;
-    // const VkRect2D*                    pScissors;
-    //
     VkPipelineViewportStateCreateInfo viewport;
-    viewport.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport.pNext = nullptr;
+    VkViewport                        viewports[1];
+    VkRect2D                          scissor_rects[1];
 
+    viewports[0]           = bfVkConvertViewport(&state.viewport);
+    scissor_rects[0]       = bfVkConvertScissorRect(&state.scissor_rect);
+    viewport.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport.pNext         = nullptr;
+    viewport.flags         = 0x0;
+    viewport.viewportCount = bfCArraySize(viewports);
+    viewport.pViewports    = viewports;
+    viewport.scissorCount  = bfCArraySize(scissor_rects);
+    viewport.pScissors     = scissor_rects;
 
-    // TODO
-    //
-    // VkPipelineRasterizationStateCreateFlags flags;
-    // VkBool32                                depthClampEnable;
-    // VkBool32                                rasterizerDiscardEnable;
-    // VkPolygonMode                           polygonMode;
-    // VkCullModeFlags                         cullMode;
-    // VkFrontFace                             frontFace;
-    // VkBool32                                depthBiasEnable;
-    // float                                   depthBiasConstantFactor;
-    // float                                   depthBiasClamp;
-    // float                                   depthBiasSlopeFactor;
-    // float                                   lineWidth;
-    //
     VkPipelineRasterizationStateCreateInfo rasterization;
     rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization.pNext = nullptr;
-
+    rasterization.flags = 0x0;
+    // rasterization.depthClampEnable = state.dep
+    rasterization.rasterizerDiscardEnable = state.state.rasterizer_discard;
+    rasterization.polygonMode             = bfVkConvertPolygonMode((BifrostPolygonFillMode)state.state.fill_mode);
+    rasterization.cullMode                = bfVkConvertCullModeFlags(state.state.cull_face);
+    rasterization.frontFace               = bfVkConvertFrontFace((BifrostFrontFace)state.state.front_face);
+    rasterization.depthBiasEnable         = state.state.do_depth_bias;
+    rasterization.depthBiasConstantFactor = state.depth.bias_constant_factor;
+    rasterization.depthBiasClamp          = state.depth.bias_clamp;
+    rasterization.depthBiasSlopeFactor    = state.depth.bias_slope_factor;
+    rasterization.lineWidth               = state.line_width;
 
     // TODO
-    //
-    // VkPipelineMultisampleStateCreateFlags flags;
-    // VkSampleCountFlagBits                 rasterizationSamples;
-    // VkBool32                              sampleShadingEnable;
-    // float                                 minSampleShading;
-    // const VkSampleMask*                   pSampleMask;
-    // VkBool32                              alphaToCoverageEnable;
-    // VkBool32                              alphaToOneEnable;
+    //   VkSampleCountFlagBits                 rasterizationSamples;
+    //   VkBool32                              sampleShadingEnable;
+    //   float                                 minSampleShading;
+    //   const VkSampleMask*                   pSampleMask;
+    //   VkBool32                              alphaToCoverageEnable;
+    //   VkBool32                              alphaToOneEnable;
     //
     VkPipelineMultisampleStateCreateInfo multisample;
     multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisample.pNext = nullptr;
+    multisample.flags = 0x0;
 
 
     // TODO
-    //
-    // VkPipelineDepthStencilStateCreateFlags flags;
     // VkBool32                               depthTestEnable;
     // VkBool32                               depthWriteEnable;
     // VkCompareOp                            depthCompareOp;
@@ -585,7 +573,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     //
     VkPipelineDepthStencilStateCreateInfo depth_stencil;
     depth_stencil.pNext = nullptr;
-
+    depth_stencil.flags = 0x0;
 
     // TODO
     //
@@ -597,20 +585,34 @@ static void flushPipeline(bfGfxCommandListHandle self)
     // const VkPipelineColorBlendAttachmentState* pAttachments;
     // float                                      blendConstants[4];
     //
-    VkPipelineColorBlendStateCreateInfo   color_blend;
+    VkPipelineColorBlendStateCreateInfo color_blend;
     color_blend.pNext = nullptr;
 
+    VkPipelineDynamicStateCreateInfo dynamic_state;
+    VkDynamicState                   dynamic_state_storage[9];
+    dynamic_state.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state.pNext             = nullptr;
+    dynamic_state.dynamicStateCount = 0;
+    dynamic_state.pDynamicStates    = dynamic_state_storage;
 
-    // TODO
-    //
-    // VkPipelineDynamicStateCreateFlags flags;
-    // uint32_t                          dynamicStateCount;
-    // const VkDynamicState*             pDynamicStates;
-    //
-    VkPipelineDynamicStateCreateInfo      dynamic_state;
-    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.pNext = nullptr;
+    auto& s = state.state;
 
+    const auto addDynamicState = [&dynamic_state](VkDynamicState* states, uint64_t flag, VkDynamicState state) {
+      if (flag)
+      {
+        states[dynamic_state.dynamicStateCount++] = state;
+      }
+    };
+
+    addDynamicState(dynamic_state_storage, s.dynamic_viewport, VK_DYNAMIC_STATE_VIEWPORT);
+    addDynamicState(dynamic_state_storage, s.dynamic_scissor, VK_DYNAMIC_STATE_SCISSOR);
+    addDynamicState(dynamic_state_storage, s.dynamic_line_width, VK_DYNAMIC_STATE_LINE_WIDTH);
+    addDynamicState(dynamic_state_storage, s.dynamic_depth_bias, VK_DYNAMIC_STATE_DEPTH_BIAS);
+    addDynamicState(dynamic_state_storage, s.dynamic_blend_constants, VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+    addDynamicState(dynamic_state_storage, s.dynamic_depth_bounds, VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+    addDynamicState(dynamic_state_storage, s.dynamic_stencil_cmp_mask, VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK);
+    addDynamicState(dynamic_state_storage, s.dynamic_stencil_write_mask, VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
+    addDynamicState(dynamic_state_storage, s.dynamic_stencil_reference, VK_DYNAMIC_STATE_STENCIL_REFERENCE);
 
     // TODO(SR): Look into pipeline derivatives?
     //   @PipelineDerivative
@@ -636,6 +638,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     pl_create_info.basePipelineHandle  = VK_NULL_HANDLE;  // @PipelineDerivative
     pl_create_info.basePipelineIndex   = -1;              // @PipelineDerivative
 
+    // TODO(Shareef): Look into Pipeline caches??
     VkResult err = vkCreateGraphicsPipelines(
      self->parent->handle,
      VK_NULL_HANDLE,

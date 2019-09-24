@@ -8,7 +8,6 @@
 #include "vulkan/bifrost_vulkan_material_pool.h"
 #include "vulkan/bifrost_vulkan_mem_allocator.h"
 
-
 #include <cassert> /* assert   */
 #include <cstddef> /* size_t   */
 #include <cstdint> /* uint32_t */
@@ -60,7 +59,7 @@ void freeN(void* ptr)
   std::free(ptr);
 }
 
-// This has very non c++ type sematics.
+// This has very non c++ type semantics in that it doesn't call ctors or dtors of the elements.
 template<typename T>
 struct FixedArray
 {
@@ -82,12 +81,14 @@ struct FixedArray
   }
 
   // A resize will not copy over the only elements.
-  // Also does not checking for redundancy
   void setSize(std::size_t new_size)
   {
-    freeN(m_Data);
-    m_Data = (new_size ? (allocN<T>(new_size)) : nullptr);
-    m_Size = new_size;
+    if (new_size != m_Size)
+    {
+      freeN(m_Data);
+      m_Data = (new_size ? allocN<T>(new_size) : nullptr);
+      m_Size = new_size;
+    }
   }
 
   T& operator[](std::size_t index)
@@ -107,12 +108,12 @@ struct FixedArray
     return m_Size;
   }
 
-  T* begin() const
+  [[nodiscard]] T* begin() const
   {
     return m_Data;
   }
 
-  T* end() const
+  [[nodiscard]] T* end() const
   {
     return m_Data + m_Size;
   }
@@ -139,19 +140,19 @@ struct VulkanWindow final
 
 BIFROST_DEFINE_HANDLE(GfxContext)
 {
-  const bfGfxContextCreateParams*          params;               // Only valid during initialization
-  std::size_t                              max_frame_in_flight;  // TODO(Shareef): Make customizable
-  VkInstance                               instance;
-  FixedArray<VulkanPhysicalDevice>         physical_devices;
-  VulkanPhysicalDevice*                    physical_device;
-  VulkanWindow                             main_window;
-  bfGfxDeviceHandle                        logical_device;
-  PoolAllocator                            device_memory_allocator;
-  VkCommandPool                            command_pools[1];  // TODO(Shareef): One per thread.
-  VulkanDescriptorPool*                    descriptor_pool;
-  uint32_t                                 image_index;
-  uint32_t                                 frame_count;
-  uint32_t                                 frame_index;  // frame_count % max_frame_in_flight
+  const bfGfxContextCreateParams*  params;               // Only valid during initialization
+  std::size_t                      max_frame_in_flight;  // TODO(Shareef): Make customizable
+  VkInstance                       instance;
+  FixedArray<VulkanPhysicalDevice> physical_devices;
+  VulkanPhysicalDevice*            physical_device;
+  VulkanWindow                     main_window;
+  bfGfxDeviceHandle                logical_device;
+  PoolAllocator                    device_memory_allocator;
+  VkCommandPool                    command_pools[1];  // TODO(Shareef): One per thread.
+  VulkanDescriptorPool*            descriptor_pool;
+  uint32_t                         image_index;
+  uint32_t                         frame_count;
+  uint32_t                         frame_index;  // frame_count % max_frame_in_flight
 
 #if BIFROST_USE_DEBUG_CALLBACK
   VkDebugReportCallbackEXT debug_callback;
@@ -897,7 +898,7 @@ namespace
     return nullptr;
   }
 
-  static VkSurfaceFormatKHR gfxContextFindSurfaceFormat(const VkSurfaceFormatKHR* const formats, const uint32_t num_formats);
+  VkSurfaceFormatKHR gfxContextFindSurfaceFormat(const VkSurfaceFormatKHR* const formats, const uint32_t num_formats);
 
   const char* gfxContextInitSwapchainInfo(bfGfxContextHandle self, VulkanWindow& window)
   {
@@ -905,8 +906,7 @@ namespace
     VulkanSwapchainInfo* const  info   = &window.swapchain_info;
 
     // NOTE(Shareef)
-    //    Not needed since when the SwapChain is Recreated this information needs to
-    //    Be queried again regardless
+    //    Not needed since when the SwapChain is Recreated this information needs to be queried again regardless
     // vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device->handle,  context->surface, &swapchain_info->capabilities);
     vkGetPhysicalDeviceSurfaceFormatsKHR(device->handle, window.surface, &info->num_formats, nullptr);
     vkGetPhysicalDeviceSurfacePresentModesKHR(device->handle, window.surface, &info->num_present_modes, nullptr);
@@ -965,7 +965,7 @@ namespace
       image->image_depth     = 1;
       image->image_miplevels = 1;
       image->tex_memory      = VK_NULL_HANDLE;
-      // image->tex_view = ; TODO(SR): CReate View
+      // image->tex_view = ; TODO(SR): Create View
       image->tex_sampler = VK_NULL_HANDLE;
       image->tex_layout  = BIFROST_IMAGE_LAYOUT_UNDEFINED;
       image->tex_format  = (BifrostImageFormat)swapchain->format.format;  // TODO: This needs to be made safer.
@@ -1079,7 +1079,7 @@ namespace
     return ret;
   }
 
-  static VkSurfaceFormatKHR gfxContextFindSurfaceFormat(const VkSurfaceFormatKHR* const formats, const uint32_t num_formats)
+  VkSurfaceFormatKHR gfxContextFindSurfaceFormat(const VkSurfaceFormatKHR* const formats, const uint32_t num_formats)
   {
     assert(num_formats >= 1);
 
@@ -1105,3 +1105,8 @@ namespace
     return formats[0];
   }
 }  // namespace
+
+BifrostImageLayout bfTexture_layout(bfTextureHandle self)
+{
+  return self->tex_layout;
+}

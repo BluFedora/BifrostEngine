@@ -111,6 +111,7 @@ static const char source[] = R"(
   {
     // print "I am updating!" + GameState.i;
     // GameState.i = GameState.i + 1;
+    t = nil;
   }
 
   func callMeFromCpp(arg0, arg1, arg2)
@@ -130,16 +131,71 @@ struct BifrostEngineCreateParams
   void*         render_window;
 };
 
+class BaseRenderer
+{
+ private:
+  bfGfxContextHandle m_GfxBackend;
+  bfGfxDeviceHandle  m_GfxDevice;
+
+ public:
+  BaseRenderer() :
+    m_GfxBackend{nullptr},
+    m_GfxDevice{nullptr}
+  {
+  }
+
+  void startup(const bfGfxContextCreateParams& gfx_create_params)
+  {
+    m_GfxBackend = bfGfxContext_new(&gfx_create_params);
+    m_GfxDevice  = bfGfxContext_device(m_GfxBackend);
+
+    // bfGfxContext_onResize(m_GfxBackend, params.width, params.height);
+  }
+
+  bool frameBegin() const
+  {
+    //bfGfxContext_beginFrame(m_GfxBackend);
+
+    auto renderpass_info = bfRenderpassInfo_init(1);
+    bfRenderpassInfo_setLoadOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_setClearOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
+    bfRenderpassInfo_setStoreOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x1);
+    // bfRenderpassInfo_addAttachment(&renderpass_info, 0x1);
+    // bfRenderpassInfo_setLoadOps(&renderpass_info, 0x1);
+    // bfRenderpassInfo_addColorOut(&renderpass_info, 0x1);
+    // bfRenderpassInfo_addDepthOut(&renderpass_info, 0x1);
+    // bfRenderpassInfo_addInput(&renderpass_info, 0x1);
+    // bfRenderpassInfo_addDependencies(&renderpass_info, 0x1);
+
+    return false;
+  }
+
+  void frameEnd() const
+  {
+    // bfGfxContext_endFrame(m_GfxBackend);
+  }
+
+  void cleanup()
+  {
+    // bfGfxDevice_flush(bfGfxContext_device(m_GfxBackend));
+    bfGfxContext_delete(m_GfxBackend);
+    m_GfxBackend = nullptr;
+  }
+};
+
 class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 {
  private:
   std::pair<int, const char**> m_CmdlineArgs;
-  bfGfxContextHandle           m_GfxBackend;
+  BaseRenderer                 m_Renderer;
 
  public:
   BifrostEngine(int argc, const char* argv[]) :
     m_CmdlineArgs{argc, argv},
-    m_GfxBackend{nullptr}
+    m_Renderer{}
   {
   }
 
@@ -177,27 +233,23 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
      params.render_window,
     };
 
-    m_GfxBackend = bfGfxContext_new(&gfx_create_params);
-    // bfGfxContext_onResize(m_GfxBackend, params.width, params.height);
+    m_Renderer.startup(gfx_create_params);
 
     bfLogPop();
   }
 
   [[nodiscard]] bool beginFrame() const
   {
-    return true;  //bfGfxContext_beginFrame(m_GfxBackend);
+    return m_Renderer.frameBegin();
   }
 
   void endFrame() const
   {
-    // bfGfxContext_endFrame(m_GfxBackend);
+    m_Renderer.frameEnd();
   }
 
   void deinit()
   {
-    // bfGfxDevice_flush(bfGfxContext_device(m_GfxBackend));
-    // bfGfxContext_delete(m_GfxBackend);
-    m_GfxBackend = nullptr;
     bfLogger_deinit();
   }
 };
@@ -227,7 +279,7 @@ int main(int argc, const char* argv[])
 {
   namespace bfmeta = bifrost::meta;
   using namespace bifrost;
-  namespace bf                               = bifrost;
+  namespace bf = bifrost;
 
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 

@@ -10,6 +10,7 @@ extern "C" {
 
 BIFROST_DEFINE_HANDLE(Texture)
 {
+  BifrostGfxObjectBase super;
   // CPU Side Data
   BifrostTextureType image_type;
   int32_t            image_width;

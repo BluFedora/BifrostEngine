@@ -46,20 +46,28 @@ typedef enum bfBufferPropertyFlags_t
   //   CAN NOT HAVE SET: BPF_HOST_CACHE_MANAGED or
   //   CAN NOT HAVE SET: BPF_HOST_CACHED
   BIFROST_BPF_PROTECTED = (1 << 5)
-
 } bfBufferPropertyFlags;
 
 typedef enum bfBufferUsageFlags_t
 {
-  BIFROST_BUF_TRANSFER_SRC         = (1 << 0), /* NOTE(Shareef): Can be used to transfer data out of.             */
-  BIFROST_BUF_TRANSFER_DST         = (1 << 1), /* NOTE(Shareef): Can be used to transfer data into.               */
-  BIFROST_BUF_UNIFORM_TEXEL_BUFFER = (1 << 2), /* NOTE(Shareef): Can be used to TODO                              */
-  BIFROST_BUF_STORAGE_TEXEL_BUFFER = (1 << 3), /* NOTE(Shareef): Can be used to TODO                              */
-  BIFROST_BUF_UNIFORM_BUFFER       = (1 << 4), /* NOTE(Shareef): Can be used to store Uniform data.               */
-  BIFROST_BUF_STORAGE_BUFFER       = (1 << 5), /* NOTE(Shareef): Can be used to store SSBO data                   */
-  BIFROST_BUF_INDEX_BUFFER         = (1 << 6), /* NOTE(Shareef): Can be used to store Index data.                 */
-  BIFROST_BUF_VERTEX_BUFFER        = (1 << 7), /* NOTE(Shareef): Can be used to store Vertex data.                */
-  BIFROST_BUF_INDIRECT_BUFFER      = (1 << 8), /* NOTE(Shareef): Can be used to store Indirect Draw Command data. */
+  BIFROST_BUF_TRANSFER_SRC = (1 << 0),
+  /* NOTE(Shareef): Can be used to transfer data out of.             */
+  BIFROST_BUF_TRANSFER_DST = (1 << 1),
+  /* NOTE(Shareef): Can be used to transfer data into.               */
+  BIFROST_BUF_UNIFORM_TEXEL_BUFFER = (1 << 2),
+  /* NOTE(Shareef): Can be used to TODO                              */
+  BIFROST_BUF_STORAGE_TEXEL_BUFFER = (1 << 3),
+  /* NOTE(Shareef): Can be used to TODO                              */
+  BIFROST_BUF_UNIFORM_BUFFER = (1 << 4),
+  /* NOTE(Shareef): Can be used to store Uniform data.               */
+  BIFROST_BUF_STORAGE_BUFFER = (1 << 5),
+  /* NOTE(Shareef): Can be used to store SSBO data                   */
+  BIFROST_BUF_INDEX_BUFFER = (1 << 6),
+  /* NOTE(Shareef): Can be used to store Index data.                 */
+  BIFROST_BUF_VERTEX_BUFFER = (1 << 7),
+  /* NOTE(Shareef): Can be used to store Vertex data.                */
+  BIFROST_BUF_INDIRECT_BUFFER = (1 << 8),
+  /* NOTE(Shareef): Can be used to store Indirect Draw Command data. */
 
   /* NOTE(Shareef):
        Allows for mapped allocations to be shared by keeping it
@@ -67,7 +75,8 @@ typedef enum bfBufferUsageFlags_t
        Requirements :
          'BIFROST_BPF_HOST_MAPPABLE'
   */
-  BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER = (1 << 9) /* NOTE(Shareef): Can be used for data that is streamed to the gpu */
+  BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER = (1 << 9)
+  /* NOTE(Shareef): Can be used for data that is streamed to the gpu */
 
 } bfBufferUsageFlags;
 
@@ -104,7 +113,7 @@ typedef enum BifrostTextureType_t
   BIFROST_TEX_TYPE_1D,
   BIFROST_TEX_TYPE_2D,
   BIFROST_TEX_TYPE_3D,
-  BIFROST_TEX_TYPE_MAX
+  BIFROST_TEX_TYPE_MAX,
 
 } BifrostTextureType;
 
@@ -112,7 +121,7 @@ typedef enum BifrostSamplerFilterMode_t
 {
   BIFROST_SFM_NEAREST,
   BIFROST_SFM_LINEAR,
-  BIFROST_SFM_MAX
+  BIFROST_SFM_MAX,
 
 } BifrostSamplerFilterMode;
 
@@ -159,7 +168,6 @@ typedef struct
       platform_module:Window   = ???;
     }
   */
-
 } bfGfxContextCreateParams;
 
 typedef struct bfAllocationCreateInfo_t
@@ -242,11 +250,28 @@ typedef enum BifrostStencilFace_t
 /* Context */
 bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params);
 bfGfxDeviceHandle  bfGfxContext_device(bfGfxContextHandle self);
-bfTextureHandle    bfGfxContext_swapchainImage(bfGfxContextHandle self);                             // This needs to be able to select which window.
-void               bfGfxContext_onResize(bfGfxContextHandle self, uint32_t width, uint32_t height);  // This needs to be able to select which window.
-bfBool32           bfGfxContext_beginFrame(bfGfxContextHandle self);
-void               bfGfxContext_endFrame(bfGfxContextHandle self);
-void               bfGfxContext_delete(bfGfxContextHandle self);
+bfTextureHandle    bfGfxContext_swapchainImage(bfGfxContextHandle self);  // This needs to be able to select which window.
+void               bfGfxContext_onResize(bfGfxContextHandle self, uint32_t width, uint32_t height);
+// This needs to be able to select which window.
+bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self);
+void     bfGfxContext_endFrame(bfGfxContextHandle self);
+void     bfGfxContext_delete(bfGfxContextHandle self);
+
+typedef enum BifrostGfxObjectType_t
+{
+  BIFROST_GFX_OBJECT_BUFFER         = 0,
+  BIFROST_GFX_OBJECT_RENDERPASS     = 1,
+  BIFROST_GFX_OBJECT_SHADER_PROGRAM = 2,
+  BIFROST_GFX_OBJECT_DESCRIPTOR_SET = 3,
+  BIFROST_GFX_OBJECT_TEXTURE        = 4,
+
+} BifrostGfxObjectType;
+
+typedef struct BifrostGfxObjectBase_t
+{
+  BifrostGfxObjectType type;
+
+} BifrostGfxObjectBase;
 
 /* Logical Device */
 void                   bfGfxDevice_flush(bfGfxDeviceHandle self);
@@ -261,8 +286,10 @@ bfDescriptorSetHandle  bfGfxDevice_newDescriptorSet(bfGfxDeviceHandle self, cons
 void                   bfGfxDevice_deleteDescriptorSet(bfGfxDeviceHandle self, bfDescriptorSetHandle descriptor_set);
 bfTextureHandle        bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
 void                   bfGfxDevice_deleteTexture(bfGfxDeviceHandle self, bfTextureHandle texture);
-bfGfxCommandListHandle bfGfxDevice_requestCommandList(bfGfxDeviceHandle self, const bfGfxCommandListCreateParams* params);
-void                   bfGfxDevice_release(void* resource);  // bfBufferHandle, bfRenderpassHandle, bfShaderProgramHandle, bfDescriptorSetHandle
+bfGfxCommandListHandle bfGfxDevice_requestCommandList(bfGfxDeviceHandle                   self,
+                                                      const bfGfxCommandListCreateParams* params);
+void                   bfGfxDevice_release(bfGfxDeviceHandle self, void* resource);
+// bfBufferHandle, bfRenderpassHandle, bfShaderProgramHandle, bfDescriptorSetHandle
 
 /* Buffer */
 bfBufferSize bfBuffer_size(bfBufferHandle self);
@@ -285,7 +312,6 @@ typedef struct bfAttachmentInfo_t
   bfTextureHandle    texture;  // [format, layouts[0], sample_count]
   BifrostImageLayout final_layout;
   bfBool32           may_alias;
-
 } bfAttachmentInfo;
 
 typedef struct
@@ -294,7 +320,6 @@ typedef struct
   BifrostPipelineStageFlags pipeline_stage_flags[2];  // [src, dst]
   BifrostAccessFlags        access_flags[2];          // [src, dst]
   bfBool32                  reads_same_pixel;         //
-
 } bfSubpassDependency;
 
 typedef uint16_t bfLoadStoreFlags;
@@ -303,7 +328,6 @@ typedef struct bfAttachmentRefCache_t
 {
   uint32_t           attachment_index;
   BifrostImageLayout layout;
-
 } bfAttachmentRefCache;
 
 typedef struct bfSubpassCache_t
@@ -313,7 +337,6 @@ typedef struct bfSubpassCache_t
   uint16_t             num_in_attachment_refs;
   bfAttachmentRefCache in_attachment_refs[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfAttachmentRefCache depth_attachment;
-
 } bfSubpassCache;
 
 typedef struct bfRenderpassInfo_t
@@ -352,10 +375,11 @@ BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self);
 bfBool32          bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file);
 bfBool32          bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length);
 void              bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle module);
-void              bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);  // glBindAttribLocation
-void              bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
-void              bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
-void              bfShaderProgram_compile(bfShaderProgramHandle self);
+void              bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);
+// glBindAttribLocation
+void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
+void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
+void bfShaderProgram_compile(bfShaderProgramHandle self);
 
 /* Descriptor Set */
 void bfDescriptorSet_addCombinedSamplerTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
@@ -370,10 +394,15 @@ uint32_t           bfTexture_width(bfTextureHandle self);
 uint32_t           bfTexture_height(bfTextureHandle self);
 uint32_t           bfTexture_depth(bfTextureHandle self);
 BifrostImageLayout bfTexture_layout(bfTextureHandle self);
-void               bfTexture_setLayout(BifrostImageLayout self, BifrostImageLayout layout);  // TODO(SR): Maybe this should solely be internal, it will be punlic to help me rember what I need to do. The reason this is a bad way to have in the public API is because of the needed syncronzation needed to transiotion in vulkan but we should never need to change layout unless for a backend like RenderGraph and Texture_setData.
-bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
-bfBool32           bfTexture_loadData(bfTextureHandle self, const char* source, size_t source_length);
-void               bfTexture_setSampler(bfTextureHandle self, const bfTextureCreateParams* sampler_properties);
+void               bfTexture_setLayout(BifrostImageLayout self, BifrostImageLayout layout);
+  // TODO(SR): Maybe this should solely be internal, it will be public
+  // to help me rember what I need to do.
+  // The reason this is a bad way to have in the public API is because of the needed
+  // syncronzation needed to transiotion in vulkan but we should never need to change layout
+  // unless for a backend like RenderGraph and Texture_setData.
+bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file);
+bfBool32 bfTexture_loadData(bfTextureHandle self, const char* source, size_t source_length);
+void     bfTexture_setSampler(bfTextureHandle self, const bfTextureCreateParams* sampler_properties);
 
 // Transient Resources
 // void bfGfxCmdList_createVertexBuffer(bfGfxCommandListHandle self);
@@ -391,62 +420,65 @@ void     bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRen
 void     bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClearValue* clear_values);
 void     bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments);
 void     bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
-void     bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);  // Normalized [0.0f, 1.0f] coords
-void     bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self);
-void     bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self);
-void     bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, BifrostDrawMode draw_mode);
-void     bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, BifrostFrontFace front_face);
-void     bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, BifrostCullFaceFlags cull_face);
-void     bfGfxCmdList_setDepthTesting(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, BifrostCompareOp op);
-void     bfGfxCmdList_setStencilTesting(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setPrimitiveRestart(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setDepthBias(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value);
-void     bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, BifrostLogicOp op);
-void     bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, BifrostPolygonFillMode fill_mode);
-void     bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output_attachment_idx, uint8_t color_mask);
-void     bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op);
-void     bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
-void     bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
-void     bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op);
-void     bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
-void     bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
-void     bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
-void     bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
-void     bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
-void     bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
-void     bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t cmp_mask);
-void     bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t write_mask);
-void     bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t ref_mask);
-void     bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states);
-void     bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, float width, float height, const float depth[2]);
-void     bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
-void     bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float constants[4]);
-void     bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value);
-void     bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value);
-void     bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value);
-void     bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value);
-void     bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value);
-void     bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mask);
-void     bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout);
-void     bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
-void     bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
-void     bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
-void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
-void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);                                              // Draw Cmds
-void     bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
-void     bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);
-void     bfGfxCmdList_drawIndexedInstanced(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset, uint32_t first_instance, uint32_t num_instances);
-void     bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandListHandle* commands, uint32_t num_commands);  // General
-void     bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self);
-void     bfGfxCmdList_end(bfGfxCommandListHandle self);
-void     bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
-void     bfGfxCmdList_submit(bfGfxCommandListHandle self);
+void     bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);
+// Normalized [0.0f, 1.0f] coords
+void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self);
+void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self);
+void bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, BifrostDrawMode draw_mode);
+void bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, BifrostFrontFace front_face);
+void bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, BifrostCullFaceFlags cull_face);
+void bfGfxCmdList_setDepthTesting(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, BifrostCompareOp op);
+void bfGfxCmdList_setStencilTesting(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setPrimitiveRestart(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setDepthBias(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value);
+void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, BifrostLogicOp op);
+void bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, BifrostPolygonFillMode fill_mode);
+void bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output_attachment_idx, uint8_t color_mask);
+void bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op);
+void bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
+void bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
+void bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op);
+void bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
+void bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor);
+void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
+void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
+void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
+void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
+void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t cmp_mask);
+void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t write_mask);
+void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t ref_mask);
+void bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states);
+void bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, float width, float height, const float depth[2]);
+void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
+void bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float constants[4]);
+void bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value);
+void bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value);
+void bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value);
+void bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value);
+void bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value);
+void bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mask);
+void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout);
+void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
+void bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
+void bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
+void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets,
+                                     uint32_t num_desc_sets);                                       // Call after pipeline is setup.
+void bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);  // Draw Cmds
+void bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
+void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);
+void bfGfxCmdList_drawIndexedInstanced(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset, uint32_t first_instance, uint32_t num_instances);
+void bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandListHandle* commands,
+                                     uint32_t num_commands);  // General
+void bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self);
+void bfGfxCmdList_end(bfGfxCommandListHandle self);
+void bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
+void bfGfxCmdList_submit(bfGfxCommandListHandle self);
 #if __cplusplus
 }
 #endif

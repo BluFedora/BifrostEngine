@@ -212,7 +212,7 @@ typedef struct
   uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS;  // 1
   uint64_t primitive_restart : 1;
   uint64_t rasterizer_discard : 1;
-  uint64_t depth_bias : 1;
+  uint64_t do_depth_bias : 1;
   uint64_t sample_shading : 1;
   uint64_t alpha_to_coverage : 1;
   uint64_t alpha_to_one : 1;

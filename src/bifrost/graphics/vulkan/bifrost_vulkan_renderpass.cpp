@@ -26,7 +26,8 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
       // TODO(Shareef): Check for the load bit NOT to be set.
       return VK_ATTACHMENT_LOAD_OP_CLEAR;
     }
-    else if (bfBit(i) & load_ops)
+
+    if (bfBit(i) & load_ops)
     {
       // TODO(Shareef): Check for the clear bit NOT to be set.
       return VK_ATTACHMENT_LOAD_OP_LOAD;

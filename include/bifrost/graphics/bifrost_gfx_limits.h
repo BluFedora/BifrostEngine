@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+  // TODO(Shareef): Switch to enum?
+
 #define BIFROST_GFX_RENDERPASS_MAX_SUBPASSES 16
 #define BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS 8
 #define BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES 32
@@ -25,6 +27,8 @@ extern "C" {
    *    [3] Object Transforms
    */
 #define BIFROST_GFX_RENDERPASS_MAX_DESCRIPTOR_SETS 4
+#define BIFROST_GFX_SHADER_ENTRY_POINT_NAME_LENGTH 32
+#define BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS 16
 
   /*
     static const unsigned VULKAN_NUM_BINDINGS        = 16;
