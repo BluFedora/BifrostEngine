@@ -10,29 +10,24 @@ extern "C" {
 
 BIFROST_DEFINE_HANDLE(Texture)
 {
-  BifrostGfxObjectBase super;
+  BifrostGfxObjectBase   super;
+  bfGfxDeviceHandle      parent;
+  BifrostTexFeatureFlags flags;
   // CPU Side Data
   BifrostTextureType image_type;
   int32_t            image_width;
   int32_t            image_height;
-  uint32_t           image_depth;
+  int32_t            image_depth;
   uint32_t           image_miplevels;
   // GPU Side Data
   VkImage            tex_image;
   VkDeviceMemory     tex_memory;
   VkImageView        tex_view;
   VkSampler          tex_sampler;
-  BifrostImageLayout tex_layout;
-  BifrostImageFormat tex_format;
+  VkImageLayout      tex_layout;
+  VkFormat tex_format;
   BifrostSampleFlags tex_samples;
 };
-
-typedef struct VulkanExtensionList_t
-{
-  VkExtensionProperties* extensions;
-  uint32_t               size;
-
-} VulkanExtensionList;
 
 typedef struct VulkanQueueArray_t
 {
@@ -74,8 +69,16 @@ typedef struct VulkanSwapchain_t
 
 } VulkanSwapchain;
 
+typedef struct VulkanExtensionList_t
+{
+  VkExtensionProperties* extensions;
+  uint32_t               size;
+
+} VulkanExtensionList;
+
 typedef struct VulkanPhysicalDevice_t
 {
+  bfGfxContextHandle parent;
   VkPhysicalDevice                 handle;
   VkPhysicalDeviceMemoryProperties memory_properties;
   VkPhysicalDeviceProperties       device_properties;

@@ -4,7 +4,7 @@
 
 #include "bifrost/data_structures/bifrost_array_t.h"
 
-#include <assert.h> /* assert */
+#include <cassert> /* assert */
 
 #define BIFROST_POOL_ALLOC_NUM_PAGES_PER_BLOCK 10
 #define CUSTOM_ALLOCATOR NULL
@@ -234,6 +234,7 @@ static size_t add_block_to_pool(PoolAllocator* self, uint32_t mem_type, VkDevice
 
   VkMemoryAllocateInfo alloc_info;
   alloc_info.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  alloc_info.pNext           = nullptr;
   alloc_info.allocationSize  = pool_size;
   alloc_info.memoryTypeIndex = mem_type;
 

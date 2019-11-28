@@ -142,19 +142,19 @@ void bfGfxDevice_deleteBuffer(bfGfxDeviceHandle self, bfBufferHandle buffer)
 }
 
 /* Buffer */
-bfBufferSize bfBuffer_size(bfBufferHandle self)
+bfBufferSize bfBuffer_size_(bfBufferHandle self)
 {
   return self->params.size;
 }
 
-void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
+void* bfBuffer_map_(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 {
   bufferBind(self);
   self->mapped_ptr = glMapBufferRange(bufferTarget(self), static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
   return self->mapped_ptr;
 }
 
-void bfBuffer_copyCPU(bfBufferHandle self, bfBufferSize dst_offset, const void* data, bfBufferSize num_bytes)
+void bfBuffer_copyCPU_(bfBufferHandle self, bfBufferSize dst_offset, const void* data, bfBufferSize num_bytes)
 {
   if (!self->mapped_ptr)
   {
@@ -165,7 +165,7 @@ void bfBuffer_copyCPU(bfBufferHandle self, bfBufferSize dst_offset, const void* 
   memcpy(static_cast<char*>(self->mapped_ptr) + dst_offset, data, std::size_t(num_bytes));
 }
 
-void bfBuffer_copyGPU(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandle dst, bfBufferSize dst_offset, bfBufferSize num_bytes)
+void bfBuffer_copyGPU_(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandle dst, bfBufferSize dst_offset, bfBufferSize num_bytes)
 {
   if (!dst->handle || !src->handle)
   {
@@ -182,7 +182,7 @@ void bfBuffer_copyGPU(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandl
                       GLsizeiptr(num_bytes));
 }
 
-void bfBuffer_unMap(bfBufferHandle self)
+void bfBuffer_unMap_(bfBufferHandle self)
 {
   if (!self->mapped_ptr)
   {

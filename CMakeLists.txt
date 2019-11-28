@@ -37,6 +37,8 @@ set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin/)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
+message(STATUS "Working Dir ${CMAKE_BINARY_DIR}../")
+
 # NOTE(Shareef): Print out some CMake Info.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
@@ -154,7 +156,7 @@ set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
   # NOTE(Shareef): Sets the working directory of the exe to be at the exe
   #   allowing us to load stuff from the assets folder.
-set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}../)
   # NOTE(Shareef): Make the console not pop up.
 # set_target_properties(BifrostEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 

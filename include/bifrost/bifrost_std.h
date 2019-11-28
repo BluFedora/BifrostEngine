@@ -11,6 +11,15 @@ static constexpr size_t bfCArraySize(const T((&)[N]))
 {
   return N;
 }
+
+#if 0
+template<typename T>
+T bfClamp(T min_value, T value, T max_value)
+{
+  return (value < min_value) ? min_value : (value > max_value ? max_value : value);
+}
+#endif
+
 #else
 #define bfCArraySize(arr) ((sizeof(arr) / sizeof(0 [arr])) / ((size_t)(!(sizeof(arr) % sizeof(0 [arr])))))  //(sizeof((arr)) / sizeof((arr)[0]))
 #endif

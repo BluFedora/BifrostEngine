@@ -1,8 +1,8 @@
 #ifndef BIFROST_GFX_PIPELINE_STATE_H
 #define BIFROST_GFX_PIPELINE_STATE_H
 
-#include "bifrost_gfx_handle.h" /* */
-#include <stdint.h>             /* uint64_t, uint32_t */
+#include "bifrost_gfx_handle.h" /* bf*Handle                   */
+#include <stdint.h>             /* uint64_t, uint32_t, int32_t */
 
 #define MASK_FOR_BITS(n) ((1ULL << (n)) - 1)
 
@@ -61,7 +61,7 @@ typedef enum BifrostCullFaceFlags_t
 
 } BifrostCullFaceFlags;  // NOTE(Shareef): 2-bits
 
-// NOTE(Shareef): DepthTest (1-bit)
+// NOTE(Shareef): DepthTest  (1-bit)
 // NOTE(Shareef): DepthWrite (1-bit)
 
 typedef enum BifrostCompareOp_t
@@ -185,6 +185,7 @@ typedef enum BifrostColorMask_t
   BIFROST_COLOR_MASK_G = 1 << 1,
   BIFROST_COLOR_MASK_B = 1 << 2,
   BIFROST_COLOR_MASK_A = 1 << 3,
+  BIFROST_COLOR_MASK_RGBA = BIFROST_COLOR_MASK_R | BIFROST_COLOR_MASK_G | BIFROST_COLOR_MASK_B | BIFROST_COLOR_MASK_A,
 
 } BifrostColorMask;
 
@@ -207,13 +208,15 @@ typedef struct
   uint64_t front_face : BIFROST_PIPELINE_STATE_FRONT_FACE_BITS;         // 1
   uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;           // 2
   uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;      // 1
+  uint64_t do_depth_clamp : 1;                                          // 1
+  uint64_t do_depth_bounds_test : 1;                                          // 1
   uint64_t depth_write : BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS;       // 1
-  uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;        // 3
+  uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;        // 3 (BifrostCompareOp)
   uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS;  // 1
   uint64_t primitive_restart : 1;
   uint64_t rasterizer_discard : 1;
   uint64_t do_depth_bias : 1;
-  uint64_t sample_shading : 1;
+  uint64_t do_sample_shading : 1;
   uint64_t alpha_to_coverage : 1;
   uint64_t alpha_to_one : 1;
   uint64_t do_logic_op : 1;
@@ -248,9 +251,11 @@ typedef struct
   uint64_t dynamic_stencil_write_mask : 1;
   uint64_t dynamic_stencil_reference : 1;
 
-  uint64_t pad : 22; // Padding may be important for consistent hashing behavior.
+  uint64_t pad : 19; // Padding may be important for consistent hashing behavior.
 
-} bfPipelineState;  // 106 bits (22 extra bits)
+} bfPipelineState;  // 107 bits (21 extra bits)
+
+ // constexpr auto i = sizeof(bfPipelineState);
 
 typedef struct BifrostViewport_t
 {
@@ -292,6 +297,8 @@ typedef struct BifrostPipelineDepthInfo_t
   float bias_constant_factor;
   float bias_clamp;
   float bias_slope_factor;
+  float min_bound;
+  float max_bound;
 
 } BifrostPipelineDepthInfo;
 
@@ -304,9 +311,9 @@ typedef struct bfPipelineCache_t
   float                    line_width;
   BifrostPipelineDepthInfo depth;
   float                    min_sample_shading;
-  uint64_t                 sample_mask;  // must default to 0xFFFFFFFFFFFFFFFF
+  uint32_t                 sample_mask;  // must default to 0xFFFFFFFF
   uint32_t                 subpass_index;
-  bfFramebufferBlending    blending[16];
+  bfFramebufferBlending    blending[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfShaderProgramHandle    program;
   bfRenderpassHandle       renderpass;
   bfVertexLayoutSetHandle  vertex_set_layout;

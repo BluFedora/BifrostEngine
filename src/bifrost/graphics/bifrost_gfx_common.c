@@ -1,10 +1,27 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
-#include <assert.h> /* assert         */
+#include "vulkan/bifrost_vulkan_physical_device.h"  // TODO: This is bad
+
+#include <assert.h>                       /* assert         */
 #include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions
 
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, uint32_t num_layers);
 static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
+
+bfTextureSamplerProperties bfTextureSamplerProperties_init(BifrostSamplerFilterMode filter, BifrostSamplerAddressMode uv_addressing)
+{
+  bfTextureSamplerProperties props;
+
+  props.min_filter = filter;
+  props.mag_filter = filter;
+  props.u_address = uv_addressing;
+  props.v_address = uv_addressing;
+  props.w_address = uv_addressing;
+  props.min_lod = 0.0f;
+  props.max_lod = 1.0f;
+
+  return props;
+}
 
 bfTextureCreateParams bfTextureCreateParams_init2D(uint32_t width, uint32_t height, BifrostImageFormat format)
 {
@@ -132,7 +149,7 @@ void bfRenderpassInfo_addInput(bfRenderpassInfo* self, uint16_t subpass_index, u
   assert(subpass->num_in_attachment_refs + 1 < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS);
 
   attachment_ref->attachment_index = attachment;
-  attachment_ref->layout           = bfTexture_layout(self->attachments[attachment].texture);
+  attachment_ref->layout           = self->attachments[attachment].texture->tex_layout;  // TODO: This is bad
 
   ++subpass->num_in_attachment_refs;
 }

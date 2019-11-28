@@ -32,12 +32,13 @@ typedef struct MaterialPool_t
   MaterialPoolCreateParams super;
   DescriptorLink*          head;
 
-} MaterialPool;
+} BifrostDescriptorPool;
 
-MaterialPool* MaterialPool_new(const MaterialPoolCreateParams* const params);
-void          MaterialPool_delete(MaterialPool* const self);
+BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* params);
+void                   MaterialPool_alloc(BifrostDescriptorPool* self, bfDescriptorSetHandle desc_set);
+void                   MaterialPool_delete(BifrostDescriptorPool* self);
 
-typedef MaterialPool VulkanDescriptorPool;
+typedef BifrostDescriptorPool VulkanDescriptorPool;
 #if __cplusplus
 }
 #endif

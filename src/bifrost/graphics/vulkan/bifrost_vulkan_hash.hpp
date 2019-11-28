@@ -19,8 +19,8 @@ namespace bifrost
     {
       struct Node final
       {
-        T*            value;
-        std::uint64_t hash_code;
+        T*            value = nullptr;
+        std::uint64_t hash_code = 0x0;
       };
 
      private:
@@ -30,7 +30,7 @@ namespace bifrost
 
      public:
       explicit ObjectHashCache(std::size_t initial_size = 32) :
-        m_Nodes{new Node[initial_size]},
+        m_Nodes{new Node[initial_size]()},
         m_NodesSize{initial_size},
         m_MaxLoad{3}
       {

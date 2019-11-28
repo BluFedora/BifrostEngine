@@ -13,8 +13,8 @@ BIFROST_DECLARE_HANDLE(GfxContext);
 BIFROST_DECLARE_HANDLE(GfxDevice);
 BIFROST_DECLARE_HANDLE(GfxCommandList);
 BIFROST_DECLARE_HANDLE(Buffer);
-BIFROST_DECLARE_HANDLE(VertexLayoutSet);  // Maybe this should be a POD rather than a handle?
-BIFROST_DECLARE_HANDLE(DescriptorSet);    // Maybe this should be a POD rather than a handle?
+BIFROST_DECLARE_HANDLE(VertexLayoutSet);  //!< Maybe this should be a POD rather than a handle?
+BIFROST_DECLARE_HANDLE(DescriptorSet);    //!< Maybe this should be a POD rather than a handle?
 BIFROST_DECLARE_HANDLE(Renderpass);
 BIFROST_DECLARE_HANDLE(ShaderModule);
 BIFROST_DECLARE_HANDLE(ShaderProgram);

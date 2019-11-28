@@ -5,7 +5,9 @@
 
 #include "meta/bifrost_meta_function_traits.hpp" /* function_traits          */
 #include "meta/bifrost_meta_utils.hpp"           /* for_each                 */
+#pragma warning(push, 0)
 #include "script/bifrost_vm_internal.h"          /* bfVM__value*             */
+#pragma warning(pop)
 #include "utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
 #include <string>                                /* string                   */
 #include <tuple>                                 /* tuple                    */
@@ -177,7 +179,7 @@ namespace bifrost
   }
 
   template<typename ClzT, typename... Args>
-  BifrostMethodBind vmMakeCtorBinding(const char* name)
+  BifrostMethodBind vmMakeCtorBinding(const char* name = "ctor")
   {
     /* NOTE(Shareef): +1 for the self argument */
     return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1};
@@ -264,9 +266,11 @@ namespace bifrost
     VMView(VMView&& rhs)      = default;
     VMView& operator=(const VMView& rhs) = default;
     VMView& operator=(VMView&& rhs) = default;
+    ~VMView() = default;
 
     [[nodiscard]] BifrostVM*       self() { return m_Self; }
     [[nodiscard]] const BifrostVM* self() const noexcept { return m_Self; }
+    operator BifrostVM*() const { return m_Self; }
     [[nodiscard]] bool             isValid() const noexcept { return m_Self != nullptr; }
 
     BifrostVMError moduleMake(size_t idx, const char* module) noexcept
@@ -443,7 +447,6 @@ namespace bifrost
     [[nodiscard]] StringRange errorStringRange() const noexcept
     {
       const char* err_str = bfVM_errorString(self());
-
       return {err_str, err_str + String_length(err_str)};
     }
   };

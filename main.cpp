@@ -111,7 +111,7 @@ static const char source[] = R"(
   {
     // print "I am updating!" + GameState.i;
     // GameState.i = GameState.i + 1;
-    t = nil;
+    // t = nil;
   }
 
   func callMeFromCpp(arg0, arg1, arg2)
@@ -133,28 +133,147 @@ struct BifrostEngineCreateParams
 
 class BaseRenderer
 {
+  struct BasicVertex final
+  {
+    float         pos[4];
+    unsigned char color[4];
+    float         uv[2];
+  };
+
  private:
-  bfGfxContextHandle m_GfxBackend;
-  bfGfxDeviceHandle  m_GfxDevice;
+  bfGfxContextHandle      m_GfxBackend;
+  bfGfxDeviceHandle       m_GfxDevice;
+  bfGfxCommandListHandle  m_MainCmdList;
+  bfTextureHandle         m_MainSurface;
+  bfVertexLayoutSetHandle m_BasicVertexLayout;
+  bfBufferHandle          m_VertexBuffer;
+  bfBufferHandle          m_IndexBuffer;
+  bfTextureHandle         m_TestTexture;
+  bfShaderModuleHandle    m_ShaderModuleV;
+  bfShaderModuleHandle    m_ShaderModuleF;
+  bfShaderProgramHandle   m_ShaderProgram;
+  bfDescriptorSetHandle   m_TestMaterial;
 
  public:
   BaseRenderer() :
     m_GfxBackend{nullptr},
-    m_GfxDevice{nullptr}
+    m_GfxDevice{nullptr},
+    m_MainCmdList{nullptr},
+    m_MainSurface{nullptr},
+    m_BasicVertexLayout{nullptr},
+    m_VertexBuffer{nullptr},
+    m_IndexBuffer{nullptr},
+    m_TestTexture{nullptr},
+    m_ShaderModuleV{nullptr},
+    m_ShaderModuleF{nullptr},
+    m_ShaderProgram{nullptr},
+    m_TestMaterial{nullptr}
   {
   }
 
-  void startup(const bfGfxContextCreateParams& gfx_create_params)
+  void startup(const bfGfxContextCreateParams& gfx_create_params, uint32_t width, uint32_t height)
   {
     m_GfxBackend = bfGfxContext_new(&gfx_create_params);
     m_GfxDevice  = bfGfxContext_device(m_GfxBackend);
 
-    // bfGfxContext_onResize(m_GfxBackend, params.width, params.height);
+    bfGfxContext_onResize(m_GfxBackend, width, height);
+
+    m_BasicVertexLayout = bfVertexLayout_new();
+    bfVertexLayout_addVertexBinding(m_BasicVertexLayout, 0, sizeof(BasicVertex));
+    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(BasicVertex, pos));
+    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(BasicVertex, color));
+    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_2, offsetof(BasicVertex, uv));
+
+    bfBufferCreateParams buffer_params;
+    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+    buffer_params.allocation.size       = sizeof(BasicVertex) * 4;
+    buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+
+    m_VertexBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
+
+    buffer_params.allocation.size = sizeof(std::uint16_t) * 6;
+    buffer_params.usage           = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
+
+    m_IndexBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
+
+    static const BasicVertex VERTEX_DATA[] =
+     {
+      {{-0.5f, -0.5f, 0.0f, 1.0f}, {255, 0, 0, 128}, {0.0f, 0.0f}},
+      {{+0.5f, -0.5f, 0.0f, 1.0f}, {255, 0, 0, 128}, {1.0f, 0.0f}},
+      {{+0.5f, +0.5f, 0.0f, 1.0f}, {0, 255, 0, 255}, {1.0f, 1.0f}},
+      {{-0.5f, +0.5f, 0.0f, 1.0f}, {255, 0, 0, 255}, {0.0f, 1.0f}},
+     };
+
+    static const uint16_t INDEX_DATA[] = {0u, 1u, 2u, 3u, 2u, 0u};
+
+    void* vertex_buffer_ptr = bfBuffer_map(m_VertexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+    void* index_buffer_ptr  = bfBuffer_map(m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+
+    std::memcpy(vertex_buffer_ptr, VERTEX_DATA, sizeof(VERTEX_DATA));
+    std::memcpy(index_buffer_ptr, INDEX_DATA, sizeof(INDEX_DATA));
+
+    bfBuffer_unMap(m_VertexBuffer);
+    bfBuffer_unMap(m_IndexBuffer);
+
+    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
+    bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
+
+    create_texture.generate_mipmaps = bfFalse;
+
+    m_TestTexture = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
+    bfTexture_loadFile(m_TestTexture, "../assets/texture.png");
+    bfTexture_setSampler(m_TestTexture, &sampler);
+
+    bfShaderProgramCreateParams create_shader;
+    create_shader.debug_name    = "My Test Shader";
+    create_shader.num_desc_sets = 1;
+
+    m_ShaderModuleV = bfGfxDevice_newShaderModule(m_GfxDevice, BIFROST_SHADER_TYPE_VERTEX);
+    m_ShaderModuleF = bfGfxDevice_newShaderModule(m_GfxDevice, BIFROST_SHADER_TYPE_FRAGMENT);
+    m_ShaderProgram = bfGfxDevice_newShaderProgram(m_GfxDevice, &create_shader);
+
+    bfShaderModule_loadFile(m_ShaderModuleV, "../assets/basic_material.vert.spv");
+    bfShaderModule_loadFile(m_ShaderModuleF, "../assets/basic_material.frag.spv");
+
+    bfShaderProgram_addModule(m_ShaderProgram, m_ShaderModuleV);
+    bfShaderProgram_addModule(m_ShaderProgram, m_ShaderModuleF);
+
+    bfShaderProgram_addImageSampler(m_ShaderProgram, "u_DiffuseTexture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
+    // bfShaderProgram_addUniformBuffer(m_ShaderProgram, "u_ModelTransform", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
+
+    bfShaderProgram_compile(m_ShaderProgram);
+
+    m_TestMaterial = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0);
+
+    bfDescriptorSet_setCombinedSamplerTextures(m_TestMaterial, 0, 0, &m_TestTexture, 1);
+    bfDescriptorSet_flushWrites(m_TestMaterial);
   }
 
-  bool frameBegin() const
+  [[nodiscard]] bool frameBegin()
   {
-    //bfGfxContext_beginFrame(m_GfxBackend);
+    if (bfGfxContext_beginFrame(m_GfxBackend, -1))
+    {
+      bfGfxCommandListCreateParams thread_command_list{0, -1};
+
+      m_MainCmdList = bfGfxContext_requestCommandList(m_GfxBackend, &thread_command_list);
+
+      if (m_MainCmdList)
+      {
+        m_MainSurface = bfGfxDevice_requestSurface(m_MainCmdList);
+
+        return bfGfxCmdList_begin(m_MainCmdList);
+      }
+    }
+
+    return false;
+  }
+
+  void frameUpdate()
+  {
+    bfAttachmentInfo main_surface;
+    main_surface.texture      = m_MainSurface;
+    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    main_surface.may_alias    = bfFalse;
 
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, 0x1);
@@ -163,24 +282,54 @@ class BaseRenderer
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStoreOps(&renderpass_info, 0x1);
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x1);
-    // bfRenderpassInfo_addAttachment(&renderpass_info, 0x1);
-    // bfRenderpassInfo_setLoadOps(&renderpass_info, 0x1);
-    // bfRenderpassInfo_addColorOut(&renderpass_info, 0x1);
-    // bfRenderpassInfo_addDepthOut(&renderpass_info, 0x1);
+    bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
+    bfRenderpassInfo_setLoadOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    // bfRenderpassInfo_addDepthOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     // bfRenderpassInfo_addInput(&renderpass_info, 0x1);
     // bfRenderpassInfo_addDependencies(&renderpass_info, 0x1);
 
-    return false;
+    BifrostClearValue clear_colors;
+    clear_colors.color.float32[0] = 1.0f;
+    clear_colors.color.float32[1] = 0.6f;
+    clear_colors.color.float32[2] = 1.0f;
+    clear_colors.color.float32[3] = 1.0f;
+
+    bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
+    bfGfxCmdList_setClearValues(m_MainCmdList, &clear_colors);
+    bfGfxCmdList_setAttachments(m_MainCmdList, &m_MainSurface);
+    bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
+
+    bfGfxCmdList_beginRenderpass(m_MainCmdList);
+    {
+      uint64_t buffer_offset = 0;
+
+      bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
+      bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
+      bfGfxCmdList_bindIndexBuffer(m_MainCmdList, m_IndexBuffer, 0, BIFROST_INDEX_TYPE_UINT16);
+      bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
+      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
+      bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
+    }
+    bfGfxCmdList_endRenderpass(m_MainCmdList);
   }
 
   void frameEnd() const
   {
-    // bfGfxContext_endFrame(m_GfxBackend);
+    bfGfxCmdList_end(m_MainCmdList);
+    bfGfxCmdList_submit(m_MainCmdList);
+    bfGfxContext_endFrame(m_GfxBackend);
   }
 
   void cleanup()
   {
-    // bfGfxDevice_flush(bfGfxContext_device(m_GfxBackend));
+    bfGfxDevice_release(m_GfxDevice, m_TestMaterial);
+    bfGfxDevice_release(m_GfxDevice, m_ShaderModuleF);
+    bfGfxDevice_release(m_GfxDevice, m_ShaderModuleV);
+    bfGfxDevice_release(m_GfxDevice, m_TestTexture);
+    bfGfxDevice_release(m_GfxDevice, m_VertexBuffer);
+    bfGfxDevice_release(m_GfxDevice, m_IndexBuffer);
+    bfVertexLayout_delete(m_BasicVertexLayout);
     bfGfxContext_delete(m_GfxBackend);
     m_GfxBackend = nullptr;
   }
@@ -233,14 +382,19 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
      params.render_window,
     };
 
-    m_Renderer.startup(gfx_create_params);
+    m_Renderer.startup(gfx_create_params, params.width, params.height);
 
     bfLogPop();
   }
 
-  [[nodiscard]] bool beginFrame() const
+  [[nodiscard]] bool beginFrame()
   {
     return m_Renderer.frameBegin();
+  }
+
+  void update()
+  {
+    m_Renderer.frameUpdate();
   }
 
   void endFrame() const
@@ -275,6 +429,8 @@ namespace bifrost::meta
   }
 }  // namespace bifrost::meta
 
+#include <filesystem>
+
 int main(int argc, const char* argv[])
 {
   namespace bfmeta = bifrost::meta;
@@ -283,8 +439,10 @@ int main(int argc, const char* argv[])
 
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
-  std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
+  const auto p = std::filesystem::current_path().string();
 
+  std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
+  std::printf("Working Dir: %s\n", p.c_str());
   std::cout << __cplusplus << "\n";
 
   TestClass my_obj = {74, "This message will be in Y"};
@@ -347,7 +505,7 @@ int main(int argc, const char* argv[])
 
   const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
    "TestClass",
-   bf::vmMakeCtorBinding<TestClass, int>("ctor"),
+   bf::vmMakeCtorBinding<TestClass, int>(),
    bf::vmMakeMemberBinding<&TestClass::printf>("printf"));
 
   vm.stackResize(1);
@@ -398,6 +556,8 @@ int main(int argc, const char* argv[])
 
       if (engine.beginFrame())
       {
+        engine.update();
+
         if (update_fn)
         {
           vm.stackResize(1);

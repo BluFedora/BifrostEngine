@@ -149,10 +149,21 @@ void String_reserve(BifrostString* self, size_t newCapacity)
   {
     /* NOTE(Shareef): Double the space than actually requested */
     newCapacity <<= 1;
-    header           = (BifrostStringHeader*)BIFROST_REALLOC(header, sizeof(BifrostStringHeader) + newCapacity, 1);
-    header->capacity = newCapacity;
 
-    (*self) = (char*)header + sizeof(BifrostStringHeader);
+    BifrostStringHeader* old_header = header;
+
+    header = (BifrostStringHeader*)BIFROST_REALLOC(old_header, sizeof(BifrostStringHeader) + newCapacity, 1);
+
+    if (header)
+    {
+      header->capacity = newCapacity;
+      *self = (char*)header + sizeof(BifrostStringHeader);
+    }
+    else
+    {
+      String_delete(*self);
+      *self = NULL;
+    }
   }
 }
 
@@ -251,7 +262,7 @@ size_t CString_unescape(char* str)
   const char* oldStr = str;
   char*       newStr = str;
 
-  while (*(oldStr))
+  while (*oldStr)
   {
     unsigned char c = *(unsigned char*)(oldStr++);
 
@@ -262,10 +273,10 @@ size_t CString_unescape(char* str)
       if (escape_convert(c)) c = escape_convert(c);
     }
 
-    *(newStr++) = (char)c;
+    *newStr++ = (char)c;
   }
 
-  (*newStr) = '\0';
+  *newStr = '\0';
 
   return (newStr - str);
 }

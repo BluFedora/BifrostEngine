@@ -5,7 +5,7 @@
 //     Manual Queue transfer will be needed to
 
 // TODO(Shareef): Add unused resource culling.
-//   THis isn't super high priority since I think that's the job of the person calling these functiuons.
+//   This isn't super high priority since I think that's the job of the person calling these functiuons.
 
 /*
  Subpasss Notes:
@@ -699,7 +699,7 @@ namespace bifrost
     Vector<RenderpassBase*>    m_Renderpasses;
     Vector<GraphResourceBase*> m_Resources;  // There should be little amount of resources generally so HashTable may not be needed??
     Vector<std::uint8_t>       m_Bytecode;
-    std::uint8_t*              m_BytecodePos;  // TODO: Make this local to the execure function.
+    std::uint8_t*              m_BytecodePos;  // TODO: Make this local to the execute function.
     Vector<BarrierMemory>      m_MemoryBarriers;
     Vector<BarrierSubpassDep>  m_SubpassBarriers;  // TODO: MAke this renderpass local
 

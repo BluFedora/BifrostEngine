@@ -8,12 +8,19 @@
 #include "vulkan/bifrost_vulkan_material_pool.h"
 #include "vulkan/bifrost_vulkan_mem_allocator.h"
 
-#include <cassert> /* assert   */
+#include "vulkan/bifrost_vulkan_conversions.h"
+#include <algorithm> /* clamp */
+#include <cassert>   /* assert   */
+#include <cmath>
 #include <cstddef> /* size_t   */
 #include <cstdint> /* uint32_t */
 #include <cstdlib>
 #include <cstring> /* strcmp   */
 #include <vulkan/vulkan.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+#undef STB_IMAGE_IMPLEMENTATION
 
 #define BIFROST_USE_DEBUG_CALLBACK 1
 #define BIFROST_USE_VALIDATION_LAYERS 1
@@ -21,37 +28,12 @@
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
 
-// [ ] bifrost_vulkan_backend.h
-// [ ] bifrost_vulkan_framebuffer.c
-// [ ] bifrost_vulkan_pool_allocator.c
-// [ ] bifrost_vulkan_buffer.c
-// [ ] bifrost_vulkan_framebuffer.h
-// [ ] bifrost_vulkan_pool_allocator.h
-// [ ] bifrost_vulkan_buffer.h
-// [ ] bifrost_vulkan_logical_device.c
-// [ ] bifrost_vulkan_render_pass.c
-// [ ] bifrost_vulkan_command_buffer.c
-// [ ] bifrost_vulkan_material.c
-// [ ] bifrost_vulkan_render_pass.h
-// [ ] bifrost_vulkan_context.c
-// [ ] bifrost_vulkan_material.h
-// [ ] bifrost_vulkan_shader.c
-// [ ] bifrost_vulkan_context.h
-// [ ] bifrost_vulkan_shader.h
-// [ ] bifrost_vulkan_conversions.c
-// [ ] bifrost_vulkan_pipeline.c
-// [ ] bifrost_vulkan_texture.c
-// [ ] bifrost_vulkan_conversions.h
-// [ ] bifrost_vulkan_pipeline.h
-// [ ] bifrost_vulkan_texture.h
-// [X] bifrost_vulkan_physical_device.h
-
 // Memory Functions (To Be Replaced)
 
 template<typename T>
 T* allocN(std::size_t num_elements)
 {
-  return (T*)std::calloc(num_elements, sizeof(T));
+  return static_cast<T*>(std::calloc(num_elements, sizeof(T)));
 }
 
 void freeN(void* ptr)
@@ -129,15 +111,6 @@ struct FixedArray
   }
 };
 
-struct VulkanWindow final
-{
-  VkSurfaceKHR        surface;
-  VulkanSwapchainInfo swapchain_info;
-  VulkanSwapchain     swapchain;
-  VkSemaphore*        is_image_available;
-  VkSemaphore*        is_render_done;
-};
-
 BIFROST_DEFINE_HANDLE(GfxContext)
 {
   const bfGfxContextCreateParams*  params;               // Only valid during initialization
@@ -147,9 +120,7 @@ BIFROST_DEFINE_HANDLE(GfxContext)
   VulkanPhysicalDevice*            physical_device;
   VulkanWindow                     main_window;
   bfGfxDeviceHandle                logical_device;
-  PoolAllocator                    device_memory_allocator;
   VkCommandPool                    command_pools[1];  // TODO(Shareef): One per thread.
-  VulkanDescriptorPool*            descriptor_pool;
   uint32_t                         image_index;
   uint32_t                         frame_count;
   uint32_t                         frame_index;  // frame_count % max_frame_in_flight
@@ -175,12 +146,11 @@ namespace
   const char* gfxContextInitCommandPool(bfGfxContextHandle self, uint16_t thread_index);
   const char* gfxContextInitSemaphores(bfGfxContextHandle self, VulkanWindow& window);
   const char* gfxContextInitSwapchainInfo(bfGfxContextHandle self, VulkanWindow& window);
-  const char* gfxContextInitMaterialPool(bfGfxContextHandle self);
-  void        gfxContextInitSwapchain(bfGfxContextHandle self, VulkanWindow& window);
+  bool        gfxContextInitSwapchain(bfGfxContextHandle self, VulkanWindow& window);
   void        gfxContextInitSwapchainImageList(bfGfxContextHandle self, VulkanWindow& window);
   void        gfxContextInitCmdFences(bfGfxContextHandle self, VulkanWindow& window);
   void        gfxContextInitCmdBuffers(bfGfxContextHandle self, VulkanWindow& window);
-  void        gfxContextDestroyCmdBuffers(bfGfxContextHandle self, const VulkanSwapchain* swapchain);
+  void        gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain);
   void        gfxContextDestroyCmdFences(bfGfxContextHandle self, const VulkanSwapchain* swapchain);
   void        gfxContextDestroySwapchainImageList(bfGfxContextHandle self, const VulkanSwapchain* swapchain);
   void        gfxContextDestroySwapchain(bfGfxContextHandle self, VulkanSwapchain* swapchain);
@@ -223,7 +193,7 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
 {
   const auto self           = new bfGfxContext();
   self->params              = params;
-  self->max_frame_in_flight = 2;
+  self->max_frame_in_flight = 3;
   self->frame_count         = 0;
   self->frame_index         = 0;
   gfxContextSetupApp(self, params);
@@ -250,10 +220,11 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
     gfxContextCreateLogicalDevice(self);
     gfxContextInitAllocator(self);
     gfxContextInitCommandPool(self, 0);
-    gfxContextInitSemaphores(self, self->main_window);
     gfxContextInitSwapchainInfo(self, self->main_window);
-    gfxContextInitMaterialPool(self);
+    gfxContextInitSemaphores(self, self->main_window);
   }
+
+  self->params = nullptr;
   return self;
 }
 
@@ -265,6 +236,16 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
 bfTextureHandle bfGfxContext_swapchainImage(bfGfxContextHandle self)
 {
   return &self->main_window.swapchain.img_list.images[self->image_index];
+}
+
+static void gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
+{
+  if (gfxContextInitSwapchain(self, window))
+  {
+    gfxContextInitSwapchainImageList(self, window);
+    gfxContextInitCmdFences(self, window);
+    gfxContextInitCmdBuffers(self, window);
+  }
 }
 
 void bfGfxContext_onResize(bfGfxContextHandle self, uint32_t width, uint32_t height)
@@ -280,14 +261,59 @@ void bfGfxContext_onResize(bfGfxContextHandle self, uint32_t width, uint32_t hei
   gfxContextDestroySwapchainImageList(self, &old_swapchain);
   gfxContextDestroySwapchain(self, &old_swapchain);
 
-  gfxContextInitSwapchain(self, window);
-  gfxContextInitSwapchainImageList(self, window);
-  gfxContextInitCmdFences(self, window);
-  gfxContextInitCmdBuffers(self, window);
+  gfxRecreateSwapchain(self, window);
 }
 
-bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self)
+bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
 {
+  if (window_idx < 0)
+  {
+    window_idx = 0;
+  }
+
+  VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
+
+  if (window && window->swapchain.extents.width > 0.0f && window->swapchain.extents.height > 0.0f)
+  {
+    if (window->swapchain_needs_creation)
+    {
+      bfGfxDevice_flush(self->logical_device);
+      gfxRecreateSwapchain(self, *window);
+
+      return bfFalse;
+    }
+
+    const VkResult err = vkAcquireNextImageKHR(self->logical_device->handle,
+                                               window->swapchain.handle,
+                                               UINT64_MAX,
+                                               window->is_image_available[0],
+                                               VK_NULL_HANDLE,
+                                               &window->image_index);
+
+    if (!(err == VK_SUCCESS || err == VK_TIMEOUT || err == VK_NOT_READY || err == VK_SUBOPTIMAL_KHR))
+    {
+      if (err == VK_ERROR_OUT_OF_DATE_KHR)
+      {
+        bfGfxContext_onResize(self, 0, 0);
+        std::printf("Surface out of date.... recreating swap chain\n");
+      }
+
+      return false;
+    }
+
+    const VkFence command_fence = window->swapchain.fences[window->image_index];
+
+    if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
+    {
+      std::printf("Waiting for fence takes too long!");
+      return bfFalse;
+    }
+
+    vkResetFences(self->logical_device->handle, 1, &command_fence);
+
+    return bfTrue;
+  }
+
   return bfFalse;
 }
 
@@ -299,6 +325,8 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
 
 void bfGfxContext_delete(bfGfxContextHandle self)
 {
+  MaterialPool_delete(self->logical_device->descriptor_pool);
+  bfGfxDevice_flush(self->logical_device);
   delete self;
 }
 
@@ -306,8 +334,98 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 
 void bfGfxDevice_flush(bfGfxDeviceHandle self)
 {
-  // vkQueueWaitIdle(GfxContext_currentLogicalDevice()->queues[DQI_GRAPHICS]);
   vkDeviceWaitIdle(self->handle);
+}
+
+bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, const bfGfxCommandListCreateParams* params)
+{
+  int window_idx = params->window_idx;
+
+  if (window_idx < 0)
+  {
+    window_idx = 0;
+  }
+
+  VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
+
+  if (window)
+  {
+    bfGfxCommandListHandle list = new bfGfxCommandList();
+
+    list->context        = self;
+    list->parent         = self->logical_device;
+    list->handle         = window->swapchain.command_buffers[window->image_index];
+    list->fence          = window->swapchain.fences[window->image_index];
+    list->window         = window;
+    list->render_area    = {};
+    list->framebuffer    = nullptr;
+    list->pipeline       = nullptr;
+    list->pipeline_state = {};
+    list->has_command    = bfFalse;
+    std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
+
+    bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_STRIP);
+    bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CW);
+    bfGfxCmdList_setCullFace(list, BIFROST_CULL_FACE_NONE);
+    bfGfxCmdList_setDepthTesting(list, bfFalse);
+    bfGfxCmdList_setDepthWrite(list, bfFalse);
+    bfGfxCmdList_setDepthTestOp(list, BIFROST_COMPARE_OP_ALWAYS);
+    bfGfxCmdList_setStencilTesting(list, bfFalse);
+    bfGfxCmdList_setPrimitiveRestart(list, bfFalse);
+    bfGfxCmdList_setRasterizerDiscard(list, bfFalse);
+    bfGfxCmdList_setDepthBias(list, bfFalse);
+    bfGfxCmdList_setSampleShading(list, bfFalse);
+    bfGfxCmdList_setAlphaToCoverage(list, bfFalse);
+    bfGfxCmdList_setAlphaToOne(list, bfFalse);
+    bfGfxCmdList_setLogicOp(list, BIFROST_LOGIC_OP_CLEAR);
+    bfGfxCmdList_setPolygonFillMode(list, BIFROST_POLYGON_MODE_FILL);
+    bfGfxCmdList_setColorWriteMask(list, 0, BIFROST_COLOR_MASK_RGBA);
+    bfGfxCmdList_setColorBlendOp(list, 0, BIFROST_BLEND_OP_ADD);
+    bfGfxCmdList_setBlendSrc(list, 0, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(list, 0, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setAlphaBlendOp(list, 0, BIFROST_BLEND_OP_ADD);
+    bfGfxCmdList_setBlendSrcAlpha(list, 0, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(list, 0, BIFROST_BLEND_FACTOR_ZERO);
+
+    const auto SetupStencilState = [&list](BifrostStencilFace face) {
+      bfGfxCmdList_setStencilFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
+      bfGfxCmdList_setStencilPassOp(list, face, BIFROST_STENCIL_OP_KEEP);
+      bfGfxCmdList_setStencilDepthFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
+      bfGfxCmdList_setStencilCompareOp(list, face, BIFROST_STENCIL_OP_KEEP);
+      bfGfxCmdList_setStencilCompareMask(list, face, 0xFF);
+      bfGfxCmdList_setStencilWriteMask(list, face, 0xFF);
+      bfGfxCmdList_setStencilReference(list, face, 0xFF);
+    };
+
+    SetupStencilState(BIFROST_STENCIL_FACE_FRONT);
+    SetupStencilState(BIFROST_STENCIL_FACE_BACK);
+
+    // bfGfxCmdList_setDynamicStates(list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
+    bfGfxCmdList_setDynamicStates(list, 0x0);
+    const float depths[] = {0.0f, 1.0f};
+    bfGfxCmdList_setViewport(list, 0.0f, 0.0f, 0.0f, 0.0f, depths);
+    bfGfxCmdList_setScissorRect(list, 0, 0, 1, 1);
+    const float blend_constants[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    bfGfxCmdList_setBlendConstants(list, blend_constants);
+    bfGfxCmdList_setLineWidth(list, 1.0f);
+    bfGfxCmdList_setDepthClampEnabled(list, bfFalse);
+    bfGfxCmdList_setDepthBoundsTestEnabled(list, bfFalse);
+    bfGfxCmdList_setDepthBounds(list, 0.0f, 1.0f);
+    bfGfxCmdList_setDepthBiasConstantFactor(list, 0.0f);
+    bfGfxCmdList_setDepthBiasClamp(list, 0.0f);
+    bfGfxCmdList_setDepthBiasSlopeFactor(list, 0.0f);
+    bfGfxCmdList_setMinSampleShading(list, 0.0f);
+    bfGfxCmdList_setSampleMask(list, 0xFFFFFFFF);
+
+    return list;
+  }
+
+  return nullptr;
+}
+
+bfTextureHandle bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list)
+{
+  return &command_list->window->swapchain.img_list.images[command_list->window->image_index];
 }
 
 namespace
@@ -332,7 +450,8 @@ namespace
     };
 
 #if BIFROST_USE_VALIDATION_LAYERS
-    const bfBool32 layers_are_supported = gfxContextCheckLayers(VALIDATION_LAYER_NAMES, bfCArraySize(VALIDATION_LAYER_NAMES));
+    const bfBool32 layers_are_supported = gfxContextCheckLayers(VALIDATION_LAYER_NAMES,
+                                                                bfCArraySize(VALIDATION_LAYER_NAMES));
 
     if (!layers_are_supported)
     {
@@ -374,7 +493,7 @@ namespace
         "There was not a compatible Vulkan ICD.",
        };
 
-      bfLogError("gfxContextSetupApp(%s %s)", "vkCreateInstance", error_messages[err == VK_ERROR_INCOMPATIBLE_DRIVER]);
+      bfLogError("gfxContextSetupApp(vkCreateInstance %s)", error_messages[err == VK_ERROR_INCOMPATIBLE_DRIVER]);
     }
   }
 
@@ -431,7 +550,8 @@ namespace
     create_info.pfnCallback = callback;
     create_info.pUserData   = nullptr;
 
-    PFN_vkCreateDebugReportCallbackEXT func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkCreateDebugReportCallbackEXT");
+    PFN_vkCreateDebugReportCallbackEXT func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
+     self->instance, "vkCreateDebugReportCallbackEXT");
 
     if (func)
     {
@@ -473,6 +593,7 @@ namespace
     size_t index = 0;
     for (auto& device : self->physical_devices)
     {
+      device.parent = self;
       device.handle = device_list[index];
 
       vkGetPhysicalDeviceMemoryProperties(device.handle, &device.memory_properties);
@@ -565,33 +686,27 @@ namespace
 
       switch (device.device_properties.deviceType)
       {
-        case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-        {
+        case VK_PHYSICAL_DEVICE_TYPE_OTHER: {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_OTHER");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-        {
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-        {
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-        {
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_CPU:
-        {
+        case VK_PHYSICAL_DEVICE_TYPE_CPU: {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_CPU");
           break;
         }
-        default:
-        {
+        default: {
           bfLogPrint("\t DEVICE_TYPE = DEVICE_TYPE_UNKNOWN");
           break;
         }
@@ -747,6 +862,7 @@ namespace
       return "Could not find Queues for Present / Graphics / Compute / Transfer.";
     }
 
+    window.swapchain_needs_creation = false;
     return nullptr;
   }
 
@@ -769,7 +885,7 @@ namespace
     static const char* const DEVICE_EXT_NAMES[] =
      {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-     };  // I should be checking of the extensions are supported.
+     };  // I should be checking if the extensions are supported.
 
     static const float queue_priorities[] = {0.0f};
 
@@ -819,6 +935,14 @@ namespace
       return "Failed to create device";
     }
 
+    MaterialPoolCreateParams create_material_pool;
+    create_material_pool.logical_device        = self->logical_device;
+    create_material_pool.num_textures_per_link = 32;
+    create_material_pool.num_uniforms_per_link = 16;
+    create_material_pool.num_descsets_per_link = 8;
+
+    self->logical_device->descriptor_pool = MaterialPool_new(&create_material_pool);
+
     // Matches order of 'BifrostGfxQueueType'.
     const uint32_t queues_to_grab[] =
      {
@@ -840,7 +964,7 @@ namespace
 
   const char* gfxContextInitAllocator(bfGfxContextHandle self)
   {
-    VkPoolAllocatorCtor(&self->device_memory_allocator, self->logical_device);
+    VkPoolAllocatorCtor(&self->logical_device->device_memory_allocator, self->logical_device);
     return nullptr;
   }
 
@@ -849,7 +973,7 @@ namespace
     assert(thread_index == 0 && "Current implemetation only supports one thread currently.");
 
     const VulkanPhysicalDevice* const phys_device    = self->physical_device;
-    bfGfxDeviceHandle                 logical_device = self->logical_device;
+    const bfGfxDeviceHandle           logical_device = self->logical_device;
 
     // This should be per thread.
     VkCommandPoolCreateInfo cmd_pool_info;
@@ -859,7 +983,7 @@ namespace
                           VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;  // Since I Reuse the Buffer each frame
     cmd_pool_info.queueFamilyIndex = phys_device->queue_list.graphics_family_index;
 
-    VkResult error = vkCreateCommandPool(
+    const VkResult error = vkCreateCommandPool(
      logical_device->handle,
      &cmd_pool_info,
      BIFROST_VULKAN_CUSTOM_ALLOCATOR,
@@ -899,6 +1023,8 @@ namespace
   }
 
   VkSurfaceFormatKHR gfxContextFindSurfaceFormat(const VkSurfaceFormatKHR* const formats, const uint32_t num_formats);
+  VkPresentModeKHR   gfxFindSurfacePresentMode(const VkPresentModeKHR* const present_modes,
+                                               const uint32_t                num_present_modes);
 
   const char* gfxContextInitSwapchainInfo(bfGfxContextHandle self, VulkanWindow& window)
   {
@@ -922,25 +1048,113 @@ namespace
     return nullptr;
   }
 
-  const char* gfxContextInitMaterialPool(bfGfxContextHandle self)
+  VkExtent2D gfxFindSurfaceExtents(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
+
+  bool gfxContextInitSwapchain(bfGfxContextHandle self, VulkanWindow& window)
   {
-    // TODO(SR): Pick better magic numbers / make it customizable.
-    MaterialPoolCreateParams material_pool_create;
-    material_pool_create.logical_device        = self->logical_device;
-    material_pool_create.num_textures_per_link = 32;
-    material_pool_create.num_uniforms_per_link = 16;
-    material_pool_create.num_descsets_per_link = 8;
+    auto& swapchain_info = window.swapchain_info;
 
-    self->descriptor_pool = MaterialPool_new(&material_pool_create);
+    VulkanPhysicalDevice* const physical_device = self->physical_device;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device->handle, window.surface, &swapchain_info.capabilities);
 
-    return nullptr;
-  }
+    const VkPresentModeKHR surface_present_mode = gfxFindSurfacePresentMode(
+     swapchain_info.present_modes, swapchain_info.num_present_modes);
+    const VkExtent2D surface_extents = gfxFindSurfaceExtents(swapchain_info.capabilities, 0, 0);
 
-  void gfxContextInitSwapchain(bfGfxContextHandle self, VulkanWindow& window)
-  {
-    VulkanPhysicalDevice* const logical_device = self->physical_device;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(logical_device->handle, window.surface, &window.swapchain_info.capabilities);
-    assert(!"Finish implementing this.");
+    uint32_t                      image_count   = swapchain_info.capabilities.minImageCount + 1;
+    VkSurfaceTransformFlagBitsKHR pre_transform = swapchain_info.capabilities.currentTransform;
+
+    if (surface_extents.width == 0 || surface_extents.height == 0)
+    {
+      window.swapchain_needs_creation = true;
+      return false;
+    }
+
+    // A value of 0 for maxImageCount means that there is no limit besides memory requirements
+    if (swapchain_info.capabilities.maxImageCount > 0 && image_count > swapchain_info.capabilities.maxImageCount)
+    {
+      image_count = swapchain_info.capabilities.maxImageCount;
+    }
+
+    // We can rotate, flip , etc if that transform type is supported
+    // On Windows / Or Just My Machine This is the only transform supported
+    if (swapchain_info.capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+    {
+      pre_transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    }
+
+    VkCompositeAlphaFlagBitsKHR composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    VkCompositeAlphaFlagBitsKHR composite_alpha_flags[4] =
+     {
+      VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+      VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
+      VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
+      VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+     };
+
+    for (const auto& composite_alpha_flag : composite_alpha_flags)
+    {
+      if (swapchain_info.capabilities.supportedCompositeAlpha & composite_alpha_flag)
+      {
+        composite_alpha = composite_alpha_flag;
+        break;
+      }
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci;
+
+    std::memset(&swapchain_ci, 0x0, sizeof(swapchain_ci));
+
+    swapchain_ci.sType              = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchain_ci.flags              = 0x0;
+    swapchain_ci.pNext              = nullptr;
+    swapchain_ci.surface            = window.surface;
+    swapchain_ci.minImageCount      = image_count;
+    swapchain_ci.imageFormat        = window.swapchain.format.format;
+    swapchain_ci.imageExtent.width  = surface_extents.width;
+    swapchain_ci.imageExtent.height = surface_extents.height;
+    swapchain_ci.preTransform       = pre_transform;
+    swapchain_ci.compositeAlpha     = composite_alpha;
+    swapchain_ci.imageArrayLayers   = 1;
+    swapchain_ci.presentMode        = surface_present_mode;
+    swapchain_ci.oldSwapchain       = VK_NULL_HANDLE;
+    swapchain_ci.clipped            = VK_TRUE;  // If another window covers this on then do you not render those pixel
+    swapchain_ci.imageColorSpace    = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    swapchain_ci.imageUsage         = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    // Assumes "physical_device->queue_list.graphics_family_index == physical_device->queue_list.present_family_index"
+    swapchain_ci.queueFamilyIndexCount = 0;
+    swapchain_ci.pQueueFamilyIndices   = nullptr;
+
+    const uint32_t queue_family_indices[2] =
+     {
+      physical_device->queue_list.graphics_family_index,
+      physical_device->queue_list.present_family_index,
+     };
+
+    if (physical_device->queue_list.graphics_family_index != physical_device->queue_list.present_family_index)
+    {
+      // If the graphics and present queues are from different queue families,
+      // we either have to explicitly transfer ownership of images between
+      // the queues, or we have to create the swapchain with imageSharingMode
+      // as VK_SHARING_MODE_CONCURRENT
+      swapchain_ci.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+      swapchain_ci.queueFamilyIndexCount = 2;
+      swapchain_ci.pQueueFamilyIndices   = queue_family_indices;
+    }
+
+    VkResult err = vkCreateSwapchainKHR(self->logical_device->handle, &swapchain_ci, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &window.swapchain.handle);
+
+    window.swapchain.extents        = surface_extents;
+    window.swapchain.present_mode   = surface_present_mode;
+    window.swapchain_needs_creation = false;
+
+    if (err)
+    {
+      std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
+    }
+
+    return true;
   }
 
   void gfxContextInitSwapchainImageList(bfGfxContextHandle self, VulkanWindow& window)
@@ -965,14 +1179,11 @@ namespace
       image->image_depth     = 1;
       image->image_miplevels = 1;
       image->tex_memory      = VK_NULL_HANDLE;
-      // image->tex_view = ; TODO(SR): Create View
-      image->tex_sampler = VK_NULL_HANDLE;
-      image->tex_layout  = BIFROST_IMAGE_LAYOUT_UNDEFINED;
-      image->tex_format  = (BifrostImageFormat)swapchain->format.format;  // TODO: This needs to be made safer.
-
-      //
-      // Texture_createImageView(logical_device->handle, temp_images[i], swapchain->format.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
-      //
+      image->tex_view        = bfCreateImageView2D(logical_device->handle, temp_images[i], swapchain->format.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+      image->tex_sampler     = VK_NULL_HANDLE;
+      image->tex_layout      = VK_IMAGE_LAYOUT_UNDEFINED;
+      image->tex_format      = swapchain->format.format;
+      image->tex_samples     = BIFROST_SAMPLE_1;
     }
   }
 
@@ -994,28 +1205,96 @@ namespace
     }
   }
 
-  void gfxContextInitCmdBuffers(bfGfxContextHandle self, VulkanWindow& window)
+  void gfxContextCreateCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers, VkCommandBuffer* result)
   {
-    bfGfxDeviceHandle device = self->logical_device;
+    const bfGfxDeviceHandle device = self->logical_device;
 
     VkCommandBufferAllocateInfo cmd_alloc_info;
     cmd_alloc_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmd_alloc_info.pNext              = NULL;
+    cmd_alloc_info.pNext              = nullptr;
     cmd_alloc_info.commandPool        = self->command_pools[0];
     cmd_alloc_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cmd_alloc_info.commandBufferCount = window.swapchain.img_list.size;
+    cmd_alloc_info.commandBufferCount = num_buffers;
 
-    window.swapchain.command_buffers = allocN<VkCommandBuffer>(cmd_alloc_info.commandBufferCount);
-
-    VkResult error = vkAllocateCommandBuffers(device->handle, &cmd_alloc_info, window.swapchain.command_buffers);
+    const VkResult error = vkAllocateCommandBuffers(device->handle, &cmd_alloc_info, result);
     assert(error == VK_SUCCESS);
   }
 
-  void gfxContextDestroyCmdBuffers(bfGfxContextHandle self, const VulkanSwapchain* swapchain)
+  struct TempCommandBuffer final
+  {
+    bfGfxContextHandle context;
+    VkCommandBuffer    handle;
+  };
+
+  VkCommandBuffer* gfxContextCreateCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers)
+  {
+    VkCommandBuffer* result = allocN<VkCommandBuffer>(num_buffers);
+    gfxContextCreateCommandBuffers(self, num_buffers, result);
+    return result;
+  }
+
+  void gfxContextDestroyCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers, VkCommandBuffer* buffers, bool free_array = true)
   {
     bfGfxDeviceHandle logical_device = self->logical_device;
-    vkFreeCommandBuffers(logical_device->handle, self->command_pools[0], swapchain->img_list.size, swapchain->command_buffers);
-    freeN(swapchain->command_buffers);
+    vkFreeCommandBuffers(logical_device->handle, self->command_pools[0], num_buffers, buffers);
+
+    if (free_array)
+    {
+      freeN(buffers);
+    }
+  }
+
+  TempCommandBuffer gfxContextBeginTransientCommandBuffer(bfGfxContextHandle self)
+  {
+    VkCommandBuffer result;
+    gfxContextCreateCommandBuffers(self, 1, &result);
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext            = nullptr;
+    begin_info.flags            = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = nullptr;
+
+    vkBeginCommandBuffer(result, &begin_info);
+
+    return {self, result};
+  }
+
+  void gfxContextEndTransientCommandBuffer(TempCommandBuffer buffer, BifrostGfxQueueType queue_type = BIFROST_GFX_QUEUE_GRAPHICS, bool wait_for_finish = true)
+  {
+    const VkQueue queue = buffer.context->logical_device->queues[queue_type];
+
+    vkEndCommandBuffer(buffer.handle);
+
+    VkSubmitInfo submit_info;
+    submit_info.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext                = nullptr;
+    submit_info.waitSemaphoreCount   = 0;
+    submit_info.pWaitSemaphores      = nullptr;
+    submit_info.pWaitDstStageMask    = nullptr;
+    submit_info.commandBufferCount   = 1;
+    submit_info.pCommandBuffers      = &buffer.handle;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores    = nullptr;
+
+    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    if (wait_for_finish)
+    {
+      vkQueueWaitIdle(queue);
+      gfxContextDestroyCommandBuffers(buffer.context, 1, &buffer.handle, false);
+    }  // else the caller is responsible for freeing
+  }
+
+  void gfxContextInitCmdBuffers(bfGfxContextHandle self, VulkanWindow& window)
+  {
+    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(self, window.swapchain.img_list.size);
+  }
+
+  void gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain)
+  {
+    gfxContextDestroyCommandBuffers(self, swapchain->img_list.size, swapchain->command_buffers);
+    swapchain->command_buffers = nullptr;
   }
 
   void gfxContextDestroyCmdFences(bfGfxContextHandle self, const VulkanSwapchain* swapchain)
@@ -1104,9 +1383,895 @@ namespace
 
     return formats[0];
   }
+
+  VkPresentModeKHR gfxFindSurfacePresentMode(const VkPresentModeKHR* const present_modes,
+                                             const uint32_t                num_present_modes)
+  {
+    VkPresentModeKHR best_mode = VK_PRESENT_MODE_FIFO_KHR;  // Guaranteed to exist according to the standard.
+
+    const VkPresentModeKHR* const present_mode_end = present_modes + num_present_modes;
+    const VkPresentModeKHR*       present_mode     = present_modes;
+
+    while (present_mode != present_mode_end)
+    {
+      if (*present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
+      {
+        return *present_mode;
+      }
+
+      if (*present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+      {
+        best_mode = *present_mode;
+      }
+
+      ++present_mode;
+    }
+
+    return best_mode;
+  }
+
+  VkExtent2D gfxFindSurfaceExtents(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
+  {
+    if (capabilities.currentExtent.width != UINT32_MAX && capabilities.currentExtent.height != UINT32_MAX)
+    {
+      return capabilities.currentExtent;
+    }
+
+    return {
+     std::clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+     std::clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height),
+    };
+  }
+
+  VkBool32 memory_type_from_properties(VkPhysicalDeviceMemoryProperties mem_props, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
+  {
+    // Search memtypes to find first index with those properties
+    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
+    {
+      // Check that the first bit is set
+      if ((typeBits & 1) == 1)
+      {
+        // Type is available, does it match user properties?
+        if ((mem_props.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask)
+        {
+          *typeIndex = i;
+          return VK_TRUE;
+        }
+      }
+      // Move the checked bit over
+      typeBits >>= 1;
+    }
+
+    return VK_FALSE;
+  }
 }  // namespace
 
-BifrostImageLayout bfTexture_layout(bfTextureHandle self)
+/* Buffers */
+bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCreateParams* params)
 {
-  return self->tex_layout;
+  bfBufferHandle self = new bfBuffer();
+
+  self->super.type            = BIFROST_GFX_OBJECT_BUFFER;
+  self->alloc_pool            = &self_->device_memory_allocator;
+  self->alloc_info.mapped_ptr = NULL;
+  self->real_size             = params->allocation.size;
+
+  VkBufferCreateInfo buffer_info;
+  buffer_info.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  buffer_info.pNext       = NULL;
+  buffer_info.flags       = 0;
+  buffer_info.size        = params->allocation.size;
+  buffer_info.usage       = bfVkConvertBufferUsageFlags(params->usage);
+  buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  // Used if: VK_SHARING_MODE_CONCURRENT
+  // Note: VK_SHARING_MODE_CONCURRENT may be slower
+  buffer_info.queueFamilyIndexCount = 0;
+  buffer_info.pQueueFamilyIndices   = NULL;
+
+  VkResult error = vkCreateBuffer(self_->handle, &buffer_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->handle);
+  assert(error == VK_SUCCESS);
+  VkMemoryRequirements mem_requirements;
+  vkGetBufferMemoryRequirements(self_->handle, self->handle, &mem_requirements);
+
+  bfAllocationCreateInfo buffer_create_info = params->allocation;
+  buffer_create_info.size                   = mem_requirements.size;
+
+  uint32_t memory_type_index;
+
+  memory_type_from_properties(
+   self_->parent->memory_properties,
+   mem_requirements.memoryTypeBits,
+   bfVkConvertBufferPropertyFlags(params->allocation.properties),
+   &memory_type_index);
+
+  VkPoolAllocator_alloc(self->alloc_pool,
+                        &buffer_create_info,
+                        params->usage & BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER,
+                        memory_type_index,
+                        &self->alloc_info);
+  vkBindBufferMemory(self_->handle, self->handle, self->alloc_info.handle, self->alloc_info.offset);
+
+  return self;
+}
+
+bfBufferSize bfBuffer_size(bfBufferHandle self)
+{
+  return self->real_size;
+}
+
+void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
+{
+  assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
+  vkMapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle, offset, size, 0, &self->alloc_info.mapped_ptr);
+  return self->alloc_info.mapped_ptr;
+}
+
+void bfBuffer_copyCPU(bfBufferHandle self, bfBufferSize dst_offset, const void* data, bfBufferSize num_bytes)
+{
+  memcpy(static_cast<unsigned char*>(self->alloc_info.mapped_ptr) + dst_offset, data, (size_t)num_bytes);
+}
+
+void bfBuffer_copyGPU(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandle dst, bfBufferSize dst_offset, bfBufferSize num_bytes)
+{
+  const auto transient_cmd = gfxContextBeginTransientCommandBuffer(src->alloc_pool->m_LogicalDevice->parent->parent);
+  {
+    VkBufferCopy copy_region;
+    copy_region.srcOffset = src_offset + src->alloc_info.offset;
+    copy_region.dstOffset = dst_offset + dst->alloc_info.offset;
+    copy_region.size      = num_bytes;
+
+    vkCmdCopyBuffer(transient_cmd.handle, src->handle, dst->handle, 1, &copy_region);
+  }
+  gfxContextEndTransientCommandBuffer(transient_cmd);
+}
+
+void bfBuffer_unMap(bfBufferHandle self)
+{
+  vkUnmapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle);
+  self->alloc_info.mapped_ptr = nullptr;
+}
+
+/* Shader Program + Module */
+bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self_, BifrostShaderType type)
+{
+  bfShaderModuleHandle self = new bfShaderModule();
+
+  self->super.type     = BIFROST_GFX_OBJECT_SHADER_MODULE;
+  self->parent         = self_;
+  self->type           = type;
+  self->handle         = VK_NULL_HANDLE;
+  self->entry_point[0] = '\0';
+
+  return self;
+}
+
+bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self_, const bfShaderProgramCreateParams* params)
+{
+  bfShaderProgramHandle self = new bfShaderProgram();
+
+  self->super.type           = BIFROST_GFX_OBJECT_SHADER_PROGRAM;
+  self->parent               = self_;
+  self->layout               = VK_NULL_HANDLE;
+  self->num_desc_set_layouts = params->num_desc_sets;
+  self->modules.size         = 0;
+
+  for (uint32_t i = 0; i < self->num_desc_set_layouts; ++i)
+  {
+    self->desc_set_layouts[i]                          = VK_NULL_HANDLE;
+    self->desc_set_layout_infos[i].num_layout_bindings = 0;
+    self->desc_set_layout_infos[i].num_image_samplers  = 0;
+    self->desc_set_layout_infos[i].num_uniforms        = 0;
+  }
+
+  if (params->debug_name)
+  {
+    std::strncpy(self->debug_name, params->debug_name, bfCArraySize(self->debug_name));
+  }
+  else
+  {
+    std::strncpy(self->debug_name, "NO_DEBUG_NAME", 14);
+  }
+
+  return self;
+}
+
+BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self)
+{
+  return self->type;
+}
+
+static char* LoadFileIntoMemory(const char* const filename, long* out_size)
+{
+  FILE* f      = std::fopen(filename, "rb");  // NOLINT(android-cloexec-fopen)
+  char* buffer = nullptr;
+
+  if (f)
+  {
+    std::fseek(f, 0, SEEK_END);
+    long file_size = std::ftell(f);
+    std::fseek(f, 0, SEEK_SET);  //same as rewind(f);
+    buffer = static_cast<char*>(std::malloc(file_size + 1));
+    if (buffer)
+    {
+      std::fread(buffer, sizeof(char), file_size, f);
+      buffer[file_size] = '\0';
+    }
+    else
+    {
+      file_size = 0;
+    }
+
+    *out_size = file_size;
+    std::fclose(f);
+  }
+
+  return buffer;
+}
+
+bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
+{
+  long  buffer_size;
+  char* buffer = LoadFileIntoMemory(file, &buffer_size);
+
+  if (buffer)
+  {
+    const bfBool32 was_successful = bfShaderModule_loadData(self, buffer, buffer_size);
+    free(buffer);
+    return was_successful;
+  }
+
+  return bfFalse;
+}
+
+bfBool32 bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length)
+{
+  assert(source && source_length && "bfShaderModule_loadData invalid parameters");
+
+  VkShaderModuleCreateInfo create_info;
+  create_info.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  create_info.pNext    = nullptr;
+  create_info.flags    = 0;
+  create_info.codeSize = source_length;
+  create_info.pCode    = reinterpret_cast<const uint32_t*>(source);
+
+  std::strncpy(self->entry_point, "main", 5);
+
+  const VkResult error = vkCreateShaderModule(
+   self->parent->handle,
+   &create_info,
+   BIFROST_VULKAN_CUSTOM_ALLOCATOR,
+   &self->handle);
+
+  return error == VK_SUCCESS;
+}
+
+void bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle module)
+{
+  for (std::size_t i = 0; i < self->modules.size; ++i)
+  {
+    if (self->modules.elements[i]->type == module->type)
+    {
+      self->modules.elements[i] = module;
+      return;
+    }
+  }
+
+  self->modules.elements[self->modules.size++] = module;
+}
+
+void bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding)
+{
+  (void)self;
+  (void)name;
+  (void)binding;
+  /* NO-OP */
+}
+
+void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages)
+{
+  (void)name;  // NOTE(Shareef): Vulkan isn't lame like OpenGL thus doesn't use strings for names
+
+  assert(set < self->num_desc_set_layouts);
+
+  bfDescriptorSetLayoutInfo*    desc_set     = self->desc_set_layout_infos + set;
+  VkDescriptorSetLayoutBinding* desc_binding = desc_set->layout_bindings + desc_set->num_layout_bindings;
+
+  desc_binding->binding            = binding;
+  desc_binding->descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  desc_binding->descriptorCount    = how_many;
+  desc_binding->stageFlags         = bfVkConvertShaderStage(stages);
+  desc_binding->pImmutableSamplers = nullptr;
+
+  ++desc_set->num_layout_bindings;
+  ++desc_set->num_uniforms;
+}
+
+void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages)
+{
+  (void)name;  // NOTE(Shareef): Vulkan isn't lame like OpenGL thus doesn't use strings for names
+
+  assert(set < self->num_desc_set_layouts);
+
+  bfDescriptorSetLayoutInfo*    desc_set     = self->desc_set_layout_infos + set;
+  VkDescriptorSetLayoutBinding* desc_binding = desc_set->layout_bindings + desc_set->num_layout_bindings;
+
+  desc_binding->binding            = binding;
+  desc_binding->descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  desc_binding->descriptorCount    = how_many;
+  desc_binding->stageFlags         = bfVkConvertShaderStage(stages);
+  desc_binding->pImmutableSamplers = nullptr;
+
+  ++desc_set->num_layout_bindings;
+  ++desc_set->num_image_samplers;
+}
+
+void bfShaderProgram_compile(bfShaderProgramHandle self)
+{
+  for (uint32_t i = 0; i < self->num_desc_set_layouts; ++i)
+  {
+    VkDescriptorSetLayout*     desc_set      = self->desc_set_layouts + i;
+    bfDescriptorSetLayoutInfo* desc_set_info = self->desc_set_layout_infos + i;
+
+    VkDescriptorSetLayoutCreateInfo desc_set_create_info;
+
+    desc_set_create_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    desc_set_create_info.pNext        = nullptr;
+    desc_set_create_info.flags        = 0x0;
+    desc_set_create_info.bindingCount = desc_set_info->num_layout_bindings;
+    desc_set_create_info.pBindings    = desc_set_info->layout_bindings;
+
+    vkCreateDescriptorSetLayout(
+     self->parent->handle,
+     &desc_set_create_info,
+     BIFROST_VULKAN_CUSTOM_ALLOCATOR,
+     desc_set);
+  }
+
+  VkPipelineLayoutCreateInfo pipeline_layout_info;
+  std::memset(&pipeline_layout_info, 0, sizeof(pipeline_layout_info));
+  pipeline_layout_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipeline_layout_info.setLayoutCount         = self->num_desc_set_layouts;
+  pipeline_layout_info.pSetLayouts            = self->desc_set_layouts;
+  pipeline_layout_info.pushConstantRangeCount = 0;        // Optional
+  pipeline_layout_info.pPushConstantRanges    = nullptr;  // Optional
+
+  vkCreatePipelineLayout(
+   self->parent->handle,
+   &pipeline_layout_info,
+   BIFROST_VULKAN_CUSTOM_ALLOCATOR,
+   &self->layout);
+}
+
+bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle self_, uint32_t index)
+{
+  assert(index < self_->num_desc_set_layouts);
+
+  bfDescriptorSetHandle self = new bfDescriptorSet();
+  self->super.type           = BIFROST_GFX_OBJECT_DESCRIPTOR_SET;
+  self->shader_program       = self_;
+  self->set_index            = index;
+  self->handle               = VK_NULL_HANDLE;
+  self->num_buffer_info      = 0;
+  self->num_image_info       = 0;
+  self->num_buffer_view_info = 0;
+  self->num_writes           = 0;
+
+  MaterialPool_alloc(self_->parent->descriptor_pool, self);
+
+  return self;
+}
+
+static VkWriteDescriptorSet* bfDescriptorSet__checkForFlush(
+ bfDescriptorSetHandle self,
+ VkDescriptorType      type,
+ uint32_t              binding,
+ uint32_t              array_element_start,
+ uint32_t              num_buffer_info,
+ uint32_t              num_image_info,
+ uint32_t              num_buffer_view_info)
+{
+  if (self->num_buffer_info + num_buffer_info > bfCArraySize(self->buffer_info) ||
+      self->num_image_info + num_image_info > bfCArraySize(self->image_info) ||
+      self->num_buffer_view_info + num_buffer_view_info > bfCArraySize(self->buffer_view_info) ||
+      self->num_writes > BIFROST_GFX_DESCRIPTOR_SET_MAX_WRITES)
+  {
+    bfDescriptorSet_flushWrites(self);
+  }
+
+  VkWriteDescriptorSet* const write = self->writes + self->num_writes;
+
+  write->sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  write->pNext            = nullptr;
+  write->dstSet           = self->handle;
+  write->dstBinding       = binding;
+  write->dstArrayElement  = array_element_start;
+  write->descriptorType   = type;
+  write->descriptorCount  = std::max(num_buffer_info, std::max(num_image_info, num_buffer_view_info));  // Mutually Exlusive
+  write->pBufferInfo      = num_buffer_info > 0 ? self->buffer_info + self->num_buffer_info : nullptr;
+  write->pImageInfo       = num_image_info > 0 ? self->image_info + self->num_image_info : nullptr;
+  write->pTexelBufferView = num_buffer_view_info > 0 ? self->buffer_view_info + self->num_buffer_view_info : nullptr;
+
+  self->num_buffer_info += num_buffer_info;
+  self->num_image_info += num_image_info;
+  self->num_buffer_view_info += num_buffer_view_info;
+  ++self->num_writes;
+
+  return write;
+}
+
+void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures)
+{
+  VkWriteDescriptorSet*  write       = bfDescriptorSet__checkForFlush(self, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, binding, array_element_start, 0, num_textures, 0);
+  VkDescriptorImageInfo* image_infos = const_cast<VkDescriptorImageInfo*>(write->pImageInfo);
+
+  for (uint32_t i = 0; i < num_textures; ++i)
+  {
+    image_infos[i].sampler     = textures[i]->tex_sampler;
+    image_infos[i].imageView   = textures[i]->tex_view;
+    image_infos[i].imageLayout = textures[i]->tex_layout;
+  }
+}
+
+void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
+{
+  VkWriteDescriptorSet*   write        = bfDescriptorSet__checkForFlush(self, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, array_element_start, num_buffers, 0, 0);
+  VkDescriptorBufferInfo* buffer_infos = const_cast<VkDescriptorBufferInfo*>(write->pBufferInfo);
+
+  for (uint32_t i = 0; i < num_buffers; ++i)
+  {
+    buffer_infos[i].buffer = buffers[i]->handle;
+    buffer_infos[i].offset = offsets[i];
+    buffer_infos[i].range  = sizes[i];
+  }
+}
+
+void bfDescriptorSet_flushWrites(bfDescriptorSetHandle self)
+{
+  vkUpdateDescriptorSets(
+   self->shader_program->parent->handle,
+   self->num_writes,
+   self->writes,
+   0,
+   nullptr);
+
+  self->num_buffer_info      = 0;
+  self->num_image_info       = 0;
+  self->num_buffer_view_info = 0;
+  self->num_writes           = 0;
+}
+
+/* Texture */
+bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureCreateParams* params)
+{
+  bfTextureHandle self = new bfTexture();
+
+  self->super.type      = BIFROST_GFX_OBJECT_TEXTURE;
+  self->parent          = self_;
+  self->flags           = params->flags;
+  self->image_type      = params->type;
+  self->image_width     = params->width;
+  self->image_height    = params->height;
+  self->image_depth     = params->depth;
+  self->image_miplevels = params->generate_mipmaps ? 1 + uint32_t(std::floor(std::log2(float(std::max(std::max(params->width, params->height), params->depth))))) : 0;
+  self->tex_image       = VK_NULL_HANDLE;
+  self->tex_memory      = VK_NULL_HANDLE;
+  self->tex_view        = VK_NULL_HANDLE;
+  self->tex_sampler     = VK_NULL_HANDLE;
+  self->tex_layout      = VK_IMAGE_LAYOUT_UNDEFINED;
+  self->tex_format      = bfVkConvertFormat(params->format);
+  self->tex_samples     = BIFROST_SAMPLE_1;
+
+  return self;
+}
+
+uint32_t bfTexture_width(bfTextureHandle self)
+{
+  return self->image_width;
+}
+
+uint32_t bfTexture_height(bfTextureHandle self)
+{
+  return self->image_height;
+}
+
+uint32_t bfTexture_depth(bfTextureHandle self)
+{
+  return self->image_depth;
+}
+
+void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlags aspects, VkImageLayout old_layout, VkImageLayout new_layout)
+{
+  VkImageMemoryBarrier image_barrier;
+  image_barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  image_barrier.pNext                           = nullptr;
+  image_barrier.srcAccessMask                   = 0x0;
+  image_barrier.dstAccessMask                   = 0x0;
+  image_barrier.oldLayout                       = old_layout;
+  image_barrier.newLayout                       = new_layout;
+  image_barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+  image_barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+  image_barrier.image                           = image;
+  image_barrier.subresourceRange.aspectMask     = aspects;
+  image_barrier.subresourceRange.baseMipLevel   = 0;
+  image_barrier.subresourceRange.levelCount     = 1;
+  image_barrier.subresourceRange.baseArrayLayer = 0;
+  image_barrier.subresourceRange.layerCount     = 1;
+
+  switch (old_layout)
+  {
+    case VK_IMAGE_LAYOUT_PREINITIALIZED:
+      image_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+      image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+      image_barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+      image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+      image_barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+      image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+      break;
+    default:
+      // image_barrier.srcAccessMask = 0x0;
+      break;
+  }
+
+  switch (new_layout)
+  {
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+      image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+      image_barrier.srcAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
+      image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+      image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+      image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+      image_barrier.dstAccessMask |=
+       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      break;
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+      image_barrier.srcAccessMask = /*VK_ACCESS_HOST_WRITE_BIT | */ VK_ACCESS_TRANSFER_WRITE_BIT;
+      image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+      break;
+    default:
+      assert(0);
+      break;
+  }
+
+  VkPipelineStageFlagBits src_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+  VkPipelineStageFlagBits dst_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+  if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+  {
+    src_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    dst_flags = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  }
+  else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+  {
+    src_flags = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    dst_flags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  }
+
+  vkCmdPipelineBarrier(
+   cmd_buffer,
+   src_flags,
+   dst_flags,
+   0,
+   0,
+   nullptr,
+   0,
+   nullptr,
+   1,
+   &image_barrier);
+}
+
+VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
+{
+  VkImageAspectFlags aspects = 0x0;
+
+  if (self->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  {
+    aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
+  }
+  else
+  {
+    if (self->flags & BIFROST_TEX_IS_DEPTH_ATTACHMENT)
+    {
+      aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    else
+    {
+      aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
+    if (self->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT)
+    {
+      aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    else
+    {
+      aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+  }
+
+  return aspects;
+}
+
+static void bfTexture__setLayout(bfTextureHandle self, VkImageLayout layout)
+{
+  const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
+  setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), self->tex_layout, layout);
+  gfxContextEndTransientCommandBuffer(transient_cmd);
+  self->tex_layout = layout;
+}
+
+static void bfTexture__createImage(bfTextureHandle self)
+{
+  VkImageCreateInfo create_image;
+  create_image.sType                 = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  create_image.pNext                 = nullptr;
+  create_image.flags                 = 0x0;
+  create_image.imageType             = bfVkConvertTextureType(self->image_type);
+  create_image.format                = self->tex_format;
+  create_image.extent.width          = self->image_width;
+  create_image.extent.height         = self->image_height;
+  create_image.extent.depth          = self->image_depth;
+  create_image.mipLevels             = self->image_miplevels;
+  create_image.arrayLayers           = 1;  // TODO:
+  create_image.samples               = bfVkConvertSampleCount(self->tex_samples);
+  create_image.tiling                = VK_IMAGE_TILING_OPTIMAL;  // TODO
+  create_image.usage                 = 0x0;
+  create_image.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
+  create_image.queueFamilyIndexCount = 0;
+  create_image.pQueueFamilyIndices   = nullptr;
+  create_image.initialLayout         = self->tex_layout;
+
+  if (self->flags & BIFROST_TEX_IS_MULTI_QUEUE)
+  {
+    create_image.sharingMode = VK_SHARING_MODE_CONCURRENT;
+  }
+
+  // TODO: Make this a function?
+  if (self->flags & BIFROST_TEX_IS_TRANSFER_SRC)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+  }
+
+  if (self->flags & BIFROST_TEX_IS_TRANSFER_DST)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  }
+
+  if (self->flags & BIFROST_TEX_IS_SAMPLED)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+  }
+
+  if (self->flags & BIFROST_TEX_IS_STORAGE)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+  }
+
+  if (self->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  }
+
+  if (self->flags & (BIFROST_TEX_IS_DEPTH_ATTACHMENT | BIFROST_TEX_IS_STENCIL_ATTACHMENT))
+  {
+    create_image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+  }
+
+  if (self->flags & BIFROST_TEX_IS_TRANSIENT)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+  }
+
+  if (self->flags & BIFROST_TEX_IS_INPUT_ATTACHMENT)
+  {
+    create_image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+  }
+
+  const VkResult error = vkCreateImage(self->parent->handle, &create_image, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->tex_image);
+  assert(error == VK_SUCCESS);
+}
+
+static void bfTexture__allocMemory(bfTextureHandle self)
+{
+  // TODO: Switch to Pool Allocator?
+
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(self->parent->handle, self->tex_image, &memRequirements);
+
+  VkMemoryAllocateInfo alloc_info;
+  alloc_info.sType          = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  alloc_info.pNext          = nullptr;
+  alloc_info.allocationSize = memRequirements.size;
+  // alloc_info.memoryTypeIndex = 0;
+
+  memory_type_from_properties(self->parent->parent->memory_properties, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_info.memoryTypeIndex);
+
+  vkAllocateMemory(self->parent->handle, &alloc_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->tex_memory);
+  vkBindImageMemory(self->parent->handle, self->tex_image, self->tex_memory, 0);
+}
+
+bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
+{
+  int      num_components = 0;
+  stbi_uc* texture_data   = stbi_load(file, &self->image_width, &self->image_height, &num_components, STBI_rgb_alpha);
+
+  if (texture_data)
+  {
+    assert(num_components == 4);
+    bfTexture_loadData(self, reinterpret_cast<const char*>(texture_data), self->image_width * self->image_height * num_components * sizeof(char));
+    stbi_image_free(texture_data);
+
+    return bfTrue;
+  }
+
+  return bfFalse;
+}
+
+void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
+{
+  const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
+  {
+    VkBufferImageCopy region;
+
+    region.bufferOffset                    = 0;
+    region.bufferRowLength                 = 0;
+    region.bufferImageHeight               = 0;
+    region.imageSubresource.aspectMask     = bfTexture__aspect(self);
+    region.imageSubresource.mipLevel       = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount     = 1;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {
+     uint32_t(self->image_width),
+     uint32_t(self->image_height),
+     uint32_t(self->image_depth)};
+
+    vkCmdCopyBufferToImage(
+     transient_cmd.handle,
+     buffer->handle,
+     self->tex_image,
+     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+     1,
+     &region);
+  }
+  gfxContextEndTransientCommandBuffer(transient_cmd);
+}
+
+bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length)
+{
+  const bool is_indefinite =
+   self->image_width == BIFROST_TEXTURE_UNKNOWN_SIZE ||
+   self->image_height == BIFROST_TEXTURE_UNKNOWN_SIZE ||
+   self->image_depth == BIFROST_TEXTURE_UNKNOWN_SIZE;
+
+  assert(!is_indefinite && "Texture_setData: The texture dimensions should be defined by this point.");
+
+  self->image_miplevels = self->image_miplevels ? 1 + uint32_t(std::floor(std::log2(float(std::max(std::max(self->image_width, self->image_height), self->image_depth))))) : 1;
+
+  bfBufferCreateParams buffer_params;
+  buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+  buffer_params.allocation.size       = pixels_length;
+  buffer_params.usage                 = BIFROST_BUF_TRANSFER_SRC;
+
+  const bfBufferHandle staging_buffer = bfGfxDevice_newBuffer(self->parent, &buffer_params);
+
+  bfBuffer_map(staging_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+  bfBuffer_copyCPU(staging_buffer, 0, pixels, pixels_length);
+  bfBuffer_unMap(staging_buffer);
+
+  bfTexture__createImage(self);
+  bfTexture__allocMemory(self);
+  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+  bfTexture_loadBuffer(self, staging_buffer);
+  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  self->tex_view = bfCreateImageView2D(self->parent->handle, self->tex_image, self->tex_format, bfTexture__aspect(self), self->image_miplevels);
+
+  bfGfxDevice_release(self->parent, staging_buffer);
+
+  return bfTrue;
+}
+
+void bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties)
+{
+  if (self->tex_sampler)
+  {
+    vkDestroySampler(self->parent->handle, self->tex_sampler, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+    self->tex_sampler = VK_NULL_HANDLE;
+  }
+
+  if (sampler_properties)
+  {
+    VkSamplerCreateInfo sampler_info;
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.pNext = NULL;
+    sampler_info.flags = 0x0;
+    // Filters
+    sampler_info.magFilter = bfVkConvertSamplerFilterMode(sampler_properties->mag_filter);
+    sampler_info.minFilter = bfVkConvertSamplerFilterMode(sampler_properties->min_filter);
+    // Extra Filtering
+    sampler_info.anisotropyEnable = VK_FALSE;
+    sampler_info.maxAnisotropy    = 1.0f;
+    // Normalized Coords (Should probably always be false)
+    sampler_info.unnormalizedCoordinates = VK_FALSE;  // VK_FALSE = [0, 1], VK_TRUE = [0, texture_width]
+    sampler_info.compareEnable           = VK_FALSE;
+    sampler_info.compareOp               = VK_COMPARE_OP_ALWAYS;
+    // MipMapping
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.minLod     = sampler_properties->min_lod;
+    sampler_info.maxLod     = sampler_properties->max_lod;
+    // Bordering
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    // Address Modes
+    sampler_info.addressModeU = bfVkConvertSamplerAddressMode(sampler_properties->u_address);
+    sampler_info.addressModeV = bfVkConvertSamplerAddressMode(sampler_properties->v_address);
+    sampler_info.addressModeW = bfVkConvertSamplerAddressMode(sampler_properties->w_address);
+
+    const VkResult error = vkCreateSampler(self->parent->handle, &sampler_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->tex_sampler);
+    assert(error == VK_SUCCESS);  // NOTE(Shareef): maybe return whether or not this was successfull?
+  }
+}
+
+/* Vertex Binding */
+bfVertexLayoutSetHandle bfVertexLayout_new(void)
+{
+  bfVertexLayoutSetHandle self = new bfVertexLayoutSet();
+  std::memset(self, 0x0, sizeof(bfVertexLayoutSet));
+  return self;
+}
+
+static void bfVertexLayout_addXBinding(bfVertexLayoutSetHandle self, uint32_t binding, uint32_t sizeof_vertex, VkVertexInputRate input_rate)
+{
+  assert(self->num_attrib_bindings < BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS);
+
+  VkVertexInputBindingDescription* desc = self->buffer_bindings + self->num_buffer_bindings;
+
+  desc->binding   = binding;
+  desc->stride    = sizeof_vertex;
+  desc->inputRate = input_rate;
+
+  ++self->num_buffer_bindings;
+}
+
+void bfVertexLayout_addVertexBinding(bfVertexLayoutSetHandle self, uint32_t binding, uint32_t sizeof_vertex)
+{
+  bfVertexLayout_addXBinding(self, binding, sizeof_vertex, VK_VERTEX_INPUT_RATE_VERTEX);
+}
+
+void bfVertexLayout_addInstanceBinding(bfVertexLayoutSetHandle self, uint32_t binding, uint32_t stride)
+{
+  bfVertexLayout_addXBinding(self, binding, stride, VK_VERTEX_INPUT_RATE_INSTANCE);
+}
+
+void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t binding, BifrostVertexFormatAttribute format, uint32_t offset)
+{
+  VkVertexInputAttributeDescription* desc = self->attrib_bindings + self->num_attrib_bindings;
+
+  desc->location = self->num_attrib_bindings;
+  desc->binding  = binding;
+  desc->format   = bfVkConvertVertexFormatAttrib(format);
+  desc->offset   = offset;
+
+  ++self->num_attrib_bindings;
+}
+
+void bfVertexLayout_delete(bfVertexLayoutSetHandle self)
+{
+  delete self;
 }

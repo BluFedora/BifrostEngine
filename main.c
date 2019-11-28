@@ -18,15 +18,15 @@ static char* load_from_file(const char* const filename, long* out_size)
   if (f)
   {
     fseek(f, 0, SEEK_END);
-    long fileSize = ftell(f);
+    long file_size = ftell(f);
     fseek(f, 0, SEEK_SET);  //same as rewind(f);
-    buffer = malloc(fileSize + 1);
-    fread(buffer, sizeof(char), fileSize, f);
+    buffer = malloc(file_size + 1);
+    fread(buffer, sizeof(char), file_size, f);
     fclose(f);
 
-    buffer[fileSize] = '\0';
+    buffer[file_size] = '\0';
 
-    (*out_size) = fileSize;
+    *out_size = file_size;
   }
 
   return buffer;

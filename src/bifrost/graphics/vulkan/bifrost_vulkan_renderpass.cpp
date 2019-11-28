@@ -9,7 +9,9 @@
 
 bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params)
 {
-  bfRenderpassHandle      renderpass      = new bfRenderpass();
+  bfRenderpassHandle renderpass           = new bfRenderpass();
+  renderpass->super.type                  = BIFROST_GFX_OBJECT_RENDERPASS;
+  renderpass->info                        = *params;
   const auto              num_attachments = params->num_attachments;
   VkAttachmentDescription attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   const uint32_t          num_subpasses = params->num_subpasses;
@@ -58,13 +60,13 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
     const bfAttachmentInfo* const  att_info = params->attachments + i;
 
     att->flags          = att_info->may_alias ? VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT : 0x0;
-    att->format         = bfVkConvertFormat(att_info->texture->tex_format);
+    att->format         = att_info->texture->tex_format;
     att->samples        = bfVkConvertSampleCount(att_info->texture->tex_samples);
     att->loadOp         = bitsToLoadOp(i, params->load_ops, params->clear_ops);
     att->storeOp        = bitsToStoreOp(i, params->store_ops);
     att->stencilLoadOp  = bitsToLoadOp(i, params->stencil_load_ops, params->stencil_clear_ops);
     att->stencilStoreOp = bitsToStoreOp(i, params->stencil_store_ops);
-    att->initialLayout  = bfVkConvertImgLayout(att_info->texture->tex_layout);
+    att->initialLayout  = att_info->texture->tex_layout;
     att->finalLayout    = bfVkConvertImgLayout(att_info->final_layout);
   }
 
@@ -99,7 +101,8 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
     sub->pResolveAttachments     = NULL;  // TODO(Shareef): This is for multisampling.
     sub->pDepthStencilAttachment = has_depth ? depth_atts + i : nullptr;
     sub->preserveAttachmentCount = 0;
-    sub->pPreserveAttachments    = NULL; // NOTE(Shareef): For attachments that must be preserved during this subpass but must not be touched by it.
+    sub->pPreserveAttachments    = NULL;
+    // NOTE(Shareef): For attachments that must be preserved during this subpass but must not be touched by it.
   }
 
   for (uint32_t i = 0; i < num_dependencies; ++i)
@@ -133,8 +136,85 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   return renderpass;
 }
 
-void bfGfxDevice_deleteRenderpass(bfGfxDeviceHandle self, bfRenderpassHandle renderpass)
+void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
 {
-  vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
-  delete renderpass;
+  BifrostGfxObjectBase* const obj = static_cast<BifrostGfxObjectBase*>(resource);
+
+  switch (obj->type)
+  {
+    case BIFROST_GFX_OBJECT_BUFFER:
+    {
+      bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(obj);
+
+      vkDestroyBuffer(self->handle, buffer->handle, CUSTOM_ALLOC);
+      VkPoolAllocator_free(buffer->alloc_pool, &buffer->alloc_info);
+      break;
+    }
+    case BIFROST_GFX_OBJECT_RENDERPASS:
+    {
+      bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
+      vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
+      break;
+    }
+    case BIFROST_GFX_OBJECT_SHADER_MODULE:
+    {
+      bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(obj);
+
+      if (shader_module->handle != VK_NULL_HANDLE)
+      {
+        vkDestroyShaderModule(shader_module->parent->handle, shader_module->handle, CUSTOM_ALLOC);
+      }
+      break;
+    }
+    case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
+    {
+      bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
+
+      for (uint32_t i = 0; i < shader_program->num_desc_set_layouts; ++i)
+      {
+        const VkDescriptorSetLayout layout = shader_program->desc_set_layouts[i];
+
+        if (layout != VK_NULL_HANDLE)
+        {
+          vkDestroyDescriptorSetLayout(shader_program->parent->handle, layout, CUSTOM_ALLOC);
+        }
+      }
+
+      if (shader_program->layout != VK_NULL_HANDLE)
+      {
+        vkDestroyPipelineLayout(shader_program->parent->handle, shader_program->layout, CUSTOM_ALLOC);
+      }
+      break;
+    }
+    case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
+    {
+      break;
+    }
+    case BIFROST_GFX_OBJECT_TEXTURE: {
+      bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
+
+      bfTexture_setSampler(texture, nullptr);
+
+      if (texture->tex_view != VK_NULL_HANDLE)
+      {
+        vkDestroyImageView(texture->parent->handle, texture->tex_view, CUSTOM_ALLOC);
+      }
+
+      if (texture->tex_memory != VK_NULL_HANDLE)
+      {
+        vkFreeMemory(texture->parent->handle, texture->tex_memory, CUSTOM_ALLOC);
+      }
+
+      if (texture->tex_image != VK_NULL_HANDLE)
+      {
+        vkDestroyImage(texture->parent->handle, texture->tex_image, CUSTOM_ALLOC);
+      }
+      break;
+    }
+    default:
+      assert(false);
+      break;
+  }
+
+  delete obj;
 }
