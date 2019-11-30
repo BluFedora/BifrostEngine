@@ -198,10 +198,10 @@ class BaseRenderer
 
     static const BasicVertex VERTEX_DATA[] =
      {
-      {{-0.5f, -0.5f, 0.0f, 1.0f}, {255, 0, 0, 128}, {0.0f, 0.0f}},
-      {{+0.5f, -0.5f, 0.0f, 1.0f}, {255, 0, 0, 128}, {1.0f, 0.0f}},
-      {{+0.5f, +0.5f, 0.0f, 1.0f}, {0, 255, 0, 255}, {1.0f, 1.0f}},
-      {{-0.5f, +0.5f, 0.0f, 1.0f}, {255, 0, 0, 255}, {0.0f, 1.0f}},
+      {{-0.5f, -0.5f, 0.0f, 1.0f}, {255, 255, 255, 255}, {0.0f, 0.0f}},
+      {{+0.5f, -0.5f, 0.0f, 1.0f}, {255, 255, 255, 255}, {1.0f, 0.0f}},
+      {{+0.5f, +0.5f, 0.0f, 1.0f}, {255, 0, 255, 255}, {1.0f, 1.0f}},
+      {{-0.5f, +0.5f, 0.0f, 1.0f}, {255, 255, 255, 255}, {0.0f, 1.0f}},
      };
 
     static const uint16_t INDEX_DATA[] = {0u, 1u, 2u, 3u, 2u, 0u};
@@ -323,6 +323,7 @@ class BaseRenderer
 
   void cleanup()
   {
+    bfGfxDevice_flush(m_GfxDevice);
     bfGfxDevice_release(m_GfxDevice, m_TestMaterial);
     bfGfxDevice_release(m_GfxDevice, m_ShaderModuleF);
     bfGfxDevice_release(m_GfxDevice, m_ShaderModuleV);
@@ -405,6 +406,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
   void deinit()
   {
     bfLogger_deinit();
+    m_Renderer.cleanup();
   }
 };
 
@@ -431,7 +433,7 @@ namespace bifrost::meta
 
 #include <filesystem>
 
-int main(int argc, const char* argv[])
+int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
   namespace bfmeta = bifrost::meta;
   using namespace bifrost;
@@ -482,7 +484,7 @@ int main(int argc, const char* argv[])
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   const auto main_window = glfwCreateWindow(INITIAL_WINDOW_SIZE[0], INITIAL_WINDOW_SIZE[1], "Bifrost Engine", nullptr, nullptr);
-  glfwSetWindowSizeLimits(main_window, 400, 400, GLFW_DONT_CARE, GLFW_DONT_CARE);
+  glfwSetWindowSizeLimits(main_window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
   /*
   glfwMakeContextCurrent(main_window);
 
@@ -572,7 +574,7 @@ int main(int argc, const char* argv[])
         engine.endFrame();
       }
 
-      glfwSwapBuffers(main_window);
+      // glfwSwapBuffers(main_window);
     }
 
     engine.deinit();

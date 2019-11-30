@@ -14,6 +14,8 @@ typedef struct DescriptorLink_t
   uint32_t                 num_textures_left;
   uint32_t                 num_uniforms_left;
   uint32_t                 num_descsets_left;
+  uint32_t                 num_active_desc_sets;
+  struct DescriptorLink_t* prev;
   struct DescriptorLink_t* next;
 
 } DescriptorLink;
@@ -36,6 +38,7 @@ typedef struct MaterialPool_t
 
 BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* params);
 void                   MaterialPool_alloc(BifrostDescriptorPool* self, bfDescriptorSetHandle desc_set);
+void                   MaterialPool_free(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set);
 void                   MaterialPool_delete(BifrostDescriptorPool* self);
 
 typedef BifrostDescriptorPool VulkanDescriptorPool;

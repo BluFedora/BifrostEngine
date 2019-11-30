@@ -120,6 +120,7 @@ BIFROST_DEFINE_HANDLE(DescriptorSet)
   bfShaderProgramHandle  shader_program;
   VkDescriptorSet        handle;
   uint32_t               set_index;
+  DescriptorLink*        pool_link;
   VkDescriptorBufferInfo buffer_info[BIFROST_GFX_DESCRIPTOR_SET_MAX_WRITES];
   VkDescriptorImageInfo  image_info[BIFROST_GFX_DESCRIPTOR_SET_MAX_WRITES];
   VkBufferView           buffer_view_info[BIFROST_GFX_DESCRIPTOR_SET_MAX_WRITES];

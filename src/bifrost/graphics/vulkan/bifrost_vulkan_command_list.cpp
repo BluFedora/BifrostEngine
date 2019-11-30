@@ -54,6 +54,7 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClear
 void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments)
 {
   const uint32_t num_attachments = self->pipeline_state.renderpass->info.num_attachments;
+  // const uint64_t hash_code       = bifrost::vk::hash(0x0, &self->pipeline_state.renderpass->info);
   const uint64_t hash_code       = bifrost::vk::hash(0x0, attachments, num_attachments);
 
   bfFramebufferHandle fb = self->parent->cache_framebuffer.find(hash_code);
@@ -104,6 +105,8 @@ void bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32
 
 void bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height)
 {
+  // TODO: Clamp the paramters or emit an error.
+
   const int32_t fb_width  = self->framebuffer->attachments[0]->image_width;
   const int32_t fb_height = self->framebuffer->attachments[0]->image_height;
 
@@ -888,6 +891,12 @@ namespace bifrost::vk
 
   std::uint64_t hash(std::uint64_t self, bfTextureHandle* attachments, std::size_t num_attachments)
   {
+    if (num_attachments)
+    {
+      self = hash::addS32(self, attachments[0]->image_width);
+      self = hash::addS32(self, attachments[0]->image_height);
+    }
+
     for (std::size_t i = 0; i < num_attachments; ++i)
     {
       self = hash::addPointer(self, attachments[i]);

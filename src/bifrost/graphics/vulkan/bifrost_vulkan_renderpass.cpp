@@ -153,6 +153,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
     case BIFROST_GFX_OBJECT_RENDERPASS:
     {
       bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
+
       vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
       break;
     }
@@ -188,9 +189,13 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
     }
     case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
     {
+      bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
+
+      MaterialPool_free(self->descriptor_pool, desc_set);
       break;
     }
-    case BIFROST_GFX_OBJECT_TEXTURE: {
+    case BIFROST_GFX_OBJECT_TEXTURE:
+    {
       bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
 
       bfTexture_setSampler(texture, nullptr);
@@ -212,8 +217,10 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
       break;
     }
     default:
-      assert(false);
-      break;
+      {
+        assert(false);
+        break;
+      }
   }
 
   delete obj;

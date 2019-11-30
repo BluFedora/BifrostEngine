@@ -1,6 +1,7 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
-#include "vulkan/bifrost_vulkan_physical_device.h"  // TODO: This is bad
+// TODO: This is bad
+#include "vulkan/bifrost_vulkan_physical_device.h"  
 
 #include <assert.h>                       /* assert         */
 #include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions

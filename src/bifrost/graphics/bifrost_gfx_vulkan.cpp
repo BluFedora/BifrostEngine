@@ -325,8 +325,38 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
 
 void bfGfxContext_delete(bfGfxContextHandle self)
 {
-  MaterialPool_delete(self->logical_device->descriptor_pool);
-  bfGfxDevice_flush(self->logical_device);
+  auto&           window        = self->main_window;
+  VulkanSwapchain old_swapchain = window.swapchain;
+  auto            device        = self->logical_device;
+
+  gfxContextDestroyCmdBuffers(self, &old_swapchain);
+  gfxContextDestroyCmdFences(self, &old_swapchain);
+  gfxContextDestroySwapchainImageList(self, &old_swapchain);
+  gfxContextDestroySwapchain(self, &old_swapchain);
+
+  MaterialPool_delete(device->descriptor_pool);
+
+  const size_t num_semaphores = self->max_frame_in_flight * 2;
+
+  for (size_t i = 0; i < num_semaphores; ++i)
+  {
+    vkDestroySemaphore(device->handle, window.is_image_available[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  }
+
+  freeN(window.is_image_available);
+
+  #if BIFROST_USE_DEBUG_CALLBACK
+  PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
+
+  if (func)
+  {
+    func(self->instance, self->debug_callback, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  }
+#endif
+
+  vkDestroyCommandPool(device->handle, self->command_pools[0], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroyDevice(device->handle, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroyInstance(self->instance, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
   delete self;
 }
 
@@ -364,7 +394,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
     list->has_command    = bfFalse;
     std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
 
-    bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_STRIP);
+    bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_LIST);
     bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CW);
     bfGfxCmdList_setCullFace(list, BIFROST_CULL_FACE_NONE);
     bfGfxCmdList_setDepthTesting(list, bfFalse);
@@ -2124,6 +2154,7 @@ bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
 
 void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
 {
+  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
   {
     VkBufferImageCopy region;
@@ -2151,6 +2182,7 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
      &region);
   }
   gfxContextEndTransientCommandBuffer(transient_cmd);
+  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length)
@@ -2177,9 +2209,7 @@ bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pix
 
   bfTexture__createImage(self);
   bfTexture__allocMemory(self);
-  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
   bfTexture_loadBuffer(self, staging_buffer);
-  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
   self->tex_view = bfCreateImageView2D(self->parent->handle, self->tex_image, self->tex_format, bfTexture__aspect(self), self->image_miplevels);
 
   bfGfxDevice_release(self->parent, staging_buffer);

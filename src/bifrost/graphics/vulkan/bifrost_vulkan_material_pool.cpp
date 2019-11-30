@@ -11,10 +11,12 @@ static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, D
 
   if (link)
   {
-    link->num_textures_left = pool->num_textures_per_link;
-    link->num_uniforms_left = pool->num_uniforms_per_link;
-    link->num_descsets_left = pool->num_descsets_per_link;
-    link->next              = next;
+    link->num_textures_left    = pool->num_textures_per_link;
+    link->num_uniforms_left    = pool->num_uniforms_per_link;
+    link->num_descsets_left    = pool->num_descsets_per_link;
+    link->num_active_desc_sets = 0;
+    link->prev                 = nullptr;
+    link->next                 = next;
 
     // Type : Num to Alloc of that Type
     VkDescriptorPoolSize pool_sizes[2];
@@ -56,7 +58,7 @@ BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* const pa
   if (self)
   {
     memcpy(self, params, sizeof(MaterialPoolCreateParams));
-    self->head = create_link(params, NULL);
+    self->head = create_link(params, nullptr);
   }
 
   return self;
@@ -64,12 +66,22 @@ BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* const pa
 
 void MaterialPool_alloc(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set)
 {
-  bfShaderProgramHandle shader = desc_set->shader_program;
+  bfShaderProgramHandle      shader = desc_set->shader_program;
   bfDescriptorSetLayoutInfo* info   = shader->desc_set_layout_infos + desc_set->set_index;
 
   DescriptorLink* link = self->head;
 
-  if (link->num_textures_left < info->num_image_samplers || link->num_uniforms_left < info->num_uniforms || link->num_descsets_left <= 0)
+  while (link)
+  {
+    if (link->num_textures_left >= info->num_image_samplers && link->num_uniforms_left >= info->num_uniforms && link->num_descsets_left > 0)
+    {
+      break;
+    }
+
+    link = link->next;
+  }
+
+  if (!link)
   {
     MaterialPoolCreateParams params;
     params.logical_device        = self->super.logical_device;
@@ -87,11 +99,43 @@ void MaterialPool_alloc(BifrostDescriptorPool* const self, bfDescriptorSetHandle
   alloc_info.descriptorSetCount = 1;
   alloc_info.pSetLayouts        = shader->desc_set_layouts + desc_set->set_index;
 
+  desc_set->pool_link = link;
+
   vkAllocateDescriptorSets(self->super.logical_device->handle, &alloc_info, &desc_set->handle);
 
   link->num_textures_left -= info->num_image_samplers;
   link->num_uniforms_left -= info->num_uniforms;
+  ++link->num_active_desc_sets;
   --link->num_descsets_left;
+}
+
+void MaterialPool_free(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set)
+{
+  DescriptorLink* link = desc_set->pool_link;
+
+  if (!--link->num_active_desc_sets)
+  {
+    if (link->prev)
+    {
+      link->prev->next = link->next;
+
+      if (link->next)
+      {
+        link->next->prev = link->prev;
+      }
+    }
+    else
+    {
+      self->head = link->next;
+
+      if (link->next)
+      {
+        link->next->prev = self->head;
+      }
+    }
+
+    free_link(self->super.logical_device, link);
+  }
 }
 
 void MaterialPool_delete(BifrostDescriptorPool* const self)
