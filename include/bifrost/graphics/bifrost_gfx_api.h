@@ -47,6 +47,7 @@ typedef enum bfBufferPropertyFlags_t
   //   CAN NOT HAVE SET: BPF_HOST_CACHE_MANAGED or
   //   CAN NOT HAVE SET: BPF_HOST_CACHED
   BIFROST_BPF_PROTECTED = (1 << 5)
+
 } bfBufferPropertyFlags;
 
 typedef enum bfBufferUsageFlags_t
@@ -102,10 +103,10 @@ typedef enum
   BIFROST_SHADER_STAGE_FRAGMENT                = bfBit(4),
   BIFROST_SHADER_STAGE_COMPUTE                 = bfBit(5),
   BIFROST_SHADER_STAGE_GRAPHICS                = BIFROST_SHADER_STAGE_VERTEX |
-                                  BIFROST_SHADER_STAGE_TESSELLATION_CONTROL |
-                                  BIFROST_SHADER_STAGE_TESSELLATION_EVALUATION |
-                                  BIFROST_SHADER_STAGE_GEOMETRY |
-                                  BIFROST_SHADER_STAGE_FRAGMENT,
+                                                 BIFROST_SHADER_STAGE_TESSELLATION_CONTROL |
+                                                 BIFROST_SHADER_STAGE_TESSELLATION_EVALUATION |
+                                                 BIFROST_SHADER_STAGE_GEOMETRY |
+                                                 BIFROST_SHADER_STAGE_FRAGMENT,
 
 } BifrostShaderStageFlags;
 
@@ -114,7 +115,6 @@ typedef enum BifrostTextureType_t
   BIFROST_TEX_TYPE_1D,
   BIFROST_TEX_TYPE_2D,
   BIFROST_TEX_TYPE_3D,
-  // BIFROST_TEX_TYPE_MAX,
 
 } BifrostTextureType;
 
@@ -122,7 +122,6 @@ typedef enum BifrostSamplerFilterMode_t
 {
   BIFROST_SFM_NEAREST,
   BIFROST_SFM_LINEAR,
-  BIFROST_SFM_MAX,
 
 } BifrostSamplerFilterMode;
 
@@ -256,6 +255,8 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 void                   bfGfxContext_endFrame(bfGfxContextHandle self);
 void                   bfGfxContext_delete(bfGfxContextHandle self);
 
+  // TODO: This should not be in this Public API header.
+  // Needs to be made internal.
 typedef enum BifrostGfxObjectType_t
 {
   BIFROST_GFX_OBJECT_BUFFER         = 0,
@@ -264,14 +265,23 @@ typedef enum BifrostGfxObjectType_t
   BIFROST_GFX_OBJECT_SHADER_PROGRAM = 3,
   BIFROST_GFX_OBJECT_DESCRIPTOR_SET = 4,
   BIFROST_GFX_OBJECT_TEXTURE        = 5,
+  BIFROST_GFX_OBJECT_FRAMEBUFFER    = 6,
+  BIFROST_GFX_OBJECT_PIPELINE       = 7,
 
 } BifrostGfxObjectType;
 
 typedef struct BifrostGfxObjectBase_t
 {
-  BifrostGfxObjectType type;
+  BifrostGfxObjectType           type;
+  struct BifrostGfxObjectBase_t* next;
+  uint64_t                       hash_code;
+  uint8_t                        last_frame_used;
 
 } BifrostGfxObjectBase;
+
+void BifrostGfxObjectBase_ctor(BifrostGfxObjectBase*self, BifrostGfxObjectType type);
+  // END: Private Impl Header
+
 
 /* Logical Device */
 void                   bfGfxDevice_flush(bfGfxDeviceHandle self);
@@ -298,7 +308,6 @@ void                    bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle s
 void                    bfVertexLayout_delete(bfVertexLayoutSetHandle self);
 
 /* Renderpass */
-
 typedef struct bfAttachmentInfo_t
 {
   bfTextureHandle    texture;  // [format, layouts[0], sample_count]
@@ -391,7 +400,6 @@ void     bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
 bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length);
 void     bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties);
 
-// if 'VkDescriptorSetLayout' is the same for two pipelines then the layout can be shared.
 /* CommandList */
 bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self);  // True if no error
 void     bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass);
@@ -448,14 +456,12 @@ void     bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayout
 void     bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
 void     bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
 void     bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
-void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets,
-                                         uint32_t num_desc_sets);                                       // Call after pipeline is setup.
+void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);                                       // Call after pipeline is setup.
 void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);  // Draw Cmds
 void     bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
 void     bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);
 void     bfGfxCmdList_drawIndexedInstanced(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset, uint32_t first_instance, uint32_t num_instances);
-void     bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandListHandle* commands,
-                                         uint32_t num_commands);  // General
+void     bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandListHandle* commands, uint32_t num_commands);  // General
 void     bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self);
 void     bfGfxCmdList_end(bfGfxCommandListHandle self);
 void     bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass

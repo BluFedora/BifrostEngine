@@ -327,6 +327,7 @@ class BaseRenderer
     bfGfxDevice_release(m_GfxDevice, m_TestMaterial);
     bfGfxDevice_release(m_GfxDevice, m_ShaderModuleF);
     bfGfxDevice_release(m_GfxDevice, m_ShaderModuleV);
+    bfGfxDevice_release(m_GfxDevice, m_ShaderProgram);
     bfGfxDevice_release(m_GfxDevice, m_TestTexture);
     bfGfxDevice_release(m_GfxDevice, m_VertexBuffer);
     bfGfxDevice_release(m_GfxDevice, m_IndexBuffer);

@@ -17,6 +17,7 @@ BIFROST_DEFINE_HANDLE(GfxDevice)
   bifrost::vk::ObjectHashCache<bfRenderpass>  cache_renderpass;
   bifrost::vk::ObjectHashCache<bfPipeline>    cache_pipeline;
   bifrost::vk::ObjectHashCache<bfFramebuffer> cache_framebuffer;
+  BifrostGfxObjectBase*                       cached_resources;
 };
 
 #if __cplusplus
@@ -32,14 +33,16 @@ BIFROST_DEFINE_HANDLE(Renderpass)
 
 BIFROST_DEFINE_HANDLE(Framebuffer)
 {
-  VkFramebuffer   handle;
-  uint32_t        num_attachments;
-  bfTextureHandle attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  BifrostGfxObjectBase super;
+  VkFramebuffer        handle;
+  uint32_t             num_attachments;
+  bfTextureHandle      attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
 };
 
 BIFROST_DEFINE_HANDLE(Pipeline)
 {
-  VkPipeline handle;
+  BifrostGfxObjectBase super;
+  VkPipeline           handle;
 };
 
 struct VulkanWindow final

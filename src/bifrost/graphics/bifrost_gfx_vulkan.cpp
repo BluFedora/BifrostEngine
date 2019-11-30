@@ -319,6 +319,65 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
 
 void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
+  BifrostGfxObjectBase* prev         = nullptr;
+  BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
+  BifrostGfxObjectBase* release_list = nullptr;
+
+  while (curr)
+  {
+    BifrostGfxObjectBase* next = curr->next;
+
+    if (std::abs(int(self->frame_count - curr->last_frame_used)) >= 60)
+    {
+      if (prev)
+      {
+        prev->next = next;
+      }
+      else
+      {
+        self->logical_device->cached_resources = next;
+      }
+
+      curr->next   = release_list;
+      release_list = curr;
+
+      curr = next;
+
+      if (curr)
+      {
+        next = curr->next;
+      }
+    }
+
+    prev = curr;
+    curr = next;
+  }
+
+  if (release_list)
+  {
+    bfGfxDevice_flush(self->logical_device);
+    while (release_list)
+    {
+      BifrostGfxObjectBase* next = release_list->next;
+
+      if (release_list->type == BIFROST_GFX_OBJECT_RENDERPASS)
+      {
+        self->logical_device->cache_renderpass.remove(release_list->hash_code);
+      }
+      else if (release_list->type == BIFROST_GFX_OBJECT_PIPELINE)
+      {
+        self->logical_device->cache_pipeline.remove(release_list->hash_code);
+      }
+      else if (release_list->type == BIFROST_GFX_OBJECT_FRAMEBUFFER)
+      {
+        self->logical_device->cache_framebuffer.remove(release_list->hash_code);
+      }
+
+      bfGfxDevice_release(self->logical_device, release_list);
+      release_list = next;
+    }
+  }
+
   ++self->frame_count;
   self->frame_index = self->frame_count % self->max_frame_in_flight;
 }
@@ -328,6 +387,17 @@ void bfGfxContext_delete(bfGfxContextHandle self)
   auto&           window        = self->main_window;
   VulkanSwapchain old_swapchain = window.swapchain;
   auto            device        = self->logical_device;
+
+  BifrostGfxObjectBase* curr = device->cached_resources;
+
+  while (curr)
+  {
+    BifrostGfxObjectBase* next = curr->next;
+    bfGfxDevice_release(self->logical_device, curr);
+    curr = next;
+  }
+
+  VkPoolAllocatorDtor(&device->device_memory_allocator);
 
   gfxContextDestroyCmdBuffers(self, &old_swapchain);
   gfxContextDestroyCmdFences(self, &old_swapchain);
@@ -345,7 +415,7 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 
   freeN(window.is_image_available);
 
-  #if BIFROST_USE_DEBUG_CALLBACK
+#if BIFROST_USE_DEBUG_CALLBACK
   PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
 
   if (func)
@@ -812,8 +882,8 @@ namespace
      .sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
      .pNext = NULL,
      .flags = 0,
-     .dpy = s_Display,
-     .window = s_Window};
+     .dpy = self->params->platform_module,
+     .window = self->params->platform_window};
 
     VkResult err = vkCreateXlibSurfaceKHR(instance, &create_info, CUSTOM_ALLOCATOR, surface);
 #else  // TODO: Other Platforms
@@ -896,7 +966,7 @@ namespace
     return nullptr;
   }
 
-  VkDeviceQueueCreateInfo makeBasicQCreateInfo(uint32_t queue_index, uint32_t num_queues, const float* queue_priortites)
+  VkDeviceQueueCreateInfo makeBasicQCreateInfo(uint32_t queue_index, uint32_t num_queues, const float* queue_priorities)
   {
     VkDeviceQueueCreateInfo create_info;
 
@@ -905,7 +975,7 @@ namespace
     create_info.flags            = 0x0;
     create_info.queueFamilyIndex = queue_index;
     create_info.queueCount       = num_queues;
-    create_info.pQueuePriorities = queue_priortites;
+    create_info.pQueuePriorities = queue_priorities;
 
     return create_info;
   }
@@ -936,7 +1006,7 @@ namespace
     addQueue(device->queue_list.transfer_family_index);
     addQueue(device->queue_list.present_family_index);
 
-    VkPhysicalDeviceFeatures deviceFeatures;  // I should be checking if the features exist for my device at all.
+    VkPhysicalDeviceFeatures deviceFeatures;  // I should be checking if the features exist for the device in the first place.
     memset(&deviceFeatures, 0x0, sizeof(deviceFeatures));
     //deviceFeatures.samplerAnisotropy = VK_TRUE;
     //deviceFeatures.fillModeNonSolid = VK_TRUE;
@@ -971,7 +1041,8 @@ namespace
     create_material_pool.num_uniforms_per_link = 16;
     create_material_pool.num_descsets_per_link = 8;
 
-    self->logical_device->descriptor_pool = MaterialPool_new(&create_material_pool);
+    self->logical_device->descriptor_pool  = MaterialPool_new(&create_material_pool);
+    self->logical_device->cached_resources = nullptr;
 
     // Matches order of 'BifrostGfxQueueType'.
     const uint32_t queues_to_grab[] =
@@ -1481,7 +1552,8 @@ bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCrea
 {
   bfBufferHandle self = new bfBuffer();
 
-  self->super.type            = BIFROST_GFX_OBJECT_BUFFER;
+  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_BUFFER);
+
   self->alloc_pool            = &self_->device_memory_allocator;
   self->alloc_info.mapped_ptr = NULL;
   self->real_size             = params->allocation.size;
@@ -1566,7 +1638,8 @@ bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self_, Bifros
 {
   bfShaderModuleHandle self = new bfShaderModule();
 
-  self->super.type     = BIFROST_GFX_OBJECT_SHADER_MODULE;
+  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_SHADER_MODULE);
+
   self->parent         = self_;
   self->type           = type;
   self->handle         = VK_NULL_HANDLE;
@@ -1579,7 +1652,8 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self_, cons
 {
   bfShaderProgramHandle self = new bfShaderProgram();
 
-  self->super.type           = BIFROST_GFX_OBJECT_SHADER_PROGRAM;
+  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_SHADER_PROGRAM);
+
   self->parent               = self_;
   self->layout               = VK_NULL_HANDLE;
   self->num_desc_set_layouts = params->num_desc_sets;
@@ -1777,7 +1851,9 @@ bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle 
   assert(index < self_->num_desc_set_layouts);
 
   bfDescriptorSetHandle self = new bfDescriptorSet();
-  self->super.type           = BIFROST_GFX_OBJECT_DESCRIPTOR_SET;
+
+  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_DESCRIPTOR_SET);
+
   self->shader_program       = self_;
   self->set_index            = index;
   self->handle               = VK_NULL_HANDLE;
@@ -1875,7 +1951,8 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
 {
   bfTextureHandle self = new bfTexture();
 
-  self->super.type      = BIFROST_GFX_OBJECT_TEXTURE;
+  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_TEXTURE);
+
   self->parent          = self_;
   self->flags           = params->flags;
   self->image_type      = params->type;
@@ -2304,4 +2381,11 @@ void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t bindi
 void bfVertexLayout_delete(bfVertexLayoutSetHandle self)
 {
   delete self;
+}
+
+// Idk what;s happeneing with this code
+
+void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj)
+{
+  obj->last_frame_used = ctx->frame_count;
 }

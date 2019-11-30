@@ -10,7 +10,9 @@
 bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params)
 {
   bfRenderpassHandle renderpass           = new bfRenderpass();
-  renderpass->super.type                  = BIFROST_GFX_OBJECT_RENDERPASS;
+
+  BifrostGfxObjectBase_ctor(&renderpass->super, BIFROST_GFX_OBJECT_RENDERPASS);
+
   renderpass->info                        = *params;
   const auto              num_attachments = params->num_attachments;
   VkAttachmentDescription attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
@@ -216,9 +218,23 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
       }
       break;
     }
+    case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+      {
+        bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(obj);
+
+        vkDestroyFramebuffer(self->handle, framebuffer->handle, CUSTOM_ALLOC);
+        break;
+      }
+    case BIFROST_GFX_OBJECT_PIPELINE:
+      {
+        bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(obj);
+
+        vkDestroyPipeline(self->handle, pipeline->handle, CUSTOM_ALLOC);
+        break;
+      }
     default:
       {
-        assert(false);
+        assert(!"Invalid object type.");
         break;
       }
   }

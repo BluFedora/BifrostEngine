@@ -1,7 +1,7 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
 // TODO: This is bad
-#include "vulkan/bifrost_vulkan_physical_device.h"  
+#include "vulkan/bifrost_vulkan_physical_device.h"
 
 #include <assert.h>                       /* assert         */
 #include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions
@@ -9,17 +9,25 @@
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, uint32_t num_layers);
 static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
 
+void BifrostGfxObjectBase_ctor(BifrostGfxObjectBase* self, BifrostGfxObjectType type)
+{
+  self->type            = type;
+  self->next            = NULL;
+  self->hash_code       = 0x0;
+  self->last_frame_used = 0;
+}
+
 bfTextureSamplerProperties bfTextureSamplerProperties_init(BifrostSamplerFilterMode filter, BifrostSamplerAddressMode uv_addressing)
 {
   bfTextureSamplerProperties props;
 
   props.min_filter = filter;
   props.mag_filter = filter;
-  props.u_address = uv_addressing;
-  props.v_address = uv_addressing;
-  props.w_address = uv_addressing;
-  props.min_lod = 0.0f;
-  props.max_lod = 1.0f;
+  props.u_address  = uv_addressing;
+  props.v_address  = uv_addressing;
+  props.w_address  = uv_addressing;
+  props.min_lod    = 0.0f;
+  props.max_lod    = 1.0f;
 
   return props;
 }

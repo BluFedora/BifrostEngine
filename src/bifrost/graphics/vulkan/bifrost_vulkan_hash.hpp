@@ -1,11 +1,13 @@
 #ifndef BIFROST_VULKAN_HASH_HPP
 #define BIFROST_VULKAN_HASH_HPP
 
-#include "bifrost/graphics/bifrost_gfx_api.h"        /* */
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable */
-#include <cassert>                                   /* assert   */
-#include <cstddef>                                   /* size_t   */
-#include <cstdint>                                   /* uint64_t */
+#include "bifrost/graphics/bifrost_gfx_api.h"        /*                       */
+#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable     */
+#include <cassert>                                   /* assert                */
+#include <cstddef>                                   /* size_t                */
+#include <cstdint>                                   /* uint64_t              */
+#include <cstring>                                   /* memset                */
+#include <type_traits>                               /* is_trivially_copyable */
 
 namespace bifrost
 {
@@ -34,7 +36,7 @@ namespace bifrost
         m_NodesSize{initial_size},
         m_MaxLoad{3}
       {
-        assert(initial_size && (!(initial_size & (initial_size - 1))) && "Initial size of a ObjectHashCache must be a non 0 power of two.");
+        assert(initial_size && !(initial_size & initial_size - 1) && "Initial size of a ObjectHashCache must be a non 0 power of two.");
       }
 
       // This method will update an old slot
@@ -48,7 +50,7 @@ namespace bifrost
         }
       }
 
-      T* find(std::uint64_t key) const
+      [[nodiscard]] T* find(std::uint64_t key) const
       {
         const std::size_t hash_mask = m_NodesSize - 1;
         std::size_t       idx       = key & hash_mask;
@@ -92,10 +94,11 @@ namespace bifrost
 
       void clear()
       {
-        for (std::size_t i = 0; i < m_NodesSize; ++i)
+        static_assert(std::is_trivially_copyable<Node>::value, "To memset nodes I nee to make sure they are trivial types.");
+
+        if (m_Nodes)
         {
-          m_Nodes[i].value     = nullptr;
-          m_Nodes[i].hash_code = 0x0;
+          std::memset(m_Nodes, 0x0, sizeof(Node) * m_NodesSize);
         }
       }
 
@@ -138,7 +141,7 @@ namespace bifrost
         do
         {
           const std::size_t new_size  = m_NodesSize * 2;
-          Node* const       new_nodes = new Node[new_size];
+          Node* const       new_nodes = new Node[new_size]();
           m_Nodes                     = new_nodes;
           m_NodesSize                 = new_size;
           ++m_MaxLoad;

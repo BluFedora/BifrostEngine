@@ -6,6 +6,15 @@
 
 #define CUSTOM_ALLOC nullptr
 
+static void AddCachedResource(bfGfxDeviceHandle device, BifrostGfxObjectBase* obj, std::uint64_t hash_code)
+{
+  obj->hash_code           = hash_code;
+  obj->next                = device->cached_resources;
+  device->cached_resources = obj;
+}
+
+void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj);
+
 bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
 {
   VkCommandBufferBeginInfo begin_info;
@@ -21,6 +30,7 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
 void bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass)
 {
   self->pipeline_state.renderpass = renderpass;
+  UpdateResourceFrame(self->context, &renderpass->super);
 }
 
 void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info)
@@ -33,6 +43,7 @@ void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderp
   {
     rp = bfGfxDevice_newRenderpass(self->parent, renderpass_info);
     self->parent->cache_renderpass.insert(hash_code, rp);
+    AddCachedResource(self->parent, &rp->super, hash_code);
   }
 
   bfGfxCmdList_setRenderpass(self, rp);
@@ -55,7 +66,7 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
 {
   const uint32_t num_attachments = self->pipeline_state.renderpass->info.num_attachments;
   // const uint64_t hash_code       = bifrost::vk::hash(0x0, &self->pipeline_state.renderpass->info);
-  const uint64_t hash_code       = bifrost::vk::hash(0x0, attachments, num_attachments);
+  const uint64_t hash_code = bifrost::vk::hash(0x0, attachments, num_attachments);
 
   bfFramebufferHandle fb = self->parent->cache_framebuffer.find(hash_code);
 
@@ -64,6 +75,8 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
     VkImageView image_views[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
 
     fb = new bfFramebuffer();
+
+    BifrostGfxObjectBase_ctor(&fb->super, BIFROST_GFX_OBJECT_FRAMEBUFFER);
 
     for (uint32_t i = 0; i < num_attachments; ++i)
     {
@@ -86,9 +99,11 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
     assert(err == VK_SUCCESS);
 
     self->parent->cache_framebuffer.insert(hash_code, fb);
+    AddCachedResource(self->parent, &fb->super, hash_code);
   }
 
   self->framebuffer = fb;
+  UpdateResourceFrame(self->context, &fb->super);
 }
 
 void bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -492,6 +507,8 @@ static void flushPipeline(bfGfxCommandListHandle self)
   {
     pl = new bfPipeline();
 
+    BifrostGfxObjectBase_ctor(&pl->super, BIFROST_GFX_OBJECT_PIPELINE);
+
     auto& state   = self->pipeline_state;
     auto& ss      = state.state;
     auto& program = state.program;
@@ -711,6 +728,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     assert(err == VK_SUCCESS);
 
     self->parent->cache_pipeline.insert(hash_code, pl);
+    AddCachedResource(self->parent, &pl->super, hash_code);
   }
 
   if (pl != self->pipeline)
@@ -718,6 +736,8 @@ static void flushPipeline(bfGfxCommandListHandle self)
     vkCmdBindPipeline(self->handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->handle);
     self->pipeline = pl;
   }
+
+  UpdateResourceFrame(self->context, &pl->super);
 }
 
 void bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices)
