@@ -253,7 +253,7 @@ static void bfHashMap_defaultDtor(void* key, void* value)
 static unsigned bfHashMap_defaultHash(const void* key)
 {
   const char* cp = (const char *)key;
-  size_t hash = 0x811c9dc5;
+  unsigned    hash = 0x811c9dc5;
 
   while (*cp) {
       hash ^= (unsigned char) *cp++;

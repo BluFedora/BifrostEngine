@@ -119,7 +119,7 @@ void Array_reserve(void* const self, const size_t num_elements)
   {
       /* NOTE(Shareef):
            The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, etc...
-          Used By Python and they seem pretty alright.
+           Used By Python and they seem pretty alright.
       */
     size_t new_capacity = (header->capacity >> 3) + (header->capacity < 9 ? 3 : 6) + header->capacity;
 

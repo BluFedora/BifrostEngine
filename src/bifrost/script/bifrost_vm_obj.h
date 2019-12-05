@@ -1,5 +1,3 @@
-// An arity of -1 indicates infinite (read: 0-511) params
-
 #ifndef BIFROST_VM_OBJ_H
 #define BIFROST_VM_OBJ_H
 
@@ -53,7 +51,7 @@ typedef struct BifrostObjFn_t
 {
   BifrostObj                 super;
   BifrostString              name;
-  int32_t                    arity;
+  int32_t                    arity; //!< An arity of -1 indicates infinite (read: 0-511) params
   uint16_t*                  line_to_code;
   bfVMValue*                 constants;
   uint32_t*                  instructions;
@@ -96,7 +94,7 @@ typedef struct BifrostObjStr_t
 {
   BifrostObj    super;
   BifrostString value;
-  size_t        hash;
+  unsigned      hash;
 
 } BifrostObjStr;
 

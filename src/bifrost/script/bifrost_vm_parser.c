@@ -1,4 +1,5 @@
 #include "bifrost_vm_parser.h"
+
 #include "bifrost_vm_function_builder.h"
 #include "bifrost_vm_gc.h"
 #include "bifrost_vm_obj.h"
@@ -38,9 +39,8 @@ void loopPop(BifrostParser* self)
   for (size_t i = self->loop_stack->body_start; i < body_end; ++i)
   {
     bfInstruction* const  inst = self->fn_builder->instructions + i;
-    const bfInstructionOp op   = *inst & BIFROST_INST_OP_MASK;
 
-    if (op == BIFROST_VM_OP_HALT)
+    if (*inst == BIFROST_INST_INVALID)
     {
       *inst = BIFROST_MAKE_INST_OP_AsBx(
        BIFROST_VM_OP_JUMP,
@@ -65,17 +65,6 @@ typedef struct
 
 } VariableInfo;
 
-static inline void printVariableInfo(const char* label, const VariableInfo* v)
-{
-  static const char* type_names[] = {
-   "V_LOCAL",
-   "V_MODULE",
-  };
-
-  const char* type = (v->kind < 2) ? type_names[v->kind] : "INVALID";
-  printf("%s{%zu, %s}\n", label, v->location, type);
-}
-
 typedef struct
 {
   uint16_t     write_loc;
@@ -87,7 +76,7 @@ typedef struct
 static bfBool32      parserIsConstexpr(const BifrostParser* self);
 static bfVMValue     parserConstexprValue(const BifrostParser* self);
 static bfVMValue     parserTokenConstexprValue(const BifrostParser* self, const bfToken* token);
-static size_t        parserGetSymbol(const BifrostParser* self, bfStringRange name);
+static uint32_t      parserGetSymbol(const BifrostParser* self, bfStringRange name);
 static void          parserModuleSetVariable(const BifrostParser* self, bfStringRange name, bfVMValue value);
 static void          parserClassSetVariable(BifrostVM* self, BifrostObjClass* clz, bfStringRange name, bfVMValue value);
 static bfStringRange parserBeginFunction(BifrostParser* self, bfBool32 require_name);
@@ -112,20 +101,20 @@ static void          parseFunctionExpr(BifrostParser* self, ExprInfo* expr, cons
 static void          parseImport(BifrostParser* self);
 static void          parseForStatement(BifrostParser* self);
 static void          parseExpr(BifrostParser* self, ExprInfo* expr_loc, int prec);
-static size_t        parserMakeJump(BifrostParser* self);
-static size_t        parserMakeJumpRev(BifrostParser* self);
-static void          parserPatchJump(BifrostParser* self, size_t jump_idx, size_t cond_var, bfBool32 if_not);
-static void          parserPatchJumpRev(BifrostParser* self, size_t jump_idx, size_t cond_var, bfBool32 if_not);
+static uint32_t      parserMakeJump(BifrostParser* self);
+static uint32_t      parserMakeJumpRev(BifrostParser* self);
+static void          parserPatchJump(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, bfBool32 if_not);
+static void          parserPatchJumpRev(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, bfBool32 if_not);
 static VariableInfo  parserVariableFindLocal(const BifrostParser* self, bfStringRange name);
 static VariableInfo  parserVariableFind(const BifrostParser* self, bfStringRange name);
 static VariableInfo  parserVariableMakeLocal(const BifrostParser* self, bfStringRange name);
 static void          parserVariableLoad(BifrostParser* self, VariableInfo variable, uint16_t write_loc);
-static void          parserVariableStore(BifrostParser* self, VariableInfo variable, size_t read_loc);
+static void          parserVariableStore(BifrostParser* self, VariableInfo variable, uint32_t read_loc);
 static VariableInfo  parserVariableMakeTemp(uint16_t temp_loc);
 static ExprInfo      exprMake(uint16_t write_loc, VariableInfo variable);
 static ExprInfo      exprMakeTemp(uint16_t temp_loc);
 static int           parserCallArgs(BifrostParser* self, uint16_t temp_first, int num_params, bfTokenType end_token);
-static void          parserFinishCall(BifrostParser* self, VariableInfo fn, VariableInfo return_loc, size_t zero_slot);
+static void          parserFinishCall(BifrostParser* self, VariableInfo fn, VariableInfo return_loc, uint32_t zero_slot);
 static void          parseBlock(BifrostParser* self);
 static bfBool32      bfParser_parse(BifrostParser* self);
 static void          bfParser_pushBuilder(BifrostParser* self, const char* fn_name, size_t fn_name_len);
@@ -441,7 +430,6 @@ bfBool32 bfParser_parse(BifrostParser* self)
     case EOP:
     {
       return bfFalse;
-      break;
     }
     case BIFROST_TOKEN_SEMI_COLON:
     {
@@ -455,7 +443,7 @@ bfBool32 bfParser_parse(BifrostParser* self)
 
       if (self->loop_stack)
       {
-        bfVMFunctionBuilder_addInstAsBx(builder(), BIFROST_VM_OP_HALT, 0, 0);
+        bfVMFunctionBuilder_addInstBreak(builder());
       }
       else
       {
@@ -466,7 +454,6 @@ bfBool32 bfParser_parse(BifrostParser* self)
       //   Same ending note for [BIFROST_TOKEN_CTRL_RETURN].
       //   Search "@UnreachableCode"
       return bfFalse;
-      break;
     }
     case BIFROST_TOKEN_CTRL_RETURN:
     {
@@ -505,7 +492,6 @@ bfBool32 bfParser_parse(BifrostParser* self)
       // TODO(SR): Check if returning false may work
       //   This optimizes away unreachable code.
       return bfFalse;
-      break;
     }
     case BIFROST_TOKEN_CLASS:
     {
@@ -550,7 +536,7 @@ bfBool32 bfParser_parse(BifrostParser* self)
 
       bfParser_eat(self, BIFROST_TOKEN_R_PAREN, bfFalse, "If statements must have r paren after condition.");
 
-      const size_t if_jump = parserMakeJump(self);
+      const uint32_t if_jump = parserMakeJump(self);
 
       bfVMFunctionBuilder_popTemp(builder(), expr_loc);
 
@@ -558,7 +544,7 @@ bfBool32 bfParser_parse(BifrostParser* self)
 
       if (bfParser_match(self, BIFROST_TOKEN_CTRL_ELSE))
       {
-        const size_t else_jump = parserMakeJump(self);
+        const uint32_t else_jump = parserMakeJump(self);
 
         // NOTE(Shareef):
         //   [expr_loc] an be used here since the actual
@@ -587,14 +573,14 @@ bfBool32 bfParser_parse(BifrostParser* self)
       loopPush(self, &loop);
 
       const uint16_t expr_loc = bfVMFunctionBuilder_pushTemp(builder(), 1);
-      const size_t   jmp_back = parserMakeJumpRev(self);
+      const uint32_t jmp_back = parserMakeJumpRev(self);
 
       bfParser_eat(self, BIFROST_TOKEN_L_PAREN, bfFalse, "while statements must be followed by a left parenthesis.");
       ExprInfo expr = exprMake(expr_loc, parserVariableMakeTemp(BIFROST_VM_INVALID_SLOT));
       parseExpr(self, &expr, PREC_NONE);
       bfParser_eat(self, BIFROST_TOKEN_R_PAREN, bfFalse, "while statement conditions must end with a right parenthesis.");
 
-      const size_t jmp_skip = parserMakeJump(self);
+      const uint32_t jmp_skip = parserMakeJump(self);
 
       loopBodyStart(self);
       bfParser_parse(self);
@@ -691,7 +677,7 @@ static void parseFunctionExpr(BifrostParser* self, ExprInfo* expr, const bfToken
   BifrostObjFn* const fn    = bfVM_createFunction(self->vm, self->current_module);
   parserEndFunction(self, fn, arity);
 
-  const size_t k_loc = bfVMFunctionBuilder_addConstant(builder(), FROM_POINTER(fn));
+  const uint32_t k_loc = bfVMFunctionBuilder_addConstant(builder(), FROM_POINTER(fn));
   bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_CONSTANT, expr->write_loc, k_loc);
 }
 
@@ -787,7 +773,7 @@ static void parseForStatement(BifrostParser* self)
     //
   */
 
-  bfParser_eat(self, BIFROST_TOKEN_L_PAREN, bfFalse, "Expected ( list after 'for' keyword.");
+  bfParser_eat(self, BIFROST_TOKEN_L_PAREN, bfFalse, "Expected '(' after 'for' keyword.");
 
   bfVMFunctionBuilder_pushScope(builder());
   {
@@ -798,7 +784,7 @@ static void parseForStatement(BifrostParser* self)
       bfParser_parse(self);
     }
 
-    const size_t   inc_to_cond = parserMakeJumpRev(self);
+    const uint32_t inc_to_cond = parserMakeJumpRev(self);
     const uint16_t cond_loc    = bfVMFunctionBuilder_pushTemp(builder(), 1);
 
     if (!bfParser_is(self, BIFROST_TOKEN_SEMI_COLON))
@@ -808,18 +794,18 @@ static void parseForStatement(BifrostParser* self)
     }
     else
     {
-      const size_t always_true = bfVMFunctionBuilder_addConstant(builder(), VAL_TRUE);
+      const uint32_t always_true = bfVMFunctionBuilder_addConstant(builder(), VAL_TRUE);
       bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_CONSTANT, cond_loc, always_true);
     }
 
-    const size_t cond_to_loop = parserMakeJump(self);
-    const size_t cond_to_end  = parserMakeJump(self);
+    const uint32_t cond_to_loop = parserMakeJump(self);
+    const uint32_t cond_to_end  = parserMakeJump(self);
 
     bfVMFunctionBuilder_popTemp(builder(), cond_loc);
 
     bfParser_match(self, BIFROST_TOKEN_SEMI_COLON);
 
-    const size_t loop_to_inc = parserMakeJumpRev(self);
+    const uint32_t loop_to_inc = parserMakeJumpRev(self);
     if (!bfParser_match(self, R_PAREN))
     {
       bfParser_parse(self);
@@ -851,7 +837,7 @@ static void parseGroup(BifrostParser* self, ExprInfo* expr_info, const bfToken* 
 
 static void parseLiteral(BifrostParser* self, ExprInfo* expr_info, const bfToken* token)
 {
-  const size_t konst_loc = bfVMFunctionBuilder_addConstant(
+  const uint32_t konst_loc = bfVMFunctionBuilder_addConstant(
    builder(),
    parserTokenConstexprValue(self, token));
 
@@ -937,7 +923,7 @@ static void parseVariable(BifrostParser* self, ExprInfo* expr, const bfToken* to
 
 static void parseBinOp(BifrostParser* self, ExprInfo* expr_info, const ExprInfo* lhs, const bfToken* token, int prec)
 {
-  bfInstructionOp inst   = BIFROST_VM_OP_HALT;
+  bfInstructionOp inst   = BIFROST_VM_OP_CMP_EE;
   const char      bin_op = token->as.str[0];
 
   switch (bin_op)
@@ -959,7 +945,7 @@ static void parseBinOp(BifrostParser* self, ExprInfo* expr_info, const ExprInfo*
 
   const uint16_t rhs_loc  = bfVMFunctionBuilder_pushTemp(builder(), 1);
   ExprInfo       rhs_expr = exprMake(rhs_loc, parserVariableMakeTemp(BIFROST_VM_INVALID_SLOT));
-  const size_t   jmp      = bin_op == '&' || bin_op == '|' ? parserMakeJump(self) : BIFROST_VM_INVALID_SLOT;
+  const uint32_t jmp      = bin_op == '&' || bin_op == '|' ? parserMakeJump(self) : BIFROST_VM_INVALID_SLOT;
 
   parseExpr(self, &rhs_expr, prec);
 
@@ -989,12 +975,12 @@ static void parseSubscript(BifrostParser* self, ExprInfo* expr, const ExprInfo* 
   const uint16_t subscript_op_loc = bfVMFunctionBuilder_pushTemp(builder(), 3);
   const uint16_t self_loc         = subscript_op_loc + 1;
   const uint16_t temp_first       = subscript_op_loc + 2;
-  const size_t   subscript_sym    = parserGetSymbol(self, bfMakeStringRangeC("[]"));
+  const uint32_t subscript_sym    = parserGetSymbol(self, bfMakeStringRangeC("[]"));
   int            num_args         = 1;
 
   parserVariableLoad(self, expr->var, self_loc);
 
-  const size_t load_sym_inst = Array_size(&builder()->instructions);
+  const uint32_t load_sym_inst = (uint32_t)Array_size(&builder()->instructions);
   bfVMFunctionBuilder_addInstABC(
    builder(),
    BIFROST_VM_OP_LOAD_SYMBOL,
@@ -1208,9 +1194,9 @@ static bfVMValue parserTokenConstexprValue(const BifrostParser* self, const bfTo
   return 0;
 }
 
-extern size_t bfVM_getSymbol(BifrostVM* self, bfStringRange name);
+extern uint32_t bfVM_getSymbol(BifrostVM* self, bfStringRange name);
 
-static size_t parserGetSymbol(const BifrostParser* self, bfStringRange name)
+static uint32_t parserGetSymbol(const BifrostParser* self, bfStringRange name)
 {
   return bfVM_getSymbol(self->vm, name);
 }
@@ -1455,19 +1441,19 @@ static void parseClassFunc(BifrostParser* self, BifrostObjClass* clz, bfBool32 i
   parserEndFunction(self, fn, arity);
 }
 
-static size_t parserMakeJump(BifrostParser* self)
+static uint32_t parserMakeJump(BifrostParser* self)
 {
-  const size_t jump_idx = Array_size(&self->fn_builder->instructions);
+  const uint32_t jump_idx = (uint32_t)Array_size(&self->fn_builder->instructions);
   bfVMFunctionBuilder_addInstAsBx(self->fn_builder, BIFROST_VM_OP_JUMP, 0, 0);
   return jump_idx;
 }
 
-static size_t parserMakeJumpRev(BifrostParser* self)
+static uint32_t parserMakeJumpRev(BifrostParser* self)
 {
-  return Array_size(&self->fn_builder->instructions);
+  return (uint32_t)Array_size(&self->fn_builder->instructions);
 }
 
-static inline void parserPatchJumpHelper(BifrostParser* self, size_t jump_idx, size_t cond_var, int jump_amt, bfBool32 if_not)
+static inline void parserPatchJumpHelper(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, int jump_amt, bfBool32 if_not)
 {
   bfInstruction* const inst = self->fn_builder->instructions + jump_idx;
 
@@ -1487,15 +1473,15 @@ static inline void parserPatchJumpHelper(BifrostParser* self, size_t jump_idx, s
   }
 }
 
-static void parserPatchJump(BifrostParser* self, size_t jump_idx, size_t cond_var, bfBool32 if_not)
+static void parserPatchJump(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, bfBool32 if_not)
 {
   const uint32_t current_loc = (uint32_t)Array_size(&self->fn_builder->instructions);
-  parserPatchJumpHelper(self, jump_idx, cond_var, (int)current_loc - (uint32_t)jump_idx, if_not);
+  parserPatchJumpHelper(self, jump_idx, cond_var, (int)current_loc - (int)jump_idx, if_not);
 }
 
-static void parserPatchJumpRev(BifrostParser* self, size_t jump_idx, size_t cond_var, bfBool32 if_not)
+static void parserPatchJumpRev(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, bfBool32 if_not)
 {
-  const size_t current_loc = Array_size(&self->fn_builder->instructions);
+  const uint32_t current_loc = (uint32_t)Array_size(&self->fn_builder->instructions);
   bfVMFunctionBuilder_addInstAsBx(self->fn_builder, BIFROST_VM_OP_JUMP, 0, 0);
   parserPatchJumpHelper(self, current_loc, cond_var, (int)jump_idx - (int)current_loc, if_not);
 }
@@ -1569,7 +1555,7 @@ static void parserVariableLoad(BifrostParser* self, VariableInfo variable, uint1
   }
 }
 
-static void parserVariableStore(BifrostParser* self, VariableInfo variable, size_t read_loc)
+static void parserVariableStore(BifrostParser* self, VariableInfo variable, uint32_t read_loc)
 {
   assert(variable.location != BIFROST_VM_INVALID_SLOT);
   assert(read_loc != BIFROST_VM_INVALID_SLOT);
@@ -1634,7 +1620,7 @@ static int parserCallArgs(BifrostParser* self, uint16_t temp_first, int num_para
   return num_params;
 }
 
-static void parserFinishCall(BifrostParser* self, VariableInfo fn, VariableInfo return_loc, size_t zero_slot)
+static void parserFinishCall(BifrostParser* self, VariableInfo fn, VariableInfo return_loc, uint32_t zero_slot)
 {
   const bfBool32 is_local_fn  = fn.kind == V_LOCAL;
   const uint16_t function_loc = is_local_fn ? fn.location : bfVMFunctionBuilder_pushTemp(builder(), 1);

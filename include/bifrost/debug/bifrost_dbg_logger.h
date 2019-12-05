@@ -35,7 +35,7 @@ typedef enum BifrostLoggerLevel_t
   BIFROST_LOGGER_LVL_ERROR,    // A recoverable error.
   BIFROST_LOGGER_LVL_FATAL,    // An unrecoverable error and the program must be shut down.
   BIFROST_LOGGER_LVL_PUSH,     // Meta Data Needed For The Callback (Editor graphical handling)
-  BIFROST_LOGGER_LVL_POP,      // Meta Data Needed For The Callback (Editor graphical handling)
+  BIFROST_LOGGER_LVL_POP,      // Meta Data Needed For The Callback (Editor graphical handling) WARNING: DO NOT USE 'info->args' as it will be uninitialized.
 
 } BifrostLoggerLevel;
 

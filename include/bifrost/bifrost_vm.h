@@ -46,16 +46,17 @@ typedef void (*bfClassFinalizer)(BifrostVM* vm, void* instance);
 
 typedef enum
 {
-  BIFROST_VM_ERROR_NONE,                   /*!< NONE       */
-  BIFROST_VM_ERROR_OUT_OF_MEMORY,          /*!< ANYONE     */
-  BIFROST_VM_ERROR_RUNTIME,                /*!< VM Runtime */
-  BIFROST_VM_ERROR_LEXER,                  /*!< Lexer      */
-  BIFROST_VM_ERROR_COMPILE,                /*!< Parser     */
-  BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED, /*!< VM         */
-  BIFROST_VM_ERROR_MODULE_NOT_FOUND,       /*!< VM         */
-  BIFROST_VM_ERROR_STACK_TRACE_BEGIN,      /*!< VM Runtime */
-  BIFROST_VM_ERROR_STACK_TRACE,            /*!< VM Runtime */
-  BIFROST_VM_ERROR_STACK_TRACE_END,        /*!< VM Runtime */
+  BIFROST_VM_ERROR_NONE,                    /*!< NONE       */
+  BIFROST_VM_ERROR_OUT_OF_MEMORY,           /*!< ANYONE     */
+  BIFROST_VM_ERROR_RUNTIME,                 /*!< VM Runtime */
+  BIFROST_VM_ERROR_LEXER,                   /*!< Lexer      */
+  BIFROST_VM_ERROR_COMPILE,                 /*!< Parser     */
+  BIFROST_VM_ERROR_FUNCTION_ARITY_MISMATCH, /*!< VM         */
+  BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED,  /*!< VM         */
+  BIFROST_VM_ERROR_MODULE_NOT_FOUND,        /*!< VM         */
+  BIFROST_VM_ERROR_STACK_TRACE_BEGIN,       /*!< VM Runtime */
+  BIFROST_VM_ERROR_STACK_TRACE,             /*!< VM Runtime */
+  BIFROST_VM_ERROR_STACK_TRACE_END,         /*!< VM Runtime */
 
 } BifrostVMError;
 

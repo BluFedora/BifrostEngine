@@ -281,9 +281,10 @@ size_t CString_unescape(char* str)
   return (newStr - str);
 }
 
-size_t bfString_hash(const char* str)
+// Fowler-Noll-Vo Hash (FNV1a)
+uint32_t bfString_hash(const char* str)
 {
-  size_t hash = 0x811c9dc5;
+  uint32_t hash = 0x811c9dc5;
 
   while (*str)
   {
@@ -294,9 +295,9 @@ size_t bfString_hash(const char* str)
   return hash;
 }
 
-size_t bfString_hashN(const char* str, size_t length)
+uint32_t bfString_hashN(const char* str, size_t length)
 {
-  size_t hash = 0x811c9dc5;
+  uint32_t hash = 0x811c9dc5;
 
   const char* str_end = str + length;
 

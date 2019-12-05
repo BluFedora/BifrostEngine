@@ -138,7 +138,7 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   return renderpass;
 }
 
-void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
+void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
   BifrostGfxObjectBase* const obj = static_cast<BifrostGfxObjectBase*>(resource);
 
@@ -172,6 +172,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, void* resource)
     case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
     {
       bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
+
 
       for (uint32_t i = 0; i < shader_program->num_desc_set_layouts; ++i)
       {

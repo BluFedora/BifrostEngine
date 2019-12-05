@@ -113,8 +113,8 @@ struct FixedArray
 
 BIFROST_DEFINE_HANDLE(GfxContext)
 {
-  const bfGfxContextCreateParams*  params;               // Only valid during initialization
-  std::size_t                      max_frame_in_flight;  // TODO(Shareef): Make customizable
+  const bfGfxContextCreateParams*  params;                // Only valid during initialization
+  std::uint32_t                    max_frames_in_flight;  // TODO(Shareef): Make customizable
   VkInstance                       instance;
   FixedArray<VulkanPhysicalDevice> physical_devices;
   VulkanPhysicalDevice*            physical_device;
@@ -191,11 +191,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
 
 bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
 {
-  const auto self           = new bfGfxContext();
-  self->params              = params;
-  self->max_frame_in_flight = 3;
-  self->frame_count         = 0;
-  self->frame_index         = 0;
+  const auto self            = new bfGfxContext();
+  self->params               = params;
+  self->max_frames_in_flight = 2;
+  self->frame_count          = 0;
+  self->frame_index          = 0;
   gfxContextSetupApp(self, params);
   if (!gfxContextSetDebugCallback(self, &gfxContextDbgCallback))
   {
@@ -248,7 +248,7 @@ static void gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
   }
 }
 
-void bfGfxContext_onResize(bfGfxContextHandle self, uint32_t width, uint32_t height)
+void bfGfxContext_onResize(bfGfxContextHandle self)
 {
   bfGfxDevice_flush(self->logical_device);
 
@@ -273,7 +273,7 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
 
   VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
 
-  if (window && window->swapchain.extents.width > 0.0f && window->swapchain.extents.height > 0.0f)
+  if (window)
   {
     if (window->swapchain_needs_creation)
     {
@@ -283,10 +283,15 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
       return bfFalse;
     }
 
+    if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
+    {
+      return bfFalse;
+    }
+
     const VkResult err = vkAcquireNextImageKHR(self->logical_device->handle,
                                                window->swapchain.handle,
                                                UINT64_MAX,
-                                               window->is_image_available[0],
+                                               window->is_image_available,
                                                VK_NULL_HANDLE,
                                                &window->image_index);
 
@@ -294,14 +299,14 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
     {
       if (err == VK_ERROR_OUT_OF_DATE_KHR)
       {
-        bfGfxContext_onResize(self, 0, 0);
+        bfGfxContext_onResize(self);
         std::printf("Surface out of date.... recreating swap chain\n");
       }
 
-      return false;
+      return bfFalse;
     }
 
-    const VkFence command_fence = window->swapchain.fences[window->image_index];
+    const VkFence command_fence = window->swapchain.fences[self->frame_index];
 
     if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
     {
@@ -379,7 +384,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
   }
 
   ++self->frame_count;
-  self->frame_index = self->frame_count % self->max_frame_in_flight;
+  self->frame_index = self->frame_count % self->max_frames_in_flight;
 }
 
 void bfGfxContext_delete(bfGfxContextHandle self)
@@ -406,14 +411,8 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 
   MaterialPool_delete(device->descriptor_pool);
 
-  const size_t num_semaphores = self->max_frame_in_flight * 2;
-
-  for (size_t i = 0; i < num_semaphores; ++i)
-  {
-    vkDestroySemaphore(device->handle, window.is_image_available[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  }
-
-  freeN(window.is_image_available);
+  vkDestroySemaphore(device->handle, window.is_image_available, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroySemaphore(device->handle, window.is_render_done, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
 
 #if BIFROST_USE_DEBUG_CALLBACK
   PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
@@ -454,8 +453,8 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 
     list->context        = self;
     list->parent         = self->logical_device;
-    list->handle         = window->swapchain.command_buffers[window->image_index];
-    list->fence          = window->swapchain.fences[window->image_index];
+    list->handle         = window->swapchain.command_buffers[self->frame_index];
+    list->fence          = window->swapchain.fences[self->frame_index];
     list->window         = window;
     list->render_area    = {};
     list->framebuffer    = nullptr;
@@ -580,7 +579,7 @@ namespace
     init_info.enabledLayerCount = 0;
     init_info.ppEnabledLayerNames = NULL;
 #endif
-    init_info.enabledExtensionCount   = bfCArraySize(INSTANCE_EXT_NAMES);
+    init_info.enabledExtensionCount   = static_cast<uint32_t>(bfCArraySize(INSTANCE_EXT_NAMES));
     init_info.ppEnabledExtensionNames = INSTANCE_EXT_NAMES;
 
     const VkResult err = vkCreateInstance(&init_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->instance);
@@ -962,7 +961,7 @@ namespace
       return "Could not find Queues for Present / Graphics / Compute / Transfer.";
     }
 
-    window.swapchain_needs_creation = false;
+    window.swapchain_needs_creation = true;
     return nullptr;
   }
 
@@ -1019,7 +1018,7 @@ namespace
     device_info.pQueueCreateInfos       = queue_create_infos;
     device_info.enabledLayerCount       = 0;
     device_info.ppEnabledLayerNames     = NULL;
-    device_info.enabledExtensionCount   = bfCArraySize(DEVICE_EXT_NAMES);
+    device_info.enabledExtensionCount   = uint32_t(bfCArraySize(DEVICE_EXT_NAMES));
     device_info.ppEnabledExtensionNames = DEVICE_EXT_NAMES;
     device_info.pEnabledFeatures        = &deviceFeatures;
 
@@ -1095,24 +1094,20 @@ namespace
 
   const char* gfxContextInitSemaphores(bfGfxContextHandle self, VulkanWindow& window)
   {
-    const size_t       num_semaphores = self->max_frame_in_flight * 2;
-    VkSemaphore* const semaphores     = allocN<VkSemaphore>(num_semaphores);
-
-    window.is_image_available = semaphores;
-    window.is_render_done     = semaphores + self->max_frame_in_flight;
+    VkSemaphore* const semaphores[] = {&window.is_image_available, &window.is_render_done};
 
     VkSemaphoreCreateInfo semaphore_create_info;
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphore_create_info.pNext = NULL;
     semaphore_create_info.flags = 0;
 
-    for (size_t i = 0; i < num_semaphores; ++i)
+    for (auto semaphore : semaphores)
     {
       const VkResult err = vkCreateSemaphore(
        self->logical_device->handle,
        &semaphore_create_info,
        BIFROST_VULKAN_CUSTOM_ALLOCATOR,
-       semaphores + i);
+       semaphore);
 
       if (err)
       {
@@ -1292,8 +1287,8 @@ namespace
   {
     bfGfxDeviceHandle logical_device = self->logical_device;
 
-    const std::uint32_t num_fences = window.swapchain.img_list.size;
-    window.swapchain.fences        = allocN<VkFence>(window.swapchain.img_list.size);
+    const std::uint32_t num_fences = self->max_frames_in_flight;
+    window.swapchain.fences        = allocN<VkFence>(num_fences);
 
     for (uint32_t i = 0; i < num_fences; ++i)
     {
@@ -1336,12 +1331,15 @@ namespace
 
   void gfxContextDestroyCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers, VkCommandBuffer* buffers, bool free_array = true)
   {
-    bfGfxDeviceHandle logical_device = self->logical_device;
-    vkFreeCommandBuffers(logical_device->handle, self->command_pools[0], num_buffers, buffers);
-
-    if (free_array)
+    if (buffers)
     {
-      freeN(buffers);
+      bfGfxDeviceHandle logical_device = self->logical_device;
+      vkFreeCommandBuffers(logical_device->handle, self->command_pools[0], num_buffers, buffers);
+
+      if (free_array)
+      {
+        freeN(buffers);
+      }
     }
   }
 
@@ -1389,12 +1387,12 @@ namespace
 
   void gfxContextInitCmdBuffers(bfGfxContextHandle self, VulkanWindow& window)
   {
-    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(self, window.swapchain.img_list.size);
+    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(self, self->max_frames_in_flight);
   }
 
   void gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain)
   {
-    gfxContextDestroyCommandBuffers(self, swapchain->img_list.size, swapchain->command_buffers);
+    gfxContextDestroyCommandBuffers(self, self->max_frames_in_flight, swapchain->command_buffers);
     swapchain->command_buffers = nullptr;
   }
 
@@ -1403,7 +1401,7 @@ namespace
     bfGfxDeviceHandle logical_device = self->logical_device;
     VkDevice          device         = logical_device->handle;
 
-    for (uint32_t i = 0; i < swapchain->img_list.size; ++i)
+    for (uint32_t i = 0; i < self->max_frames_in_flight; ++i)
     {
       vkDestroyFence(device, swapchain->fences[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
     }

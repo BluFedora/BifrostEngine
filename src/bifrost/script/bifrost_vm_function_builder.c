@@ -37,7 +37,7 @@ void bfVMFunctionBuilder_begin(BifrostVMFunctionBuilder* self, const char* name,
   bfVMFunctionBuilder_pushScope(self);
 }
 
-size_t bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMValue value)
+uint32_t bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMValue value)
 {
   size_t index = Array_find(&self->constants, &value, NULL);
 
@@ -47,7 +47,7 @@ size_t bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMValue
     Array_push(&self->constants, &value);
   }
 
-  return index;
+  return (uint32_t)index;
 }
 
 void bfVMFunctionBuilder_pushScope(BifrostVMFunctionBuilder* self)
@@ -76,7 +76,7 @@ static inline size_t bfVMFunctionBuilder__getVariable(BifrostVMFunctionBuilder* 
   return BIFROST_ARRAY_INVALID_INDEX;
 }
 
-size_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length)
+uint32_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length)
 {
   const size_t prev_decl = bfVMFunctionBuilder__getVariable(self, name, length, bfTrue);
 
@@ -86,7 +86,7 @@ size_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const ch
     //   Is it the callers job to call bfVMFunctionBuilder_getVariable first?
     //   Or maybe I should add a helper???
     printf("ERROR: [%.*s] already declared.\n", (int)length, name);
-    return prev_decl;
+    return (uint32_t)prev_decl;
   }
 
   const size_t       var_loc = Array_size(&self->local_vars);
@@ -102,7 +102,7 @@ size_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const ch
     self->max_local_idx = var_loc;
   }
 
-  return var_loc;
+  return (uint32_t)var_loc;
 }
 
 uint16_t bfVMFunctionBuilder_pushTemp(BifrostVMFunctionBuilder* self, uint16_t num_temps)
@@ -164,6 +164,11 @@ void bfVMFunctionBuilder_addInstABx(BifrostVMFunctionBuilder* self, bfInstructio
 void bfVMFunctionBuilder_addInstAsBx(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, int32_t sbx)
 {
   *bfVMFunctionBuilder_addInst(self) = BIFROST_MAKE_INST_OP_AsBx(op, a, sbx);
+}
+
+void bfVMFunctionBuilder_addInstBreak(BifrostVMFunctionBuilder* self)
+{
+  *bfVMFunctionBuilder_addInst(self) = BIFROST_INST_INVALID;
 }
 
 void bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstructionOp op)
@@ -238,7 +243,6 @@ const char* bfInstOpToString(bfInstructionOp op)
     bfInstOpToStringImpl(CMP_AND);
     bfInstOpToStringImpl(CMP_OR);
     bfInstOpToStringImpl(RETURN);
-    bfInstOpToStringImpl(HALT);
     bfInstOpToStringImpl(LOAD_SYMBOL);
     bfInstOpToStringImpl(STORE_SYMBOL);
     bfInstOpToStringImpl(NEW_CLZ);

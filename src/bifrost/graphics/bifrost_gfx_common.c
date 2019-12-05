@@ -163,7 +163,7 @@ void bfRenderpassInfo_addInput(bfRenderpassInfo* self, uint16_t subpass_index, u
   ++subpass->num_in_attachment_refs;
 }
 
-void bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDependency* dependencies, size_t num_dependencies)
+void bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDependency* dependencies, uint32_t num_dependencies)
 {
   assert((self->num_dependencies + num_dependencies) < BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES);
 

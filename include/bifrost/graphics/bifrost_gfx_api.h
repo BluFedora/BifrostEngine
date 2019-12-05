@@ -248,7 +248,7 @@ typedef enum BifrostStencilFace_t
 /* Context */
 bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
-void                   bfGfxContext_onResize(bfGfxContextHandle self, uint32_t width, uint32_t height);
+void                   bfGfxContext_onResize(bfGfxContextHandle self);
 bfTextureHandle        bfGfxContext_swapchainImage(bfGfxContextHandle self);  // This needs to be able to select which window.
 bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, int window); // This needs to be able to select which window.
 bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, const bfGfxCommandListCreateParams* params);
@@ -291,7 +291,7 @@ bfShaderModuleHandle   bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, Bifro
 bfShaderProgramHandle  bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self, const bfShaderProgramCreateParams* params);
 bfTextureHandle        bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
 bfTextureHandle        bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list);
-void                   bfGfxDevice_release(bfGfxDeviceHandle self, void* resource);
+void                   bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
 /* Buffer */
 bfBufferSize bfBuffer_size(bfBufferHandle self);
@@ -373,7 +373,7 @@ void             bfRenderpassInfo_addAttachment(bfRenderpassInfo* self, const bf
 void             bfRenderpassInfo_addColorOut(bfRenderpassInfo* self, uint16_t subpass_index, uint32_t attachment, BifrostImageLayout layout);
 void             bfRenderpassInfo_addDepthOut(bfRenderpassInfo* self, uint16_t subpass_index, uint32_t attachment, BifrostImageLayout layout);
 void             bfRenderpassInfo_addInput(bfRenderpassInfo* self, uint16_t subpass_index, uint32_t attachment);
-void             bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDependency* dependencies, size_t num_dependencies);
+void             bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDependency* dependencies, uint32_t num_dependencies);
 
 /* Shader Program + Module */
 BifrostShaderType     bfShaderModule_type(bfShaderModuleHandle self);

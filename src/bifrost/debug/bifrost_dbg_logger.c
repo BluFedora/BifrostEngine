@@ -1,6 +1,7 @@
 #include "bifrost/debug/bifrost_dbg_logger.h"
 
 #include <assert.h> /* assert */
+#include <string.h> /* memset */
 
 static IBifrostDbgLogger  s_ILogger;
 static unsigned           s_IndentLevel;
@@ -40,9 +41,8 @@ void bfLogPop_(const char* file, const char* func, int line, unsigned amount)
   assert(amount <= s_IndentLevel && "There were more pops than pushes performed.");
 
   va_list args;
-  va_start(args, amount);
+  memset(&args, 0x0, sizeof(args));
   callCallback(BIFROST_LOGGER_LVL_POP, file, func, line, "", args);
-  va_end(args);
 
   s_IndentLevel -= amount;
 }

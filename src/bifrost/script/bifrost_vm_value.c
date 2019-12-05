@@ -92,28 +92,3 @@ bfBool32 bfVMValue_ge(bfVMValue lhs, bfVMValue rhs)
 
   return bfFalse;
 }
-
-bfBool32 bfVM__valueToBool(bfVMValue value)
-{
-  return IS_TRUE(value);
-}
-
-bfBool32 bfVM__valueIsPointer(bfVMValue value)
-{
-  return IS_POINTER(value);
-}
-
-bfBool32 bfVM__valueIsNumber(bfVMValue value)
-{
-  return IS_NUMBER(value);
-}
-
-bfBool32 bfVM__valueIsBool(bfVMValue value)
-{
-  return IS_BOOL(value);
-}
-
-bfBool32 bfVM__valueIsNull(bfVMValue value)
-{
-  return IS_NULL(value);
-}

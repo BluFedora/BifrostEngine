@@ -317,7 +317,6 @@ typedef struct bfPipelineCache_t
   bfShaderProgramHandle    program;
   bfRenderpassHandle       renderpass;
   bfVertexLayoutSetHandle  vertex_set_layout;
-  // uint32_t              sample_count_flags;  // Can be gotten from the currently bound framebuffer
 
 } bfPipelineCache;
 

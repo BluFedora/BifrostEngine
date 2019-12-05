@@ -3,7 +3,7 @@
 namespace
 {
   // This is a very simple hash (same one that Java uses for String.hashCode())
-  // It is not cryptographically secure but is fairly fast.
+  // It is NOT cryptographically secure but is fairly fast.
   template<typename TPredicate>
   bifrost::hash::Hash_t simple_hash_base(const char* p, TPredicate&& f)
   {
@@ -125,7 +125,8 @@ namespace bifrost::hash
   {
     if constexpr (sizeof(uintptr_t) == 4)
     {
-      return addU32(self, reinterpret_cast<uintptr_t>(ptr));
+      // NOTE: the cast is to appease the warning gods on 64bit compiles.
+      return addU32(self, std::uint32_t(reinterpret_cast<uintptr_t>(ptr)));
     }
 
     if constexpr (sizeof(uintptr_t) == 8)

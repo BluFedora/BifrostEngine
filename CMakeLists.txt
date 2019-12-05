@@ -72,8 +72,8 @@ endif()
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
 if (WIN32)
-  set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj")
-  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj")
+  set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
+  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
 else()
   # GCC / Clang
   #   "/GR-"                      - Not needed since GCC / Clang isn't retarded like MSVC.
@@ -124,7 +124,14 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bfrost Script Module
   "src/bifrost/script/bifrost_vm_build.c"
 
-  # Misc
+  # Bifrost Math Module
+  "src/bifrost/math/bifrost_camera.c"
+  "src/bifrost/math/bifrost_mat4x4.c"
+  "src/bifrost/math/bifrost_transform.c"
+  "src/bifrost/math/bifrost_vec2.c"
+  "src/bifrost/math/bifrost_vec3.c"
+
+  # Bifrost Utility Module
   "src/bifrost/utility/bifrost_hash.cpp"
 
   "main.cpp"

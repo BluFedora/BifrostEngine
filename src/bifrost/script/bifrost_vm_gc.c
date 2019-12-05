@@ -29,7 +29,7 @@ static inline void   bfGCFinalize(BifrostVM* self);
 
 extern bfVMValue     bfVM_getHandleValue(bfValueHandle h);
 extern bfValueHandle bfVM_getHandleNext(bfValueHandle h);
-extern size_t        bfVM_getSymbol(BifrostVM* self, bfStringRange name);
+extern uint32_t      bfVM_getSymbol(BifrostVM* self, bfStringRange name);
 
 void bfGCMarkObjects(struct BifrostVM_t* self)
 {

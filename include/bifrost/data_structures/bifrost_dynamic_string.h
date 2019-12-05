@@ -9,7 +9,8 @@
 #ifndef BIFROST_DYNAMIC_STRING_H
 #define BIFROST_DYNAMIC_STRING_H
 
-#include <stddef.h> /* size_t */
+#include <stddef.h> /* size_t   */
+#include <stdint.h> /* uint32_t */
 
 #define STR_FAST_CMP 1
 
@@ -72,8 +73,8 @@ void              String_unescape(BifrostString self);
   //   EX: \n, \t, \" etc
 size_t            CString_unescape(char* str);
 
-size_t            bfString_hash(const char* str);
-size_t            bfString_hashN(const char* str, size_t length);
+uint32_t          bfString_hash(const char* str);
+uint32_t          bfString_hashN(const char* str, size_t length);
 
   // NOTE(Shareef): returns 0 if the strings are the same
   //   works the same as strncmp (but potentially more optimized)

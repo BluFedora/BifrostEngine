@@ -35,9 +35,9 @@ typedef struct BifrostVMFunctionBuilder_t
 
 void     bfVMFunctionBuilder_ctor(BifrostVMFunctionBuilder* self);
 void     bfVMFunctionBuilder_begin(BifrostVMFunctionBuilder* self, const char* name, size_t length);
-size_t   bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMValue value);
+uint32_t bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMValue value);
 void     bfVMFunctionBuilder_pushScope(BifrostVMFunctionBuilder* self);
-size_t   bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length);
+uint32_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length);
 uint16_t bfVMFunctionBuilder_pushTemp(BifrostVMFunctionBuilder* self, uint16_t num_temps);
 void     bfVMFunctionBuilder_popTemp(BifrostVMFunctionBuilder* self, uint16_t start);
 size_t   bfVMFunctionBuilder_getVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length);
@@ -45,6 +45,7 @@ void     bfVMFunctionBuilder_popScope(BifrostVMFunctionBuilder* self);
 void     bfVMFunctionBuilder_addInstABC(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, uint16_t b, uint16_t c);
 void     bfVMFunctionBuilder_addInstABx(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, uint32_t bx);
 void     bfVMFunctionBuilder_addInstAsBx(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, int32_t sbx);
+void     bfVMFunctionBuilder_addInstBreak(BifrostVMFunctionBuilder* self);
 void     bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstructionOp op);
 void     bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* self);
 void     bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn_t* out, int arity);

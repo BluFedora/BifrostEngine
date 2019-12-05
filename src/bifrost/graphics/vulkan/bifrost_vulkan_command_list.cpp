@@ -562,9 +562,9 @@ static void flushPipeline(bfGfxCommandListHandle self)
     viewport.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport.pNext         = nullptr;
     viewport.flags         = 0x0;
-    viewport.viewportCount = bfCArraySize(viewports);
+    viewport.viewportCount = uint32_t(bfCArraySize(viewports));
     viewport.pViewports    = viewports;
-    viewport.scissorCount  = bfCArraySize(scissor_rects);
+    viewport.scissorCount  = uint32_t(bfCArraySize(scissor_rects));
     viewport.pScissors     = scissor_rects;
 
     VkPipelineRasterizationStateCreateInfo rasterization;
@@ -792,19 +792,19 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
   const VkFence command_fence = self->fence;
   VulkanWindow& window        = *self->window;
 
-  VkSemaphore          wait_semaphores[]   = {window.is_image_available[0]};
+  VkSemaphore          wait_semaphores[]   = {window.is_image_available};
   VkPipelineStageFlags wait_stages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};  // What to wait for, like: DO NOT WRITE TO COLOR UNTIL IMAGE IS AVALIBALLE.
-  VkSemaphore          signal_semaphores[] = {window.is_render_done[0]};
+  VkSemaphore          signal_semaphores[] = {window.is_render_done};
 
   VkSubmitInfo submit_info;
   submit_info.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submit_info.pNext                = NULL;
-  submit_info.waitSemaphoreCount   = bfCArraySize(wait_semaphores);
+  submit_info.waitSemaphoreCount   = uint32_t(bfCArraySize(wait_semaphores));
   submit_info.pWaitSemaphores      = wait_semaphores;
   submit_info.pWaitDstStageMask    = wait_stages;
   submit_info.commandBufferCount   = 1;
   submit_info.pCommandBuffers      = &self->handle;
-  submit_info.signalSemaphoreCount = bfCArraySize(signal_semaphores);
+  submit_info.signalSemaphoreCount = uint32_t(bfCArraySize(signal_semaphores));
   submit_info.pSignalSemaphores    = signal_semaphores;
 
   VkResult err = vkQueueSubmit(self->parent->queues[BIFROST_GFX_QUEUE_GRAPHICS], 1, &submit_info, command_fence);
@@ -825,7 +825,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
   if (err == VK_ERROR_OUT_OF_DATE_KHR)
   {
-    bfGfxContext_onResize(self->context, 0u, 0u);
+    bfGfxContext_onResize(self->context);
   }
   else
   {

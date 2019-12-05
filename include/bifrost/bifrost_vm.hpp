@@ -5,9 +5,7 @@
 
 #include "meta/bifrost_meta_function_traits.hpp" /* function_traits          */
 #include "meta/bifrost_meta_utils.hpp"           /* for_each                 */
-#pragma warning(push, 0)
-#include "script/bifrost_vm_internal.h"          /* bfVM__value*             */
-#pragma warning(pop)
+#include "bifrost_vm.h"                          /* bfVM_*                   */
 #include "utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
 #include <string>                                /* string                   */
 #include <tuple>                                 /* tuple                    */
@@ -167,7 +165,7 @@ namespace bifrost
     }
     else
     {
-      throw "Invalid number of parameters passed to a native function.";
+      throw "Invalid number of parameters passed to a native function.";  // NOLINT(hicpp-exception-baseclass)
     }
   }
 
@@ -453,7 +451,7 @@ namespace bifrost
 
   // clang-format off
   // This class is movable but not copyable.
-  class VM final : private bfNonCopyable<VM>, public VMView
+  class VM final : private bfNonCopyable<VM>, public VMView  // NOLINT(hicpp-special-member-functions)
   // clang-format on
   {
    private:
@@ -461,11 +459,9 @@ namespace bifrost
 
    public:
     explicit VM(const BifrostVMParams& params) noexcept :
-      VMView(&m_VM),
-      m_VM{}
+      VM()
     {
-      // Doesn't call 'VM::create' because of the 'noexcept' guarantee.
-      bfVM_ctor(self(), &params);
+      create(params);
     }
 
     explicit VM() noexcept :
@@ -481,15 +477,13 @@ namespace bifrost
       rhs.m_Self = nullptr;
     }
 
-    void create(const BifrostVMParams& params) noexcept(false)
+    void create(const BifrostVMParams& params) noexcept
     {
-      if (!m_Self)
+      if (!isValid())
       {
-        throw "Called create on VM when it is already created.";
-      }
-
-      m_Self = &m_VM;
-      bfVM_ctor(self(), &params);
+        m_Self = &m_VM;
+        bfVM_ctor(self(), &params);
+      } 
     }
 
     VM& operator=(VM&& rhs) noexcept
@@ -514,12 +508,6 @@ namespace bifrost
       return *this;
     }
 
-    //
-    // TODO(SR):
-    //   Currently this can be called on an invalid vm.
-    //   Is that good behavior considering 'create' must be called
-    //   be called in an invalid state thus this API is unbalanced.
-    //
     void destroy() noexcept
     {
       if (isValid())

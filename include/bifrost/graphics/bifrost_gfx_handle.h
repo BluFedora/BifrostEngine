@@ -21,6 +21,8 @@ BIFROST_DECLARE_HANDLE(ShaderProgram);
 BIFROST_DECLARE_HANDLE(Texture);
 BIFROST_DECLARE_HANDLE(Framebuffer);
 BIFROST_DECLARE_HANDLE(Pipeline);
+
+  typedef void* bfGfxBaseHandle;
 #undef BIFROST_DECLARE_HANDLE
 
 #define BIFROST_DEFINE_HANDLE(T) struct bf##T##_t

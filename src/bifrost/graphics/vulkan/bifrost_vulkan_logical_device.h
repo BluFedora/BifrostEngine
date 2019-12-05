@@ -45,16 +45,17 @@ BIFROST_DEFINE_HANDLE(Pipeline)
   VkPipeline           handle;
 };
 
-struct VulkanWindow final
+typedef struct
 {
   VkSurfaceKHR        surface;
   VulkanSwapchainInfo swapchain_info;
   VulkanSwapchain     swapchain;
-  VkSemaphore*        is_image_available;
-  VkSemaphore*        is_render_done;
+  VkSemaphore         is_image_available;
+  VkSemaphore         is_render_done;
   uint32_t            image_index;
   bfBool32            swapchain_needs_creation;
-};
+
+} VulkanWindow;
 
 BIFROST_DEFINE_HANDLE(GfxCommandList)
 {
@@ -91,14 +92,14 @@ BIFROST_DEFINE_HANDLE(ShaderModule)
 
 typedef struct
 {
-  size_t               size;
+  uint32_t             size;
   bfShaderModuleHandle elements[BIFROST_SHADER_TYPE_MAX];
 
 } bfShaderModuleList;
 
 typedef struct
 {
-  size_t                       num_layout_bindings;
+  uint32_t                     num_layout_bindings;
   VkDescriptorSetLayoutBinding layout_bindings[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
   uint32_t                     num_image_samplers;
   uint32_t                     num_uniforms;

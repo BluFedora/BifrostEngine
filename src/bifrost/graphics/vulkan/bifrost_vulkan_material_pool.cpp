@@ -32,7 +32,7 @@ static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, D
     pool_create_info.pNext         = NULL;
     pool_create_info.flags         = 0x0;  //VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT - If I wanted to free individual sets
     pool_create_info.maxSets       = pool->num_descsets_per_link;
-    pool_create_info.poolSizeCount = bfCArraySize(pool_sizes);
+    pool_create_info.poolSizeCount = uint32_t(bfCArraySize(pool_sizes));
     pool_create_info.pPoolSizes    = pool_sizes;
 
     vkCreateDescriptorPool(

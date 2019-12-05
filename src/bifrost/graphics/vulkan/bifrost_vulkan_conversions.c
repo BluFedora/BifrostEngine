@@ -69,20 +69,6 @@ VkShaderStageFlagBits bfVkConvertShaderType(BifrostShaderType type)
   return VK_SHADER_STAGE_ALL;
 }
 
-/*
-  BIFROST_SHADER_STAGE_VERTEX                  = bfBit(0),
-  BIFROST_SHADER_STAGE_TESSELLATION_CONTROL    = bfBit(1),
-  BIFROST_SHADER_STAGE_TESSELLATION_EVALUATION = bfBit(2),
-  BIFROST_SHADER_STAGE_GEOMETRY                = bfBit(3),
-  BIFROST_SHADER_STAGE_FRAGMENT                = bfBit(4),
-  BIFROST_SHADER_STAGE_COMPUTE                 = bfBit(5),
-  BIFROST_SHADER_STAGE_GRAPHICS                = BIFROST_SHADER_STAGE_VERTEX |
-                                  BIFROST_SHADER_STAGE_TESSELLATION_CONTROL |
-                                  BIFROST_SHADER_STAGE_TESSELLATION_EVALUATION |
-                                  BIFROST_SHADER_STAGE_GEOMETRY |
-                                  BIFROST_SHADER_STAGE_FRAGMENT,
-*/
-
 VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageFlags flags)
 {
   VkShaderStageFlagBits result = 0x0;
@@ -270,9 +256,7 @@ VkImageType bfVkConvertTextureType(BifrostTextureType type)
   {
     case BIFROST_TEX_TYPE_1D: return VK_IMAGE_TYPE_1D;
     case BIFROST_TEX_TYPE_2D: return VK_IMAGE_TYPE_2D;
-    case BIFROST_TEX_TYPE_3D:
-      return VK_IMAGE_TYPE_3D;
-      // case BIFROST_TEX_TYPE_MAX: return VK_IMAGE_TYPE_1D;
+    case BIFROST_TEX_TYPE_3D: return VK_IMAGE_TYPE_3D;
   }
 
   assert(0);

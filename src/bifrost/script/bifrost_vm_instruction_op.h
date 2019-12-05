@@ -26,7 +26,6 @@ extern "C" {
 typedef enum
 {
   // To be replaced with return. / Fake OPs
-  BIFROST_VM_OP_HALT,         // Used for 'break' resolution in the parser.
   BIFROST_VM_OP_PRINT_LOCAL,  // print(local[rBx])
 
   /* Load OPs */
@@ -117,6 +116,8 @@ typedef uint32_t bfInstruction;
 #define BIFROST_INST_RsBx_MASK (bfInstruction)0x3FFFF
 #define BIFROST_INST_RsBx_OFFSET (bfInstruction)14
 #define BIFROST_INST_RsBx_MAX ((bfInstruction)BIFROST_INST_RsBx_MASK / 2)
+
+#define BIFROST_INST_INVALID 0xFFFFFFFF
 
 #define BIFROST_MAKE_INST_OP(op) \
   (bfInstruction)(op & BIFROST_INST_OP_MASK)

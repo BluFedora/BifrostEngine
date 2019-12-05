@@ -22,7 +22,7 @@ bfValueHandle bfVM_getHandleNext(bfValueHandle h)
 }
 
 BifrostObjModule*     bfVM_findModule(BifrostVM* self, const char* name, size_t name_len);
-size_t                bfVM_getSymbol(BifrostVM* self, bfStringRange name);
+uint32_t              bfVM_getSymbol(BifrostVM* self, bfStringRange name);
 static BifrostVMError bfVM_runModule(BifrostVM* self, BifrostObjModule* module);
 static BifrostVMError bfVM_compileIntoModule(BifrostVM* self, BifrostObjModule* module, const char* source, size_t source_len);
 
@@ -618,7 +618,6 @@ static bfBool32 bfVM_ensureStackspace2(BifrostVM* self, size_t stack_space, cons
   if (stack_size < requested_size)
   {
     Array_resize(&self->stack, requested_size);
-    // self->stack_top = self->stack + requested_size;
     return bfTrue;
   }
 
@@ -914,12 +913,12 @@ frame_start:;
                   BF_RUNTIME_ERROR("'%s::call' must be defined as a function to use instance as function.\n", clz->name);
                 }
 
-                bfVMValue* const new_top = locals + ra;
-
-                if (bfVM_ensureStackspace2(self, num_args + 1, new_top))
+                if (bfVM_ensureStackspace2(self, num_args + 1, locals + ra))
                 {
                   BF_REFRESH_LOCALS();
                 }
+
+                bfVMValue* new_top = locals + ra;
 
                 memmove(new_top + 1, new_top, sizeof(bfVMValue) * num_args);
 
@@ -934,7 +933,7 @@ frame_start:;
             }
             else
             {
-              BF_RUNTIME_ERROR("%s does not define a 'call' function\n", clz->name);
+              BF_RUNTIME_ERROR("%s does not define a 'call' function.\n", clz->name);
             }
           }
 
@@ -1129,8 +1128,6 @@ BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t
 
   if (obj->type == BIFROST_VM_OBJ_FUNCTION)
   {
-    // TODO(SR): Check arity with num_args.
-
     /* NOTE(Shareef):
         The 'bfVM_execTopFrame' function automatically pops the
         stackframe once the call is done.
@@ -1138,8 +1135,15 @@ BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t
 
     BifrostObjFn* const fn = (BifrostObjFn*)obj;
 
-    bfVM_pushCallFrame(self, fn, base_stack + args_start);
-    err = bfVM_execTopFrame(self);
+    if (fn->arity < 0 || fn->arity == num_args)
+    {
+      bfVM_pushCallFrame(self, fn, base_stack + args_start);
+      err = bfVM_execTopFrame(self);
+    }
+    else
+    {
+      err = BIFROST_VM_ERROR_FUNCTION_ARITY_MISMATCH;
+    }
   }
   else if (obj->type == BIFROST_VM_OBJ_NATIVE_FN)
   {
@@ -1285,7 +1289,7 @@ static int bfVM_getSymbolHelper(const void* lhs, const void* rhs)
   return lhs_len == rhs_len && String_ccmpn(*sym, name->bgn, lhs_len) == 0;
 }
 
-size_t bfVM_getSymbol(BifrostVM* self, bfStringRange name)
+uint32_t bfVM_getSymbol(BifrostVM* self, bfStringRange name)
 {
   size_t idx = Array_find(&self->symbols, &name, &bfVM_getSymbolHelper);
 
@@ -1296,7 +1300,7 @@ size_t bfVM_getSymbol(BifrostVM* self, bfStringRange name)
     *sym               = String_newLen(name.bgn, bfStringRange_length(&name));
   }
 
-  return idx;
+  return (uint32_t)idx;
 }
 
 static BifrostVMError bfVM_runModule(BifrostVM* self, BifrostObjModule* module)
