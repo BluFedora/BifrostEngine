@@ -3,9 +3,9 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
+#include "bifrost_vm.h"                          /* bfVM_*                   */
 #include "meta/bifrost_meta_function_traits.hpp" /* function_traits          */
 #include "meta/bifrost_meta_utils.hpp"           /* for_each                 */
-#include "bifrost_vm.h"                          /* bfVM_*                   */
 #include "utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
 #include <string>                                /* string                   */
 #include <tuple>                                 /* tuple                    */
@@ -30,7 +30,6 @@ namespace bifrost
     template<typename T>
     static T readFromSlot(const BifrostVM* self, std::size_t slot)
     {
-      // TODO(SR): This needs some type checking.
       if constexpr (std::is_arithmetic_v<T>)
       {
         return static_cast<T>(bfVM_stackReadNumber(self, slot));
@@ -59,10 +58,9 @@ namespace bifrost
           return reinterpret_cast<T>(bfVM_stackReadInstance(self, slot));
         }
       }
-      // TODO(SR): Currently this could never be hit because of the impl. This is bad.
       else if constexpr (std::is_reference_v<T>)
       {
-        static_assert(always_false<T>, "Bifrost Script does not support references similar to Lua in a way.");
+        // static_assert(always_false<T>, "Bifrost Script does not support references similar to Lua in a way.");
         return *reinterpret_cast<T*>(bfVM_stackReadInstance(self, slot));
       }
       else
@@ -103,11 +101,17 @@ namespace bifrost
         {
           bfVM_stackSetNumber(self, slot, static_cast<bfVMNumberT>(value));
         }
+        else if constexpr (std::is_same_v<RawT, bfValueHandle>)
+        {
+          bfVM_stackLoadHandle(self, slot, value);
+        }
+        else if constexpr (std::is_pointer_v<T>)
+        {
+          bfVM_stackStoreWeakRef(self, slot, value);
+        }
         else
         {
-          // TODO(SR): When we add 'light userdata' aka references then we can just return that.
           static_assert(always_false<T>, "Type could not be automatically converted.");
-          bfVM_stackSetNil(self, slot);
         }
       }
     }
@@ -121,14 +125,11 @@ namespace bifrost
       });
     }
 
-    template<typename F>
-    void vmCallImpl(BifrostVM* vm, F&& fn)
+    template<typename F, typename... Args>
+    void vmCallArgsImpl(BifrostVM* vm, F&& fn, std::tuple<Args...>& arguments)
     {
       using fn_traits   = meta::function_traits<decltype(fn)>;
       using return_type = typename fn_traits::return_type;
-
-      typename fn_traits::tuple_type arguments;
-      generateArgs(arguments, vm);
 
       if constexpr (std::is_same_v<return_type, void>)
       {
@@ -140,6 +141,18 @@ namespace bifrost
         const auto& ret = meta::apply(fn, arguments);
         writeToSlot<return_type>(vm, 0, ret);
       }
+    }
+
+    template<typename F>
+    void vmCallImpl(BifrostVM* vm, F&& fn)
+    {
+      using fn_traits   = meta::function_traits<decltype(fn)>;
+      using return_type = typename fn_traits::return_type;
+
+      typename fn_traits::tuple_type arguments;
+      generateArgs(arguments, vm);
+
+      vmCallArgsImpl(vm, fn, arguments);
     }
   }  // namespace detail
 
@@ -173,23 +186,24 @@ namespace bifrost
   void vmBindNativeFn(BifrostVM* self, size_t idx, const char* variable)
   {
     using fn_traits = meta::function_traits<decltype(fn)>;
-    bfVM_moduleBindNativeFn(self, idx, variable, &vmNativeFnWrapper<fn>, static_cast<int32_t>(fn_traits::arity));
+    bfVM_stackStoreNativeFn(self, idx, variable, &vmNativeFnWrapper<fn>, static_cast<int32_t>(fn_traits::arity));
   }
 
   template<typename ClzT, typename... Args>
-  BifrostMethodBind vmMakeCtorBinding(const char* name = "ctor")
+  BifrostMethodBind vmMakeCtorBinding(const char* name = "ctor", uint32_t num_statics = 0)
   {
     /* NOTE(Shareef): +1 for the self argument */
-    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1};
+    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1, num_statics};
   }
 
   template<auto mem_fn>
-  BifrostMethodBind vmMakeMemberBinding(const char* name)
+  BifrostMethodBind vmMakeMemberBinding(const char* name, uint32_t num_statics = 0)
   {
     return {
      name,
      &vmNativeFnWrapper<mem_fn>,
      meta::function_traits<decltype(mem_fn)>::arity,
+     num_statics,
     };
   }
 
@@ -202,7 +216,7 @@ namespace bifrost
   template<typename ClzT, typename... Args>
   BifrostVMClassBind vmMakeClassBinding(const char* name, Args&&... methods)
   {
-    static BifrostMethodBind s_Methods[] = {methods..., {nullptr, nullptr, 0}};
+    static BifrostMethodBind s_Methods[] = {methods..., {nullptr, nullptr, 0, 0}};
 
     BifrostVMClassBind clz_bind;
 
@@ -239,7 +253,7 @@ namespace bifrost
     return {args_start, err};
   }
 
-  struct VMParams : public BifrostVMParams
+  struct VMParams final : public BifrostVMParams
   {
     explicit VMParams() :
       BifrostVMParams()
@@ -264,12 +278,12 @@ namespace bifrost
     VMView(VMView&& rhs)      = default;
     VMView& operator=(const VMView& rhs) = default;
     VMView& operator=(VMView&& rhs) = default;
-    ~VMView() = default;
+    ~VMView()                       = default;
 
     [[nodiscard]] BifrostVM*       self() { return m_Self; }
     [[nodiscard]] const BifrostVM* self() const noexcept { return m_Self; }
     operator BifrostVM*() const { return m_Self; }
-    [[nodiscard]] bool             isValid() const noexcept { return m_Self != nullptr; }
+    [[nodiscard]] bool isValid() const noexcept { return m_Self != nullptr; }
 
     BifrostVMError moduleMake(size_t idx, const char* module) noexcept
     {
@@ -281,30 +295,14 @@ namespace bifrost
       return bfVM_moduleLoad(self(), idx, module);
     }
 
-    void moduleBind(size_t idx, const char* variable, bfNativeFnT func, int32_t arity) noexcept
-    {
-      bfVM_moduleBindNativeFn(self(), idx, variable, func, arity);
-    }
-
-    void moduleBind(size_t idx, const BifrostVMClassBind& clz_bind) noexcept
-    {
-      bfVM_moduleBindClass(self(), idx, &clz_bind);
-    }
-
-    template<auto fn>
-    void moduleBind(size_t idx, const char* variable) noexcept
-    {
-      vmBindNativeFn<fn>(self(), idx, variable);
-    }
-
-    void moduleStoreVariable(size_t module_idx, const char* variable_name, size_t value_src_idx) noexcept
-    {
-      bfVM_moduleStoreVariable(self(), module_idx, variable_name, value_src_idx);
-    }
-
     void moduleUnload(const char* module) noexcept
     {
       bfVM_moduleUnload(self(), module);
+    }
+
+    size_t stackSize() const noexcept
+    {
+      return bfVM_stackSize(self());
     }
 
     BifrostVMError stackResize(size_t size) noexcept
@@ -317,9 +315,104 @@ namespace bifrost
       bfVM_stackMakeInstance(self(), clz_idx, dst_idx);
     }
 
+    void* stackMakeReference(size_t idx, size_t extra_data_size) noexcept
+    {
+      return bfVM_stackMakeReference(self(), idx, extra_data_size);
+    }
+
+    void* stackMakeReference(size_t module_idx, const BifrostVMClassBind& class_bind, size_t dst_idx) noexcept
+    {
+      return bfVM_stackMakeReferenceClz(self(), module_idx, &class_bind, dst_idx);
+    }
+
+    void stackMakeWeakRef(size_t idx, void* value) noexcept
+    {
+      bfVM_stackMakeWeakRef(self(), idx, value);
+    }
+
     void stackLoadVariable(size_t idx, size_t inst_or_class_or_module, const char* variable) noexcept
     {
       bfVM_stackLoadVariable(self(), idx, inst_or_class_or_module, variable);
+    }
+
+    void stackStore(size_t idx, const char* variable_name, size_t value_src_idx) noexcept
+    {
+      bfVM_stackStoreVariable(self(), idx, variable_name, value_src_idx);
+    }
+
+    void stackStore(size_t idx, const char* variable, bfNativeFnT func, int32_t arity) noexcept
+    {
+      bfVM_stackStoreNativeFn(self(), idx, variable, func, arity);
+    }
+
+    BifrostVMError stackStoreClosure(size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics)
+    {
+      return bfVM_stackStoreClosure(self(), inst_or_class_or_module, field, func, arity, num_statics);
+    }
+
+    BifrostVMError closureGetStatic(size_t dst_idx, size_t static_idx)
+    {
+      return bfVM_closureGetStatic(self(), dst_idx, dst_idx);
+    }
+
+    BifrostVMError closureSetStatic(size_t closure_idx, size_t static_idx, size_t value_idx)
+    {
+      return bfVM_closureSetStatic(self(), closure_idx, static_idx, value_idx);
+    }
+
+    // Compile time Fns
+    template<auto fn>
+    void stackStore(size_t idx, const char* variable) noexcept
+    {
+      vmBindNativeFn<fn>(self(), idx, variable);
+    }
+
+    //
+    template<typename Fn>
+    void stackStore(size_t idx, const char* variable, Fn&& func) noexcept
+    {
+      using fn_traits = meta::function_traits<decltype(func)>;
+
+      const std::size_t old_size = stackSize();
+      
+
+      if constexpr (fn_traits::is_member_fn)
+      {
+        // NOTE(Shareef): Space for the 'idx' (module) and 'idx + 1' (Closure) 'idx + 2' (WeakRef).
+
+        stackResize(idx + 3);
+        stackStoreClosure(idx, variable, &callMember<Fn>, fn_traits::arity, 1);
+        stackLoadVariable(idx + 1, idx, variable);
+        stackMakeWeakRef(idx + 2, std::addressof(func));
+        closureSetStatic(idx + 1, 0, idx + 2);
+      }
+      else
+      {
+        BifrostMethodBind call_method_bind{};
+        call_method_bind.name  = bfVM_buildInSymbolStr(self(), BIFROST_VM_SYMBOL_CALL);
+        call_method_bind.fn    = &callImpl_<Fn>;
+        call_method_bind.arity = fn_traits::arity + 1;  // NOTE(Shareef): + 1 for the Fn 'class'.
+
+        const BifrostVMClassBind clz_bind = vmMakeClassBinding<Fn>(variable, call_method_bind);
+
+        // NOTE(Shareef): Space for the 'idx' (module) and 'idx + 1' (reference).
+        stackResize(idx + 2);
+        void* func_storage = stackMakeReference(idx, clz_bind, idx + 1);
+        new (func_storage) Fn(std::forward<Fn>(func));
+        stackStore(idx, variable, idx + 1);
+      }
+
+      stackResize(old_size);
+    }
+
+    void stackStore(size_t idx, const BifrostVMClassBind& clz_bind) noexcept
+    {
+      bfVM_stackStoreClass(self(), idx, &clz_bind);
+    }
+
+    void referenceSetClass(size_t idx, size_t class_idx) noexcept
+    {
+      bfVM_referenceSetClass(self(), idx, class_idx);
     }
 
     void stackSet(size_t idx, const std::string& value) noexcept
@@ -447,6 +540,53 @@ namespace bifrost
       const char* err_str = bfVM_errorString(self());
       return {err_str, err_str + String_length(err_str)};
     }
+
+   private:
+    template<typename FObj, typename Ret, typename... Args>
+    static Ret stackStore_(FObj* obj, Args&&... args)
+    {
+      return meta::invoke(obj, args);
+    }
+
+    template<typename Fn>
+    static void callImplShared(BifrostVM* vm, Fn* fn_obj)
+    {
+      using fn_traits   = meta::function_traits<Fn>;
+      using return_type = typename fn_traits::return_type;
+
+      typename fn_traits::tuple_type arguments;
+      detail::generateArgs(arguments, vm);
+
+      if constexpr (std::is_same_v<return_type, void>)
+      {
+        meta::apply(*fn_obj, arguments);
+        bfVM_stackSetNil(vm, 0);
+      }
+      else
+      {
+        const auto& ret = meta::apply(*fn_obj, arguments);
+        detail::writeToSlot<return_type>(vm, 0, ret);
+      }
+    }
+
+    template<typename Fn>
+    static void callImpl_(BifrostVM* vm, int /*arity*/)
+    {
+      callImplShared<Fn>(vm, static_cast<Fn*>(bfVM_stackReadInstance(vm, 0)));
+    }
+
+    template<typename Fn>
+    static void callMember(BifrostVM* vm, int arity)
+    {
+      static constexpr size_t STATIC_FN_POINTER_IDX = 0;
+
+      const size_t extra_start = arity + 1;
+
+      bfVM_stackResize(vm, extra_start + 1);
+      bfVM_closureGetStatic(vm, extra_start, STATIC_FN_POINTER_IDX);
+
+      callImplShared<Fn>(vm, static_cast<Fn*>(bfVM_stackReadInstance(vm, extra_start)));
+    }
   };
 
   // clang-format off
@@ -483,7 +623,7 @@ namespace bifrost
       {
         m_Self = &m_VM;
         bfVM_ctor(self(), &params);
-      } 
+      }
     }
 
     VM& operator=(VM&& rhs) noexcept

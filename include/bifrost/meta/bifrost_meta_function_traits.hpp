@@ -53,12 +53,15 @@ namespace bifrost::meta
   template<typename R, typename... Args>
   struct function_traits<R (*)(Args...)> : public function_traits<R(Args...)>
   {
+    static constexpr bool is_member_fn = false;
   };
 
   // member function pointer
   template<typename C, typename R, typename... Args>
   struct function_traits<R (C::*)(Args...)> : public function_traits<R(C*, Args...)>
   {
+    static constexpr bool is_member_fn = true;
+
     using class_type     = std::decay_t<C>;
     using tuple_type_raw = FunctionTuple<Args...>;
   };
@@ -67,6 +70,8 @@ namespace bifrost::meta
   template<typename C, typename R, typename... Args>
   struct function_traits<R (C::*)(Args...) const> : public function_traits<R(const C*, Args...)>
   {
+    static constexpr bool is_member_fn = true;
+
     using class_type     = std::decay_t<C>;
     using tuple_type_raw = FunctionTuple<Args...>;
   };
@@ -77,18 +82,21 @@ namespace bifrost::meta
   template<typename R, typename... Args>
   struct function_traits<R (*)(Args...) noexcept> : public function_traits<R(Args...)>
   {
+    static constexpr bool is_member_fn = true;
   };
 
   // noexcept member function pointer
   template<typename C, typename R, typename... Args>
   struct function_traits<R (C::*)(Args...) noexcept> : public function_traits<R(C*, Args...)>
   {
+    static constexpr bool is_member_fn = true;
   };
 
   // noexcept const member function pointer
   template<typename C, typename R, typename... Args>
   struct function_traits<R (C::*)(Args...) const noexcept> : public function_traits<R(C*, Args...)>
   {
+    static constexpr bool is_member_fn = true;
   };
 
 #endif
@@ -97,13 +105,18 @@ namespace bifrost::meta
   template<typename C, typename R>
   struct function_traits<R(C::*)> : public function_traits<R(C&)>
   {
+    static constexpr bool is_member_fn = false;
+
     using class_type     = std::decay_t<C>;
     using tuple_type_raw = std::tuple<>;
   };
 
+  // function objects / lambdas
   template<typename F>
   struct function_traits
   {
+    static constexpr bool is_member_fn = false;
+
    private:
     using call_type = function_traits<decltype(&F::operator())>;
 

@@ -33,6 +33,7 @@ struct BifrostVMStackFrame_t;
 struct BifrostObj_t;
 struct BifrostObjInstance_t;
 struct BifrostObjModule_t;
+struct BifrostObjNativeFn_t;
 struct BifrostVM_t;
 typedef struct BifrostVM_t BifrostVM;
 struct bfValueHandle_t;
@@ -54,6 +55,8 @@ typedef enum
   BIFROST_VM_ERROR_FUNCTION_ARITY_MISMATCH, /*!< VM         */
   BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED,  /*!< VM         */
   BIFROST_VM_ERROR_MODULE_NOT_FOUND,        /*!< VM         */
+  BIFROST_VM_ERROR_INVALID_OP_ON_TYPE,      /*!< VM         */
+  BIFROST_VM_ERROR_INVALID_ARGUMENT,        /*!< VM         */
   BIFROST_VM_ERROR_STACK_TRACE_BEGIN,       /*!< VM Runtime */
   BIFROST_VM_ERROR_STACK_TRACE,             /*!< VM Runtime */
   BIFROST_VM_ERROR_STACK_TRACE_END,         /*!< VM Runtime */
@@ -78,6 +81,7 @@ typedef struct
   const char* name;
   bfNativeFnT fn;
   int32_t     arity;
+  uint32_t    num_statics;
 
 } BifrostMethodBind;
 
@@ -152,60 +156,64 @@ typedef enum
  *   Consider all these member variables private. They
  *   are exposed so that you may declare a VM on the stack.
  *
- *   For ABI compatibility use 'bfVM_new' and 'bfVM_delete'
+ *   If you want ABI compatibility use 'bfVM_new' and 'bfVM_delete'
  *   and do not use this struct directly.
  */
 struct BifrostVM_t
 {
-  struct BifrostVMStackFrame_t* frames;                                  /*!< The call stack.                                                */
-  bfVMValue*                    stack;                                   /*!< The base pointer to the stack memory.                          */
-  bfVMValue*                    stack_top;                               /*!< The usable top of the [BifrostVM::stack].                      */
-  BifrostString*                symbols;                                 /*!< Every symbol ever used in the vm, a 'perfect hash'             */
-  BifrostVMParams               params;                                  /*!< The user defined parameters used by the VM                     */
-  struct BifrostObj_t*          gc_object_list;                          /*!< The list of every object allocated by this VM.                 */
-  BifrostHashMap                modules;                                 /*!< <BifrostObjStr, BifrostObjModule*> for fast module lookup      */
-  struct BifrostParser_t*       parser_stack;                            /*!< For handling the recursive nature of importing modules.        */
-  bfValueHandle                 handles;                                 /*!< Additional GC Roots for Extended C Lifetimes                   */
-  bfValueHandle                 free_handles;                            /*!< A pool of handles for reduced allocations.                     */
-  BifrostString                 last_error;                              /*!< The last error to happen in a user readable way                */
-  size_t                        bytes_allocated;                         /*!< The total amount of memory this VM has asked for               */
-  struct BifrostObjInstance_t*  finalized;                               /*!< Objects that have finalized but still need to be freed         */
-  struct BifrostObj_t*          temp_roots[3];                           /*!< Objects temporarily protected from the GC                      */
-  uint8_t                       temp_roots_top;                          /*!< BifrostVM_t::temp_roots size                                   */
-  bfBool32                      gc_is_running;                           /*!< This is so that when calling finalizers the GC isn't run.      */
-  size_t                        build_in_symbols[BIFROST_VM_SYMBOL_MAX]; /*!< Symbols that should be loaded at startup for a faster runtime. */
+  struct BifrostVMStackFrame_t*      frames;                                  /*!< The call stack.                                                */
+  bfVMValue*                         stack;                                   /*!< The base pointer to the stack memory.                          */
+  bfVMValue*                         stack_top;                               /*!< The usable top of the [BifrostVM::stack].                      */
+  BifrostString*                     symbols;                                 /*!< Every symbol ever used in the vm, a 'perfect hash'             */
+  BifrostVMParams                    params;                                  /*!< The user defined parameters used by the VM                     */
+  struct BifrostObj_t*               gc_object_list;                          /*!< The list of every object allocated by this VM.                 */
+  BifrostHashMap                     modules;                                 /*!< <BifrostObjStr, BifrostObjModule*> for fast module lookup      */
+  struct BifrostParser_t*            parser_stack;                            /*!< For handling the recursive nature of importing modules.        */
+  bfValueHandle                      handles;                                 /*!< Additional GC Roots for Extended C Lifetimes                   */
+  bfValueHandle                      free_handles;                            /*!< A pool of handles for reduced allocations.                     */
+  BifrostString                      last_error;                              /*!< The last error to happen in a user readable way                */
+  size_t                             bytes_allocated;                         /*!< The total amount of memory this VM has asked for               */
+  struct BifrostObj_t*               finalized;                               /*!< Objects that have finalized but still need to be freed         */
+  struct BifrostObj_t*               temp_roots[8];                           /*!< Objects temporarily protected from the GC                      */
+  uint8_t                            temp_roots_top;                          /*!< BifrostVM_t::temp_roots size                                   */
+  bfBool32                           gc_is_running;                           /*!< This is so that when calling finalizers the GC isn't run.      */
+  size_t                             build_in_symbols[BIFROST_VM_SYMBOL_MAX]; /*!< Symbols that should be loaded at startup for a faster runtime. */
+  const struct BifrostObjNativeFn_t* current_native_fn;
 };
-
-// TODO(SR):
-//   Simplify the API even more by allowing the setting of fields.
-//   A mirror of "bfVM_stackLoadVariable". => bfVM_stackStoreVariable
-//   This make make the 'binding' API the same as everything else.
 
 BifrostVM*     bfVM_new(const BifrostVMParams* params);
 void           bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
 BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
 BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
-void           bfVM_moduleBindNativeFn(BifrostVM* self, size_t idx, const char* variable, bfNativeFnT func, int32_t arity);
-void           bfVM_moduleBindClass(BifrostVM* self, size_t idx, const BifrostVMClassBind* clz_bind);
-void           bfVM_moduleStoreVariable(BifrostVM* self, size_t module_idx, const char* variable_name, size_t value_src_idx);
 void           bfVM_moduleUnload(BifrostVM* self, const char* module);
+size_t         bfVM_stackSize(const BifrostVM* self);  // The usable size from an API standpoint
 BifrostVMError bfVM_stackResize(BifrostVM* self, size_t size);
 void           bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx);
-void           bfVM_stackLoadVariable(BifrostVM* self, size_t idx, size_t inst_or_class_or_module, const char* variable);
+void*          bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t extra_data_size);
+void*          bfVM_stackMakeReferenceClz(BifrostVM* self, size_t module_idx, const BifrostVMClassBind* clz_bind, size_t dst_idx);
+void           bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value);
+void           bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t clz_idx);
+void           bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_class_or_module, const char* variable);
+BifrostVMError bfVM_stackStoreVariable(BifrostVM* self, size_t inst_or_class_or_module, const char* field, size_t value_idx);
+BifrostVMError bfVM_stackStoreNativeFn(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity);
+BifrostVMError bfVM_stackStoreClosure(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics);
+BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t static_idx);  // Must ony be called in the current closure.
+BifrostVMError bfVM_closureSetStatic(BifrostVM* self, size_t closure_idx, size_t static_idx, size_t value_idx);
+BifrostVMError bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind);
 void           bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value);
 void           bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len);
 void           bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value);
 void           bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
 void           bfVM_stackSetNil(BifrostVM* self, size_t idx);
-void*          bfVM_stackReadInstance(const BifrostVM* self, size_t idx); // Also works on null values, just returns NULL
+void*          bfVM_stackReadInstance(const BifrostVM* self, size_t idx);  // Also works on null values, just returns NULL
 const char*    bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);
 bfVMNumberT    bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
 bfBool32       bfVM_stackReadBool(const BifrostVM* self, size_t idx);
 BifrostVMType  bfVM_stackGetType(BifrostVM* self, size_t idx);
-int32_t        bfVM_stackGetArity(BifrostVM* self, size_t idx); // This should be const
+int32_t        bfVM_stackGetArity(BifrostVM* self, size_t idx);  // This should be const
 bfValueHandle  bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
 void           bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle);
-void           bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle); // Freeing a null handle is safe.
+void           bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);  // Freeing a null handle is safe.
 int32_t        bfVM_handleGetArity(bfValueHandle handle);
 BifrostVMType  bfVM_handleGetType(bfValueHandle handle);
 BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);

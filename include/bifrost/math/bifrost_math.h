@@ -3,8 +3,8 @@
 //
 //  Created by Shareef Raheem on 8/16/18.
 //  Copyright © 2018 BluFedora. All rights reserved.
-#ifndef BIFROST_MATH_H
-#define BIFROST_MATH_H
+#ifndef BIFROST_MATH2_H
+#define BIFROST_MATH2_H
 
 #include <math.h>   /* pow, powf, fabs, fabsf, sqrt, sqrtf        */
 #include <float.h>  /* DBL_MAX, FLT_MAX, DBL_EPSILON, FLT_EPSILON */
@@ -26,7 +26,6 @@
   #define epsilon_real    DBL_EPSILON
 
   typedef double bf_real;
-
 #elif BIFROST_PHYSICS_PRECISION == BIFROST_PHYSICS_FLT
   #define max_real        FLT_MAX
   #define pow_real        powf
@@ -35,9 +34,8 @@
   #define epsilon_real    FLT_EPSILON
 
   typedef float bf_real;
-
 #else
   #error "A floating point precision must be specified."
 #endif
 
-#endif /* BIFROST_MATH_H */
+#endif /* BIFROST_MATH2_H */

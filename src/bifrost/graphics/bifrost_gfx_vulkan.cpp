@@ -122,8 +122,8 @@ BIFROST_DEFINE_HANDLE(GfxContext)
   bfGfxDeviceHandle                logical_device;
   VkCommandPool                    command_pools[1];  // TODO(Shareef): One per thread.
   uint32_t                         image_index;
-  uint32_t                         frame_count;
-  uint32_t                         frame_index;  // frame_count % max_frame_in_flight
+  bfFrameCount_t                   frame_count;
+  bfFrameCount_t                   frame_index;  // frame_count % max_frames_in_flight
 
 #if BIFROST_USE_DEBUG_CALLBACK
   VkDebugReportCallbackEXT debug_callback;
@@ -322,6 +322,23 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
   return bfFalse;
 }
 
+bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, int window_idx)
+{
+  if (window_idx < 0)
+  {
+    window_idx = 0;
+  }
+
+  VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
+
+  if (window)
+  {
+    return {self->frame_index, self->frame_count, self->max_frames_in_flight};
+  }
+
+  return {0, 0, 0};
+}
+
 void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
   BifrostGfxObjectBase* prev         = nullptr;
@@ -332,7 +349,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
   {
     BifrostGfxObjectBase* next = curr->next;
 
-    if (std::abs(int(self->frame_count - curr->last_frame_used)) >= 60)
+    if ((self->frame_count - curr->last_frame_used & bfFrameCountMax) >= 60)
     {
       if (prev)
       {
@@ -360,7 +377,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
 
   if (release_list)
   {
-    bfGfxDevice_flush(self->logical_device);
+    // bfGfxDevice_flush(self->logical_device);
     while (release_list)
     {
       BifrostGfxObjectBase* next = release_list->next;
@@ -785,27 +802,33 @@ namespace
 
       switch (device.device_properties.deviceType)
       {
-        case VK_PHYSICAL_DEVICE_TYPE_OTHER: {
+        case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+        {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_OTHER");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: {
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: {
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: {
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+        {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU");
           break;
         }
-        case VK_PHYSICAL_DEVICE_TYPE_CPU: {
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:
+        {
           bfLogPrint("\t DEVICE_TYPE = VK_PHYSICAL_DEVICE_TYPE_CPU");
           break;
         }
-        default: {
+        default:
+        {
           bfLogPrint("\t DEVICE_TYPE = DEVICE_TYPE_UNKNOWN");
           break;
         }
@@ -1751,7 +1774,7 @@ void bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle 
 {
   for (std::size_t i = 0; i < self->modules.size; ++i)
   {
-    if (self->modules.elements[i]->type == module->type)
+    if (self->modules.elements[i] == module || self->modules.elements[i]->type == module->type)
     {
       self->modules.elements[i] = module;
       return;

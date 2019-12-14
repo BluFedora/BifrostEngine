@@ -128,11 +128,18 @@ void Array_reserve(void* const self, const size_t num_elements)
       new_capacity = num_elements;
     }
 
-    header = BIFROST_REALLOC(header, sizeof(BifrostArrayHeader) + new_capacity * header->stride, 1);
-    PRISM_ASSERT(header, "Array_reserve: the array could not be resized from realloc failing.");
+    BifrostArrayHeader* new_header = (BifrostArrayHeader*)BIFROST_REALLOC(header, sizeof(BifrostArrayHeader) + new_capacity * header->stride, 1);
 
-    (*SELF_CAST(self)) = (uint8_t*)header + sizeof(BifrostArrayHeader);
-    header->capacity   = new_capacity;
+    if (new_header)
+    {
+      new_header->capacity = new_capacity;
+      *SELF_CAST(self)            = (char*)new_header + sizeof(BifrostArrayHeader);
+    }
+    else
+    {
+      Array_delete(self);
+      *SELF_CAST(self) = NULL;
+    }
   }
 }
 

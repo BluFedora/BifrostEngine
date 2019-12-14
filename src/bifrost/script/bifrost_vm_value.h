@@ -6,22 +6,23 @@
 #if __cplusplus
 extern "C" {
 #endif
-static const uint64_t SIGN_BIT  = (uint64_t)(1) << 63;
-static const uint64_t QUIET_NAN = (uint64_t)(0x7FFC000000000000ULL);
-static const uint64_t TAG_MASK  = (uint64_t)0x3;
+
+#define SIGN_BIT ((uint64_t)(1) << 63)
+#define QUIET_NAN (uint64_t)(0x7FFC000000000000ULL)
+#define TAG_MASK (uint64_t)0x3
 /* static  const uint64_t TAG_NAN = 0x0; */
-static const uint64_t TAG_TRUE     = (uint64_t)0x1;
-static const uint64_t TAG_FALSE    = (uint64_t)0x2;
-static const uint64_t TAG_NULL     = (uint64_t)0x3;                                // 4-7 unused
-static const uint64_t POINTER_MASK = ((uint64_t)1 << 63) | 0x7FFC000000000000ULL;  // SIGN_BIT | QUIET_NAN;
+#define TAG_TRUE (uint64_t)0x1
+#define TAG_FALSE (uint64_t)0x2
+#define TAG_NULL (uint64_t)0x3                                    // 4-7 unused
+#define POINTER_MASK (((uint64_t)1 << 63) | 0x7FFC000000000000ULL)  // SIGN_BIT | QUIET_NAN;
 /* static  uint8_t TAG_GET(bfVMValue value) { return (uint8_t)(value & TAG_MASK); } */
 
 #define TAG_DEF(t) (bfVMValue)((uint64_t)(QUIET_NAN | t))
 
 // NOTE/TODO/WTF(SHAREEF): The explicit values are to quiet down VS code.
-static const uint64_t VAL_NULL  = (bfVMValue)((uint64_t)(0x7FFC000000000000ULL | 0x3));  // TAG_DEF(TAG_NULL);
-static const uint64_t VAL_TRUE  = (bfVMValue)((uint64_t)(0x7FFC000000000000ULL | 0x1));  // TAG_DEF(TAG_TRUE);
-static const uint64_t VAL_FALSE = (bfVMValue)((uint64_t)(0x7FFC000000000000ULL | 0x2));  // TAG_DEF(TAG_FALSE);
+static const uint64_t VAL_TRUE  = TAG_DEF(TAG_TRUE);
+static const uint64_t VAL_FALSE = TAG_DEF(TAG_FALSE);
+static const uint64_t VAL_NULL  = TAG_DEF(TAG_NULL);
 
 // Used By:
 // debug, value
@@ -67,8 +68,13 @@ static inline void* AS_POINTER(bfVMValue v)
 
 // Used By:
 // API, gc, parser
-static inline bfVMValue FROM_POINTER(void* p)
+static inline bfVMValue FROM_POINTER(const void* p)
 {
+  if (p == NULL)
+  {
+    return VAL_NULL;
+  }
+
   return (bfVMValue)(POINTER_MASK | (uint64_t)((uintptr_t)(p)));
 }
 
@@ -100,6 +106,7 @@ bfBool32    bfVMValue_ee(bfVMValue lhs, bfVMValue rhs);
 bfBool32    bfVMValue_lt(bfVMValue lhs, bfVMValue rhs);
 bfBool32    bfVMValue_gt(bfVMValue lhs, bfVMValue rhs);
 bfBool32    bfVMValue_ge(bfVMValue lhs, bfVMValue rhs);
+
 #if __cplusplus
 }
 #endif

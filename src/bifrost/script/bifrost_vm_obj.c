@@ -82,18 +82,19 @@ BifrostObjFn* bfVM_createFunction(struct BifrostVM_t* self, BifrostObjModule* mo
 
   fn->module = module;
 
-  /* NOTE(Shareef):
-      'fn' Will be filled out later by a Function Builder.
-  */
+  /* NOTE(Shareef): 'fn' Will be filled out later by a Function Builder. */
 
   return fn;
 }
 
-BifrostObjNativeFn* bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity)
+BifrostObjNativeFn* bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics)
 {
-  BifrostObjNativeFn* fn = allocObj(self, sizeof(BifrostObjNativeFn), BIFROST_VM_OBJ_NATIVE_FN);
+  BifrostObjNativeFn* fn = allocObj(self, sizeof(BifrostObjNativeFn) + sizeof(bfVMValue) * num_statics, BIFROST_VM_OBJ_NATIVE_FN);
   fn->value              = fn_ptr;
   fn->arity              = arity;
+  fn->num_statics        = num_statics;
+  fn->statics            = (bfVMValue*)((char*)fn + sizeof(BifrostObjNativeFn));
+
   return fn;
 }
 
@@ -103,6 +104,24 @@ BifrostObjStr* bfVM_createString(struct BifrostVM_t* self, bfStringRange value)
   obj->value         = String_newLen(value.bgn, bfStringRange_length(&value));
   String_unescape(obj->value);
   obj->hash = bfString_hashN(obj->value, String_length(obj->value));
+
+  return obj;
+}
+
+BifrostObjReference* bfVM_createReference(struct BifrostVM_t* self, size_t extra_data_size)
+{
+  BifrostObjReference* obj = allocObj(self, sizeof(BifrostObjReference) + extra_data_size, BIFROST_VM_OBJ_REFERENCE);
+  obj->clz                 = NULL;
+  obj->extra_data_size     = extra_data_size;
+  memset(&obj->extra_data, 0x0, extra_data_size);
+
+  return obj;
+}
+
+BifrostObjWeakRef* bfVM_createWeakRef(struct BifrostVM_t* self, void* data)
+{
+  BifrostObjWeakRef* obj = allocObj(self, sizeof(BifrostObjWeakRef), BIFROST_VM_OBJ_WEAK_REF);
+  obj->data              = data;
 
   return obj;
 }
@@ -158,6 +177,14 @@ void bfVMObject__delete(struct BifrostVM_t* self, BifrostObj* obj)
       String_delete(str->value);
       break;
     }
+    case BIFROST_VM_OBJ_REFERENCE:
+    {
+      break;
+    }
+    case BIFROST_VM_OBJ_WEAK_REF:
+    {
+      break;
+    }
   }
 }
 
@@ -166,7 +193,6 @@ void bfVMObject_delete(struct BifrostVM_t* self, BifrostObj* obj)
   const size_t obj_size = bfGCObjectSize(obj);
 
   bfVMObject__delete(self, obj);
-  // memset(obj, 0xCD, obj_size);
   bfGCAllocMemory(self, obj, obj_size, 0u, sizeof(void*));
 }
 
@@ -175,11 +201,25 @@ bfBool32 bfObjIsFunction(const BifrostObj* obj)
   return obj->type == BIFROST_VM_OBJ_FUNCTION || obj->type == BIFROST_VM_OBJ_NATIVE_FN;
 }
 
-void bfObjFinalize(struct BifrostVM_t* self, BifrostObjInstance* inst)
+void bfObjFinalize(struct BifrostVM_t* self, BifrostObj* obj)
 {
   // TODO(SR): Find a way to guarantee instances don't get finalized twice
-  if (inst->clz->finalizer)
+  if (obj->type == BIFROST_VM_OBJ_INSTANCE)
   {
-    inst->clz->finalizer(self, &inst->extra_data);
+    BifrostObjInstance* inst = (BifrostObjInstance*)obj;
+
+    if (inst->clz->finalizer)
+    {
+      inst->clz->finalizer(self, &inst->extra_data);
+    }
+  }
+  else if (obj->type == BIFROST_VM_OBJ_REFERENCE)
+  {
+    BifrostObjReference* ref = (BifrostObjReference*)obj;
+
+    if (ref->clz->finalizer)
+    {
+      ref->clz->finalizer(self, &ref->extra_data);
+    }
   }
 }

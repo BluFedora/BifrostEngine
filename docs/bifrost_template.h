@@ -1,5 +1,5 @@
-#ifndef BIFROST_
-#define BIFROST_
+#ifndef BIFROST_H
+#define BIFROST_H
 
 #if __cplusplus
 extern "C"
@@ -10,4 +10,4 @@ extern "C"
 }
 #endif
 
-#endif /* BIFROST_ */
+#endif /* BIFROST_H */

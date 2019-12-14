@@ -12,6 +12,32 @@
 
 static const uint16_t BIFROST_VM_INVALID_SLOT = 0xFFFF;
 
+extern uint32_t bfVM_getSymbol(BifrostVM* self, bfStringRange name);
+
+uint32_t bfVM_xSetVariable(BifrostVMSymbol** variables, BifrostVM* vm, bfStringRange name, bfVMValue value)
+{
+  const size_t idx      = bfVM_getSymbol(vm, name);
+  const size_t old_size = Array_size(variables);
+
+  if (idx >= old_size)
+  {
+    const size_t new_size = idx + 1;
+
+    Array_resize(variables, new_size);
+
+    for (size_t i = old_size; i < new_size; ++i)
+    {
+      (*variables)[i].name  = "___UNUSED___";
+      (*variables)[i].value = VAL_NULL;
+    }
+  }
+
+  (*variables)[idx].name  = vm->symbols[idx];
+  (*variables)[idx].value = value;
+
+  return idx & 0xFFFFFFFF;
+}
+
 struct LoopInfo_t
 {
   size_t    body_start;
@@ -38,7 +64,7 @@ void loopPop(BifrostParser* self)
 
   for (size_t i = self->loop_stack->body_start; i < body_end; ++i)
   {
-    bfInstruction* const  inst = self->fn_builder->instructions + i;
+    bfInstruction* const inst = self->fn_builder->instructions + i;
 
     if (*inst == BIFROST_INST_INVALID)
     {
@@ -77,8 +103,6 @@ static bfBool32      parserIsConstexpr(const BifrostParser* self);
 static bfVMValue     parserConstexprValue(const BifrostParser* self);
 static bfVMValue     parserTokenConstexprValue(const BifrostParser* self, const bfToken* token);
 static uint32_t      parserGetSymbol(const BifrostParser* self, bfStringRange name);
-static void          parserModuleSetVariable(const BifrostParser* self, bfStringRange name, bfVMValue value);
-static void          parserClassSetVariable(BifrostVM* self, BifrostObjClass* clz, bfStringRange name, bfVMValue value);
 static bfStringRange parserBeginFunction(BifrostParser* self, bfBool32 require_name);
 static int           parserParseFunction(BifrostParser* self);
 static void          parserEndFunction(BifrostParser* self, BifrostObjFn* out, int arity);
@@ -95,7 +119,7 @@ static void          parseDotOp(BifrostParser* self, ExprInfo* expr, const ExprI
 static void          parseAssign(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs, const bfToken* token, int prec);
 static void          parseCall(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs, const bfToken* token, int prec);
 static void          parseMethodCall(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs, const bfToken* token, int prec);
-static void          parseVarDecl(BifrostParser* self);
+static void          parseVarDecl(BifrostParser* self, bfBool32 is_static);
 static void          parseFunctionDecl(BifrostParser* self);
 static void          parseFunctionExpr(BifrostParser* self, ExprInfo* expr, const bfToken* token);
 static void          parseImport(BifrostParser* self);
@@ -307,23 +331,45 @@ static inline GrammarRule typeToRule(bfTokenType type)
 
 #define builder() self->fn_builder
 
-static void parseVarDecl(BifrostParser* self)
+static void parseVarDecl(BifrostParser* self, bfBool32 is_static)
 {
   /* GRAMMAR(Shareef):
        var <identifier>;
        var <identifier> = <expr>;
+       static var <identifier>;
+       static var <identifier> = <expr>;
   */
 
   const bfStringRange name = self->current_token.as.str_range;
 
   if (bfParser_eat(self, IDENTIFIER, bfFalse, "Expected identifier after var keyword."))
   {
-    VariableInfo var = parserVariableMakeLocal(self, name);
-
-    if (bfParser_match(self, EQUALS))
+    if (is_static)
     {
-      ExprInfo expr = exprMake(var.location, parserVariableMakeTemp(BIFROST_VM_INVALID_SLOT));
-      parseExpr(self, &expr, PREC_NONE);
+      const uint32_t location = bfVM_xSetVariable(&self->current_module->variables, self->vm, name, VAL_NULL);
+
+      if (bfParser_match(self, EQUALS))
+      {
+        VariableInfo var;
+        var.kind     = V_MODULE;
+        var.location = location;
+
+        const uint16_t expr_loc = bfVMFunctionBuilder_pushTemp(builder(), 1);
+        ExprInfo       expr     = exprMake(expr_loc, parserVariableMakeTemp(BIFROST_VM_INVALID_SLOT));
+        parseExpr(self, &expr, PREC_NONE);
+        parserVariableStore(self, var, expr_loc);
+        bfVMFunctionBuilder_popTemp(builder(), expr_loc);
+      }
+    }
+    else
+    {
+      const VariableInfo var = parserVariableMakeLocal(self, name);
+
+      if (bfParser_match(self, EQUALS))
+      {
+        ExprInfo expr = exprMake(var.location, parserVariableMakeTemp(BIFROST_VM_INVALID_SLOT));
+        parseExpr(self, &expr, PREC_NONE);
+      }
     }
 
     bfParser_eat(self, BIFROST_TOKEN_SEMI_COLON, bfFalse, "Expected semi colon after variable declaration.");
@@ -332,8 +378,8 @@ static void parseVarDecl(BifrostParser* self)
 
 static void parseExpr(BifrostParser* self, ExprInfo* expr_loc, int prec)
 {
-  bfToken     token = self->current_token;
-  GrammarRule rule  = typeToRule(token.type);
+  bfToken           token = self->current_token;
+  const GrammarRule rule  = typeToRule(token.type);
 
   if (!rule.prefix)
   {
@@ -393,7 +439,7 @@ void bfParser_dtor(BifrostParser* self)
 {
   self->vm->parser_stack = self->parent;
 
-  // NOTE(Shareef): Handles the case where a script is recompiled into 
+  // NOTE(Shareef): Handles the case where a script is recompiled into
   //   The same module.
   // TODO(Shareef): This is probably horrible broken and since other
   //   thinsg probably need to be cleared from the module during a recompile.
@@ -591,10 +637,13 @@ bfBool32 bfParser_parse(BifrostParser* self)
       loopPop(self);
       break;
     }
+    case BIFROST_TOKEN_STATIC:
     case BIFROST_TOKEN_VAR_DECL:
     {
+      const bfBool32 is_static = bfParser_match(self, BIFROST_TOKEN_STATIC);
+
       bfParser_match(self, BIFROST_TOKEN_VAR_DECL);
-      parseVarDecl(self);
+      parseVarDecl(self, is_static);
       break;
     }
     case BIFROST_TOKEN_FUNC_DECL:
@@ -664,7 +713,7 @@ static void parseFunctionDecl(BifrostParser* self)
   }
   else
   {
-    parserModuleSetVariable(self, name_str, fn_value);
+    bfVM_xSetVariable(&self->current_module->variables, self->vm, name_str, fn_value);
   }
 }
 
@@ -728,13 +777,7 @@ static void parseImport(BifrostParser* self)
 
       if (imported_module)
       {
-        parserModuleSetVariable(
-         self,
-         dst_name,
-         bfVM_stackFindVariable(
-          imported_module,
-          src_name.bgn,
-          bfStringRange_length(&src_name)));
+        bfVM_xSetVariable(&self->current_module->variables, self->vm, dst_name, bfVM_stackFindVariable(imported_module, src_name.bgn, bfStringRange_length(&src_name)));
       }
     } while (bfParser_match(self, BIFROST_TOKEN_COMMA));
   }
@@ -876,7 +919,7 @@ static void parseNew(BifrostParser* self, ExprInfo* expr, const bfToken* token)
         ctor_name = self->current_token.as.str_range;
       }
 
-      bfParser_eat(self, BIFROST_TOKEN_IDENTIFIER, bfFalse, "Expected name as the constructor to call.");
+      bfParser_eat(self, BIFROST_TOKEN_IDENTIFIER, bfFalse, "Expected the name of the constructor to call.");
     }
 
     if (bfParser_match(self, BIFROST_TOKEN_L_PAREN))
@@ -1194,50 +1237,9 @@ static bfVMValue parserTokenConstexprValue(const BifrostParser* self, const bfTo
   return 0;
 }
 
-extern uint32_t bfVM_getSymbol(BifrostVM* self, bfStringRange name);
-
 static uint32_t parserGetSymbol(const BifrostParser* self, bfStringRange name)
 {
   return bfVM_getSymbol(self->vm, name);
-}
-
-static inline void bfVM_xSetVariable(BifrostVMSymbol** variables, BifrostVM* vm, bfStringRange name, bfVMValue value)
-{
-  const size_t idx      = bfVM_getSymbol(vm, name);
-  const size_t old_size = Array_size(variables);
-
-  if (idx >= old_size)
-  {
-    const size_t new_size = idx + 1;
-
-    Array_resize(variables, new_size);
-
-    for (size_t i = old_size; i < new_size; ++i)
-    {
-      (*variables)[i].name  = "___UNUSED___";
-      (*variables)[i].value = VAL_NULL;
-    }
-  }
-
-  (*variables)[idx].name  = vm->symbols[idx];
-  (*variables)[idx].value = value;
-}
-
-void bfVM_moduleSetVariable(BifrostObjModule* self, BifrostVM* vm, bfStringRange name, bfVMValue value)
-{
-  bfVM_xSetVariable(&self->variables, vm, name, value);
-}
-
-// TODO(SR): Deprecate this function.
-static void parserModuleSetVariable(const BifrostParser* self, bfStringRange name, bfVMValue value)
-{
-  bfVM_moduleSetVariable(self->current_module, self->vm, name, value);
-}
-
-// TODO(SR): Deprecate this function.
-static void parserClassSetVariable(BifrostVM* self, BifrostObjClass* clz, bfStringRange name, bfVMValue value)
-{
-  bfVM_xSetVariable(&clz->symbols, self, name, value);
 }
 
 static bfStringRange parserBeginFunction(BifrostParser* self, bfBool32 require_name)
@@ -1333,7 +1335,7 @@ static void parseClassDecl(BifrostParser* self)
   BifrostObjClass* clz = bfVM_createClass(self->vm, self->current_module, name_str, 0u);
 
   bfGCPushRoot(self->vm, &clz->super);
-  parserModuleSetVariable(self, name_str, FROM_POINTER(clz));
+  bfVM_xSetVariable(&self->current_module->variables, self->vm, name_str, FROM_POINTER(clz));
 
   self->current_clz = clz;
 
@@ -1377,11 +1379,6 @@ static void parseClassDecl(BifrostParser* self)
   bfParser_eat(self, BIFROST_TOKEN_SEMI_COLON, bfFalse, "Class definition must have a semi colon at the end.");
 }
 
-void bfVM_classSetVar(BifrostVM* self, BifrostObjClass* clz, bfStringRange name, bfVMValue value)
-{
-  parserClassSetVariable(self, clz, name, value);
-}
-
 static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz, bfBool32 is_static)
 {
   /* GRAMMAR(Shareef):
@@ -1410,7 +1407,7 @@ static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz, bfBool3
 
   if (is_static)
   {
-    bfVM_classSetVar(self->vm, clz, name_str, initial_value);
+    bfVM_xSetVariable(&clz->symbols, self->vm, name_str, initial_value);
   }
   else
   {
@@ -1437,7 +1434,7 @@ static void parseClassFunc(BifrostParser* self, BifrostObjClass* clz, bfBool32 i
 
   // TODO(Shareef): This same line is used in 3 (or more) places and should be put in a helper.
   BifrostObjFn* fn = bfVM_createFunction(self->vm, self->current_module);
-  bfVM_classSetVar(self->vm, clz, name_str, FROM_POINTER(fn));
+  bfVM_xSetVariable(&clz->symbols, self->vm, name_str, FROM_POINTER(fn));
   parserEndFunction(self, fn, arity);
 }
 
@@ -1490,7 +1487,7 @@ static VariableInfo parserVariableFindLocal(const BifrostParser* self, bfStringR
 {
   VariableInfo var;
   var.kind     = V_LOCAL;
-  var.location = (uint16_t)bfVMFunctionBuilder_getVariable(self->fn_builder, name.bgn, bfStringRange_length(&name));
+  var.location = (uint16_t)(bfVMFunctionBuilder_getVariable(self->fn_builder, name.bgn, bfStringRange_length(&name)) & 0xFFFF);
 
   return var;
 }
@@ -1511,8 +1508,10 @@ static VariableInfo parserVariableFind(const BifrostParser* self, bfStringRange 
 static VariableInfo parserVariableMakeLocal(const BifrostParser* self, bfStringRange name)
 {
   VariableInfo var;
+
   var.kind     = V_LOCAL;
   var.location = (uint16_t)bfVMFunctionBuilder_declVariable(builder(), name.bgn, bfStringRange_length(&name));
+
   return var;
 }
 

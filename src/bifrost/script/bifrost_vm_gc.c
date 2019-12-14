@@ -22,6 +22,7 @@
 static inline size_t bfGCFinalizePostMark(BifrostVM* self);
 static inline void   bfGCMarkValue(bfVMValue value);
 static inline void   bfGCMarkValues(bfVMValue* values);
+static inline void   bfGCMarkValuesN(bfVMValue* values, size_t size);
 static void          bfGCMarkObj(BifrostObj* obj);
 static inline void   bfGCMarkSymbols(BifrostVMSymbol* symbols);
 static inline size_t bfGCObjectSize(BifrostObj* obj);
@@ -42,7 +43,7 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
 
   const size_t frames_size = Array_size(&self->frames);
 
-    // TODO(SR): Is this really needed?
+  // TODO(SR): Is this really needed?
   for (size_t i = 0; i < frames_size; ++i)
   {
     BifrostObjFn* const fn = self->frames[i].fn;
@@ -135,29 +136,23 @@ size_t bfGCSweep(struct BifrostVM_t* self)
   while (g_cursor)
   {
     BifrostObj* const next = g_cursor->next;
-
-    if (g_cursor->type == BIFROST_VM_OBJ_INSTANCE)
-    {
-      bfObjFinalize(self, (BifrostObjInstance*)g_cursor);
-    }
-
+    bfObjFinalize(self, g_cursor);
     g_cursor = next;
   }
 
   g_cursor = garbage_list;
 
-  //*
   while (g_cursor)
   {
     BifrostObj* const next = g_cursor->next;
-#if 1
-    if (g_cursor->type == BIFROST_VM_OBJ_INSTANCE)
+
+    if (g_cursor->type == BIFROST_VM_OBJ_INSTANCE || g_cursor->type == BIFROST_VM_OBJ_REFERENCE)
     {
       BifrostObjInstance* const inst   = (BifrostObjInstance*)g_cursor;
       BifrostObjClass* const    clz    = inst->clz;
       const uint32_t            symbol = bfVM_getSymbol(self, bfMakeStringRangeC("dtor"));
 
-      if (symbol < Array_size(&clz->symbols))
+      if (clz && symbol < Array_size(&clz->symbols))
       {
         const bfVMValue value = clz->symbols[symbol].value;
 
@@ -165,14 +160,13 @@ size_t bfGCSweep(struct BifrostVM_t* self)
         {
           if (bfObjIsFunction(AS_POINTER(value)))
           {
-            inst->super.next = &self->finalized->super;
-            self->finalized  = inst;
+            inst->super.next = self->finalized;
+            self->finalized  = g_cursor;
 
             collected_bytes -= bfGCObjectSize(g_cursor);
 
             /*
-              NOTE(Shareef):
-                Don't GC Just Yet.
+              NOTE(Shareef): Don't GC Just Yet.
              */
             g_cursor = next;
             continue;
@@ -180,11 +174,11 @@ size_t bfGCSweep(struct BifrostVM_t* self)
         }
       }
     }
-#endif
+
     bfVMObject_delete(self, g_cursor);
     g_cursor = next;
   }
-  //*/
+
   return collected_bytes;
 }
 
@@ -278,23 +272,23 @@ void bfGCPopRoot(struct BifrostVM_t* self)
 
 static inline size_t bfGCFinalizePostMark(BifrostVM* self)
 {
-  BifrostObjInstance** cursor          = &self->finalized;
-  size_t               collected_bytes = 0u;
+  BifrostObj** cursor          = &self->finalized;
+  size_t       collected_bytes = 0u;
 
   while (*cursor)
   {
-    if (!(*cursor)->super.gc_mark)
+    if (!(*cursor)->gc_mark)
     {
-      BifrostObjInstance* garbage = *cursor;
-      *cursor                     = (BifrostObjInstance*)garbage->super.next;
+      BifrostObj* garbage = *cursor;
+      *cursor             = garbage->next;
 
-      collected_bytes += bfGCObjectSize(&garbage->super);
-      bfVMObject_delete(self, &garbage->super);
+      collected_bytes += bfGCObjectSize(garbage);
+      bfVMObject_delete(self, garbage);
     }
     else
     {
-      (*cursor)->super.gc_mark = 0;
-      cursor                   = (BifrostObjInstance**)&((*cursor)->super.next);
+      (*cursor)->gc_mark = 0;
+      cursor             = &(*cursor)->next;
     }
   }
 
@@ -316,8 +310,11 @@ static inline void bfGCMarkValue(bfVMValue value)
 
 static inline void bfGCMarkValues(bfVMValue* values)
 {
-  const size_t size = Array_size(&values);
+  bfGCMarkValuesN(values, Array_size(&values));
+}
 
+static inline void bfGCMarkValuesN(bfVMValue* values, size_t size)
+{
   for (size_t i = 0; i < size; ++i)
   {
     bfGCMarkValue(values[i]);
@@ -370,8 +367,25 @@ static void bfGCMarkObj(BifrostObj* obj)
         break;
       }
       case BIFROST_VM_OBJ_NATIVE_FN:
+      {
+        BifrostObjNativeFn* const fn = (BifrostObjNativeFn*)obj;
+        bfGCMarkValuesN(fn->statics, fn->num_statics);
         break;
+      }
       case BIFROST_VM_OBJ_STRING:
+        break;
+      case BIFROST_VM_OBJ_REFERENCE:
+      {
+        BifrostObjReference* const ref = (BifrostObjReference*)obj;
+
+        if (ref->clz)
+        {
+          bfGCMarkObj(&ref->clz->super);
+        }
+
+        break;
+      }
+      case BIFROST_VM_OBJ_WEAK_REF:
         break;
     }
   }
@@ -387,7 +401,7 @@ static inline void bfGCMarkSymbols(BifrostVMSymbol* symbols)
   }
 }
 
-static inline size_t bfGCObjectSize(BifrostObj* obj)
+size_t bfGCObjectSize(BifrostObj* obj)
 {
   switch (obj->type & BifrostVMObjType_mask)
   {
@@ -409,11 +423,19 @@ static inline size_t bfGCObjectSize(BifrostObj* obj)
     }
     case BIFROST_VM_OBJ_NATIVE_FN:
     {
-      return sizeof(BifrostObjNativeFn);
+      return sizeof(BifrostObjNativeFn) + ((BifrostObjNativeFn*)obj)->num_statics * sizeof(bfVMValue);
     }
     case BIFROST_VM_OBJ_STRING:
     {
       return sizeof(BifrostObjStr);
+    }
+    case BIFROST_VM_OBJ_REFERENCE:
+    {
+      return sizeof(BifrostObjReference) + ((BifrostObjReference*)obj)->extra_data_size;
+    }
+    case BIFROST_VM_OBJ_WEAK_REF:
+    {
+      return sizeof(BifrostObjWeakRef);
     }
   }
 
@@ -423,11 +445,10 @@ static inline size_t bfGCObjectSize(BifrostObj* obj)
 static inline void bfGCFinalize(BifrostVM* self)
 {
   const uint32_t      symbol = bfVM_getSymbol(self, bfMakeStringRangeC("dtor"));
-  BifrostObjInstance* cursor = self->finalized;
+  BifrostObjInstance* cursor = (BifrostObjInstance*)self->finalized;
 
   while (cursor)
   {
-    //*
     BifrostObjClass* const clz   = cursor->clz;
     const bfVMValue        value = clz->symbols[symbol].value;
 
@@ -449,7 +470,7 @@ static inline void bfGCFinalize(BifrostVM* self)
     }
     self->stack_top[0] = stack_restore[0];
     self->stack_top[1] = stack_restore[1];
-    //*/
+
     cursor = (BifrostObjInstance*)cursor->super.next;
   }
 }

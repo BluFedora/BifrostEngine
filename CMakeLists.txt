@@ -100,6 +100,9 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Libs
   "lib/include/glad/glad.c"
+  "lib/include/imgui/imgui.cpp"
+  "lib/include/imgui/imgui_widgets.cpp"
+  "lib/include/imgui/imgui_draw.cpp"
 
   # Bifrost Datastructures Module
   "src/bifrost/data_structures/bifrost_array_t.c"
@@ -133,6 +136,11 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Utility Module
   "src/bifrost/utility/bifrost_hash.cpp"
+
+  # Editor
+
+  "src/bifrost_imgui_glfw.cpp"
+  "src/bifrost/platform/bifrost_window_glfw.cpp"
 
   "main.cpp"
  )
@@ -184,7 +192,7 @@ if (WIN32)
 	set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
 elseif (APPLE)
 	set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
-	set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.3.dylib")
+	set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
 endif()
 
 target_link_libraries(BifrostEngine "${BIFROST_ENGINE_GLFW_LIB}")
@@ -195,7 +203,7 @@ if (WIN32)
 elseif (APPLE)
   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/libfmod.dylib")
-  # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/libglfw.3.3.dylib")
+  # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/libglfw.3.dylib")
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/liblua.a")
 endif()
 

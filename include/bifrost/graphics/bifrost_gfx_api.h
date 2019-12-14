@@ -103,10 +103,10 @@ typedef enum
   BIFROST_SHADER_STAGE_FRAGMENT                = bfBit(4),
   BIFROST_SHADER_STAGE_COMPUTE                 = bfBit(5),
   BIFROST_SHADER_STAGE_GRAPHICS                = BIFROST_SHADER_STAGE_VERTEX |
-                                                 BIFROST_SHADER_STAGE_TESSELLATION_CONTROL |
-                                                 BIFROST_SHADER_STAGE_TESSELLATION_EVALUATION |
-                                                 BIFROST_SHADER_STAGE_GEOMETRY |
-                                                 BIFROST_SHADER_STAGE_FRAGMENT,
+                                  BIFROST_SHADER_STAGE_TESSELLATION_CONTROL |
+                                  BIFROST_SHADER_STAGE_TESSELLATION_EVALUATION |
+                                  BIFROST_SHADER_STAGE_GEOMETRY |
+                                  BIFROST_SHADER_STAGE_FRAGMENT,
 
 } BifrostShaderStageFlags;
 
@@ -174,8 +174,8 @@ typedef struct
 
 typedef struct bfAllocationCreateInfo_t
 {
-  bfBufferSize          size;
-  uint16_t              properties;  // (bfBufferPropertyFlags)
+  bfBufferSize size;
+  uint16_t     properties;  // (bfBufferPropertyFlags)
 
 } bfAllocationCreateInfo;
 
@@ -245,18 +245,27 @@ typedef enum BifrostStencilFace_t
 
 } BifrostStencilFace;
 
+typedef struct
+{
+  uint32_t frame_index;
+  uint32_t frame_count;
+  uint32_t num_frame_indices;
+
+} bfGfxFrameInfo;
+
 /* Context */
 bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
 void                   bfGfxContext_onResize(bfGfxContextHandle self);
 bfTextureHandle        bfGfxContext_swapchainImage(bfGfxContextHandle self);  // This needs to be able to select which window.
-bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, int window); // This needs to be able to select which window.
+bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx);
+bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self, int window_idx);
 bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, const bfGfxCommandListCreateParams* params);
 void                   bfGfxContext_endFrame(bfGfxContextHandle self);
 void                   bfGfxContext_delete(bfGfxContextHandle self);
 
-  // TODO: This should not be in this Public API header.
-  // Needs to be made internal.
+// TODO: This should not be in this Public API header.
+// Needs to be made internal.
 typedef enum BifrostGfxObjectType_t
 {
   BIFROST_GFX_OBJECT_BUFFER         = 0,
@@ -270,28 +279,30 @@ typedef enum BifrostGfxObjectType_t
 
 } BifrostGfxObjectType;
 
+typedef uint32_t bfFrameCount_t;
+#define bfFrameCountMax 0xFFFFFFFF
+
 typedef struct BifrostGfxObjectBase_t
 {
   BifrostGfxObjectType           type;
   struct BifrostGfxObjectBase_t* next;
   uint64_t                       hash_code;
-  uint8_t                        last_frame_used;
+  bfFrameCount_t                 last_frame_used;
 
 } BifrostGfxObjectBase;
 
-void BifrostGfxObjectBase_ctor(BifrostGfxObjectBase*self, BifrostGfxObjectType type);
-  // END: Private Impl Header
-
+void BifrostGfxObjectBase_ctor(BifrostGfxObjectBase* self, BifrostGfxObjectType type);
+// END: Private Impl Header
 
 /* Logical Device */
-void                   bfGfxDevice_flush(bfGfxDeviceHandle self);
-bfBufferHandle         bfGfxDevice_newBuffer(bfGfxDeviceHandle self, const bfBufferCreateParams* params);
-bfRenderpassHandle     bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params);
-bfShaderModuleHandle   bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, BifrostShaderType type);
-bfShaderProgramHandle  bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self, const bfShaderProgramCreateParams* params);
-bfTextureHandle        bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
-bfTextureHandle        bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list);
-void                   bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
+void                  bfGfxDevice_flush(bfGfxDeviceHandle self);
+bfBufferHandle        bfGfxDevice_newBuffer(bfGfxDeviceHandle self, const bfBufferCreateParams* params);
+bfRenderpassHandle    bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params);
+bfShaderModuleHandle  bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, BifrostShaderType type);
+bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self, const bfShaderProgramCreateParams* params);
+bfTextureHandle       bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
+bfTextureHandle       bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list);
+void                  bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
 /* Buffer */
 bfBufferSize bfBuffer_size(bfBufferHandle self);
@@ -380,7 +391,7 @@ BifrostShaderType     bfShaderModule_type(bfShaderModuleHandle self);
 bfBool32              bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file);
 bfBool32              bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length);
 void                  bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle module);
-void                  bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding); // glBindAttribLocation
+void                  bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);  // glBindAttribLocation
 void                  bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
 void                  bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
 void                  bfShaderProgram_compile(bfShaderProgramHandle self);
@@ -407,7 +418,7 @@ void     bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRen
 void     bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClearValue* clear_values);
 void     bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments);
 void     bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
-void     bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height); // Normalized [0.0f, 1.0f] coords
+void     bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);  // Normalized [0.0f, 1.0f] coords
 void     bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self);
 void     bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self);
 void     bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, BifrostDrawMode draw_mode);
@@ -456,8 +467,8 @@ void     bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayout
 void     bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
 void     bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
 void     bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
-void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);                                       // Call after pipeline is setup.
-void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);  // Draw Cmds
+void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
+void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);                                              // Draw Cmds
 void     bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
 void     bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);
 void     bfGfxCmdList_drawIndexedInstanced(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset, uint32_t first_instance, uint32_t num_instances);

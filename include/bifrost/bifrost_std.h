@@ -4,6 +4,19 @@
 #include <stddef.h> /* size_t             */
 #include <stdint.h> /* uint32_t, uint64_t */
 
+/*!
+ * @brief
+ *  NOTE(Shareef):
+ *    This is a compiler intrinsic that tells the compiler that
+ *    the default case cannot be reached thus letting the optimizer
+ *    do less checks to see if the expression is not in the
+ *    set of valid cases.
+ */
+#define bfInvalidDefaultCase() \
+  default:                          \
+    __debugbreak();                 \
+    __assume(0)
+
 #if __cplusplus
 #undef bfCArraySize
 template<typename T, size_t N>

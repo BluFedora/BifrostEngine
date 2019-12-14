@@ -71,18 +71,6 @@ void BifrostShaderProgram_loadData(BifrostShaderProgramHandle self, BifrostShade
   }
 }
 
-void BifrostShaderProgram_registerUniformBuffer(bfShaderProgram self, const char *name, uint32_t how_many, BifrostShaderStageFlags stages);
-void BifrostShaderProgram_registerUniformBufferAt(bfShaderProgram self, uint32_t binding, const char *name, uint32_t how_many, BifrostShaderStageFlags stages);
-void BifrostShaderprogram_registerImageSampler(bfShaderProgram         self,
-                                               const char *            name,
-                                               uint32_t                how_many,
-                                               BifrostShaderStageFlags stages);
-void BifrostShaderprogram_registerImageSamplerAt(bfShaderProgram         self,
-                                                 uint32_t                binding,
-                                                 const char *            name,
-                                                 uint32_t                how_many,
-                                                 BifrostShaderStageFlags stages);
-
 void BifrostShaderprogram_compile(bfShaderProgram self)
 {
   GLuint program = self->handle = glCreateProgram();

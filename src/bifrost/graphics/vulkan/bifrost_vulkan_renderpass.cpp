@@ -9,7 +9,7 @@
 
 bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params)
 {
-  bfRenderpassHandle renderpass           = new bfRenderpass();
+  bfRenderpassHandle renderpass = new bfRenderpass();
 
   BifrostGfxObjectBase_ctor(&renderpass->super, BIFROST_GFX_OBJECT_RENDERPASS);
 
@@ -140,105 +140,107 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
 
 void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
-  BifrostGfxObjectBase* const obj = static_cast<BifrostGfxObjectBase*>(resource);
-
-  switch (obj->type)
+  if (resource)
   {
-    case BIFROST_GFX_OBJECT_BUFFER:
-    {
-      bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(obj);
+    BifrostGfxObjectBase* const obj = static_cast<BifrostGfxObjectBase*>(resource);
 
-      vkDestroyBuffer(self->handle, buffer->handle, CUSTOM_ALLOC);
-      VkPoolAllocator_free(buffer->alloc_pool, &buffer->alloc_info);
-      break;
-    }
-    case BIFROST_GFX_OBJECT_RENDERPASS:
+    switch (obj->type)
     {
-      bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
-
-      vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
-      break;
-    }
-    case BIFROST_GFX_OBJECT_SHADER_MODULE:
-    {
-      bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(obj);
-
-      if (shader_module->handle != VK_NULL_HANDLE)
+      case BIFROST_GFX_OBJECT_BUFFER:
       {
-        vkDestroyShaderModule(shader_module->parent->handle, shader_module->handle, CUSTOM_ALLOC);
+        bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(obj);
+
+        vkDestroyBuffer(self->handle, buffer->handle, CUSTOM_ALLOC);
+        VkPoolAllocator_free(buffer->alloc_pool, &buffer->alloc_info);
+        break;
       }
-      break;
-    }
-    case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
-    {
-      bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
-
-
-      for (uint32_t i = 0; i < shader_program->num_desc_set_layouts; ++i)
+      case BIFROST_GFX_OBJECT_RENDERPASS:
       {
-        const VkDescriptorSetLayout layout = shader_program->desc_set_layouts[i];
+        bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
 
-        if (layout != VK_NULL_HANDLE)
+        vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
+        break;
+      }
+      case BIFROST_GFX_OBJECT_SHADER_MODULE:
+      {
+        bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(obj);
+
+        if (shader_module->handle != VK_NULL_HANDLE)
         {
-          vkDestroyDescriptorSetLayout(shader_program->parent->handle, layout, CUSTOM_ALLOC);
+          vkDestroyShaderModule(shader_module->parent->handle, shader_module->handle, CUSTOM_ALLOC);
         }
+        break;
       }
-
-      if (shader_program->layout != VK_NULL_HANDLE)
+      case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
       {
-        vkDestroyPipelineLayout(shader_program->parent->handle, shader_program->layout, CUSTOM_ALLOC);
+        bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
+
+        for (uint32_t i = 0; i < shader_program->num_desc_set_layouts; ++i)
+        {
+          const VkDescriptorSetLayout layout = shader_program->desc_set_layouts[i];
+
+          if (layout != VK_NULL_HANDLE)
+          {
+            vkDestroyDescriptorSetLayout(shader_program->parent->handle, layout, CUSTOM_ALLOC);
+          }
+        }
+
+        if (shader_program->layout != VK_NULL_HANDLE)
+        {
+          vkDestroyPipelineLayout(shader_program->parent->handle, shader_program->layout, CUSTOM_ALLOC);
+        }
+        break;
       }
-      break;
-    }
-    case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
-    {
-      bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
-
-      MaterialPool_free(self->descriptor_pool, desc_set);
-      break;
-    }
-    case BIFROST_GFX_OBJECT_TEXTURE:
-    {
-      bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
-
-      bfTexture_setSampler(texture, nullptr);
-
-      if (texture->tex_view != VK_NULL_HANDLE)
+      case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
       {
-        vkDestroyImageView(texture->parent->handle, texture->tex_view, CUSTOM_ALLOC);
-      }
+        bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
 
-      if (texture->tex_memory != VK_NULL_HANDLE)
-      {
-        vkFreeMemory(texture->parent->handle, texture->tex_memory, CUSTOM_ALLOC);
+        MaterialPool_free(self->descriptor_pool, desc_set);
+        break;
       }
+      case BIFROST_GFX_OBJECT_TEXTURE:
+      {
+        bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
 
-      if (texture->tex_image != VK_NULL_HANDLE)
-      {
-        vkDestroyImage(texture->parent->handle, texture->tex_image, CUSTOM_ALLOC);
+        bfTexture_setSampler(texture, nullptr);
+
+        if (texture->tex_view != VK_NULL_HANDLE)
+        {
+          vkDestroyImageView(texture->parent->handle, texture->tex_view, CUSTOM_ALLOC);
+        }
+
+        if (texture->tex_memory != VK_NULL_HANDLE)
+        {
+          vkFreeMemory(texture->parent->handle, texture->tex_memory, CUSTOM_ALLOC);
+        }
+
+        if (texture->tex_image != VK_NULL_HANDLE)
+        {
+          vkDestroyImage(texture->parent->handle, texture->tex_image, CUSTOM_ALLOC);
+        }
+        break;
       }
-      break;
-    }
-    case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+      case BIFROST_GFX_OBJECT_FRAMEBUFFER:
       {
         bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(obj);
 
         vkDestroyFramebuffer(self->handle, framebuffer->handle, CUSTOM_ALLOC);
         break;
       }
-    case BIFROST_GFX_OBJECT_PIPELINE:
+      case BIFROST_GFX_OBJECT_PIPELINE:
       {
         bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(obj);
 
         vkDestroyPipeline(self->handle, pipeline->handle, CUSTOM_ALLOC);
         break;
       }
-    default:
+      default:
       {
         assert(!"Invalid object type.");
         break;
       }
-  }
+    }
 
-  delete obj;
+    delete obj;
+  }
 }

@@ -19,10 +19,8 @@ typedef enum
   BIFROST_VM_OBJ_INSTANCE,   // 0b011
   BIFROST_VM_OBJ_STRING,     // 0b100
   BIFROST_VM_OBJ_NATIVE_FN,  // 0b101
-
-  // These next two types would be C/++ owned memory.
-  // BIFROST_VM_OBJ_REFERENCE,  // 0b110
-  // BIFROST_VM_OBJ_WEAK_REF,  // 0b111
+  BIFROST_VM_OBJ_REFERENCE,  // 0b110
+  BIFROST_VM_OBJ_WEAK_REF,   // 0b111
 
 } BifrostVMObjType;
 
@@ -51,7 +49,7 @@ typedef struct BifrostObjFn_t
 {
   BifrostObj                 super;
   BifrostString              name;
-  int32_t                    arity; //!< An arity of -1 indicates infinite (read: 0-511) params
+  int32_t                    arity;  //!< An arity of -1 indicates infinite (read: 0-511) params
   uint16_t*                  line_to_code;
   bfVMValue*                 constants;
   uint32_t*                  instructions;
@@ -103,8 +101,27 @@ typedef struct BifrostObjNativeFn_t
   BifrostObj  super;
   bfNativeFnT value;
   int32_t     arity;
+  uint32_t    num_statics;
+  bfVMValue*  statics;  // Fixed size array.
 
 } BifrostObjNativeFn;
+
+typedef struct BifrostObjReference_t
+{
+  // NOTE(Shareef): Matches the same beginning as 'BifrostObjInstance'.
+  BifrostObj       super;
+  BifrostObjClass* clz;  // Optional
+  size_t           extra_data_size;
+  char             extra_data[bfStructHack]; /* This is for native data. */
+
+} BifrostObjReference;
+
+typedef struct BifrostObjWeakRef_t
+{
+  BifrostObj super;
+  void*      data;
+
+} BifrostObjWeakRef;
 
 typedef struct BifrostVMStackFrame_t
 {
@@ -118,15 +135,17 @@ typedef struct BifrostVMStackFrame_t
 #define BIFROST_AS_OBJ(value) ((BifrostObj*)AS_POINTER((value)))
 
 // Move to "GC" Header.
-BifrostObjModule*   bfVM_createModule(struct BifrostVM_t* self, bfStringRange name);
-BifrostObjClass*    bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, size_t extra_data);
-BifrostObjInstance* bfVM_createInstance(struct BifrostVM_t* self, BifrostObjClass* clz);
-BifrostObjFn*       bfVM_createFunction(struct BifrostVM_t* self, BifrostObjModule* module);
-BifrostObjNativeFn* bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity);
-BifrostObjStr*      bfVM_createString(struct BifrostVM_t* self, bfStringRange value);
-void                bfVMObject_delete(struct BifrostVM_t* self, BifrostObj* obj);
-bfBool32            bfObjIsFunction(const BifrostObj* obj);
-void                bfObjFinalize(struct BifrostVM_t* self, BifrostObjInstance* inst);
+BifrostObjModule*    bfVM_createModule(struct BifrostVM_t* self, bfStringRange name);
+BifrostObjClass*     bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, size_t extra_data);
+BifrostObjInstance*  bfVM_createInstance(struct BifrostVM_t* self, BifrostObjClass* clz);
+BifrostObjFn*        bfVM_createFunction(struct BifrostVM_t* self, BifrostObjModule* module);
+BifrostObjNativeFn*  bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics);
+BifrostObjStr*       bfVM_createString(struct BifrostVM_t* self, bfStringRange value);
+BifrostObjReference* bfVM_createReference(struct BifrostVM_t* self, size_t extra_data_size);
+BifrostObjWeakRef*   bfVM_createWeakRef(struct BifrostVM_t* self, void* data);
+void                 bfVMObject_delete(struct BifrostVM_t* self, BifrostObj* obj);
+bfBool32             bfObjIsFunction(const BifrostObj* obj);
+void                 bfObjFinalize(struct BifrostVM_t* self, BifrostObj* obj);
 #if __cplusplus
 }
 #endif

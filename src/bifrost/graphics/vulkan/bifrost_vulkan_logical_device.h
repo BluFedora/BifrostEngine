@@ -70,6 +70,7 @@ BIFROST_DEFINE_HANDLE(GfxCommandList)
   bfPipelineCache     pipeline_state;
   VkClearValue        clear_colors[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfBool32            has_command;
+  uint16_t            dynamic_state_dirty;
 };
 
 BIFROST_DEFINE_HANDLE(Buffer)

@@ -14,7 +14,7 @@ void BifrostGfxObjectBase_ctor(BifrostGfxObjectBase* self, BifrostGfxObjectType 
   self->type            = type;
   self->next            = NULL;
   self->hash_code       = 0x0;
-  self->last_frame_used = 0;
+  self->last_frame_used = -1;
 }
 
 bfTextureSamplerProperties bfTextureSamplerProperties_init(BifrostSamplerFilterMode filter, BifrostSamplerAddressMode uv_addressing)

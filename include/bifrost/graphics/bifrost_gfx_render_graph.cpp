@@ -35,7 +35,7 @@ namespace bifrost
   //   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
   static constexpr unsigned int BIFROST_RENDERPASS_DEBUG_NAME_LEN = 64u;
   static constexpr unsigned int BIFROST_RESOURCE_NAME_LEN         = 128u;
-  static constexpr std::size_t  INVALID_BARRIER_IDX               = std::numeric_limits<std::size_t>::max();
+  static constexpr std::uint32_t INVALID_BARRIER_IDX               = std::numeric_limits<std::uint32_t>::max();
 
   class RenderGraph;
   struct GraphResourceBase;
@@ -92,7 +92,7 @@ namespace bifrost
   struct BarrierRef
   {
     BarrierType type  = BarrierType::EXECUTION;
-    std::size_t index = INVALID_BARRIER_IDX;
+    std::uint32_t index = INVALID_BARRIER_IDX;
 
     [[nodiscard]] bool isValid() const
     {
@@ -430,21 +430,13 @@ namespace bifrost
     }
   };
 
-  enum class ResourceType
-  {
-    BUFFER,
-    IMAGE,
-  };
-
   struct GraphResourceBase
   {
-    ResourceType                          type;
     NameString<BIFROST_RESOURCE_NAME_LEN> name;
     Vector<RenderpassBase*>               readers;
     Vector<RenderpassBase*>               writers;
 
-    explicit GraphResourceBase(ResourceType type, const char* name) :
-      type{type},
+    explicit GraphResourceBase(const char* name) :
       name{name},
       readers{},
       writers{}
@@ -462,8 +454,8 @@ namespace bifrost
   {
     T data;
 
-    explicit GraphResource(ResourceType type, const char* name, const T& data) :
-      GraphResourceBase(type, name),
+    explicit GraphResource(const char* name, const T& data) :
+      GraphResourceBase(name),
       data{data}
     {
     }
@@ -472,7 +464,7 @@ namespace bifrost
   struct BufferResource final : public GraphResource<bfBufferHandle>
   {
     explicit BufferResource(const char* name, const bfBufferHandle& data) :
-      GraphResource(ResourceType::BUFFER, name, data)
+      GraphResource(name, data)
     {
     }
   };
@@ -480,7 +472,7 @@ namespace bifrost
   struct ImageResource final : public GraphResource<bfTextureHandle>
   {
     explicit ImageResource(const char* name, const bfTextureHandle& data) :
-      GraphResource(ResourceType::IMAGE, name, data)
+      GraphResource(name, data)
     {
     }
   };
@@ -520,6 +512,7 @@ namespace bifrost
       GraphResourceBase* resource;
       BufferResource*    buffer;
       ImageResource*     image;
+
     } as;
 
     GraphResourceBase* operator->() const
@@ -583,14 +576,6 @@ namespace bifrost
     {
     }
 
-    // TODO(Shareef): This being virtual is exclsusively for the type safety.
-    //   Can maybe replace it with a function pointer with a template.
-    //   This will lead to a smaller runtime since we only need ...
-    //
-    //   Uhh this isn't super true I guess, the code gets really ugly avoiding virtuals
-    //   This is because of my insitence on storing inplace lambdas.
-    //   This is very much a later problem.
-
     void execute(RenderGraph& graph, void* data) override
     {
       exec_fn(graph, *static_cast<const TData*>(data));
@@ -620,11 +605,11 @@ namespace bifrost
     Vector<ImageResource*>                        attachments;
     std::size_t                                   queue_family;
     BarrierRef                                    barrier_ref;  // TODO: Find a way to only have this variable while compiling.
-    std::size_t                                   index;
+    std::uint32_t                                 index;
     void* const                                   data_ptr;
     bool                                          is_compute;
 
-    explicit RenderpassBase(RenderGraph& parent, const char* name, std::size_t index, void* data_ptr, bool is_compute) :
+    explicit RenderpassBase(RenderGraph& parent, const char* name, std::uint32_t index, void* data_ptr, bool is_compute) :
       parent{parent},
       name{name},
       subpasses{},
@@ -674,7 +659,7 @@ namespace bifrost
    protected:
     TData data;
 
-    explicit Renderpass(RenderGraph& parent, const char* name, std::size_t index, bool is_compute) :
+    explicit Renderpass(RenderGraph& parent, const char* name, std::uint32_t index, bool is_compute) :
       RenderpassBase(parent, name, index, &data, is_compute),
       data{}
     {
@@ -754,7 +739,7 @@ namespace bifrost
         return it != end;
       };
 
-      std::size_t index = 0;
+      std::uint32_t index = 0;
       for (const auto& pass : m_Renderpasses)
       {
         targets.clear();
@@ -953,7 +938,7 @@ namespace bifrost
 
     BarrierRef addBarrier(const BarrierMemory& dep)
     {
-      BarrierRef ret = {BarrierType::MEMORY, m_MemoryBarriers.size()};
+      BarrierRef ret = {BarrierType::MEMORY, uint32_t(m_MemoryBarriers.size())};
       bytecodeWriteAction(BytecodeInst::MEMORY_BARRIER, ret.index);
       m_MemoryBarriers.push_back(dep);
       return ret;
@@ -961,7 +946,7 @@ namespace bifrost
 
     BarrierRef addSubpassBarrier(const BarrierSubpassDep& dep)
     {
-      BarrierRef ret = {BarrierType::SUBPASS_DEP, m_SubpassBarriers.size()};
+      BarrierRef ret = {BarrierType::SUBPASS_DEP, uint32_t(m_SubpassBarriers.size())};
       m_SubpassBarriers.push_back(dep);
       return ret;
     }
@@ -975,7 +960,7 @@ namespace bifrost
     template<typename TData, typename RSetupFn>
     void addPass(const char* name, RSetupFn&& setup_fn, bool is_compute)
     {
-      auto* const rp = new Renderpass<TData>(*this, name, m_Renderpasses.size(), is_compute);
+      auto* const rp = new Renderpass<TData>(*this, name, uint32_t(m_Renderpasses.size()), is_compute);
       m_Renderpasses.push_back(rp);
       setup_fn(*rp, rp->data);
     }
@@ -1132,7 +1117,7 @@ namespace bifrost
 
       const auto num_subpasses = subpasses.size();
 
-      for (size_t index = 1; index < num_subpasses; ++index)
+      for (uint32_t index = 1; index < num_subpasses; ++index)
       {
         auto* const pass = subpasses[index];
 

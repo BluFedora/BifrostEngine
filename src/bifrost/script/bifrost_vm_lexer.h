@@ -93,9 +93,9 @@ static inline size_t bfStringRange_length(const bfStringRange* self)
 }
 
 /*!
-    * @brief
-    *    An individual token for a bts program.
-    */
+ * @brief
+ *    An individual token for a bts program.
+ */
 typedef struct
 {
   bfTokenType type;
@@ -105,6 +105,7 @@ typedef struct
     bfStringRange str_range;
     const char*   str;
     bfVMNumberT   num;
+
   } as;
 
 } bfToken;
@@ -178,7 +179,7 @@ bfToken      bfLexer_parseString(BifrostLexer* self);
     .type = t, .as = {.num = v }     \
   }
 
-// TODO(SR): Move To Debug HEader.
+// TODO(SR): Move To Debug HEadere
 const char* tokentypeToString(bfTokenType t);
 void        printToken(const bfToken* token);
 #if __cplusplus

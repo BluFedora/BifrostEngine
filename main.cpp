@@ -1,14 +1,13 @@
-// TODO(SR): Update glfw to version 3.3
-
 #include "bifrost/bifrost_version.h"
 #include <bifrost/bifrost.hpp>
-#include <glad/glad.h>
+#include <bifrost_editor/bifrost_imgui_glfw.hpp>
 #include <glfw/glfw3.h>
 #include <iostream> /*  */
 #include <utility>
 
 // [https://www.glfw.org/docs/latest/group__native.html]
 #define GLFW_EXPOSE_NATIVE_WIN32
+#include "bifrost/platform/bifrost_window_glfw.hpp"
 #include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
 
@@ -90,17 +89,20 @@ void testFN()
 }
 
 static const char source[] = R"(
-  import "main" for TestClass, cppFn;
+  import "main" for TestClass, cppFn, BigFunc, AnotherOne;
+  import "bifrost" for Camera;
 
-  func hello()
-  {
-    print "Hello from another module.";
-  }
+  static var cam = new Camera();
 
   var t = new TestClass.ctor(28);
   print "ret from t = " +  t:printf(54);
 
   hello();
+
+  func hello()
+  {
+    print "Hello from another module.";
+  }
 
   class GameState
   {
@@ -109,6 +111,11 @@ static const char source[] = R"(
 
   func update()
   {
+    cam:update(0.4);
+
+    // BigFunc();
+    // print AnotherOne();
+
     // print "I am updating!" + GameState.i;
     // GameState.i = GameState.i + 1;
     // t = nil;
@@ -186,6 +193,21 @@ class BaseRenderer
     Camera_init(&m_Camera, &cam_pos, &cam_up, 0.0f, 0.0f);
   }
 
+  bfGfxContextHandle context() const
+  {
+    return m_GfxBackend;
+  }
+
+  bfTextureHandle surface() const
+  {
+    return m_MainSurface;
+  }
+
+  bfGfxCommandListHandle mainCommandList() const
+  {
+    return m_MainCmdList;
+  }
+
   void startup(const bfGfxContextCreateParams& gfx_create_params)
   {
     m_GfxBackend = bfGfxContext_new(&gfx_create_params);
@@ -214,7 +236,7 @@ class BaseRenderer
 
     m_UniformBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
 
-    static const BasicVertex VERTEX_DATA[] =
+    const BasicVertex VERTEX_DATA[] =
      {
       {{-0.5f, -0.5f, 0.0f, 1.0f}, {0, 255, 255, 255}, {0.0f, 0.0f}},
       {{+0.5f, -0.5f, 0.0f, 1.0f}, {255, 255, 0, 255}, {1.0f, 0.0f}},
@@ -222,7 +244,7 @@ class BaseRenderer
       {{-0.5f, +0.5f, 0.0f, 1.0f}, {255, 255, 255, 255}, {0.0f, 1.0f}},
      };
 
-    static const uint16_t INDEX_DATA[] = {0u, 1u, 2u, 3u, 2u, 0u};
+    const uint16_t INDEX_DATA[] = {0u, 1u, 2u, 3u, 2u, 0u};
 
     void* vertex_buffer_ptr = bfBuffer_map(m_VertexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
     void* index_buffer_ptr  = bfBuffer_map(m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
@@ -261,13 +283,13 @@ class BaseRenderer
 
     bfShaderProgram_compile(m_ShaderProgram);
 
-    m_TestMaterial = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0);
-    m_TestMaterial2 = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0); 
-
-    bfDescriptorSet_setCombinedSamplerTextures(m_TestMaterial, 0, 0, &m_TestTexture, 1);
+    m_TestMaterial  = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0);
+    m_TestMaterial2 = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0);
 
     uint64_t offset = 0;
     uint64_t sizes  = sizeof(m_ModelView);
+
+    bfDescriptorSet_setCombinedSamplerTextures(m_TestMaterial, 0, 0, &m_TestTexture, 1);
     bfDescriptorSet_setUniformBuffers(m_TestMaterial, 1, 0, &offset, &sizes, &m_UniformBuffer, 1);
     bfDescriptorSet_flushWrites(m_TestMaterial);
 
@@ -322,7 +344,7 @@ class BaseRenderer
     Mat4x4_mult(&trans, &m_ModelView, &m_ModelView);
 
     const auto camera_move_speed = 0.05f;
-    
+
     if (glfwGetKey(g_Window, GLFW_KEY_W) == GLFW_PRESS)
     {
       Camera_moveForward(&m_Camera, camera_move_speed);
@@ -372,7 +394,6 @@ class BaseRenderer
     {
       Camera_addYaw(&m_Camera, -0.01f);
     }
-
 
     int width, height;
     glfwGetWindowSize(g_Window, &width, &height);
@@ -436,11 +457,11 @@ class BaseRenderer
       bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial2, 1);
       bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
     }
-    bfGfxCmdList_endRenderpass(m_MainCmdList);
   }
 
   void frameEnd()
   {
+    bfGfxCmdList_endRenderpass(m_MainCmdList);
     bfGfxCmdList_end(m_MainCmdList);
     bfGfxCmdList_submit(m_MainCmdList);
     bfGfxContext_endFrame(m_GfxBackend);
@@ -474,6 +495,11 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
     m_CmdlineArgs{argc, argv},
     m_Renderer{}
   {
+  }
+
+  BaseRenderer& renderer()
+  {
+    return m_Renderer;
   }
 
   void init(const BifrostEngineCreateParams& params)
@@ -551,22 +577,37 @@ namespace bifrost::meta
   }
 }  // namespace bifrost::meta
 
-#include <filesystem>
-#include <thread>
 #include <chrono>
+#include <functional>
+#include <thread>
+
+namespace bifrost
+{
+  class Camera
+  {
+   private:
+    float m_ElapsedTime = 0.0f;
+
+   public:
+    void update(float dt)
+    {
+      std::printf("Camera::update(@ %f) with %f as dt.\n", m_ElapsedTime, dt);
+
+      m_ElapsedTime += dt;
+    }
+  };
+}  // namespace bifrost
 
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
-  namespace bfmeta = bifrost::meta;
+  std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
+
   using namespace bifrost;
-  namespace bf = bifrost;
+  namespace bfmeta = meta;
+  namespace bf     = bifrost;
 
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
-  const auto p = std::filesystem::current_path().string();
-
-  std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
-  std::printf("Working Dir: %s\n", p.c_str());
   std::cout << __cplusplus << "\n";
 
   TestClass my_obj = {74, "This message will be in Y"};
@@ -596,21 +637,10 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   {
   }
 
-  int error_code = 0;
-
-  if (!glfwInit())
+  if (!startupGLFW(nullptr, nullptr))
   {
-    error_code = ErrorCodes::GLFW_FAILED_TO_INIT;
-    return error_code;
+    return ErrorCodes::GLFW_FAILED_TO_INIT;
   }
-
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  const auto main_window = glfwCreateWindow(INITIAL_WINDOW_SIZE[0], INITIAL_WINDOW_SIZE[1], "Bifrost Engine", nullptr, nullptr);
-  glfwSetWindowSizeLimits(main_window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
-
-
-  g_Window = main_window;
-
 
   /*
   glfwMakeContextCurrent(main_window);
@@ -624,13 +654,21 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   std::cout << "\n\nScripting Language Test Begin\n";
 
-  VMParams vm_params;
+  VMParams vm_params{};
   vm_params.error_fn           = &userErrorFn;
   vm_params.print_fn           = [](BifrostVM*, const char* message) { std::cout << message << "\n"; };
   vm_params.min_heap_size      = 20;
   vm_params.heap_size          = 200;
   vm_params.heap_growth_factor = 0.1f;
   VM vm{vm_params};
+
+  const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<bf::Camera>("Camera", bf::vmMakeCtorBinding<bf::Camera>());
+
+  vm.stackResize(5);
+  vm.moduleMake(0, "bifrost");
+  vm.stackStore(0, camera_clz_bindings);
+  vm.stackLoadVariable(1, 0, "Camera");
+  vm.stackStore(1, "update", &bf::Camera::update);
 
   const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
    "TestClass",
@@ -639,8 +677,16 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   vm.stackResize(1);
   vm.moduleMake(0, "main");
-  vm.moduleBind(0, clz_bind);
-  vm.moduleBind<testFN>(0, "cppFn");
+  vm.stackStore(0, clz_bind);
+  vm.stackStore<testFN>(0, "cppFn");
+
+  float capture = 6.0f;
+  vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
+    std::printf("Will this work out %f???\n", capture);
+    ++capture;
+    my_obj.x = 65;
+  });
+  vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
 
   const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
 
@@ -662,31 +708,53 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   std::cout << "\n\nScripting Language Test End\n";
 
   {
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    WindowGLFW    window{};
     BifrostEngine engine{argc, argv};
+    // editor::Editor editor{main_window, engine};
+
+    window.open("Bifrost Engine");
+    // glfwSetWindowSizeLimits(main_window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
+
+    g_Window = window.handle();
 
     const BifrostEngineCreateParams params =
      {
       {
        argv[0],
        0,
-      GetModuleHandle(nullptr),
-      glfwGetWin32Window(main_window),
+       GetModuleHandle(nullptr),
+       glfwGetWin32Window(window.handle()),
       },
-       INITIAL_WINDOW_SIZE[0],
-       INITIAL_WINDOW_SIZE[1],
+      INITIAL_WINDOW_SIZE[0],
+      INITIAL_WINDOW_SIZE[1],
      };
 
     engine.init(params);
 
-    while (!glfwWindowShouldClose(main_window))
+    editor::imgui::startup(engine.renderer().context(), window);
+
+    while (!window.wantsToClose())
     {
       int window_width, window_height;
-      glfwGetWindowSize(main_window, &window_width, &window_height);
+      glfwGetWindowSize(window.handle(), &window_width, &window_height);
 
       glfwPollEvents();
 
+      while (window.hasNextEvent())
+      {
+        const Event evt = window.getNextEvent();
+        editor::imgui::onEvent(evt);
+      }
+
       if (engine.beginFrame())
       {
+        editor::imgui::beginFrame(
+          engine.renderer().surface(), 
+          float(window_width), 
+          float(window_height),
+         float(glfwGetTime()));
         engine.update();
 
         if (update_fn)
@@ -700,132 +768,21 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
           }
         }
 
+        editor::imgui::endFrame(engine.renderer().mainCommandList());
         engine.endFrame();
       }
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(16));
+      std::this_thread::sleep_for(std::chrono::milliseconds(16 * 1));
     }
 
+    editor::imgui::shutdown();
     engine.deinit();
+    window.close();
   }
 
   vm.stackDestroyHandle(update_fn);
 
-  // shutdown_glfw:
-  glfwDestroyWindow(main_window);
-  glfwTerminate();
+  shutdownGLFW();
 
-  // shutdown_exit:
-  return error_code;
+  return 0;
 }
-
-#if 0
-#include <imgui/imgui.h>
-
-static const char* GLFW_ClipboardGet(void* user_data);
-static void        GLFW_ClipboardSet(void* user_data, const char* text);
-
-static void GLFW_onKeyChanged(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-}
-
-static void GLFW_onMousePosChanged(GLFWwindow* window, double xpos, double ypos)
-{
-}
-
-static void GLFW_onMouseButtonChanged(GLFWwindow* window, int button, int action, int mods)
-{
-}
-
-void GLFW_onWindowFileDropped(GLFWwindow* window, int count, const char** paths)
-{
-}
-
-void GLFW_onJoystickStateChanged(int joy, int event)
-{
-}
-
-static void GLFW_onWindowSizeChanged(GLFWwindow* window, int width, int height)
-{
-}
-
-static void GLFW_onWindowCharacterInput(GLFWwindow* window, unsigned int codepoint, int mods)
-{
-}
-
-static void GLFW_onScrollWheel(GLFWwindow* window, double xoffset, double yoffset)
-{
-}
-
-static void GLFW_onWindowIconify(GLFWwindow* window, int iconified)
-{
-}
-
-void GLFW_onWindowFocusChanged(GLFWwindow* window, int focused)
-{
-}
-
-static void GLFW_onWindowClose(GLFWwindow* window)
-{
-  // glfwSetWindowShouldClose(window, GLFW_FALSE);
-}
-
-static void ImGuiSetup(GLFWwindow* window, BifrostEngine* engine)
-{
-  ImGuiIO& io            = ImGui::GetIO();
-  io.BackendPlatformName = "Bifrost GLFW Backend";
-  io.BackendRendererName = "Bifrost GLFW Backend";
-
-  // Keyboard Setup
-  io.KeyMap[ImGuiKey_Tab]         = GLFW_KEY_TAB;
-  io.KeyMap[ImGuiKey_LeftArrow]   = GLFW_KEY_LEFT;
-  io.KeyMap[ImGuiKey_RightArrow]  = GLFW_KEY_RIGHT;
-  io.KeyMap[ImGuiKey_UpArrow]     = GLFW_KEY_UP;
-  io.KeyMap[ImGuiKey_DownArrow]   = GLFW_KEY_DOWN;
-  io.KeyMap[ImGuiKey_PageUp]      = GLFW_KEY_PAGE_UP;
-  io.KeyMap[ImGuiKey_PageDown]    = GLFW_KEY_PAGE_DOWN;
-  io.KeyMap[ImGuiKey_Home]        = GLFW_KEY_HOME;
-  io.KeyMap[ImGuiKey_End]         = GLFW_KEY_END;
-  io.KeyMap[ImGuiKey_Insert]      = GLFW_KEY_INSERT;
-  io.KeyMap[ImGuiKey_Delete]      = GLFW_KEY_DELETE;
-  io.KeyMap[ImGuiKey_Backspace]   = GLFW_KEY_BACKSPACE;
-  io.KeyMap[ImGuiKey_Space]       = GLFW_KEY_SPACE;
-  io.KeyMap[ImGuiKey_Enter]       = GLFW_KEY_ENTER;
-  io.KeyMap[ImGuiKey_Escape]      = GLFW_KEY_ESCAPE;
-  io.KeyMap[ImGuiKey_KeyPadEnter] = GLFW_KEY_KP_ENTER;
-  io.KeyMap[ImGuiKey_A]           = GLFW_KEY_A;
-  io.KeyMap[ImGuiKey_C]           = GLFW_KEY_C;
-  io.KeyMap[ImGuiKey_V]           = GLFW_KEY_V;
-  io.KeyMap[ImGuiKey_X]           = GLFW_KEY_X;
-  io.KeyMap[ImGuiKey_Y]           = GLFW_KEY_Y;
-  io.KeyMap[ImGuiKey_Z]           = GLFW_KEY_Z;
-
-  // Clipboard
-  io.GetClipboardTextFn = GLFW_ClipboardGet;
-  io.SetClipboardTextFn = GLFW_ClipboardSet;
-  io.ClipboardUserData = window;
-
-  glfwSetWindowUserPointer(window, engine);
-  glfwSetKeyCallback(window, GLFW_onKeyChanged);
-  glfwSetCursorPosCallback(window, GLFW_onMousePosChanged);
-  glfwSetMouseButtonCallback(window, GLFW_onMouseButtonChanged);
-  glfwSetDropCallback(window, GLFW_onWindowFileDropped);
-  glfwSetJoystickCallback(GLFW_onJoystickStateChanged);
-  glfwSetWindowSizeCallback(window, GLFW_onWindowSizeChanged);
-  glfwSetCharModsCallback(window, GLFW_onWindowCharacterInput);
-  glfwSetScrollCallback(window, GLFW_onScrollWheel);
-  glfwSetWindowIconifyCallback(window, GLFW_onWindowIconify);
-  glfwSetWindowFocusCallback(window, GLFW_onWindowFocusChanged);
-  glfwSetWindowCloseCallback(window, GLFW_onWindowClose);
-}
-
-static const char* GLFW_ClipboardGet(void* user_data)
-{
-  return glfwGetClipboardString(static_cast<GLFWwindow*>(user_data));
-}
-
-static void GLFW_ClipboardSet(void* user_data, const char* text)
-{
-  glfwSetClipboardString(static_cast<GLFWwindow*>(user_data), text);
-}
-#endif

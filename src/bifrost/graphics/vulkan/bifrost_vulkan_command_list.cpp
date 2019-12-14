@@ -24,6 +24,8 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
   begin_info.pInheritanceInfo = NULL;
 
   const VkResult error = vkBeginCommandBuffer(self->handle, &begin_info);
+
+  self->dynamic_state_dirty = 0xFFFF;
   return error == VK_SUCCESS;
 }
 
@@ -61,6 +63,8 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClear
     *color = bfVKConvertClearColor(bf_color);
   }
 }
+
+#include <stdio.h>
 
 void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments)
 {
@@ -325,6 +329,8 @@ void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostSten
   {
     self->pipeline_state.state.stencil_face_back_compare_mask = cmp_mask;
   }
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK;
 }
 
 void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t write_mask)
@@ -337,6 +343,8 @@ void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStenci
   {
     self->pipeline_state.state.stencil_face_back_write_mask = write_mask;
   }
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK;
 }
 
 void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t ref_mask)
@@ -349,25 +357,45 @@ void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStenci
   {
     self->pipeline_state.state.stencil_face_back_reference = ref_mask;
   }
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
 }
 
 void bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states)
 {
   auto& s = self->pipeline_state.state;
 
-  s.dynamic_viewport           = dynamic_states & BIFROST_PIPELINE_DYNAMIC_VIEWPORT;
-  s.dynamic_scissor            = dynamic_states & BIFROST_PIPELINE_DYNAMIC_SCISSOR;
-  s.dynamic_line_width         = dynamic_states & BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH;
-  s.dynamic_depth_bias         = dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
-  s.dynamic_blend_constants    = dynamic_states & BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS;
-  s.dynamic_depth_bounds       = dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS;
-  s.dynamic_stencil_cmp_mask   = dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK;
-  s.dynamic_stencil_write_mask = dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK;
-  s.dynamic_stencil_reference  = dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
+  const bfBool32 set_dynamic_viewport           = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_VIEWPORT) != 0;
+  const bfBool32 set_dynamic_scissor            = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_SCISSOR) != 0;
+  const bfBool32 set_dynamic_line_width         = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH) != 0;
+  const bfBool32 set_dynamic_depth_bias         = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS) != 0;
+  const bfBool32 set_dynamic_blend_constants    = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS) != 0;
+  const bfBool32 set_dynamic_depth_bounds       = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS) != 0;
+  const bfBool32 set_dynamic_stencil_cmp_mask   = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK) != 0;
+  const bfBool32 set_dynamic_stencil_write_mask = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK) != 0;
+  const bfBool32 set_dynamic_stencil_reference  = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE) != 0;
+
+  s.dynamic_viewport           = set_dynamic_viewport;
+  s.dynamic_scissor            = set_dynamic_scissor;
+  s.dynamic_line_width         = set_dynamic_line_width;
+  s.dynamic_depth_bias         = set_dynamic_depth_bias;
+  s.dynamic_blend_constants    = set_dynamic_blend_constants;
+  s.dynamic_depth_bounds       = set_dynamic_depth_bounds;
+  s.dynamic_stencil_cmp_mask   = set_dynamic_stencil_cmp_mask;
+  s.dynamic_stencil_write_mask = set_dynamic_stencil_write_mask;
+  s.dynamic_stencil_reference  = set_dynamic_stencil_reference;
+
+  self->dynamic_state_dirty = dynamic_states;
 }
 
 void bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, float width, float height, const float depth[2])
 {
+  if (depth == nullptr)
+  {
+    static float default_depth[2] = {0.0f, 1.0f};
+    depth                         = default_depth;
+  }
+
   auto& vp     = self->pipeline_state.viewport;
   vp.x         = x;
   vp.y         = y;
@@ -375,6 +403,8 @@ void bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, flo
   vp.height    = height;
   vp.min_depth = depth[0];
   vp.max_depth = depth[1];
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_VIEWPORT;
 }
 
 void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -385,16 +415,22 @@ void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t
   s.y      = y;
   s.width  = width;
   s.height = height;
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_SCISSOR;
 }
 
 void bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float constants[4])
 {
   memcpy(self->pipeline_state.blend_constants, constants, sizeof(self->pipeline_state.blend_constants));
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS;
 }
 
 void bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.line_width = value;
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH;
 }
 
 void bfGfxCmdList_setDepthClampEnabled(bfGfxCommandListHandle self, bfBool32 value)
@@ -411,21 +447,26 @@ void bfGfxCmdList_setDepthBounds(bfGfxCommandListHandle self, float min, float m
 {
   self->pipeline_state.depth.min_bound = min;
   self->pipeline_state.depth.max_bound = max;
+
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS;
 }
 
 void bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_constant_factor = value;
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_clamp = value;
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_slope_factor = value;
+  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value)
@@ -734,8 +775,92 @@ static void flushPipeline(bfGfxCommandListHandle self)
   if (pl != self->pipeline)
   {
     vkCmdBindPipeline(self->handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->handle);
-    self->pipeline = pl;
+    self->dynamic_state_dirty = 0xFFFF;
+    self->pipeline            = pl;
   }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_VIEWPORT && self->pipeline_state.state.dynamic_viewport)
+  {
+    VkViewport viewports = bfVkConvertViewport(&self->pipeline_state.viewport);
+    vkCmdSetViewport(self->handle, 0, 1, &viewports);
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_SCISSOR && self->pipeline_state.state.dynamic_scissor)
+  {
+    VkRect2D scissors = bfVkConvertScissorRect(&self->pipeline_state.scissor_rect);
+    vkCmdSetScissor(self->handle, 0, 1, &scissors);
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH && self->pipeline_state.state.dynamic_line_width)
+  {
+    vkCmdSetLineWidth(self->handle, self->pipeline_state.line_width);
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS && self->pipeline_state.state.dynamic_depth_bias)
+  {
+    auto& depth = self->pipeline_state.depth;
+
+    vkCmdSetDepthBias(self->handle, depth.bias_constant_factor, depth.bias_clamp, depth.bias_slope_factor);
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS && self->pipeline_state.state.dynamic_blend_constants)
+  {
+    vkCmdSetBlendConstants(self->handle, self->pipeline_state.blend_constants);
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS && self->pipeline_state.state.dynamic_depth_bounds)
+  {
+    auto& depth = self->pipeline_state.depth;
+
+    vkCmdSetDepthBounds(self->handle, depth.min_bound, depth.max_bound);
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK && self->pipeline_state.state.dynamic_stencil_cmp_mask)
+  {
+    auto& ss = self->pipeline_state.state;
+
+    if (ss.stencil_face_front_compare_mask == ss.stencil_face_back_compare_mask)
+    {
+      vkCmdSetStencilCompareMask(self->handle, VK_STENCIL_FRONT_AND_BACK, ss.stencil_face_front_compare_mask);
+    }
+    else
+    {
+      vkCmdSetStencilCompareMask(self->handle, VK_STENCIL_FACE_FRONT_BIT, ss.stencil_face_front_compare_mask);
+      vkCmdSetStencilCompareMask(self->handle, VK_STENCIL_FACE_BACK_BIT, ss.stencil_face_back_compare_mask);
+    }
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK && self->pipeline_state.state.dynamic_stencil_write_mask)
+  {
+    auto& ss = self->pipeline_state.state;
+
+    if (ss.stencil_face_front_write_mask == ss.stencil_face_back_write_mask)
+    {
+      vkCmdSetStencilWriteMask(self->handle, VK_STENCIL_FRONT_AND_BACK, ss.stencil_face_front_write_mask);
+    }
+    else
+    {
+      vkCmdSetStencilWriteMask(self->handle, VK_STENCIL_FACE_FRONT_BIT, ss.stencil_face_front_write_mask);
+      vkCmdSetStencilWriteMask(self->handle, VK_STENCIL_FACE_BACK_BIT, ss.stencil_face_back_write_mask);
+    }
+  }
+
+  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE && self->pipeline_state.state.dynamic_stencil_reference)
+  {
+    auto& ss = self->pipeline_state.state;
+
+    if (ss.stencil_face_front_reference == ss.stencil_face_back_reference)
+    {
+      vkCmdSetStencilReference(self->handle, VK_STENCIL_FRONT_AND_BACK, ss.stencil_face_front_reference);
+    }
+    else
+    {
+      vkCmdSetStencilReference(self->handle, VK_STENCIL_FACE_FRONT_BIT, ss.stencil_face_front_reference);
+      vkCmdSetStencilReference(self->handle, VK_STENCIL_FACE_BACK_BIT, ss.stencil_face_back_reference);
+    }
+  }
+
+  self->dynamic_state_dirty = 0x0;
 
   UpdateResourceFrame(self->context, &pl->super);
 }
@@ -858,13 +983,20 @@ namespace bifrost::vk
     self = hash::addU32(self, scissor.height);
   }
 
-  static void hash(std::uint64_t& self, const BifrostPipelineDepthInfo& depth)
+  static void hash(std::uint64_t& self, const BifrostPipelineDepthInfo& depth, const bfPipelineState& state)
   {
-    self = hash::addF32(self, depth.bias_constant_factor);
-    self = hash::addF32(self, depth.bias_clamp);
-    self = hash::addF32(self, depth.bias_slope_factor);
-    self = hash::addF32(self, depth.min_bound);
-    self = hash::addF32(self, depth.max_bound);
+    if (!state.dynamic_depth_bias)
+    {
+      self = hash::addF32(self, depth.bias_constant_factor);
+      self = hash::addF32(self, depth.bias_clamp);
+      self = hash::addF32(self, depth.bias_slope_factor);
+    }
+
+    if (!state.dynamic_depth_bounds)
+    {
+      self = hash::addF32(self, depth.min_bound);
+      self = hash::addF32(self, depth.max_bound);
+    }
   }
 
   static void hash(std::uint64_t& self, const bfFramebufferBlending& fb_blending)
@@ -874,6 +1006,11 @@ namespace bifrost::vk
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {
+    // TODO DO NOT HASH THESE FIELDS ID THESE BITS ARE SET
+    //  uint64_t dynamic_stencil_cmp_mask : 1;
+    //  uint64_t dynamic_stencil_write_mask : 1;
+    //  uint64_t dynamic_stencil_reference : 1;
+
     const auto* state = reinterpret_cast<const std::uint64_t*>(&pipeline->state);
 
     const auto num_attachments = pipeline->renderpass->info.subpasses[pipeline->subpass_index].num_out_attachment_refs;
@@ -882,16 +1019,31 @@ namespace bifrost::vk
     self = hash::addU64(self, state[1]);
     self = hash::addU64(self, state[2]);
     self = hash::addU64(self, state[4]);
-    hash(self, pipeline->viewport);
-    hash(self, pipeline->scissor_rect);
 
-    for (float blend_constant : pipeline->blend_constants)
+    if (!pipeline->state.dynamic_viewport)
     {
-      self = hash::addF32(self, blend_constant);
+      hash(self, pipeline->viewport);
     }
 
-    self = hash::addF32(self, pipeline->line_width);
-    hash(self, pipeline->depth);
+    if (!pipeline->state.dynamic_scissor)
+    {
+      hash(self, pipeline->scissor_rect);
+    }
+
+    if (!pipeline->state.dynamic_blend_constants)
+    {
+      for (float blend_constant : pipeline->blend_constants)
+      {
+        self = hash::addF32(self, blend_constant);
+      }
+    }
+
+    if (!pipeline->state.dynamic_line_width)
+    {
+      self = hash::addF32(self, pipeline->line_width);
+    }
+
+    hash(self, pipeline->depth, pipeline->state);
     self = hash::addF32(self, pipeline->min_sample_shading);
     self = hash::addU64(self, pipeline->sample_mask);
     self = hash::addU32(self, pipeline->subpass_index);

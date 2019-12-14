@@ -1,6 +1,7 @@
 #ifndef BIFORST_PLATFORM_H
 #define BIFORST_PLATFORM_H
 
+#ifndef PLATFORM_WIN32
 #define PLATFORM_WIN32      0
 #define PLATFORM_WIN64      0
 #define PLATFORM_WINDOWS    0
@@ -8,6 +9,7 @@
 #define PLATFORM_MACOS      0
 #define PLATFORM_IOS        0
 #define PLATFORM_EMSCRIPTEN 0
+#endif
 
 #ifdef _WIN32
 
