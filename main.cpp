@@ -160,6 +160,7 @@ class BaseRenderer
   bfShaderProgramHandle        m_ShaderProgram;
   bfDescriptorSetHandle        m_TestMaterial;
   bfDescriptorSetHandle        m_TestMaterial2;
+  bfTextureHandle              m_DepthBuffer;
   std::vector<bfGfxBaseHandle> m_Resources;
   Mat4x4                       m_ModelView;
   Camera                       m_Camera;
@@ -181,6 +182,7 @@ class BaseRenderer
     m_ShaderProgram{nullptr},
     m_TestMaterial{nullptr},
     m_TestMaterial2{nullptr},
+    m_DepthBuffer{nullptr},
     m_Resources{},
     m_ModelView{},
     m_Camera{},
@@ -258,7 +260,7 @@ class BaseRenderer
     bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
     bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
 
-    create_texture.generate_mipmaps = bfFalse;
+    // create_texture.generate_mipmaps = bfFalse;
 
     m_TestTexture = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
     bfTexture_loadFile(m_TestTexture, "../assets/texture.png");
@@ -321,6 +323,20 @@ class BaseRenderer
       if (m_MainCmdList)
       {
         m_MainSurface = bfGfxDevice_requestSurface(m_MainCmdList);
+
+        const std::uint32_t surface_w = bfTexture_width(m_MainSurface);
+        const std::uint32_t surface_h = bfTexture_height(m_MainSurface);
+
+        if (!m_DepthBuffer || bfTexture_width(m_DepthBuffer) != surface_w || bfTexture_height(m_DepthBuffer) != surface_h)
+        {
+          bfGfxDevice_flush(m_GfxDevice);
+          bfGfxDevice_release(m_GfxDevice, m_DepthBuffer);
+
+          bfTextureCreateParams create_depth_tex = bfTextureCreateParams_initDepthAttachment(surface_w, surface_h, BIFROST_IMAGE_FORMAT_D24_UNORM_S8_UINT, bfFalse, bfFalse);
+
+          m_DepthBuffer = bfGfxDevice_newTexture(m_GfxDevice, &create_depth_tex);
+          bfTexture_loadData(m_DepthBuffer, nullptr, 0);
+        }
 
         return bfGfxCmdList_begin(m_MainCmdList);
       }
@@ -420,33 +436,48 @@ class BaseRenderer
     main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     main_surface.may_alias    = bfFalse;
 
+    bfAttachmentInfo depth_buffer;
+    depth_buffer.texture      = m_DepthBuffer;
+    depth_buffer.final_layout = BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_buffer.may_alias    = bfFalse;
+
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_setClearOps(&renderpass_info, 1 | 2);
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStoreOps(&renderpass_info, 0x1);
+    bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
+    bfRenderpassInfo_addAttachment(&renderpass_info, &depth_buffer);
     bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    // bfRenderpassInfo_addDepthOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addDepthOut(&renderpass_info, 0, 1, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     // bfRenderpassInfo_addInput(&renderpass_info, 0x1);
     // bfRenderpassInfo_addDependencies(&renderpass_info, 0x1);
 
-    BifrostClearValue clear_colors;
-    clear_colors.color.float32[0] = 0.8f;
-    clear_colors.color.float32[1] = 0.6f;
-    clear_colors.color.float32[2] = 1.0f;
-    clear_colors.color.float32[3] = 1.0f;
+    BifrostClearValue clear_colors[2];
+    clear_colors[0].color.float32[0] = 0.8f;
+    clear_colors[0].color.float32[1] = 0.6f;
+    clear_colors[0].color.float32[2] = 1.0f;
+    clear_colors[0].color.float32[3] = 1.0f;
+
+    clear_colors[1].depthStencil.depth   = 1.0f;
+    clear_colors[1].depthStencil.stencil = 0;
+
+    bfTextureHandle attachments[] = {m_MainSurface, m_DepthBuffer};
 
     bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
-    bfGfxCmdList_setClearValues(m_MainCmdList, &clear_colors);
-    bfGfxCmdList_setAttachments(m_MainCmdList, &m_MainSurface);
+    bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
+    bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
     bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
 
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
     {
       uint64_t buffer_offset = 0;
+
+      bfGfxCmdList_setDepthTesting(m_MainCmdList, bfTrue);
+      bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
+      bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
 
       bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
       bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
@@ -472,6 +503,8 @@ class BaseRenderer
   void cleanup()
   {
     bfGfxDevice_flush(m_GfxDevice);
+
+    bfGfxDevice_release(m_GfxDevice, m_DepthBuffer);
 
     for (auto resource : m_Resources)
     {
@@ -741,7 +774,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       glfwGetWindowSize(window.handle(), &window_width, &window_height);
 
       glfwPollEvents();
-
+      
       while (window.hasNextEvent())
       {
         const Event evt = window.getNextEvent();
@@ -751,9 +784,9 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       if (engine.beginFrame())
       {
         editor::imgui::beginFrame(
-          engine.renderer().surface(), 
-          float(window_width), 
-          float(window_height),
+         engine.renderer().surface(),
+         float(window_width),
+         float(window_height),
          float(glfwGetTime()));
         engine.update();
 
@@ -764,7 +797,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
           if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
           {
-            vm.call(0);
+            // vm.call(0);
           }
         }
 

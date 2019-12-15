@@ -3,7 +3,7 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 #include "bifrost/math/bifrost_mat4x4.h"
 #include <algorithm>
-#include <glfw/glfw3.h>
+#include <glfw/glfw3.h>  // Cursors, KeyboardKeys, and Clipboard...
 #include <imgui/imgui.h>
 
 namespace bifrost::editor::imgui

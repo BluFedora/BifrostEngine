@@ -1980,7 +1980,7 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
   self->image_width     = params->width;
   self->image_height    = params->height;
   self->image_depth     = params->depth;
-  self->image_miplevels = params->generate_mipmaps ? 1 + uint32_t(std::floor(std::log2(float(std::max(std::max(params->width, params->height), params->depth))))) : 0;
+  self->image_miplevels = params->generate_mipmaps;
   self->tex_image       = VK_NULL_HANDLE;
   self->tex_memory      = VK_NULL_HANDLE;
   self->tex_view        = VK_NULL_HANDLE;
@@ -1988,6 +1988,21 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
   self->tex_layout      = VK_IMAGE_LAYOUT_UNDEFINED;
   self->tex_format      = bfVkConvertFormat(params->format);
   self->tex_samples     = BIFROST_SAMPLE_1;
+
+  if (self->image_miplevels)
+  {
+    // Vulkan Spec requires blit feature on the format
+    // to use the 'vkCmdBlitImage' command on it.
+
+    VkFormatProperties format_properties;
+    vkGetPhysicalDeviceFormatProperties(self_->parent->handle, self->tex_format, &format_properties);
+
+    if (!(format_properties.linearTilingFeatures & (VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)))
+    {
+      assert(!"This is not a real error, just a warning but I do not want to forget to add a warning.");
+      self->image_miplevels = 0;
+    }
+  }
 
   return self;
 }
@@ -2007,7 +2022,7 @@ uint32_t bfTexture_depth(bfTextureHandle self)
   return self->image_depth;
 }
 
-void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlags aspects, VkImageLayout old_layout, VkImageLayout new_layout)
+void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlags aspects, VkImageLayout old_layout, VkImageLayout new_layout, uint32_t mip_levels)
 {
   VkImageMemoryBarrier image_barrier;
   image_barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -2021,7 +2036,7 @@ void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlag
   image_barrier.image                           = image;
   image_barrier.subresourceRange.aspectMask     = aspects;
   image_barrier.subresourceRange.baseMipLevel   = 0;
-  image_barrier.subresourceRange.levelCount     = 1;
+  image_barrier.subresourceRange.levelCount     = mip_levels;
   image_barrier.subresourceRange.baseArrayLayer = 0;
   image_barrier.subresourceRange.layerCount     = 1;
 
@@ -2107,29 +2122,22 @@ VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
 {
   VkImageAspectFlags aspects = 0x0;
 
-  if (self->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  if (self->flags & BIFROST_TEX_IS_DEPTH_ATTACHMENT)
   {
-    aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
-  }
-  else
-  {
-    if (self->flags & BIFROST_TEX_IS_DEPTH_ATTACHMENT)
-    {
-      aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-    else
-    {
-      aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
-    }
+    aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
 
     if (self->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT)
     {
       aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
-    else
-    {
-      aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
-    }
+  }
+  else if (self->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  {
+    aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
+  }
+  else  // Sampled Texture
+  {
+    aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
   return aspects;
@@ -2138,7 +2146,7 @@ VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
 static void bfTexture__setLayout(bfTextureHandle self, VkImageLayout layout)
 {
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
-  setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), self->tex_layout, layout);
+  setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), self->tex_layout, layout, self->image_miplevels);
   gfxContextEndTransientCommandBuffer(transient_cmd);
   self->tex_layout = layout;
 }
@@ -2169,8 +2177,8 @@ static void bfTexture__createImage(bfTextureHandle self)
     create_image.sharingMode = VK_SHARING_MODE_CONCURRENT;
   }
 
-  // TODO: Make this a function?
-  if (self->flags & BIFROST_TEX_IS_TRANSFER_SRC)
+  // TODO: Make this a function? BGN
+  if (self->flags & BIFROST_TEX_IS_TRANSFER_SRC || self->image_miplevels > 1)
   {
     create_image.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   }
@@ -2209,6 +2217,7 @@ static void bfTexture__createImage(bfTextureHandle self)
   {
     create_image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
   }
+  // TODO: Make this a function? END
 
   const VkResult error = vkCreateImage(self->parent->handle, &create_image, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->tex_image);
   assert(error == VK_SUCCESS);
@@ -2280,7 +2289,122 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
      &region);
   }
   gfxContextEndTransientCommandBuffer(transient_cmd);
-  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+  if (self->image_miplevels > 1)
+  {
+    int32_t mip_width  = int32_t(self->image_width);
+    int32_t mip_height = int32_t(self->image_height);
+
+    const auto copy_cmds = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
+    {
+      VkImageMemoryBarrier barrier            = {};
+      barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      barrier.image                           = self->tex_image;
+      barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+      barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+      barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+      barrier.subresourceRange.baseArrayLayer = 0;
+      barrier.subresourceRange.layerCount     = 1;
+      barrier.subresourceRange.levelCount     = 1;
+
+      for (uint32_t i = 1; i < self->image_miplevels; ++i)
+      {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout                     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask                 = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(copy_cmds.handle,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &barrier);
+
+        VkImageBlit image_blit{};
+
+        // Source
+        image_blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_blit.srcSubresource.layerCount = 1;
+        image_blit.srcSubresource.mipLevel   = i - 1;
+        image_blit.srcOffsets[1].x           = mip_width;
+        image_blit.srcOffsets[1].y           = mip_height;
+        image_blit.srcOffsets[1].z           = 1;
+
+        // Destination
+        image_blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_blit.dstSubresource.layerCount = 1;
+        image_blit.dstSubresource.mipLevel   = i;
+        image_blit.dstOffsets[1].x           = mip_width > 1 ? mip_width / 2 : 1;
+        image_blit.dstOffsets[1].y           = mip_height > 1 ? mip_height / 2 : 1;
+        image_blit.dstOffsets[1].z           = 1;
+
+        vkCmdBlitImage(copy_cmds.handle,
+                       self->tex_image,
+                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       self->tex_image,
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1,
+                       &image_blit,
+                       VK_FILTER_LINEAR);
+
+        barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(copy_cmds.handle,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &barrier);
+
+        if (mip_width > 1)
+        {
+          mip_width /= 2;
+        }
+
+        if (mip_height > 1)
+        {
+          mip_height /= 2;
+        }
+      }
+
+      barrier.subresourceRange.baseMipLevel = self->image_miplevels - 1;
+      barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+      barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+      barrier.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
+
+      vkCmdPipelineBarrier(copy_cmds.handle,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier);
+    }
+    gfxContextEndTransientCommandBuffer(copy_cmds);
+
+    self->tex_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  }
+  else
+  {
+    bfTexture__setLayout(self, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  }
 }
 
 bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length)
@@ -2294,23 +2418,26 @@ bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pix
 
   self->image_miplevels = self->image_miplevels ? 1 + uint32_t(std::floor(std::log2(float(std::max(std::max(self->image_width, self->image_height), self->image_depth))))) : 1;
 
-  bfBufferCreateParams buffer_params;
-  buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
-  buffer_params.allocation.size       = pixels_length;
-  buffer_params.usage                 = BIFROST_BUF_TRANSFER_SRC;
-
-  const bfBufferHandle staging_buffer = bfGfxDevice_newBuffer(self->parent, &buffer_params);
-
-  bfBuffer_map(staging_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-  bfBuffer_copyCPU(staging_buffer, 0, pixels, pixels_length);
-  bfBuffer_unMap(staging_buffer);
-
   bfTexture__createImage(self);
   bfTexture__allocMemory(self);
-  bfTexture_loadBuffer(self, staging_buffer);
   self->tex_view = bfCreateImageView2D(self->parent->handle, self->tex_image, self->tex_format, bfTexture__aspect(self), self->image_miplevels);
 
-  bfGfxDevice_release(self->parent, staging_buffer);
+  if (pixels)
+  {
+    bfBufferCreateParams buffer_params;
+    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+    buffer_params.allocation.size       = pixels_length;
+    buffer_params.usage                 = BIFROST_BUF_TRANSFER_SRC;
+
+    const bfBufferHandle staging_buffer = bfGfxDevice_newBuffer(self->parent, &buffer_params);
+
+    bfBuffer_map(staging_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+    bfBuffer_copyCPU(staging_buffer, 0, pixels, pixels_length);
+    bfBuffer_unMap(staging_buffer);
+
+    bfTexture_loadBuffer(self, staging_buffer);
+    bfGfxDevice_release(self->parent, staging_buffer);
+  }
 
   return bfTrue;
 }

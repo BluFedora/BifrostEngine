@@ -29,9 +29,11 @@ namespace bifrost
       {
         if (wrap(tail + 1) == head)
         {
-          // TODO(Shareef): Throw an exception?
-          throw "";
-          return false;
+          // NOTE(Shareef):
+          //   Since this is used for the event system having the latest event
+          //   is a better policy than keeping the old events.
+          pop(wrap);
+          // return false;
         }
 
         new (buffer + tail) T(element);

@@ -645,6 +645,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     };
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil;
+    depth_stencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil.pNext                 = nullptr;
     depth_stencil.flags                 = 0x0;
     depth_stencil.depthTestEnable       = state.state.do_depth_test;
@@ -679,7 +680,9 @@ static void flushPipeline(bfGfxCommandListHandle self)
     VkPipelineColorBlendStateCreateInfo color_blend;
     VkPipelineColorBlendAttachmentState color_blend_states[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
 
-    for (uint32_t i = 0; i < self->pipeline_state.renderpass->info.num_attachments; ++i)
+    const uint32_t num_color_attachments = self->pipeline_state.renderpass->info.subpasses[state.subpass_index].num_out_attachment_refs;
+
+    for (uint32_t i = 0; i < num_color_attachments; ++i)
     {
       bfFramebufferBlending&               blend     = state.blending[i];
       VkPipelineColorBlendAttachmentState& clr_state = color_blend_states[i];
@@ -703,7 +706,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     color_blend.flags           = 0x0;
     color_blend.logicOpEnable   = ss.do_logic_op;
     color_blend.logicOp         = bfVkConvertLogicOp((BifrostLogicOp)ss.logic_op);
-    color_blend.attachmentCount = self->pipeline_state.renderpass->info.num_attachments;
+    color_blend.attachmentCount = num_color_attachments;
     color_blend.pAttachments    = color_blend_states;
     memcpy(color_blend.blendConstants, state.blend_constants, sizeof(state.blend_constants));
 
