@@ -34,8 +34,6 @@ VkBlendFactor         bfVkConvertBlendFactor(BifrostBlendFactor factor);
 VkBlendOp             bfVkConvertBlendOp(BifrostBlendOp factor);
 VkFlags               bfVkConvertColorMask(uint16_t flags); // BifrostColorMask
 
- // Internal API
-
 VkImageView bfCreateImageView(
  VkDevice           device,
  VkImage            image,

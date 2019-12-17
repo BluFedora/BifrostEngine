@@ -62,6 +62,16 @@ bfTextureCreateParams bfTextureCreateParams_initDepthAttachment(uint32_t width, 
   return ret;
 }
 
+void bfBuffer_invalidateRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
+{
+  bfBuffer_invalidateRanges(self, &offset, &size, 1);
+}
+
+void bfBuffer_flushRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
+{
+  bfBuffer_flushRanges(self, &offset, &size, 1);
+}
+
 bfRenderpassInfo bfRenderpassInfo_init(uint16_t num_subpasses)
 {
   assert(num_subpasses < BIFROST_GFX_RENDERPASS_MAX_SUBPASSES);

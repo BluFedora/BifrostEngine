@@ -450,7 +450,6 @@ const char* tokentypeToString(bfTokenType t)
     TT_TO_STR(BIFROST_TOKEN_STATIC);
     TT_TO_STR(BIFROST_TOKEN_NEW);
     TT_TO_STR(BIFROST_TOKEN_CTRL_BREAK);
-    TT_TO_STR(BIFROST_TOKEN_PRINT);
     TT_TO_STR(BIFROST_TOKEN_L_PAREN);
     TT_TO_STR(BIFROST_TOKEN_R_PAREN);
     TT_TO_STR(BIFROST_TOKEN_L_SQR_BOI);
@@ -495,10 +494,9 @@ const char* tokentypeToString(bfTokenType t)
     TT_TO_STR(CONST_BOOL);
     TT_TO_STR(CONST_NIL);
     TT_TO_STR(EOP);
+    default: return "There was a grave mistake";
   }
-
 #undef TT_TO_STR
-  return "There was a grave mistake";
 }
 
 void printToken(const bfToken* token)

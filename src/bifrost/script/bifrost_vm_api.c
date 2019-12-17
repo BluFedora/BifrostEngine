@@ -1,4 +1,5 @@
 #include "bifrost/bifrost_vm.h"
+
 #include "bifrost_vm_debug.h"
 #include "bifrost_vm_gc.h"
 #include <bifrost/data_structures/bifrost_dynamic_string.h>
@@ -112,6 +113,15 @@ void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params)
 
 static inline BifrostVMError bfVM__moduleMake(BifrostVM* self, const char* module, BifrostObjModule** out)
 {
+  static const char* ANON_MODULE_NAME = "__anon_module__";
+
+  const bfBool32 is_anon = module == NULL;
+
+  if (is_anon)
+  {
+    module = ANON_MODULE_NAME;
+  }
+
   // TODO(SR):
   //   Make it so this check only happens in debug builds??
   const bfStringRange name_range = bfMakeStringRangeC(module);
@@ -122,14 +132,15 @@ static inline BifrostVMError bfVM__moduleMake(BifrostVM* self, const char* modul
     return BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED;
   }
 
-  BifrostObjStr* const module_name = bfVM_createString(self, name_range);
-
-  bfGCPushRoot(self, &module_name->super);
-
   *out = bfVM_createModule(self, name_range);
-  bfHashMap_set(&self->modules, module_name, out);
 
-  bfGCPopRoot(self);
+  if (!is_anon)
+  {
+    bfGCPushRoot(self, &(*out)->super);
+    BifrostObjStr* const module_name = bfVM_createString(self, name_range);
+    bfHashMap_set(&self->modules, module_name, out);
+    bfGCPopRoot(self);
+  }
 
   return BIFROST_VM_ERROR_NONE;
 }
@@ -142,6 +153,39 @@ BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module)
   BifrostVMError    err = bfVM__moduleMake(self, module, &temp);
   self->stack_top[idx]  = FROM_POINTER(temp);
   return err;
+}
+
+static void bfVM_moduleLoadStdIOPrint(BifrostVM* vm, int32_t num_args)
+{
+  const bfPrintFn print = vm->params.print_fn;
+
+  if (print && num_args)
+  {
+    // TODO: Make this safer and better
+    char buffer[1024];
+
+    char* buffer_head = buffer;
+    char* buffer_end  = buffer + sizeof(buffer);
+
+    for (int32_t i = 0; i < num_args && buffer < buffer_end; ++i)
+    {
+      const bfVMValue value         = vm->stack_top[i];
+      const size_t    written_bytes = bfDbgValueToString(value, buffer_head, buffer_end - buffer_head);
+
+      buffer_head += written_bytes;
+    }
+
+    print(vm, buffer);
+  }
+}
+
+void bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags)
+{
+  if (module_flags & BIFROST_VM_STD_MODULE_IO)
+  {
+    bfVM_moduleMake(self, idx, "std:io");
+    bfVM_stackStoreNativeFn(self, idx, "print", &bfVM_moduleLoadStdIOPrint, -1);
+  }
 }
 
 BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module)
@@ -159,18 +203,41 @@ BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module)
   return BIFROST_VM_ERROR_MODULE_NOT_FOUND;
 }
 
+typedef struct
+{
+  const char* str;
+  size_t      str_len;
+  unsigned    hash;
+
+} TempModuleName;
+
+static int bfVM_moduleUnloadCmp(const void* lhs, const void* rhs)
+{
+  const TempModuleName* str_lhs = (const TempModuleName*)lhs;
+  const BifrostObjStr*  str_rhs = (const BifrostObjStr*)rhs;
+
+  return str_lhs->hash == str_rhs->hash && String_ccmpn(str_rhs->value, str_lhs->str, str_lhs->str_len) == 0;
+}
+
 void bfVM_moduleUnload(BifrostVM* self, const char* module)
 {
-  BifrostObjStr* const str = bfVM_createString(self, bfMakeStringRangeC(module));
-
-  bfGCPushRoot(self, &str->super);
   /*
     NOTE(Shareef):
       The GC will handle deleting the module and
       string whenever we are low on memory.
    */
-  bfHashMap_remove(&self->modules, str);
-  bfGCPopRoot(self);
+  const TempModuleName tmn =
+   {
+    .str     = module,
+    .str_len = strlen(module),
+    .hash    = bfString_hash(module)};
+
+  bfHashMap_removeCmp(&self->modules, &tmn, &bfVM_moduleUnloadCmp);
+}
+
+void bfVM_moduleUnloadAll(BifrostVM* self)
+{
+  bfHashMap_clear(&self->modules);
 }
 
 size_t bfVM_stackSize(const BifrostVM* self)
@@ -325,6 +392,7 @@ void* bfVM_stackMakeReferenceClz(BifrostVM* self, size_t module_idx, const Bifro
 void bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value)
 {
   bfVM_assertStackIndex(self, idx);
+
   self->stack_top[idx] = FROM_POINTER(bfVM_createWeakRef(self, value));
 }
 
@@ -640,6 +708,7 @@ bfBool32 bfVM_stackReadBool(const BifrostVM* self, size_t idx)
 static int32_t bfVMGetArity(bfVMValue value)
 {
   assert(IS_POINTER(value));
+
   const BifrostObj* const obj = AS_POINTER(value);
 
   if (obj->type == BIFROST_VM_OBJ_FUNCTION)
@@ -872,10 +941,9 @@ BifrostVMStackFrame* bfVM_pushCallFrame(BifrostVM* self, BifrostObjFn* fn, size_
 
 static void bfVM_popAllCallFrames(BifrostVM* self, const BifrostVMStackFrame* ref_frame)
 {
-  const size_t num_frames   = ref_frame - self->frames;
-  const size_t total_frames = Array_size(&self->frames);
-
-  const bfErrorFn error_fn = self->params.error_fn;
+  const size_t    num_frames   = ref_frame - self->frames;
+  const size_t    total_frames = Array_size(&self->frames);
+  const bfErrorFn error_fn     = self->params.error_fn;
 
   if (error_fn)
   {
@@ -1002,9 +1070,15 @@ frame_start:;
             locals[regs[REG_RA]] = VAL_NULL;
           }
         }
+        else if (obj->type == BIFROST_VM_OBJ_MODULE)
+        {
+          BifrostObjModule* module = (BifrostObjModule*)obj;
+
+          locals[regs[REG_RA]] = bfVM_stackFindVariable(module, symbol_str, String_length(symbol_str));
+        }
         else
         {
-          BF_RUNTIME_ERROR("(%u) ERRRO, loading a symbol (%s) on a non instance obj.\n", obj->type, self->symbols[symbol]);
+          BF_RUNTIME_ERROR("(%u) ERROR, loading a symbol (%s) on a non instance obj.\n", obj->type, self->symbols[symbol]);
         }
         break;
       }
@@ -1012,34 +1086,43 @@ frame_start:;
       {
         const BifrostString sym_str = self->symbols[regs[REG_RB]];
 
-        const int err = bfVM__stackStoreVariable(self, locals[regs[REG_RA]], bfMakeStringRangeLen(sym_str, String_length(sym_str)), locals[regs[REG_RC]]);
+        const int err_store = bfVM__stackStoreVariable(self, locals[regs[REG_RA]], bfMakeStringRangeLen(sym_str, String_length(sym_str)), locals[regs[REG_RC]]);
 
-        if (err == 1)
+        if (err_store == 1)
         {
           BF_RUNTIME_ERROR("Cannot store symbol into non object\n");
         }
 
-        if (err == 2)
+        if (err_store == 2)
         {
           BF_RUNTIME_ERROR("ERRRO, storing a symbol on a non instance or class obj.\n");
         }
         break;
       }
-      case BIFROST_VM_OP_STORE_MODULE_VAR:
+      case BIFROST_VM_OP_LOAD_BASIC:
       {
-        const BifrostString sym_str = self->symbols[regs[REG_RA]];
+        static const bfVMValue s_Literals[] =
+         {
+          VAL_TRUE,
+          VAL_FALSE,
+          VAL_NULL,
+         };
 
-        const int err = bfVM__stackStoreVariable(self, FROM_POINTER(current_module), bfMakeStringRangeLen(sym_str, String_length(sym_str)), locals[regs[REG_RBx]]);
+        const uint32_t action = regs[REG_RBx];
 
-        if (err == 1)
+        if (action < BIFROST_VM_OP_LOAD_BASIC_CURRENT_MODULE)
         {
-          BF_RUNTIME_ERROR("Cannot store symbol into non object\n");
+          locals[regs[REG_RA]] = s_Literals[action];
+        }
+        else if (action == BIFROST_VM_OP_LOAD_BASIC_CURRENT_MODULE)
+        {
+          locals[regs[REG_RA]] = FROM_POINTER(current_module);
+        }
+        else
+        {
+          locals[regs[REG_RA]] = constants[regs[REG_RBx] - BIFROST_VM_OP_LOAD_BASIC_CONSTANT];
         }
 
-        if (err == 2)
-        {
-          BF_RUNTIME_ERROR("ERRRO, storing a symbol on a non instance or class obj.\n");
-        }
         break;
       }
       case BIFROST_VM_OP_NEW_CLZ:
@@ -1059,12 +1142,18 @@ frame_start:;
           }
           else
           {
-            BF_RUNTIME_ERROR("ERROR CALLED NEW ON NON CLASS TYPE.\n");
+            char string_buffer[512];
+            bfDbgValueTypeToString(value, string_buffer, sizeof(string_buffer));
+
+            BF_RUNTIME_ERROR("Called new on a non Class type (%s).\n", string_buffer);
           }
         }
         else
         {
-          BF_RUNTIME_ERROR("ERROR CALLED NEW ON NON CLASS TYPE.\n");
+          char string_buffer[512];
+          bfDbgValueTypeToString(value, string_buffer, sizeof(string_buffer));
+
+          BF_RUNTIME_ERROR("Called new on a non Class type (%s).\n", string_buffer);
         }
         break;
       }
@@ -1073,33 +1162,9 @@ frame_start:;
         locals[regs[REG_RA]] = bfVMValue_isThuthy(locals[regs[REG_RBx]]) ? VAL_FALSE : VAL_TRUE;
         break;
       }
-      case BIFROST_VM_OP_LOAD_CONSTANT:
-      {
-        locals[regs[REG_RA]] = constants[regs[REG_RBx]];
-        break;
-      }
-      case BIFROST_VM_OP_LOAD_MODULE_VAR:
-      {
-        ConstBifrostString sym_name = self->symbols[regs[REG_RBx]];
-        locals[regs[REG_RA]]        = bfVM_stackFindVariable(current_module, sym_name, String_length(sym_name));
-        break;
-      }
       case BIFROST_VM_OP_STORE_MOVE:
       {
         locals[regs[REG_RA]] = locals[regs[REG_RBx]];
-        break;
-      }
-      case BIFROST_VM_OP_PRINT_LOCAL:
-      {
-        const bfPrintFn print = self->params.print_fn;
-
-        if (print)
-        {
-          const bfVMValue value = locals[regs[REG_RBx]];
-          char            buffer[512];
-          bfDbgValueToString(value, buffer, sizeof(buffer));
-          print(self, buffer);
-        }
         break;
       }
       case BIFROST_VM_OP_CALL_FN:
@@ -1395,10 +1460,14 @@ BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char
   BifrostObjModule* module_obj;
   BifrostVMError    err = bfVM__moduleMake(self, module, &module_obj);
 
-  if (err == BIFROST_VM_ERROR_NONE)
+  if (!err)
   {
-    err = bfVM_compileIntoModule(self, module_obj, source, source_length);
-    return (err == BIFROST_VM_ERROR_NONE) ? bfVM_runModule(self, module_obj) : err;
+    bfGCPushRoot(self, &module_obj->super);
+
+    err = bfVM_compileIntoModule(self, module_obj, source, source_length) ||
+          bfVM_runModule(self, module_obj);
+
+    bfGCPopRoot(self);
   }
 
   return err;
@@ -1550,7 +1619,7 @@ static BifrostVMError bfVM_compileIntoModule(BifrostVM* self, BifrostObjModule* 
       .type = (tt), .as = {.str = (kw) } \
     }                                    \
   }
-  /* TODO(SR): Order should based on how often each keyword is used on average. */
+
   static const bfKeyword s_Keywords[] =
    {
     KEYWORD("true", CONST_BOOL),
@@ -1565,7 +1634,6 @@ static BifrostVMError bfVM_compileIntoModule(BifrostVM* self, BifrostObjModule* 
     KEYWORD("nil", CONST_NIL),
     KEYWORD("class", BIFROST_TOKEN_CLASS),
     KEYWORD("import", IMPORT),
-    KEYWORD("print", BIFROST_TOKEN_PRINT),
     KEYWORD("break", BIFROST_TOKEN_CTRL_BREAK),
     KEYWORD("new", BIFROST_TOKEN_NEW),
     KEYWORD("static", BIFROST_TOKEN_STATIC),

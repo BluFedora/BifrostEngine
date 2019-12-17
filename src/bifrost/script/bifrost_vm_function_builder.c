@@ -238,17 +238,14 @@ const char* bfInstOpToString(bfInstructionOp op)
     bfInstOpToStringImpl(CMP_NE);
     bfInstOpToStringImpl(CMP_LE);
     bfInstOpToStringImpl(NOT);
-    bfInstOpToStringImpl(LOAD_MODULE_VAR);
-    bfInstOpToStringImpl(STORE_MODULE_VAR);
+    bfInstOpToStringImpl(LOAD_BASIC);
     bfInstOpToStringImpl(CMP_AND);
     bfInstOpToStringImpl(CMP_OR);
     bfInstOpToStringImpl(RETURN);
     bfInstOpToStringImpl(LOAD_SYMBOL);
     bfInstOpToStringImpl(STORE_SYMBOL);
     bfInstOpToStringImpl(NEW_CLZ);
-    bfInstOpToStringImpl(LOAD_CONSTANT);
     bfInstOpToStringImpl(STORE_MOVE);
-    bfInstOpToStringImpl(PRINT_LOCAL);
     bfInstOpToStringImpl(CALL_FN);
     bfInstOpToStringImpl(MATH_ADD);
     bfInstOpToStringImpl(MATH_SUB);
@@ -263,8 +260,7 @@ const char* bfInstOpToString(bfInstructionOp op)
     bfInstOpToStringImpl(JUMP);
     bfInstOpToStringImpl(JUMP_IF);
     bfInstOpToStringImpl(JUMP_IF_NOT);
+    default: return "OP_UNKNOWN";
   }
 #undef bfInstOpToStringImpl
-
-  return "OP_UNKNOWN";
 }

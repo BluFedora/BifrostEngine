@@ -11,7 +11,8 @@
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "intelliSenseMode": "windows-msvc-x86",
-      "variables": []
+      "variables": [
+      ]
     },
     {
       "name": "x86-Release",

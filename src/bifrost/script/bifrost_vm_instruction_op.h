@@ -22,26 +22,23 @@
 #if __cplusplus
 extern "C" {
 #endif
-// Total of 28.5 / 31 possible ops.
+
+#define BIFROST_VM_OP_LOAD_BASIC_TRUE 0
+#define BIFROST_VM_OP_LOAD_BASIC_FALSE 1
+#define BIFROST_VM_OP_LOAD_BASIC_NULL 2
+#define BIFROST_VM_OP_LOAD_BASIC_CURRENT_MODULE 3
+#define BIFROST_VM_OP_LOAD_BASIC_CONSTANT 4
+
+// Total of 25 / 31 possible ops.
 typedef enum
 {
-  // To be replaced with return. / Fake OPs
-  BIFROST_VM_OP_PRINT_LOCAL,  // print(local[rBx])
-
   /* Load OPs */
-  BIFROST_VM_OP_LOAD_CONSTANT,    // rA = K[rBx]
-  BIFROST_VM_OP_LOAD_SYMBOL,      // rA = rB.SYMBOLS[rC]
-  BIFROST_VM_OP_LOAD_MODULE_VAR,  // rA = module.SYMBOLS[rBx]
-
-  // TODO(Shareef): If I have space for this optimization OP that would be great.
-  // BIFROST_VM_OP_LOAD_BASIC, // rA = (rBx == 1 : VAL_TRUE) || (rBx == 2 : VAL_FALSE) || (rBx == 3 : VAL_NULL)
+  BIFROST_VM_OP_LOAD_SYMBOL,  // rA = rB.SYMBOLS[rC]
+  BIFROST_VM_OP_LOAD_BASIC,   // rA = (rBx == 0 : VAL_TRUE) || (rBx == 1 : VAL_FALSE) || (rBx == 2 : VAL_NULL) || (rBx == 3 : <current-module>) || (rBx > 3 : K[rBx - 4])
 
   /* Store OPs */
-  BIFROST_VM_OP_STORE_MOVE,        // rA     = rBx
-  BIFROST_VM_OP_STORE_SYMBOL,      // rA.SYMBOLS[rB]  = rC
-
-  // TODO(SR): This can be removed in favor of exclusively static variables for Module state.
-  BIFROST_VM_OP_STORE_MODULE_VAR,  // module.SYMBOLS[rA] = rBx
+  BIFROST_VM_OP_STORE_MOVE,    // rA              = rBx
+  BIFROST_VM_OP_STORE_SYMBOL,  // rA.SYMBOLS[rB]  = rC
 
   /* System OPs */
   BIFROST_VM_OP_NEW_CLZ,  // rA = new local[rBx];
@@ -76,10 +73,9 @@ typedef enum
   BIFROST_VM_OP_CMP_AND,  // rA = rB && rC
   BIFROST_VM_OP_CMP_OR,   // rA = rB || rC
   BIFROST_VM_OP_NOT,      // rA = !rBx
+
   // Control Flow
   BIFROST_VM_OP_CALL_FN,      // call(local[rB]) (params-start = rA, num-args = rC)
-
-  // TODO(SR): If I need another OP JUMP can be a JUMP_IF with a hardcoded true.
   BIFROST_VM_OP_JUMP,         // ip += rsBx
   BIFROST_VM_OP_JUMP_IF,      // if (rA) ip += rsBx
   BIFROST_VM_OP_JUMP_IF_NOT,  // if (!rA) ip += rsBx

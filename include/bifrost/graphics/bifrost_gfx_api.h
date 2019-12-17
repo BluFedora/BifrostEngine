@@ -10,7 +10,8 @@
 #include "bifrost_gfx_limits.h"
 #include "bifrost_gfx_pipeline_state.h" /* */
 #include "bifrost_gfx_types.h"          /* */
-#include <stdint.h>                     /* uint32_t */
+
+#include <stdint.h> /* uint32_t */
 
 #if __cplusplus
 extern "C" {
@@ -307,8 +308,12 @@ void                  bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandl
 /* Buffer */
 bfBufferSize bfBuffer_size(bfBufferHandle self);
 void*        bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size);
+void         bfBuffer_invalidateRanges(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges);
+void         bfBuffer_invalidateRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize size);
 void         bfBuffer_copyCPU(bfBufferHandle self, bfBufferSize dst_offset, const void* data, bfBufferSize num_bytes);
 void         bfBuffer_copyGPU(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandle dst, bfBufferSize dst_offset, bfBufferSize num_bytes);
+void         bfBuffer_flushRanges(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges);
+void         bfBuffer_flushRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize size);
 void         bfBuffer_unMap(bfBufferHandle self);
 
 /* Vertex Binding */
@@ -477,6 +482,10 @@ void     bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self);
 void     bfGfxCmdList_end(bfGfxCommandListHandle self);
 void     bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
 void     bfGfxCmdList_submit(bfGfxCommandListHandle self);
+
+// This should not be in this file...
+char* LoadFileIntoMemory(const char* filename, long* out_size);
+
 #if __cplusplus
 }
 #endif

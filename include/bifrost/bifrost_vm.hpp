@@ -290,6 +290,11 @@ namespace bifrost
       return bfVM_moduleMake(self(), idx, module);
     }
 
+    void moduleLoad(size_t idx, uint32_t std_module_flags) noexcept
+    {
+      bfVM_moduleLoadStd(self(), idx, std_module_flags);
+    }
+
     BifrostVMError moduleLoad(size_t idx, const char* module) noexcept
     {
       return bfVM_moduleLoad(self(), idx, module);
@@ -374,7 +379,6 @@ namespace bifrost
       using fn_traits = meta::function_traits<decltype(func)>;
 
       const std::size_t old_size = stackSize();
-      
 
       if constexpr (fn_traits::is_member_fn)
       {

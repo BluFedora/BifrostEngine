@@ -8,7 +8,11 @@
 //----------------------------------------------------------------------------//
 #include "bifrost/data_structures/bifrost_dynamic_string.h"
 
-#include "bifrost/bifrost_c_alloc.h"
+#ifndef BIFROST_MALLOC
+#define BIFROST_MALLOC(size, align) malloc((size))
+#define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
+#define BIFROST_FREE(ptr) free((ptr))
+#endif
 
 #ifndef BIFROST_MALLOC
 #include "bifrost/memory/bifrost_allocator.h"

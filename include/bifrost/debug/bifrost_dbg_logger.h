@@ -1,28 +1,6 @@
 #ifndef BIFROST_DBG_LOGGER_H
 #define BIFROST_DBG_LOGGER_H
 
-#if 0               /* TODO(Shareef): Logging Colors. */
-// clang-format off
-#define RESET                   "\033[0m"
-#define BLACK                   "\033[30m"        /* Black */
-#define RED                     "\x1B[31m"        /* Red */
-#define GREEN                   "\033[32m"        /* Green */
-#define YELLOW                  "\033[33m"        /* Yellow */
-#define BLUE                    "\033[34m"        /* Blue */
-#define MAGENTA                 "\033[35m"        /* Magenta */
-#define CYAN                    "\033[36m"        /* Cyan */
-#define WHITE                   "\033[37m"        /* White */
-#define BOLDBLACK               "\033[1m\033[30m" /* Bold Black */
-#define BOLDRED                 "\033[1m\033[31m" /* Bold Red */
-#define BOLDGREEN               "\033[1m\033[32m" /* Bold Green */
-#define BOLDYELLOW              "\033[1m\033[33m" /* Bold Yellow */
-#define BOLDBLUE                "\033[1m\033[34m" /* Bold Blue */
-#define BOLDMAGENTA             "\033[1m\033[35m" /* Bold Magenta */
-#define BOLDCYAN                "\033[1m\033[36m" /* Bold Cyan */
-#define BOLDWHITE               "\033[1m\033[37m" /* Bold White */
-// clang-format on
-#endif              /* 0 */
-
 #include <stdarg.h> /* va_list, va_start, va_end */
 
 #if __cplusplus
@@ -38,6 +16,24 @@ typedef enum BifrostLoggerLevel_t
   BIFROST_LOGGER_LVL_POP,      // Meta Data Needed For The Callback (Editor graphical handling) WARNING: DO NOT USE 'info->args' as it will be uninitialized.
 
 } BifrostLoggerLevel;
+
+typedef enum BifrostLoggerColor_t
+{
+  BIFROST_LOGGER_COLOR_BLACK,
+  BIFROST_LOGGER_COLOR_WHITE,
+  BIFROST_LOGGER_COLOR_YELLOW,
+  BIFROST_LOGGER_COLOR_MAGENTA,
+  BIFROST_LOGGER_COLOR_CYAN,
+  BIFROST_LOGGER_COLOR_RED,
+  BIFROST_LOGGER_COLOR_GREEN,
+  BIFROST_LOGGER_COLOR_BLUE,
+
+  BIFROST_LOGGER_COLOR_FG_BOLD   = (1 << 0),
+  BIFROST_LOGGER_COLOR_BG_BOLD   = (1 << 1),
+  BIFROST_LOGGER_COLOR_UNDERLINE = (1 << 2),
+  BIFROST_LOGGER_COLOR_INVERT    = (1 << 3),
+
+} BifrostLoggerColor;
 
 typedef struct BifrostDbgLogInfo_t
 {
@@ -58,6 +54,7 @@ typedef struct IBifrostDbgLogger_t
 
 } IBifrostDbgLogger;
 
+// Main API
 void bfLogger_init(const IBifrostDbgLogger* logger);
 void bfLogPush_(const char* file, const char* func, int line, const char* format, ...);
 void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, const char* format, ...);
@@ -68,14 +65,28 @@ void bfLogPop_(const char* file, const char* func, int line, unsigned amount);
 #endif
 void bfLogger_deinit(void);
 
+// clang-format off
 #ifndef bfLogPush
-#define bfLogPush(format, ...) bfLogPush_(__FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define bfLogPush(format, ...)  bfLogPush_(__FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 #define bfLogPrint(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_VERBOSE, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogWarn(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_WARNING, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogError(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_ERROR, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogFatal(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_FATAL, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogPop(...) bfLogPop_(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define bfLogWarn(format, ...)  bfLogPrint_(BIFROST_LOGGER_LVL_WARNING, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define bfLogError(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_ERROR,   __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define bfLogFatal(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_FATAL,   __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define bfLogPop(...)           bfLogPop_(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 #endif /* bfLogPush */
+// clang-format on
+
+// Helpers for Logging callbacks
+typedef struct
+{
+  BifrostLoggerColor fg_color;
+  BifrostLoggerColor bg_color;
+  unsigned int       flags;
+
+} bfLogColorState;
+
+// Returns the previous color state.
+bfLogColorState bfLogSetColor(BifrostLoggerColor fg_color, BifrostLoggerColor bg_color, unsigned int flags);
 
 #if __cplusplus
 }

@@ -21,9 +21,9 @@
 #ifndef BIFROST_VM_API_H
 #define BIFROST_VM_API_H
 
+#include "bifrost/data_structures/bifrost_dynamic_string.h" /* BifrostString                  */
+#include "bifrost/data_structures/bifrost_hash_map.h"       /* BifrostHashMap                 */
 #include "bifrost_std.h"                                    /* bfStringRange, int32_t, size_t */
-#include <bifrost/data_structures/bifrost_dynamic_string.h> /* BifrostString                  */
-#include <bifrost/data_structures/bifrost_hash_map.h>       /* BifrostHashMap                 */
 
 #if __cplusplus
 extern "C" {
@@ -62,6 +62,16 @@ typedef enum
   BIFROST_VM_ERROR_STACK_TRACE_END,         /*!< VM Runtime */
 
 } BifrostVMError;
+
+typedef enum
+{
+  BIFROST_VM_STD_MODULE_IO          = (1 << 0),
+  BIFROST_VM_STD_MODULE_MEMORY      = (1 << 1),
+  BIFROST_VM_STD_MODULE_FUNCTIONAL  = (1 << 2),
+  BIFROST_VM_STD_MODULE_COLLECTIONS = (1 << 3),
+  BIFROST_VM_STD_MODULE_ALL         = 0xFFFFFFFF,
+
+} BifrostVMStandardModule;
 
 typedef enum
 {
@@ -184,8 +194,10 @@ struct BifrostVM_t
 BifrostVM*     bfVM_new(const BifrostVMParams* params);
 void           bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
 BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
+void           bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
 BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
 void           bfVM_moduleUnload(BifrostVM* self, const char* module);
+void           bfVM_moduleUnloadAll(BifrostVM* self);
 size_t         bfVM_stackSize(const BifrostVM* self);  // The usable size from an API standpoint
 BifrostVMError bfVM_stackResize(BifrostVM* self, size_t size);
 void           bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx);
@@ -217,7 +229,7 @@ void           bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);  
 int32_t        bfVM_handleGetArity(bfValueHandle handle);
 BifrostVMType  bfVM_handleGetType(bfValueHandle handle);
 BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
-BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);
+BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);  // if 'module' == NULL we will exec i an anon module.
 void           bfVM_gc(BifrostVM* self);
 const char*    bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol);
 const char*    bfVM_errorString(const BifrostVM* self);

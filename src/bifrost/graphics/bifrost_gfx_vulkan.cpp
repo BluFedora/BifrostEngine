@@ -306,7 +306,7 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
       return bfFalse;
     }
 
-    const VkFence command_fence = window->swapchain.fences[self->frame_index];
+    const VkFence command_fence = window->swapchain.fences[window->image_index];
 
     if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
     {
@@ -333,7 +333,7 @@ bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, int window_idx
 
   if (window)
   {
-    return {self->frame_index, self->frame_count, self->max_frames_in_flight};
+    return {window->image_index, self->frame_count, window->swapchain.img_list.size};
   }
 
   return {0, 0, 0};
@@ -470,8 +470,8 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 
     list->context        = self;
     list->parent         = self->logical_device;
-    list->handle         = window->swapchain.command_buffers[self->frame_index];
-    list->fence          = window->swapchain.fences[self->frame_index];
+    list->handle         = window->swapchain.command_buffers[window->image_index];
+    list->fence          = window->swapchain.fences[window->image_index];
     list->window         = window;
     list->render_area    = {};
     list->framebuffer    = nullptr;
@@ -479,6 +479,8 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
     list->pipeline_state = {};
     list->has_command    = bfFalse;
     std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
+
+    vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
     bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_LIST);
     bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CW);
@@ -1310,7 +1312,7 @@ namespace
   {
     bfGfxDeviceHandle logical_device = self->logical_device;
 
-    const std::uint32_t num_fences = self->max_frames_in_flight;
+    const std::uint32_t num_fences = window.swapchain.img_list.size;
     window.swapchain.fences        = allocN<VkFence>(num_fences);
 
     for (uint32_t i = 0; i < num_fences; ++i)
@@ -1410,12 +1412,12 @@ namespace
 
   void gfxContextInitCmdBuffers(bfGfxContextHandle self, VulkanWindow& window)
   {
-    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(self, self->max_frames_in_flight);
+    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(self, window.swapchain.img_list.size);
   }
 
   void gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain)
   {
-    gfxContextDestroyCommandBuffers(self, self->max_frames_in_flight, swapchain->command_buffers);
+    gfxContextDestroyCommandBuffers(self, swapchain->img_list.size, swapchain->command_buffers);
     swapchain->command_buffers = nullptr;
   }
 
@@ -1424,7 +1426,7 @@ namespace
     bfGfxDeviceHandle logical_device = self->logical_device;
     VkDevice          device         = logical_device->handle;
 
-    for (uint32_t i = 0; i < self->max_frames_in_flight; ++i)
+    for (uint32_t i = 0; i < swapchain->img_list.size; ++i)
     {
       vkDestroyFence(device, swapchain->fences[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
     }
@@ -1629,6 +1631,29 @@ void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
   return self->alloc_info.mapped_ptr;
 }
 
+VkMappedMemoryRange* bfBuffer__makeRangesN(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges)
+{
+  VkMappedMemoryRange* const ranges = allocN<VkMappedMemoryRange>(num_ranges);
+
+  for (uint32_t i = 0; i < num_ranges; ++i)
+  {
+    ranges[i].sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    ranges[i].pNext  = nullptr;
+    ranges[i].memory = self->alloc_info.handle;
+    ranges[i].offset = self->alloc_info.offset + offsets[i];
+    ranges[i].size   = sizes[i];
+  }
+
+  return ranges;
+}
+
+void bfBuffer_invalidateRanges(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges)
+{
+  VkMappedMemoryRange* const ranges = bfBuffer__makeRangesN(self, offsets, sizes, num_ranges);
+  vkInvalidateMappedMemoryRanges(self->alloc_pool->m_LogicalDevice->handle, num_ranges, ranges);
+  freeN(ranges);
+}
+
 void bfBuffer_copyCPU(bfBufferHandle self, bfBufferSize dst_offset, const void* data, bfBufferSize num_bytes)
 {
   memcpy(static_cast<unsigned char*>(self->alloc_info.mapped_ptr) + dst_offset, data, (size_t)num_bytes);
@@ -1646,6 +1671,15 @@ void bfBuffer_copyGPU(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandl
     vkCmdCopyBuffer(transient_cmd.handle, src->handle, dst->handle, 1, &copy_region);
   }
   gfxContextEndTransientCommandBuffer(transient_cmd);
+}
+
+void bfBuffer_flushRanges(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges)
+{
+  VkMappedMemoryRange* const ranges = bfBuffer__makeRangesN(self, offsets, sizes, num_ranges);
+
+  vkFlushMappedMemoryRanges(self->alloc_pool->m_LogicalDevice->handle, num_ranges, ranges);
+
+  freeN(ranges);
 }
 
 void bfBuffer_unMap(bfBufferHandle self)
@@ -1688,14 +1722,8 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self_, cons
     self->desc_set_layout_infos[i].num_uniforms        = 0;
   }
 
-  if (params->debug_name)
-  {
-    std::strncpy(self->debug_name, params->debug_name, bfCArraySize(self->debug_name));
-  }
-  else
-  {
-    std::strncpy(self->debug_name, "NO_DEBUG_NAME", 14);
-  }
+  std::strncpy(self->debug_name, params->debug_name ? params->debug_name : "NO_DEBUG_NAME", bfCArraySize(self->debug_name));
+  self->debug_name[bfCArraySize(self->debug_name) - 1] = '\0';
 
   return self;
 }
@@ -1705,7 +1733,7 @@ BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self)
   return self->type;
 }
 
-static char* LoadFileIntoMemory(const char* const filename, long* out_size)
+char* LoadFileIntoMemory(const char* const filename, long* out_size)
 {
   FILE* f      = std::fopen(filename, "rb");  // NOLINT(android-cloexec-fopen)
   char* buffer = nullptr;
@@ -2516,6 +2544,8 @@ void bfVertexLayout_addInstanceBinding(bfVertexLayoutSetHandle self, uint32_t bi
 
 void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t binding, BifrostVertexFormatAttribute format, uint32_t offset)
 {
+  assert(self->num_attrib_bindings < BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS);
+
   VkVertexInputAttributeDescription* desc = self->attrib_bindings + self->num_attrib_bindings;
 
   desc->location = self->num_attrib_bindings;
@@ -2531,7 +2561,7 @@ void bfVertexLayout_delete(bfVertexLayoutSetHandle self)
   delete self;
 }
 
-// Idk what;s happeneing with this code
+// Idk what's happeneing with this code
 
 void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj)
 {

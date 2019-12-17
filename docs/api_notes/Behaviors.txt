@@ -24,7 +24,7 @@ This is retarded because then sense of timing will be very off.
 
 ----- Scripting Language Regstry -----
 
-Rether than an int maybe this should be an opaque handle that is really an int.
+Rather than an int maybe this should be an opaque handle that is really an int.
 typedef int bfVMRegistrySlot;
 
 // Psuedo Codes

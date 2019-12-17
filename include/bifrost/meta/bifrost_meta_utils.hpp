@@ -7,6 +7,9 @@
 
 namespace bifrost::meta
 {
+  //
+  // overloaded
+  //
   template<class... Ts>
   struct overloaded : public Ts...
   {
@@ -15,6 +18,9 @@ namespace bifrost::meta
   template<class... Ts>
   overloaded(Ts...)->overloaded<Ts...>;
 
+  //
+  // for_each
+  //
   template<typename Tuple, typename F, std::size_t... Indices>
   constexpr void for_each_impl(Tuple&& tuple, F&& f, std::index_sequence<Indices...>)
   {
@@ -33,6 +39,55 @@ namespace bifrost::meta
      std::forward<Tuple>(tuple),
      std::forward<F>(f),
      std::make_index_sequence<N>{});
+  }
+
+  //
+  // for_each_template
+  //
+  namespace detail
+  {
+    //
+    // C++20 comes with lambda templates so we wouldn't have to do this.
+    // But alas we are stuck on C++17 for now.
+    //
+    template<typename T>
+    struct type_holder
+    {
+      using held_type = T;
+
+      type_holder() = default;
+    };
+
+    template<std::size_t, typename T, typename... Args>
+    class for_each_template_impl
+    {
+     public:
+      template<typename F>
+      static void impl(F&& func)
+      {
+        func(type_holder<T>());
+        for_each_template_impl<sizeof...(Args), Args...>::impl(func);
+      }
+    };
+
+    template<typename T>
+    class for_each_template_impl<1, T>
+    {
+     public:
+      template<typename F>
+      static void impl(F&& func)
+      {
+        func(type_holder<T>());
+      }
+    };
+  }  // namespace detail
+
+  #define bfForEachTemplateT(t) typename std::decay<decltype((t))>::type::held_type
+
+  template<typename... Args, typename F>
+  void for_each_template(F&& func)
+  {
+    detail::for_each_template_impl<sizeof...(Args), Args...>::impl(func);
   }
 }  // namespace bifrost::meta
 

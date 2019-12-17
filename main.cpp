@@ -1,15 +1,89 @@
 #include "bifrost/bifrost_version.h"
+
+#include "bifrost/core/bifrost_game_state_machine.hpp"
+#include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#include "bifrost/platform/bifrost_window_glfw.hpp"
+#include "demo/game_state_layers/main_demo.hpp"
+#include "imgui/imgui.h"
 #include <bifrost/bifrost.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
+#include <chrono>
+#include <functional>
 #include <glfw/glfw3.h>
 #include <iostream> /*  */
+#include <thread>
 #include <utility>
-
-// [https://www.glfw.org/docs/latest/group__native.html]
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include "bifrost/platform/bifrost_window_glfw.hpp"
+#include "bifrost/asset_io/test.h"
 #include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
+
+namespace bifrost
+{
+  class Entity : public BaseObject<Entity>
+  {
+   public:
+    Entity()
+    {
+      std::printf("Created an entity\n");
+    }
+  };
+
+  template<typename TDerived>
+  class Component : public BaseObject<Component<TDerived>, TDerived>
+  {
+   public:
+    Component() = default;
+  };
+
+  class SpriteComponent : public Component<SpriteComponent>
+  {
+   public:
+    SpriteComponent()
+    {
+      std::printf("Created a SpriteComponent\n");
+    }
+  };
+
+  class MeshComponent : public Component<MeshComponent>
+  {
+   public:
+    MeshComponent()
+    {
+      std::printf("Created a MeshComponent\n");
+    }
+  };
+
+  namespace meta
+  {
+    template<>
+    const auto& Meta::registerMembers<Entity>()
+    {
+      static auto member_ptrs = members(
+       class_info<Entity>("Entity"));
+
+      return member_ptrs;
+    }
+
+    template<>
+    const auto& Meta::registerMembers<SpriteComponent>()
+    {
+      static auto member_ptrs = members(
+       class_info<SpriteComponent, Component<SpriteComponent>>("SpriteComponent"));
+
+      return member_ptrs;
+    }
+
+    template<>
+    const auto& Meta::registerMembers<MeshComponent>()
+    {
+      static auto member_ptrs = members(
+       class_info<MeshComponent, Component<MeshComponent>>("MeshComponent"));
+
+      return member_ptrs;
+    }
+  }  // namespace meta
+}  // namespace bifrost
 
 class TestClass
 {
@@ -33,7 +107,7 @@ class TestClass
   [[nodiscard]] const char* printf(float h) const
   {
     std::cout << "h = " << h << ", my var = " << x << "\n";
-    return "__ Return from printf __";
+    return "__ Return from printf *^";
   }
 
   void myRandomFn(int hello) const
@@ -79,7 +153,7 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
   }
   else
   {
-    printf("%s", message);
+    std::printf("%s", message);
   }
 }
 
@@ -89,19 +163,20 @@ void testFN()
 }
 
 static const char source[] = R"(
-  import "main" for TestClass, cppFn, BigFunc, AnotherOne;
+  import "main"    for TestClass, cppFn, BigFunc, AnotherOne;
   import "bifrost" for Camera;
+  import "std:io"  for print;
 
   static var cam = new Camera();
 
   var t = new TestClass.ctor(28);
-  print "ret from t = " +  t:printf(54);
+  print("ret from t = " +  t:printf(54));
 
   hello();
 
   func hello()
   {
-    print "Hello from another module.";
+    print("Hello from another module.");
   }
 
   class GameState
@@ -123,7 +198,7 @@ static const char source[] = R"(
 
   func callMeFromCpp(arg0, arg1, arg2)
   {
-    print "You passed in: " + arg0 + ", " + arg1 + ", "  + arg2;
+    print("You passed in: " + arg0 + ", " + arg1 + ", "  + arg2);
     cppFn();
   }
 )";
@@ -136,15 +211,58 @@ struct BifrostEngineCreateParams : public bfGfxContextCreateParams
 
 static GLFWwindow* g_Window = nullptr;
 
+class Model
+{
+  bfBufferHandle vertex_buffer = nullptr;
+  size_t         num_vertices  = 0;
+
+ public:
+  void load(bfGfxDeviceHandle device, const char* file)
+  {
+    long  file_size;
+    char* file_data;
+
+    if ((file_data = LoadFileIntoMemory(file, &file_size)))
+    {
+      TEST_ModelData data = TEST_AssetIO_loadObj(file_data, (uint)file_size);
+      num_vertices        = Array_size(&data.vertices);
+
+      bfBufferCreateParams buffer_params;
+      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
+      buffer_params.allocation.size       = sizeof(BasicVertex) * num_vertices;
+      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+
+      vertex_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
+
+      void* vertex_buffer_ptr = bfBuffer_map(vertex_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+
+      std::memcpy(vertex_buffer_ptr, data.vertices, buffer_params.allocation.size);
+
+      bfBuffer_flushRange(vertex_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      bfBuffer_unMap(vertex_buffer);
+
+      data.destroy();
+    }
+  }
+
+  void draw(bfGfxCommandListHandle cmdlist)
+  {
+    uint64_t buffer_offset = 0;
+    bfGfxCmdList_bindVertexBuffers(cmdlist, 0, &vertex_buffer, 1, &buffer_offset);
+    bfGfxCmdList_draw(cmdlist, 0, (uint32_t)num_vertices);
+  }
+
+  void unload(bfGfxDeviceHandle device)
+  {
+    bfGfxDevice_release(device, vertex_buffer);
+    vertex_buffer = nullptr;
+  }
+};
+
+static Model s_Model;
+
 class BaseRenderer
 {
-  struct BasicVertex final
-  {
-    float         pos[4];
-    unsigned char color[4];
-    float         uv[2];
-  };
-
  private:
   bfGfxContextHandle           m_GfxBackend;
   bfGfxDeviceHandle            m_GfxDevice;
@@ -218,11 +336,12 @@ class BaseRenderer
     m_BasicVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_BasicVertexLayout, 0, sizeof(BasicVertex));
     bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(BasicVertex, pos));
+    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(BasicVertex, normal));
     bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(BasicVertex, color));
     bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_2, offsetof(BasicVertex, uv));
 
     bfBufferCreateParams buffer_params;
-    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
     buffer_params.allocation.size       = sizeof(BasicVertex) * 4;
     buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
 
@@ -233,17 +352,18 @@ class BaseRenderer
 
     m_IndexBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
 
-    buffer_params.allocation.size = 0x100 * 2;
-    buffer_params.usage           = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
+    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+    buffer_params.allocation.size       = 0x100 * 2;
+    buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
 
     m_UniformBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
 
     const BasicVertex VERTEX_DATA[] =
      {
-      {{-0.5f, -0.5f, 0.0f, 1.0f}, {0, 255, 255, 255}, {0.0f, 0.0f}},
-      {{+0.5f, -0.5f, 0.0f, 1.0f}, {255, 255, 0, 255}, {1.0f, 0.0f}},
-      {{+0.5f, +0.5f, 0.0f, 1.0f}, {255, 0, 255, 255}, {1.0f, 1.0f}},
-      {{-0.5f, +0.5f, 0.0f, 1.0f}, {255, 255, 255, 255}, {0.0f, 1.0f}},
+      {Vec3f{-0.5f, -0.5f, 0.0f, 1.0f}, Vec3f{}, {0, 255, 255, 255}, {0.0f, 0.0f}},
+      {Vec3f{+0.5f, -0.5f, 0.0f, 1.0f}, Vec3f{}, {255, 255, 0, 255}, {1.0f, 0.0f}},
+      {Vec3f{+0.5f, +0.5f, 0.0f, 1.0f}, Vec3f{}, {255, 0, 255, 255}, {1.0f, 1.0f}},
+      {Vec3f{-0.5f, +0.5f, 0.0f, 1.0f}, Vec3f{}, {255, 255, 255, 255}, {0.0f, 1.0f}},
      };
 
     const uint16_t INDEX_DATA[] = {0u, 1u, 2u, 3u, 2u, 0u};
@@ -254,6 +374,8 @@ class BaseRenderer
     std::memcpy(vertex_buffer_ptr, VERTEX_DATA, sizeof(VERTEX_DATA));
     std::memcpy(index_buffer_ptr, INDEX_DATA, sizeof(INDEX_DATA));
 
+    bfBuffer_flushRange(m_VertexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+    bfBuffer_flushRange(m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
     bfBuffer_unMap(m_VertexBuffer);
     bfBuffer_unMap(m_IndexBuffer);
 
@@ -263,7 +385,7 @@ class BaseRenderer
     // create_texture.generate_mipmaps = bfFalse;
 
     m_TestTexture = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
-    bfTexture_loadFile(m_TestTexture, "../assets/texture.png");
+    bfTexture_loadFile(m_TestTexture, "assets/texture.png");
     bfTexture_setSampler(m_TestTexture, &sampler);
 
     bfShaderProgramCreateParams create_shader;
@@ -274,8 +396,8 @@ class BaseRenderer
     m_ShaderModuleF = bfGfxDevice_newShaderModule(m_GfxDevice, BIFROST_SHADER_TYPE_FRAGMENT);
     m_ShaderProgram = bfGfxDevice_newShaderProgram(m_GfxDevice, &create_shader);
 
-    bfShaderModule_loadFile(m_ShaderModuleV, "../assets/basic_material.vert.spv");
-    bfShaderModule_loadFile(m_ShaderModuleF, "../assets/basic_material.frag.spv");
+    bfShaderModule_loadFile(m_ShaderModuleV, "assets/basic_material.vert.spv");
+    bfShaderModule_loadFile(m_ShaderModuleF, "assets/basic_material.frag.spv");
 
     bfShaderProgram_addModule(m_ShaderProgram, m_ShaderModuleV);
     bfShaderProgram_addModule(m_ShaderProgram, m_ShaderModuleF);
@@ -310,6 +432,8 @@ class BaseRenderer
     m_Resources.push_back(m_VertexBuffer);
     m_Resources.push_back(m_IndexBuffer);
     m_Resources.push_back(m_UniformBuffer);
+
+    s_Model.load(m_GfxDevice, "assets/models/cultchar.obj");
   }
 
   [[nodiscard]] bool frameBegin()
@@ -479,12 +603,14 @@ class BaseRenderer
       bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
       bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
 
+      bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
       bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
+
+      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
+      s_Model.draw(m_MainCmdList);
+
       bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
       bfGfxCmdList_bindIndexBuffer(m_MainCmdList, m_IndexBuffer, 0, BIFROST_INDEX_TYPE_UINT16);
-      bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
-      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
-      bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
       bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial2, 1);
       bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
     }
@@ -504,6 +630,8 @@ class BaseRenderer
   {
     bfGfxDevice_flush(m_GfxDevice);
 
+    s_Model.unload(m_GfxDevice);
+
     bfGfxDevice_release(m_GfxDevice, m_DepthBuffer);
 
     for (auto resource : m_Resources)
@@ -517,23 +645,29 @@ class BaseRenderer
   }
 };
 
+namespace bifrost
+{
+}
+
 class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 {
  private:
   std::pair<int, const char**> m_CmdlineArgs;
+  bifrost::FreeListAllocator   m_MainMemory;
+  bifrost::GameStateMachine    m_StateMachine;
   BaseRenderer                 m_Renderer;
 
  public:
   BifrostEngine(int argc, const char* argv[]) :
     m_CmdlineArgs{argc, argv},
+    m_MainMemory{new char[100000000ull], 100000000ull},
+    m_StateMachine{*this, m_MainMemory},
     m_Renderer{}
   {
   }
 
-  BaseRenderer& renderer()
-  {
-    return m_Renderer;
-  }
+  bifrost::GameStateMachine& stateMachine() { return m_StateMachine; }
+  BaseRenderer&              renderer() { return m_Renderer; }
 
   void init(const BifrostEngineCreateParams& params)
   {
@@ -564,17 +698,37 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 
     m_Renderer.startup(params);
 
+    bifrost::BaseObjectT::instanciate("Entity", m_MainMemory);
+    bifrost::BaseObjectT::instanciate("Component", m_MainMemory);
+    bifrost::BaseObjectT::instanciate("SpriteComponent", m_MainMemory);
+    bifrost::BaseObjectT::instanciate("MeshComponent", m_MainMemory);
+
     bfLogPop();
   }
 
   [[nodiscard]] bool beginFrame()
   {
+    m_StateMachine.purgeStates();
+
     return m_Renderer.frameBegin();
+  }
+
+  void onEvent(bifrost::Event& evt)
+  {
+    for (auto it = m_StateMachine.rbegin(); (evt.flags & bifrost::Event::FLAGS_IS_ACCEPTED) == 0 && it != m_StateMachine.rend(); ++it)
+    {
+      it->onEvent(*this, evt);
+    }
   }
 
   void update()
   {
     m_Renderer.frameUpdate();
+
+    for (auto& state : m_StateMachine)
+    {
+      state.onUpdate(*this, 0.0f);
+    }
   }
 
   void endFrame()
@@ -584,8 +738,14 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 
   void deinit()
   {
+    m_StateMachine.removeAll();
     bfLogger_deinit();
     m_Renderer.cleanup();
+  }
+
+  ~BifrostEngine()
+  {
+    delete[] m_MainMemory.begin();
   }
 };
 
@@ -610,10 +770,6 @@ namespace bifrost::meta
   }
 }  // namespace bifrost::meta
 
-#include <chrono>
-#include <functional>
-#include <thread>
-
 namespace bifrost
 {
   class Camera
@@ -631,17 +787,59 @@ namespace bifrost
   };
 }  // namespace bifrost
 
+#ifdef _WIN32
+extern "C" {
+__declspec(dllexport) DWORD NvOptimusEnablement                = 0x00000001;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif  //  _WIN32
+
+static GLFWmonitor* get_current_monitor(GLFWwindow* window)
+{
+  int                nmonitors, i;
+  int                wx, wy, ww, wh;
+  int                mx, my, mw, mh;
+  int                overlap, bestoverlap;
+  GLFWmonitor*       bestmonitor;
+  const GLFWvidmode* mode;
+
+  bestoverlap = 0;
+  bestmonitor = nullptr;
+
+  glfwGetWindowPos(window, &wx, &wy);
+  glfwGetWindowSize(window, &ww, &wh);
+  GLFWmonitor** monitors = glfwGetMonitors(&nmonitors);
+
+  for (i = 0; i < nmonitors; i++)
+  {
+    mode = glfwGetVideoMode(monitors[i]);
+    glfwGetMonitorPos(monitors[i], &mx, &my);
+    mw = mode->width;
+    mh = mode->height;
+
+    overlap = max(0, min(wx + ww, mx + mw) - max(wx, mx)) * max(0, min(wy + wh, my + mh) - max(wy, my));
+
+    if (bestoverlap < overlap)
+    {
+      bestoverlap = overlap;
+      bestmonitor = monitors[i];
+    }
+  }
+
+  return bestmonitor;
+}
+
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
-  std::printf("Bifrost Engine v%s\n", BIFROST_VERSION_STR);
+  bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+  std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
+  bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
   using namespace bifrost;
   namespace bfmeta = meta;
   namespace bf     = bifrost;
 
   static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
-
-  std::cout << __cplusplus << "\n";
 
   TestClass my_obj = {74, "This message will be in Y"};
 
@@ -685,72 +883,20 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   }
   */
 
-  std::cout << "\n\nScripting Language Test Begin\n";
-
-  VMParams vm_params{};
-  vm_params.error_fn           = &userErrorFn;
-  vm_params.print_fn           = [](BifrostVM*, const char* message) { std::cout << message << "\n"; };
-  vm_params.min_heap_size      = 20;
-  vm_params.heap_size          = 200;
-  vm_params.heap_growth_factor = 0.1f;
-  VM vm{vm_params};
-
-  const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<bf::Camera>("Camera", bf::vmMakeCtorBinding<bf::Camera>());
-
-  vm.stackResize(5);
-  vm.moduleMake(0, "bifrost");
-  vm.stackStore(0, camera_clz_bindings);
-  vm.stackLoadVariable(1, 0, "Camera");
-  vm.stackStore(1, "update", &bf::Camera::update);
-
-  const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
-   "TestClass",
-   bf::vmMakeCtorBinding<TestClass, int>(),
-   bf::vmMakeMemberBinding<&TestClass::printf>("printf"));
-
-  vm.stackResize(1);
-  vm.moduleMake(0, "main");
-  vm.stackStore(0, clz_bind);
-  vm.stackStore<testFN>(0, "cppFn");
-
-  float capture = 6.0f;
-  vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
-    std::printf("Will this work out %f???\n", capture);
-    ++capture;
-    my_obj.x = 65;
-  });
-  vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
-
-  const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
-
-  bfValueHandle update_fn = nullptr;
-
-  if (!err)
-  {
-    vm.stackResize(1);
-    vm.moduleLoad(0, "main2");
-    vm.stackLoadVariable(0, 0, "callMeFromCpp");
-
-    vm.call(0, 45, std::string("Hello from cpp") + "!!!", false);
-
-    vm.moduleLoad(0, "main2");
-    vm.stackLoadVariable(0, 0, "update");
-    update_fn = vm.stackMakeHandle(0);
-  }
-
-  std::cout << "\n\nScripting Language Test End\n";
-
   {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     WindowGLFW    window{};
     BifrostEngine engine{argc, argv};
-    // editor::Editor editor{main_window, engine};
 
-    window.open("Bifrost Engine");
-    // glfwSetWindowSizeLimits(main_window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    if (!window.open("Bifrost Engine"))
+    {
+      return -1;
+    }
 
     g_Window = window.handle();
+
+    glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
     const BifrostEngineCreateParams params =
      {
@@ -768,17 +914,107 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     editor::imgui::startup(engine.renderer().context(), window);
 
+    engine.stateMachine().push<MainDemoLayer>();
+
+    std::cout << "\n\nScripting Language Test Begin\n";
+
+    VMParams vm_params{};
+    vm_params.error_fn = &userErrorFn;
+    vm_params.print_fn = [](BifrostVM*, const char* message) {
+      bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
+      bfLogPush("Print From Script");
+      bfLogPrint("(BTS) %s", message);
+      bfLogPop();
+      bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+    };
+    vm_params.min_heap_size      = 20;
+    vm_params.heap_size          = 200;
+    vm_params.heap_growth_factor = 0.1f;
+    VM vm{vm_params};
+
+    const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<bf::Camera>("Camera", bf::vmMakeCtorBinding<bf::Camera>());
+
+    vm.stackResize(5);
+
+    vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
+
+    vm.moduleMake(0, "bifrost");
+    vm.stackStore(0, camera_clz_bindings);
+    vm.stackLoadVariable(1, 0, "Camera");
+    vm.stackStore(1, "update", &bf::Camera::update);
+
+    const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
+     "TestClass",
+     bf::vmMakeCtorBinding<TestClass, int>(),
+     bf::vmMakeMemberBinding<&TestClass::printf>("printf"));
+
+    vm.stackResize(1);
+    vm.moduleMake(0, "main");
+    vm.stackStore(0, clz_bind);
+    vm.stackStore<testFN>(0, "cppFn");
+
+    float capture = 6.0f;
+    vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
+      std::printf("Will this work out %f???\n", capture);
+      ++capture;
+      my_obj.x = 65;
+    });
+    vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
+
+    const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
+
+    bfValueHandle update_fn = nullptr;
+
+    if (!err)
+    {
+      vm.stackResize(1);
+      vm.moduleLoad(0, "main2");
+      vm.stackLoadVariable(0, 0, "callMeFromCpp");
+
+      vm.call(0, 45, std::string("Hello from cpp") + "!!!", false);
+
+      vm.moduleLoad(0, "main2");
+      vm.stackLoadVariable(0, 0, "update");
+      update_fn = vm.stackMakeHandle(0);
+    }
+
+    std::cout << "\n\nScripting Language Test End\n";
+
     while (!window.wantsToClose())
     {
       int window_width, window_height;
       glfwGetWindowSize(window.handle(), &window_width, &window_height);
 
       glfwPollEvents();
-      
+
       while (window.hasNextEvent())
       {
-        const Event evt = window.getNextEvent();
+        Event evt = window.getNextEvent();
+
+        if (evt.type == EventType::ON_KEY_DOWN && evt.keyboard.key == 'P')
+        {
+          static bool isFullscreen = false;
+          static int  old_info[4];
+
+          if (isFullscreen)
+          {
+            glfwSetWindowMonitor(g_Window, nullptr, old_info[0], old_info[1], old_info[2], old_info[3], 60);
+          }
+          else
+          {
+            glfwGetWindowPos(g_Window, &old_info[0], &old_info[1]);
+            glfwGetWindowSize(g_Window, &old_info[2], &old_info[3]);
+
+            GLFWmonitor*       monitor = get_current_monitor(g_Window);
+            const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
+            glfwSetWindowMonitor(g_Window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+          }
+
+          isFullscreen = !isFullscreen;
+        }
+
         editor::imgui::onEvent(evt);
+        engine.onEvent(evt);
       }
 
       if (engine.beginFrame())
@@ -805,17 +1041,111 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
         engine.endFrame();
       }
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(16 * 1));
+      // std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1));
     }
 
+    vm.stackDestroyHandle(update_fn);
     editor::imgui::shutdown();
     engine.deinit();
     window.close();
   }
 
-  vm.stackDestroyHandle(update_fn);
-
   shutdownGLFW();
 
   return 0;
 }
+
+void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
+{
+  if (m_Name != std::string("ImGUI 0"))
+    return;
+
+  ImGui::ShowDemoWindow();
+
+  ImGuiIO& io = ImGui::GetIO();
+
+  const auto height = io.DisplaySize.y - 10.0f;
+
+  ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f));
+  ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
+  ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
+  if (ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoMove))
+  {
+    ImGui::Button("Create Entity");
+
+    ImGui::Separator();
+
+    for (int i = 0; i < 100; ++i)
+      ImGui::Selectable("Item");
+  }
+  ImGui::End();
+
+  window("Game State Machine", [&engine]() {
+    auto& state_machine = engine.stateMachine();
+
+    for (auto& state : state_machine)
+    {
+      ImGui::PushID(&state);
+      if (ImGui::TreeNode(state.name()))
+      {
+        if (&state == state_machine.head())
+        {
+          ImGui::TextColored(ImVec4{1.0f, 0.0f, 0.0f, 1.0f}, "Layer Head");
+        }
+
+        if (&state == state_machine.tail())
+        {
+          ImGui::TextColored(ImVec4{0.0f, 1.0f, 0.0f, 1.0f}, "Layer Tail");
+        }
+
+        if (&state == state_machine.overlayHead())
+        {
+          ImGui::TextColored(ImVec4{0.0f, 1.0f, 0.0f, 1.0f}, "Overlay Head");
+        }
+
+        if (&state == state_machine.overlayTail())
+        {
+          ImGui::TextColored(ImVec4{1.0f, 0.0f, 1.0f, 1.0f}, "Overlay Tail");
+        }
+
+        ImGui::Text("Prev: %s", state.prev() ? state.prev()->name() : "<null>");
+        ImGui::Text("Next: %s", state.next() ? state.next()->name() : "<null>");
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Push Before"))
+        {
+          state_machine.pushBefore<ImGUIOverlay>(state, "Useless");
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Push After"))
+        {
+          state_machine.pushAfter<ImGUIOverlay>(state, "Garbage");
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Remove"))
+        {
+          state_machine.remove(&state);
+        }
+
+        ImGui::TreePop();
+      }
+      ImGui::PopID();
+    }
+  });
+}
+
+void MainDemoLayer::onLoad(BifrostEngine& engine)
+{
+  bfLogPrint("MainDemoLayer::onLoad Start");
+  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 0");
+  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 1");
+  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 2");
+  bfLogPrint("MainDemoLayer::onLoad End");
+}
+
+#include "src/bifrost/asset_io/test.cpp"

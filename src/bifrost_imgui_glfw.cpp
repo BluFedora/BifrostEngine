@@ -2,12 +2,15 @@
 
 #include "bifrost/graphics/bifrost_gfx_api.h"
 #include "bifrost/math/bifrost_mat4x4.h"
+#include "bifrost/platform/bifrost_window_glfw.hpp"
 #include <algorithm>
 #include <glfw/glfw3.h>  // Cursors, KeyboardKeys, and Clipboard...
 #include <imgui/imgui.h>
 
 namespace bifrost::editor::imgui
 {
+  using namespace bifrost;
+
   struct UIFrameData
   {
     bfBufferHandle        vertex_buffer;
@@ -76,7 +79,7 @@ namespace bifrost::editor::imgui
     bfVertexLayoutSetHandle vertex_layout;
     bfShaderModuleHandle    vertex_shader;
     bfShaderModuleHandle    fragment_shader;
-    UIFrameData             buffers[2];
+    UIFrameData             buffers[3];
     bfTextureHandle         font;
     bfShaderProgramHandle   program;
   };
@@ -130,6 +133,7 @@ namespace bifrost::editor::imgui
     io.ClipboardUserData  = &window;
 
     // Cursors
+    io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     s_MouseCursors[ImGuiMouseCursor_Arrow]      = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
     s_MouseCursors[ImGuiMouseCursor_TextInput]  = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
     s_MouseCursors[ImGuiMouseCursor_ResizeNS]   = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
@@ -161,8 +165,8 @@ namespace bifrost::editor::imgui
     s_RenderData.fragment_shader = bfGfxDevice_newShaderModule(device, BIFROST_SHADER_TYPE_FRAGMENT);
     s_RenderData.program         = bfGfxDevice_newShaderProgram(device, &create_shader);
 
-    bfShaderModule_loadFile(s_RenderData.vertex_shader, "../assets/imgui.vert.spv");
-    bfShaderModule_loadFile(s_RenderData.fragment_shader, "../assets/imgui.frag.spv");
+    bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/imgui.vert.spv");
+    bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/imgui.frag.spv");
 
     bfShaderProgram_addModule(s_RenderData.program, s_RenderData.vertex_shader);
     bfShaderProgram_addModule(s_RenderData.program, s_RenderData.fragment_shader);
@@ -173,6 +177,12 @@ namespace bifrost::editor::imgui
     bfShaderProgram_compile(s_RenderData.program);
 
     // Renderer Setup: Font Texture
+    io.Fonts->AddFontFromFileTTF(
+     "assets/fonts/Abel.ttf",
+     18.0f,
+     nullptr,
+     nullptr);
+
     unsigned char* pixels;
     int            width, height, bytes_per_pixel;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
@@ -188,9 +198,9 @@ namespace bifrost::editor::imgui
 
     // Renderer Setup: Descriptor Set
 
-    for (int i = 0; i < 2; ++i)
+    for (auto& buffer : s_RenderData.buffers)
     {
-      s_RenderData.buffers[i].create(device, s_RenderData.program, s_RenderData.font);
+      buffer.create(device, s_RenderData.program, s_RenderData.font);
     }
   }
 
@@ -283,17 +293,23 @@ namespace bifrost::editor::imgui
     io.DeltaTime = s_Time > 0.0 ? current_time - s_Time : 1.0f / 60.0f;
     s_Time       = current_time;
 
-    ImGui::NewFrame();
-
-    if (ImGui::Begin("Test GUI"))
+    if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) /*|| glfwGetInputMode(g_Window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED*/)
     {
-      static float t         = 0.5f;
-      static char  text[500] = "Hello";
+      bifrost::WindowGLFW* window = reinterpret_cast<bifrost::WindowGLFW*>(static_cast<bifrost::IBaseWindow*>(io.ClipboardUserData));
 
-      ImGui::DragFloat("Hmmm", &t);
-      ImGui::InputText("Text uwu", text, sizeof(text) - 1);
+      ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
+      if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
+      {
+        glfwSetInputMode(window->handle(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+      }
+      else
+      {
+        glfwSetCursor(window->handle(), s_MouseCursors[imgui_cursor] ? s_MouseCursors[imgui_cursor] : s_MouseCursors[ImGuiMouseCursor_Arrow]);
+        glfwSetInputMode(window->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      }
     }
-    ImGui::End();
+
+    ImGui::NewFrame();
   }
 
   static void frameResetState(bfGfxCommandListHandle command_list, UIFrameData& frame, int fb_width, int fb_height)
@@ -431,9 +447,9 @@ namespace bifrost::editor::imgui
     bfGfxDevice_release(s_RenderData.device, s_RenderData.program);
     bfGfxDevice_release(s_RenderData.device, s_RenderData.font);
 
-    for (int i = 0; i < 2; ++i)
+    for (auto& buffer : s_RenderData.buffers)
     {
-      s_RenderData.buffers[i].destroy(s_RenderData.device);
+      buffer.destroy(s_RenderData.device);
     }
 
     for (auto& cursor : s_MouseCursors)

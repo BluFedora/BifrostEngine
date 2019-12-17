@@ -3,14 +3,14 @@
 // #include "bifrost_std.h" /* bfStructHack */
 
 #ifndef bfStructHack
-  #if __STDC_VERSION__ >= 199901L
-    // In C99, a flexible array member is just "[]".
-    #define bfStructHack 
-  #else
-    // Elsewhere, use a zero-sized array. It's technically undefined behavior,
-    // but works reliably in most known compilers.
-    #define bfStructHack 0
-  #endif
+#if __STDC_VERSION__ >= 199901L
+// In C99, a flexible array member is just "[]".
+#define bfStructHack
+#else
+// Elsewhere, use a zero-sized array. It's technically undefined behavior,
+// but works reliably in most known compilers.
+#define bfStructHack 0
+#endif
 #endif
 
 #include <assert.h> /* assert             */
@@ -24,8 +24,8 @@ struct bfHashNode_t
   char        value[bfStructHack];
 };
 
-static bfHashNode* bfHashMap_newNode(const void *key, size_t value_size, void *value, bfHashNode* next);
-static bfHashNode* bfHashMap_getNode(const BifrostHashMap* self, const void *key, unsigned hash);
+static bfHashNode* bfHashMap_newNode(const void* key, size_t value_size, void* value, bfHashNode* next);
+static bfHashNode* bfHashMap_getNode(const BifrostHashMap* self, const void* key, unsigned hash);
 static void        bfHashMap_deleteNode(const BifrostHashMap* self, bfHashNode* node);
 static void        bfHashMap_defaultDtor(void* key, void* value);
 static unsigned    bfHashMap_defaultHash(const void* key);
@@ -64,8 +64,8 @@ void bfHashMap_ctor(BifrostHashMap* self, const BifrostHashMapParams* params)
 
 void bfHashMap_set(BifrostHashMap* self, const void* key, void* value)
 {
-  unsigned hash    = self->params.hash(key) % self->num_buckets;
-  bfHashNode* node = bfHashMap_getNode(self, key, hash);
+  const unsigned hash = self->params.hash(key) % self->num_buckets;
+  bfHashNode*    node = bfHashMap_getNode(self, key, hash);
 
   if (node)
   {
@@ -81,27 +81,32 @@ void bfHashMap_set(BifrostHashMap* self, const void* key, void* value)
 
 int bfHashMap_has(const BifrostHashMap* self, const void* key)
 {
-  unsigned hash = self->params.hash(key) % self->num_buckets;
+  const unsigned hash = self->params.hash(key) % self->num_buckets;
   return bfHashMap_getNode(self, key, hash) != NULL;
 }
 
 void* bfHashMap_get(BifrostHashMap* self, const void* key)
 {
-  unsigned hash    = self->params.hash(key) % self->num_buckets;
-  bfHashNode* node = bfHashMap_getNode(self, key, hash);
+  const unsigned hash = self->params.hash(key) % self->num_buckets;
+  bfHashNode*    node = bfHashMap_getNode(self, key, hash);
 
   return node ? node->value : NULL;
 }
 
-void bfHashMap_remove(BifrostHashMap* self, const void* key)
+int bfHashMap_remove(BifrostHashMap* self, const void* key)
 {
-  unsigned hash      = self->params.hash(key) % self->num_buckets;
-  bfHashNode* cursor = self->buckets[hash];
-  bfHashNode* prev   = NULL;
+  return bfHashMap_removeCmp(self, key, self->params.cmp);
+}
+
+int bfHashMap_removeCmp(BifrostHashMap* self, const void* key, bfHashMapCmp cmp)
+{
+  const unsigned hash   = self->params.hash(key) % self->num_buckets;
+  bfHashNode*    cursor = self->buckets[hash];
+  bfHashNode*    prev   = NULL;
 
   while (cursor)
   {
-    if (self->params.cmp(key, cursor->key))
+    if (cmp(key, cursor->key))
     {
       if (prev)
       {
@@ -111,19 +116,21 @@ void bfHashMap_remove(BifrostHashMap* self, const void* key)
       {
         self->buckets[hash] = cursor->next;
       }
-      
+
       bfHashMap_deleteNode(self, cursor);
-      break;
+      return 1;
     }
 
     prev   = cursor;
     cursor = cursor->next;
   }
+
+  return 0;
 }
 
 bfHashMapIter bfHashMap_itBegin(const BifrostHashMap* self)
 {
-  bfHashMapIter begin_it = { NULL, NULL, -1, NULL };
+  bfHashMapIter begin_it = {NULL, NULL, -1, NULL};
 
   for (int i = 0; i < (int)self->num_buckets; ++i)
   {
@@ -203,25 +210,25 @@ void bfHashMap_delete(BifrostHashMap* self)
   free(self);
 }
 
-static bfHashNode* bfHashMap_newNode(const void *key, size_t value_size, void *value, bfHashNode* next)
+static bfHashNode* bfHashMap_newNode(const void* key, size_t value_size, void* value, bfHashNode* next)
 {
-  bfHashNode* node = (bfHashNode *)malloc(sizeof(bfHashNode) + value_size);
+  bfHashNode* node = (bfHashNode*)malloc(sizeof(bfHashNode) + value_size);
 
   if (node)
   {
-    node->key   = key;
-    node->next  = next;
+    node->key  = key;
+    node->next = next;
     memcpy(node->value, value, value_size);
   }
   else
   {
     assert(!"Failed to alloc memory for a bfHashNode.");
   }
-  
+
   return node;
 }
 
-static bfHashNode* bfHashMap_getNode(const BifrostHashMap* self, const void *key, unsigned hash)
+static bfHashNode* bfHashMap_getNode(const BifrostHashMap* self, const void* key, unsigned hash)
 {
   bfHashNode* cursor = self->buckets[hash];
 
@@ -246,18 +253,19 @@ static void bfHashMap_deleteNode(const BifrostHashMap* self, bfHashNode* node)
 
 static void bfHashMap_defaultDtor(void* key, void* value)
 {
-  (void) key;
-  (void) value;
+  (void)key;
+  (void)value;
 }
 
 static unsigned bfHashMap_defaultHash(const void* key)
 {
-  const char* cp = (const char *)key;
+  const char* cp   = (const char*)key;
   unsigned    hash = 0x811c9dc5;
 
-  while (*cp) {
-      hash ^= (unsigned char) *cp++;
-      hash *= 0x01000193;
+  while (*cp)
+  {
+    hash ^= (unsigned char)*cp++;
+    hash *= 0x01000193;
   }
 
   return hash;

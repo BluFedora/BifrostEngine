@@ -16,23 +16,27 @@
 /******************************************************************************/
 #include "bifrost/data_structures/bifrost_array_t.h"
 
-#include "bifrost/bifrost_c_alloc.h"
-
 #ifndef BIFROST_MALLOC
-  #include "bifrost/memory/bifrost_allocator.h"
-  #define BIFROST_MALLOC(size, align)            Bifrost_alloc((size), (align))
-  #define BIFROST_REALLOC(ptr, new_size, align)  Bifrost_realloc((ptr), (new_size), (align))
-  #define BIFROST_FREE(ptr)                      Bifrost_free((ptr))
+#define BIFROST_MALLOC(size, align) malloc((size))
+#define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
+#define BIFROST_FREE(ptr) free((ptr))
 #endif
 
-#include <stdlib.h>   /* qsort, bsearch */
-#include <string.h>   /* memcpy         */
-#include <stdint.h>   /* uint8_t        */
+#ifndef BIFROST_MALLOC
+#include "bifrost/memory/bifrost_allocator.h"
+#define BIFROST_MALLOC(size, align) Bifrost_alloc((size), (align))
+#define BIFROST_REALLOC(ptr, new_size, align) Bifrost_realloc((ptr), (new_size), (align))
+#define BIFROST_FREE(ptr) Bifrost_free((ptr))
+#endif
+
+#include <stdint.h> /* uint8_t        */
+#include <stdlib.h> /* qsort, bsearch */
+#include <string.h> /* memcpy         */
 #ifdef _DEBUG
-  #include <assert.h> /* assert         */
-  #define PRISM_ASSERT(arg, msg) assert((arg) && (msg))
+#include <assert.h> /* assert         */
+#define PRISM_ASSERT(arg, msg) assert((arg) && (msg))
 #else
-  #define PRISM_ASSERT(arg, msg) /* NO-OP */
+#define PRISM_ASSERT(arg, msg) /* NO-OP */
 #endif
 
 #define SELF_CAST(s) ((BifrostArray*)(s))
@@ -52,13 +56,13 @@ static BifrostArrayHeader* Array_getHeader(BifrostArray self)
 
 void* _ArrayT_new(const size_t stride, const size_t initial_size)
 {
-  PRISM_ASSERT(stride,                "_ArrayT_new:: The struct must be greater than 0.");
+  PRISM_ASSERT(stride, "_ArrayT_new:: The struct must be greater than 0.");
   PRISM_ASSERT(initial_size * stride, "_ArrayT_new:: Please initialize the Array with a size greater than 0");
 
   BifrostArrayHeader* const self = (BifrostArrayHeader*)
-    BIFROST_MALLOC(
-      sizeof(BifrostArrayHeader) + stride * initial_size,
-      bfAlignof(BifrostArrayHeader));
+   BIFROST_MALLOC(
+    sizeof(BifrostArrayHeader) + stride * initial_size,
+    bfAlignof(BifrostArrayHeader));
 
   PRISM_ASSERT(self, "Array_new:: The Dynamic Array could not be allocated");
 
@@ -101,7 +105,7 @@ void Array_copy(const void* const self, BifrostArray* dst)
   const size_t stride = Array_getHeader(*SELF_CAST(self))->stride;
 
   Array_getHeader(*dst)->stride = stride;
-  Array_getHeader(*dst)->size = size;
+  Array_getHeader(*dst)->size   = size;
   Array_reserve(dst, size);
   memcpy((*dst), (*SELF_CAST(self)), size * stride);
 }
@@ -117,7 +121,7 @@ void Array_reserve(void* const self, const size_t num_elements)
 
   if (header->capacity < num_elements)
   {
-      /* NOTE(Shareef):
+    /* NOTE(Shareef):
            The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, etc...
            Used By Python and they seem pretty alright.
       */
@@ -133,7 +137,7 @@ void Array_reserve(void* const self, const size_t num_elements)
     if (new_header)
     {
       new_header->capacity = new_capacity;
-      *SELF_CAST(self)            = (char*)new_header + sizeof(BifrostArrayHeader);
+      *SELF_CAST(self)     = (char*)new_header + sizeof(BifrostArrayHeader);
     }
     else
     {
@@ -149,7 +153,7 @@ void Array_resize(void* const self, const size_t size)
   Array_getHeader(*SELF_CAST(self))->size = size;
 }
 
-void Array_push(void* const self, const void * const data)
+void Array_push(void* const self, const void* const data)
 {
   const size_t stride = Array_getHeader(*SELF_CAST(self))->stride;
 
@@ -168,8 +172,10 @@ void* Array_emplaceN(void* const self, const size_t num_elements)
 {
   const size_t old_size = Array_size(self);
   Array_reserve(self, old_size + num_elements);
-  uint8_t* const new_element = Array_end(self);
-  Array_getHeader(*SELF_CAST(self))->size += num_elements;
+  uint8_t* const      new_element = Array_end(self);
+  BifrostArrayHeader* header      = Array_getHeader(*SELF_CAST(self));
+  memset(new_element, 0x0, header->stride * num_elements);
+  header->size += num_elements;
   return new_element;
 }
 
@@ -185,7 +191,7 @@ void* Array_findSorted(const void* const self, const void* const key, ArrayFindC
   return Array_findFromSorted(self, key, 0, Array_size(self), compare);
 }
 
-typedef struct 
+typedef struct
 {
   size_t      stride;
   const void* key;
@@ -224,17 +230,18 @@ size_t Array_find(const void* const self, const void* key, ArrayFindCompare comp
       }
     }
   }
-  
+
   return BIFROST_ARRAY_INVALID_INDEX;
 }
 
 void* Array_at(const void* const self, const size_t index)
 {
 #if PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS
-  const size_t size = Array_size(self);
-  const int is_in_bounds = index < size;
+  const size_t size         = Array_size(self);
+  const int    is_in_bounds = index < size;
 
-  if (!is_in_bounds) {
+  if (!is_in_bounds)
+  {
     PRISM_ASSERT(is_in_bounds, "Array_at:: index array out of bounds error");
   }
 #endif /* PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS */
@@ -248,8 +255,8 @@ void* Array_pop(void* const self)
   PRISM_ASSERT(Array_size(self) != 0, "Array_pop:: attempt to pop empty array");
 #endif
 
-  BifrostArrayHeader* const header = Array_getHeader(*SELF_CAST(self));
-  void* const old_element = Array_at(self, header->size - 1);
+  BifrostArrayHeader* const header      = Array_getHeader(*SELF_CAST(self));
+  void* const               old_element = Array_at(self, header->size - 1);
   --header->size;
 
   return old_element;

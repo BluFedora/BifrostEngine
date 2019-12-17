@@ -247,7 +247,6 @@ namespace bifrost
    private:
     // ReSharper disable once CppPossiblyUninitializedMember
     Event(EventType type, IBaseWindow* target, std::uint8_t flags) :
-      // NOLINT(hicpp-member-init)
       type{type},
       target{target},
       flags{flags}

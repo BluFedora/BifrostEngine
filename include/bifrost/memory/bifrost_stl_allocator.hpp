@@ -1,3 +1,4 @@
+#if 0
 template<class T>
 struct proxy_allocator
 {
@@ -60,3 +61,4 @@ struct proxy_allocator
     return false;
   }
 };
+#endif

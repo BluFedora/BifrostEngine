@@ -127,6 +127,16 @@ size_t bfDbgValueTypeToString(bfVMValue value, char* buffer, size_t buffer_size)
         return (size_t)snprintf(buffer, buffer_size, "<NativeFunction>");
         break;
       }
+      case BIFROST_VM_OBJ_REFERENCE:
+      {
+        return (size_t)snprintf(buffer, buffer_size, "<Reference>");
+        break;
+      }
+      case BIFROST_VM_OBJ_WEAK_REF:
+      {
+        return (size_t)snprintf(buffer, buffer_size, "<Weak Ref>");
+        break;
+      }
     }
   }
 

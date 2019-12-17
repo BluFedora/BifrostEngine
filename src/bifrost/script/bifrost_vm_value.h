@@ -19,10 +19,15 @@ extern "C" {
 
 #define TAG_DEF(t) (bfVMValue)((uint64_t)(QUIET_NAN | t))
 
-// NOTE/TODO/WTF(SHAREEF): The explicit values are to quiet down VS code.
+/*
 static const uint64_t VAL_TRUE  = TAG_DEF(TAG_TRUE);
 static const uint64_t VAL_FALSE = TAG_DEF(TAG_FALSE);
 static const uint64_t VAL_NULL  = TAG_DEF(TAG_NULL);
+*/
+
+#define VAL_TRUE  TAG_DEF(TAG_TRUE)
+#define VAL_FALSE TAG_DEF(TAG_FALSE)
+#define VAL_NULL  TAG_DEF(TAG_NULL)
 
 // Used By:
 // debug, value

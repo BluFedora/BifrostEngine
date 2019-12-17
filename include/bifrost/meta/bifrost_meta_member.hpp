@@ -20,6 +20,39 @@ namespace bifrost::meta
     [[nodiscard]] const char* name() const { return m_Name; }
   };
 
+  template<typename Class, typename Base>
+  class ClassInfo final : public BaseMember
+  {
+   public:
+    using type      = Class;
+    using type_base = Base;
+    using class_t   = Class;
+    // using member_ptr                         = Class;
+    static constexpr bool is_writable = true;
+    using is_function                 = std::bool_constant<false>;
+    static constexpr bool is_readable = false;
+    static constexpr bool is_class    = true;
+    static constexpr bool is_field    = true;
+    static constexpr bool is_property = false;
+    static constexpr bool is_pointer  = false;
+    static constexpr bool is_enum     = false;
+
+   private:
+    const std::size_t m_Size;
+    const std::size_t m_Alignment;
+
+   public:
+    explicit ClassInfo(const char* name) :
+      BaseMember{name},
+      m_Size{sizeof(Class)},
+      m_Alignment{alignof(Class)}
+    {
+    }
+
+    [[nodiscard]] std::size_t size() const { return m_Size; }
+    [[nodiscard]] std::size_t alignment() const { return m_Alignment; }
+  };
+
   template<typename Class, typename PropertyT>
   class RawMember final : public BaseMember
   {
@@ -231,8 +264,7 @@ namespace bifrost::meta
 
     // NOTE(Shareef)
     //   This should always be true.
-    //   The use of 'm_Pointer' is just so there
-    //   are no warnings from resharper.
+    //   The use of 'm_Pointer' is just so there are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
 
     decltype(auto) call(const Class& obj, Args&&... args) const
@@ -252,12 +284,15 @@ namespace bifrost::meta
     // void set(Class& obj, const type& value) const;
   };
 
-  template<typename Clz, typename T>
-  decltype(auto) class_info(const char* name, T Clz::*ptr)
+  template<typename Clz, typename Base = void>
+  decltype(auto) class_info(const char* name)
   {
-    return RawMember<Clz, T>(name, ptr);
+    static_assert(std::is_base_of_v<Base, Clz> || std::is_same_v<Base, void>, "Class must inherit from the specified Base.");
+
+    return ClassInfo<Clz, Base>(name);
   }
 
+#if 0
   template<typename Clz, typename T>
   decltype(auto) ctor(const char* name, T Clz::*ptr)
   {
@@ -269,6 +304,7 @@ namespace bifrost::meta
   {
     return RawMember<Clz, T>(name, ptr);
   }
+#endif
 
   template<typename Clz, typename T>
   decltype(auto) field(const char* name, T Clz::*ptr)
@@ -342,6 +378,9 @@ namespace bifrost::meta
 
   template<typename MemberT>
   static constexpr bool is_function_v = std::decay_t<MemberT>::is_function::value;
+
+  template<typename MemberT>
+  static constexpr bool is_class_v = std::decay_t<MemberT>::is_class;
 
   template<typename MemberType>
   using member_t = std::decay_t<MemberType>;

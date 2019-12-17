@@ -36,7 +36,6 @@ typedef enum
   IMPORT,               // import
   FUNC,                 // func
   BIFROST_TOKEN_CLASS,  // class
-  BIFROST_TOKEN_PRINT,  // print
   CTRL_IF,              // @BIFROST_TOKEN_CTRL_IF
   CTRL_ELSE,            // @BIFROST_TOKEN_CTRL_ELSE
   CTRL_EE,              // ==

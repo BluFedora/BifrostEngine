@@ -58,11 +58,11 @@ typedef unsigned char uchar;
 
 typedef struct Mat4x4_t Mat4x4;
 
-typedef struct ALIGN_STRUCT(16) Vec3f_t
+typedef struct /*ALIGN_STRUCT(16)*/ Vec3f_t
 {
   float x, y, z, w;
 
-} ALIGN_STRUCT(16) Vec3f;
+} /*ALIGN_STRUCT(16)*/ Vec3f;
 
 typedef struct Rectf_t
 {

@@ -29,15 +29,12 @@ include_directories("${PROJECT_BINARY_DIR}")
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
 
 set(CMAKE_CXX_STANDARD 17)
-
 # set(CMAKE_GENERATOR_PLATFORM x64)
 
   # NOTE(Shareef): Sets the output directory to be in a reasonable place.
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin/)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
-
-message(STATUS "Working Dir ${CMAKE_BINARY_DIR}../")
 
 # NOTE(Shareef): Print out some CMake Info.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -78,9 +75,10 @@ else()
   # GCC / Clang
   #   "/GR-"                      - Not needed since GCC / Clang isn't retarded like MSVC.
   #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't retarded like MSVC.
-  #   "-std=c++17"                = /std:c++17
+  #   "-std=c++17"                = "/std:c++17"
+  #   "-fno-rtti"                 = "/GR-"
   #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -Wall -g")
+  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
 endif()
 
 
@@ -103,6 +101,11 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/imgui/imgui.cpp"
   "lib/include/imgui/imgui_widgets.cpp"
   "lib/include/imgui/imgui_draw.cpp"
+  "lib/include/imgui/imgui_demo.cpp"
+
+  # Bifrost Core Module
+  "src/bifrost/core/bifrost_game_state_machine.cpp"
+  "src/bifrost/core/bifrost_igame_state_layer.cpp"
 
   # Bifrost Datastructures Module
   "src/bifrost/data_structures/bifrost_array_t.c"
@@ -134,6 +137,15 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/math/bifrost_vec2.c"
   "src/bifrost/math/bifrost_vec3.c"
 
+  # Bifrost Memory Module
+  "src/bifrost/memory/bifrost_c_allocator.cpp"
+  "src/bifrost/memory/bifrost_freelist_allocator.cpp"
+  "src/bifrost/memory/bifrost_imemory_manager.cpp"
+  "src/bifrost/memory/bifrost_linear_allocator.cpp"
+  "src/bifrost/memory/bifrost_pool_allocator.cpp"
+  "src/bifrost/memory/bifrost_proxy_allocator.cpp"
+  "src/bifrost/memory/bifrost_stack_allocator.cpp"
+
   # Bifrost Utility Module
   "src/bifrost/utility/bifrost_hash.cpp"
 
@@ -161,7 +173,6 @@ find_package(OpenCL)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
-include_directories(BifrostEngine C:/Users/rshar/Documents/bifrost-core/bifrost_core)
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
@@ -171,7 +182,7 @@ set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
   # NOTE(Shareef): Sets the working directory of the exe to be at the exe
   #   allowing us to load stuff from the assets folder.
-set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}../)
+set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
   # NOTE(Shareef): Make the console not pop up.
 # set_target_properties(BifrostEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
@@ -199,7 +210,7 @@ target_link_libraries(BifrostEngine "${BIFROST_ENGINE_GLFW_LIB}")
 
 if (WIN32)
   target_link_libraries(BifrostEngine "opengl32.lib")
-  target_link_libraries(BifrostEngine "D:/Vulkan/1.1.106.0/Lib32/vulkan-1.lib")
+  target_link_libraries(BifrostEngine ${Vulkan_LIBRARY})
 elseif (APPLE)
   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/libfmod.dylib")
