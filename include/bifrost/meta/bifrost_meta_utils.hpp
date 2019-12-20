@@ -80,6 +80,18 @@ namespace bifrost::meta
         func(type_holder<T>());
       }
     };
+
+    template<std::size_t N>
+    struct num
+    {
+      static const constexpr auto value = N;
+    };
+
+    template<class F, std::size_t... Is>
+    void for_constexpr_impl(F func, std::index_sequence<Is...>)
+    {
+      (func(detail::num<Is>{}), ...);
+    }
   }  // namespace detail
 
   #define bfForEachTemplateT(t) typename std::decay<decltype((t))>::type::held_type
@@ -88,6 +100,13 @@ namespace bifrost::meta
   void for_each_template(F&& func)
   {
     detail::for_each_template_impl<sizeof...(Args), Args...>::impl(func);
+  }
+
+  // [https://nilsdeppe.com/posts/for-constexpr]
+  template<std::size_t N, typename F>
+  void for_constexpr(F func)
+  {
+    detail::for_constexpr_impl(func, std::make_index_sequence<N>());
   }
 }  // namespace bifrost::meta
 

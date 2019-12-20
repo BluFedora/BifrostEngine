@@ -103,3 +103,67 @@ Meta system Should have been more specialized:
 
   });
   inspector.pop();
+
+
+
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+                                        RUNTIME META OUTLINE
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+  BaseObject:
+    Class            : ClassInfo*
+    PropertyOverides : HashTable<String, GenericValue>
+
+  GenericValue : Variant / Any
+
+  BaseMetaInfo
+    Name           : StringView
+    // Path           : StringView
+    
+  ClassInfo : BaseMetaInfo
+    BaseClasses    : Array<ClassInfo>
+    Members        : Array<MemberInfo>
+    Properties     : Array<PropertyInfo>
+    Methods        : Array<MethodInfo>
+    Instanciate()  : GenericValue
+    FindProperty() : PropertyInfo
+    FindMember()   : MemberInfo
+    FindMethod()   : MethodInfo
+    Size()         : size_t
+    Alignment()    : size_t
+
+  MemberInfo : BaseMetaInfo
+    Get()             : GenericValue
+    Set(GenericValue) : Void
+    Size              : size_t 
+    Offset            : size_t 
+
+  PropertyInfo : BaseMetaInfo
+    Get()             : GenericValue
+    Set(GenericValue) : Void
+
+  ArrayPropertyInfo : PropertyInfo
+    Elements : Array<PropertyInfo> 
+
+  MethodInfo : BaseMetaInfo
+    Invoke(GenericValue...) : GenericValue
+    IsStatic()              : Bool
+
+  EnumInfo : BaseMetaInfo
+    FindElement() : EnumElementInfo
+    Instanciate() : StringView
+    ToElement()   : EnumElementInfo
+    
+  EnumElementInfo : BaseMetaInfo
+    Value() : size_t
+
+  UnionInfo : ClassInfo
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////

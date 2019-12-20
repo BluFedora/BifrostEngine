@@ -2,30 +2,24 @@
 /*!
   @file   bifrost_array_t.h
   @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
+  @par    
   @brief
     Part of the "Bifrost Data Structures C Library"
-    This is a generic dynamic array class the growing algorithm is based
-    off of the one used with Python.
+    This is a generic dynamic array class.
+
     No dependencies besides the C Standard Library.
     Random Access - O(1)
     Pop           - O(1)
     Push, Emplace - O(1) best O(n) worst (when we need to grow)
     Clear         - O(1)
 
-    The memory layout: [BifrostArrayHeader (capacity | size | stride) | BifrostArray (uint8_t*)]
+    The memory layout: [ArrayHeader (capacity | size | stride)][alignment-padding][allocation-offset][array-data (uint8_t*)]
 
     Memory Allocation Customization:
-      To use your own allocation then define these three macros
-      with the same name and arguments.
-      You are also passed in the wanted alignment but ignoring
-      it is generally fine assuming you don't care about the 
-      alignment of the elements in the array.
-
-      EX:
-        #define BIFROST_MALLOC(size, align)           malloc((size))
-        #define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
-        #define BIFROST_FREE(ptr)                     free((ptr))
+      To use your own allocator pass an allocation function to the array.
+      To be compliant you must:
+        > Act as malloc  when ptr == NULL.
+        > Act as free    when ptr != NULL.
 */
 /******************************************************************************/
 #ifndef BIFROST_DATA_STRUCTURES_ARRAY_H
@@ -33,26 +27,22 @@
 
 #include <stddef.h> /* size_t */
 
-#define bfArray_newT(T, initial_size) (T*)_ArrayT_new(sizeof(T), (initial_size))
+#define OLD_bfArray_newT(T, initial_size) (T*)_ArrayT_new(sizeof(T), (initial_size))
 
 #if __cplusplus
 #include <type_traits> /* remove_reference_t */
-#define bfArray_newA(arr, initial_size) (typename std::remove_reference_t<decltype((arr)[0])>*)_ArrayT_new(sizeof((arr)[0]), (initial_size))
+#define OLD_bfArray_newA(arr, initial_size) (typename std::remove_reference_t<decltype((arr)[0])>*)_ArrayT_new(sizeof((arr)[0]), (initial_size))
 #else
-#define bfArray_newA(arr, initial_size) _ArrayT_new(sizeof((arr)[0]), (initial_size))
+#define OLD_bfArray_newA(arr, initial_size) _ArrayT_new(sizeof((arr)[0]), (initial_size))
 #endif
 
 // Old Stuff
 #define PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS 1  // Disable for a faster 'Array_at'.
-#define Array_new(T, initial_size) bfArray_newT(T, initial_size)
+#define Array_new(T, initial_size) OLD_bfArray_newT(T, initial_size)
 
 #if __cplusplus
 extern "C" {
 #endif
-#define BIFROST_ARRAY_INVALID_INDEX ((size_t)(-1))
-
-// NOTE(Shareef):
-//   
 //   A 'BifrostArray' can be used anywhere a 'normal' C array can be used.
 typedef unsigned char* BifrostArray;
 
@@ -62,6 +52,7 @@ typedef unsigned char* BifrostArray;
 typedef int(__cdecl* ArraySortCompare)(const void*, const void*);
 typedef int(__cdecl* ArrayFindCompare)(const void*, const void*);
 
+// Old API with default allocator
 void*  _ArrayT_new(const size_t stride, const size_t initial_size);
 void*  Array_begin(const void* const self);
 void*  Array_end(const void* const self);
@@ -76,14 +67,62 @@ void*  Array_emplace(void* const self);
 void*  Array_emplaceN(void* const self, const size_t num_elements);
 void*  Array_findFromSorted(const void* const self, const void* const key, const size_t index, const size_t size, ArrayFindCompare compare);
 void*  Array_findSorted(const void* const self, const void* const key, ArrayFindCompare compare);
-// If [compare] is NULL then the default impl uses a memcmp with the sizeof a single element.
-// [key] is always the first parameter for each comparison.
 size_t Array_find(const void* const self, const void* key, ArrayFindCompare compare);
 void*  Array_at(const void* const self, const size_t index);
 void*  Array_pop(void* const self);
 void*  Array_back(const void* const self);
 void   Array_sort(void* const self, ArraySortCompare compare);
 void   Array_delete(void* const self);
+
+/* New API that is allocator aware */
+
+#define BIFROST_ARRAY_INVALID_INDEX ((size_t)(-1))
+
+typedef void* (*bfArrayAllocator)(void* user_data, void* ptr, size_t new_size);
+
+/* a  < b : < 0 */
+/* a == b :   0 */
+/* a  > b : > 0 */
+typedef int(__cdecl* bfArraySortCompare)(const void*, const void*);
+typedef int(__cdecl* bfArrayFindCompare)(const void*, const void*);
+
+
+
+#if __cplusplus
+#include <type_traits> /* remove_reference_t */
+#define bfArray_new(T, alloc, user_data) (T*)bfArray_new_(alloc, sizeof(T), alignof(T), (user_data))
+#define bfArray_newA(arr, alloc, user_data) bfArray_new(typename std::remove_reference_t<decltype((arr)[0])>, alloc, user_data)
+#else
+#define bfArray_new(T, alloc, user_data) (T*)bfArray_new_(alloc, sizeof(T), _Alignof(T), (user_data))
+#define bfArray_newA(arr, alloc, user_data) bfArray_new((arr)[0], alloc, user_data)
+#endif
+
+void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data);
+void*  bfArray_begin(void** self);
+void*  bfArray_end(void** self);
+void*  bfArray_back(void** self);
+size_t bfArray_size(void** self);
+size_t bfArray_capacity(void** self);
+void   bfArray_copy(void** self, void** src, size_t num_elements);
+void   bfArray_clear(void** self);
+void   bfArray_reserve(void** self, size_t num_elements);
+void   bfArray_resize(void** self, size_t num_elements);
+void   bfArray_push(void** self, const void* element);
+void*  bfArray_emplace(void** self);
+void*  bfArray_emplaceN(void** self, size_t num_elements);
+void*  bfArray_at(void** self, size_t index);
+void*  bfArray_binarySearchRange(void** self, size_t bgn, size_t end, const void* key, bfArrayFindCompare compare); /* [bgn, end) */
+void*  bfArray_binarySearch(void** self, const void* key, bfArrayFindCompare compare);
+/* If [compare] is NULL then the default impl uses a memcmp with the sizeof a single element. */
+/* [key] is always the first parameter for each comparison.                                   */
+/* Returns BIFROST_ARRAY_INVALID_INDEX on failure to find element.                            */
+size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key, ArrayFindCompare compare);
+size_t bfArray_find(void** self, const void* key, ArrayFindCompare compare);
+void*  bfArray_pop(void** self);
+void   bfArray_sortRange(void** self, size_t bgn, size_t end, ArraySortCompare compare); /* [bgn, end) */
+void   bfArray_sort(void** self, ArraySortCompare compare);
+void   bfArray_delete(void** self);
+
 #if __cplusplus
 }
 #endif

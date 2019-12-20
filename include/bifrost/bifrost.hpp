@@ -1,6 +1,9 @@
 #ifndef BIFROST_HPP
 #define BIFROST_HPP
 
+// AssetIO
+#include "asset_io/bifrost_scene.hpp"
+
 // Core
 #include "bifrost/core/bifrost_base_object.hpp"
 
@@ -17,7 +20,7 @@
 #include "bifrost_math.h"
 
 // Meta
-#include "meta/bifrost_meta_member.hpp"
+#include "meta/bifrost_meta_runtime.hpp"
 
 // Script
 #include "bifrost_vm.hpp"

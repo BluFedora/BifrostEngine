@@ -32,7 +32,8 @@ namespace bifrost::meta
     using is_function                 = std::bool_constant<false>;
     static constexpr bool is_readable = false;
     static constexpr bool is_class    = true;
-    static constexpr bool is_field    = true;
+    static constexpr bool is_ctor     = false;
+    static constexpr bool is_field    = false;
     static constexpr bool is_property = false;
     static constexpr bool is_pointer  = false;
     static constexpr bool is_enum     = false;
@@ -53,31 +54,52 @@ namespace bifrost::meta
     [[nodiscard]] std::size_t alignment() const { return m_Alignment; }
   };
 
-  template<typename Class, typename PropertyT>
+  template<typename... Args>
+  class CtorInfo final
+  {
+   public:
+    using type                        = std::tuple<Args...>;
+    static constexpr bool is_writable = true;
+    using is_function                 = std::bool_constant<false>;
+    static constexpr bool is_readable = false;
+    static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = true;
+    static constexpr bool is_field    = false;
+    static constexpr bool is_property = false;
+    static constexpr bool is_pointer  = false;
+    static constexpr bool is_enum     = false;
+  };
+
+  template<typename Class, typename PropertyT, bool read_only>
   class RawMember final : public BaseMember
   {
    public:
-    using type                               = std::decay_t<PropertyT>;
-    using class_t                            = Class;
-    using member_ptr                         = PropertyT class_t::*;
-    static constexpr bool        is_writable = true;
-    using is_function                        = std::bool_constant<false>;
-    static constexpr bool is_readable        = true;
-    static constexpr bool is_class           = false;
-    static constexpr bool is_field           = true;
-    static constexpr bool is_property        = false;
-    static constexpr bool is_pointer         = std::is_pointer_v<PropertyT>;
-    static constexpr bool is_enum            = false;
+    using type                        = std::decay_t<PropertyT>;
+    using class_t                     = Class;
+    using member_ptr                  = PropertyT class_t::*;
+    using is_function                 = std::bool_constant<false>;
+    static constexpr bool is_writable = !read_only;
+    static constexpr bool is_readable = true;
+    static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
+    static constexpr bool is_field    = true;
+    static constexpr bool is_property = false;
+    static constexpr bool is_pointer  = std::is_pointer_v<PropertyT>;
+    static constexpr bool is_enum     = false;
 
    private:
-    member_ptr m_Pointer;
+    member_ptr     m_Pointer;
+    std::ptrdiff_t m_Offset;
 
    public:
-    explicit RawMember(const char* name, member_ptr ptr) :
+    explicit RawMember(const char* name, member_ptr ptr, std::ptrdiff_t offset) :
       BaseMember{name},
-      m_Pointer{ptr}
+      m_Pointer{ptr},
+      m_Offset{offset}
     {
     }
+
+    [[nodiscard]] std::ptrdiff_t offset() const { return m_Offset; }
 
     // NOTE(Shareef)
     //   This should always be true.
@@ -97,7 +119,10 @@ namespace bifrost::meta
 
     void set(Class& obj, const type& value) const
     {
-      (obj.*m_Pointer) = value;
+      if constexpr (!read_only)
+      {
+        (obj.*m_Pointer) = value;
+      }
     }
   };
 
@@ -113,6 +138,7 @@ namespace bifrost::meta
     using is_function                 = std::bool_constant<false>;
     static constexpr bool is_readable = true;
     static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
     static constexpr bool is_field    = false;
     static constexpr bool is_property = true;
     static constexpr bool is_pointer  = std::is_pointer_v<PropertyT>;
@@ -154,6 +180,7 @@ namespace bifrost::meta
     using is_function                 = std::bool_constant<false>;
     static constexpr bool is_readable = true;
     static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
     static constexpr bool is_field    = false;
     static constexpr bool is_property = true;
     static constexpr bool is_pointer  = std::is_pointer_v<PropertyT>;
@@ -198,8 +225,9 @@ namespace bifrost::meta
     static constexpr bool is_writable = true;
     static constexpr bool is_readable = true;
     static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
     static constexpr bool is_field    = false;
-    static constexpr bool is_property = true;
+    static constexpr bool is_property = false;
     static constexpr bool is_pointer  = false;
     static constexpr bool is_enum     = false;
 
@@ -218,7 +246,7 @@ namespace bifrost::meta
     //   The use of 'm_Pointer' is just so there
     //   are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
-
+#if 0
     decltype(auto) call(Class& obj, Args&&... args) const
     {
       if constexpr (std::is_same_v<void, R>)
@@ -228,6 +256,18 @@ namespace bifrost::meta
       else
       {
         return (obj.*m_Pointer)(std::forward<Args>(args)...);
+      }
+    }
+#endif
+    decltype(auto) call(Class* obj, Args... args) const
+    {
+      if constexpr (std::is_same_v<void, R>)
+      {
+        (obj->*m_Pointer)(std::forward<Args>(args)...);
+      }
+      else
+      {
+        return (obj->*m_Pointer)(std::forward<Args>(args)...);
       }
     }
 
@@ -247,8 +287,9 @@ namespace bifrost::meta
     static constexpr bool is_writable = true;
     static constexpr bool is_readable = true;
     static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
     static constexpr bool is_field    = false;
-    static constexpr bool is_property = true;
+    static constexpr bool is_property = false;
     static constexpr bool is_pointer  = false;
     static constexpr bool is_enum     = false;
 
@@ -266,6 +307,7 @@ namespace bifrost::meta
     //   This should always be true.
     //   The use of 'm_Pointer' is just so there are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
+#if 0
 
     decltype(auto) call(const Class& obj, Args&&... args) const
     {
@@ -278,6 +320,19 @@ namespace bifrost::meta
         return (obj.*m_Pointer)(std::forward<Args>(args)...);
       }
     }
+#endif
+
+    decltype(auto) call(const Class* obj, Args... args) const
+    {
+      if constexpr (std::is_same_v<void, R>)
+      {
+        (obj->*m_Pointer)(std::forward<Args>(args)...);
+      }
+      else
+      {
+        return (obj->*m_Pointer)(std::forward<Args>(args)...);
+      }
+    }
 
     // This part of the concept is not available for functions.
     // void get(const Class& obj) const;
@@ -287,29 +342,29 @@ namespace bifrost::meta
   template<typename Clz, typename Base = void>
   decltype(auto) class_info(const char* name)
   {
-    static_assert(std::is_base_of_v<Base, Clz> || std::is_same_v<Base, void>, "Class must inherit from the specified Base.");
+    static_assert(
+     std::is_base_of_v<Base, Clz> || std::is_same_v<Base, void>,
+     "Class must inherit from the specified Base.");
 
     return ClassInfo<Clz, Base>(name);
   }
 
-#if 0
-  template<typename Clz, typename T>
-  decltype(auto) ctor(const char* name, T Clz::*ptr)
+  template<typename... Args>
+  decltype(auto) ctor()
   {
-    return RawMember<Clz, T>(name, ptr);
+    return CtorInfo<Args...>();
+  }
+
+  template<bool is_readonly = false, typename Clz, typename T>
+  decltype(auto) field(const char* name, T Clz::*ptr, std::ptrdiff_t offset = 0u)
+  {
+    return RawMember<Clz, T, is_readonly>(name, ptr, offset);
   }
 
   template<typename Clz, typename T>
-  decltype(auto) dtor(const char* name, T Clz::*ptr)
+  decltype(auto) field_readonly(const char* name, T Clz::*ptr, std::ptrdiff_t offset = 0u)
   {
-    return RawMember<Clz, T>(name, ptr);
-  }
-#endif
-
-  template<typename Clz, typename T>
-  decltype(auto) field(const char* name, T Clz::*ptr)
-  {
-    return RawMember<Clz, T>(name, ptr);
+    return field<true>(name, ptr, offset);
   }
 
   template<typename Clz, typename T>
@@ -377,10 +432,19 @@ namespace bifrost::meta
   }
 
   template<typename MemberT>
-  static constexpr bool is_function_v = std::decay_t<MemberT>::is_function::value;
+  static constexpr bool is_class_v = std::decay_t<MemberT>::is_class;
 
   template<typename MemberT>
-  static constexpr bool is_class_v = std::decay_t<MemberT>::is_class;
+  static constexpr bool is_ctor_v = std::decay_t<MemberT>::is_ctor;
+
+  template<typename MemberT>
+  static constexpr bool is_field_v = std::decay_t<MemberT>::is_field;
+
+  template<typename MemberT>
+  static constexpr bool is_property_v = std::decay_t<MemberT>::is_property;
+
+  template<typename MemberT>
+  static constexpr bool is_function_v = std::decay_t<MemberT>::is_function::value;
 
   template<typename MemberType>
   using member_t = std::decay_t<MemberType>;
@@ -388,5 +452,19 @@ namespace bifrost::meta
   template<typename MemberType>
   using member_type_t = typename member_t<MemberType>::type;
 }  // namespace bifrost::meta
+
+#define BIFROST_META_FRIEND friend class ::bifrost::meta::Meta
+
+#define BIFROST_META_REGISTER(name) \
+  template<>                        \
+  const auto& ::bifrost::meta::Meta::registerMembers<name>()
+
+#define BIFROST_META_BEGIN() \
+  static auto member_ptrs = ::bifrost::meta::members(
+
+#define BIFROST_META_MEMBERS(...) __VA_ARGS__);
+
+#define BIFROST_META_END() \
+  return member_ptrs;
 
 #endif /* BIFROST_META_MEMBER_HPP */

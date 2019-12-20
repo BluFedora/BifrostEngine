@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   proxy_allocator.hpp
+  @file   bifrost_proxy_allocator.hpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief
@@ -15,23 +15,37 @@
 
 namespace bifrost
 {
-  class ProxyAllocator : public IMemoryManager
+  class ProxyAllocator final : public IMemoryManager
   {
-    private:
-      IMemoryManager& m_Impl;
+   private:
+    IMemoryManager& m_Impl;
 
-    public:
-      ProxyAllocator(IMemoryManager& real_allocator);
-      ~ProxyAllocator() = default;
+   public:
+    ProxyAllocator(IMemoryManager& real_allocator);
 
-    public:
-      void* alloc(const std::size_t size, const std::size_t alignment)  override;
-      void  dealloc(void* ptr)                                          override;
+   public:
+    void* alloc(std::size_t size, std::size_t alignment) override;
+    void  dealloc(void* ptr) override;
 
-    public:
-      static constexpr std::size_t header_size = 0u;
-
+   public:
+    static constexpr std::size_t header_size = 0u;
   };
-}
+
+  class NoFreeAllocator final : public IMemoryManager
+  {
+   private:
+    IMemoryManager& m_Impl;
+
+   public:
+    NoFreeAllocator(IMemoryManager& real_allocator);
+
+   public:
+    void* alloc(std::size_t size, std::size_t alignment) override;
+    void  dealloc(void* ptr) override;
+
+   public:
+    static constexpr std::size_t header_size = 0u;
+  };
+}  // namespace bifrost
 
 #endif /* PROXY_ALLOCATOR_HPP */

@@ -15,6 +15,8 @@
 #include <utility>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "bifrost/asset_io/test.h"
+#include "bifrost/data_structures/bifrost_any.hpp"
+#include <future>
 #include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
 
@@ -22,10 +24,29 @@ namespace bifrost
 {
   class Entity : public BaseObject<Entity>
   {
+   private:
+    std::string m_Name;
+
    public:
     Entity()
     {
       std::printf("Created an entity\n");
+    }
+
+    Entity(std::string n)
+    {
+      m_Name = std::move(n);
+    }
+
+    void move(int x, float y, int& t)
+    {
+      std::printf("Entty::move to %i %f\n", x, y);
+      t = 496;
+    }
+
+    ~Entity()
+    {
+      std::printf("~E(%s)\n", m_Name.c_str());
     }
   };
 
@@ -60,7 +81,8 @@ namespace bifrost
     const auto& Meta::registerMembers<Entity>()
     {
       static auto member_ptrs = members(
-       class_info<Entity>("Entity"));
+       class_info<Entity>("Entity"),
+       function("move", &Entity::move));
 
       return member_ptrs;
     }
@@ -162,10 +184,41 @@ void testFN()
   std::cout << "does this work?" << std::endl;
 }
 
-static const char source[] = R"(
+static char source[4096] = R"(
   import "main"    for TestClass, cppFn, BigFunc, AnotherOne;
   import "bifrost" for Camera;
   import "std:io"  for print;
+
+  class MyBase
+  {
+    func ctor()
+    {
+      print("MyBase::ctor");
+    }
+
+    func baseClassCall()
+    {
+      print("This is from the base class.");
+    }
+  };
+
+  class Derived : MyBase
+  {
+    func ctor()
+    {
+      super.ctor(self);
+      print("Derived::ctor");
+    }
+
+    func test()
+    {
+      print(super);
+      self:baseClassCall();
+    }
+  };
+
+  var d = new Derived();
+  d:test();
 
   static var cam = new Camera();
 
@@ -655,6 +708,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
   std::pair<int, const char**> m_CmdlineArgs;
   bifrost::FreeListAllocator   m_MainMemory;
   bifrost::GameStateMachine    m_StateMachine;
+  bifrost::VM                  m_Scripting;
   BaseRenderer                 m_Renderer;
 
  public:
@@ -662,12 +716,15 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
     m_CmdlineArgs{argc, argv},
     m_MainMemory{new char[100000000ull], 100000000ull},
     m_StateMachine{*this, m_MainMemory},
+    m_Scripting{},
     m_Renderer{}
   {
   }
 
-  bifrost::GameStateMachine& stateMachine() { return m_StateMachine; }
-  BaseRenderer&              renderer() { return m_Renderer; }
+  bifrost::FreeListAllocator& mainMemory() { return m_MainMemory; }
+  bifrost::GameStateMachine&  stateMachine() { return m_StateMachine; }
+  bifrost::VM&                scripting() { return m_Scripting; }
+  BaseRenderer&               renderer() { return m_Renderer; }
 
   void init(const BifrostEngineCreateParams& params)
   {
@@ -698,10 +755,20 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 
     m_Renderer.startup(params);
 
-    bifrost::BaseObjectT::instanciate("Entity", m_MainMemory);
-    bifrost::BaseObjectT::instanciate("Component", m_MainMemory);
-    bifrost::BaseObjectT::instanciate("SpriteComponent", m_MainMemory);
-    bifrost::BaseObjectT::instanciate("MeshComponent", m_MainMemory);
+    bifrost::VMParams vm_params{};
+    vm_params.error_fn = &userErrorFn;
+    vm_params.print_fn = [](BifrostVM*, const char* message) {
+      bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
+      bfLogPush("Print From Script");
+      bfLogPrint("(BTS) %s", message);
+      bfLogPop();
+      bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+    };
+    vm_params.min_heap_size      = 20;
+    vm_params.heap_size          = 200;
+    vm_params.heap_growth_factor = 0.1f;
+
+    m_Scripting.create(vm_params);
 
     bfLogPop();
   }
@@ -739,6 +806,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
   void deinit()
   {
     m_StateMachine.removeAll();
+    m_Scripting.destroy();
     bfLogger_deinit();
     m_Renderer.cleanup();
   }
@@ -852,7 +920,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
       if constexpr (bfmeta::is_function_v<decltype(member)>)
       {
-        member.call(my_obj, 6);
+        member.call(&my_obj, 6);
       }
       else
       {
@@ -918,19 +986,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     std::cout << "\n\nScripting Language Test Begin\n";
 
-    VMParams vm_params{};
-    vm_params.error_fn = &userErrorFn;
-    vm_params.print_fn = [](BifrostVM*, const char* message) {
-      bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
-      bfLogPush("Print From Script");
-      bfLogPrint("(BTS) %s", message);
-      bfLogPop();
-      bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
-    };
-    vm_params.min_heap_size      = 20;
-    vm_params.heap_size          = 200;
-    vm_params.heap_growth_factor = 0.1f;
-    VM vm{vm_params};
+    VM& vm = engine.scripting();
 
     const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<bf::Camera>("Camera", bf::vmMakeCtorBinding<bf::Camera>());
 
@@ -991,7 +1047,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       {
         Event evt = window.getNextEvent();
 
-        if (evt.type == EventType::ON_KEY_DOWN && evt.keyboard.key == 'P')
+        if (evt.type == EventType::ON_KEY_DOWN && evt.keyboard.key == 'P' && evt.keyboard.modifiers & KeyboardEvent::CONTROL)
         {
           static bool isFullscreen = false;
           static int  old_info[4];
@@ -1028,8 +1084,8 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
         if (update_fn)
         {
-          vm.stackResize(1);
-          vm.stackLoadHandle(0, update_fn);
+          // vm.stackResize(1);
+          // vm.stackLoadHandle(0, update_fn);
 
           if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
           {
@@ -1079,6 +1135,67 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
       ImGui::Selectable("Item");
   }
   ImGui::End();
+
+  ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 5.0f, 5.0f), 0, ImVec2(1.0f, 0.0f));
+  ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
+  ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
+  window("RTTI", []() {
+    for (auto& type : bifrost::meta::gRegistry())
+    {
+      const auto& name = type.key();
+
+      if (ImGui::TreeNode(type.value(), "%.*s", name.length(), name.data()))
+      {
+        auto* const type_info = type.value();
+
+        ImGui::Text("Size: %i, Alignment %i", int(type_info->size()), int(type_info->alignment()));
+
+        for (auto& field : type_info->members())
+        {
+          ImGui::Text("member: %.*s", field->name().length(), field->name().data());
+        }
+
+        for (auto& prop : type_info->properties())
+        {
+          ImGui::Text("prop: %.*s", prop->name().length(), prop->name().data());
+        }
+
+        for (auto& method : type_info->methods())
+        {
+          ImGui::Text("method: %.*s", method->name().length(), method->name().data());
+        }
+
+        ImGui::Separator();
+        ImGui::TreePop();
+      }
+    }
+  });
+
+  window("Scripting", [&engine]() {
+    static std::future<BifrostVMError> s_WaitForCompile;
+
+    ImGui::PushItemWidth(-1.0f);
+    ImGui::InputTextMultiline("", source, sizeof(source), ImVec2(), ImGuiInputTextFlags_AllowTabInput);
+
+    if (!s_WaitForCompile.valid() || s_WaitForCompile.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready)
+    {
+      if (s_WaitForCompile._Is_ready())
+      {
+        s_WaitForCompile.get();
+      }
+
+      if (ImGui::Button("Run"))
+      {
+        auto& vm = engine.scripting();
+
+        // s_WaitForCompile = std::async(&bifrost::VM::execInModule, &vm, nullptr, source, std::strlen(source));
+
+        vm.execInModule(nullptr, source, std::strlen(source));
+      }
+    }
+
+    ImGui::PopItemWidth();
+  });
 
   window("Game State Machine", [&engine]() {
     auto& state_machine = engine.stateMachine();
@@ -1143,9 +1260,32 @@ void MainDemoLayer::onLoad(BifrostEngine& engine)
 {
   bfLogPrint("MainDemoLayer::onLoad Start");
   engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 0");
-  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 1");
-  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 2");
   bfLogPrint("MainDemoLayer::onLoad End");
+
+  auto mye              = new bifrost::Entity("Hello I am an entity");
+  auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");
+  auto dynamic_entity   = entity_type_info->instantiate(engine.mainMemory());
+  auto move_method      = entity_type_info->findMethod("move");
+
+  int          write;
+  bifrost::Any result = move_method->invoke(dynamic_entity, 89, 6.3f, write);
+
+  if (result.is<bifrost::meta::InvalidMethodCall>())
+  {
+    bfLogPrint("Failed to call move on entity");
+  }
+
+  bifrost::Any any1 = 9;
+  bifrost::Any any0 = std::move(any1);
+  bifrost::Any any2 = mye;
+  bifrost::Any any3 = TestClass(42, "HOLD ME TIGHT ANY");
+
+  delete any2.as<bifrost::Entity*>();
+
+  if (any0.is<int>())
+  {
+    bfLogPrint("My Any contains an int with value = %i\n", any0.as<int>());
+  }
 }
 
 #include "src/bifrost/asset_io/test.cpp"

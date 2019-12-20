@@ -78,10 +78,10 @@ void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params)
 {
   memset(self, 0x0, sizeof(*self));
 
-  self->frames            = bfArray_newA(self->frames, 12);
-  self->stack             = bfArray_newA(self->stack, 10);
+  self->frames            = OLD_bfArray_newA(self->frames, 12);
+  self->stack             = OLD_bfArray_newA(self->stack, 10);
   self->stack_top         = self->stack;
-  self->symbols           = bfArray_newA(self->symbols, 10);
+  self->symbols           = OLD_bfArray_newA(self->symbols, 10);
   self->params            = *params;
   self->gc_object_list    = NULL;
   self->last_error        = String_new("");
@@ -348,7 +348,7 @@ BifrostObjClass* createClassBinding(BifrostVM* self, bfVMValue obj, const Bifros
   }
 
   const bfStringRange      name   = bfMakeStringRangeC(clz_bind->name);
-  BifrostObjClass* const   clz    = bfVM_createClass(self, module_obj, name, clz_bind->extra_data_size);
+  BifrostObjClass* const   clz    = bfVM_createClass(self, module_obj, name, NULL, clz_bind->extra_data_size);
   const BifrostMethodBind* method = clz_bind->methods;
 
   clz->finalizer = clz_bind->finalizer;
@@ -396,23 +396,52 @@ void bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value)
   self->stack_top[idx] = FROM_POINTER(bfVM_createWeakRef(self, value));
 }
 
+bfBool32 bfVMGrabObjectsOfType(bfVMValue obj_a, bfVMValue obj_b, BifrostVMObjType type_a, BifrostVMObjType type_b, BifrostObj** out_a, BifrostObj** out_b)
+{
+  if (IS_POINTER(obj_a) && IS_POINTER(obj_b))
+  {
+    BifrostObj* const obj_a_ptr = BIFROST_AS_OBJ(obj_a);
+    BifrostObj* const obj_b_ptr = BIFROST_AS_OBJ(obj_b);
+
+    if (obj_a_ptr->type == type_a && obj_b_ptr->type == type_b)
+    {
+      *out_a = obj_a_ptr;
+      *out_b = obj_b_ptr;
+    }
+  }
+
+  return bfFalse;
+}
+
 void bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t clz_idx)
 {
   bfVM_assertStackIndex(self, idx);
   bfVM_assertStackIndex(self, clz_idx);
 
-  const bfVMValue obj = self->stack_top[idx];
-  const bfVMValue clz = self->stack_top[clz_idx];
+  const bfVMValue obj     = self->stack_top[idx];
+  const bfVMValue clz     = self->stack_top[clz_idx];
+  BifrostObj*     obj_ptr = NULL;
+  BifrostObj*     clz_ptr = NULL;
 
-  if (IS_POINTER(obj) && IS_POINTER(clz))
+  if (bfVMGrabObjectsOfType(obj, clz, BIFROST_VM_OBJ_REFERENCE, BIFROST_VM_OBJ_CLASS, &obj_ptr, &clz_ptr))
   {
-    BifrostObj* const obj_ptr = BIFROST_AS_OBJ(obj);
-    BifrostObj* const clz_ptr = BIFROST_AS_OBJ(clz);
+    ((BifrostObjReference*)obj_ptr)->clz = (BifrostObjClass*)clz_ptr;
+  }
+}
 
-    if (obj_ptr->type == BIFROST_VM_OBJ_REFERENCE && clz_ptr->type == BIFROST_VM_OBJ_CLASS)
-    {
-      ((BifrostObjReference*)obj_ptr)->clz = (BifrostObjClass*)clz_ptr;
-    }
+void bfVM_classSetBaseClass(BifrostVM* self, size_t idx, size_t clz_idx)
+{
+  bfVM_assertStackIndex(self, idx);
+  bfVM_assertStackIndex(self, clz_idx);
+
+  const bfVMValue obj     = self->stack_top[idx];
+  const bfVMValue clz     = self->stack_top[clz_idx];
+  BifrostObj*     obj_ptr = NULL;
+  BifrostObj*     clz_ptr = NULL;
+
+  if (bfVMGrabObjectsOfType(obj, clz, BIFROST_VM_OBJ_CLASS, BIFROST_VM_OBJ_CLASS, &obj_ptr, &clz_ptr))
+  {
+    ((BifrostObjClass*)obj_ptr)->base_clz = (BifrostObjClass*)clz_ptr;
   }
 }
 
@@ -494,6 +523,7 @@ static int bfVM__stackStoreVariable(BifrostVM* self, bfVMValue obj, bfStringRang
   else if (obj_ptr->type == BIFROST_VM_OBJ_MODULE)
   {
     BifrostObjModule* const module_obj = (BifrostObjModule*)obj_ptr;
+
     bfVM_xSetVariable(&module_obj->variables, self, field_symbol, value);
   }
   else
@@ -722,6 +752,7 @@ static int32_t bfVMGetArity(bfVMValue value)
     const BifrostObjNativeFn* const fn = (const BifrostObjNativeFn*)obj;
     return fn->arity;
   }
+  // TODO: If an instance / reference has a 'call' operator that should be checked.
 
   assert(!"Invalid type for arity check!");
   return 0;
@@ -778,7 +809,7 @@ BifrostVMType bfVM_stackGetType(BifrostVM* self, size_t idx)
   return bfVMGetType(self->stack_top[idx]);
 }
 
-int32_t bfVM_stackGetArity(BifrostVM* self, size_t idx)
+int32_t bfVM_stackGetArity(const BifrostVM* self, size_t idx)
 {
   bfVM_assertStackIndex(self, idx);
   return bfVMGetArity(self->stack_top[idx]);
@@ -1019,9 +1050,9 @@ frame_start:;
       }
       case BIFROST_VM_OP_LOAD_SYMBOL:
       {
-        const bfVMValue obj_value  = locals[regs[REG_RB]];
-        const uint32_t  symbol     = regs[REG_RC];
-        BifrostString   symbol_str = self->symbols[symbol];
+        const bfVMValue     obj_value  = locals[regs[REG_RB]];
+        const uint32_t      symbol     = regs[REG_RC];
+        const BifrostString symbol_str = self->symbols[symbol];
 
         if (!IS_POINTER(obj_value))
         {
@@ -1032,7 +1063,7 @@ frame_start:;
 
         BifrostObj* obj = AS_POINTER(obj_value);
 
-        if (obj->type == BIFROST_VM_OBJ_INSTANCE)
+        if (obj->type == BIFROST_VM_OBJ_INSTANCE || obj->type == BIFROST_VM_OBJ_REFERENCE)
         {
           BifrostObjInstance* inst = (BifrostObjInstance*)obj;
 
@@ -1042,32 +1073,33 @@ frame_start:;
           {
             locals[regs[REG_RA]] = *value;
           }
-          else
+          else if (inst->clz)
           {
-            BifrostObjClass* clz = inst->clz;
-
-            if (symbol < Array_size(&clz->symbols))
-            {
-              locals[regs[REG_RA]] = clz->symbols[symbol].value;
-            }
-            else
-            {
-              // TODO(Shareef): Decide on how strict this language will be with undefined fields.
-              // BF_RUNTIME_ERROR("WARNING: instance class does not have this field (%s)\n", self->symbols[symbol]);
-            }
+            obj = &inst->clz->super;
           }
         }
-        else if (obj->type == BIFROST_VM_OBJ_CLASS)
-        {
-          BifrostObjClass* clz = (BifrostObjClass*)obj;
 
-          if (symbol < Array_size(&clz->symbols))
+        if (obj->type == BIFROST_VM_OBJ_CLASS)
+        {
+          BifrostObjClass* original_clz = (BifrostObjClass*)obj;
+          BifrostObjClass* clz          = original_clz;
+          bfBool32         found_field  = bfFalse;
+
+          while (clz)
           {
-            locals[regs[REG_RA]] = clz->symbols[symbol].value;
+            if (symbol < Array_size(&clz->symbols) && clz->symbols[symbol].value != VAL_NULL)
+            {
+              locals[regs[REG_RA]] = clz->symbols[symbol].value;
+              found_field          = bfTrue;
+              break;
+            }
+
+            clz = clz->base_clz;
           }
-          else
+
+          if (!found_field)
           {
-            locals[regs[REG_RA]] = VAL_NULL;
+            BF_RUNTIME_ERROR("'%s::%s' is not defined (also not found in any base class).\n", original_clz->name, self->symbols[symbol]);
           }
         }
         else if (obj->type == BIFROST_VM_OBJ_MODULE)
@@ -1084,18 +1116,20 @@ frame_start:;
       }
       case BIFROST_VM_OP_STORE_SYMBOL:
       {
-        const BifrostString sym_str = self->symbols[regs[REG_RB]];
+        const BifrostString sym_str   = self->symbols[regs[REG_RB]];
+        const int           err_store = bfVM__stackStoreVariable(self, locals[regs[REG_RA]], bfMakeStringRangeLen(sym_str, String_length(sym_str)), locals[regs[REG_RC]]);
 
-        const int err_store = bfVM__stackStoreVariable(self, locals[regs[REG_RA]], bfMakeStringRangeLen(sym_str, String_length(sym_str)), locals[regs[REG_RC]]);
-
-        if (err_store == 1)
+        if (err_store)
         {
-          BF_RUNTIME_ERROR("Cannot store symbol into non object\n");
-        }
+          if (err_store == 1)
+          {
+            BF_RUNTIME_ERROR("Cannot store symbol into non object\n");
+          }
 
-        if (err_store == 2)
-        {
-          BF_RUNTIME_ERROR("ERRRO, storing a symbol on a non instance or class obj.\n");
+          if (err_store == 2)
+          {
+            BF_RUNTIME_ERROR("ERRRO, storing a symbol on a non instance or class obj.\n");
+          }
         }
         break;
       }

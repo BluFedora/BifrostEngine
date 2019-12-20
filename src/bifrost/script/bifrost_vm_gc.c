@@ -19,14 +19,18 @@
     This saves you one write per non-freed object, which is nice.
 */
 
-static inline size_t bfGCFinalizePostMark(BifrostVM* self);
-static inline void   bfGCMarkValue(bfVMValue value);
-static inline void   bfGCMarkValues(bfVMValue* values);
-static inline void   bfGCMarkValuesN(bfVMValue* values, size_t size);
-static void          bfGCMarkObj(BifrostObj* obj);
-static inline void   bfGCMarkSymbols(BifrostVMSymbol* symbols);
-static inline size_t bfGCObjectSize(BifrostObj* obj);
-static inline void   bfGCFinalize(BifrostVM* self);
+#define GC_MARK_UNREACHABLE 0
+#define GC_MARK_REACHABLE 1
+#define GC_MARK_FINALIZE 3
+
+static size_t bfGCFinalizePostMark(BifrostVM* self);
+static void   bfGCMarkValue(bfVMValue value, int mark_value);
+static void   bfGCMarkValues(bfVMValue* values, int mark_value);
+static void   bfGCMarkValuesN(bfVMValue* values, size_t size, int mark_value);
+static void   bfGCMarkObj(BifrostObj* obj, int mark_value);
+static void   bfGCMarkSymbols(BifrostVMSymbol* symbols, int mark_value);
+static size_t bfGCObjectSize(BifrostObj* obj);
+static void   bfGCFinalize(BifrostVM* self);
 
 extern bfVMValue     bfVM_getHandleValue(bfValueHandle h);
 extern bfValueHandle bfVM_getHandleNext(bfValueHandle h);
@@ -38,7 +42,7 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
 
   for (size_t i = 0; i < stack_size; ++i)
   {
-    bfGCMarkValue(self->stack[i]);
+    bfGCMarkValue(self->stack[i], GC_MARK_REACHABLE);
   }
 
   const size_t frames_size = Array_size(&self->frames);
@@ -50,7 +54,7 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
 
     if (fn)
     {
-      bfGCMarkObj(&fn->super);
+      bfGCMarkObj(&fn->super, GC_MARK_REACHABLE);
     }
   }
 
@@ -58,15 +62,15 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
   {
     BifrostObjStr* const key = (void*)it.key;
 
-    bfGCMarkObj(&key->super);
-    bfGCMarkObj(*(void**)it.value);
+    bfGCMarkObj(&key->super, GC_MARK_REACHABLE);
+    bfGCMarkObj(*(BifrostObj**)it.value, GC_MARK_REACHABLE);
   }
 
   bfValueHandle cursor = self->handles;
 
   while (cursor)
   {
-    bfGCMarkValue(bfVM_getHandleValue(cursor));
+    bfGCMarkValue(bfVM_getHandleValue(cursor), GC_MARK_REACHABLE);
     cursor = bfVM_getHandleNext(cursor);
   }
 
@@ -76,12 +80,12 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
   {
     if (parsers->current_module)
     {
-      bfGCMarkObj(&parsers->current_module->super);
+      bfGCMarkObj(&parsers->current_module->super, GC_MARK_REACHABLE);
     }
 
     if (parsers->current_clz)
     {
-      bfGCMarkObj(&parsers->current_clz->super);
+      bfGCMarkObj(&parsers->current_clz->super, GC_MARK_REACHABLE);
     }
 
     const size_t num_builders = Array_size(&parsers->fn_builder_stack);
@@ -92,7 +96,7 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
 
       if (builder->constants)
       {
-        bfGCMarkValues(builder->constants);
+        bfGCMarkValues(builder->constants, GC_MARK_REACHABLE);
       }
     }
 
@@ -101,7 +105,7 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
 
   for (uint8_t i = 0; i < self->temp_roots_top; ++i)
   {
-    bfGCMarkObj(self->temp_roots[i]);
+    bfGCMarkObj(self->temp_roots[i], GC_MARK_REACHABLE);
   }
 }
 
@@ -114,7 +118,7 @@ size_t bfGCSweep(struct BifrostVM_t* self)
 
   while (*cursor)
   {
-    if (!(*cursor)->gc_mark)
+    if ((*cursor)->gc_mark == GC_MARK_UNREACHABLE)
     {
       BifrostObj* garbage = *cursor;
       *cursor             = garbage->next;
@@ -126,21 +130,19 @@ size_t bfGCSweep(struct BifrostVM_t* self)
     }
     else
     {
-      (*cursor)->gc_mark = 0;
+      (*cursor)->gc_mark = GC_MARK_UNREACHABLE;
       cursor             = &(*cursor)->next;
     }
   }
 
-  BifrostObj* g_cursor = garbage_list;
+  BifrostObj* g_cursor      = garbage_list;
+  BifrostObj* g_cursor_prev = NULL;
 
-  while (g_cursor)
-  {
-    BifrostObj* const next = g_cursor->next;
-    bfObjFinalize(self, g_cursor);
-    g_cursor = next;
-  }
+  // NOTE: Instances must be destroyed before classes.
 
-  g_cursor = garbage_list;
+  //
+  // TODO(Shareef): Make this code nicer...
+  //   Need to find a better more consitent want to handle finalizers.
 
   while (g_cursor)
   {
@@ -156,26 +158,55 @@ size_t bfGCSweep(struct BifrostVM_t* self)
       {
         const bfVMValue value = clz->symbols[symbol].value;
 
-        if (IS_POINTER(value))
+        if (IS_POINTER(value) && bfObjIsFunction(AS_POINTER(value)))
         {
-          if (bfObjIsFunction(AS_POINTER(value)))
-          {
-            inst->super.next = self->finalized;
-            self->finalized  = g_cursor;
+          bfGCMarkObj(g_cursor, GC_MARK_FINALIZE);
 
-            collected_bytes -= bfGCObjectSize(g_cursor);
-
-            /*
-              NOTE(Shareef): Don't GC Just Yet.
-             */
-            g_cursor = next;
-            continue;
-          }
+          collected_bytes -= bfGCObjectSize(g_cursor);
         }
+      }
+
+      bfObjFinalize(self, g_cursor);
+
+      if (g_cursor->gc_mark != GC_MARK_FINALIZE)
+      {
+        if (g_cursor_prev)
+        {
+          g_cursor_prev->next = next;
+        }
+
+        if (garbage_list == g_cursor)
+        {
+          garbage_list = next;
+        }
+
+        bfVMObject_delete(self, g_cursor);
+
+        g_cursor = next;
+        continue;
       }
     }
 
-    bfVMObject_delete(self, g_cursor);
+    g_cursor_prev = g_cursor;
+    g_cursor      = next;
+  }
+
+  g_cursor = garbage_list;
+
+  while (g_cursor)
+  {
+    BifrostObj* const next = g_cursor->next;
+
+    if (g_cursor->gc_mark == GC_MARK_UNREACHABLE)
+    {
+      bfVMObject_delete(self, g_cursor);
+    }
+    else if (g_cursor->gc_mark == GC_MARK_FINALIZE)
+    {
+      g_cursor->next  = self->finalized;
+      self->finalized = g_cursor;
+    }
+
     g_cursor = next;
   }
 
@@ -215,7 +246,10 @@ void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t n
   */
   if (new_size == 0u)
   {
+    BifrostObj*      o = ptr;
+    BifrostVMObjType t = o->type;
     memset(ptr, 0xCC, old_size);
+    o->type = t;
     free(ptr);
     ptr = NULL;
   }
@@ -270,7 +304,7 @@ void bfGCPopRoot(struct BifrostVM_t* self)
   --self->temp_roots_top;
 }
 
-static inline size_t bfGCFinalizePostMark(BifrostVM* self)
+static size_t bfGCFinalizePostMark(BifrostVM* self)
 {
   BifrostObj** cursor          = &self->finalized;
   size_t       collected_bytes = 0u;
@@ -287,7 +321,7 @@ static inline size_t bfGCFinalizePostMark(BifrostVM* self)
     }
     else
     {
-      (*cursor)->gc_mark = 0;
+      (*cursor)->gc_mark = 6;
       cursor             = &(*cursor)->next;
     }
   }
@@ -295,7 +329,7 @@ static inline size_t bfGCFinalizePostMark(BifrostVM* self)
   return collected_bytes;
 }
 
-static inline void bfGCMarkValue(bfVMValue value)
+static void bfGCMarkValue(bfVMValue value, int mark_value)
 {
   if (IS_POINTER(value))
   {
@@ -303,73 +337,78 @@ static inline void bfGCMarkValue(bfVMValue value)
 
     if (ptr)
     {
-      bfGCMarkObj(ptr);
+      bfGCMarkObj(ptr, mark_value);
     }
   }
 }
 
-static inline void bfGCMarkValues(bfVMValue* values)
+static void bfGCMarkValues(bfVMValue* values, int mark_value)
 {
-  bfGCMarkValuesN(values, Array_size(&values));
+  bfGCMarkValuesN(values, Array_size(&values), mark_value);
 }
 
-static inline void bfGCMarkValuesN(bfVMValue* values, size_t size)
+static void bfGCMarkValuesN(bfVMValue* values, size_t size, int mark_value)
 {
   for (size_t i = 0; i < size; ++i)
   {
-    bfGCMarkValue(values[i]);
+    bfGCMarkValue(values[i], mark_value);
   }
 }
 
-static void bfGCMarkObj(BifrostObj* obj)
+static void bfGCMarkObj(BifrostObj* obj, int mark_value)
 {
   if (!obj->gc_mark)
   {
-    obj->gc_mark = 1;
+    obj->gc_mark = mark_value;
 
     switch (obj->type & BifrostVMObjType_mask)
     {
       case BIFROST_VM_OBJ_MODULE:
       {
         BifrostObjModule* module = (BifrostObjModule*)obj;
-        bfGCMarkSymbols(module->variables);
+        bfGCMarkSymbols(module->variables, mark_value);
 
         if (module->init_fn.name)
         {
-          bfGCMarkObj(&module->init_fn.super);
-
-          bfGCMarkValues(module->init_fn.constants);
+          bfGCMarkObj(&module->init_fn.super, mark_value);
+          bfGCMarkValues(module->init_fn.constants, mark_value);
         }
         break;
       }
       case BIFROST_VM_OBJ_CLASS:
       {
         BifrostObjClass* const clz = (BifrostObjClass*)obj;
-        bfGCMarkObj(&clz->module->super);
-        bfGCMarkSymbols(clz->symbols);
-        bfGCMarkSymbols(clz->field_initializers);
+
+        if (clz->base_clz)
+        {
+          bfGCMarkObj(&clz->base_clz->super, mark_value);
+        }
+
+        bfGCMarkObj(&clz->module->super, mark_value);
+        bfGCMarkSymbols(clz->symbols, mark_value);
+        bfGCMarkSymbols(clz->field_initializers, mark_value);
         break;
       }
       case BIFROST_VM_OBJ_INSTANCE:
       {
         BifrostObjInstance* const inst = (BifrostObjInstance*)obj;
-        bfGCMarkObj(&inst->clz->super);
+        bfGCMarkObj(&inst->clz->super, mark_value);
         bfHashMapFor(it, &inst->fields)
         {
-          bfGCMarkValue(*(bfVMValue*)it.value);
+          bfGCMarkValue(*(bfVMValue*)it.value, mark_value);
         }
         break;
       }
       case BIFROST_VM_OBJ_FUNCTION:
       {
         BifrostObjFn* const fn = (BifrostObjFn*)obj;
-        bfGCMarkValues(fn->constants);
+        bfGCMarkValues(fn->constants, mark_value);
         break;
       }
       case BIFROST_VM_OBJ_NATIVE_FN:
       {
         BifrostObjNativeFn* const fn = (BifrostObjNativeFn*)obj;
-        bfGCMarkValuesN(fn->statics, fn->num_statics);
+        bfGCMarkValuesN(fn->statics, fn->num_statics, mark_value);
         break;
       }
       case BIFROST_VM_OBJ_STRING:
@@ -380,7 +419,7 @@ static void bfGCMarkObj(BifrostObj* obj)
 
         if (ref->clz)
         {
-          bfGCMarkObj(&ref->clz->super);
+          bfGCMarkObj(&ref->clz->super, mark_value);
         }
 
         break;
@@ -391,13 +430,13 @@ static void bfGCMarkObj(BifrostObj* obj)
   }
 }
 
-static inline void bfGCMarkSymbols(BifrostVMSymbol* symbols)
+static void bfGCMarkSymbols(BifrostVMSymbol* symbols, int mark_value)
 {
   const size_t size = Array_size(&symbols);
 
   for (size_t i = 0; i < size; ++i)
   {
-    bfGCMarkValue(symbols[i].value);
+    bfGCMarkValue(symbols[i].value, mark_value);
   }
 }
 
@@ -442,7 +481,7 @@ size_t bfGCObjectSize(BifrostObj* obj)
   return 0u;
 }
 
-static inline void bfGCFinalize(BifrostVM* self)
+static void bfGCFinalize(BifrostVM* self)
 {
   const uint32_t      symbol = bfVM_getSymbol(self, bfMakeStringRangeC("dtor"));
   BifrostObjInstance* cursor = (BifrostObjInstance*)self->finalized;

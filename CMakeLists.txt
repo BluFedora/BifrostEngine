@@ -146,6 +146,9 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/memory/bifrost_proxy_allocator.cpp"
   "src/bifrost/memory/bifrost_stack_allocator.cpp"
 
+  # Bifrost Meta Module
+  "src/bifrost/meta/bifrost_meta_runtime.cpp"
+
   # Bifrost Utility Module
   "src/bifrost/utility/bifrost_hash.cpp"
 

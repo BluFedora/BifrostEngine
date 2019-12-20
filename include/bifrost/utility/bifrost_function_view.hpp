@@ -114,7 +114,7 @@ namespace bifrost
       }
     }
 
-    decltype(auto) call(Args... args) const
+    decltype(auto) call(Args&&... args) const
     {
       if constexpr (std::is_same_v<void, R>)
       {

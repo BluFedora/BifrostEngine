@@ -92,11 +92,11 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
 
   TEST_ModelData ret;
 
-  ret.vertices        = bfArray_newT(BasicVertex, 10);
-  Vec3f *positions    = bfArray_newT(Vec3f, 10);
-  Vec2f *uvs          = bfArray_newT(Vec2f, 10);
-  Vec3f *normals      = bfArray_newT(Vec3f, 10);
-  Face * faces        = bfArray_newT(Face, 10);
+  ret.vertices        = OLD_bfArray_newT(BasicVertex, 10);
+  Vec3f *positions    = OLD_bfArray_newT(Vec3f, 10);
+  Vec2f *uvs          = OLD_bfArray_newT(Vec2f, 10);
+  Vec3f *normals      = OLD_bfArray_newT(Vec3f, 10);
+  Face * faces        = OLD_bfArray_newT(Face, 10);
   uint   file_pointer = 0;
 
   while (file_pointer < obj_file_data_length)

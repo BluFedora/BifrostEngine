@@ -191,50 +191,51 @@ struct BifrostVM_t
   const struct BifrostObjNativeFn_t* current_native_fn;
 };
 
-BifrostVM*     bfVM_new(const BifrostVMParams* params);
-void           bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
-BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
-void           bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
-BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
-void           bfVM_moduleUnload(BifrostVM* self, const char* module);
-void           bfVM_moduleUnloadAll(BifrostVM* self);
-size_t         bfVM_stackSize(const BifrostVM* self);  // The usable size from an API standpoint
-BifrostVMError bfVM_stackResize(BifrostVM* self, size_t size);
-void           bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx);
-void*          bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t extra_data_size);
-void*          bfVM_stackMakeReferenceClz(BifrostVM* self, size_t module_idx, const BifrostVMClassBind* clz_bind, size_t dst_idx);
-void           bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value);
-void           bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t clz_idx);
-void           bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_class_or_module, const char* variable);
-BifrostVMError bfVM_stackStoreVariable(BifrostVM* self, size_t inst_or_class_or_module, const char* field, size_t value_idx);
-BifrostVMError bfVM_stackStoreNativeFn(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity);
-BifrostVMError bfVM_stackStoreClosure(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics);
-BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t static_idx);  // Must ony be called in the current closure.
-BifrostVMError bfVM_closureSetStatic(BifrostVM* self, size_t closure_idx, size_t static_idx, size_t value_idx);
-BifrostVMError bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind);
-void           bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value);
-void           bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len);
-void           bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value);
-void           bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
-void           bfVM_stackSetNil(BifrostVM* self, size_t idx);
-void*          bfVM_stackReadInstance(const BifrostVM* self, size_t idx);  // Also works on null values, just returns NULL
-const char*    bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);
-bfVMNumberT    bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
-bfBool32       bfVM_stackReadBool(const BifrostVM* self, size_t idx);
-BifrostVMType  bfVM_stackGetType(BifrostVM* self, size_t idx);
-int32_t        bfVM_stackGetArity(BifrostVM* self, size_t idx);  // This should be const
-bfValueHandle  bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
-void           bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle);
-void           bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);  // Freeing a null handle is safe.
-int32_t        bfVM_handleGetArity(bfValueHandle handle);
-BifrostVMType  bfVM_handleGetType(bfValueHandle handle);
-BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
-BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);  // if 'module' == NULL we will exec i an anon module.
-void           bfVM_gc(BifrostVM* self);
-const char*    bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol);
-const char*    bfVM_errorString(const BifrostVM* self);
-void           bfVM_dtor(BifrostVM* self);
-void           bfVM_delete(BifrostVM* self);
+BifrostVM*         bfVM_new(const BifrostVMParams* params);
+void               bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
+BifrostVMError     bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
+void               bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
+BifrostVMError     bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
+void               bfVM_moduleUnload(BifrostVM* self, const char* module);
+void               bfVM_moduleUnloadAll(BifrostVM* self);
+size_t             bfVM_stackSize(const BifrostVM* self);  // The usable size from an API standpoint
+BifrostVMError     bfVM_stackResize(BifrostVM* self, size_t size);
+void               bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx);
+void*              bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t extra_data_size);
+void*              bfVM_stackMakeReferenceClz(BifrostVM* self, size_t module_idx, const BifrostVMClassBind* clz_bind, size_t dst_idx);
+void               bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value);
+void               bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t clz_idx);
+void               bfVM_classSetBaseClass(BifrostVM* self, size_t idx, size_t clz_idx);
+void               bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_class_or_module, const char* variable);
+BifrostVMError     bfVM_stackStoreVariable(BifrostVM* self, size_t inst_or_class_or_module, const char* field, size_t value_idx);
+BifrostVMError     bfVM_stackStoreNativeFn(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity);
+BifrostVMError     bfVM_stackStoreClosure(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics);
+BifrostVMError     bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t static_idx);  // Must ony be called in the current closure.
+BifrostVMError     bfVM_closureSetStatic(BifrostVM* self, size_t closure_idx, size_t static_idx, size_t value_idx);
+BifrostVMError     bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind);
+void               bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value);
+void               bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len);
+void               bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value);
+void               bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
+void               bfVM_stackSetNil(BifrostVM* self, size_t idx);
+void*              bfVM_stackReadInstance(const BifrostVM* self, size_t idx);  // Also works on null values, just returns NULL
+const char*        bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);
+bfVMNumberT        bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
+bfBool32           bfVM_stackReadBool(const BifrostVM* self, size_t idx);
+BifrostVMType      bfVM_stackGetType(BifrostVM* self, size_t idx);
+int32_t            bfVM_stackGetArity(const BifrostVM* self, size_t idx);
+bfValueHandle      bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
+void               bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle);
+void               bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);  // Freeing a null handle is safe.
+int32_t            bfVM_handleGetArity(bfValueHandle handle);
+BifrostVMType      bfVM_handleGetType(bfValueHandle handle);
+BifrostVMError     bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
+BifrostVMError     bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);  // if 'module' == NULL we will exec in an anon module.
+void               bfVM_gc(BifrostVM* self);
+const char*        bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol);
+ConstBifrostString bfVM_errorString(const BifrostVM* self);
+void               bfVM_dtor(BifrostVM* self);
+void               bfVM_delete(BifrostVM* self);
 #if __cplusplus
 }
 #endif

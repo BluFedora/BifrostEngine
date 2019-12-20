@@ -30,21 +30,22 @@ BifrostObjModule* bfVM_createModule(struct BifrostVM_t* self, bfStringRange name
   BifrostObjModule* module = allocObj(self, sizeof(BifrostObjModule), BIFROST_VM_OBJ_MODULE);
 
   module->name      = String_newLen(name.bgn, bfStringRange_length(&name));
-  module->variables = bfArray_newA(module->variables, 32);
+  module->variables = OLD_bfArray_newA(module->variables, 32);
   memset(&module->init_fn, 0x0, sizeof(module->init_fn));
   objSetup(&module->init_fn.super, BIFROST_VM_OBJ_FUNCTION, NULL);
   module->init_fn.module = module;
   return module;
 }
 
-BifrostObjClass* bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, size_t extra_data)
+BifrostObjClass* bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, BifrostObjClass* base_clz, size_t extra_data)
 {
   BifrostObjClass* clz = allocObj(self, sizeof(BifrostObjClass), BIFROST_VM_OBJ_CLASS);
 
   clz->name               = String_newLen(name.bgn, bfStringRange_length(&name));
+  clz->base_clz           = base_clz;
   clz->module             = module;
-  clz->symbols            = bfArray_newA(clz->symbols, 32);
-  clz->field_initializers = bfArray_newA(clz->field_initializers, 32);
+  clz->symbols            = OLD_bfArray_newA(clz->symbols, 32);
+  clz->field_initializers = OLD_bfArray_newA(clz->field_initializers, 32);
   clz->extra_data         = extra_data;
   clz->finalizer          = NULL;
 
@@ -185,6 +186,10 @@ void bfVMObject__delete(struct BifrostVM_t* self, BifrostObj* obj)
     {
       break;
     }
+    default:
+    {
+      break;
+    }
   }
 }
 
@@ -204,6 +209,7 @@ bfBool32 bfObjIsFunction(const BifrostObj* obj)
 void bfObjFinalize(struct BifrostVM_t* self, BifrostObj* obj)
 {
   // TODO(SR): Find a way to guarantee instances don't get finalized twice
+
   if (obj->type == BIFROST_VM_OBJ_INSTANCE)
   {
     BifrostObjInstance* inst = (BifrostObjInstance*)obj;

@@ -16,11 +16,38 @@ namespace bifrost
   {
    protected:
     BaseObjectT(PrivateCtorTag) {}
+
+   public:
+    virtual meta::BaseClassMetaInfo* type() = 0;
+    virtual ~BaseObjectT()                  = default;
   };
 
   // NOTE(Shareef): Inherit from this
+  // template<typename... T>
+  // using BaseObject = BaseObjectT::Base<T...>;
+
+  namespace detail
+  {
+    template<typename... Ts>
+    struct FirstT;
+
+    template<typename T0, typename... Ts>
+    struct FirstT<T0, Ts...>
+    {
+      using Type = T0;
+    };
+  }
+
   template<typename... T>
-  using BaseObject = BaseObjectT::Base<T...>;
+  class BaseObject : public BaseObjectT::Base<T...>
+  {
+   public:
+    meta::BaseClassMetaInfo* type() override
+    {
+      return meta::TypeInfo<typename detail::FirstT<T...>::Type>();
+    }
+  };
+
 }  // namespace bifrost
 
 #endif /* BIFROST_BASE_OBJECT_HPP */

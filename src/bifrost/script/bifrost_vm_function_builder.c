@@ -32,7 +32,7 @@ void bfVMFunctionBuilder_begin(BifrostVMFunctionBuilder* self, const char* name,
   Array_clear(&self->local_vars);
   Array_clear(&self->local_var_scope_size);
   self->instructions = Array_new(uint32_t, DEFAULT_ARRAY_SIZE);
-  self->line_to_code = bfArray_newA(self->line_to_code, DEFAULT_ARRAY_SIZE);
+  self->line_to_code = OLD_bfArray_newA(self->line_to_code, DEFAULT_ARRAY_SIZE);
 
   bfVMFunctionBuilder_pushScope(self);
 }

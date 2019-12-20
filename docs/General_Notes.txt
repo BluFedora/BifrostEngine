@@ -91,18 +91,13 @@ Random:
 //   * x++
 //   * Switch Statements (Maybe add some pattern matching?)
 //   * Preprocessor for some extra fun.
-//   * References to C/++ owned Objects (references / lightuserdata)
-//   * References to C/++ owned Objects + Class information? (userdata)
-//   * Module variables apparently. (Statics also solve the problem)
 //   * Integer Div
 //   * Bin / Oct / Hex Numbers
 //   * Unicode chars?
 //   * foreach (with user defined iterators)
 //   * Ternary branch
 //   * For more efficient execution all string functions must be a lib rather than on the object itself.
-//   * A Lua Regisirty type thing w/o garbage collection and NO string keys.
 //   * To handle infinite loops introduce a max instrcution count.
-//   * Temp modules (aka just run code), maybe just return a Handle?
 
 // TODO(SR): Bifrost DS
 //   * Array needs a 'shrink to fit' function to make it use less memory.

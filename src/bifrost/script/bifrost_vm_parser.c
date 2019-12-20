@@ -112,6 +112,7 @@ static void          parseClassFunc(BifrostParser* self, BifrostObjClass* clz, b
 static void          parseGroup(BifrostParser* self, ExprInfo* expr, const bfToken* token);
 static void          parseLiteral(BifrostParser* self, ExprInfo* expr, const bfToken* token);
 static void          parseNew(BifrostParser* self, ExprInfo* expr, const bfToken* token);
+static void          parseSuper(BifrostParser* self, ExprInfo* expr, const bfToken* token);
 static void          parseVariable(BifrostParser* self, ExprInfo* expr, const bfToken* token);
 static void          parseBinOp(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs, const bfToken* token, int prec);
 static void          parseSubscript(BifrostParser* self, ExprInfo* expr, const ExprInfo* lhs, const bfToken* token, int prec);
@@ -241,7 +242,7 @@ static const GrammarRule s_Rules[BIFROST_TOKEN_SUPER + 1] =
   GRAMMAR_PREFIX(parseNew),                        // (BIFROST_TOKEN_NEW)
   GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_STATIC)
   GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_AS)
-  GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_SUPER)
+  GRAMMAR_PREFIX(parseSuper),                      // (BIFROST_TOKEN_SUPER)
 };
 
 // static_assert(std::size(s_Rules) == (std::size_t(TokenType::EOP) + 1u), "This parse table must match each token.");
@@ -654,6 +655,15 @@ bfBool32 bfParser_parse(BifrostParser* self)
       parseBlock(self);
       break;
     }
+    case BIFROST_TOKEN_NEW:
+    case BIFROST_TOKEN_SUPER:
+    {
+      const uint16_t expr_loc = bfVMFunctionBuilder_pushTemp(builder(), 1);
+      ExprInfo       expr     = exprMake(expr_loc, parserVariableMakeTemp(expr_loc));
+      parseExpr(self, &expr, PREC_NONE);
+      bfVMFunctionBuilder_popTemp(builder(), expr_loc);
+      break;
+    }
   }
 
   return bfTrue;
@@ -757,6 +767,9 @@ static void parseImport(BifrostParser* self)
       }
     } while (bfParser_match(self, BIFROST_TOKEN_COMMA));
   }
+  else
+  {
+  }
 
   bfParser_eat(self, BIFROST_TOKEN_SEMI_COLON, bfFalse, "Import must end with a semi-colon.");
 }
@@ -853,6 +866,17 @@ static void parseGroup(BifrostParser* self, ExprInfo* expr_info, const bfToken* 
   bfParser_eat(self, R_PAREN, bfFalse, "Missing closing parenthesis for an group expression.");
 }
 
+static void bfParser_loadConstant(BifrostParser* self, ExprInfo* expr_info, bfVMValue value)
+{
+  const uint32_t konst_loc = bfVMFunctionBuilder_addConstant(builder(), value);
+
+  bfVMFunctionBuilder_addInstABx(
+   builder(),
+   BIFROST_VM_OP_LOAD_BASIC,
+   expr_info->write_loc,
+   konst_loc + BIFROST_VM_OP_LOAD_BASIC_CONSTANT);
+}
+
 static void parseLiteral(BifrostParser* self, ExprInfo* expr_info, const bfToken* token)
 {
   const bfVMValue constexpr_value = parserTokenConstexprValue(self, token);
@@ -871,13 +895,7 @@ static void parseLiteral(BifrostParser* self, ExprInfo* expr_info, const bfToken
   }
   else
   {
-    const uint32_t konst_loc = bfVMFunctionBuilder_addConstant(builder(), constexpr_value);
-
-    bfVMFunctionBuilder_addInstABx(
-     builder(),
-     BIFROST_VM_OP_LOAD_BASIC,
-     expr_info->write_loc,
-     konst_loc + BIFROST_VM_OP_LOAD_BASIC_CONSTANT);
+    bfParser_loadConstant(self, expr_info, constexpr_value);
   }
 }
 
@@ -930,6 +948,27 @@ static void parseNew(BifrostParser* self, ExprInfo* expr, const bfToken* token)
     }
 
     bfVMFunctionBuilder_popTemp(builder(), clz_loc);
+  }
+}
+
+static void parseSuper(BifrostParser* self, ExprInfo* expr, const bfToken* token)
+{
+  (void)token;
+
+  if (self->current_clz)
+  {
+    if (self->current_clz->base_clz)
+    {
+      bfParser_loadConstant(self, expr, FROM_POINTER(self->current_clz->base_clz));
+    }
+    else
+    {
+      bfEmitError(self, "'super' keyword can only be used on Classes with a Base Class.\n");
+    }
+  }
+  else
+  {
+    bfEmitError(self, "'super' keyword can only be used in class methods.\n");
   }
 }
 
@@ -1309,6 +1348,7 @@ static void parseClassDecl(BifrostParser* self)
 
   const bfToken       name_token = self->current_token;
   const bfStringRange name_str   = name_token.as.str_range;
+  BifrostObjClass*    base_clz   = NULL;
 
   bfParser_eat(
    self,
@@ -1316,13 +1356,54 @@ static void parseClassDecl(BifrostParser* self)
    bfFalse,
    "Class name expected after 'class' keyword");
 
+  if (bfParser_match(self, BIFROST_TOKEN_COLON))
+  {
+    const bfToken       base_name_token = self->current_token;
+    const bfStringRange base_name_str   = base_name_token.as.str_range;
+
+    if (bfParser_eat(self, BIFROST_TOKEN_IDENTIFIER, bfFalse, "Class name expected after ':' to specify the base class."))
+    {
+      const bfVMValue base_class_val = bfVM_stackFindVariable(self->current_module, base_name_str.bgn, bfStringRange_length(&base_name_str));
+
+      if (IS_POINTER(base_class_val))
+      {
+        BifrostObj* const base_class_obj = BIFROST_AS_OBJ(base_class_val);
+
+        if (base_class_obj->type == BIFROST_VM_OBJ_CLASS)
+        {
+          base_clz = (BifrostObjClass*)base_class_obj;
+        }
+        else
+        {
+          bfEmitError(
+           self,
+           "'%.*s' cannot be used as a base class for '%.*s' (NON CLASS TYPE).",
+           bfStringRange_length(&base_name_str),
+           base_name_str.bgn,
+           bfStringRange_length(&name_str),
+           name_str.bgn);
+        }
+      }
+      else
+      {
+        bfEmitError(
+         self,
+         "'%.*s' cannot be used as a base class for '%.*s' (NON CLASS TYPE).",
+         name_str.bgn,
+         bfStringRange_length(&name_str),
+         base_name_str.bgn,
+         bfStringRange_length(&base_name_str));
+      }
+    }
+  }
+
   bfParser_eat(
    self,
    BIFROST_TOKEN_L_CURLY,
    bfFalse,
    "Class definition must start with a curly brace.");
 
-  BifrostObjClass* clz = bfVM_createClass(self->vm, self->current_module, name_str, 0u);
+  BifrostObjClass* clz = bfVM_createClass(self->vm, self->current_module, name_str, base_clz, 0u);
 
   bfGCPushRoot(self->vm, &clz->super);
   bfVM_xSetVariable(&self->current_module->variables, self->vm, name_str, FROM_POINTER(clz));

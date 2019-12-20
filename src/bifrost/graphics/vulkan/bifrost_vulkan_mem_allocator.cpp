@@ -58,8 +58,8 @@ void VkPoolAllocatorCtor(PoolAllocator* self, const bfGfxDevice* const logical_d
 
   const uint32_t memory_properties_type_count = device->memory_properties.memoryTypeCount;
 
-  self->m_MemTypeAllocSizes = bfArray_newA(self->m_MemTypeAllocSizes, memory_properties_type_count);
-  self->m_MemPools          = bfArray_newA(self->m_MemPools, memory_properties_type_count);
+  self->m_MemTypeAllocSizes = OLD_bfArray_newA(self->m_MemTypeAllocSizes, memory_properties_type_count);
+  self->m_MemPools          = OLD_bfArray_newA(self->m_MemPools, memory_properties_type_count);
   self->m_PageSize          = (uint32_t)device->device_properties.limits.bufferImageGranularity;
   self->m_MinBlockSize      = (uint64_t)self->m_PageSize * BIFROST_POOL_ALLOC_NUM_PAGES_PER_BLOCK;
   self->m_LogicalDevice     = logical_device;
@@ -71,7 +71,7 @@ void VkPoolAllocatorCtor(PoolAllocator* self, const bfGfxDevice* const logical_d
     MemoryPool* const pool = (MemoryPool*)Array_emplace(&self->m_MemPools);
     size_t* const     size = (size_t*)Array_emplace(&self->m_MemTypeAllocSizes);
 
-    *pool = bfArray_newA(*pool, initial_pool_size);
+    *pool = OLD_bfArray_newA(*pool, initial_pool_size);
 
     for (uint32_t j = 0; j < initial_pool_size; ++j)
     {

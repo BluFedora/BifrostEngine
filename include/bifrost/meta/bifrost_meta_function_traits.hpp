@@ -10,6 +10,19 @@
 
 namespace bifrost::meta
 {
+  // NOTE(Shareef):
+  //   How to use 'ParameterPack':
+  //     using ParamPack = ParameterPack<A, B, C>;
+  //     template <typename...> struct S {};
+  //     ParamPack::apply<S> var;   [Equivalent to `S<A, B, C> var;`]
+  template<typename... P>
+  struct ParameterPack
+  {
+    template<template<typename...> typename T>
+    using apply                = T<P...>;
+    static constexpr auto size = sizeof...(P);
+  };
+
   template<typename F>
   struct function_traits;
 
@@ -40,6 +53,7 @@ namespace bifrost::meta
     static constexpr std::size_t arity = sizeof...(Args);
     using return_type                  = R;
     using tuple_type                   = FunctionTuple<Args...>;
+    using parameter_pack               = ParameterPack<Args...>;
 
     template<std::size_t N>
     struct argument
@@ -124,6 +138,7 @@ namespace bifrost::meta
     static constexpr std::size_t arity = call_type::arity - 1;
     using return_type                  = typename call_type::return_type;
     using tuple_type                   = detail::remove_first_tuple_t<typename call_type::tuple_type>;
+    using parameter_pack               = detail::remove_first_tuple_t<typename call_type::parameter_pack>;
 
     template<std::size_t N>
     struct argument

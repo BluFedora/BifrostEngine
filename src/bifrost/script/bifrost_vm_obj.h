@@ -69,13 +69,14 @@ typedef struct BifrostObjModule_t
 
 typedef struct BifrostObjClass_t
 {
-  BifrostObj        super;
-  BifrostString     name;
-  BifrostObjModule* module;
-  BifrostVMSymbol*  symbols;
-  BifrostVMSymbol*  field_initializers;
-  size_t            extra_data;
-  bfClassFinalizer  finalizer;
+  BifrostObj                super;
+  BifrostString             name;
+  struct BifrostObjClass_t* base_clz;
+  BifrostObjModule*         module;
+  BifrostVMSymbol*          symbols;
+  BifrostVMSymbol*          field_initializers;
+  size_t                    extra_data;
+  bfClassFinalizer          finalizer;
 
 } BifrostObjClass;
 
@@ -136,7 +137,7 @@ typedef struct BifrostVMStackFrame_t
 
 // Move to "GC" Header.
 BifrostObjModule*    bfVM_createModule(struct BifrostVM_t* self, bfStringRange name);
-BifrostObjClass*     bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, size_t extra_data);
+BifrostObjClass*     bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, BifrostObjClass* base_clz, size_t extra_data);
 BifrostObjInstance*  bfVM_createInstance(struct BifrostVM_t* self, BifrostObjClass* clz);
 BifrostObjFn*        bfVM_createFunction(struct BifrostVM_t* self, BifrostObjModule* module);
 BifrostObjNativeFn*  bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics);

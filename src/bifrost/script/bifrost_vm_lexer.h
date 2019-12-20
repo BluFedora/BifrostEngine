@@ -13,14 +13,39 @@ extern "C" {
  */
 typedef enum
 {
-  R_PAREN   = 1,        // @BIFROST_TOKEN_R_PAREN
-  L_SQR_BOI = 2,        // @BIFROST_TOKEN_L_SQR_BOI
-  R_SQR_BOI = 3,        // @BIFROST_TOKEN_R_SQR_BOI
-  L_CURLY   = 4,        // @BIFROST_TOKEN_L_CURLY
-  R_CURLY   = 5,        // @BIFROST_TOKEN_R_CURLY
+  BIFROST_TOKEN_L_PAREN     = 0,  /* (                                     */
+  BIFROST_TOKEN_R_PAREN     = 1,  /* )                                     */
+  BIFROST_TOKEN_L_SQR_BOI   = 2,  /* [                                     */
+  BIFROST_TOKEN_R_SQR_BOI   = 3,  /* ]                                     */
+  BIFROST_TOKEN_L_CURLY     = 4,  /* {                                     */
+  BIFROST_TOKEN_R_CURLY     = 5,  /* }                                     */
+  BIFROST_TOKEN_COLON       = 7,  /* :                                     */
+  BIFROST_TOKEN_SEMI_COLON  = 8,  /* ;                                     */
+  BIFROST_TOKEN_COMMA       = 9,  /* ,                                     */
+  BIFROST_TOKEN_EQUALS      = 10, /* =                                     */
+  BIFROST_TOKEN_DOT         = 19, /* .                                     */
+  BIFROST_TOKEN_IDENTIFIER  = 20, /* abcdefghijklmnopqrstuvwxyz_0123456789 */
+  BIFROST_TOKEN_VAR_DECL    = 21, /* var                                   */
+  BIFROST_TOKEN_FUNC_DECL   = 23, /* func                                  */
+  BIFROST_TOKEN_CTRL_IF     = 25, /* if                                    */
+  BIFROST_TOKEN_CTRL_ELSE   = 26, /* else                                  */
+  BIFROST_TOKEN_CTRL_WHILE  = 36, /* while                                 */
+  BIFROST_TOKEN_CTRL_RETURN = 38, /* return                                */
+  BIFROST_TOKEN_CTRL_BREAK  = 45, /* break                                 */
+  BIFROST_TOKEN_NEW         = 46, /* new                                   */
+  BIFROST_TOKEN_STATIC      = 47, /* static                                */
+  BIFROST_TOKEN_AS          = 48, /* as                                    */
+  BIFROST_TOKEN_SUPER       = 49, /* super                                 */
+
+  // Depracated names
+  R_PAREN   = BIFROST_TOKEN_R_PAREN,
+  L_SQR_BOI = BIFROST_TOKEN_L_SQR_BOI,
+  R_SQR_BOI = BIFROST_TOKEN_R_SQR_BOI,
+  L_CURLY   = BIFROST_TOKEN_L_CURLY,
+  R_CURLY   = BIFROST_TOKEN_R_CURLY,
   HASHTAG   = 6,        // #
-  COLON     = 7,        // :
-  COMMA     = 9,        // @BIFROST_TOKEN_COMMA
+  COLON     = BIFROST_TOKEN_COLON,  // @BIFROST_TOKEN_COLON
+  COMMA     = BIFROST_TOKEN_COMMA,  // @BIFROST_TOKEN_COMMA
   EQUALS    = 10,       // @BIFROST_TOKEN_EQUALS
   PLUS      = 11,       // +
   MINUS     = 12,       // -
@@ -56,31 +81,7 @@ typedef enum
   EOP         = 44,     // End of Program
 
   // basics, keywords, meta, literals, literals, flow control
-
   // TODO(SR): Tokens: '/=', '*=', '%', '%=', '|', '&', '~', '>>', '<<'
-
-  BIFROST_TOKEN_L_PAREN     = 0,           /* (                                     */
-  BIFROST_TOKEN_R_PAREN     = R_PAREN,     /* )                                     */
-  BIFROST_TOKEN_L_SQR_BOI   = L_SQR_BOI,   /* [                                     */
-  BIFROST_TOKEN_R_SQR_BOI   = R_SQR_BOI,   /* ]                                     */
-  BIFROST_TOKEN_L_CURLY     = L_CURLY,     /* {                                     */
-  BIFROST_TOKEN_R_CURLY     = R_CURLY,     /* }                                     */
-  BIFROST_TOKEN_SEMI_COLON  = 8,           /* ;                                     */
-  BIFROST_TOKEN_EQUALS      = EQUALS,      /* =                                     */
-  BIFROST_TOKEN_DOT         = DOT,         /* .                                     */
-  BIFROST_TOKEN_COMMA       = COMMA,       /* ,                                     */
-  BIFROST_TOKEN_IDENTIFIER  = IDENTIFIER,  /* abcdefghijklmnopqrstuvwxyz_0123456789 */
-  BIFROST_TOKEN_VAR_DECL    = VAR_DECL,    /* var                                   */
-  BIFROST_TOKEN_FUNC_DECL   = FUNC,        /* func                                  */
-  BIFROST_TOKEN_CTRL_WHILE  = 36,          /* while                                 */
-  BIFROST_TOKEN_CTRL_IF     = CTRL_IF,     /* if                                    */
-  BIFROST_TOKEN_CTRL_ELSE   = CTRL_ELSE,   /* else                                  */
-  BIFROST_TOKEN_CTRL_RETURN = CTRL_RETURN, /* return                                */
-  BIFROST_TOKEN_CTRL_BREAK  = EOP + 1,     /* break                                 */
-  BIFROST_TOKEN_NEW         = EOP + 2,     /* new                                   */
-  BIFROST_TOKEN_STATIC      = EOP + 3,     /* static                                */
-  BIFROST_TOKEN_AS          = EOP + 4,     /* as                                    */
-  BIFROST_TOKEN_SUPER       = EOP + 5,     /* super                                 */
 
 } bfTokenType;
 

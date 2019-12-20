@@ -26,4 +26,20 @@ namespace bifrost
   {
     m_Impl.dealloc(ptr);
   }
+
+  NoFreeAllocator::NoFreeAllocator(IMemoryManager& real_allocator) :
+    m_Impl(real_allocator)
+  {
+  }
+
+  void* NoFreeAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  {
+    return m_Impl.alloc(size, alignment);
+  }
+
+  void NoFreeAllocator::dealloc(void* ptr)
+  {
+    (void)ptr;
+    // m_Impl.dealloc(ptr);
+  }
 }

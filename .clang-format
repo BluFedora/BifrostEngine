@@ -69,8 +69,8 @@ JavaScriptQuotes:                               Leave
 JavaScriptWrapImports:                          false
 KeepEmptyLinesAtTheStartOfBlocks:               false
 Language:                                       Cpp
-#MacroBlockBegin (std::string)
-#MacroBlockEnd (std::string)
+MacroBlockBegin:                                "BIFROST_META_BEGIN"
+MacroBlockEnd:                                  "BIFROST_META_END"
 MaxEmptyLinesToKeep:                            1
 NamespaceIndentation:                           All
 ObjCBlockIndentWidth:                           4
