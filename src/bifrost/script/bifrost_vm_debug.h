@@ -15,9 +15,10 @@ typedef enum
 
 } BifrostDebugConstants;
 
-size_t bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size);
-size_t bfDbgValueTypeToString(bfVMValue value, char* buffer, size_t buffer_size);
-void   bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t code_length);
+size_t      bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size);
+size_t      bfDbgValueTypeToString(bfVMValue value, char* buffer, size_t buffer_size);
+const char* bfInstOpToString(bfInstructionOp op);
+void        bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t code_length);
 #if __cplusplus
 }
 #endif

@@ -1,7 +1,7 @@
 #include "bifrost_vm_debug.h"
 
 #include "bifrost_vm_obj.h"  //
-#include <stdio.h>  //sprintf
+#include <stdio.h>           //sprintf
 
 static inline void bfDbgIndentPrint(int indent);
 
@@ -33,36 +33,42 @@ size_t bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size)
         const BifrostObjFn* const obj_fn = (const BifrostObjFn*)obj;
 
         return (size_t)snprintf(buffer, buffer_size, "<fn %s>", obj_fn->name);
-        break;
       }
       case BIFROST_VM_OBJ_MODULE:
       {
         return (size_t)snprintf(buffer, buffer_size, "<module>");
-        break;
       }
       case BIFROST_VM_OBJ_CLASS:
       {
         const BifrostObjClass* const obj_clz = (const BifrostObjClass*)obj;
 
         return (size_t)snprintf(buffer, buffer_size, "<class %s>", obj_clz->name);
-        break;
       }
       case BIFROST_VM_OBJ_INSTANCE:
       {
         return (size_t)snprintf(buffer, buffer_size, "<instance>");
-        break;
       }
       case BIFROST_VM_OBJ_STRING:
       {
         const BifrostObjStr* const obj_string = (const BifrostObjStr*)obj;
 
         return (size_t)snprintf(buffer, buffer_size, "%s", obj_string->value);
-        break;
       }
       case BIFROST_VM_OBJ_NATIVE_FN:
       {
         return (size_t)snprintf(buffer, buffer_size, "<native function>");
-        break;
+      }
+      case BIFROST_VM_OBJ_REFERENCE:
+      {
+        const BifrostObjReference* const obj_ref = (const BifrostObjReference*)obj;
+
+        return (size_t)snprintf(buffer, buffer_size, "<obj reference class(%s)>", obj_ref->clz ? obj_ref->clz->name : "null");
+      }
+      case BIFROST_VM_OBJ_WEAK_REF:
+      {
+        const BifrostObjWeakRef* const obj_weak_ref = (const BifrostObjWeakRef*)obj;
+
+        return (size_t)snprintf(buffer, buffer_size, "<obj weak ref %p>", obj_weak_ref->data);
       }
     }
   }
@@ -98,49 +104,79 @@ size_t bfDbgValueTypeToString(bfVMValue value, char* buffer, size_t buffer_size)
         const BifrostObjFn* const obj_fn = (const BifrostObjFn*)obj;
 
         return (size_t)snprintf(buffer, buffer_size, "<fn %s>", obj_fn->name);
-        break;
       }
       case BIFROST_VM_OBJ_MODULE:
       {
         return (size_t)snprintf(buffer, buffer_size, "<Module>");
-        break;
       }
       case BIFROST_VM_OBJ_CLASS:
       {
         const BifrostObjClass* const obj_clz = (const BifrostObjClass*)obj;
 
         return (size_t)snprintf(buffer, buffer_size, "<Class %s>", obj_clz->name);
-        break;
       }
       case BIFROST_VM_OBJ_INSTANCE:
       {
         return (size_t)snprintf(buffer, buffer_size, "<Instance>");
-        break;
       }
       case BIFROST_VM_OBJ_STRING:
       {
         return (size_t)snprintf(buffer, buffer_size, "<String>");
-        break;
       }
       case BIFROST_VM_OBJ_NATIVE_FN:
       {
         return (size_t)snprintf(buffer, buffer_size, "<NativeFunction>");
-        break;
       }
       case BIFROST_VM_OBJ_REFERENCE:
       {
         return (size_t)snprintf(buffer, buffer_size, "<Reference>");
-        break;
       }
       case BIFROST_VM_OBJ_WEAK_REF:
       {
         return (size_t)snprintf(buffer, buffer_size, "<Weak Ref>");
-        break;
       }
     }
   }
 
   return (size_t)snprintf(buffer, buffer_size, "<Undefined>");
+}
+
+const char* bfInstOpToString(bfInstructionOp op)
+{
+#define bfInstOpToStringImpl(n) \
+  case BIFROST_VM_OP_##n: return #n
+
+  switch (op)
+  {
+    bfInstOpToStringImpl(CMP_EE);
+    bfInstOpToStringImpl(CMP_NE);
+    bfInstOpToStringImpl(CMP_LE);
+    bfInstOpToStringImpl(NOT);
+    bfInstOpToStringImpl(LOAD_BASIC);
+    bfInstOpToStringImpl(CMP_AND);
+    bfInstOpToStringImpl(CMP_OR);
+    bfInstOpToStringImpl(RETURN);
+    bfInstOpToStringImpl(LOAD_SYMBOL);
+    bfInstOpToStringImpl(STORE_SYMBOL);
+    bfInstOpToStringImpl(NEW_CLZ);
+    bfInstOpToStringImpl(STORE_MOVE);
+    bfInstOpToStringImpl(CALL_FN);
+    bfInstOpToStringImpl(MATH_ADD);
+    bfInstOpToStringImpl(MATH_SUB);
+    bfInstOpToStringImpl(MATH_MUL);
+    bfInstOpToStringImpl(MATH_DIV);
+    bfInstOpToStringImpl(MATH_MOD);
+    bfInstOpToStringImpl(MATH_POW);
+    bfInstOpToStringImpl(MATH_INV);
+    bfInstOpToStringImpl(CMP_LT);
+    bfInstOpToStringImpl(CMP_GT);
+    bfInstOpToStringImpl(CMP_GE);
+    bfInstOpToStringImpl(JUMP);
+    bfInstOpToStringImpl(JUMP_IF);
+    bfInstOpToStringImpl(JUMP_IF_NOT);
+    default: return "OP_UNKNOWN";
+  }
+#undef bfInstOpToStringImpl
 }
 
 void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t code_length)

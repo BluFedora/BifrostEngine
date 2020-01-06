@@ -1,14 +1,16 @@
 #ifndef BIFORST_PLATFORM_H
 #define BIFORST_PLATFORM_H
 
+/* clang-format off */
 #ifndef PLATFORM_WIN32
-#define BIFROST_PLATFORM_WIN32 0
+#define BIFROST_PLATFORM_WIN32         0
 #define BIFROST_PLATFORM_WIN64         0
 #define BIFROST_PLATFORM_WINDOWS       0
 #define BIFROST_PLATFORM_ANDROID       0
 #define BIFROST_PLATFORM_MACOS         0
 #define BIFROST_PLATFORM_IOS           0
 #define BIFROST_PLATFORM_EMSCRIPTEN    0
+#define BIFROST_PLATFORM_LINUX         0
 #endif
 
 #ifdef _WIN32
@@ -35,7 +37,7 @@
   #elif TARGET_OS_MAC
     #undef BIFROST_PLATFORM_MACOS
     #define BIFROST_PLATFORM_MACOS 1
-	#define PLATFORM_MAC 1
+	#define BIFROST_PLATFORM_MACOS 1
   #else
     #   error "Unknown Apple platform"
   #endif
@@ -43,6 +45,10 @@
   #undef BIFROST_PLATFORM_ANDROID
   #define BIFROST_PLATFORM_ANDROID 1
 #elif __linux
+
+  #undef BIFROST_PLATFORM_LINUX
+  #define BIFROST_PLATFORM_LINUX 1
+
   // linux
 #elif __unix // all unices not caught above
              // Unix

@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   tide_stack_allocator.cpp
+  @file   bifrost_stack_allocator.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

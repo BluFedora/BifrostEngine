@@ -1,7 +1,3 @@
-// After the API is finalized then move to separate files.
-
-// Dependencies
-//  -> Core Bifrost Types
 #ifndef BIFROST_GFX_API_H
 #define BIFROST_GFX_API_H
 

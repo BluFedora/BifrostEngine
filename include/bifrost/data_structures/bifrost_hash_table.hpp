@@ -57,25 +57,6 @@ namespace bifrost
       {
       }
 
-      // TODO(Shareef): Add an operator for RValues.
-      HashNode& operator=(const HashNode& rhs)
-      {
-        if (this != &rhs)
-        {
-          deleteNode();
-
-          if (rhs.isFilled())
-          {
-            new (&this->m_Key) TKey(rhs.key());
-            new (&this->m_Value) TValue(rhs.value());
-          }
-
-          m_State = rhs.m_State;
-        }
-
-        return *this;
-      }
-
       void set(const TKey& key, const TValue& value)
       {
         deleteNode();
@@ -122,6 +103,25 @@ namespace bifrost
       HashNode(HashNode&& rhs) = delete;
       HashNode& operator=(HashNode&& rhs) = delete;
       HashNode(const HashNode& rhs)       = delete;
+
+       // TODO(Shareef): Add an operator for RValues.
+      HashNode& operator=(const HashNode& rhs)
+      {
+        if (this != &rhs)
+        {
+          deleteNode();
+
+          if (rhs.isFilled())
+          {
+            new (&this->m_Key) TKey(rhs.key());
+            new (&this->m_Value) TValue(rhs.value());
+          }
+
+          m_State = rhs.m_State;
+        }
+
+        return *this;
+      }
 
       [[nodiscard]] const TKey& key() const
       {
@@ -675,6 +675,7 @@ namespace bifrost
 
     m_Table = newTable;
 
+    // TODO(Shareef): The insert call can recursively call 'rehash'. This can be made into an iterative method.
     for (std::size_t i = 0; i < old_capacity; ++i)
     {
       if (!walker->isWritable())

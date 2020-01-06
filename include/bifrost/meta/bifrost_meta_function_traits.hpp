@@ -1,6 +1,15 @@
-//
-// 'tuple_type_raw' is for the arguments of a member function / pointer without the class as the first argument
-//
+/*!
+ * @file   bifrost_meta_function_traits.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Allows for compile time introspection on the properties of
+ *   all types of callable objects.
+ *
+ * @version 0.0.1
+ * @date    2019-12-28
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_META_FUNCTION_TRAIT_HPP
 #define BIFROST_META_FUNCTION_TRAIT_HPP
 
@@ -10,6 +19,10 @@
 
 namespace bifrost::meta
 {
+  //
+  // 'tuple_type_raw' is for the arguments of a member function / pointer without the class as the first argument
+  //
+
   // NOTE(Shareef):
   //   How to use 'ParameterPack':
   //     using ParamPack = ParameterPack<A, B, C>;

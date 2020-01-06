@@ -1,3 +1,14 @@
+/*!
+ * @file   bifrost_meta_utils.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Utilities for compile time template meta programming operations.
+ *
+ * @version 0.0.1
+ * @date    2019-12-28
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_META_UTILS_HPP
 #define BIFROST_META_UTILS_HPP
 
@@ -10,6 +21,7 @@ namespace bifrost::meta
   //
   // overloaded
   //
+
   template<class... Ts>
   struct overloaded : public Ts...
   {
@@ -21,6 +33,7 @@ namespace bifrost::meta
   //
   // for_each
   //
+
   template<typename Tuple, typename F, std::size_t... Indices>
   constexpr void for_each_impl(Tuple&& tuple, F&& f, std::index_sequence<Indices...>)
   {
@@ -44,6 +57,7 @@ namespace bifrost::meta
   //
   // for_each_template
   //
+
   namespace detail
   {
     //
@@ -101,6 +115,10 @@ namespace bifrost::meta
   {
     detail::for_each_template_impl<sizeof...(Args), Args...>::impl(func);
   }
+
+  //
+  // for_constexpr
+  //
 
   // [https://nilsdeppe.com/posts/for-constexpr]
   template<std::size_t N, typename F>

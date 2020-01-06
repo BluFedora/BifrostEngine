@@ -37,9 +37,9 @@ namespace bifrost::meta
           for_each(meta::membersOf<Type>(), [](const auto& member) {
             if constexpr (meta::is_class_v<decltype(member)>)
             {
-              if (!g_TypeInfo<Type>)
+              if (!TypeInfo<Type>::get())
               {
-                g_TypeInfo<Type> = gRttiMemory().alloc_t<ClassMetaInfo<Type>>(member.name());
+                // TypeInfo<Type>::get() = gRttiMemory().alloc_t<ClassMetaInfo<Type>>(member.name());
               }
             }
           });

@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   tide_pool_allocator.hpp
+  @file   bifrost_pool_allocator.hpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

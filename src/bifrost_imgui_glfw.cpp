@@ -79,7 +79,7 @@ namespace bifrost::editor::imgui
     bfVertexLayoutSetHandle vertex_layout;
     bfShaderModuleHandle    vertex_shader;
     bfShaderModuleHandle    fragment_shader;
-    UIFrameData             buffers[3];
+    UIFrameData             buffers[3]; // TODO(Shareef): This needs to read from The GfxContexts number of frames.
     bfTextureHandle         font;
     bfShaderProgramHandle   program;
   };

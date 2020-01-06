@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   imemory_manager.cpp
+  @file   bifrost_imemory_manager.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

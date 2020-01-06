@@ -6,7 +6,8 @@
  *    Bifrost Scripting Language
  *
  * @brief
- *
+ *    The list of op codes the virtual machine handles along with
+ *    the spec on interpretting each code.
  *
  * @version 0.0.1-beta
  * @date    2019-07-01
@@ -30,7 +31,7 @@ extern "C" {
 #define BIFROST_VM_OP_LOAD_BASIC_CONSTANT 4
 
 // Total of 25 / 31 possible ops.
-typedef enum
+typedef enum bfInstructionOp_t
 {
   /* Load OPs */
   BIFROST_VM_OP_LOAD_SYMBOL,  // rA = rB.SYMBOLS[rC]
@@ -51,9 +52,6 @@ typedef enum
   BIFROST_VM_OP_MATH_MOD,  // rA = rB % rC
   BIFROST_VM_OP_MATH_POW,  // rA = rB ^ rC
   BIFROST_VM_OP_MATH_INV,  // rA = -rB
-
-  // TODO(Shareef): No integer div, guess you have to do:
-  //   rA = Math.floor(rB / rC);
 
   // Additional Logical Ops
   // BIFROST_VM_OP_LOGIC_OR,   // rA = rB | rC
@@ -154,9 +152,6 @@ typedef uint32_t bfInstruction;
  */
 #define bfInstPatchX(inst, x, val) \
   *(inst) = (*(inst) & ~(BIFROST_INST_##x##_MASK << BIFROST_INST_##x##_OFFSET)) | BIFROST_MAKE_INST_##x(val)
-
-// TODO(SR): Move to the Debug Header
-const char* bfInstOpToString(bfInstructionOp op);
 #if __cplusplus
 }
 #endif

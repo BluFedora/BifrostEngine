@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_any.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *    This class can hold any C++ type with a small buffer optimization
+ *    for built-in small types.
+ *    Anything other class is on the heap.
+ *
+ * @version 0.0.1
+ * @date 2019-12-27
+ *
+ * @copyright Copyright (c) 2019
+ */
+/******************************************************************************/
 #ifndef BIFROST_ANY_HPP
 #define BIFROST_ANY_HPP
 
@@ -23,31 +38,18 @@ namespace bifrost
     class BaseAnyPolicy
     {
      public:
-      virtual void   static_delete(void** x)                       = 0;
-      virtual void   copy_from_value(void const* src, void** dest) = 0;
-      virtual void   clone(void* const* src, void** dest)          = 0;
-      virtual void   move(void* const* src, void** dest)           = 0;
-      virtual void*  get_value(void** src)                         = 0;
-      virtual size_t get_size()                                    = 0;
+      virtual void  static_delete(void** x)                       = 0;
+      virtual void  copy_from_value(void const* src, void** dest) = 0;
+      virtual void  clone(void* const* src, void** dest)          = 0;
+      virtual void  move(void* const* src, void** dest)           = 0;
+      virtual void* get_value(void** src)                         = 0;
 
      protected:
       ~BaseAnyPolicy() = default;
     };
 
     template<typename T>
-    class BaseTypedAnyPolicy : public BaseAnyPolicy
-    {
-     public:
-      virtual ~BaseTypedAnyPolicy() = default;
-
-      size_t get_size() override
-      {
-        return sizeof(T);
-      }
-    };
-
-    template<typename T>
-    class SmallAnyPolicy final : public BaseTypedAnyPolicy<T>
+    class SmallAnyPolicy final : public BaseAnyPolicy
     {
      public:
       void static_delete(void** x) override
@@ -78,7 +80,7 @@ namespace bifrost
     };
 
     template<typename T>
-    class BigAnyPolicy final : public BaseTypedAnyPolicy<T>
+    class BigAnyPolicy final : public BaseAnyPolicy
     {
      public:
       void static_delete(void** x) override
@@ -244,7 +246,7 @@ namespace bifrost
     Any& assign(const T& x)
     {
       reset();
-      m_Policy = detail::getPolicy<T>();
+      m_Policy = detail::getPolicy<std::remove_cv_t<T>>();
       m_Policy->copy_from_value(&x, asRawPointer());
       return *this;
     }
@@ -286,14 +288,34 @@ namespace bifrost
       return *this;
     }
 
+    template<typename T>
+    struct StripPointer
+    {
+      using ref = T&;
+    };
+
+    template<typename T>
+    struct StripPointer<T*>
+    {
+      using ref = std::decay_t<T>*;
+    };
+
     /// It's like cast be more linient
     template<typename T>
-    T& castSimilar()
+    typename StripPointer<T>::ref castSimilar()
     {
       using RawT = std::decay_t<T>;
 
       if (!isSimilar<T>())
         throw detail::BadAnyCast();
+
+      if constexpr (std::is_pointer_v<T>)
+      {
+        if (is<std::nullptr_t>())
+        {
+          return nullptr;
+        }
+      }
 
       if (is<RawT*>())
       {
@@ -309,8 +331,10 @@ namespace bifrost
     template<typename T>
     T& cast()
     {
-      if (!is<T>())
-        throw detail::BadAnyCast();
+      // TODO: This doesn't work with inheritance...
+      // if (!is<T>())
+      // throw detail::BadAnyCast();
+
       T* r = static_cast<T*>(m_Policy->get_value(asRawPointer()));
       return (*r);
     }
@@ -318,8 +342,10 @@ namespace bifrost
     template<typename T>
     const T& cast() const
     {
-      if (!is<T>())
-        throw detail::BadAnyCast();
+      // TODO: This doesn't work with inheritance...
+      // if (!is<T>())
+      //   throw detail::BadAnyCast();
+
       T* r = static_cast<T*>(m_Policy->get_value(asRawPointer()));
       return (*r);
     }
@@ -342,6 +368,12 @@ namespace bifrost
       return castSimilar<T>();
     }
 
+    template<typename T>
+    operator T*()
+    {
+      return castSimilar<T*>();
+    }
+
     /// Frees any allocated memory, and sets the value to NULL.
     void reset()
     {
@@ -357,6 +389,10 @@ namespace bifrost
       if constexpr (std::is_reference_v<T>)
       {
         return m_Policy == detail::getPolicy<RawT*>();
+      }
+      else if constexpr (std::is_pointer_v<T>)
+      {
+        return m_Policy == detail::getPolicy<RawT>() || m_Policy == detail::getPolicy<RawT*>() || m_Policy == detail::getPolicy<std::nullptr_t>();
       }
       else
       {

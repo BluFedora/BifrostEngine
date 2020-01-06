@@ -1,3 +1,12 @@
+/*!
+ * @file   bifrost_window_event.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_WINDOW_EVENT_HPP
 #define BIFROST_WINDOW_EVENT_HPP
 
@@ -245,7 +254,6 @@ namespace bifrost
     }
 
    private:
-    // ReSharper disable once CppPossiblyUninitializedMember
     Event(EventType type, IBaseWindow* target, std::uint8_t flags) :
       type{type},
       target{target},

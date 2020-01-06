@@ -11,13 +11,12 @@ struct BasicVertex final
   Vec2f uv;
 };
 
-struct TEST_ModelData
+struct TEST_ModelData final
 {
   BasicVertex* vertices = nullptr;
-
   void destroy();
 };
 
 TEST_ModelData TEST_AssetIO_loadObj(const char* obj_file_data, uint obj_file_data_length);
 
-#endif  // ASSETIO_TEST
+#endif

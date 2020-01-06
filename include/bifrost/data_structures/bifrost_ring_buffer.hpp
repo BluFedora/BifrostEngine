@@ -1,3 +1,12 @@
+/*!
+ * @file bifrost_ring_buffer.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date 2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_RING_BUFFER_HPP
 #define BIFROST_RING_BUFFER_HPP
 

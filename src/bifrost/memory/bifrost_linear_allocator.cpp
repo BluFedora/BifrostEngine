@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   linear_allocator.cpp
+  @file   bifrost_linear_allocator.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

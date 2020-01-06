@@ -8,6 +8,7 @@ namespace bifrost
   {
    public:
     bfNonCopyable(const bfNonCopyable&) = delete;
+    explicit bfNonCopyable(const T&)    = delete;
     bfNonCopyable& operator=(const T&) = delete;
 
    protected:
@@ -19,8 +20,9 @@ namespace bifrost
   class bfNonMoveable  // NOLINT(hicpp-special-member-functions)
   {
    public:
-    bfNonMoveable(const bfNonMoveable&) = delete;
-    bfNonMoveable& operator=(const T&) = delete;
+    bfNonMoveable(bfNonMoveable&&) = delete;
+    explicit bfNonMoveable(T&&)    = delete;
+    bfNonMoveable& operator=(T&&) = delete;
 
    protected:
     bfNonMoveable()  = default;

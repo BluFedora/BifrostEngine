@@ -177,9 +177,9 @@ void bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstruction
   *inst               = BIFROST_MAKE_INST_OP(op);
 }
 
-void bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* self)
+void bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* _)
 {
-  assert(self && !"Reimplement this function in the general debug header.");
+  assert(!"Reimplement this function in the general debug header.");
   /*
   printf("\nDisassemble: [%s]: \n", self->name);
   printf("Num slots: %zu - ARITY\n", self->max_local_idx + 1);
@@ -225,42 +225,4 @@ void bfVMFunctionBuilder_dtor(BifrostVMFunctionBuilder* self)
 {
   Array_delete(&self->local_vars);
   Array_delete(&self->local_var_scope_size);
-}
-
-const char* bfInstOpToString(bfInstructionOp op)
-{
-#define bfInstOpToStringImpl(n) \
-  case BIFROST_VM_OP_##n: return #n
-
-  switch (op)
-  {
-    bfInstOpToStringImpl(CMP_EE);
-    bfInstOpToStringImpl(CMP_NE);
-    bfInstOpToStringImpl(CMP_LE);
-    bfInstOpToStringImpl(NOT);
-    bfInstOpToStringImpl(LOAD_BASIC);
-    bfInstOpToStringImpl(CMP_AND);
-    bfInstOpToStringImpl(CMP_OR);
-    bfInstOpToStringImpl(RETURN);
-    bfInstOpToStringImpl(LOAD_SYMBOL);
-    bfInstOpToStringImpl(STORE_SYMBOL);
-    bfInstOpToStringImpl(NEW_CLZ);
-    bfInstOpToStringImpl(STORE_MOVE);
-    bfInstOpToStringImpl(CALL_FN);
-    bfInstOpToStringImpl(MATH_ADD);
-    bfInstOpToStringImpl(MATH_SUB);
-    bfInstOpToStringImpl(MATH_MUL);
-    bfInstOpToStringImpl(MATH_DIV);
-    bfInstOpToStringImpl(MATH_MOD);
-    bfInstOpToStringImpl(MATH_POW);
-    bfInstOpToStringImpl(MATH_INV);
-    bfInstOpToStringImpl(CMP_LT);
-    bfInstOpToStringImpl(CMP_GT);
-    bfInstOpToStringImpl(CMP_GE);
-    bfInstOpToStringImpl(JUMP);
-    bfInstOpToStringImpl(JUMP_IF);
-    bfInstOpToStringImpl(JUMP_IF_NOT);
-    default: return "OP_UNKNOWN";
-  }
-#undef bfInstOpToStringImpl
 }

@@ -2,8 +2,8 @@
 /*!
   @file   bifrost_array.hpp
   @author Shareef Abdoul-Raheem
-  @par   
-  @brief  
+  @brief
+    Safe C++ wrapper around the bifrost_array_t.h API.
 */
 /******************************************************************************/
 #ifndef BIFROST_ARRAY_HPP
@@ -16,49 +16,71 @@
 namespace bifrost
 {
   template<typename T>
-  class Array : bfNonCopyMoveable<T>
+  class Array final : bfNonCopyable<T>
   {
    private:
     static void* allocate(void* user_data, void* ptr, std::size_t new_size)
     {
-      Array<T>* array = static_cast<Array<T>*>(user_data);
+      auto* const allocator = static_cast<IMemoryManager*>(user_data);
 
       if (ptr)
       {
-        array->m_Memory.dealloc(ptr);
+        allocator->dealloc(ptr);
         ptr = nullptr;
       }
       else
       {
-        ptr = array->m_Memory.alloc(new_size, alignof(T));
+        ptr = allocator->alloc(new_size, alignof(T));
       }
 
       return ptr;
     }
 
    private:
-    IMemoryManager& m_Memory;
-    mutable T*      m_Data;
+    mutable T* m_Data;
 
    public:
-    explicit Array(IMemoryManager& memory) :
-      m_Memory{memory},
-      m_Data{bfArray_new(T, &allocate, this)}
+    explicit Array(IMemoryManager& memory, const std::size_t alignment = alignof(T)) :
+      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignment, &memory))}
     {
     }
 
-    T*                        begin() { return static_cast<T*>(::bfArray_begin(rawData())); }
-    const T*                  begin() const { return static_cast<const T*>(::bfArray_begin(rawData())); }
-    T*                        end() { return static_cast<T*>(::bfArray_end(rawData())); }
-    const T*                  end() const { return static_cast<const T*>(::bfArray_end(rawData())); }
-    T&                        back() { return *static_cast<T*>(::bfArray_back(rawData())); }
-    const T&                  back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }
+    Array(Array&& rhs) noexcept :
+      m_Data{rhs.m_Data}
+    {
+      rhs.m_Data = nullptr;
+    }
+
+    Array& operator=(T&& rhs) noexcept
+    {
+      if (this != &rhs)
+      {
+        m_Data = std::exchange(rhs.m_Data, nullptr);
+      }
+
+      return *this;
+    }
+
+    [[nodiscard]] T*          begin() { return static_cast<T*>(::bfArray_begin(rawData())); }
+    [[nodiscard]] const T*    begin() const { return static_cast<const T*>(::bfArray_begin(rawData())); }
+    [[nodiscard]] T*          end() { return static_cast<T*>(::bfArray_end(rawData())); }
+    [[nodiscard]] const T*    end() const { return static_cast<const T*>(::bfArray_end(rawData())); }
+    [[nodiscard]] T&          back() { return *static_cast<T*>(::bfArray_back(rawData())); }
+    [[nodiscard]] const T&    back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }
     [[nodiscard]] std::size_t size() const { return ::bfArray_size(rawData()); }
     [[nodiscard]] std::size_t capacity() const { return ::bfArray_capacity(rawData()); }
+    [[nodiscard]] T*          data() { return begin(); }
+    [[nodiscard]] const T*    data() const { return begin(); }
 
     void copy(Array<T>& src, std::size_t num_elements)
     {
+      // TODO(Shareef): This does not respect ctors and dtors...
       ::bfArray_copy(rawData(), &src.m_Data, num_elements);
+
+      std::copy(
+       src.m_Data,
+       src.m_Data + std::min(num_elements, src.size()),
+       m_Data);
     }
 
     void clear()
@@ -147,24 +169,36 @@ namespace bifrost
       return m_Data[index];
     }
 
-    T* binarySearchRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare)
+    T* binarySearchRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare = nullptr)
     {
       return static_cast<T*>(::bfArray_binarySearchRange(rawData(), bgn, end, &key, compare));
     }
 
-    T* binarySearch(const T& key, bfArrayFindCompare compare)
+    T* binarySearch(const T& key, bfArrayFindCompare compare = nullptr)
     {
       return static_cast<T*>(::bfArray_binarySearch(rawData(), &key, compare));
     }
 
-    std::size_t findInRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare)
+    std::size_t findInRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare = nullptr)
     {
       return ::bfArray_findInRange(rawData(), bgn, end, &key, compare);
     }
 
-    std::size_t find(const T& key, bfArrayFindCompare compare)
+    std::size_t find(const T& key, bfArrayFindCompare compare = nullptr)
     {
       return ::bfArray_find(rawData(), &key, compare);
+    }
+
+    void removeAt(const std::size_t index)
+    {
+      m_Data[index].~T();
+      ::bfArray_removeAt(rawData(), index);
+    }
+
+    void swapAndPopAt(const std::size_t index)
+    {
+      m_Data[index].~T();
+      ::bfArray_swapAndPopAt(rawData(), index);
     }
 
     T& pop()
@@ -184,8 +218,11 @@ namespace bifrost
 
     ~Array()
     {
-      clear();
-      ::bfArray_delete(rawData());
+      if (m_Data)
+      {
+        clear();
+        ::bfArray_delete(rawData());
+      }
     }
 
    private:

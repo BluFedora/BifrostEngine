@@ -16,25 +16,19 @@
 /******************************************************************************/
 #include "bifrost/data_structures/bifrost_array_t.h"
 
-#ifndef BIFROST_MALLOC
-#define BIFROST_MALLOC(size, align) malloc((size))
-#define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
-#define BIFROST_FREE(ptr) free((ptr))
-#endif
-
+#include <assert.h> /* assert         */
 #include <stdint.h> /* uint8_t        */
 #include <stdlib.h> /* qsort, bsearch */
 #include <string.h> /* memcpy         */
-#ifdef _DEBUG
-#include <assert.h> /* assert         */
+
 #define PRISM_ASSERT(arg, msg) assert((arg) && (msg))
-#else
-#define PRISM_ASSERT(arg, msg) /* NO-OP */
-#endif
-
 #define SELF_CAST(s) ((BifrostArray*)(s))
+#define BIFROST_MALLOC(size, align) malloc((size))
+#define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
+#define BIFROST_FREE(ptr) free((ptr))
+#define PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS 1  // Disable for a faster 'Array_at'.
 
-typedef struct BifrostArrayHeader_t
+typedef struct
 {
   size_t capacity;
   size_t size;
@@ -55,7 +49,7 @@ void* _ArrayT_new(const size_t stride, const size_t initial_size)
   BifrostArrayHeader* const self = (BifrostArrayHeader*)
    BIFROST_MALLOC(
     sizeof(BifrostArrayHeader) + stride * initial_size,
-    bfAlignof(BifrostArrayHeader));
+    0);
 
   PRISM_ASSERT(self, "Array_new:: The Dynamic Array could not be allocated");
 
@@ -309,20 +303,40 @@ static ArrayHeader*       grabHeader(void** self);
 
 // API
 
+void* bfArray_mallocator(void* user_data, void* ptr, size_t size)
+{
+  (void)user_data;
+
+  if (ptr)
+  {
+    free(ptr);
+    ptr = NULL;
+  }
+  else
+  {
+    ptr = malloc(size);
+  }
+
+  return ptr;
+}
+
 void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data)
 {
+  if (!allocator)
+  {
+    allocator = &bfArray_mallocator;
+  }
+
   bfAssert(allocator, "bfArray_new_:: Must pass in  avalid allocator.");
   bfAssert(element_size, "bfArray_new_:: The struct size must be greater than 0.");
   bfAssert(element_alignment, "bfArray_new_:: The struct alignment must be greater than 0.");
   bfAssert(element_alignment < 256, "bfArray_new_:: The struct alignment must be less than 256.");
   bfAssert((element_alignment & (element_alignment - 1)) == 0, "bfArray_new_:: The struct alignment must be a power of two.");
 
-  if (!allocator)
-  {
-    __debugbreak();
-  }
+  const size_t header_size     = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);
+  const size_t allocation_size = header_size + (element_alignment - 1);
 
-  ArrayHeader* header = allocator(allocator_user_data, NULL, sizeof(ArrayHeader));
+  ArrayHeader* header = allocator(allocator_user_data, NULL, allocation_size);
   header->allocator   = allocator;
   header->user_data   = allocator_user_data;
   header->size        = 0;
@@ -330,7 +344,13 @@ void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t eleme
   header->stride      = element_size;
   header->alignment   = (AllocationOffset_t)element_alignment;
 
-  return bfCastByte(header) + sizeof(ArrayHeader);
+  void* data_start = alignUpPtr((uintptr_t)header + header_size, header->alignment);
+
+  const AllocationOffset_t new_offset = (AllocationOffset_t)((uintptr_t)data_start - (uintptr_t)header - sizeof(ArrayHeader));
+
+  ((AllocationOffset_t*)data_start)[-1] = new_offset;
+
+  return data_start;
 }
 
 void* bfArray_begin(void** self)
@@ -394,7 +414,8 @@ void bfArray_reserve(void** self, size_t num_elements)
     //  [ArrayHeader][alignment-padding][allocation-offset][array-data]
     //
 
-    const size_t      header_size   = sizeof(ArrayHeader) + (header->alignment - 1) + sizeof(AllocationOffset_t);
+    const size_t      header_size_  = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);
+    const size_t      header_size   = header_size_ + (header->alignment - 1);
     const size_t      new_data_size = num_elements * header->stride;
     const size_t      old_data_size = header->size * header->stride;
     const ArrayHeader header_state  = *header;
@@ -403,11 +424,11 @@ void bfArray_reserve(void** self, size_t num_elements)
 
     if (new_allocation)
     {
-      void* data_start = alignUpPtr((uintptr_t)new_allocation + header_size, header->alignment);
+      void* data_start = alignUpPtr((uintptr_t)new_allocation + header_size_, header->alignment);
 
       memcpy(data_start, *self, old_data_size);
 
-      header_state.allocator(header->user_data, header, 0);
+      header_state.allocator(header->user_data, header, header_size + old_data_size);
 
       const AllocationOffset_t new_offset = (AllocationOffset_t)((uintptr_t)data_start - (uintptr_t)new_allocation - sizeof(ArrayHeader));
 
@@ -526,6 +547,36 @@ size_t bfArray_find(void** self, const void* key, ArrayFindCompare compare)
   return bfArray_findInRange(self, 0, Array_size(self), key, compare);
 }
 
+void bfArray_removeAt(void** self, size_t index)
+{
+  ArrayHeader* header = grabHeader(self);
+
+  bfAssert(index < header->size, "bfArray_removeAt:: index must be less than the size.");
+
+  const size_t num_elemnts_to_move = header->size - index - 1;
+
+  if (num_elemnts_to_move)
+  {
+    memmove(Array_at(self, index), Array_at(self, index + 1), num_elemnts_to_move * header->stride);
+  }
+
+  --header->size;
+}
+
+void bfArray_swapAndPopAt(void** self, size_t index)
+{
+  ArrayHeader* header = grabHeader(self);
+
+  bfAssert(index < header->size, "bfArray_swapAndPopAt:: index must be less than the size.");
+
+  if (header->size)
+  {
+    memcpy(Array_at(self, index), Array_back(self), header->stride);
+  }
+
+  --header->size;
+}
+
 void* bfArray_pop(void** self)
 {
   ArrayHeader* header = grabHeader(self);
@@ -560,9 +611,12 @@ void bfArray_sort(void** self, ArraySortCompare compare)
 
 void bfArray_delete(void** self)
 {
-  ArrayHeader* header = grabHeader(self);
+  ArrayHeader* header       = grabHeader(self);
+  const size_t header_size_ = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);
+  const size_t header_size  = header_size_ + (header->alignment - 1);
+  const size_t data_size    = header->size * header->stride;
 
-  header->allocator(header->user_data, header, 0);
+  header->allocator(header->user_data, header, header_size + data_size);
 }
 
 static void* alignUpPtr(uintptr_t element_size, uintptr_t element_alignment)
@@ -577,7 +631,7 @@ static AllocationOffset_t grabOffset(const void** self)
 
 static ArrayHeader* grabHeader(void** self)
 {
-  const AllocationOffset_t offset       = grabOffset(self);
+  const AllocationOffset_t offset       = grabOffset((const void**)self);
   void*                    actual_array = *self;
 
   return (ArrayHeader*)(bfCastByte(actual_array) - offset - sizeof(ArrayHeader));

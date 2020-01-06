@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   freelist_allocator.hpp
+  @file   bifrost_freelist_allocator.hpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief
@@ -36,7 +36,7 @@ namespace bifrost
     struct AllocationHeader
     {
       std::size_t size;
-      std::size_t alignment;
+      std::size_t PADD;
     };
 
     struct FreeListNode

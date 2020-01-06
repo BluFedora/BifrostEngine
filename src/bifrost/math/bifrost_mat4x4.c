@@ -457,28 +457,28 @@ static float det_3x3(float a, float b, float c,
 
 float Mat4x4_det(const Mat4x4* self)
 {
-  const float det_a = Mat4x4_constGet(self, 0, 0) * det_3x3(Mat4x4_constGet(self, 1, 1), Mat4x4_constGet(self, 2, 1), Mat4x4_constGet(self, 3, 1),
-                                                            Mat4x4_constGet(self, 1, 2), Mat4x4_constGet(self, 2, 2), Mat4x4_constGet(self, 3, 2),
-                                                            Mat4x4_constGet(self, 1, 3), Mat4x4_constGet(self, 2, 3), Mat4x4_constGet(self, 3, 3));
+  const float det_a = Mat4x4_at(self, 0, 0) * det_3x3(Mat4x4_at(self, 1, 1), Mat4x4_at(self, 2, 1), Mat4x4_at(self, 3, 1),
+                                                            Mat4x4_at(self, 1, 2), Mat4x4_at(self, 2, 2), Mat4x4_at(self, 3, 2),
+                                                            Mat4x4_at(self, 1, 3), Mat4x4_at(self, 2, 3), Mat4x4_at(self, 3, 3));
 
-  const float det_b = Mat4x4_constGet(self, 1, 0) * det_3x3(Mat4x4_constGet(self, 0, 1), Mat4x4_constGet(self, 2, 1), Mat4x4_constGet(self, 3, 1),
-                                                            Mat4x4_constGet(self, 0, 2), Mat4x4_constGet(self, 2, 2), Mat4x4_constGet(self, 3, 2),
-                                                            Mat4x4_constGet(self, 0, 3), Mat4x4_constGet(self, 2, 3), Mat4x4_constGet(self, 3, 3));
+  const float det_b = Mat4x4_at(self, 1, 0) * det_3x3(Mat4x4_at(self, 0, 1), Mat4x4_at(self, 2, 1), Mat4x4_at(self, 3, 1),
+                                                            Mat4x4_at(self, 0, 2), Mat4x4_at(self, 2, 2), Mat4x4_at(self, 3, 2),
+                                                            Mat4x4_at(self, 0, 3), Mat4x4_at(self, 2, 3), Mat4x4_at(self, 3, 3));
 
-  const float det_c = Mat4x4_constGet(self, 2, 0) * det_3x3(Mat4x4_constGet(self, 0, 1), Mat4x4_constGet(self, 1, 1), Mat4x4_constGet(self, 3, 1),
-                                                            Mat4x4_constGet(self, 0, 2), Mat4x4_constGet(self, 1, 2), Mat4x4_constGet(self, 3, 2),
-                                                            Mat4x4_constGet(self, 0, 3), Mat4x4_constGet(self, 1, 3), Mat4x4_constGet(self, 3, 3));
+  const float det_c = Mat4x4_at(self, 2, 0) * det_3x3(Mat4x4_at(self, 0, 1), Mat4x4_at(self, 1, 1), Mat4x4_at(self, 3, 1),
+                                                            Mat4x4_at(self, 0, 2), Mat4x4_at(self, 1, 2), Mat4x4_at(self, 3, 2),
+                                                            Mat4x4_at(self, 0, 3), Mat4x4_at(self, 1, 3), Mat4x4_at(self, 3, 3));
 
-  const float det_d = Mat4x4_constGet(self, 3, 0) * det_3x3(Mat4x4_constGet(self, 0, 1), Mat4x4_constGet(self, 1, 1), Mat4x4_constGet(self, 2, 1),
-                                                            Mat4x4_constGet(self, 0, 2), Mat4x4_constGet(self, 1, 2), Mat4x4_constGet(self, 2, 2),
-                                                            Mat4x4_constGet(self, 0, 3), Mat4x4_constGet(self, 1, 3), Mat4x4_constGet(self, 2, 3));
+  const float det_d = Mat4x4_at(self, 3, 0) * det_3x3(Mat4x4_at(self, 0, 1), Mat4x4_at(self, 1, 1), Mat4x4_at(self, 2, 1),
+                                                            Mat4x4_at(self, 0, 2), Mat4x4_at(self, 1, 2), Mat4x4_at(self, 2, 2),
+                                                            Mat4x4_at(self, 0, 3), Mat4x4_at(self, 1, 3), Mat4x4_at(self, 2, 3));
 
   return det_a - det_b + det_c - det_d;
 }
 
 float Mat4x4_trace(const Mat4x4* self)
 {
-  return Mat4x4_constGet(self, 0, 0) + Mat4x4_constGet(self, 1, 1) + Mat4x4_constGet(self, 2, 2) + Mat4x4_constGet(self, 3, 3);
+  return Mat4x4_at(self, 0, 0) + Mat4x4_at(self, 1, 1) + Mat4x4_at(self, 2, 2) + Mat4x4_at(self, 3, 3);
 }
 
 //inline float Mat4x4_constGet(const Mat4x4* self, const uint x, const uint y)
@@ -578,17 +578,17 @@ void Mat4x4_mult(const Mat4x4* self, const Mat4x4* other, Mat4x4* out)
 
   for (uint cols = 0; cols < 4; ++cols)
   {
-    const float col0 = Mat4x4_constGet(other, cols, 0);
-    const float col1 = Mat4x4_constGet(other, cols, 1);
-    const float col2 = Mat4x4_constGet(other, cols, 2);
-    const float col3 = Mat4x4_constGet(other, cols, 3);
+    const float col0 = Mat4x4_at(other, cols, 0);
+    const float col1 = Mat4x4_at(other, cols, 1);
+    const float col2 = Mat4x4_at(other, cols, 2);
+    const float col3 = Mat4x4_at(other, cols, 3);
 
     for (uint rows = 0; rows < 4; ++rows)
     {
-      const float row0 = Mat4x4_constGet(self, 0, rows);
-      const float row1 = Mat4x4_constGet(self, 1, rows);
-      const float row2 = Mat4x4_constGet(self, 2, rows);
-      const float row3 = Mat4x4_constGet(self, 3, rows);
+      const float row0 = Mat4x4_at(self, 0, rows);
+      const float row1 = Mat4x4_at(self, 1, rows);
+      const float row2 = Mat4x4_at(self, 2, rows);
+      const float row3 = Mat4x4_at(self, 3, rows);
 
       (*Mat4x4_get(&temp, cols, rows)) = (col0 * row0) + (col1 * row1) + (col2 * row2) + (col3 * row3);
     }
@@ -635,9 +635,9 @@ void Mat4x4_multVec(const Mat4x4* self, const Vec3f *vec, Vec3f* outVec)
   const float vz = vec->z;
   const float vw = vec->w;
   
-  outVec->x = (Mat4x4_constGet(self, 0, 0) * vx) + (Mat4x4_constGet(self, 1, 0) * vy) + (Mat4x4_constGet(self, 2, 0) * vz) + (Mat4x4_constGet(self, 3, 0) * vw);
-  outVec->y = (Mat4x4_constGet(self, 0, 1) * vx) + (Mat4x4_constGet(self, 1, 1) * vy) + (Mat4x4_constGet(self, 2, 1) * vz) + (Mat4x4_constGet(self, 3, 1) * vw);
-  outVec->z = (Mat4x4_constGet(self, 0, 2) * vx) + (Mat4x4_constGet(self, 1, 2) * vy) + (Mat4x4_constGet(self, 2, 2) * vz) + (Mat4x4_constGet(self, 3, 2) * vw);
-  outVec->w = (Mat4x4_constGet(self, 0, 3) * vx) + (Mat4x4_constGet(self, 1, 3) * vy) + (Mat4x4_constGet(self, 2, 3) * vz) + (Mat4x4_constGet(self, 3, 3) * vw);
+  outVec->x = (Mat4x4_at(self, 0, 0) * vx) + (Mat4x4_at(self, 1, 0) * vy) + (Mat4x4_at(self, 2, 0) * vz) + (Mat4x4_at(self, 3, 0) * vw);
+  outVec->y = (Mat4x4_at(self, 0, 1) * vx) + (Mat4x4_at(self, 1, 1) * vy) + (Mat4x4_at(self, 2, 1) * vz) + (Mat4x4_at(self, 3, 1) * vw);
+  outVec->z = (Mat4x4_at(self, 0, 2) * vx) + (Mat4x4_at(self, 1, 2) * vy) + (Mat4x4_at(self, 2, 2) * vz) + (Mat4x4_at(self, 3, 2) * vw);
+  outVec->w = (Mat4x4_at(self, 0, 3) * vx) + (Mat4x4_at(self, 1, 3) * vy) + (Mat4x4_at(self, 2, 3) * vz) + (Mat4x4_at(self, 3, 3) * vw);
 #endif
 }

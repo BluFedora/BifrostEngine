@@ -58,7 +58,7 @@ namespace bifrost::vk
       {
         const auto& node = m_Nodes[idx];
 
-        if (node.value && node.hash_code == key)
+        if (node.hash_code == key)
         {
           return node.value;
         }
@@ -93,7 +93,7 @@ namespace bifrost::vk
 
     void clear()
     {
-      static_assert(std::is_trivially_copyable<Node>::value, "To memset nodes I need to make sure they are trivial types.");
+      static_assert(std::is_trivially_copyable_v<Node>, "To memset nodes I need to make sure they are trivial types.");
 
       if (m_Nodes)
       {

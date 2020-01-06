@@ -25,19 +25,19 @@ extern "C"
 #endif
   #if MATRIX_ROW_MAJOR
     #define Mat4x4_get(self, x, y)      (&((self)->data[(x) + ((y) << 2)]))
-    #define Mat4x4_constGet(self, x, y) ((self)->data[(x) + ((y) << 2)])
+#define Mat4x4_at(self, x, y) ((self)->data[(x) + ((y) << 2)])
   #else
     #define Mat4x4_get(self, x, y)      (&((self)->data[(y) + ((x) << 2)]))
-    #define Mat4x4_constGet(self, x, y) ((self)->data[(y) + ((x) << 2)])
+    #define Mat4x4_at(self, x, y) ((self)->data[(y) + ((x) << 2)])
   #endif
 
   typedef struct Vec3f_t Vec3f;
 
-  typedef struct ALIGN_STRUCT(16) Mat4x4_t
+  typedef struct /*ALIGN_STRUCT(16)*/ Mat4x4_t
   {
     float data[16];
 
-  } ALIGN_STRUCT(16) Mat4x4;
+  } /*ALIGN_STRUCT(16)*/ Mat4x4;
 
   // 'static' functions
   void    Mat4x4_identity(Mat4x4* self);

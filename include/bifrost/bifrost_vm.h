@@ -65,11 +65,11 @@ typedef enum
 
 typedef enum
 {
-  BIFROST_VM_STD_MODULE_IO          = (1 << 0),
-  BIFROST_VM_STD_MODULE_MEMORY      = (1 << 1),
-  BIFROST_VM_STD_MODULE_FUNCTIONAL  = (1 << 2),
-  BIFROST_VM_STD_MODULE_COLLECTIONS = (1 << 3),
-  BIFROST_VM_STD_MODULE_ALL         = 0xFFFFFFFF,
+  BIFROST_VM_STD_MODULE_IO          = (1 << 0),   /*!< "std:io"          */
+  BIFROST_VM_STD_MODULE_MEMORY      = (1 << 1),   /*!< "std:memory"      */
+  BIFROST_VM_STD_MODULE_FUNCTIONAL  = (1 << 2),   /*!< "std:functional"  */
+  BIFROST_VM_STD_MODULE_COLLECTIONS = (1 << 3),   /*!< "std:collections" */
+  BIFROST_VM_STD_MODULE_ALL         = 0xFFFFFFFF, /*!< "std:*"           */
 
 } BifrostVMStandardModule;
 
@@ -191,10 +191,76 @@ struct BifrostVM_t
   const struct BifrostObjNativeFn_t* current_native_fn;
 };
 
-BifrostVM*         bfVM_new(const BifrostVMParams* params);
-void               bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
-BifrostVMError     bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
-void               bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
+/*!
+ * @brief
+ *   Creates a new virtual machine.
+ *   This function will use the allocator from the params variable
+ *   to allocate memory for the vm.
+ *
+ * @param params
+ *   The customization points for the virtual machine.
+ *
+ * @return BifrostVM*
+ *   The newly created virtual machine.
+ */
+BifrostVM* bfVM_new(const BifrostVMParams* params);
+
+/*!
+ * @brief
+ *   If you already have a block of memory of size 'sizeof(BifrostVM)'
+ *   this basically 'placement new's into the passed in block.
+ *
+ * @param self
+ *   The block of memory to create the vm in.
+ *
+ * @param params
+ *   The customization points for the virtual machine.
+ */
+void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
+
+/*!
+ * @brief
+ *   Creates a new module.
+ *
+ * @param self
+ *   The vm to create the module in.
+ *
+ * @param idx
+ *    The index on the stack to write the module to.
+ *
+ * @param module
+ *    The name of the module.
+ *
+ * @return BifrostVMError
+ *   BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED - The module with that name has already been defined.
+ */
+BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
+
+/*!
+ * @brief
+ *   Loads up standard module(s) into the vm.
+ *   All modules loaded by this function are prefixed with 'std:'.
+ *
+ * @param self
+ *  The vm to load the module in.
+ *
+ * @param idx
+ *  Where to put the module. This function can be called multiple
+ *  times with the same paramaters to just grab the standard module.
+ *
+ * @param module_flags
+ *  Must be a valid set of bits from 'BifrostVMStandardModule'.
+ */
+void bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
+
+/*!
+ * @brief
+ *
+ * @param self
+ * @param idx
+ * @param module
+ * @return BifrostVMError
+ */
 BifrostVMError     bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
 void               bfVM_moduleUnload(BifrostVM* self, const char* module);
 void               bfVM_moduleUnloadAll(BifrostVM* self);
@@ -218,8 +284,8 @@ void               bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const cha
 void               bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value);
 void               bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
 void               bfVM_stackSetNil(BifrostVM* self, size_t idx);
-void*              bfVM_stackReadInstance(const BifrostVM* self, size_t idx);  // Also works on null values, just returns NULL
-const char*        bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);
+void*              bfVM_stackReadInstance(const BifrostVM* self, size_t idx);                  // Also works on null values, just returns NULL
+const char*        bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);  // 'out_size' can be NULL.
 bfVMNumberT        bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
 bfBool32           bfVM_stackReadBool(const BifrostVM* self, size_t idx);
 BifrostVMType      bfVM_stackGetType(BifrostVM* self, size_t idx);
@@ -229,8 +295,8 @@ void               bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValue
 void               bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);  // Freeing a null handle is safe.
 int32_t            bfVM_handleGetArity(bfValueHandle handle);
 BifrostVMType      bfVM_handleGetType(bfValueHandle handle);
-BifrostVMError     bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
-BifrostVMError     bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);  // if 'module' == NULL we will exec in an anon module.
+BifrostVMError     bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args); // Return value is in stack[args_start]
+BifrostVMError     bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);  // if 'module' == NULL we will exec in an anon module, puts the module in stack[0]
 void               bfVM_gc(BifrostVM* self);
 const char*        bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol);
 ConstBifrostString bfVM_errorString(const BifrostVM* self);

@@ -1,3 +1,13 @@
+/*!
+ * @file bifrost_hash_map.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date 2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ *
+ */
 #ifndef BIFROST_HASH_MAP_H
 #define BIFROST_HASH_MAP_H
 
@@ -40,12 +50,12 @@ typedef struct
       dtor       - Does nothing and assumes you will handle deallocation of
                    key and values yourself before you call "bfHashMap_remove"
                    or "bfHashMap_clear". Easiest way is through the iterator API.
-                 
+
       hash       - Assumes the keys are nul terminated strings. So if you use a
-                   different data-type you MUST pass in a valid hash function. 
-                 
+                   different data-type you MUST pass in a valid hash function.
+
       cmp        - Like [hash] assumes a nul terminated string and will compare each
-                   character. So if you use a different data-type you MUST pass in a 
+                   character. So if you use a different data-type you MUST pass in a
                    valid compare function.
 
       value_size - By default is the size of a pointer.

@@ -1,21 +1,24 @@
 #include "bifrost/meta/bifrost_meta_runtime.hpp"
 
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp"
 
 namespace
 {
-  char s_Storage[8192];
+  char s_Storage[8192 * 10];
 }  // namespace
 
 namespace bifrost::meta
 {
   NoFreeAllocator& gRttiMemory()
   {
-    static LinearAllocator s_BackingAllocator{s_Storage, sizeof(s_Storage)};
-    static NoFreeAllocator s_RttiMemory{s_BackingAllocator};
-
+    static NoFreeAllocator s_RttiMemory{gRttiMemoryBacking()};
     return s_RttiMemory;
+  }
+
+  LinearAllocator& gRttiMemoryBacking()
+  {
+    static LinearAllocator s_BackingAllocator{s_Storage, sizeof(s_Storage)};
+    return s_BackingAllocator;
   }
 
   HashTable<std::string_view, BaseClassMetaInfo*>& gRegistry()
@@ -69,7 +72,9 @@ namespace bifrost::meta
     m_Properties{gRttiMemory()},
     m_Methods{gRttiMemory()},
     m_Size{size},
-    m_Alignment{alignment}
+    m_Alignment{alignment},
+    m_IsArray{false},
+    m_IsMap{false}
   {
   }
 
@@ -112,22 +117,22 @@ namespace bifrost::meta
     return nullptr;
   }
 
-  // clang-format off                                   
-  template<> BaseClassMetaInfo* g_TypeInfo<std::byte>   = gRttiMemory().alloc_t<ClassMetaInfo<std::byte>>("std::byte");
-  template<> BaseClassMetaInfo* g_TypeInfo<bool>        = gRttiMemory().alloc_t<ClassMetaInfo<bool>>("bool");
-  template<> BaseClassMetaInfo* g_TypeInfo<char>        = gRttiMemory().alloc_t<ClassMetaInfo<char>>("char");
-  template<> BaseClassMetaInfo* g_TypeInfo<int8_t>      = gRttiMemory().alloc_t<ClassMetaInfo<int8_t>>("int8_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<uint8_t>     = gRttiMemory().alloc_t<ClassMetaInfo<uint8_t>>("uint8_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<int16_t>     = gRttiMemory().alloc_t<ClassMetaInfo<int16_t>>("int16_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<uint16_t>    = gRttiMemory().alloc_t<ClassMetaInfo<uint16_t>>("uint16_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<int32_t>     = gRttiMemory().alloc_t<ClassMetaInfo<int32_t>>("int32_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<uint32_t>    = gRttiMemory().alloc_t<ClassMetaInfo<uint32_t>>("uint32_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<int64_t>     = gRttiMemory().alloc_t<ClassMetaInfo<int64_t>>("int64_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<uint64_t>    = gRttiMemory().alloc_t<ClassMetaInfo<uint64_t>>("uint64_t");
-  template<> BaseClassMetaInfo* g_TypeInfo<float>       = gRttiMemory().alloc_t<ClassMetaInfo<float>>("float");
-  template<> BaseClassMetaInfo* g_TypeInfo<double>      = gRttiMemory().alloc_t<ClassMetaInfo<double>>("double");
-  template<> BaseClassMetaInfo* g_TypeInfo<long double> = gRttiMemory().alloc_t<ClassMetaInfo<long double>>("long double");
-  template<> BaseClassMetaInfo* g_TypeInfo<void*>       = gRttiMemory().alloc_t<ClassMetaInfo<void*>>("void*");
+  // clang-format off
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::byte>     = gRttiMemory().alloc_t<ClassMetaInfo<std::byte>>("std::byte");
+  // template<> BaseClassMetaInfo* g_TypeInfo<bool>          = gRttiMemory().alloc_t<ClassMetaInfo<bool>>("bool");
+  // template<> BaseClassMetaInfo* g_TypeInfo<char>          = gRttiMemory().alloc_t<ClassMetaInfo<char>>("char");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::int8_t>   = gRttiMemory().alloc_t<ClassMetaInfo<std::int8_t>>("int8_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::uint8_t>  = gRttiMemory().alloc_t<ClassMetaInfo<std::uint8_t>>("uint8_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::int16_t>  = gRttiMemory().alloc_t<ClassMetaInfo<std::int16_t>>("int16_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::uint16_t> = gRttiMemory().alloc_t<ClassMetaInfo<std::uint16_t>>("uint16_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::int32_t>  = gRttiMemory().alloc_t<ClassMetaInfo<std::int32_t>>("int32_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::uint32_t> = gRttiMemory().alloc_t<ClassMetaInfo<std::uint32_t>>("uint32_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::int64_t>  = gRttiMemory().alloc_t<ClassMetaInfo<std::int64_t>>("int64_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<std::uint64_t> = gRttiMemory().alloc_t<ClassMetaInfo<std::uint64_t>>("uint64_t");
+  // template<> BaseClassMetaInfo* g_TypeInfo<float>         = gRttiMemory().alloc_t<ClassMetaInfo<float>>("float");
+  // template<> BaseClassMetaInfo* g_TypeInfo<double>        = gRttiMemory().alloc_t<ClassMetaInfo<double>>("double");
+  // template<> BaseClassMetaInfo* g_TypeInfo<long double>   = gRttiMemory().alloc_t<ClassMetaInfo<long double>>("long double");
+  // template<> BaseClassMetaInfo* g_TypeInfo<void*>         = gRttiMemory().alloc_t<ClassMetaInfo<void*>>("void*");
   // clang-format on
 
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name)

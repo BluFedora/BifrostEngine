@@ -1,3 +1,12 @@
+/*!
+ * @file   bifrost_dbg_logger.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_DBG_LOGGER_H
 #define BIFROST_DBG_LOGGER_H
 
@@ -57,7 +66,7 @@ typedef struct IBifrostDbgLogger_t
 // Main API
 void bfLogger_init(const IBifrostDbgLogger* logger);
 void bfLogPush_(const char* file, const char* func, int line, const char* format, ...);
-void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, const char* format, ...);
+void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, __format_string const char* format, ...);
 #if __cplusplus
 void bfLogPop_(const char* file, const char* func, int line, unsigned amount = 1);
 #else

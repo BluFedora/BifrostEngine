@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   pool_allocator.cpp
+  @file   bifrost_pool_allocator.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

@@ -695,7 +695,7 @@ static void parseFunctionDecl(BifrostParser* self)
   {
     const VariableInfo fn_var = parserVariableMakeLocal(self, name_str);
     const uint32_t     k_loc  = bfVMFunctionBuilder_addConstant(builder(), fn_value);
-    bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, (uint16_t)fn_var.location, k_loc + BIFROST_VM_OP_LOAD_BASIC_CONSTANT);
+    bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, (uint16_t)fn_var.location, BIFROST_VM_OP_LOAD_BASIC_CONSTANT + k_loc);
   }
   else
   {
@@ -713,7 +713,7 @@ static void parseFunctionExpr(BifrostParser* self, ExprInfo* expr, const bfToken
   parserEndFunction(self, fn, arity);
 
   const uint32_t k_loc = bfVMFunctionBuilder_addConstant(builder(), FROM_POINTER(fn));
-  bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, expr->write_loc, k_loc + BIFROST_VM_OP_LOAD_BASIC_CONSTANT);
+  bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, expr->write_loc, BIFROST_VM_OP_LOAD_BASIC_CONSTANT + k_loc);
 }
 
 extern BifrostObjModule* bfVM_findModule(BifrostVM* self, const char* name, size_t name_len);

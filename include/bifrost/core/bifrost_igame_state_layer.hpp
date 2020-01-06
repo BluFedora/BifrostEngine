@@ -1,3 +1,15 @@
+/*!
+ * @file   bifrost_igame_state_layer.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   A single gamestate, used with the 'GameStateMachine' to
+ *   handle stackable game states.
+ *
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_IGAME_STATE_LAYER_HPP
 #define BIFROST_IGAME_STATE_LAYER_HPP
 

@@ -1,8 +1,13 @@
-//  bifrost_math.h
-//  bifrost-core
-//
-//  Created by Shareef Raheem on 8/16/18.
-//  Copyright © 2018 BluFedora. All rights reserved.
+/*!
+ * @file bifrost_math.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date 2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ *
+ */
 #ifndef BIFROST_MATH2_H
 #define BIFROST_MATH2_H
 

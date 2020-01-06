@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   c_allocator.hpp
+  @file   bifrost_c_allocator.hpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

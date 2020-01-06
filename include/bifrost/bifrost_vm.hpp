@@ -1,5 +1,18 @@
-// [https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/]
-
+/*!
+ * @file   bifrost_vm.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   A C++ wrapper around the scripting virtual machine API
+ *   with helpers for binding any callable object and classes.
+ *
+ *   References:
+ *     [https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/]
+ *
+ * @version 0.0.1
+ * @date    2020-01-02
+ *
+ * @copyright Copyright (c) 2020
+ */
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
@@ -20,9 +33,10 @@ namespace bifrost
     template<typename...>
     constexpr std::false_type always_false{};
 
-    //
-    // Tag type for 'writeToSlot' so that the stack is not written to.
-    //
+    /*!
+     * @brief
+     *   Tag type for 'writeToSlot' so that the stack is not written to.
+     */
     struct RetainStack final
     {
     };
@@ -30,6 +44,8 @@ namespace bifrost
     template<typename T>
     static T readFromSlot(const BifrostVM* self, std::size_t slot)
     {
+      // TODO(Shareef): Add some type checking, atleast let the user be able to handle type mismatches.
+
       if constexpr (std::is_arithmetic_v<T>)
       {
         return static_cast<T>(bfVM_stackReadNumber(self, slot));
@@ -50,8 +66,7 @@ namespace bifrost
       {
         if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
         {
-          std::size_t str_size;
-          return bfVM_stackReadString(self, slot, &str_size);
+          return bfVM_stackReadString(self, slot, nullptr);
         }
         else
         {
@@ -60,7 +75,6 @@ namespace bifrost
       }
       else if constexpr (std::is_reference_v<T>)
       {
-        // static_assert(always_false<T>, "Bifrost Script does not support references similar to Lua in a way.");
         return *reinterpret_cast<T*>(bfVM_stackReadInstance(self, slot));
       }
       else
@@ -372,7 +386,6 @@ namespace bifrost
       vmBindNativeFn<fn>(self(), idx, variable);
     }
 
-    //
     template<typename Fn>
     void stackStore(size_t idx, const char* variable, Fn&& func) noexcept
     {
@@ -380,6 +393,7 @@ namespace bifrost
 
       const std::size_t old_size = stackSize();
 
+      // TODO(Shareef): Also specialize on 
       if constexpr (fn_traits::is_member_fn)
       {
         // NOTE(Shareef): Space for the 'idx' (module) and 'idx + 1' (Closure) 'idx + 2' (WeakRef).
@@ -594,7 +608,6 @@ namespace bifrost
   };
 
   // clang-format off
-  // This class is movable but not copyable.
   class VM final : private bfNonCopyable<VM>, public VMView  // NOLINT(hicpp-special-member-functions)
   // clang-format on
   {

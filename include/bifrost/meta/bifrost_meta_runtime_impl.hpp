@@ -25,22 +25,25 @@ namespace bifrost::meta
 
    public:
     template<typename... Args>
-    PropertyMetaInfoCRTP(const MemberConcept& impl, Args&&... args) :
-      Base(impl.name(), TypeInfo<PropertyT>(), std::forward<Args>(args)...),
-      m_Impl{impl}
-    {
-    }
+    PropertyMetaInfoCRTP(const MemberConcept& impl, Args&&... args);
 
-    Any get(Any& instance) override final
+    Any get(const Any& instance) override final
     {
-      return &m_Impl.get(*instance.as<Class*>());
+      if constexpr (std::is_lvalue_reference<decltype(m_Impl.get(*instance.as<Class*>()))>::value)
+      {
+        return &m_Impl.get(*instance.as<Class*>());
+      }
+      else
+      {
+        return m_Impl.get(*instance.as<Class*>());
+      }
     }
 
     void set(Any& instance, const Any& value) override final
     {
       if constexpr (MemberConcept::is_writable)
       {
-        m_Impl.set(instance.as<Class>(), value.as<PropertyT>());
+        m_Impl.set(*instance.as<Class*>(), value.as<PropertyT>());
       }
     }
   };
@@ -52,10 +55,7 @@ namespace bifrost::meta
     using PropertyT = typename MemberConcept::type;
 
    public:
-    PropertyMetaInfo(const MemberConcept& impl) :
-      PropertyMetaInfoCRTP<BasePropertyMetaInfo, MemberConcept>(impl)
-    {
-    }
+    PropertyMetaInfo(const MemberConcept& impl);
   };
 
   template<typename MemberConcept>
@@ -65,10 +65,7 @@ namespace bifrost::meta
     using PropertyT = typename MemberConcept::type;
 
    public:
-    MemberMetaInfo(const MemberConcept& impl) :
-      PropertyMetaInfoCRTP<BaseMemberMetaInfo, MemberConcept>(impl, impl.offset())
-    {
-    }
+    MemberMetaInfo(const MemberConcept& impl);
   };
 
   template<typename FunctionConcept>
@@ -83,11 +80,7 @@ namespace bifrost::meta
     const FunctionConcept& m_Impl;
 
    public:
-    MethodMetaInfo(const FunctionConcept& impl) :
-      BaseMethodMetaInfo(impl.name(), FnTraits::arity, TypeInfo<ReturnType>()),
-      m_Impl{impl}
-    {
-    }
+    MethodMetaInfo(const FunctionConcept& impl);
 
     Any invokeImpl(const Any* arguments) override
     {
@@ -195,41 +188,216 @@ namespace bifrost::meta
   class ClassMetaInfo : public BaseClassMetaInfo
   {
    public:
-    explicit ClassMetaInfo(std::string_view name) :
-      BaseClassMetaInfo(name, sizeof(Class), alignof(Class))
+    explicit ClassMetaInfo(std::string_view name);
+
+    void populateFields();
+  };
+
+  template<typename Class>
+  class ArrayClassMetaInfo final : public BaseClassMetaInfo
+  {
+   private:
+    ValMember<Array<Class>, std::size_t> m_Size;
+    ValMember<Array<Class>, std::size_t> m_Capacity;
+
+   public:
+    explicit ArrayClassMetaInfo() :
+      BaseClassMetaInfo("Array", sizeof(Class), alignof(Class)),
+      m_Size{property("m_Size", &Array<Class>::size, &Array<Class>::resize)},
+      m_Capacity{property("m_Capacity", &Array<Class>::capacity, &Array<Class>::reserve)}
     {
-      gRegistry()[name] = this;
+      gRegistry()[name()] = this;
 
-      for_each(meta::membersOf<Class>(), [this](const auto& member) {
-        using MemberT = member_t<decltype(member)>;
+      m_IsArray = true;
 
-        if constexpr (meta::is_class_v<MemberT>)
-        {
-          m_BaseClasses.push(TypeInfo<typename MemberT::type_base>());
-        }
+      m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<decltype(m_Size)>>(m_Size));
+      m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<decltype(m_Capacity)>>(m_Capacity));
+    }
 
-        if constexpr (meta::is_ctor_v<MemberT>)
-        {
-          m_Ctors.push(gRttiMemory().alloc_t<CtorMetaInfo<Class, MemberT>>());
-        }
+    BaseClassMetaInfo* containedType() const override;
 
-        if constexpr (meta::is_field_v<MemberT>)
-        {
-          m_Members.push(gRttiMemory().alloc_t<MemberMetaInfo<MemberT>>(member));
-        }
+    std::size_t arraySize(Any& instance) override
+    {
+      Array<Class>* const arr = instance;
+      return arr->size();
+    }
 
-        if constexpr (meta::is_property_v<MemberT>)
-        {
-          m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<MemberT>>(member));
-        }
+    Any arrayGetElementAt(Any& instance, std::size_t index) override
+    {
+      Array<Class>* arr = instance;
+      return (*arr)[index];
+    }
 
-        if constexpr (meta::is_function_v<MemberT>)
-        {
-          m_Methods.push(gRttiMemory().alloc_t<MethodMetaInfo<MemberT>>(member));
-        }
-      });
+    bool arraySetElementAt(Any& instance, std::size_t index, Any& value) override
+    {
+      Array<Class>* arr = instance;
+      (*arr)[index]     = value;
+      return true;
     }
   };
+
+  template<typename T>
+  struct TypeInfo
+  {
+    static BaseClassMetaInfo*& get()
+    {
+      static BaseClassMetaInfo* s_Info = nullptr;
+
+      if (s_Info == nullptr)
+      {
+#define TYPE_INFO_SPEC(T) TypeInfo<T>::get()
+        TYPE_INFO_SPEC(std::byte);
+        TYPE_INFO_SPEC(char);
+        TYPE_INFO_SPEC(std::int8_t);
+        TYPE_INFO_SPEC(std::uint8_t);
+        TYPE_INFO_SPEC(std::int16_t);
+        TYPE_INFO_SPEC(std::uint16_t);
+        TYPE_INFO_SPEC(std::int32_t);
+        TYPE_INFO_SPEC(std::uint32_t);
+        TYPE_INFO_SPEC(std::int64_t);
+        TYPE_INFO_SPEC(std::uint64_t);
+        TYPE_INFO_SPEC(float);
+        TYPE_INFO_SPEC(double);
+        TYPE_INFO_SPEC(long double);
+        TYPE_INFO_SPEC(void*);
+#undef TYPE_INFO_SPEC
+
+        for_each(meta::membersOf<T>(), [](const auto& member) {
+          if constexpr (meta::is_class_v<decltype(member)>)
+          {
+            if (!s_Info)
+            {
+              auto* info = gRttiMemory().alloc_t<ClassMetaInfo<T>>(member.name());
+              s_Info = info;
+              info->populateFields();
+            }
+          }
+        });
+      }
+
+      return s_Info;
+    }
+  };
+
+#define TYPE_INFO_SPEC(T)                                                             \
+  template<>                                                                          \
+  struct TypeInfo<T>                                                                  \
+  {                                                                                   \
+    static BaseClassMetaInfo*& get()                                                  \
+    {                                                                                 \
+      static BaseClassMetaInfo* s_Info = gRttiMemory().alloc_t<ClassMetaInfo<T>>(#T); \
+      return s_Info;                                                                  \
+    }                                                                                 \
+  }
+
+  TYPE_INFO_SPEC(std::byte);
+  TYPE_INFO_SPEC(char);
+  TYPE_INFO_SPEC(std::int8_t);
+  TYPE_INFO_SPEC(std::uint8_t);
+  TYPE_INFO_SPEC(std::int16_t);
+  TYPE_INFO_SPEC(std::uint16_t);
+  TYPE_INFO_SPEC(std::int32_t);
+  TYPE_INFO_SPEC(std::uint32_t);
+  TYPE_INFO_SPEC(std::int64_t);
+  TYPE_INFO_SPEC(std::uint64_t);
+  TYPE_INFO_SPEC(float);
+  TYPE_INFO_SPEC(double);
+  TYPE_INFO_SPEC(long double);
+  TYPE_INFO_SPEC(void*);
+
+#undef TYPE_INFO_SPEC
+
+  template<typename T>
+  struct TypeInfo<T*>
+  {
+    static BaseClassMetaInfo* get()
+    {
+      return TypeInfo<std::decay_t<T>>::get();
+    }
+  };
+
+  template<typename T>
+  struct TypeInfo<Array<T>>
+  {
+    static BaseClassMetaInfo* get()
+    {
+      static BaseClassMetaInfo* s_Info = gRttiMemory().alloc_t<ArrayClassMetaInfo<T>>();
+      return s_Info;
+    }
+  };
+
+  template<typename Base, typename MemberConcept>
+  template<typename... Args>
+  PropertyMetaInfoCRTP<Base, MemberConcept>::PropertyMetaInfoCRTP(const MemberConcept& impl, Args&&... args) :
+    Base(impl.name(), TypeInfo<PropertyT>::get(), std::forward<Args>(args)...),
+    m_Impl{impl}
+  {
+  }
+
+  template<typename MemberConcept>
+  PropertyMetaInfo<MemberConcept>::PropertyMetaInfo(const MemberConcept& impl) :
+    PropertyMetaInfoCRTP<BasePropertyMetaInfo, MemberConcept>(impl)
+  {
+  }
+
+  template<typename MemberConcept>
+  MemberMetaInfo<MemberConcept>::MemberMetaInfo(const MemberConcept& impl) :
+    PropertyMetaInfoCRTP<BaseMemberMetaInfo, MemberConcept>(impl, impl.offset())
+  {
+  }
+
+  template<typename FunctionConcept>
+  MethodMetaInfo<FunctionConcept>::MethodMetaInfo(const FunctionConcept& impl) :
+    BaseMethodMetaInfo(impl.name(), FnTraits::arity, TypeInfo<ReturnType>::get()),
+    m_Impl{impl}
+  {
+  }
+
+  template<typename Class>
+  ClassMetaInfo<Class>::ClassMetaInfo(std::string_view name) :
+    BaseClassMetaInfo(name, sizeof(Class), alignof(Class))
+  {
+    gRegistry()[name] = this;
+  }
+
+  template<typename Class>
+  void ClassMetaInfo<Class>::populateFields()
+  {
+    for_each(meta::membersOf<Class>(), [this](const auto& member) {
+      using MemberT = member_t<decltype(member)>;
+
+      if constexpr (meta::is_class_v<MemberT>)
+      {
+        // m_BaseClasses.push(TypeInfo<typename MemberT::type_base>::get());
+      }
+
+      if constexpr (meta::is_ctor_v<MemberT>)
+      {
+        m_Ctors.push(gRttiMemory().alloc_t<CtorMetaInfo<Class, MemberT>>());
+      }
+
+      if constexpr (meta::is_field_v<MemberT>)
+      {
+        m_Members.push(gRttiMemory().alloc_t<MemberMetaInfo<MemberT>>(member));
+      }
+
+      if constexpr (meta::is_property_v<MemberT>)
+      {
+        m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<MemberT>>(member));
+      }
+
+      if constexpr (meta::is_function_v<MemberT>)
+      {
+        m_Methods.push(gRttiMemory().alloc_t<MethodMetaInfo<MemberT>>(member));
+      }
+    });
+  }
+
+  template<typename Class>
+  BaseClassMetaInfo* ArrayClassMetaInfo<Class>::containedType() const
+  {
+    return TypeInfo<Class>::get();
+  }
 }  // namespace bifrost::meta
 
 #endif /* BIFROST_META_RUNTIME_IMPL_HPP */

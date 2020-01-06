@@ -102,6 +102,13 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/imgui/imgui_widgets.cpp"
   "lib/include/imgui/imgui_draw.cpp"
   "lib/include/imgui/imgui_demo.cpp"
+  "lib/include/nativefiledialog/nfd_common.c"
+  "lib/include/nativefiledialog/nfd_win.cpp"
+
+  # Bifrost Asset Module
+  "src/bifrost/asset_io/bifrost_json_parser.cpp"
+  "src/bifrost/asset_io/bifrost_json_value.cpp"
+  "src/bifrost/asset_io/bifrost_scene.cpp"
 
   # Bifrost Core Module
   "src/bifrost/core/bifrost_game_state_machine.cpp"
@@ -111,9 +118,17 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/data_structures/bifrost_array_t.c"
   "src/bifrost/data_structures/bifrost_dynamic_string.c"
   "src/bifrost/data_structures/bifrost_hash_map.c"
+  "src/bifrost/data_structures/bifrost_string.cpp"
 
   # Bifrost Debug Module
   "src/bifrost/debug/bifrost_dbg_logger.c"
+
+  # Bifrost ECS Module
+  "src/bifrost/ecs/bifrost_entity.cpp"
+  "src/bifrost/ecs/bifrost_component.cpp"
+
+  # Bifrost Editor Module
+  "src/bifrost/editor/bifrost_editor_overlay.cpp"
 
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_gfx_common.c"
@@ -151,6 +166,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Utility Module
   "src/bifrost/utility/bifrost_hash.cpp"
+  "src/bifrost/utility/bifrost_uuid.c"
 
   # Editor
 

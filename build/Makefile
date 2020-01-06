@@ -48,10 +48,10 @@ RM = C:/Development/VisualStudio/Common7/IDE/CommonExtensions/Microsoft/CMake/CM
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:/Users/rshar/Documents/BifrostDev
+CMAKE_SOURCE_DIR = C:/Users/rshar/Documents/BifrostEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:/Users/rshar/Documents/BifrostDev/build
+CMAKE_BINARY_DIR = C:/Users/rshar/Documents/BifrostEngine/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,14 +80,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(CMAKE_COMMAND) -E cmake_progress_start C:/Users/rshar/Documents/BifrostDev/build/CMakeFiles C:/Users/rshar/Documents/BifrostDev/build/CMakeFiles/progress.marks
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:/Users/rshar/Documents/BifrostDev/build/CMakeFiles 0
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(CMAKE_COMMAND) -E cmake_progress_start C:/Users/rshar/Documents/BifrostEngine/build/CMakeFiles C:/Users/rshar/Documents/BifrostEngine/build/CMakeFiles/progress.marks
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/Makefile2 all
+	$(CMAKE_COMMAND) -E cmake_progress_start C:/Users/rshar/Documents/BifrostEngine/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/Makefile2 clean
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/Makefile2 clean
 .PHONY : clean
 
 # The main clean target
@@ -97,17 +97,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 #=============================================================================
@@ -123,13 +123,26 @@ BifrostEngine/fast:
 	$(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/build
 .PHONY : BifrostEngine/fast
 
+#=============================================================================
+# Target rules for targets named RenderGraph
+
+# Build rule for target.
+RenderGraph: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 RenderGraph
+.PHONY : RenderGraph
+
+# fast build rule for target.
+RenderGraph/fast:
+	$(MAKE) -f include/bifrost/graphics/CMakeFiles/RenderGraph.dir/build.make include/bifrost/graphics/CMakeFiles/RenderGraph.dir/build
+.PHONY : RenderGraph/fast
+
 lib/include/glad/glad.obj: lib/include/glad/glad.c.obj
 
 .PHONY : lib/include/glad/glad.obj
 
 # target to build an object file
 lib/include/glad/glad.c.obj:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.obj
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.obj
 .PHONY : lib/include/glad/glad.c.obj
 
 lib/include/glad/glad.i: lib/include/glad/glad.c.i
@@ -138,7 +151,7 @@ lib/include/glad/glad.i: lib/include/glad/glad.c.i
 
 # target to preprocess a source file
 lib/include/glad/glad.c.i:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.i
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.i
 .PHONY : lib/include/glad/glad.c.i
 
 lib/include/glad/glad.s: lib/include/glad/glad.c.s
@@ -147,8 +160,116 @@ lib/include/glad/glad.s: lib/include/glad/glad.c.s
 
 # target to generate assembly for a file
 lib/include/glad/glad.c.s:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.s
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/glad/glad.c.s
 .PHONY : lib/include/glad/glad.c.s
+
+lib/include/imgui/imgui.obj: lib/include/imgui/imgui.cpp.obj
+
+.PHONY : lib/include/imgui/imgui.obj
+
+# target to build an object file
+lib/include/imgui/imgui.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui.cpp.obj
+.PHONY : lib/include/imgui/imgui.cpp.obj
+
+lib/include/imgui/imgui.i: lib/include/imgui/imgui.cpp.i
+
+.PHONY : lib/include/imgui/imgui.i
+
+# target to preprocess a source file
+lib/include/imgui/imgui.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui.cpp.i
+.PHONY : lib/include/imgui/imgui.cpp.i
+
+lib/include/imgui/imgui.s: lib/include/imgui/imgui.cpp.s
+
+.PHONY : lib/include/imgui/imgui.s
+
+# target to generate assembly for a file
+lib/include/imgui/imgui.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui.cpp.s
+.PHONY : lib/include/imgui/imgui.cpp.s
+
+lib/include/imgui/imgui_demo.obj: lib/include/imgui/imgui_demo.cpp.obj
+
+.PHONY : lib/include/imgui/imgui_demo.obj
+
+# target to build an object file
+lib/include/imgui/imgui_demo.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_demo.cpp.obj
+.PHONY : lib/include/imgui/imgui_demo.cpp.obj
+
+lib/include/imgui/imgui_demo.i: lib/include/imgui/imgui_demo.cpp.i
+
+.PHONY : lib/include/imgui/imgui_demo.i
+
+# target to preprocess a source file
+lib/include/imgui/imgui_demo.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_demo.cpp.i
+.PHONY : lib/include/imgui/imgui_demo.cpp.i
+
+lib/include/imgui/imgui_demo.s: lib/include/imgui/imgui_demo.cpp.s
+
+.PHONY : lib/include/imgui/imgui_demo.s
+
+# target to generate assembly for a file
+lib/include/imgui/imgui_demo.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_demo.cpp.s
+.PHONY : lib/include/imgui/imgui_demo.cpp.s
+
+lib/include/imgui/imgui_draw.obj: lib/include/imgui/imgui_draw.cpp.obj
+
+.PHONY : lib/include/imgui/imgui_draw.obj
+
+# target to build an object file
+lib/include/imgui/imgui_draw.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_draw.cpp.obj
+.PHONY : lib/include/imgui/imgui_draw.cpp.obj
+
+lib/include/imgui/imgui_draw.i: lib/include/imgui/imgui_draw.cpp.i
+
+.PHONY : lib/include/imgui/imgui_draw.i
+
+# target to preprocess a source file
+lib/include/imgui/imgui_draw.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_draw.cpp.i
+.PHONY : lib/include/imgui/imgui_draw.cpp.i
+
+lib/include/imgui/imgui_draw.s: lib/include/imgui/imgui_draw.cpp.s
+
+.PHONY : lib/include/imgui/imgui_draw.s
+
+# target to generate assembly for a file
+lib/include/imgui/imgui_draw.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_draw.cpp.s
+.PHONY : lib/include/imgui/imgui_draw.cpp.s
+
+lib/include/imgui/imgui_widgets.obj: lib/include/imgui/imgui_widgets.cpp.obj
+
+.PHONY : lib/include/imgui/imgui_widgets.obj
+
+# target to build an object file
+lib/include/imgui/imgui_widgets.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_widgets.cpp.obj
+.PHONY : lib/include/imgui/imgui_widgets.cpp.obj
+
+lib/include/imgui/imgui_widgets.i: lib/include/imgui/imgui_widgets.cpp.i
+
+.PHONY : lib/include/imgui/imgui_widgets.i
+
+# target to preprocess a source file
+lib/include/imgui/imgui_widgets.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_widgets.cpp.i
+.PHONY : lib/include/imgui/imgui_widgets.cpp.i
+
+lib/include/imgui/imgui_widgets.s: lib/include/imgui/imgui_widgets.cpp.s
+
+.PHONY : lib/include/imgui/imgui_widgets.s
+
+# target to generate assembly for a file
+lib/include/imgui/imgui_widgets.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_widgets.cpp.s
+.PHONY : lib/include/imgui/imgui_widgets.cpp.s
 
 main.obj: main.cpp.obj
 
@@ -156,7 +277,7 @@ main.obj: main.cpp.obj
 
 # target to build an object file
 main.cpp.obj:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.obj
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.obj
 .PHONY : main.cpp.obj
 
 main.i: main.cpp.i
@@ -165,7 +286,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.i
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -174,8 +295,89 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.s
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.s
 .PHONY : main.cpp.s
+
+src/bifrost/asset_io/bifrost_scene.obj: src/bifrost/asset_io/bifrost_scene.cpp.obj
+
+.PHONY : src/bifrost/asset_io/bifrost_scene.obj
+
+# target to build an object file
+src/bifrost/asset_io/bifrost_scene.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_scene.cpp.obj
+.PHONY : src/bifrost/asset_io/bifrost_scene.cpp.obj
+
+src/bifrost/asset_io/bifrost_scene.i: src/bifrost/asset_io/bifrost_scene.cpp.i
+
+.PHONY : src/bifrost/asset_io/bifrost_scene.i
+
+# target to preprocess a source file
+src/bifrost/asset_io/bifrost_scene.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_scene.cpp.i
+.PHONY : src/bifrost/asset_io/bifrost_scene.cpp.i
+
+src/bifrost/asset_io/bifrost_scene.s: src/bifrost/asset_io/bifrost_scene.cpp.s
+
+.PHONY : src/bifrost/asset_io/bifrost_scene.s
+
+# target to generate assembly for a file
+src/bifrost/asset_io/bifrost_scene.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_scene.cpp.s
+.PHONY : src/bifrost/asset_io/bifrost_scene.cpp.s
+
+src/bifrost/core/bifrost_game_state_machine.obj: src/bifrost/core/bifrost_game_state_machine.cpp.obj
+
+.PHONY : src/bifrost/core/bifrost_game_state_machine.obj
+
+# target to build an object file
+src/bifrost/core/bifrost_game_state_machine.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/core/bifrost_game_state_machine.cpp.obj
+.PHONY : src/bifrost/core/bifrost_game_state_machine.cpp.obj
+
+src/bifrost/core/bifrost_game_state_machine.i: src/bifrost/core/bifrost_game_state_machine.cpp.i
+
+.PHONY : src/bifrost/core/bifrost_game_state_machine.i
+
+# target to preprocess a source file
+src/bifrost/core/bifrost_game_state_machine.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/core/bifrost_game_state_machine.cpp.i
+.PHONY : src/bifrost/core/bifrost_game_state_machine.cpp.i
+
+src/bifrost/core/bifrost_game_state_machine.s: src/bifrost/core/bifrost_game_state_machine.cpp.s
+
+.PHONY : src/bifrost/core/bifrost_game_state_machine.s
+
+# target to generate assembly for a file
+src/bifrost/core/bifrost_game_state_machine.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/core/bifrost_game_state_machine.cpp.s
+.PHONY : src/bifrost/core/bifrost_game_state_machine.cpp.s
+
+src/bifrost/core/bifrost_igame_state_layer.obj: src/bifrost/core/bifrost_igame_state_layer.cpp.obj
+
+.PHONY : src/bifrost/core/bifrost_igame_state_layer.obj
+
+# target to build an object file
+src/bifrost/core/bifrost_igame_state_layer.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/core/bifrost_igame_state_layer.cpp.obj
+.PHONY : src/bifrost/core/bifrost_igame_state_layer.cpp.obj
+
+src/bifrost/core/bifrost_igame_state_layer.i: src/bifrost/core/bifrost_igame_state_layer.cpp.i
+
+.PHONY : src/bifrost/core/bifrost_igame_state_layer.i
+
+# target to preprocess a source file
+src/bifrost/core/bifrost_igame_state_layer.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/core/bifrost_igame_state_layer.cpp.i
+.PHONY : src/bifrost/core/bifrost_igame_state_layer.cpp.i
+
+src/bifrost/core/bifrost_igame_state_layer.s: src/bifrost/core/bifrost_igame_state_layer.cpp.s
+
+.PHONY : src/bifrost/core/bifrost_igame_state_layer.s
+
+# target to generate assembly for a file
+src/bifrost/core/bifrost_igame_state_layer.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/core/bifrost_igame_state_layer.cpp.s
+.PHONY : src/bifrost/core/bifrost_igame_state_layer.cpp.s
 
 src/bifrost/data_structures/bifrost_array_t.obj: src/bifrost/data_structures/bifrost_array_t.c.obj
 
@@ -183,7 +385,7 @@ src/bifrost/data_structures/bifrost_array_t.obj: src/bifrost/data_structures/bif
 
 # target to build an object file
 src/bifrost/data_structures/bifrost_array_t.c.obj:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.obj
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.obj
 .PHONY : src/bifrost/data_structures/bifrost_array_t.c.obj
 
 src/bifrost/data_structures/bifrost_array_t.i: src/bifrost/data_structures/bifrost_array_t.c.i
@@ -192,7 +394,7 @@ src/bifrost/data_structures/bifrost_array_t.i: src/bifrost/data_structures/bifro
 
 # target to preprocess a source file
 src/bifrost/data_structures/bifrost_array_t.c.i:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.i
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.i
 .PHONY : src/bifrost/data_structures/bifrost_array_t.c.i
 
 src/bifrost/data_structures/bifrost_array_t.s: src/bifrost/data_structures/bifrost_array_t.c.s
@@ -201,7 +403,7 @@ src/bifrost/data_structures/bifrost_array_t.s: src/bifrost/data_structures/bifro
 
 # target to generate assembly for a file
 src/bifrost/data_structures/bifrost_array_t.c.s:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.s
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_array_t.c.s
 .PHONY : src/bifrost/data_structures/bifrost_array_t.c.s
 
 src/bifrost/data_structures/bifrost_dynamic_string.obj: src/bifrost/data_structures/bifrost_dynamic_string.c.obj
@@ -210,7 +412,7 @@ src/bifrost/data_structures/bifrost_dynamic_string.obj: src/bifrost/data_structu
 
 # target to build an object file
 src/bifrost/data_structures/bifrost_dynamic_string.c.obj:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.obj
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.obj
 .PHONY : src/bifrost/data_structures/bifrost_dynamic_string.c.obj
 
 src/bifrost/data_structures/bifrost_dynamic_string.i: src/bifrost/data_structures/bifrost_dynamic_string.c.i
@@ -219,7 +421,7 @@ src/bifrost/data_structures/bifrost_dynamic_string.i: src/bifrost/data_structure
 
 # target to preprocess a source file
 src/bifrost/data_structures/bifrost_dynamic_string.c.i:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.i
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.i
 .PHONY : src/bifrost/data_structures/bifrost_dynamic_string.c.i
 
 src/bifrost/data_structures/bifrost_dynamic_string.s: src/bifrost/data_structures/bifrost_dynamic_string.c.s
@@ -228,7 +430,7 @@ src/bifrost/data_structures/bifrost_dynamic_string.s: src/bifrost/data_structure
 
 # target to generate assembly for a file
 src/bifrost/data_structures/bifrost_dynamic_string.c.s:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.s
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_dynamic_string.c.s
 .PHONY : src/bifrost/data_structures/bifrost_dynamic_string.c.s
 
 src/bifrost/data_structures/bifrost_hash_map.obj: src/bifrost/data_structures/bifrost_hash_map.c.obj
@@ -237,7 +439,7 @@ src/bifrost/data_structures/bifrost_hash_map.obj: src/bifrost/data_structures/bi
 
 # target to build an object file
 src/bifrost/data_structures/bifrost_hash_map.c.obj:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.obj
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.obj
 .PHONY : src/bifrost/data_structures/bifrost_hash_map.c.obj
 
 src/bifrost/data_structures/bifrost_hash_map.i: src/bifrost/data_structures/bifrost_hash_map.c.i
@@ -246,7 +448,7 @@ src/bifrost/data_structures/bifrost_hash_map.i: src/bifrost/data_structures/bifr
 
 # target to preprocess a source file
 src/bifrost/data_structures/bifrost_hash_map.c.i:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.i
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.i
 .PHONY : src/bifrost/data_structures/bifrost_hash_map.c.i
 
 src/bifrost/data_structures/bifrost_hash_map.s: src/bifrost/data_structures/bifrost_hash_map.c.s
@@ -255,8 +457,683 @@ src/bifrost/data_structures/bifrost_hash_map.s: src/bifrost/data_structures/bifr
 
 # target to generate assembly for a file
 src/bifrost/data_structures/bifrost_hash_map.c.s:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.s
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_hash_map.c.s
 .PHONY : src/bifrost/data_structures/bifrost_hash_map.c.s
+
+src/bifrost/data_structures/bifrost_string.obj: src/bifrost/data_structures/bifrost_string.cpp.obj
+
+.PHONY : src/bifrost/data_structures/bifrost_string.obj
+
+# target to build an object file
+src/bifrost/data_structures/bifrost_string.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_string.cpp.obj
+.PHONY : src/bifrost/data_structures/bifrost_string.cpp.obj
+
+src/bifrost/data_structures/bifrost_string.i: src/bifrost/data_structures/bifrost_string.cpp.i
+
+.PHONY : src/bifrost/data_structures/bifrost_string.i
+
+# target to preprocess a source file
+src/bifrost/data_structures/bifrost_string.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_string.cpp.i
+.PHONY : src/bifrost/data_structures/bifrost_string.cpp.i
+
+src/bifrost/data_structures/bifrost_string.s: src/bifrost/data_structures/bifrost_string.cpp.s
+
+.PHONY : src/bifrost/data_structures/bifrost_string.s
+
+# target to generate assembly for a file
+src/bifrost/data_structures/bifrost_string.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/data_structures/bifrost_string.cpp.s
+.PHONY : src/bifrost/data_structures/bifrost_string.cpp.s
+
+src/bifrost/debug/bifrost_dbg_logger.obj: src/bifrost/debug/bifrost_dbg_logger.c.obj
+
+.PHONY : src/bifrost/debug/bifrost_dbg_logger.obj
+
+# target to build an object file
+src/bifrost/debug/bifrost_dbg_logger.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/debug/bifrost_dbg_logger.c.obj
+.PHONY : src/bifrost/debug/bifrost_dbg_logger.c.obj
+
+src/bifrost/debug/bifrost_dbg_logger.i: src/bifrost/debug/bifrost_dbg_logger.c.i
+
+.PHONY : src/bifrost/debug/bifrost_dbg_logger.i
+
+# target to preprocess a source file
+src/bifrost/debug/bifrost_dbg_logger.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/debug/bifrost_dbg_logger.c.i
+.PHONY : src/bifrost/debug/bifrost_dbg_logger.c.i
+
+src/bifrost/debug/bifrost_dbg_logger.s: src/bifrost/debug/bifrost_dbg_logger.c.s
+
+.PHONY : src/bifrost/debug/bifrost_dbg_logger.s
+
+# target to generate assembly for a file
+src/bifrost/debug/bifrost_dbg_logger.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/debug/bifrost_dbg_logger.c.s
+.PHONY : src/bifrost/debug/bifrost_dbg_logger.c.s
+
+src/bifrost/ecs/bifrost_component.obj: src/bifrost/ecs/bifrost_component.cpp.obj
+
+.PHONY : src/bifrost/ecs/bifrost_component.obj
+
+# target to build an object file
+src/bifrost/ecs/bifrost_component.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_component.cpp.obj
+.PHONY : src/bifrost/ecs/bifrost_component.cpp.obj
+
+src/bifrost/ecs/bifrost_component.i: src/bifrost/ecs/bifrost_component.cpp.i
+
+.PHONY : src/bifrost/ecs/bifrost_component.i
+
+# target to preprocess a source file
+src/bifrost/ecs/bifrost_component.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_component.cpp.i
+.PHONY : src/bifrost/ecs/bifrost_component.cpp.i
+
+src/bifrost/ecs/bifrost_component.s: src/bifrost/ecs/bifrost_component.cpp.s
+
+.PHONY : src/bifrost/ecs/bifrost_component.s
+
+# target to generate assembly for a file
+src/bifrost/ecs/bifrost_component.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_component.cpp.s
+.PHONY : src/bifrost/ecs/bifrost_component.cpp.s
+
+src/bifrost/ecs/bifrost_entity.obj: src/bifrost/ecs/bifrost_entity.cpp.obj
+
+.PHONY : src/bifrost/ecs/bifrost_entity.obj
+
+# target to build an object file
+src/bifrost/ecs/bifrost_entity.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_entity.cpp.obj
+.PHONY : src/bifrost/ecs/bifrost_entity.cpp.obj
+
+src/bifrost/ecs/bifrost_entity.i: src/bifrost/ecs/bifrost_entity.cpp.i
+
+.PHONY : src/bifrost/ecs/bifrost_entity.i
+
+# target to preprocess a source file
+src/bifrost/ecs/bifrost_entity.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_entity.cpp.i
+.PHONY : src/bifrost/ecs/bifrost_entity.cpp.i
+
+src/bifrost/ecs/bifrost_entity.s: src/bifrost/ecs/bifrost_entity.cpp.s
+
+.PHONY : src/bifrost/ecs/bifrost_entity.s
+
+# target to generate assembly for a file
+src/bifrost/ecs/bifrost_entity.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_entity.cpp.s
+.PHONY : src/bifrost/ecs/bifrost_entity.cpp.s
+
+src/bifrost/graphics/bifrost_gfx_common.obj: src/bifrost/graphics/bifrost_gfx_common.c.obj
+
+.PHONY : src/bifrost/graphics/bifrost_gfx_common.obj
+
+# target to build an object file
+src/bifrost/graphics/bifrost_gfx_common.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/bifrost_gfx_common.c.obj
+.PHONY : src/bifrost/graphics/bifrost_gfx_common.c.obj
+
+src/bifrost/graphics/bifrost_gfx_common.i: src/bifrost/graphics/bifrost_gfx_common.c.i
+
+.PHONY : src/bifrost/graphics/bifrost_gfx_common.i
+
+# target to preprocess a source file
+src/bifrost/graphics/bifrost_gfx_common.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/bifrost_gfx_common.c.i
+.PHONY : src/bifrost/graphics/bifrost_gfx_common.c.i
+
+src/bifrost/graphics/bifrost_gfx_common.s: src/bifrost/graphics/bifrost_gfx_common.c.s
+
+.PHONY : src/bifrost/graphics/bifrost_gfx_common.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/bifrost_gfx_common.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/bifrost_gfx_common.c.s
+.PHONY : src/bifrost/graphics/bifrost_gfx_common.c.s
+
+src/bifrost/graphics/bifrost_gfx_vulkan.obj: src/bifrost/graphics/bifrost_gfx_vulkan.cpp.obj
+
+.PHONY : src/bifrost/graphics/bifrost_gfx_vulkan.obj
+
+# target to build an object file
+src/bifrost/graphics/bifrost_gfx_vulkan.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/bifrost_gfx_vulkan.cpp.obj
+.PHONY : src/bifrost/graphics/bifrost_gfx_vulkan.cpp.obj
+
+src/bifrost/graphics/bifrost_gfx_vulkan.i: src/bifrost/graphics/bifrost_gfx_vulkan.cpp.i
+
+.PHONY : src/bifrost/graphics/bifrost_gfx_vulkan.i
+
+# target to preprocess a source file
+src/bifrost/graphics/bifrost_gfx_vulkan.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/bifrost_gfx_vulkan.cpp.i
+.PHONY : src/bifrost/graphics/bifrost_gfx_vulkan.cpp.i
+
+src/bifrost/graphics/bifrost_gfx_vulkan.s: src/bifrost/graphics/bifrost_gfx_vulkan.cpp.s
+
+.PHONY : src/bifrost/graphics/bifrost_gfx_vulkan.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/bifrost_gfx_vulkan.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/bifrost_gfx_vulkan.cpp.s
+.PHONY : src/bifrost/graphics/bifrost_gfx_vulkan.cpp.s
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.obj: src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.obj
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.obj
+
+# target to build an object file
+src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.obj
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.obj
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.i: src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.i
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.i
+
+# target to preprocess a source file
+src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.i
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.i
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.s: src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.s
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.s
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp.s
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.obj: src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.obj
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.obj
+
+# target to build an object file
+src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.obj
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.obj
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.i: src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.i
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.i
+
+# target to preprocess a source file
+src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.i
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.i
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.s: src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.s
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.s
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c.s
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.obj: src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.obj
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.obj
+
+# target to build an object file
+src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.obj
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.obj
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.i: src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.i
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.i
+
+# target to preprocess a source file
+src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.i
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.i
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.s: src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.s
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.s
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp.s
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.obj: src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.obj
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.obj
+
+# target to build an object file
+src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.obj
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.obj
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.i: src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.i
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.i
+
+# target to preprocess a source file
+src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.i
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.i
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.s: src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.s
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.s
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp.s
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.obj: src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.obj
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.obj
+
+# target to build an object file
+src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.obj
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.obj
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.i: src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.i
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.i
+
+# target to preprocess a source file
+src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.i
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.i
+
+src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.s: src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.s
+
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.s
+
+# target to generate assembly for a file
+src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.s
+.PHONY : src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp.s
+
+src/bifrost/math/bifrost_camera.obj: src/bifrost/math/bifrost_camera.c.obj
+
+.PHONY : src/bifrost/math/bifrost_camera.obj
+
+# target to build an object file
+src/bifrost/math/bifrost_camera.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_camera.c.obj
+.PHONY : src/bifrost/math/bifrost_camera.c.obj
+
+src/bifrost/math/bifrost_camera.i: src/bifrost/math/bifrost_camera.c.i
+
+.PHONY : src/bifrost/math/bifrost_camera.i
+
+# target to preprocess a source file
+src/bifrost/math/bifrost_camera.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_camera.c.i
+.PHONY : src/bifrost/math/bifrost_camera.c.i
+
+src/bifrost/math/bifrost_camera.s: src/bifrost/math/bifrost_camera.c.s
+
+.PHONY : src/bifrost/math/bifrost_camera.s
+
+# target to generate assembly for a file
+src/bifrost/math/bifrost_camera.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_camera.c.s
+.PHONY : src/bifrost/math/bifrost_camera.c.s
+
+src/bifrost/math/bifrost_mat4x4.obj: src/bifrost/math/bifrost_mat4x4.c.obj
+
+.PHONY : src/bifrost/math/bifrost_mat4x4.obj
+
+# target to build an object file
+src/bifrost/math/bifrost_mat4x4.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_mat4x4.c.obj
+.PHONY : src/bifrost/math/bifrost_mat4x4.c.obj
+
+src/bifrost/math/bifrost_mat4x4.i: src/bifrost/math/bifrost_mat4x4.c.i
+
+.PHONY : src/bifrost/math/bifrost_mat4x4.i
+
+# target to preprocess a source file
+src/bifrost/math/bifrost_mat4x4.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_mat4x4.c.i
+.PHONY : src/bifrost/math/bifrost_mat4x4.c.i
+
+src/bifrost/math/bifrost_mat4x4.s: src/bifrost/math/bifrost_mat4x4.c.s
+
+.PHONY : src/bifrost/math/bifrost_mat4x4.s
+
+# target to generate assembly for a file
+src/bifrost/math/bifrost_mat4x4.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_mat4x4.c.s
+.PHONY : src/bifrost/math/bifrost_mat4x4.c.s
+
+src/bifrost/math/bifrost_transform.obj: src/bifrost/math/bifrost_transform.c.obj
+
+.PHONY : src/bifrost/math/bifrost_transform.obj
+
+# target to build an object file
+src/bifrost/math/bifrost_transform.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_transform.c.obj
+.PHONY : src/bifrost/math/bifrost_transform.c.obj
+
+src/bifrost/math/bifrost_transform.i: src/bifrost/math/bifrost_transform.c.i
+
+.PHONY : src/bifrost/math/bifrost_transform.i
+
+# target to preprocess a source file
+src/bifrost/math/bifrost_transform.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_transform.c.i
+.PHONY : src/bifrost/math/bifrost_transform.c.i
+
+src/bifrost/math/bifrost_transform.s: src/bifrost/math/bifrost_transform.c.s
+
+.PHONY : src/bifrost/math/bifrost_transform.s
+
+# target to generate assembly for a file
+src/bifrost/math/bifrost_transform.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_transform.c.s
+.PHONY : src/bifrost/math/bifrost_transform.c.s
+
+src/bifrost/math/bifrost_vec2.obj: src/bifrost/math/bifrost_vec2.c.obj
+
+.PHONY : src/bifrost/math/bifrost_vec2.obj
+
+# target to build an object file
+src/bifrost/math/bifrost_vec2.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_vec2.c.obj
+.PHONY : src/bifrost/math/bifrost_vec2.c.obj
+
+src/bifrost/math/bifrost_vec2.i: src/bifrost/math/bifrost_vec2.c.i
+
+.PHONY : src/bifrost/math/bifrost_vec2.i
+
+# target to preprocess a source file
+src/bifrost/math/bifrost_vec2.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_vec2.c.i
+.PHONY : src/bifrost/math/bifrost_vec2.c.i
+
+src/bifrost/math/bifrost_vec2.s: src/bifrost/math/bifrost_vec2.c.s
+
+.PHONY : src/bifrost/math/bifrost_vec2.s
+
+# target to generate assembly for a file
+src/bifrost/math/bifrost_vec2.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_vec2.c.s
+.PHONY : src/bifrost/math/bifrost_vec2.c.s
+
+src/bifrost/math/bifrost_vec3.obj: src/bifrost/math/bifrost_vec3.c.obj
+
+.PHONY : src/bifrost/math/bifrost_vec3.obj
+
+# target to build an object file
+src/bifrost/math/bifrost_vec3.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_vec3.c.obj
+.PHONY : src/bifrost/math/bifrost_vec3.c.obj
+
+src/bifrost/math/bifrost_vec3.i: src/bifrost/math/bifrost_vec3.c.i
+
+.PHONY : src/bifrost/math/bifrost_vec3.i
+
+# target to preprocess a source file
+src/bifrost/math/bifrost_vec3.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_vec3.c.i
+.PHONY : src/bifrost/math/bifrost_vec3.c.i
+
+src/bifrost/math/bifrost_vec3.s: src/bifrost/math/bifrost_vec3.c.s
+
+.PHONY : src/bifrost/math/bifrost_vec3.s
+
+# target to generate assembly for a file
+src/bifrost/math/bifrost_vec3.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/math/bifrost_vec3.c.s
+.PHONY : src/bifrost/math/bifrost_vec3.c.s
+
+src/bifrost/memory/bifrost_c_allocator.obj: src/bifrost/memory/bifrost_c_allocator.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_c_allocator.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_c_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_c_allocator.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_c_allocator.cpp.obj
+
+src/bifrost/memory/bifrost_c_allocator.i: src/bifrost/memory/bifrost_c_allocator.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_c_allocator.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_c_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_c_allocator.cpp.i
+.PHONY : src/bifrost/memory/bifrost_c_allocator.cpp.i
+
+src/bifrost/memory/bifrost_c_allocator.s: src/bifrost/memory/bifrost_c_allocator.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_c_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_c_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_c_allocator.cpp.s
+.PHONY : src/bifrost/memory/bifrost_c_allocator.cpp.s
+
+src/bifrost/memory/bifrost_freelist_allocator.obj: src/bifrost/memory/bifrost_freelist_allocator.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_freelist_allocator.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_freelist_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_freelist_allocator.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_freelist_allocator.cpp.obj
+
+src/bifrost/memory/bifrost_freelist_allocator.i: src/bifrost/memory/bifrost_freelist_allocator.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_freelist_allocator.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_freelist_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_freelist_allocator.cpp.i
+.PHONY : src/bifrost/memory/bifrost_freelist_allocator.cpp.i
+
+src/bifrost/memory/bifrost_freelist_allocator.s: src/bifrost/memory/bifrost_freelist_allocator.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_freelist_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_freelist_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_freelist_allocator.cpp.s
+.PHONY : src/bifrost/memory/bifrost_freelist_allocator.cpp.s
+
+src/bifrost/memory/bifrost_imemory_manager.obj: src/bifrost/memory/bifrost_imemory_manager.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_imemory_manager.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_imemory_manager.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_imemory_manager.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_imemory_manager.cpp.obj
+
+src/bifrost/memory/bifrost_imemory_manager.i: src/bifrost/memory/bifrost_imemory_manager.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_imemory_manager.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_imemory_manager.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_imemory_manager.cpp.i
+.PHONY : src/bifrost/memory/bifrost_imemory_manager.cpp.i
+
+src/bifrost/memory/bifrost_imemory_manager.s: src/bifrost/memory/bifrost_imemory_manager.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_imemory_manager.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_imemory_manager.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_imemory_manager.cpp.s
+.PHONY : src/bifrost/memory/bifrost_imemory_manager.cpp.s
+
+src/bifrost/memory/bifrost_linear_allocator.obj: src/bifrost/memory/bifrost_linear_allocator.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_linear_allocator.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_linear_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_linear_allocator.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_linear_allocator.cpp.obj
+
+src/bifrost/memory/bifrost_linear_allocator.i: src/bifrost/memory/bifrost_linear_allocator.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_linear_allocator.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_linear_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_linear_allocator.cpp.i
+.PHONY : src/bifrost/memory/bifrost_linear_allocator.cpp.i
+
+src/bifrost/memory/bifrost_linear_allocator.s: src/bifrost/memory/bifrost_linear_allocator.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_linear_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_linear_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_linear_allocator.cpp.s
+.PHONY : src/bifrost/memory/bifrost_linear_allocator.cpp.s
+
+src/bifrost/memory/bifrost_pool_allocator.obj: src/bifrost/memory/bifrost_pool_allocator.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_pool_allocator.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_pool_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_pool_allocator.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_pool_allocator.cpp.obj
+
+src/bifrost/memory/bifrost_pool_allocator.i: src/bifrost/memory/bifrost_pool_allocator.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_pool_allocator.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_pool_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_pool_allocator.cpp.i
+.PHONY : src/bifrost/memory/bifrost_pool_allocator.cpp.i
+
+src/bifrost/memory/bifrost_pool_allocator.s: src/bifrost/memory/bifrost_pool_allocator.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_pool_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_pool_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_pool_allocator.cpp.s
+.PHONY : src/bifrost/memory/bifrost_pool_allocator.cpp.s
+
+src/bifrost/memory/bifrost_proxy_allocator.obj: src/bifrost/memory/bifrost_proxy_allocator.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_proxy_allocator.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_proxy_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_proxy_allocator.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_proxy_allocator.cpp.obj
+
+src/bifrost/memory/bifrost_proxy_allocator.i: src/bifrost/memory/bifrost_proxy_allocator.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_proxy_allocator.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_proxy_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_proxy_allocator.cpp.i
+.PHONY : src/bifrost/memory/bifrost_proxy_allocator.cpp.i
+
+src/bifrost/memory/bifrost_proxy_allocator.s: src/bifrost/memory/bifrost_proxy_allocator.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_proxy_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_proxy_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_proxy_allocator.cpp.s
+.PHONY : src/bifrost/memory/bifrost_proxy_allocator.cpp.s
+
+src/bifrost/memory/bifrost_stack_allocator.obj: src/bifrost/memory/bifrost_stack_allocator.cpp.obj
+
+.PHONY : src/bifrost/memory/bifrost_stack_allocator.obj
+
+# target to build an object file
+src/bifrost/memory/bifrost_stack_allocator.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_stack_allocator.cpp.obj
+.PHONY : src/bifrost/memory/bifrost_stack_allocator.cpp.obj
+
+src/bifrost/memory/bifrost_stack_allocator.i: src/bifrost/memory/bifrost_stack_allocator.cpp.i
+
+.PHONY : src/bifrost/memory/bifrost_stack_allocator.i
+
+# target to preprocess a source file
+src/bifrost/memory/bifrost_stack_allocator.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_stack_allocator.cpp.i
+.PHONY : src/bifrost/memory/bifrost_stack_allocator.cpp.i
+
+src/bifrost/memory/bifrost_stack_allocator.s: src/bifrost/memory/bifrost_stack_allocator.cpp.s
+
+.PHONY : src/bifrost/memory/bifrost_stack_allocator.s
+
+# target to generate assembly for a file
+src/bifrost/memory/bifrost_stack_allocator.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/memory/bifrost_stack_allocator.cpp.s
+.PHONY : src/bifrost/memory/bifrost_stack_allocator.cpp.s
+
+src/bifrost/meta/bifrost_meta_runtime.obj: src/bifrost/meta/bifrost_meta_runtime.cpp.obj
+
+.PHONY : src/bifrost/meta/bifrost_meta_runtime.obj
+
+# target to build an object file
+src/bifrost/meta/bifrost_meta_runtime.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/meta/bifrost_meta_runtime.cpp.obj
+.PHONY : src/bifrost/meta/bifrost_meta_runtime.cpp.obj
+
+src/bifrost/meta/bifrost_meta_runtime.i: src/bifrost/meta/bifrost_meta_runtime.cpp.i
+
+.PHONY : src/bifrost/meta/bifrost_meta_runtime.i
+
+# target to preprocess a source file
+src/bifrost/meta/bifrost_meta_runtime.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/meta/bifrost_meta_runtime.cpp.i
+.PHONY : src/bifrost/meta/bifrost_meta_runtime.cpp.i
+
+src/bifrost/meta/bifrost_meta_runtime.s: src/bifrost/meta/bifrost_meta_runtime.cpp.s
+
+.PHONY : src/bifrost/meta/bifrost_meta_runtime.s
+
+# target to generate assembly for a file
+src/bifrost/meta/bifrost_meta_runtime.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/meta/bifrost_meta_runtime.cpp.s
+.PHONY : src/bifrost/meta/bifrost_meta_runtime.cpp.s
+
+src/bifrost/platform/bifrost_window_glfw.obj: src/bifrost/platform/bifrost_window_glfw.cpp.obj
+
+.PHONY : src/bifrost/platform/bifrost_window_glfw.obj
+
+# target to build an object file
+src/bifrost/platform/bifrost_window_glfw.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/platform/bifrost_window_glfw.cpp.obj
+.PHONY : src/bifrost/platform/bifrost_window_glfw.cpp.obj
+
+src/bifrost/platform/bifrost_window_glfw.i: src/bifrost/platform/bifrost_window_glfw.cpp.i
+
+.PHONY : src/bifrost/platform/bifrost_window_glfw.i
+
+# target to preprocess a source file
+src/bifrost/platform/bifrost_window_glfw.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/platform/bifrost_window_glfw.cpp.i
+.PHONY : src/bifrost/platform/bifrost_window_glfw.cpp.i
+
+src/bifrost/platform/bifrost_window_glfw.s: src/bifrost/platform/bifrost_window_glfw.cpp.s
+
+.PHONY : src/bifrost/platform/bifrost_window_glfw.s
+
+# target to generate assembly for a file
+src/bifrost/platform/bifrost_window_glfw.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/platform/bifrost_window_glfw.cpp.s
+.PHONY : src/bifrost/platform/bifrost_window_glfw.cpp.s
 
 src/bifrost/script/bifrost_vm_build.obj: src/bifrost/script/bifrost_vm_build.c.obj
 
@@ -264,7 +1141,7 @@ src/bifrost/script/bifrost_vm_build.obj: src/bifrost/script/bifrost_vm_build.c.o
 
 # target to build an object file
 src/bifrost/script/bifrost_vm_build.c.obj:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.obj
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.obj
 .PHONY : src/bifrost/script/bifrost_vm_build.c.obj
 
 src/bifrost/script/bifrost_vm_build.i: src/bifrost/script/bifrost_vm_build.c.i
@@ -273,7 +1150,7 @@ src/bifrost/script/bifrost_vm_build.i: src/bifrost/script/bifrost_vm_build.c.i
 
 # target to preprocess a source file
 src/bifrost/script/bifrost_vm_build.c.i:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.i
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.i
 .PHONY : src/bifrost/script/bifrost_vm_build.c.i
 
 src/bifrost/script/bifrost_vm_build.s: src/bifrost/script/bifrost_vm_build.c.s
@@ -282,8 +1159,89 @@ src/bifrost/script/bifrost_vm_build.s: src/bifrost/script/bifrost_vm_build.c.s
 
 # target to generate assembly for a file
 src/bifrost/script/bifrost_vm_build.c.s:
-	cd c:/Users/rshar/Documents/BifrostDev/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.s
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/script/bifrost_vm_build.c.s
 .PHONY : src/bifrost/script/bifrost_vm_build.c.s
+
+src/bifrost/utility/bifrost_hash.obj: src/bifrost/utility/bifrost_hash.cpp.obj
+
+.PHONY : src/bifrost/utility/bifrost_hash.obj
+
+# target to build an object file
+src/bifrost/utility/bifrost_hash.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/utility/bifrost_hash.cpp.obj
+.PHONY : src/bifrost/utility/bifrost_hash.cpp.obj
+
+src/bifrost/utility/bifrost_hash.i: src/bifrost/utility/bifrost_hash.cpp.i
+
+.PHONY : src/bifrost/utility/bifrost_hash.i
+
+# target to preprocess a source file
+src/bifrost/utility/bifrost_hash.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/utility/bifrost_hash.cpp.i
+.PHONY : src/bifrost/utility/bifrost_hash.cpp.i
+
+src/bifrost/utility/bifrost_hash.s: src/bifrost/utility/bifrost_hash.cpp.s
+
+.PHONY : src/bifrost/utility/bifrost_hash.s
+
+# target to generate assembly for a file
+src/bifrost/utility/bifrost_hash.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/utility/bifrost_hash.cpp.s
+.PHONY : src/bifrost/utility/bifrost_hash.cpp.s
+
+src/bifrost/utility/bifrost_uuid.obj: src/bifrost/utility/bifrost_uuid.c.obj
+
+.PHONY : src/bifrost/utility/bifrost_uuid.obj
+
+# target to build an object file
+src/bifrost/utility/bifrost_uuid.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/utility/bifrost_uuid.c.obj
+.PHONY : src/bifrost/utility/bifrost_uuid.c.obj
+
+src/bifrost/utility/bifrost_uuid.i: src/bifrost/utility/bifrost_uuid.c.i
+
+.PHONY : src/bifrost/utility/bifrost_uuid.i
+
+# target to preprocess a source file
+src/bifrost/utility/bifrost_uuid.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/utility/bifrost_uuid.c.i
+.PHONY : src/bifrost/utility/bifrost_uuid.c.i
+
+src/bifrost/utility/bifrost_uuid.s: src/bifrost/utility/bifrost_uuid.c.s
+
+.PHONY : src/bifrost/utility/bifrost_uuid.s
+
+# target to generate assembly for a file
+src/bifrost/utility/bifrost_uuid.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/utility/bifrost_uuid.c.s
+.PHONY : src/bifrost/utility/bifrost_uuid.c.s
+
+src/bifrost_imgui_glfw.obj: src/bifrost_imgui_glfw.cpp.obj
+
+.PHONY : src/bifrost_imgui_glfw.obj
+
+# target to build an object file
+src/bifrost_imgui_glfw.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost_imgui_glfw.cpp.obj
+.PHONY : src/bifrost_imgui_glfw.cpp.obj
+
+src/bifrost_imgui_glfw.i: src/bifrost_imgui_glfw.cpp.i
+
+.PHONY : src/bifrost_imgui_glfw.i
+
+# target to preprocess a source file
+src/bifrost_imgui_glfw.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost_imgui_glfw.cpp.i
+.PHONY : src/bifrost_imgui_glfw.cpp.i
+
+src/bifrost_imgui_glfw.s: src/bifrost_imgui_glfw.cpp.s
+
+.PHONY : src/bifrost_imgui_glfw.s
+
+# target to generate assembly for a file
+src/bifrost_imgui_glfw.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost_imgui_glfw.cpp.s
+.PHONY : src/bifrost_imgui_glfw.cpp.s
 
 # Help Target
 help:
@@ -294,12 +1252,34 @@ help:
 	@echo "... BifrostEngine"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... RenderGraph"
 	@echo "... lib/include/glad/glad.obj"
 	@echo "... lib/include/glad/glad.i"
 	@echo "... lib/include/glad/glad.s"
+	@echo "... lib/include/imgui/imgui.obj"
+	@echo "... lib/include/imgui/imgui.i"
+	@echo "... lib/include/imgui/imgui.s"
+	@echo "... lib/include/imgui/imgui_demo.obj"
+	@echo "... lib/include/imgui/imgui_demo.i"
+	@echo "... lib/include/imgui/imgui_demo.s"
+	@echo "... lib/include/imgui/imgui_draw.obj"
+	@echo "... lib/include/imgui/imgui_draw.i"
+	@echo "... lib/include/imgui/imgui_draw.s"
+	@echo "... lib/include/imgui/imgui_widgets.obj"
+	@echo "... lib/include/imgui/imgui_widgets.i"
+	@echo "... lib/include/imgui/imgui_widgets.s"
 	@echo "... main.obj"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... src/bifrost/asset_io/bifrost_scene.obj"
+	@echo "... src/bifrost/asset_io/bifrost_scene.i"
+	@echo "... src/bifrost/asset_io/bifrost_scene.s"
+	@echo "... src/bifrost/core/bifrost_game_state_machine.obj"
+	@echo "... src/bifrost/core/bifrost_game_state_machine.i"
+	@echo "... src/bifrost/core/bifrost_game_state_machine.s"
+	@echo "... src/bifrost/core/bifrost_igame_state_layer.obj"
+	@echo "... src/bifrost/core/bifrost_igame_state_layer.i"
+	@echo "... src/bifrost/core/bifrost_igame_state_layer.s"
 	@echo "... src/bifrost/data_structures/bifrost_array_t.obj"
 	@echo "... src/bifrost/data_structures/bifrost_array_t.i"
 	@echo "... src/bifrost/data_structures/bifrost_array_t.s"
@@ -309,9 +1289,93 @@ help:
 	@echo "... src/bifrost/data_structures/bifrost_hash_map.obj"
 	@echo "... src/bifrost/data_structures/bifrost_hash_map.i"
 	@echo "... src/bifrost/data_structures/bifrost_hash_map.s"
+	@echo "... src/bifrost/data_structures/bifrost_string.obj"
+	@echo "... src/bifrost/data_structures/bifrost_string.i"
+	@echo "... src/bifrost/data_structures/bifrost_string.s"
+	@echo "... src/bifrost/debug/bifrost_dbg_logger.obj"
+	@echo "... src/bifrost/debug/bifrost_dbg_logger.i"
+	@echo "... src/bifrost/debug/bifrost_dbg_logger.s"
+	@echo "... src/bifrost/ecs/bifrost_component.obj"
+	@echo "... src/bifrost/ecs/bifrost_component.i"
+	@echo "... src/bifrost/ecs/bifrost_component.s"
+	@echo "... src/bifrost/ecs/bifrost_entity.obj"
+	@echo "... src/bifrost/ecs/bifrost_entity.i"
+	@echo "... src/bifrost/ecs/bifrost_entity.s"
+	@echo "... src/bifrost/graphics/bifrost_gfx_common.obj"
+	@echo "... src/bifrost/graphics/bifrost_gfx_common.i"
+	@echo "... src/bifrost/graphics/bifrost_gfx_common.s"
+	@echo "... src/bifrost/graphics/bifrost_gfx_vulkan.obj"
+	@echo "... src/bifrost/graphics/bifrost_gfx_vulkan.i"
+	@echo "... src/bifrost/graphics/bifrost_gfx_vulkan.s"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.obj"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.i"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.s"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.obj"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.i"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.s"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.obj"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.i"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.s"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.obj"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.i"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.s"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.obj"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.i"
+	@echo "... src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.s"
+	@echo "... src/bifrost/math/bifrost_camera.obj"
+	@echo "... src/bifrost/math/bifrost_camera.i"
+	@echo "... src/bifrost/math/bifrost_camera.s"
+	@echo "... src/bifrost/math/bifrost_mat4x4.obj"
+	@echo "... src/bifrost/math/bifrost_mat4x4.i"
+	@echo "... src/bifrost/math/bifrost_mat4x4.s"
+	@echo "... src/bifrost/math/bifrost_transform.obj"
+	@echo "... src/bifrost/math/bifrost_transform.i"
+	@echo "... src/bifrost/math/bifrost_transform.s"
+	@echo "... src/bifrost/math/bifrost_vec2.obj"
+	@echo "... src/bifrost/math/bifrost_vec2.i"
+	@echo "... src/bifrost/math/bifrost_vec2.s"
+	@echo "... src/bifrost/math/bifrost_vec3.obj"
+	@echo "... src/bifrost/math/bifrost_vec3.i"
+	@echo "... src/bifrost/math/bifrost_vec3.s"
+	@echo "... src/bifrost/memory/bifrost_c_allocator.obj"
+	@echo "... src/bifrost/memory/bifrost_c_allocator.i"
+	@echo "... src/bifrost/memory/bifrost_c_allocator.s"
+	@echo "... src/bifrost/memory/bifrost_freelist_allocator.obj"
+	@echo "... src/bifrost/memory/bifrost_freelist_allocator.i"
+	@echo "... src/bifrost/memory/bifrost_freelist_allocator.s"
+	@echo "... src/bifrost/memory/bifrost_imemory_manager.obj"
+	@echo "... src/bifrost/memory/bifrost_imemory_manager.i"
+	@echo "... src/bifrost/memory/bifrost_imemory_manager.s"
+	@echo "... src/bifrost/memory/bifrost_linear_allocator.obj"
+	@echo "... src/bifrost/memory/bifrost_linear_allocator.i"
+	@echo "... src/bifrost/memory/bifrost_linear_allocator.s"
+	@echo "... src/bifrost/memory/bifrost_pool_allocator.obj"
+	@echo "... src/bifrost/memory/bifrost_pool_allocator.i"
+	@echo "... src/bifrost/memory/bifrost_pool_allocator.s"
+	@echo "... src/bifrost/memory/bifrost_proxy_allocator.obj"
+	@echo "... src/bifrost/memory/bifrost_proxy_allocator.i"
+	@echo "... src/bifrost/memory/bifrost_proxy_allocator.s"
+	@echo "... src/bifrost/memory/bifrost_stack_allocator.obj"
+	@echo "... src/bifrost/memory/bifrost_stack_allocator.i"
+	@echo "... src/bifrost/memory/bifrost_stack_allocator.s"
+	@echo "... src/bifrost/meta/bifrost_meta_runtime.obj"
+	@echo "... src/bifrost/meta/bifrost_meta_runtime.i"
+	@echo "... src/bifrost/meta/bifrost_meta_runtime.s"
+	@echo "... src/bifrost/platform/bifrost_window_glfw.obj"
+	@echo "... src/bifrost/platform/bifrost_window_glfw.i"
+	@echo "... src/bifrost/platform/bifrost_window_glfw.s"
 	@echo "... src/bifrost/script/bifrost_vm_build.obj"
 	@echo "... src/bifrost/script/bifrost_vm_build.i"
 	@echo "... src/bifrost/script/bifrost_vm_build.s"
+	@echo "... src/bifrost/utility/bifrost_hash.obj"
+	@echo "... src/bifrost/utility/bifrost_hash.i"
+	@echo "... src/bifrost/utility/bifrost_hash.s"
+	@echo "... src/bifrost/utility/bifrost_uuid.obj"
+	@echo "... src/bifrost/utility/bifrost_uuid.i"
+	@echo "... src/bifrost/utility/bifrost_uuid.s"
+	@echo "... src/bifrost_imgui_glfw.obj"
+	@echo "... src/bifrost_imgui_glfw.i"
+	@echo "... src/bifrost_imgui_glfw.s"
 .PHONY : help
 
 

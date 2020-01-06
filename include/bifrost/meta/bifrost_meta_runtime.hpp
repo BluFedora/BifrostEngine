@@ -4,7 +4,9 @@
 #include "bifrost/data_structures/bifrost_any.hpp"
 #include "bifrost/data_structures/bifrost_array.hpp"
 #include "bifrost/data_structures/bifrost_hash_table.hpp"
+#include "bifrost/memory/bifrost_linear_allocator.hpp"
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"
+
 #include <string_view> /* string_view */
 
 namespace bifrost::meta
@@ -12,6 +14,7 @@ namespace bifrost::meta
   class BaseClassMetaInfo;
 
   NoFreeAllocator&                                 gRttiMemory();
+  LinearAllocator&                                 gRttiMemoryBacking();
   HashTable<std::string_view, BaseClassMetaInfo*>& gRegistry();
 
   template<typename BaseT, typename... CtorArgs>
@@ -38,9 +41,6 @@ namespace bifrost::meta
 
   class BaseMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    protected:
     std::string_view m_Name;
 
@@ -54,9 +54,6 @@ namespace bifrost::meta
 
   class BasePropertyMetaInfo : public BaseMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    private:
     BaseClassMetaInfo* m_Type;
 
@@ -66,7 +63,7 @@ namespace bifrost::meta
    public:
     [[nodiscard]] BaseClassMetaInfo* type() const { return m_Type; }
 
-    virtual Any  get(Any& instance)                   = 0;
+    virtual Any  get(const Any& instance)             = 0;
     virtual void set(Any& instance, const Any& value) = 0;
   };
 
@@ -87,9 +84,6 @@ namespace bifrost::meta
 
   class BaseMethodMetaInfo : public BaseMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    protected:
     Array<BaseClassMetaInfo*> m_Parameters;
     BaseClassMetaInfo*        m_ReturnType;
@@ -156,9 +150,6 @@ namespace bifrost::meta
 
   class BaseClassMetaInfo : public BaseMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    protected:
     Array<BaseClassMetaInfo*>    m_BaseClasses;
     Array<BaseCtorMetaInfo*>     m_Ctors;
@@ -167,14 +158,17 @@ namespace bifrost::meta
     Array<BaseMethodMetaInfo*>   m_Methods;
     std::size_t                  m_Size;
     std::size_t                  m_Alignment;
+    bool                         m_IsArray;
+    bool                         m_IsMap;
 
    protected:
     BaseClassMetaInfo(std::string_view name, std::size_t size, std::size_t alignment);
 
    public:
-    [[nodiscard]] std::size_t size() const { return m_Size; }
-    [[nodiscard]] std::size_t alignment() const { return m_Alignment; }
-
+    [[nodiscard]] std::size_t           size() const { return m_Size; }
+    [[nodiscard]] std::size_t           alignment() const { return m_Alignment; }
+    [[nodiscard]] bool                  isArray() const { return m_IsArray; }
+    [[nodiscard]] bool                  isMap() const { return m_IsMap; }
     const Array<BaseClassMetaInfo*>&    baseClasses() const { return m_BaseClasses; }
     const Array<BaseCtorMetaInfo*>&     ctors() const { return m_Ctors; }
     const Array<BaseMemberMetaInfo*>&   members() const { return m_Members; }
@@ -191,7 +185,7 @@ namespace bifrost::meta
         }
       }
 
-      return InvalidCtorCall{};
+      return nullptr;
     }
 
     template<typename... Args>
@@ -216,45 +210,19 @@ namespace bifrost::meta
     BaseMemberMetaInfo*   findMember(std::string_view name) const;
     BasePropertyMetaInfo* findProperty(std::string_view name) const;
     BaseMethodMetaInfo*   findMethod(std::string_view name) const;
+
+    virtual BaseClassMetaInfo* containedType() const { return nullptr; }
+    virtual std::size_t        arraySize(Any& instance) { return 0; }
+    virtual Any                arrayGetElementAt(Any& instance, std::size_t index) { return {}; }
+    virtual bool               arraySetElementAt(Any& instance, std::size_t index, Any& value) { return false; }
+    virtual Any                mapGetElementAt(Any& instance, Any& key) { return {}; }
+    virtual bool               mapSetElementAt(Any& instance, Any& key, Any& value) { return false; }
   };
 
   using BaseUnionMetaInfo  = BaseClassMetaInfo;
   using BaseStructMetaInfo = BaseClassMetaInfo;
 
-  template<typename T>
-  BaseClassMetaInfo* g_TypeInfo = nullptr;
-
-  template<typename T>
-  BaseClassMetaInfo* g_TypeInfo<T*> = g_TypeInfo<T>;
-
-  // clang-format off
-  /*
-  template<> extern BaseClassMetaInfo* g_TypeInfo<std::byte>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<bool>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<char>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<int8_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<uint8_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<int16_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<uint16_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<int32_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<uint32_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<int64_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<uint64_t>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<float>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<double>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<long double>;
-  template<> extern BaseClassMetaInfo* g_TypeInfo<void*>;
-  */
-  // clang-format on
-
-  template<typename T>
-  BaseClassMetaInfo* TypeInfo()
-  {
-    return g_TypeInfo<T>;
-  }
-
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name);
-
 }  // namespace bifrost::meta
 
 #endif /* BIFROST_META_RUNTIME_HPP */

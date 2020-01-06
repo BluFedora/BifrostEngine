@@ -326,7 +326,6 @@ Present and Graphics Queue could actually be diff according to the spec.
 
 // Compute needs a layout of VK_IMAGE_LAYOUT_GENERAL
 
-
 So I was having issues understanding subpass deps since I did not know aquiring and image 
 basically counts as a command.
 

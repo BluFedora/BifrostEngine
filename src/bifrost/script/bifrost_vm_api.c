@@ -183,8 +183,10 @@ void bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags)
 {
   if (module_flags & BIFROST_VM_STD_MODULE_IO)
   {
-    bfVM_moduleMake(self, idx, "std:io");
-    bfVM_stackStoreNativeFn(self, idx, "print", &bfVM_moduleLoadStdIOPrint, -1);
+    if (bfVM_moduleMake(self, idx, "std:io") == BIFROST_VM_ERROR_NONE)
+    {
+      bfVM_stackStoreNativeFn(self, idx, "print", &bfVM_moduleLoadStdIOPrint, -1);
+    }
   }
 }
 
@@ -711,7 +713,11 @@ const char* bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_
 
   BifrostObjStr* str = (BifrostObjStr*)obj;
 
-  *out_size = String_length(str->value);
+  if (out_size)
+  {
+    *out_size = String_length(str->value);
+  }
+
   return str->value;
 }
 
@@ -1501,6 +1507,8 @@ BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char
     err = bfVM_compileIntoModule(self, module_obj, source, source_length) ||
           bfVM_runModule(self, module_obj);
 
+    bfVM_stackResize(self, 1);
+    self->stack_top[0] = FROM_POINTER(module_obj);
     bfGCPopRoot(self);
   }
 
@@ -1531,7 +1539,7 @@ const char* bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol 
   return ENUM_TO_STR[symbol];
 }
 
-const char* bfVM_errorString(const BifrostVM* self)
+ConstBifrostString bfVM_errorString(const BifrostVM* self)
 {
   return self->last_error;
 }

@@ -8,11 +8,13 @@
 class ImGUIOverlay final : public bifrost::IGameStateLayer
 {
  private:
-  const char* m_Name;
+  const char*      m_Name;
+  bifrost::Entity* m_SelectedEntity;
 
  public:
   ImGUIOverlay(const char* name = "ImGUI Overlay") :
-    m_Name{name}
+    m_Name{name},
+    m_SelectedEntity{nullptr}
   {
   }
 
@@ -83,6 +85,9 @@ class ImGUIOverlay final : public bifrost::IGameStateLayer
   void onDestroy(BifrostEngine& engine) override
   {
   }
+
+  void inspect(const char* label, bifrost::BaseObjectT* object) const;
+  bool inspect(const char* label, bifrost::Any& object, bifrost::meta::BaseClassMetaInfo* class_info) const;
 
  private:
   template<typename F>

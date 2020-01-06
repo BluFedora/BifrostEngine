@@ -2,7 +2,7 @@
 /*!
   @file   bifrost_imemory_manager.hpp
   @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
+  @par    
   @brief
       Outlines a basic interface for the various types of memory managers.
 */

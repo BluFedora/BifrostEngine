@@ -1,15 +1,15 @@
-  //
-  //  vec3f.c
-  //  OpenGL
-  //
-  //  Created by Shareef Raheem on 12/15/17.
-  //  Copyright © 2017 Shareef Raheem. All rights reserved.
-  //
+//
+//  vec3f.c
+//  OpenGL
+//
+//  Created by Shareef Raheem on 12/15/17.
+//  Copyright © 2017 Shareef Raheem. All rights reserved.
+//
 #include "bifrost/math/bifrost_vec3.h"
 #include "bifrost/math/bifrost_mat4x4.h"
 
-#include <string.h> /* memcmp */
 #include <math.h>   /* sqrt   */
+#include <string.h> /* memcmp */
 
 #if VECTOR_SSE
 #include <xmmintrin.h>
@@ -82,17 +82,25 @@ void Vec3f_sub(Vec3f* self, const Vec3f* other)
 void Vec3f_mul(Vec3f* self, const float scalar)
 {
 #if VECTOR_SSE
-    // for aligned use : _mm_load_ps
+  // for aligned use : _mm_load_ps
   __m128 lhs_data = _mm_loadu_ps((float*)self);
   __m128 rhs_data = _mm_set_ps(1.0f, scalar, scalar, scalar);
   __m128 result   = _mm_mul_ps(lhs_data, rhs_data);
-    // for aligned use : _mm_store_ps
+  // for aligned use : _mm_store_ps
   _mm_storeu_ps((float*)self, result);
 #else
   self->x *= scalar;
   self->y *= scalar;
   self->z *= scalar;
 #endif
+}
+
+void Vec3f_multV(Vec3f* self, const Vec3f* other)
+{
+  self->x *= other->x;
+  self->y *= other->y;
+  self->z *= other->z;
+  self->w *= other->w;
 }
 
 void Vec3f_div(Vec3f* self, const float scalar)
@@ -147,14 +155,14 @@ void Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix)
   Mat4x4_multVec(matrix, self, self);
 }
 
-#define MUL_AND_SHIFT(c, s) ((uint)((c) * 255.0f) << (s))
+#define MUL_AND_SHIFT(c, s) ((uint)((c)*255.0f) << (s))
 
 Color Vec3f_toColor(const Vec3f* self)
 {
-  return  MUL_AND_SHIFT(self->x,  0) |
-          MUL_AND_SHIFT(self->y,  8) |
-          MUL_AND_SHIFT(self->z, 16) |
-          MUL_AND_SHIFT(self->w, 24);
+  return MUL_AND_SHIFT(self->x, 0) |
+         MUL_AND_SHIFT(self->y, 8) |
+         MUL_AND_SHIFT(self->z, 16) |
+         MUL_AND_SHIFT(self->w, 24);
 }
 
 #undef MUL_AND_SHIFT

@@ -1,7 +1,6 @@
 #include "bifrost/asset_io/test.h"
 
 #include "bifrost/data_structures/bifrost_array_t.h"
-#include "bifrost/data_structures/bifrost_dynamic_string.h"
 
 #include <cctype>   // isdigit
 #include <cstdlib>  // atoi
@@ -160,6 +159,9 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
             normal->w = 0.0f;
             break;
           }
+          default:
+            ++file_pointer;
+            break;
         }
         break;
       }

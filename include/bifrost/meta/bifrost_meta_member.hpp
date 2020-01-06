@@ -86,6 +86,7 @@ namespace bifrost::meta
     static constexpr bool is_property = false;
     static constexpr bool is_pointer  = std::is_pointer_v<PropertyT>;
     static constexpr bool is_enum     = false;
+    static constexpr bool is_value    = false;
 
    private:
     member_ptr     m_Pointer;
@@ -107,12 +108,12 @@ namespace bifrost::meta
     //   are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
 
-    [[nodiscard]] const PropertyT& get(const Class& obj) const
+    [[nodiscard]] PropertyT& get(Class& obj) const
     {
       return obj.*m_Pointer;
     }
 
-    [[nodiscard]] PropertyT& rGet(const Class& obj) const
+    [[nodiscard]] PropertyT& rGet(Class& obj) const
     {
       return obj.*m_Pointer;
     }
@@ -143,6 +144,7 @@ namespace bifrost::meta
     static constexpr bool is_property = true;
     static constexpr bool is_pointer  = std::is_pointer_v<PropertyT>;
     static constexpr bool is_enum     = false;
+    static constexpr bool is_value    = false;
 
    private:
     getter_t m_Getter;
@@ -185,6 +187,7 @@ namespace bifrost::meta
     static constexpr bool is_property = true;
     static constexpr bool is_pointer  = std::is_pointer_v<PropertyT>;
     static constexpr bool is_enum     = false;
+    static constexpr bool is_value    = true;
 
    private:
     getter_t m_Getter;
@@ -457,7 +460,7 @@ namespace bifrost::meta
 
 #define BIFROST_META_REGISTER(name) \
   template<>                        \
-  const auto& ::bifrost::meta::Meta::registerMembers<name>()
+  inline const auto& ::bifrost::meta::Meta::registerMembers<name>()
 
 #define BIFROST_META_BEGIN() \
   static auto member_ptrs = ::bifrost::meta::members(

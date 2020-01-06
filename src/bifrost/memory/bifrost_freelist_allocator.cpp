@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   freelist_allocator.cpp
+  @file   bifrost_freelist_allocator.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief
@@ -26,14 +26,14 @@ namespace bifrost
     this->m_FreeList->size = memory_block_size - FreeListAllocator::header_size;
   }
 
-  void* FreeListAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  void* FreeListAllocator::alloc(const std::size_t size, const std::size_t)
   {
     FreeListNode* curr_node = this->m_FreeList;
     FreeListNode* prev_node = nullptr;
 
     while (curr_node)
     {
-      const std::size_t potential_space = (size + alignment + header_size);
+      const std::size_t potential_space = (size + header_size);
 
       if (curr_node->size <= potential_space)
       {
@@ -44,38 +44,30 @@ namespace bifrost
 
       void* data = cast(curr_node, void*);
 
-      std::size_t free_space = curr_node->size;
+      const std::size_t free_space = curr_node->size;
 
-      if (std::align(alignment, size, data, free_space))
+      const std::size_t moved_fwd      = (curr_node->size - free_space);
+      const std::size_t new_block_size = header_size + size;
+
+      FreeListNode* new_node = cast(reinterpret_cast<char*>(data) + new_block_size, FreeListNode*);
+      new_node->size         = curr_node->size - new_block_size - moved_fwd;
+      new_node->next         = curr_node->next;
+
+      if (prev_node)
       {
-        const std::size_t moved_fwd       = (curr_node->size - free_space);
-        const std::size_t new_block_size  = header_size + size;
-
-        FreeListNode* new_node = cast(reinterpret_cast<char*>(data) + new_block_size, FreeListNode*);
-        new_node->size = curr_node->size - new_block_size - moved_fwd;
-        new_node->next = curr_node->next;
-
-        if (prev_node)
-        {
-          prev_node->next = new_node;
-        }
-        else
-        {
-          this->m_FreeList = new_node;
-        }
-
-#if DEBUG_MEMORY
-        std::memset(curr_node, DEBUG_PATTERN_ALIGNMENT, moved_fwd);
-#endif
-
-        AllocationHeader* header = reinterpret_cast<AllocationHeader*>(data);
-
-        header->size = size;
-        header->alignment = moved_fwd;
-
-        m_UsedBytes += size + moved_fwd;
-        return reinterpret_cast<char*>(data) + header_size;
+        prev_node->next = new_node;
       }
+      else
+      {
+        this->m_FreeList = new_node;
+      }
+
+      AllocationHeader* header = reinterpret_cast<AllocationHeader*>(data);
+
+      header->size      = size;
+
+      m_UsedBytes += size + moved_fwd;
+      return reinterpret_cast<char*>(data) + header_size;
 
       return nullptr;
     }
@@ -88,16 +80,15 @@ namespace bifrost
     if (!ptr) return;
 
     AllocationHeader* const header  = reinterpret_cast<AllocationHeader*>(reinterpret_cast<char*>(ptr) - header_size);
-    FreeListNode* const node        = reinterpret_cast<FreeListNode*>(reinterpret_cast<char*>(header) - header->alignment);
+    FreeListNode* const node        = reinterpret_cast<FreeListNode*>(reinterpret_cast<char*>(header));
 
     const std::size_t block_size  = header->size;
-    const std::size_t alignment   = header->alignment;
 
 #if DEBUG_MEMORY
     std::memset(ptr, DEBUG_MEMORY_SIGNATURE, block_size);
 #endif
 
-    node->size = block_size + alignment;
+    node->size = block_size;
 
     m_UsedBytes -= node->size;
 

@@ -47,7 +47,7 @@ void     bfVMFunctionBuilder_addInstABx(BifrostVMFunctionBuilder* self, bfInstru
 void     bfVMFunctionBuilder_addInstAsBx(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, int32_t sbx);
 void     bfVMFunctionBuilder_addInstBreak(BifrostVMFunctionBuilder* self);
 void     bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstructionOp op);
-void     bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* self);
+void     bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* _);
 void     bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn_t* out, int arity);
 void     bfVMFunctionBuilder_dtor(BifrostVMFunctionBuilder* self);
 #if __cplusplus

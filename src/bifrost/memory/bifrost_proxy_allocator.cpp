@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   proxy_allocator.cpp
+  @file   bifrost_proxy_allocator.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief

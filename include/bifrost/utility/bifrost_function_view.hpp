@@ -14,7 +14,7 @@ namespace bifrost
   {
    public:
     using InstancePtr = void*;
-      using FunctionPtr = R (*)(Args...);
+    using FunctionPtr = R (*)(Args...);
 
     template<typename C>
     using MemberFunctionPtr = R (C::*)(Args...);
@@ -48,7 +48,6 @@ namespace bifrost
     {
       return (m_Callback.second != nullptr);
     }
-
 
     template<typename F>
     void bind(F&& lambda)

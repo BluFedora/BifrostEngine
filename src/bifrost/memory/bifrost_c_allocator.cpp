@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-  @file   c_allocator.cpp
+  @file   bifrost_c_allocator.cpp
   @author Shareef Abdoul-Raheem
   @par    email: shareef.a\@digipen.edu
   @brief
@@ -22,7 +22,7 @@ namespace bifrost
   void* CAllocator::alloc(const std::size_t size, const std::size_t alignment)
   {
     (void) alignment;
-#ifdef DEBUG_MEMORY
+#if 0
     return std::calloc(1, size);
 #else
     return std::malloc(size);

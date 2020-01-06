@@ -85,6 +85,7 @@ void  Vec3f_add(Vec3f* self, const Vec3f* other);
 void  Vec3f_addScaled(Vec3f* self, const Vec3f* other, const float factor);
 void  Vec3f_sub(Vec3f* self, const Vec3f* other);
 void  Vec3f_mul(Vec3f* self, const float scalar);
+void  Vec3f_multV(Vec3f* self, const Vec3f* other); // Component wise mult
 void  Vec3f_div(Vec3f* self, const float scalar);
 float Vec3f_lenSq(const Vec3f* self);
 float Vec3f_len(const Vec3f* self);

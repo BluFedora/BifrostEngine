@@ -1,3 +1,14 @@
+/*!
+ * @file   bifrost_hash.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Some hashing utilities for various data types.
+ *
+ * @version 0.0.1
+ * @date 2019-12-28
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_HASH_HPP
 #define BIFROST_HASH_HPP
 

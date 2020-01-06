@@ -1,112 +1,156 @@
+/*!
+ * @file   bifrost_scene.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   This is where Entities live in the engine.
+ *   Also contains the storage for the components.
+ *
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ */
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
-#include "bifrost/bifrost_math.h"               /* Vec3f, Mat4x4 */
-#include "bifrost/core/bifrost_base_object.hpp" /* BaseObject<T> */
+#include "bifrost/bifrost_math.h"               /* Vec3f, Mat4x4                             */
+#include "bifrost/core/bifrost_base_object.hpp" /* BaseObject<T>                             */
+#include "bifrost/ecs/bifrost_component.hpp"    /* BaseComponentStorage, ComponentStorage<T> */
 
 namespace bifrost
 {
   class Entity;
 
-  struct SceneNodeRef
-  {
-    static constexpr int INVALID_INDEX = -1;
+  BIFROST_META_REGISTER(Vec3f){
+   BIFROST_META_BEGIN()
+    BIFROST_META_MEMBERS(
+     class_info<Vec3f>("Vec3f"),  //
+     ctor<>(),                    //
+     field("x", &Vec3f::x),       //
+     field("y", &Vec3f::y),       //
+     field("z", &Vec3f::z),       //
+     field("w", &Vec3f::w)        //
+     )
+     BIFROST_META_END()}
 
-    int index;
-
-    SceneNodeRef(int index = INVALID_INDEX) :
-      index{index}
-    {
-    }
-
-    [[nodiscard]] bool isValid() const
-    {
-      return index != INVALID_INDEX;
-    }
-  };
-
-  struct SceneNode
-  {
-    Vec3f        position;
-    Vec3f        rotation;
-    Vec3f        scale;
-    Mat4x4       local_transform;
-    Mat4x4       world_transform;
-    SceneNodeRef parent;
-    SceneNodeRef first_child;
-    SceneNodeRef next_sibling;
-    SceneNodeRef prev_sibling;
-
-    void addChild(SceneNodeRef this_id, SceneNodeRef child, Array<SceneNode>& data)
-    {
-      data[child.index].parent = this_id;
-
-      if (first_child.isValid())
-      {
-        SceneNodeRef child_it = first_child;
-
-        while (data[child_it.index].next_sibling.isValid())
-        {
-          child_it = data[child_it.index].next_sibling;
-        }
-
-        data[child_it.index].next_sibling = child;
-      }
-      else
-      {
-        first_child = child;
-      }
-    }
-
-    void removeChild()
-    {
-    }
-  };
-
-  class Scene final : public BaseObject<Scene>
-  {
-    BIFROST_META_FRIEND;
-
-   private:
-    Array<Entity*>   m_Entities;
-    Array<SceneNode> m_SceneNodes;
-
-   public:
-    explicit Scene(IMemoryManager& memory) :
-      m_Entities{memory},
-      m_SceneNodes{memory}
-    {
-    }
-
-    SceneNodeRef addNode(SceneNodeRef parent = {SceneNodeRef::INVALID_INDEX})
-    {
-      const SceneNodeRef id{int(m_SceneNodes.size())};
-      SceneNode&         node = m_SceneNodes.emplace();
-
-      node.parent       = parent;
-      node.first_child  = SceneNodeRef::INVALID_INDEX;
-      node.next_sibling = SceneNodeRef::INVALID_INDEX;
-      node.prev_sibling = SceneNodeRef::INVALID_INDEX;
-
-      if (parent.isValid())
-      {
-      }
-
-      return id;
-    }
-  };
-
-  BIFROST_META_REGISTER(Scene)
+  BIFROST_META_REGISTER(Quaternionf)
   {
     BIFROST_META_BEGIN()
       BIFROST_META_MEMBERS(
-       class_info<Scene>("Scene"),                                                          //
-       ctor<IMemoryManager&>(),                                                             //
-       field_readonly("m_Entities", &Scene::m_Entities, offsetof(Scene, m_Entities)),       //
-       field_readonly("m_SceneNodes", &Scene::m_SceneNodes, offsetof(Scene, m_SceneNodes))  //
+       class_info<Quaternionf>("Quaternionf"),  //
+       ctor<>(),                                //
+       field("x", &Quaternionf::x),             //
+       field("y", &Quaternionf::y),             //
+       field("z", &Quaternionf::z),             //
+       field("w", &Quaternionf::w)              //
       )
     BIFROST_META_END()
   }
+
+  template<typename T>
+  struct ArrayView
+  {
+    T*          data;
+    std::size_t data_size;
+
+    ArrayView(T* data, std::size_t size) :
+      data{data},
+      data_size{size}
+    {
+    }
+
+    T* begin()
+    {
+      return data;
+    }
+
+    T* end()
+    {
+      return data + data_size;
+    }
+  };
+
+  /*!
+   * @brief
+   *  Hold entities along with any associated Component data.
+   */
+  class Scene final : public BaseObject<Scene>
+  {
+    BIFROST_META_FRIEND;
+    friend class Entity;
+
+   private:
+    IMemoryManager&              m_Memory;
+    Array<Entity*>               m_RootEntities;
+    Array<BaseComponentStorage*> m_ComponentStorage;
+
+   public:
+    explicit Scene(IMemoryManager& memory) :
+      m_Memory{memory},
+      m_RootEntities{memory},
+      m_ComponentStorage{memory}
+    {
+    }
+
+    // Entity Management
+    const Array<Entity*>& rootEntities() const { return m_RootEntities; }
+    Entity*               addEntity(std::string_view name);
+    void                  removeEntity(Entity* entity);
+
+    // Component Management
+
+    template<typename T, typename F>
+    void forEachComponent(F&& fn)
+    {
+      const std::uint32_t cid = T::s_ComponentID;
+
+      if (cid < m_ComponentStorage.size())
+      {
+        BaseComponentStorage* storage = m_ComponentStorage[cid];
+
+        if (storage)
+        {
+          const std::size_t num_components = storage->numComponents();
+
+          for (std::size_t i = 0; i < num_components; ++i)
+          {
+            fn(static_cast<T*>(storage->componentAt(i)));
+          }
+        }
+      }
+    }
+
+    ~Scene() override;
+
+   private:
+    template<typename T>
+    dense_map::ID_t addComponent(Entity& owner)
+    {
+      const std::uint32_t cid = T::s_ComponentID;
+
+      if (m_ComponentStorage.size() <= cid)
+      {
+        m_ComponentStorage.resize(cid + 1);
+
+        m_ComponentStorage[cid] = m_Memory.alloc_t<ComponentStorage<T>>(m_Memory);
+      }
+
+      return m_ComponentStorage[cid]->createComponent(owner);
+    }
+
+    Entity* createEntity(std::string_view name);
+  };
 }  // namespace bifrost
+
+BIFROST_META_REGISTER(bifrost::Scene)
+{
+  BIFROST_META_BEGIN()
+    BIFROST_META_MEMBERS(
+     class_info<Scene>("Scene"),                                                                //
+     ctor<IMemoryManager&>(),                                                                   //
+     field_readonly("m_RootEntities", &Scene::m_RootEntities, offsetof(Scene, m_RootEntities))  //
+    )
+  BIFROST_META_END()
+}
 
 #endif /* BIFROST_SCENE_HPP */
