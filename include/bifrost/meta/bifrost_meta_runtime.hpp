@@ -13,12 +13,12 @@ namespace bifrost::meta
 {
   class BaseClassMetaInfo;
 
-  NoFreeAllocator&                                 gRttiMemory();
-  LinearAllocator&                                 gRttiMemoryBacking();
-  HashTable<std::string_view, BaseClassMetaInfo*>& gRegistry();
+  using RttiAllocatorType        = NoFreeAllocator;
+  using RttiAllocatorBackingType = LinearAllocator;
 
-  template<typename BaseT, typename... CtorArgs>
-  class Factory;
+  RttiAllocatorType&                               gRttiMemory();
+  RttiAllocatorBackingType&                        gRttiMemoryBacking();
+  HashTable<std::string_view, BaseClassMetaInfo*>& gRegistry();
 
   class BaseCtorMetaInfo
   {
@@ -69,9 +69,6 @@ namespace bifrost::meta
 
   class BaseMemberMetaInfo : public BasePropertyMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    protected:
     std::ptrdiff_t m_Offset;
 
@@ -113,9 +110,6 @@ namespace bifrost::meta
 
   class BaseEnumElementMetaInfo : public BaseMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    protected:
     std::size_t m_Value;
 
@@ -132,9 +126,6 @@ namespace bifrost::meta
 
   class BaseEnumMetaInfo : public BaseMetaInfo
   {
-    template<typename BaseT, typename... CtorArgs>
-    friend class Factory;
-
    protected:
     Array<BaseEnumElementMetaInfo*> m_Elements;
 

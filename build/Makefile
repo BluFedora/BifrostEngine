@@ -271,6 +271,60 @@ lib/include/imgui/imgui_widgets.cpp.s:
 	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/imgui/imgui_widgets.cpp.s
 .PHONY : lib/include/imgui/imgui_widgets.cpp.s
 
+lib/include/nativefiledialog/nfd_common.obj: lib/include/nativefiledialog/nfd_common.c.obj
+
+.PHONY : lib/include/nativefiledialog/nfd_common.obj
+
+# target to build an object file
+lib/include/nativefiledialog/nfd_common.c.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/nativefiledialog/nfd_common.c.obj
+.PHONY : lib/include/nativefiledialog/nfd_common.c.obj
+
+lib/include/nativefiledialog/nfd_common.i: lib/include/nativefiledialog/nfd_common.c.i
+
+.PHONY : lib/include/nativefiledialog/nfd_common.i
+
+# target to preprocess a source file
+lib/include/nativefiledialog/nfd_common.c.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/nativefiledialog/nfd_common.c.i
+.PHONY : lib/include/nativefiledialog/nfd_common.c.i
+
+lib/include/nativefiledialog/nfd_common.s: lib/include/nativefiledialog/nfd_common.c.s
+
+.PHONY : lib/include/nativefiledialog/nfd_common.s
+
+# target to generate assembly for a file
+lib/include/nativefiledialog/nfd_common.c.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/nativefiledialog/nfd_common.c.s
+.PHONY : lib/include/nativefiledialog/nfd_common.c.s
+
+lib/include/nativefiledialog/nfd_win.obj: lib/include/nativefiledialog/nfd_win.cpp.obj
+
+.PHONY : lib/include/nativefiledialog/nfd_win.obj
+
+# target to build an object file
+lib/include/nativefiledialog/nfd_win.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/nativefiledialog/nfd_win.cpp.obj
+.PHONY : lib/include/nativefiledialog/nfd_win.cpp.obj
+
+lib/include/nativefiledialog/nfd_win.i: lib/include/nativefiledialog/nfd_win.cpp.i
+
+.PHONY : lib/include/nativefiledialog/nfd_win.i
+
+# target to preprocess a source file
+lib/include/nativefiledialog/nfd_win.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/nativefiledialog/nfd_win.cpp.i
+.PHONY : lib/include/nativefiledialog/nfd_win.cpp.i
+
+lib/include/nativefiledialog/nfd_win.s: lib/include/nativefiledialog/nfd_win.cpp.s
+
+.PHONY : lib/include/nativefiledialog/nfd_win.s
+
+# target to generate assembly for a file
+lib/include/nativefiledialog/nfd_win.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/lib/include/nativefiledialog/nfd_win.cpp.s
+.PHONY : lib/include/nativefiledialog/nfd_win.cpp.s
+
 main.obj: main.cpp.obj
 
 .PHONY : main.obj
@@ -297,6 +351,114 @@ main.s: main.cpp.s
 main.cpp.s:
 	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/main.cpp.s
 .PHONY : main.cpp.s
+
+src/bifrost/asset_io/bifrost_assets.obj: src/bifrost/asset_io/bifrost_assets.cpp.obj
+
+.PHONY : src/bifrost/asset_io/bifrost_assets.obj
+
+# target to build an object file
+src/bifrost/asset_io/bifrost_assets.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_assets.cpp.obj
+.PHONY : src/bifrost/asset_io/bifrost_assets.cpp.obj
+
+src/bifrost/asset_io/bifrost_assets.i: src/bifrost/asset_io/bifrost_assets.cpp.i
+
+.PHONY : src/bifrost/asset_io/bifrost_assets.i
+
+# target to preprocess a source file
+src/bifrost/asset_io/bifrost_assets.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_assets.cpp.i
+.PHONY : src/bifrost/asset_io/bifrost_assets.cpp.i
+
+src/bifrost/asset_io/bifrost_assets.s: src/bifrost/asset_io/bifrost_assets.cpp.s
+
+.PHONY : src/bifrost/asset_io/bifrost_assets.s
+
+# target to generate assembly for a file
+src/bifrost/asset_io/bifrost_assets.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_assets.cpp.s
+.PHONY : src/bifrost/asset_io/bifrost_assets.cpp.s
+
+src/bifrost/asset_io/bifrost_file.obj: src/bifrost/asset_io/bifrost_file.cpp.obj
+
+.PHONY : src/bifrost/asset_io/bifrost_file.obj
+
+# target to build an object file
+src/bifrost/asset_io/bifrost_file.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_file.cpp.obj
+.PHONY : src/bifrost/asset_io/bifrost_file.cpp.obj
+
+src/bifrost/asset_io/bifrost_file.i: src/bifrost/asset_io/bifrost_file.cpp.i
+
+.PHONY : src/bifrost/asset_io/bifrost_file.i
+
+# target to preprocess a source file
+src/bifrost/asset_io/bifrost_file.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_file.cpp.i
+.PHONY : src/bifrost/asset_io/bifrost_file.cpp.i
+
+src/bifrost/asset_io/bifrost_file.s: src/bifrost/asset_io/bifrost_file.cpp.s
+
+.PHONY : src/bifrost/asset_io/bifrost_file.s
+
+# target to generate assembly for a file
+src/bifrost/asset_io/bifrost_file.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_file.cpp.s
+.PHONY : src/bifrost/asset_io/bifrost_file.cpp.s
+
+src/bifrost/asset_io/bifrost_json_parser.obj: src/bifrost/asset_io/bifrost_json_parser.cpp.obj
+
+.PHONY : src/bifrost/asset_io/bifrost_json_parser.obj
+
+# target to build an object file
+src/bifrost/asset_io/bifrost_json_parser.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_json_parser.cpp.obj
+.PHONY : src/bifrost/asset_io/bifrost_json_parser.cpp.obj
+
+src/bifrost/asset_io/bifrost_json_parser.i: src/bifrost/asset_io/bifrost_json_parser.cpp.i
+
+.PHONY : src/bifrost/asset_io/bifrost_json_parser.i
+
+# target to preprocess a source file
+src/bifrost/asset_io/bifrost_json_parser.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_json_parser.cpp.i
+.PHONY : src/bifrost/asset_io/bifrost_json_parser.cpp.i
+
+src/bifrost/asset_io/bifrost_json_parser.s: src/bifrost/asset_io/bifrost_json_parser.cpp.s
+
+.PHONY : src/bifrost/asset_io/bifrost_json_parser.s
+
+# target to generate assembly for a file
+src/bifrost/asset_io/bifrost_json_parser.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_json_parser.cpp.s
+.PHONY : src/bifrost/asset_io/bifrost_json_parser.cpp.s
+
+src/bifrost/asset_io/bifrost_json_value.obj: src/bifrost/asset_io/bifrost_json_value.cpp.obj
+
+.PHONY : src/bifrost/asset_io/bifrost_json_value.obj
+
+# target to build an object file
+src/bifrost/asset_io/bifrost_json_value.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_json_value.cpp.obj
+.PHONY : src/bifrost/asset_io/bifrost_json_value.cpp.obj
+
+src/bifrost/asset_io/bifrost_json_value.i: src/bifrost/asset_io/bifrost_json_value.cpp.i
+
+.PHONY : src/bifrost/asset_io/bifrost_json_value.i
+
+# target to preprocess a source file
+src/bifrost/asset_io/bifrost_json_value.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_json_value.cpp.i
+.PHONY : src/bifrost/asset_io/bifrost_json_value.cpp.i
+
+src/bifrost/asset_io/bifrost_json_value.s: src/bifrost/asset_io/bifrost_json_value.cpp.s
+
+.PHONY : src/bifrost/asset_io/bifrost_json_value.s
+
+# target to generate assembly for a file
+src/bifrost/asset_io/bifrost_json_value.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/asset_io/bifrost_json_value.cpp.s
+.PHONY : src/bifrost/asset_io/bifrost_json_value.cpp.s
 
 src/bifrost/asset_io/bifrost_scene.obj: src/bifrost/asset_io/bifrost_scene.cpp.obj
 
@@ -567,6 +729,33 @@ src/bifrost/ecs/bifrost_entity.s: src/bifrost/ecs/bifrost_entity.cpp.s
 src/bifrost/ecs/bifrost_entity.cpp.s:
 	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/ecs/bifrost_entity.cpp.s
 .PHONY : src/bifrost/ecs/bifrost_entity.cpp.s
+
+src/bifrost/editor/bifrost_editor_overlay.obj: src/bifrost/editor/bifrost_editor_overlay.cpp.obj
+
+.PHONY : src/bifrost/editor/bifrost_editor_overlay.obj
+
+# target to build an object file
+src/bifrost/editor/bifrost_editor_overlay.cpp.obj:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/editor/bifrost_editor_overlay.cpp.obj
+.PHONY : src/bifrost/editor/bifrost_editor_overlay.cpp.obj
+
+src/bifrost/editor/bifrost_editor_overlay.i: src/bifrost/editor/bifrost_editor_overlay.cpp.i
+
+.PHONY : src/bifrost/editor/bifrost_editor_overlay.i
+
+# target to preprocess a source file
+src/bifrost/editor/bifrost_editor_overlay.cpp.i:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/editor/bifrost_editor_overlay.cpp.i
+.PHONY : src/bifrost/editor/bifrost_editor_overlay.cpp.i
+
+src/bifrost/editor/bifrost_editor_overlay.s: src/bifrost/editor/bifrost_editor_overlay.cpp.s
+
+.PHONY : src/bifrost/editor/bifrost_editor_overlay.s
+
+# target to generate assembly for a file
+src/bifrost/editor/bifrost_editor_overlay.cpp.s:
+	cd c:/Users/rshar/Documents/BifrostEngine/build && $(MAKE) -f CMakeFiles/BifrostEngine.dir/build.make CMakeFiles/BifrostEngine.dir/src/bifrost/editor/bifrost_editor_overlay.cpp.s
+.PHONY : src/bifrost/editor/bifrost_editor_overlay.cpp.s
 
 src/bifrost/graphics/bifrost_gfx_common.obj: src/bifrost/graphics/bifrost_gfx_common.c.obj
 
@@ -1268,9 +1457,27 @@ help:
 	@echo "... lib/include/imgui/imgui_widgets.obj"
 	@echo "... lib/include/imgui/imgui_widgets.i"
 	@echo "... lib/include/imgui/imgui_widgets.s"
+	@echo "... lib/include/nativefiledialog/nfd_common.obj"
+	@echo "... lib/include/nativefiledialog/nfd_common.i"
+	@echo "... lib/include/nativefiledialog/nfd_common.s"
+	@echo "... lib/include/nativefiledialog/nfd_win.obj"
+	@echo "... lib/include/nativefiledialog/nfd_win.i"
+	@echo "... lib/include/nativefiledialog/nfd_win.s"
 	@echo "... main.obj"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... src/bifrost/asset_io/bifrost_assets.obj"
+	@echo "... src/bifrost/asset_io/bifrost_assets.i"
+	@echo "... src/bifrost/asset_io/bifrost_assets.s"
+	@echo "... src/bifrost/asset_io/bifrost_file.obj"
+	@echo "... src/bifrost/asset_io/bifrost_file.i"
+	@echo "... src/bifrost/asset_io/bifrost_file.s"
+	@echo "... src/bifrost/asset_io/bifrost_json_parser.obj"
+	@echo "... src/bifrost/asset_io/bifrost_json_parser.i"
+	@echo "... src/bifrost/asset_io/bifrost_json_parser.s"
+	@echo "... src/bifrost/asset_io/bifrost_json_value.obj"
+	@echo "... src/bifrost/asset_io/bifrost_json_value.i"
+	@echo "... src/bifrost/asset_io/bifrost_json_value.s"
 	@echo "... src/bifrost/asset_io/bifrost_scene.obj"
 	@echo "... src/bifrost/asset_io/bifrost_scene.i"
 	@echo "... src/bifrost/asset_io/bifrost_scene.s"
@@ -1301,6 +1508,9 @@ help:
 	@echo "... src/bifrost/ecs/bifrost_entity.obj"
 	@echo "... src/bifrost/ecs/bifrost_entity.i"
 	@echo "... src/bifrost/ecs/bifrost_entity.s"
+	@echo "... src/bifrost/editor/bifrost_editor_overlay.obj"
+	@echo "... src/bifrost/editor/bifrost_editor_overlay.i"
+	@echo "... src/bifrost/editor/bifrost_editor_overlay.s"
 	@echo "... src/bifrost/graphics/bifrost_gfx_common.obj"
 	@echo "... src/bifrost/graphics/bifrost_gfx_common.i"
 	@echo "... src/bifrost/graphics/bifrost_gfx_common.s"

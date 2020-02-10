@@ -16,11 +16,16 @@
 
 #include "bifrost/asset_io/bifrost_scene.hpp"    // Scene
 #include "bifrost/core/bifrost_base_object.hpp"  // BaseObject
-#include "bifrost/math/bifrost_transform.h"      // BifrostTransform
+#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
+#include "bifrost/math/bifrost_transform.h"  // BifrostTransform
 
 namespace bifrost
 {
   // class Scene;
+
+  class Entity;
+
+  using EntityList = intrusive::ListView<Entity>;
 
   class Entity final : public BaseObject<Entity>
   {
@@ -31,16 +36,17 @@ namespace bifrost
     std::string                                      m_Name;
     BifrostTransform                                 m_Transform;
     Entity*                                          m_Parent;
-    Array<Entity*>                                   m_Children;
+    EntityList                                       m_Children;
+    intrusive::Node<Entity>                          m_Hierarchy;
     Array<std::pair<std::uint32_t, dense_map::ID_t>> m_Components;  // <type, id>
 
    public:
     Entity(Scene& scene, std::string_view name);
 
-    [[nodiscard]] Scene&                scene() const { return m_OwningScene; }
-    [[nodiscard]] const std::string&    name() const { return m_Name; }
-    [[nodiscard]] BifrostTransform&     transform() { return m_Transform; }
-    [[nodiscard]] const Array<Entity*>& children() const { return m_Children; }
+    [[nodiscard]] Scene&             scene() const { return m_OwningScene; }
+    [[nodiscard]] const std::string& name() const { return m_Name; }
+    [[nodiscard]] BifrostTransform&  transform() { return m_Transform; }
+    [[nodiscard]] const EntityList&  children() const { return m_Children; }
 
     template<typename F>
     void forEachComp(F&& f)

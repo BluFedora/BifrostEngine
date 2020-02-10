@@ -1,8 +1,11 @@
 /*!
- * @file    bifrost_assets.hpp
+ * @file   bifrost_assets.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *   Asset / Resource manager for this engine.
+ *
+ *   References:
+ *     [https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#short-vs-long-names]
  *
  * @version 0.0.1
  * @date    2019-12-28
@@ -12,7 +15,6 @@
 #ifndef BIFROST_ASSETS_HPP
 #define BIFROST_ASSETS_HPP
 
-#include "bifrost/data_structures/bifrost_any.hpp"        /* Any                                          */
 #include "bifrost/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
@@ -24,69 +26,50 @@ namespace bifrost
 {
   class BaseAssetHandle;
 
-  // TODO: Move to string.hpp???
-  template<typename T, std::size_t initial_size = 128>
-  using StringTable = HashTable<BifrostString, T, initial_size, string_utils::BifrostStringHasher, string_utils::BifrostStringComparator>;
+  using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
-  class Project final
+  enum class AssetError : std::uint8_t
   {
-   private:
-    BifrostString    m_Name;
-    BifrostString    m_PathRoot;
-    StringTable<Any> m_Options;
-
-   public:
-  };
-
-  using PathToUUIDTable = StringTable<BifrostUUID, 64>;
-
-  /*!
-   * @brief
-   *  All native asset types supported by the engine.
-   */
-  enum class AssetType : std::uint8_t
-  {
-    SHADER_MODULE,
-    SHADER_PROGRAM,
-    TEXTURE,
-    MATERIAL,
-    SPRITESHEET,
-    AUDIO_SOURCE,
-    BITMAP_FONT,
-    BIFROST_SCRIPT,
-    MODEL,
-
-    ASSET_TYPE_MAX
+    NONE,
+    UNKNOWN_STL_ERROR,
+    PATH_DOES_NOT_EXIST,
   };
 
   /*!
    * @brief
    *  Basic abstraction over a path.
    *
-   *  Glorified string with some extra utilities to
-   *  make working with paths cross-platform and less
-   *  painful.
+   *  Glorified string utilities with some extra utilities to
+   *  make working with paths cross-platform and less painful.
    */
-  class Path : public bfNonCopyMoveable<Path>
+  namespace path
   {
-   private:
-    BifrostString m_Impl;  //!< The Glorified string.
+    struct DirectoryEntry;
 
-   public:
-    Path(std::string_view path) :
-      m_Impl{String_newLen(path.data(), path.length())}
-    {
-    }
-  };
+    bool            doesExist(const char* path);
+    bool            createDirectory(const char* path);
+    DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path);
+    bool            isDirectory(const DirectoryEntry* entry);
+    bool            isFile(const DirectoryEntry* entry);
+    const char*     entryFilename(const DirectoryEntry* entry);
+    bool            readNextEntry(DirectoryEntry* entry);
+    void            closeDirectory(DirectoryEntry* entry);
+  }  // namespace path
 
   class Assets final : public bfNonCopyMoveable<Assets>
   {
    private:
     PathToUUIDTable                          m_NameToGUID;  //!< Allows loading assets from path rather than having to know the UUID.
-    HashTable<BifrostUUID, BaseAssetHandle*> m_Asset;       //!< Owns the memory for the associated 'BaseAssetHandle*'.
+    HashTable<BifrostUUID, BaseAssetHandle*> m_AssetMap;    //!< Owns the memory for the associated 'BaseAssetHandle*'.
+    BifrostString                            m_RootPath;    //!< Base Path that all assets are relative to.
 
    public:
     Assets();
+
+    AssetError setRootPath(std::string_view path);
+    void       setRootPath(std::nullptr_t);
+
+    ~Assets();
   };
 }  // namespace bifrost
 

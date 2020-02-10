@@ -3,7 +3,7 @@
   @file   bifrost_array.hpp
   @author Shareef Abdoul-Raheem
   @brief
-    Safe C++ wrapper around the bifrost_array_t.h API.
+    Safe(-ish) C++ wrapper around the bifrost_array_t.h API.
 */
 /******************************************************************************/
 #ifndef BIFROST_ARRAY_HPP
@@ -16,7 +16,7 @@
 namespace bifrost
 {
   template<typename T>
-  class Array final : bfNonCopyable<T>
+  class Array final : bfNonCopyable<Array<T>>
   {
    private:
     static void* allocate(void* user_data, void* ptr, std::size_t new_size)
@@ -61,6 +61,11 @@ namespace bifrost
       return *this;
     }
 
+    IMemoryManager& memory() const
+    {
+      return *static_cast<IMemoryManager*>(bfArray_userData(rawData()));
+    }
+
     [[nodiscard]] T*          begin() { return static_cast<T*>(::bfArray_begin(rawData())); }
     [[nodiscard]] const T*    begin() const { return static_cast<const T*>(::bfArray_begin(rawData())); }
     [[nodiscard]] T*          end() { return static_cast<T*>(::bfArray_end(rawData())); }
@@ -74,13 +79,10 @@ namespace bifrost
 
     void copy(Array<T>& src, std::size_t num_elements)
     {
-      // TODO(Shareef): This does not respect ctors and dtors...
-      ::bfArray_copy(rawData(), &src.m_Data, num_elements);
+      // ::bfArray_copy(rawData(), &src.m_Data, num_elements);
 
-      std::copy(
-       src.m_Data,
-       src.m_Data + std::min(num_elements, src.size()),
-       m_Data);
+      resize(num_elements);
+      std::copy(src.m_Data, src.m_Data + num_elements, m_Data);
     }
 
     void clear()
@@ -191,28 +193,37 @@ namespace bifrost
 
     void removeAt(const std::size_t index)
     {
+      // TODO(SR): This only works if T is trivially locatable.
       m_Data[index].~T();
       ::bfArray_removeAt(rawData(), index);
     }
 
     void swapAndPopAt(const std::size_t index)
     {
+      // TODO(SR): This only works if T is trivially locatable.
       m_Data[index].~T();
       ::bfArray_swapAndPopAt(rawData(), index);
     }
 
-    T& pop()
+    void pop()
     {
-      return *static_cast<T*>(::bfArray_pop(rawData()));
+      // NOTE(Shareef):
+      //   The C version returns the element since
+      //   dtors does not exist for C but C++
+      //   lifetime semantics do not allow that type of API.
+      back().~T();
+      ::bfArray_pop(rawData());
     }
 
     void sortRange(size_t bgn, size_t end, ArraySortCompare compare)
     {
+      // TODO(SR): This only works if T is trivially locatable.
       ::bfArray_sortRange(rawData(), bgn, end, compare);
     }
 
     void sort(ArraySortCompare compare)
     {
+      // TODO(SR): This only works if T is trivially locatable.
       ::bfArray_sort(rawData(), compare);
     }
 
@@ -234,6 +245,29 @@ namespace bifrost
     void** rawData() const
     {
       return reinterpret_cast<void**>(&m_Data);
+    }
+  };
+
+  template<typename T>
+  struct ArrayView
+  {
+    T*          data;
+    std::size_t data_size;
+
+    ArrayView(T* data, std::size_t size) :
+      data{data},
+      data_size{size}
+    {
+    }
+
+    T* begin()
+    {
+      return data;
+    }
+
+    T* end()
+    {
+      return data + data_size;
     }
   };
 }  // namespace bifrost

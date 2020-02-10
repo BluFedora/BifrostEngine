@@ -118,7 +118,7 @@ namespace bifrost::intrusive
 
   // This list does not own the memory.
   template<typename T>
-  class ListView final : private bfNonCopyMoveable<ListView<T>>
+  class ListView final
   {
     using MemberAccessor = Node<T> T::*;
 
@@ -197,7 +197,7 @@ namespace bifrost
 {
   // Memory Owning List
   template<typename T>
-  class List : private bfNonCopyable<List<T>>
+  class List : private bfNonCopyMoveable<List<T>>
   {
    public:
     struct Node;
@@ -285,7 +285,7 @@ namespace bifrost
     struct Node final
     {
       std::aligned_storage_t<sizeof(T), alignof(T)> data_storage;  //!< Must be the first member since this will be treated as a 'T'.
-      intrusive::Node<Node>                         list; //!< The set of pointers for the ListView.
+      intrusive::Node<Node>                         list;          //!< The set of pointers for the ListView.
 
       Node() :
         data_storage{},

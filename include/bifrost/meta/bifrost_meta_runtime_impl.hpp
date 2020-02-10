@@ -6,7 +6,7 @@
 #include "bifrost_meta_runtime.hpp"
 #include "bifrost_meta_utils.hpp"
 
-#include <array> /* array<T> */
+#include <array>
 
 namespace bifrost::meta
 {

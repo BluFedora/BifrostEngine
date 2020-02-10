@@ -65,6 +65,14 @@ namespace bifrost
         this->m_State = NodeState::OCCUPIED;
       }
 
+      void set(const TKey& key, TValue&& value)
+      {
+        deleteNode();
+        new (&this->m_Key) TKey(key);
+        new (&this->m_Value) TValue(std::move(value));
+        this->m_State = NodeState::OCCUPIED;
+      }
+
       template<typename... Args>
       void emplace(const TKey& key, Args... args)
       {
@@ -212,6 +220,7 @@ namespace bifrost
     iterator end() const;
 
     void         insert(const TKey& key, const TValue& value);
+    void         insert(const TKey& key, TValue&& value);
     unsigned int count(const TKey& key) const;
     bool         has(const TKey& key) const;
 
@@ -221,7 +230,7 @@ namespace bifrost
     void set(const TKey& key, const TValue& value);
 
     template<typename... Args>
-    bool emplace(const TKey& key, Args... args);
+    bool emplace(const TKey& key, Args&&... args);
 
     TValue* at(const TKey& key) const;
     TValue* get(const TKey& key) const;
@@ -475,6 +484,33 @@ namespace bifrost
   }
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
+  void HashTable<TKey, TValue, initial_size, Hasher, TEqual>::insert(const TKey& key, TValue&& value)
+  {
+    auto hashCode = this->index(key);
+
+    for (std::size_t i = 0; i < MAX_PROBES; ++i)
+    {
+      if (hashCode >= m_Capacity) break;
+
+      HashT* node = nodeAt(hashCode);
+
+      if (node->isWritable())
+      {
+        node->emplace(key, std::forward<TValue&&>(value));
+        return;
+      }
+
+      ++hashCode;
+    }
+
+    if (hashCode >= m_Capacity)
+    {
+      this->rehash();
+      this->insert(key, std::forward<TValue&&>(value));
+    }
+  }
+
+  template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
   unsigned HashTable<TKey, TValue, initial_size, Hasher, TEqual>::count(const TKey& key) const
   {
     return has(std::forward<decltype(key)>(key));
@@ -531,7 +567,7 @@ namespace bifrost
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
   template<typename... Args>
-  bool HashTable<TKey, TValue, initial_size, Hasher, TEqual>::emplace(const TKey& key, Args... args)
+  bool HashTable<TKey, TValue, initial_size, Hasher, TEqual>::emplace(const TKey& key, Args&&... args)
   {
     HashT* node = this->getFreeNode(key);
 
@@ -680,7 +716,7 @@ namespace bifrost
     {
       if (!walker->isWritable())
       {
-        insert(walker->key(), walker->value());
+        insert(walker->key(), std::move(walker->value()));
       }
 
       ++walker;

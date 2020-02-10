@@ -119,8 +119,10 @@ typedef struct BifrostObjReference_t
 
 typedef struct BifrostObjWeakRef_t
 {
-  BifrostObj super;
-  void*      data;
+  // NOTE(Shareef): Matches the same beginning as 'BifrostObjInstance'.
+  BifrostObj       super;
+  BifrostObjClass* clz;  // Optional
+  void*            data;
 
 } BifrostObjWeakRef;
 

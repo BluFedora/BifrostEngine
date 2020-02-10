@@ -32,16 +32,9 @@ namespace bifrost
     {
     }
 
-    decltype(auto) operator()(Args... args)
+    R operator()(Args... args)
     {
-      if constexpr (std::is_same_v<void, R>)
-      {
-        return this->call(std::forward<Args>(args)...);
-      }
-      else
-      {
-        call(std::forward<Args>(args)...);
-      }
+      return call(std::forward<Args>(args)...);
     }
 
     operator bool() const
@@ -52,41 +45,41 @@ namespace bifrost
     template<typename F>
     void bind(F&& lambda)
     {
-      this->m_Callback.first  = &lambda;
-      this->m_Callback.second = &FunctionView::template lambda_function_wrapper<F>;
+      m_Callback.first  = &lambda;
+      m_Callback.second = &FunctionView::template lambda_function_wrapper<F>;
     }
 
     void bind(FunctionPtr lambda)
     {
-      this->m_Callback.first  = reinterpret_cast<void*>(lambda);
-      this->m_Callback.second = &FunctionView::c_ptr_function_wrapper;
+      m_Callback.first  = reinterpret_cast<void*>(lambda);
+      m_Callback.second = &FunctionView::c_ptr_function_wrapper;
     }
 
     template<FunctionPtr callback>
     void bind()
     {
-      this->m_Callback.first  = nullptr;
-      this->m_Callback.second = &FunctionView::template c_function_wrapper<callback>;
+      m_Callback.first  = nullptr;
+      m_Callback.second = &FunctionView::template c_function_wrapper<callback>;
     }
 
     template<typename Clz, R (Clz::*callback)(Args...)>
     void bind(Clz* obj)
     {
-      this->m_Callback.first  = obj;
-      this->m_Callback.second = &FunctionView::template member_function_wrapper<Clz, callback>;
+      m_Callback.first  = obj;
+      m_Callback.second = &FunctionView::template member_function_wrapper<Clz, callback>;
     }
 
     template<typename Clz, R (Clz::*callback)(Args...) const>
     void bind(Clz* obj)
     {
-      this->m_Callback.first  = obj;
-      this->m_Callback.second = &FunctionView::template const_member_function_wrapper<Clz, callback>;
+      m_Callback.first  = obj;
+      m_Callback.second = &FunctionView::template const_member_function_wrapper<Clz, callback>;
     }
 
     void unBind()
     {
-      this->m_Callback.first  = nullptr;
-      this->m_Callback.second = nullptr;
+      m_Callback.first  = nullptr;
+      m_Callback.second = nullptr;
     }
 
     // This function returns an empty optional if there is not a
@@ -113,8 +106,9 @@ namespace bifrost
       }
     }
 
-    decltype(auto) call(Args&&... args) const
+    R call(Args&&... args) const
     {
+      /*
       if constexpr (std::is_same_v<void, R>)
       {
         (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
@@ -123,11 +117,14 @@ namespace bifrost
       {
         return (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
       }
+      */
+      return (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
     }
 
    private:
     static decltype(auto) c_ptr_function_wrapper(InstancePtr instance, Args... args)
     {
+      /*
       if constexpr (std::is_same_v<void, R>)
       {
         reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
@@ -136,6 +133,9 @@ namespace bifrost
       {
         return reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
       }
+      */
+
+      return reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
     }
 
     template<typename F>

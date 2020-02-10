@@ -295,20 +295,22 @@ namespace bifrost
     }
   }  // namespace
 
-  JsonValue JsonParser::parse(const std::string& source_string)
+  JsonValue JsonParser::parse(const String& source_string)
   {
-    char* buffer = new char[source_string.size() + 1];
+    const std::size_t buffer_size = source_string.length();
+    char* const       buffer      = new char[buffer_size + 1];
 
-    memcpy(buffer, source_string.c_str(), source_string.size());
+    memcpy(buffer, source_string.cstr(), buffer_size);
 
-    buffer[source_string.size()] = '\0';
+    buffer[buffer_size] = '\0';
 
     JsonParserImpl parser = {
-     source_string.size(),
+     buffer_size,
      buffer,
      {nullptr, JSON_EOF},
      0,
-     1};
+     1,
+    };
 
     JParserEat(&parser, JSON_EOF, 0);
 
@@ -323,7 +325,7 @@ namespace bifrost
     value.toString(return_value, pretty_print, 2);
     return return_value;
   }
-}  // namespace tide
+}  // namespace bifrost
 
 #undef JParserCurrentChar
 #undef JParserCurrentStr

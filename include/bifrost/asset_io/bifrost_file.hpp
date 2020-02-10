@@ -1,0 +1,149 @@
+#ifndef BIFROST_FILE_HPP
+#define BIFROST_FILE_HPP
+
+// uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
+
+#include "bifrost/data_structures/bifrost_string.hpp" /* String, StringRange */
+#include <algorithm>                                  /* reverse             */
+#include <fstream>                                    /* fstream, ios        */
+
+namespace bifrost
+{
+  using StringSizeT = uint32_t;
+
+  namespace file
+  {
+    enum FileMode
+    {
+      FILE_MODE_APPEND        = std::ios::app,
+      FILE_MODE_START_AT_END  = std::ios::ate,
+      FILE_MODE_BINARY        = std::ios::binary,
+      FILE_MODE_READ          = std::ios::in,
+      FILE_MODE_WRITE         = std::ios::out,
+      FILE_MODE_OVERWRITE_ALL = std::ios::trunc
+    };
+
+    enum class FileSeek
+    {
+      FILE_SEEK_BEGIN    = std::ios::beg,
+      FILE_SEEK_RELATIVE = std::ios::cur,
+      FILE_SEEK_END      = std::ios::end
+    };
+
+    enum class FileError
+    {
+      NONE,
+      FILE_DID_NOT_OPEN
+    };
+
+    // TODO(SR): These path helpers can probably be in a separate file.
+    bool pathEndsIn(const char* path, const char* ending, int ending_len = -1, int path_len = -1);
+
+    /// All slashes are forward slashes '/'.
+    /// A path for a folder has no following '/'.
+    /// Returns the new length of the path.
+    std::size_t canonicalizePath(char* path_bgn, const char* path_end);
+    std::size_t canonicalizePath(char* path_bgn); // Gives you the length
+
+    // These function assumes a canonical path by the calling of 'canonicalizePath'.
+    StringRange directoryOfFile(const StringRange& path);
+
+    // String pathFileName(String filename);
+    // String pathFileDir(String filename);
+    // void   replaceAll(String& path, char replace = '\\', char with = '/');
+  }  // namespace file
+
+  class File final
+  {
+   public:
+    static bool exists(const char* path);
+
+    template<class T>
+    static void endianSwap(T* obj)
+    {
+      uint8_t* memp = reinterpret_cast<uint8_t*>(obj);
+      std::reverse(memp, memp + sizeof(T));
+    }
+
+   private:
+    String       m_FileName;
+    std::fstream m_FileStream;
+
+   public:
+    File() = default;
+    File(const char* filename, const unsigned int mode);
+    File(const String& filename, const unsigned int mode);
+
+    File(const File& rhs) = delete;
+    File(File&& rhs)      = delete;
+
+    // Basic FileIO //
+    operator bool() const { return isOpen(); }
+    file::FileError open(const char* filename, const unsigned int mode);
+    file::FileError open(const String& filename, const unsigned int mode);
+    bool            isOpen() const;
+    void            seek(const int movement, const file::FileSeek mode);
+    std::size_t     size() const;
+    void            close();
+
+    // Binary API (Endian Independent as Long as You Use this class for both reading and writing) //
+    File& writeBytes(const char* bytes, std::streamsize size);
+    File& writeInt8(std::int8_t value);
+    File& writeInt16(std::int16_t value);
+    File& writeInt32(std::int32_t value);
+    File& writeInt64(std::int64_t value);
+    File& writeUint8(std::uint8_t value);
+    File& writeUint16(std::uint16_t value);
+    File& writeUint32(std::uint32_t value);
+    File& writeUint64(std::uint64_t value);
+
+    File& readBytes(char* bytes, std::streamsize size);
+    File& readInt8(int8_t& value);
+    File& readInt16(std::int16_t& value);
+    File& readInt32(std::int32_t& value);
+    File& readInt64(std::int64_t& value);
+    File& readUint8(std::uint8_t& value);
+    File& readUint16(std::uint16_t& value);
+    File& readUint32(std::uint32_t& value);
+    File& readUint64(std::uint64_t& value);
+
+    // Templated (Binary) API //
+    template<typename T>
+    File& write(const T& data);
+    template<typename T>
+    File& read(T& data);
+
+    // 'out' will be appended to so remeber to clear if beforehand if need-be
+    void readAll(String& out);
+
+    template<typename T>
+    File& operator<<(const T& data)
+    {
+      m_FileStream << data;
+      return *this;
+    }
+
+    template<typename T>
+    File& operator>>(T& data)
+    {
+      m_FileStream >> data;
+      return *this;
+    }
+
+    ~File() = default;
+  };
+
+  template<typename T>
+  File& File::write(const T& data)
+  {
+    return writeBytes(reinterpret_cast<const char*>(&data), sizeof(T));
+  }
+
+  template<typename T>
+  File& File::read(T& data)
+  {
+    return readBytes(reinterpret_cast<char*>(&data), sizeof(T));
+  }
+}  // namespace bifrost
+
+#endif /* BIFROST_FILE_HPP */

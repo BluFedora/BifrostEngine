@@ -1,15 +1,13 @@
-
 #ifndef BIFROST_ENGINE_HPP
 #define BIFROST_ENGINE_HPP
 
+#include "bifrost/asset_io/test.h"
 #include "bifrost/bifrost.hpp"
 #include "bifrost/event/bifrost_window_event.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
-#include "bifrost/asset_io/test.h"
 #include "glfw/glfw3.h"
 
 using namespace bifrost;
-
 
 struct BifrostEngineCreateParams : public bfGfxContextCreateParams
 {
@@ -67,7 +65,7 @@ class Model
 
 static BifrostEngine* g_Engine = nullptr;
 static GLFWwindow*    g_Window = nullptr;
-static Model s_Model;
+static Model          s_Model;
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -253,7 +251,7 @@ class BaseRenderer
     m_Resources.push_back(m_IndexBuffer);
     m_Resources.push_back(m_UniformBuffer);
 
-    s_Model.load(m_GfxDevice, "assets/models/cultchar.obj");
+    s_Model.load(m_GfxDevice, "assets/models/rhino.obj");
   }
 
   [[nodiscard]] bool frameBegin()
@@ -437,24 +435,26 @@ class BaseRenderer
   }
 };
 
-class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
+class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 {
  private:
   std::pair<int, const char**> m_CmdlineArgs;
-  bifrost::FreeListAllocator   m_MainMemory;
-  bifrost::GameStateMachine    m_StateMachine;
-  bifrost::VM                  m_Scripting;
+  FreeListAllocator            m_MainMemory;
+  GameStateMachine             m_StateMachine;
+  VM                           m_Scripting;
   BaseRenderer                 m_Renderer;
-  bifrost::Scene*              m_CurrentScene;
+  Scene*                       m_CurrentScene;
+  Assets                       m_Assets;
 
  public:
   BifrostEngine(int argc, const char* argv[]) :
     m_CmdlineArgs{argc, argv},
-    m_MainMemory{new char[100000000ull](), 100000000ull},
+    m_MainMemory{new char[100000000ull], 100000000ull},
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
     m_Renderer{},
-    m_CurrentScene{nullptr}
+    m_CurrentScene{nullptr},
+    m_Assets{}
   {
   }
 
@@ -462,6 +462,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
   GameStateMachine&  stateMachine() { return m_StateMachine; }
   VM&                scripting() { return m_Scripting; }
   BaseRenderer&      renderer() { return m_Renderer; }
+  Assets&            assets() { return m_Assets; }
 
   Scene* currentScene() const
   {
@@ -502,7 +503,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
 
     m_Renderer.startup(params);
 
-    bifrost::VMParams vm_params{};
+    VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
     vm_params.print_fn = [](BifrostVM*, const char* message) {
       bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
@@ -527,7 +528,7 @@ class BifrostEngine : private bifrost::bfNonCopyMoveable<BifrostEngine>
     return m_Renderer.frameBegin();
   }
 
-  void onEvent(bifrost::Event& evt)
+  void onEvent(Event& evt)
   {
     for (auto it = m_StateMachine.rbegin(); (evt.flags & bifrost::Event::FLAGS_IS_ACCEPTED) == 0 && it != m_StateMachine.rend(); ++it)
     {

@@ -30,7 +30,8 @@ static inline bfStringRange bfLexer_currentLine(BifrostLexer* self)
 {
   return (bfStringRange){
    .bgn = self->source_bgn + self->line_pos_bgn,
-   .end = self->source_bgn + self->line_pos_end};
+   .end = self->source_bgn + self->line_pos_end,
+   };
 }
 
 bfToken bfLexer_nextToken(BifrostLexer* self)
@@ -285,19 +286,19 @@ void bfLexer_skipLineComment(BifrostLexer* self)
 void bfLexer_skipBlockComment(BifrostLexer* self)
 {
   const size_t line_no = self->current_line_no;
-  bfLexer_advance(self, 2);  // /*
+  bfLexer_advance(self, 2);  /* / * */
 
   while (bfLexer_peek(self, 0) != '*' || bfLexer_peek(self, 1) != '/')
   {
     if (bfLexer_peek(self, 0) == '\0')
     {
-      bfErrorFn err_fn = self->vm->params.error_fn;
+      const bfErrorFn err_fn = self->vm->params.error_fn;
 
       if (err_fn)
       {
         char buffer[64];
 
-        int num_bytes = sprintf(
+        const int num_bytes = sprintf(
          buffer,
          "Unfinished block comment starting on line(%zu)",
          line_no);
@@ -312,7 +313,7 @@ void bfLexer_skipBlockComment(BifrostLexer* self)
     bfLexer_advance(self, 1);
   }
 
-  bfLexer_advance(self, 2);  // */
+  bfLexer_advance(self, 2);  /* * / */
 }
 
 void bfLexer_advance(BifrostLexer* self, size_t amt)
@@ -410,7 +411,7 @@ bfToken bfLexer_parseID(BifrostLexer* self)
   return BIFROST_TOKEN_MAKE_STR2(IDENTIFIER, bgn, bgn + length);
 }
 
-static inline bfBool32 bfLexer_isNotQuote(char c)
+static bfBool32 bfLexer_isNotQuote(char c)
 {
   return c != '\"';
 }

@@ -6,7 +6,7 @@
  *  All reflectable / serializable engine objects will inherit from this class.
  *
  * @version 0.0.1
- * @date 2019-12-22
+ * @date    2019-12-22
  *
  * @copyright Copyright (c) 2019
  */
@@ -14,8 +14,7 @@
 #ifndef BIFROST_BASE_OBJECT_HPP
 #define BIFROST_BASE_OBJECT_HPP
 
-#include "bifrost/meta/bifrost_meta_factory.hpp"     /* Factory<T>           */
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
+#include "bifrost/meta/bifrost_meta_factory.hpp" /* Factory<T> */
 
 class BifrostEngine;
 
@@ -23,9 +22,7 @@ namespace bifrost
 {
   // NOTE(Shareef): Use this class as the base type.
 
-  // clang-format off
-  class BaseObjectT : /*private bfNonCopyMoveable<BaseObjectT>,*/ public meta::Factory<BaseObjectT>
-  // clang-format on
+  class BaseObjectT : public meta::Factory<BaseObjectT>
   {
    protected:
     explicit BaseObjectT(PrivateCtorTag) {}
@@ -34,10 +31,6 @@ namespace bifrost
     virtual meta::BaseClassMetaInfo* type() = 0;
     virtual ~BaseObjectT()                  = default;
   };
-
-  // NOTE(Shareef): Inherit from this
-  // template<typename... T>
-  // using BaseObject = BaseObjectT::Base<T...>;
 
   namespace detail
   {
@@ -51,6 +44,7 @@ namespace bifrost
     };
   }  // namespace detail
 
+  // NOTE(Shareef): Inherit from this
   template<typename... T>
   class BaseObject : public BaseObjectT::Base<T...>
   {

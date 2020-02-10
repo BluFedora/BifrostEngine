@@ -9,15 +9,15 @@ namespace
 
 namespace bifrost::meta
 {
-  NoFreeAllocator& gRttiMemory()
+  RttiAllocatorType& gRttiMemory()
   {
-    static NoFreeAllocator s_RttiMemory{gRttiMemoryBacking()};
+    static RttiAllocatorType s_RttiMemory{gRttiMemoryBacking()};
     return s_RttiMemory;
   }
 
-  LinearAllocator& gRttiMemoryBacking()
+  RttiAllocatorBackingType& gRttiMemoryBacking()
   {
-    static LinearAllocator s_BackingAllocator{s_Storage, sizeof(s_Storage)};
+    static RttiAllocatorBackingType s_BackingAllocator{s_Storage, sizeof(s_Storage)};
     return s_BackingAllocator;
   }
 

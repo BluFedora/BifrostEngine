@@ -1,18 +1,18 @@
 #include "bifrost/bifrost_version.h"
 
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
-#include "bifrost/asset_io/test.h"
 #include "bifrost/core/bifrost_game_state_machine.hpp"
 #include "bifrost/data_structures/bifrost_any.hpp"
 #include "bifrost/data_structures/bifrost_string.hpp"
+#include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/platform/bifrost_window_glfw.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
 
-#include "imgui/imgui.h"
 #include <bifrost/bifrost.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
-#include "bifrost/editor/bifrost_editor_overlay.hpp"
+
+#include "imgui/imgui.h"
 
 #include <chrono>
 #include <functional>
@@ -22,8 +22,8 @@
 #include <utility>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include <glfw/glfw3native.h>
 #include "bifrost/core/bifrost_engine.hpp"
+#include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
 
 namespace bifrost
@@ -310,16 +310,16 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
   return bestmonitor;
 }
 
+static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
+
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
-  bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
-  std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
-  bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
-
   namespace bfmeta = meta;
   namespace bf     = bifrost;
 
-  static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
+  bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+  std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
+  bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
   TestClass my_obj = {74, "This message will be in Y"};
 
@@ -355,7 +355,6 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   /*
   glfwMakeContextCurrent(main_window);
-
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
   {
     error_code = ErrorCodes::GLAD_FAILED_TO_INIT;
@@ -364,8 +363,6 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   */
 
   {
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
     WindowGLFW    window{};
     BifrostEngine engine{argc, argv};
 
@@ -527,15 +524,11 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
 void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
 {
-  float menu_bar_height = 0.0f;
-
-  // ImGui::ShowDemoWindow();
-
   ImGuiIO& io = ImGui::GetIO();
 
-  const auto height = io.DisplaySize.y - 10.0f - menu_bar_height;
+  const auto height = io.DisplaySize.y - 10.0f;
 
-  ImGui::SetNextWindowPos(ImVec2(5.0f, menu_bar_height + 5.0f));
+  ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f));
   ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
   ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
   if (ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoMove))
@@ -551,18 +544,18 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
         scene->addEntity(name);
       }
 
-      const auto inspectEntityArray = [this](const Array<Entity*>& entities, auto& rec) -> void {
+      const auto inspectEntityArray = [this](const EntityList& entities, auto& rec) -> void {
         Entity* add_child_to = nullptr;
 
         for (auto& entity : entities)
         {
-          ImGui::PushID(entity);
-          const bool open = ImGui::TreeNode(entity->name().c_str());
+          ImGui::PushID(&entity);
+          const bool open = ImGui::TreeNode(entity.name().c_str());
           if (ImGui::BeginPopupContextItem())
           {
             if (ImGui::Selectable("Add Child"))
             {
-              add_child_to = entity;
+              add_child_to = &entity;
             }
 
             ImGui::EndPopup();
@@ -571,15 +564,15 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
           {
             if (ImGui::Button("Select"))
             {
-              m_SelectedEntity = entity;
+              m_SelectedEntity = &entity;
             }
 
             if (ImGui::Button("Add Sprite Component"))
             {
-              entity->add<SpriteComponent>();
+              entity.add<SpriteComponent>();
             }
 
-            rec(entity->children(), rec);
+            rec(entity.children(), rec);
             ImGui::TreePop();
           }
           ImGui::PopID();
@@ -591,7 +584,7 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
             add_child_to->addChild("My Child");
       };
 
-      inspectEntityArray(engine.currentScene()->rootEntities(), inspectEntityArray);
+      // inspectEntityArray(engine.currentScene()->rootEntities(), inspectEntityArray);
     }
     else
     {
@@ -601,7 +594,7 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
   }
   ImGui::End();
 
-  ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 5.0f, menu_bar_height + 5.0f), 0, ImVec2(1.0f, 0.0f));
+  ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 5.0f, 5.0f), 0, ImVec2(1.0f, 0.0f));
   ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
   ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
   window("RTTI", [this]() {
@@ -854,7 +847,7 @@ bool inspect(const char* label, std::string& string, ImGuiInputTextFlags flags =
   return ImGui::InputText(label, const_cast<char*>(string.c_str()), string.capacity() + 1, flags, inspectStringCallback, static_cast<void*>(&string));
 }
 
-bool ImGUIOverlay::inspect(const char* label, bifrost::Any& object, meta::BaseClassMetaInfo* info) const
+bool ImGUIOverlay::inspect(const char* label, Any& object, meta::BaseClassMetaInfo* info) const
 {
   bool did_change = false;
 
@@ -966,13 +959,6 @@ bool ImGUIOverlay::inspect(const char* label, bifrost::Any& object, meta::BaseCl
           }
         }
 
-#if 0
-      for (auto& method : info->methods())
-      {
-        // ImGui::Text("method: %.*s", method->name().length(), method->name().data());
-      }
-#endif
-
         ImGui::TreePop();
       }
     }
@@ -995,8 +981,9 @@ bool ImGUIOverlay::inspect(const char* label, bifrost::Any& object, meta::BaseCl
 
 void MainDemoLayer::onLoad(BifrostEngine& engine)
 {
-  // engine.stateMachine().addOverlay<ImGUIOverlay>("ImGUI 0");
 #if 0
+  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGui 0");
+
   auto mye              = new bifrost::Entity("Hello I am an entity");
   auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");
   auto dynamic_entity   = entity_type_info->instantiate(engine.mainMemory());

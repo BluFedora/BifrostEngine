@@ -1063,13 +1063,13 @@ frame_start:;
         if (!IS_POINTER(obj_value))
         {
           char error_buffer[512];
-          bfDbgValueToString(obj_value, error_buffer, 512);
+          bfDbgValueToString(obj_value, error_buffer, sizeof(error_buffer));
           BF_RUNTIME_ERROR("Cannot load symbol (%s) from non object %s\n", symbol_str, error_buffer);
         }
 
         BifrostObj* obj = AS_POINTER(obj_value);
 
-        if (obj->type == BIFROST_VM_OBJ_INSTANCE || obj->type == BIFROST_VM_OBJ_REFERENCE)
+        if (obj->type == BIFROST_VM_OBJ_INSTANCE)
         {
           BifrostObjInstance* inst = (BifrostObjInstance*)obj;
 
@@ -1080,6 +1080,15 @@ frame_start:;
             locals[regs[REG_RA]] = *value;
           }
           else if (inst->clz)
+          {
+            obj = &inst->clz->super;
+          }
+        }
+        else if (obj->type == BIFROST_VM_OBJ_REFERENCE || obj->type == BIFROST_VM_OBJ_WEAK_REF)
+        {
+          BifrostObjReference* inst = (BifrostObjReference*)obj;
+
+          if (inst->clz)
           {
             obj = &inst->clz->super;
           }
@@ -1219,10 +1228,10 @@ frame_start:;
           BifrostObj*               obj      = AS_POINTER(value);
           const BifrostObjInstance* instance = (const BifrostObjInstance*)obj;
 
-          if (obj->type == BIFROST_VM_OBJ_INSTANCE || obj->type == BIFROST_VM_OBJ_REFERENCE)
+          if (obj->type == BIFROST_VM_OBJ_INSTANCE || obj->type == BIFROST_VM_OBJ_REFERENCE || obj->type == BIFROST_VM_OBJ_WEAK_REF)
           {
             instance = (const BifrostObjInstance*)obj;
-            obj      = &instance->clz->super;
+            obj      = instance->clz ? &instance->clz->super : obj;
           }
 
           if (obj->type == BIFROST_VM_OBJ_CLASS)

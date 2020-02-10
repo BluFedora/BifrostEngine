@@ -122,6 +122,7 @@ BifrostObjReference* bfVM_createReference(struct BifrostVM_t* self, size_t extra
 BifrostObjWeakRef* bfVM_createWeakRef(struct BifrostVM_t* self, void* data)
 {
   BifrostObjWeakRef* obj = allocObj(self, sizeof(BifrostObjWeakRef), BIFROST_VM_OBJ_WEAK_REF);
+  obj->clz               = NULL;
   obj->data              = data;
 
   return obj;

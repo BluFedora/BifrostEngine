@@ -67,7 +67,7 @@ void   Array_delete(void* const self);
 }
 #endif
 
-/* New API that is allocator aware */
+/* New allocator aware API */
 
 #if __cplusplus
 extern "C" {
@@ -96,6 +96,7 @@ typedef int(__cdecl* bfArrayFindCompare)(const void*, const void*);
 
 void*  bfArray_mallocator(void* user_data, void* ptr, size_t size);  // Default allocator uses C-Libs 'malloc' and 'free'.
 void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data);
+void*  bfArray_userData(void** self);
 void*  bfArray_begin(void** self);
 void*  bfArray_end(void** self);
 void*  bfArray_back(void** self);

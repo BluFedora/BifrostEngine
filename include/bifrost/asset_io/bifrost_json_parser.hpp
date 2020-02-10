@@ -8,7 +8,7 @@ namespace bifrost
   class JsonParser
   {
    public:
-    static JsonValue   parse(const std::string& source_string);
+    static JsonValue   parse(const String& source_string);
     static std::string toString(const JsonValue& value, bool pretty_print = true);
   };
 }  // namespace bifrost

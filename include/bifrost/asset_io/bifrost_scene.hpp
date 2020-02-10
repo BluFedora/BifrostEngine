@@ -47,29 +47,6 @@ namespace bifrost
     BIFROST_META_END()
   }
 
-  template<typename T>
-  struct ArrayView
-  {
-    T*          data;
-    std::size_t data_size;
-
-    ArrayView(T* data, std::size_t size) :
-      data{data},
-      data_size{size}
-    {
-    }
-
-    T* begin()
-    {
-      return data;
-    }
-
-    T* end()
-    {
-      return data + data_size;
-    }
-  };
-
   /*!
    * @brief
    *  Hold entities along with any associated Component data.

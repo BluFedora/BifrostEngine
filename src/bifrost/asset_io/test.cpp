@@ -20,27 +20,42 @@ static void skip_line(const char *data, uint *pointer, uint file_length)
 
 static void skip_whitespace(const char *data, uint *pointer)
 {
-  while (data[*pointer] == ' ') ++(*pointer);
+  while (data[*pointer] == ' ')
+  {
+    ++(*pointer);
+  }
 }
 
 static void skip_until_whitespace(const char *data, uint *pointer)
 {
-  while (data[*pointer] != ' ') ++(*pointer);
+  while (data[*pointer] != ' ')
+  {
+    ++(*pointer);
+  }
 }
 
 static void skip_non_digit(const char *data, uint *pointer)
 {
-  while (!isdigit(data[*pointer]) && data[*pointer] != '-') ++(*pointer);
+  while (!isdigit(data[*pointer]) && data[*pointer] != '-')
+  {
+    ++(*pointer);
+  }
 }
 
 static void skip_digit(const char *data, uint *pointer)
 {
-  while (isdigit(data[*pointer]) || data[*pointer] == '-') ++(*pointer);
+  while (isdigit(data[*pointer]) || data[*pointer] == '-')
+  {
+    ++(*pointer);
+  }
 }
 
 static void skip_comma(const char *data, uint *pointer)
 {
-  if (data[*pointer] == ',') ++(*pointer);
+  if (data[*pointer] == ',')
+  {
+    ++(*pointer);
+  }
 }
 
 static void extract_face(const char *data, uint *pointer, int *v_index, int *uv_index, int *n_index)
@@ -79,11 +94,35 @@ static void extract_face(const char *data, uint *pointer, int *v_index, int *uv_
   }
 }
 
+static void load_vec3f(Vec3f **arr, const char *obj_file_data, uint *file_pointer, uint obj_file_data_length, float default_w)
+{
+  Vec3f *position = (Vec3f *)Array_emplace(arr);
+
+  skip_until_whitespace(obj_file_data, file_pointer);
+  skip_whitespace(obj_file_data, file_pointer);
+  position->x = (float)atof(obj_file_data + *file_pointer);
+  skip_until_whitespace(obj_file_data, file_pointer);
+  skip_whitespace(obj_file_data, file_pointer);
+  position->y = (float)atof(obj_file_data + *file_pointer);
+  skip_until_whitespace(obj_file_data, file_pointer);
+  skip_whitespace(obj_file_data, file_pointer);
+  position->z = (float)atof(obj_file_data + *file_pointer);
+  skip_line(obj_file_data, file_pointer, obj_file_data_length);
+  position->w = default_w;
+}
+
 TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_data_length)
 {
+  struct FaceElement final
+  {
+    int position;
+    int uv;
+    int normal;
+  };
+
   typedef struct
   {
-    int vertex[3];
+    int position[3];
     int uv[3];
     int normal[3];
 
@@ -91,12 +130,13 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
 
   TEST_ModelData ret;
 
-  ret.vertices        = OLD_bfArray_newT(BasicVertex, 10);
-  Vec3f *positions    = OLD_bfArray_newT(Vec3f, 10);
-  Vec2f *uvs          = OLD_bfArray_newT(Vec2f, 10);
-  Vec3f *normals      = OLD_bfArray_newT(Vec3f, 10);
-  Face * faces        = OLD_bfArray_newT(Face, 10);
-  uint   file_pointer = 0;
+  ret.vertices               = OLD_bfArray_newT(BasicVertex, 10);
+  Vec3f *      positions     = OLD_bfArray_newT(Vec3f, 10);
+  Vec2f *      uvs           = OLD_bfArray_newT(Vec2f, 10);
+  Vec3f *      normals       = OLD_bfArray_newT(Vec3f, 10);
+  Face *       faces         = OLD_bfArray_newT(Face, 10);
+  FaceElement *face_elements = OLD_bfArray_newT(FaceElement, 10);
+  uint         file_pointer  = 0;
 
   while (file_pointer < obj_file_data_length)
   {
@@ -115,19 +155,7 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
         {
           case ' ':
           {
-            Vec3f *position = (Vec3f *)Array_emplace(&positions);
-
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
-            position->x = (float)atof(obj_file_data + file_pointer);
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
-            position->y = (float)atof(obj_file_data + file_pointer);
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
-            position->z = (float)atof(obj_file_data + file_pointer);
-            skip_line(obj_file_data, &file_pointer, obj_file_data_length);
-            position->w = 1.0f;
+            load_vec3f(&positions, obj_file_data, &file_pointer, obj_file_data_length, 1.0f);
             break;
           }
           case 't':
@@ -144,19 +172,7 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
           }
           case 'n':
           {
-            Vec3f *normal = (Vec3f *)Array_emplace(&normals);
-
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
-            normal->x = (float)atof(obj_file_data + file_pointer);
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
-            normal->y = (float)atof(obj_file_data + file_pointer);
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
-            normal->z = (float)atof(obj_file_data + file_pointer);
-            skip_line(obj_file_data, &file_pointer, obj_file_data_length);
-            normal->w = 0.0f;
+            load_vec3f(&normals, obj_file_data, &file_pointer, obj_file_data_length, 0.0f);
             break;
           }
           default:
@@ -167,26 +183,46 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
       }
       case 'f':
       {
-        int v1, v2, v3, uv1, uv2, uv3, n1, n2, n3;
-
         skip_non_digit(obj_file_data, &file_pointer);
-        extract_face(obj_file_data, &file_pointer, &v1, &uv1, &n1);
-        skip_until_whitespace(obj_file_data, &file_pointer);
-        skip_whitespace(obj_file_data, &file_pointer);
-        extract_face(obj_file_data, &file_pointer, &v2, &uv2, &n2);
-        skip_until_whitespace(obj_file_data, &file_pointer);
-        skip_whitespace(obj_file_data, &file_pointer);
-        extract_face(obj_file_data, &file_pointer, &v3, &uv3, &n3);
+
+        int num_face_elements = 0;
+
+        Array_clear(&face_elements);
+
+        while (file_pointer < obj_file_data_length)
+        {
+          FaceElement face_element{-1, -1, -1};
+
+          extract_face(obj_file_data, &file_pointer, &face_element.position, &face_element.uv, &face_element.normal);
+
+          Array_push(&face_elements, &face_element);
+          ++num_face_elements;
+
+          if (obj_file_data[file_pointer] != ' ')
+          {
+            break;
+          }
+
+          skip_until_whitespace(obj_file_data, &file_pointer);
+          skip_whitespace(obj_file_data, &file_pointer);
+        }
+
         skip_line(obj_file_data, &file_pointer, obj_file_data_length);
 
-        Face face =
-         {
-          {v1, v2, v3},
-          {uv1, uv2, uv3},
-          {n1, n2, n3},
-         };
+        for (int i = 1; i < num_face_elements - 1; ++i)
+        {
+          FaceElement *const fe = face_elements + i;
 
-        Array_push(&faces, &face);
+          Face face =
+           {
+            {face_elements[0].position, fe[0].position, fe[1].position},
+            {face_elements[0].uv, fe[0].uv, fe[1].uv},
+            {face_elements[0].normal, fe[0].normal, fe[1].normal},
+           };
+
+          Array_push(&faces, &face);
+        }
+
         break;
       }
       default:
@@ -205,7 +241,7 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
     {
       BasicVertex *vertex = (BasicVertex *)Array_emplace(&ret.vertices);
 
-      const Vec3f *const pos    = face->vertex[j] == -1 ? NULL : positions + face->vertex[j] - 1;
+      const Vec3f *const pos    = face->position[j] == -1 ? NULL : positions + face->position[j] - 1;
       const Vec3f *const normal = face->normal[j] == -1 ? NULL : normals + face->normal[j] - 1;
       const Vec2f *const uv     = face->uv[j] == -1 ? NULL : uvs + face->uv[j] - 1;
 
@@ -232,6 +268,7 @@ TEST_ModelData TEST_AssetIO_loadObj(const char *obj_file_data, uint obj_file_dat
   Array_delete(&uvs);
   Array_delete(&normals);
   Array_delete(&faces);
+  Array_delete(&face_elements);
 
   return ret;
 }

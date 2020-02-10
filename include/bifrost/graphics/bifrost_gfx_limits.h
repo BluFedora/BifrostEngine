@@ -10,18 +10,18 @@ extern "C" {
 
   /*!
    * @brief
-   *  Hardware Limitations Overview
+   *  Hardware Limitations Overview\n\n
    *
-   *  Portable Vulkan:      4 DescriptorSets
-   *  Mobile:               4 DescriptorSets
-   *  Older Graphics cards: 4 DescriptorSets
-   *  Newer Graphics cards: 8 DescriptorSets
+   *  Portable Vulkan:      4 DescriptorSets\n
+   *  Mobile:               4 DescriptorSets\n
+   *  Older Graphics cards: 4 DescriptorSets\n
+   *  Newer Graphics cards: 8 DescriptorSets\n\n
    *
-   *  Suggested Layout:
-   *    [0] Camera / Scene
-   *    [1] General Shader Params
-   *    [2] Materials
-   *    [3] Object Transforms
+   *  Suggested Layout:\n
+   *    [0] Camera / Scene\n
+   *    [1] General Shader Params\n
+   *    [2] Materials\n
+   *    [3] Object Transforms\n
    */
 #define BIFROST_GFX_RENDERPASS_MAX_DESCRIPTOR_SETS 4
 #define BIFROST_GFX_SHADER_ENTRY_POINT_NAME_LENGTH 32

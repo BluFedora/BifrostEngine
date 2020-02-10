@@ -1,3 +1,14 @@
+/*!
+ * @file   bifrost_vm_lexer.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Tokenizing helpers for strings.
+ *
+ * @version 0.0.1
+ * @date    2019-06-08
+ *
+ * @copyright Copyright (c) 2020
+ */
 #ifndef BIFROST_VM_LEXER_H
 #define BIFROST_VM_LEXER_H
 
@@ -13,29 +24,29 @@ extern "C" {
  */
 typedef enum
 {
-  BIFROST_TOKEN_L_PAREN     = 0,  /* (                                     */
-  BIFROST_TOKEN_R_PAREN     = 1,  /* )                                     */
-  BIFROST_TOKEN_L_SQR_BOI   = 2,  /* [                                     */
-  BIFROST_TOKEN_R_SQR_BOI   = 3,  /* ]                                     */
-  BIFROST_TOKEN_L_CURLY     = 4,  /* {                                     */
-  BIFROST_TOKEN_R_CURLY     = 5,  /* }                                     */
-  BIFROST_TOKEN_COLON       = 7,  /* :                                     */
-  BIFROST_TOKEN_SEMI_COLON  = 8,  /* ;                                     */
-  BIFROST_TOKEN_COMMA       = 9,  /* ,                                     */
-  BIFROST_TOKEN_EQUALS      = 10, /* =                                     */
-  BIFROST_TOKEN_DOT         = 19, /* .                                     */
-  BIFROST_TOKEN_IDENTIFIER  = 20, /* abcdefghijklmnopqrstuvwxyz_0123456789 */
-  BIFROST_TOKEN_VAR_DECL    = 21, /* var                                   */
-  BIFROST_TOKEN_FUNC_DECL   = 23, /* func                                  */
-  BIFROST_TOKEN_CTRL_IF     = 25, /* if                                    */
-  BIFROST_TOKEN_CTRL_ELSE   = 26, /* else                                  */
-  BIFROST_TOKEN_CTRL_WHILE  = 36, /* while                                 */
-  BIFROST_TOKEN_CTRL_RETURN = 38, /* return                                */
-  BIFROST_TOKEN_CTRL_BREAK  = 45, /* break                                 */
-  BIFROST_TOKEN_NEW         = 46, /* new                                   */
-  BIFROST_TOKEN_STATIC      = 47, /* static                                */
-  BIFROST_TOKEN_AS          = 48, /* as                                    */
-  BIFROST_TOKEN_SUPER       = 49, /* super                                 */
+  BIFROST_TOKEN_L_PAREN     = 0,  /*!< (                                     */
+  BIFROST_TOKEN_R_PAREN     = 1,  /*!< )                                     */
+  BIFROST_TOKEN_L_SQR_BOI   = 2,  /*!< [                                     */
+  BIFROST_TOKEN_R_SQR_BOI   = 3,  /*!< ]                                     */
+  BIFROST_TOKEN_L_CURLY     = 4,  /*!< {                                     */
+  BIFROST_TOKEN_R_CURLY     = 5,  /*!< }                                     */
+  BIFROST_TOKEN_COLON       = 7,  /*!< :                                     */
+  BIFROST_TOKEN_SEMI_COLON  = 8,  /*!< ;                                     */
+  BIFROST_TOKEN_COMMA       = 9,  /*!< ,                                     */
+  BIFROST_TOKEN_EQUALS      = 10, /*!< =                                     */
+  BIFROST_TOKEN_DOT         = 19, /*!< .                                     */
+  BIFROST_TOKEN_IDENTIFIER  = 20, /*!< abcdefghijklmnopqrstuvwxyz_0123456789 */
+  BIFROST_TOKEN_VAR_DECL    = 21, /*!< var                                   */
+  BIFROST_TOKEN_FUNC_DECL   = 23, /*!< func                                  */
+  BIFROST_TOKEN_CTRL_IF     = 25, /*!< if                                    */
+  BIFROST_TOKEN_CTRL_ELSE   = 26, /*!< else                                  */
+  BIFROST_TOKEN_CTRL_WHILE  = 36, /*!< while                                 */
+  BIFROST_TOKEN_CTRL_RETURN = 38, /*!< return                                */
+  BIFROST_TOKEN_CTRL_BREAK  = 45, /*!< break                                 */
+  BIFROST_TOKEN_NEW         = 46, /*!< new                                   */
+  BIFROST_TOKEN_STATIC      = 47, /*!< static                                */
+  BIFROST_TOKEN_AS          = 48, /*!< as                                    */
+  BIFROST_TOKEN_SUPER       = 49, /*!< super                                 */
 
   // Depracated names
   R_PAREN   = BIFROST_TOKEN_R_PAREN,
@@ -87,7 +98,7 @@ typedef enum
 
 // TODO(Shareef): Consider passing by copy.
 // This is in this file because of the "size_t".
-static inline size_t bfStringRange_length(const bfStringRange* self)
+static size_t bfStringRange_length(const bfStringRange* self)
 {
   return self->end - self->bgn;
 }
@@ -179,7 +190,7 @@ bfToken      bfLexer_parseString(BifrostLexer* self);
     .type = t, .as = {.num = v }     \
   }
 
-// TODO(SR): Move To Debug HEadere
+// TODO(SR): Move To Debug Header
 const char* tokentypeToString(bfTokenType t);
 void        printToken(const bfToken* token);
 #if __cplusplus

@@ -54,29 +54,7 @@ typedef struct bfStringRange_t
 
 } bfStringRange;
 
-static inline bfStringRange bfMakeStringRangeC(const char* str)
-{
-  const char* end = str;
-
-  while (end[0])
-  {
-    ++end;
-  }
-
-#if __cplusplus
-  return {
-   str,
-   end,
-  };
-#else
-  return (bfStringRange){
-   .bgn = str,
-   .end = end,
-  };
-#endif
-}
-
-static inline bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
+static bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
 {
 #if __cplusplus
   return {
@@ -89,6 +67,19 @@ static inline bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
    .end = bgn + length,
   };
 #endif
+}
+
+  
+static bfStringRange bfMakeStringRangeC(const char* str)
+{
+  const char* end = str;
+
+  while (end[0])
+  {
+    ++end;
+  }
+
+  return bfMakeStringRangeLen(str, end - str);
 }
 
 // This is used to clearly mark flexible-sized arrays that appear at the end of

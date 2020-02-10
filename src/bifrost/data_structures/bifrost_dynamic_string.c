@@ -161,7 +161,7 @@ void String_reserve(BifrostString* self, size_t newCapacity)
     if (header)
     {
       header->capacity = newCapacity;
-      *self = (char*)header + sizeof(BifrostStringHeader);
+      *self            = (char*)header + sizeof(BifrostStringHeader);
     }
     else
     {
@@ -169,6 +169,14 @@ void String_reserve(BifrostString* self, size_t newCapacity)
       *self = NULL;
     }
   }
+}
+
+void String_resize(BifrostString* self, size_t new_size)
+{
+  String_reserve(self, new_size + 1u);
+  BifrostStringHeader* header = String_getHeader(*self);
+  header->length              = new_size;
+  (*self)[new_size]           = '\0';
 }
 
 size_t String_length(ConstBifrostString self)
@@ -315,6 +323,35 @@ uint32_t bfString_hashN(const char* str, size_t length)
   return hash;
 }
 
+uint64_t bfString_hash64(const char* str)
+{
+  uint64_t hash = 14695981039346656037ULL;
+
+  while (*str)
+  {
+    hash ^= (unsigned char)*str++;
+    hash *= 1099511628211ULL;
+  }
+
+  return hash;
+}
+
+uint64_t bfString_hashN64(const char* str, size_t length)
+{
+  uint64_t hash = 14695981039346656037ULL;
+
+  const char* str_end = str + length;
+
+  while (str != str_end)
+  {
+    hash ^= (unsigned char)*str;
+    hash *= 1099511628211ULL;
+    ++str;
+  }
+
+  return hash;
+}
+
 int String_cmp(ConstBifrostString self, ConstBifrostString other)
 {
   const size_t len1 = String_length(self);
@@ -369,9 +406,7 @@ void String_sprintf(BifrostString* self, const char* format, ...)
 
 void String_clear(BifrostString* self)
 {
-  String_reserve(self, 1);
-  (*self)[0]                      = '\0';
-  String_getHeader(*self)->length = 0;
+  String_resize(self, 0u);
 }
 
 void String_delete(BifrostString self)

@@ -9,7 +9,7 @@ namespace bifrost
     m_Name{name},
     m_Transform{},
     m_Parent{nullptr},
-    m_Children{scene.m_Memory},
+    m_Children{&Entity::m_Hierarchy},
     m_Components{scene.m_Memory}
   {
     bfTransform_ctor(&m_Transform);
@@ -19,7 +19,7 @@ namespace bifrost
   {
     Entity* child   = m_OwningScene.createEntity(name);
     child->m_Parent = this;
-    m_Children.push(child);
+    m_Children.pushBack(*child);
     return child;
   }
 
@@ -36,7 +36,7 @@ namespace bifrost
 
       if (new_parent)
       {
-        new_parent->m_Children.push(this);
+        new_parent->m_Children.pushBack(*this);
       }
       else
       {
@@ -57,7 +57,7 @@ namespace bifrost
 
   void Entity::removeChild(Entity* child)
   {
-    m_Children.removeAt(m_Children.find(child));
+    m_Children.erase(m_Children.makeIterator(* child));
     child->m_Parent = nullptr;
   }
 }  // namespace bifrost

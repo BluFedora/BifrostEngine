@@ -353,6 +353,11 @@ void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t eleme
   return data_start;
 }
 
+void* bfArray_userData(void** self)
+{
+  return grabHeader(self)->user_data;
+}
+
 void* bfArray_begin(void** self)
 {
   return *self;

@@ -9,13 +9,15 @@
   # NOTE(Shareef): This sets the minimum version of CMake that must be used
 cmake_minimum_required(VERSION 3.8)
 
-  # NOTE(Shareef): This sets project's name
+  # NOTE(Shareef): This sets project's name.
 project(BifrostEngine)
 
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)
 set(BIFROST_ENGINE_VERSION_MINOR 0)
 set(BIFROST_ENGINE_VERSION_PATCH 0)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
   # This will generate a header file with the version info.
   # The file will be made in the build directory hence why the build
@@ -73,27 +75,18 @@ if (WIN32)
   set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
 else()
   # GCC / Clang
-  #   "/GR-"                      - Not needed since GCC / Clang isn't retarded like MSVC.
-  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't retarded like MSVC.
+  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
+  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
   #   "-std=c++17"                = "/std:c++17"
   #   "-fno-rtti"                 = "/GR-"
   #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
   set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
 endif()
 
-
-
-  # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based
-  #   of off what is in the folders.
+  # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
-  # "engine/animation/*.hpp"
-  # "engine/animation/*.cpp"
-  # "engine/core/*.hpp"
-  # "engine/core/*.cpp"
-  # "engine/memory/*.hpp"
   # "engine/memory/*.cpp"
-  # "engine/*.hpp"
   # "engine/*.cpp"
 
   # Libs
@@ -106,6 +99,8 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_win.cpp"
 
   # Bifrost Asset Module
+  "src/bifrost/asset_io/bifrost_assets.cpp"
+  "src/bifrost/asset_io/bifrost_file.cpp"
   "src/bifrost/asset_io/bifrost_json_parser.cpp"
   "src/bifrost/asset_io/bifrost_json_value.cpp"
   "src/bifrost/asset_io/bifrost_scene.cpp"
@@ -169,7 +164,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/utility/bifrost_uuid.c"
 
   # Editor
-
   "src/bifrost_imgui_glfw.cpp"
   "src/bifrost/platform/bifrost_window_glfw.cpp"
 

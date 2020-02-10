@@ -26,8 +26,6 @@
 
 namespace bifrost
 {
-  using StringRange = bfStringRange;
-
   namespace detail
   {
     template<typename...>
@@ -371,7 +369,7 @@ namespace bifrost
 
     BifrostVMError closureGetStatic(size_t dst_idx, size_t static_idx)
     {
-      return bfVM_closureGetStatic(self(), dst_idx, dst_idx);
+      return bfVM_closureGetStatic(self(), dst_idx, static_idx);
     }
 
     BifrostVMError closureSetStatic(size_t closure_idx, size_t static_idx, size_t value_idx)
@@ -393,7 +391,7 @@ namespace bifrost
 
       const std::size_t old_size = stackSize();
 
-      // TODO(Shareef): Also specialize on 
+      // TODO(Shareef): Also specialize on
       if constexpr (fn_traits::is_member_fn)
       {
         // NOTE(Shareef): Space for the 'idx' (module) and 'idx + 1' (Closure) 'idx + 2' (WeakRef).

@@ -329,6 +329,8 @@ namespace bifrost
 
       glfwSetJoystickCallback(GLFW_onJoystickStateChanged);
       glfwSetErrorCallback(GLFW_errorCallback);
+
+      glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
 
     return was_success;

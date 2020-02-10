@@ -142,7 +142,7 @@ size_t bfGCSweep(struct BifrostVM_t* self)
 
   //
   // TODO(Shareef): Make this code nicer...
-  //   Need to find a better more consitent want to handle finalizers.
+  //   Need to find a better more consistent want to handle finalizers.
 
   while (g_cursor)
   {
@@ -246,10 +246,6 @@ void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t n
   */
   if (new_size == 0u)
   {
-    BifrostObj*      o = ptr;
-    BifrostVMObjType t = o->type;
-    memset(ptr, 0xCC, old_size);
-    o->type = t;
     free(ptr);
     ptr = NULL;
   }
@@ -425,7 +421,17 @@ static void bfGCMarkObj(BifrostObj* obj, int mark_value)
         break;
       }
       case BIFROST_VM_OBJ_WEAK_REF:
+      {
+        BifrostObjWeakRef* const weak_ref = (BifrostObjWeakRef*)obj;
+
+        if (weak_ref->clz)
+        {
+          bfGCMarkObj(&weak_ref->clz->super, mark_value);
+        }
+
         break;
+      }
+        bfInvalidDefaultCase();
     }
   }
 }
@@ -476,6 +482,7 @@ size_t bfGCObjectSize(BifrostObj* obj)
     {
       return sizeof(BifrostObjWeakRef);
     }
+      bfInvalidDefaultCase();
   }
 
   return 0u;

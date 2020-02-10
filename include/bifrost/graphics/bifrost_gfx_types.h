@@ -48,8 +48,7 @@ typedef enum BifrostVertexFormatAttribute_t
   BIFROST_VFA_SCHAR8_3,
   BIFROST_VFA_SCHAR8_2,
   BIFROST_VFA_SCHAR8_1,
-  // NOTE(Shareef):
-  //   For Color packed as 8 bit chars but need to be converted to floats
+  // NOTE(Shareef): For Color packed as 8 bit chars but need to be converted to floats
   BIFROST_VFA_UCHAR8_4_UNORM,
 
 } BifrostVertexFormatAttribute;
