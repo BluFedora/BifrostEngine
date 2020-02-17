@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-* @file   bifrost_vm_export.h
+* @file   bifrost_math_export.h
 * @author Shareef Raheem (http://blufedora.github.io)
 * @par
 *    Bifrost Scripting Language
@@ -14,37 +14,37 @@
 * @copyright Copyright (c) 2019 Shareef Abdoul-Raheem
 */
 /******************************************************************************/
-#ifndef BIFROST_VM_EXPORT_H
-#define BIFROST_VM_EXPORT_H
+#ifndef BIFROST_MATH_EXPORT_H
+#define BIFROST_MATH_EXPORT_H
 
 #if __cplusplus
 extern "C" {
 #endif
 
 #if defined _WIN32 || defined __CYGWIN__
-#ifdef BIFROST_VM_EXPORT
+#ifdef BIFROST_MATH_EXPORT
 #ifdef __GNUC__
-#define BIFROST_VM_API __attribute__((dllexport))
+#define BIFROST_MATH_API __attribute__((dllexport))
 #else
-#define BIFROST_VM_API __declspec(dllexport)
+#define BIFROST_MATH_API __declspec(dllexport)
 #endif
-#elif defined(BIFROST_VM_EXPORT_STATIC)
-#define BIFROST_VM_API
+#elif defined(BIFROST_MATH_EXPORT_STATIC)
+#define BIFROST_MATH_API
 #else
 #ifdef __GNUC__
-#define BIFROST_VM_API __attribute__((dllimport))
+#define BIFROST_MATH_API __attribute__((dllimport))
 #else
-#define BIFROST_VM_API __declspec(dllimport)
+#define BIFROST_MATH_API __declspec(dllimport)
 #endif
 #endif
-#define NOT_BIFROST_VM_API
+#define NOT_BIFROST_MATH_API
 #else
 #if __GNUC__ >= 4
-#define BIFROST_VM_API __attribute__((visibility("default")))
-#define BIFROST_VM_NOAPI __attribute__((visibility("hidden")))
+#define BIFROST_MATH_API __attribute__((visibility("default")))
+#define BIFROST_MATH_NOAPI __attribute__((visibility("hidden")))
 #else
-#define BIFROST_VM_API
-#define BIFROST_VM_NOAPI
+#define BIFROST_MATH_API
+#define BIFROST_MATH_NOAPI
 #endif
 #endif
 
@@ -52,4 +52,4 @@ extern "C" {
 }
 #endif
 
-#endif /* BIFROST_VM_EXPORT_H */
+#endif /* BIFROST_MATH_EXPORT_H */

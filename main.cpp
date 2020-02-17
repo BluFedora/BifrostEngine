@@ -979,11 +979,22 @@ bool ImGUIOverlay::inspect(const char* label, Any& object, meta::BaseClassMetaIn
   return did_change;
 }
 
+static void cb()
+{
+  std::printf("I dont return anything\n");
+}
+
 void MainDemoLayer::onLoad(BifrostEngine& engine)
 {
-#if 0
-  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGui 0");
+  FunctionView<void(void)> test_view;
 
+  test_view.bind(cb);
+
+  test_view();
+  test_view.safeCall();
+
+  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGui 0");
+#if 0
   auto mye              = new bifrost::Entity("Hello I am an entity");
   auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");
   auto dynamic_entity   = entity_type_info->instantiate(engine.mainMemory());

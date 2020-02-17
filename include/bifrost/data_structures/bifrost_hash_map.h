@@ -6,7 +6,6 @@
  * @date 2019-12-22
  *
  * @copyright Copyright (c) 2019
- *
  */
 #ifndef BIFROST_HASH_MAP_H
 #define BIFROST_HASH_MAP_H

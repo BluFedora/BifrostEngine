@@ -137,13 +137,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp"
   "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
 
-  # Bifrost Math Module
-  "src/bifrost/math/bifrost_camera.c"
-  "src/bifrost/math/bifrost_mat4x4.c"
-  "src/bifrost/math/bifrost_transform.c"
-  "src/bifrost/math/bifrost_vec2.c"
-  "src/bifrost/math/bifrost_vec3.c"
-
   # Bifrost Memory Module
   "src/bifrost/memory/bifrost_c_allocator.cpp"
   "src/bifrost/memory/bifrost_freelist_allocator.cpp"
@@ -168,13 +161,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
  )
 # set(GAME200_SOURCES_FILES game/main.cpp lib/include/glad/glad.c)
 
-# add_subdirectory("engine")
-# add_subdirectory("${GAME200_PROJECT_LIB_DIR}/include/glm")
-# add_subdirectory("unit_tests")
-# add_subdirectory("game")
-
-# NOTE(Shareef):
-#   Add the libraries we are linking against to the target.
+# NOTE(Shareef): Add the libraries we are linking against to the target.
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenCL)
@@ -187,10 +174,8 @@ include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
-target_link_libraries(
-  BifrostEngine PRIVATE
-  BifrostScript_shared
-)
+target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
+target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)
 
 # NOTE(Shareef): Allows Visual Studio to detect the use of C++17 while doing static analysis.
 set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
@@ -272,6 +257,7 @@ endif()
 if (WIN32)
 	configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
   configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
+  configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
@@ -286,3 +272,4 @@ endif()
 
 add_subdirectory(include/bifrost/graphics/)
 add_subdirectory(BifrostScript)
+add_subdirectory(BifrostMath)

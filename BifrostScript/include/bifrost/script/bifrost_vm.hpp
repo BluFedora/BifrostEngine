@@ -18,13 +18,14 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
-#include "bifrost_vm.h"                          /* bfVM_*                   */
-#include "meta/bifrost_meta_function_traits.hpp" /* function_traits          */
-#include "meta/bifrost_meta_utils.hpp"           /* for_each                 */
-#include "utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
-#include <string>                                /* string                   */
-#include <tuple>                                 /* tuple                    */
-#include <type_traits>                           /* decay_t, is_arithmetic_v */
+#include "bifrost/data_structures/bifrost_string.hpp" /* */
+#include "bifrost_vm.h"                               /* bfVM_*                   */
+#include "meta/bifrost_meta_function_traits.hpp"      /* function_traits          */
+#include "meta/bifrost_meta_utils.hpp"                /* for_each                 */
+#include "utility/bifrost_non_copy_move.hpp"          /* bfNonCopyMoveable        */
+#include <string>                                     /* string                   */
+#include <tuple>                                      /* tuple                    */
+#include <type_traits>                                /* decay_t, is_arithmetic_v */
 
 namespace bifrost
 {
@@ -269,7 +270,7 @@ namespace bifrost
 
   struct VMParams final : public BifrostVMParams
   {
-    explicit VMParams() :
+    explicit VMParams() noexcept :
       BifrostVMParams()
     {
       bfVMParams_init(this);
@@ -283,7 +284,7 @@ namespace bifrost
     BifrostVM* m_Self;
 
    public:
-    explicit VMView(BifrostVM* self) :
+    explicit VMView(BifrostVM* self) noexcept :
       m_Self{self}
     {
     }
@@ -294,7 +295,7 @@ namespace bifrost
     VMView& operator=(VMView&& rhs) = default;
     ~VMView()                       = default;
 
-    [[nodiscard]] BifrostVM*       self() { return m_Self; }
+    [[nodiscard]] BifrostVM*       self() noexcept { return m_Self; }
     [[nodiscard]] const BifrostVM* self() const noexcept { return m_Self; }
     operator BifrostVM*() const { return m_Self; }
     [[nodiscard]] bool isValid() const noexcept { return m_Self != nullptr; }

@@ -1,22 +1,3 @@
-// Languague Spec Ref
-//   return and break: https://www.lua.org/pil/4.4.htm
-//
-
-//
-// Instanciating Objects:
-//   to make a new instance of an class call new
-//   on the class. EX:
-//     var instance = new ClassName;
-//
-//   To call the constructor you must add parenthesis like a function call:
-//     var instance = new ClassName(...args...);
-//
-//   By default a fuction named 'ctor' will be called but to call
-//   a custom constructor you must specify it's name ex:
-//
-//     var instance = new ClassName.custom_name();
-//
-
 // This is an import for the standard math lib
 // asking for the 'math_print' function.
 import "std:math"                       for math_print;

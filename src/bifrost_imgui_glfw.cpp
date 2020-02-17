@@ -79,7 +79,7 @@ namespace bifrost::editor::imgui
     bfVertexLayoutSetHandle vertex_layout;
     bfShaderModuleHandle    vertex_shader;
     bfShaderModuleHandle    fragment_shader;
-    UIFrameData             buffers[3]; // TODO(Shareef): This needs to read from The GfxContexts number of frames.
+    UIFrameData             buffers[3]; // TODO(Shareef): This needs to read from The GfxContext's number of frames.
     bfTextureHandle         font;
     bfShaderProgramHandle   program;
   };
@@ -319,7 +319,9 @@ namespace bifrost::editor::imgui
     bfGfxCmdList_setDynamicStates(command_list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
     bfGfxCmdList_bindVertexDesc(command_list, s_RenderData.vertex_layout);
     bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame.vertex_buffer, 1, &buffer_offset);
+    // ReSharper disable CppUnreachableCode
     bfGfxCmdList_bindIndexBuffer(command_list, frame.index_buffer, 0, sizeof(ImDrawIdx) == 2 ? BIFROST_INDEX_TYPE_UINT16 : BIFROST_INDEX_TYPE_UINT32);
+    // ReSharper restore CppUnreachableCode
     bfGfxCmdList_bindProgram(command_list, s_RenderData.program);
     bfGfxCmdList_bindDescriptorSets(command_list, 0, &frame.descriptor_set, 1);
     bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);

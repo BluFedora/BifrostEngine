@@ -14,7 +14,6 @@ Then in Start you can assume all 'Awake's have been called so that you can do so
 
 * Unity Requires that script files have a class with the same name as the file otherwise there is a rejection of adding it to an object.
 
-
 ----- Action List Design -----
 
 The message board is not needed since the state could have been stored in the behavior itself.

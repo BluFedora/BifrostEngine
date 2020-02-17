@@ -59,12 +59,17 @@ include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/include)
 add_library(
   BifrostScript STATIC
   ${BIFROST_SCRIPT_SOURCE_FILES}
+  "../src/bifrost/data_structures/bifrost_array_t.c"
+  "../src/bifrost/data_structures/bifrost_dynamic_string.c"
+  "../src/bifrost/data_structures/bifrost_hash_map.c"
 )
 
 target_include_directories(
   BifrostScript PUBLIC
   ${PROJECT_SOURCE_DIR}/include
 )
+
+target_compile_definitions(BifrostScript PRIVATE BIFROST_VM_EXPORT_STATIC)
 
 set_target_properties(BifrostScript PROPERTIES OUTPUT_NAME BifrostScript_static)
 set_target_properties(BifrostScript PROPERTIES VERSION ${PROJECT_VERSION})
@@ -75,7 +80,7 @@ set_target_properties(BifrostScript PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${
 
 # Shared Library Setttings
 
-# project(BifrostScript_shared VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
+project(BifrostScript_shared VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
 
 add_library(
   BifrostScript_shared SHARED
@@ -92,3 +97,21 @@ target_include_directories(BifrostScript_shared
 
 target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
 set_target_properties(BifrostScript_shared PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
+
+# Command Line Interface
+
+project(BifrostScript_cli DESCRIPTION "Command line interface for interacting with the vm.")
+
+add_executable(
+  BifrostScript_cli
+  "vm_command_line.cpp"
+)
+
+set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
+
+target_compile_definitions(BifrostScript_cli PRIVATE BIFROST_VM_EXPORT_STATIC)
+
+
+target_link_libraries(BifrostScript_cli PRIVATE BifrostScript)

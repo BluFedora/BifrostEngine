@@ -1,6 +1,8 @@
 #ifndef vec3f_h
 #define vec3f_h
 
+#include "bifrost_math_export.h"
+
 #if _MSC_VER
 #define ALIGN_STRUCT(n) __declspec(align(n))
 #else  // Clang and GCC
@@ -78,22 +80,22 @@ typedef struct Recti_t
 
 } Recti;
 
-void  Vec3f_set(Vec3f* self, float x, float y, float z, float w);
-void  Vec3f_copy(Vec3f* self, const Vec3f* other);
-int   Vec3f_isEqual(const Vec3f* self, const Vec3f* other);
-void  Vec3f_add(Vec3f* self, const Vec3f* other);
-void  Vec3f_addScaled(Vec3f* self, const Vec3f* other, const float factor);
-void  Vec3f_sub(Vec3f* self, const Vec3f* other);
-void  Vec3f_mul(Vec3f* self, const float scalar);
-void  Vec3f_multV(Vec3f* self, const Vec3f* other); // Component wise mult
-void  Vec3f_div(Vec3f* self, const float scalar);
-float Vec3f_lenSq(const Vec3f* self);
-float Vec3f_len(const Vec3f* self);
-void  Vec3f_normalize(Vec3f* self);
-float Vec3f_dot(const Vec3f* self, const Vec3f* other);
-void  Vec3f_cross(const Vec3f* self, const Vec3f* other, Vec3f* output);
-void  Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix);
-Color Vec3f_toColor(const Vec3f* self);
+BIFROST_MATH_API void  Vec3f_set(Vec3f* self, float x, float y, float z, float w);
+BIFROST_MATH_API void  Vec3f_copy(Vec3f* self, const Vec3f* other);
+BIFROST_MATH_API int   Vec3f_isEqual(const Vec3f* self, const Vec3f* other);
+BIFROST_MATH_API void  Vec3f_add(Vec3f* self, const Vec3f* other);
+BIFROST_MATH_API void  Vec3f_addScaled(Vec3f* self, const Vec3f* other, const float factor);
+BIFROST_MATH_API void  Vec3f_sub(Vec3f* self, const Vec3f* other);
+BIFROST_MATH_API void  Vec3f_mul(Vec3f* self, const float scalar);
+BIFROST_MATH_API void  Vec3f_multV(Vec3f* self, const Vec3f* other); // Component wise mult
+BIFROST_MATH_API void  Vec3f_div(Vec3f* self, const float scalar);
+BIFROST_MATH_API float Vec3f_lenSq(const Vec3f* self);
+BIFROST_MATH_API float Vec3f_len(const Vec3f* self);
+BIFROST_MATH_API void  Vec3f_normalize(Vec3f* self);
+BIFROST_MATH_API float Vec3f_dot(const Vec3f* self, const Vec3f* other);
+BIFROST_MATH_API void  Vec3f_cross(const Vec3f* self, const Vec3f* other, Vec3f* output);
+BIFROST_MATH_API void  Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix);
+BIFROST_MATH_API Color Vec3f_toColor(const Vec3f* self);
 
 // Color API
 typedef enum EColor_t
@@ -243,15 +245,15 @@ typedef enum EColor_t
 
 } EColor;
 
-uchar Color_r(const Color self);
-uchar Color_g(const Color self);
-uchar Color_b(const Color self);
-uchar Color_a(const Color self);
-void  Color_setRGBA(Color* self, const uchar r, const uchar g, const uchar b, const uchar a);
-void  Color_setR(Color* self, const uint r);
-void  Color_setG(Color* self, const uint g);
-void  Color_setB(Color* self, const uint b);
-void  Color_setA(Color* self, const uint a);
+BIFROST_MATH_API uchar Color_r(const Color self);
+BIFROST_MATH_API uchar Color_g(const Color self);
+BIFROST_MATH_API uchar Color_b(const Color self);
+BIFROST_MATH_API uchar Color_a(const Color self);
+BIFROST_MATH_API void  Color_setRGBA(Color* self, const uchar r, const uchar g, const uchar b, const uchar a);
+BIFROST_MATH_API void  Color_setR(Color* self, const uint r);
+BIFROST_MATH_API void  Color_setG(Color* self, const uint g);
+BIFROST_MATH_API void  Color_setB(Color* self, const uint b);
+BIFROST_MATH_API void  Color_setA(Color* self, const uint a);
 
 #if __cplusplus
 }

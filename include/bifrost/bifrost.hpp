@@ -39,7 +39,7 @@
 #include "graphics/bifrost_gfx_api.h"
 
 // Math
-#include "bifrost_math.h"
+#include "bifrost/bifrost_math.h"
 
 // Meta
 #include "meta/bifrost_meta_runtime.hpp"

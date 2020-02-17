@@ -1,7 +1,6 @@
 TODO:
 	Search for 'CUSTOM_ALLOC' for any hacks in the Vulkan Gfx Backend.
 
-
 > Multiviewport / Viewport Array requires Geometry shader. So it's practically useless.
 
 Platforms (Game Wise) that C/C++ Can Target:

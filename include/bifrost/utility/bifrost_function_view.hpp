@@ -2,7 +2,6 @@
 #define BIFROST_FUNCTION_VIEW_HPP
 
 #include <optional> /* optional<T>  */
-#include <utility>  /* pair<T1, T2> */
 
 namespace bifrost
 {
@@ -12,7 +11,7 @@ namespace bifrost
   template<typename R, typename... Args>
   class FunctionView<R(Args...)>
   {
-   public:
+   private:
     using InstancePtr = void*;
     using FunctionPtr = R (*)(Args...);
 
@@ -21,14 +20,19 @@ namespace bifrost
     template<typename C>
     using ConstMemberFunctionPtr = R (C::*)(Args...) const;
     using ErasedFunctionPtr      = R (*)(InstancePtr, Args...);
-    using FunctionPair           = std::pair<InstancePtr, ErasedFunctionPtr>;
+
+    struct FunctionPair final
+    {
+      InstancePtr       first;
+      ErasedFunctionPtr second;
+    };
 
    private:
     FunctionPair m_Callback;
 
    public:
     FunctionView() :
-      m_Callback(nullptr, nullptr)
+      m_Callback{nullptr, nullptr}
     {
     }
 
@@ -88,108 +92,53 @@ namespace bifrost
     {
       using OptionalReturn = std::optional<R>;
 
-      if (m_Callback.second)
+      if constexpr (std::is_same_v<void, R>)
       {
-        if constexpr (std::is_same_v<void, R>)
+        if (m_Callback.second)
         {
           call(std::forward<Args>(args)...);
         }
-        else
-        {
-          return OptionalReturn{call(std::forward<Args>(args)...)};
-        }
       }
-
-      if constexpr (!std::is_same_v<void, R>)
+      else
       {
-        return OptionalReturn{};
+        return m_Callback.second ? OptionalReturn{call(std::forward<Args>(args)...)} : OptionalReturn{};
       }
     }
 
     R call(Args&&... args) const
     {
-      /*
-      if constexpr (std::is_same_v<void, R>)
-      {
-        (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
-      }
-      else
-      {
-        return (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
-      }
-      */
       return (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
     }
 
    private:
     static decltype(auto) c_ptr_function_wrapper(InstancePtr instance, Args... args)
     {
-      /*
-      if constexpr (std::is_same_v<void, R>)
-      {
-        reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
-      }
-      else
-      {
-        return reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
-      }
-      */
-
       return reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
     }
 
     template<typename F>
     static decltype(auto) lambda_function_wrapper(InstancePtr instance, Args... args)
     {
-      if constexpr (std::is_same_v<void, R>)
-      {
-        (*reinterpret_cast<F*>(instance))(std::forward<Args>(args)...);
-      }
-      else
-      {
-        return (*reinterpret_cast<F*>(instance))(std::forward<Args>(args)...);
-      }
+      return (*reinterpret_cast<F*>(instance))(std::forward<Args>(args)...);
     }
 
     template<FunctionPtr callback>
     static decltype(auto) c_function_wrapper(InstancePtr instance, Args... args)
     {
       (void)instance;
-
-      if constexpr (std::is_same_v<void, R>)
-      {
-        callback(std::forward<Args>(args)...);
-      }
-      else
-      {
-        return callback(std::forward<Args>(args)...);
-      }
+      return callback(std::forward<Args>(args)...);
     }
 
     template<typename Clz, MemberFunctionPtr<Clz> callback>
     static decltype(auto) member_function_wrapper(InstancePtr instance, Args... args)
     {
-      if constexpr (std::is_same_v<void, R>)
-      {
-        (static_cast<Clz*>(instance)->*callback)(std::forward<Args>(args)...);
-      }
-      else
-      {
-        return (static_cast<Clz*>(instance)->*callback)(std::forward<Args>(args)...);
-      }
+      return (static_cast<Clz*>(instance)->*callback)(std::forward<Args>(args)...);
     }
 
     template<typename Clz, ConstMemberFunctionPtr<Clz> callback>
     static decltype(auto) const_member_function_wrapper(InstancePtr instance, Args... args)
     {
-      if constexpr (std::is_same_v<void, R>)
-      {
-        (static_cast<const Clz*>(instance)->*callback)(std::forward<Args>(args)...);
-      }
-      else
-      {
-        return (static_cast<const Clz*>(instance)->*callback)(std::forward<Args>(args)...);
-      }
+      return (static_cast<const Clz*>(instance)->*callback)(std::forward<Args>(args)...);
     }
   };
 }  // namespace bifrost

@@ -1,9 +1,10 @@
 #ifndef camera_h
 #define camera_h
 
-#include "bifrost_mat4x4.h" /* Mat4x4       */
-#include "bifrost_vec2.h"   /* Vec2i        */
-#include "bifrost_vec3.h"   /* Vec3f, Rectf */
+#include "bifrost_mat4x4.h"      /* Mat4x4       */
+#include "bifrost_math_export.h" /* BIFROST_MATH_API */
+#include "bifrost_vec2.h"        /* Vec2i        */
+#include "bifrost_vec3.h"        /* Vec3f, Rectf */
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,22 +78,22 @@ typedef struct Camera_t
 
 } Camera;
 
-void  Camera_init(Camera* cam, const Vec3f* const pos, const Vec3f* const world_up, float yaw, float pitch);
-void  Camera_update(Camera* cam);
-void  Camera_move(Camera* cam, const Vec3f* dir, float amt);
-void  Camera_moveLeft(Camera* cam, float amt);
-void  Camera_moveRight(Camera* cam, float amt);
-void  Camera_moveUp(Camera* cam, float amt);
-void  Camera_moveDown(Camera* cam, float amt);
-void  Camera_moveForward(Camera* cam, float amt);
-void  Camera_moveBackward(Camera* cam, float amt);
-void  Camera_addPitch(Camera* cam, float amt);
-void  Camera_addYaw(Camera* cam, float amt);
-void  Camera_mouse(Camera* cam, float offsetx, float offsety);
-void  Camera_setFovY(Camera* cam, const float value);
-void  Camera_onResize(Camera* cam, uint width, uint height);
-void  Camera_setProjectionModified(Camera* cam);
-Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size);
+BIFROST_MATH_API void  Camera_init(Camera* cam, const Vec3f* const pos, const Vec3f* const world_up, float yaw, float pitch);
+BIFROST_MATH_API void  Camera_update(Camera* cam);
+BIFROST_MATH_API void  Camera_move(Camera* cam, const Vec3f* dir, float amt);
+BIFROST_MATH_API void  Camera_moveLeft(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveRight(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveUp(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveDown(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveForward(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveBackward(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_addPitch(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_addYaw(Camera* cam, float amt);
+BIFROST_MATH_API void  Camera_mouse(Camera* cam, float offsetx, float offsety);
+BIFROST_MATH_API void  Camera_setFovY(Camera* cam, const float value);
+BIFROST_MATH_API void  Camera_onResize(Camera* cam, uint width, uint height);
+BIFROST_MATH_API void  Camera_setProjectionModified(Camera* cam);
+BIFROST_MATH_API Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size);
 #ifdef __cplusplus
 }
 #endif

@@ -33,8 +33,8 @@ namespace bifrost
 {
   // What 64 Characters look like:
   //   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-  static constexpr unsigned int BIFROST_RENDERPASS_DEBUG_NAME_LEN = 64u;
-  static constexpr unsigned int BIFROST_RESOURCE_NAME_LEN         = 128u;
+  static constexpr unsigned int  BIFROST_RENDERPASS_DEBUG_NAME_LEN = 64u;
+  static constexpr unsigned int  BIFROST_RESOURCE_NAME_LEN         = 128u;
   static constexpr std::uint32_t INVALID_BARRIER_IDX               = std::numeric_limits<std::uint32_t>::max();
 
   class RenderGraph;
@@ -91,7 +91,7 @@ namespace bifrost
 
   struct BarrierRef
   {
-    BarrierType type  = BarrierType::EXECUTION;
+    BarrierType   type  = BarrierType::EXECUTION;
     std::uint32_t index = INVALID_BARRIER_IDX;
 
     [[nodiscard]] bool isValid() const
@@ -232,9 +232,9 @@ namespace bifrost
 
   struct BufferDesc final
   {
-    typename BufferUsage::type usage  = BufferUsage::STORAGE_COMPUTE;
-    bfBufferSize               offset = 0;
-    bfBufferSize               size   = BIFROST_BUFFER_WHOLE_SIZE;
+    BufferUsage::type usage  = BufferUsage::STORAGE_COMPUTE;
+    bfBufferSize      offset = 0;
+    bfBufferSize      size   = BIFROST_BUFFER_WHOLE_SIZE;
 
     std::uint32_t pipelineStage() const
     {
