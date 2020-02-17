@@ -1,3 +1,17 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_function_builder.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief 
+ *   The parser uses this API to generate instructions.
+ *   The output from this is an executable set of bytecode.
+ * 
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #ifndef BIFROST_VM_FUNCTION_BUILDER_H
 #define BIFROST_VM_FUNCTION_BUILDER_H
 

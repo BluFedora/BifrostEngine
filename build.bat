@@ -30,9 +30,6 @@ set CC_OPTIONS=-I../bifrost-core/bifrost_core^
  -Wdouble-promotion^
  -Wshadow^
  -Winline^
- -DBIFROST_MALLOC(size,align)="malloc((size))"^
- -DBIFROST_REALLOC(ptr,new_size,align)="realloc((ptr), new_size)"^
- -DBIFROST_FREE(ptr)="free((ptr))"^
  -c
 
 set CPPC_OPTIONS=-I../bifrost-core/bifrost_core^
@@ -52,9 +49,6 @@ set CPPC_OPTIONS=-I../bifrost-core/bifrost_core^
  -Wdouble-promotion^
  -Wshadow^
  -Winline^
- -DBIFROST_MALLOC(size,align)="malloc((size))"^
- -DBIFROST_REALLOC(ptr,new_size,align)="realloc((ptr), new_size)"^
- -DBIFROST_FREE(ptr)="free((ptr))"^
  -c
 
 rem g++ %CPPC_OPTIONS% main.cpp -o build/gcc/main_cpp.o || pause

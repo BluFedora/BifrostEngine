@@ -1,7 +1,21 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_obj.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief 
+ *   Handles the object's available to the vm runtime.
+ * 
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+/******************************************************************************/
 #ifndef BIFROST_VM_OBJ_H
 #define BIFROST_VM_OBJ_H
 
-#include "bifrost_vm.h"                                    /* bfNativeFnT, bfClassFinalizer, bfVMValue */
+#include "bifrost/script/bifrost_vm.h"                      /* bfNativeFnT, bfClassFinalizer, bfVMValue */
 #include <bifrost/data_structures/bifrost_dynamic_string.h> /* BifrostString, ConstBifrostString        */
 #include <bifrost/data_structures/bifrost_hash_map.h>       /* BifrostHashMap                           */
 

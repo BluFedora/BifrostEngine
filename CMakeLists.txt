@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.8)
 
   # NOTE(Shareef): This sets project's name.
-project(BifrostEngine)
+project(BifrostEngine VERSION 1.0)
 
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)

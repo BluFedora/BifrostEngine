@@ -45,7 +45,7 @@
 #include "meta/bifrost_meta_runtime.hpp"
 
 // Script
-#include "bifrost_vm.hpp"
+#include "bifrost/script/bifrost_vm.hpp"
 
 // Utility
 #include "utility/bifrost_non_copy_move.hpp"

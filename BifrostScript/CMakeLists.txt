@@ -14,7 +14,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories("${PROJECT_BINARY_DIR}")
 
-set(CMAKE_CXX_STANDARD     17)
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
@@ -57,9 +56,13 @@ include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/../include/bifrost)
 include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/include)
 
-# SHARED
 add_library(
   BifrostScript STATIC
+  ${BIFROST_SCRIPT_SOURCE_FILES}
+)
+
+add_library(
+  BifrostScript_shared SHARED
   ${BIFROST_SCRIPT_SOURCE_FILES}
 )
 

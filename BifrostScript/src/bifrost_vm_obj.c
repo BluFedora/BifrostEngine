@@ -1,3 +1,17 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_obj.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief 
+ *   Handles the object's available to the vm runtime.
+ * 
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+/******************************************************************************/
 #include "bifrost_vm_obj.h"
 
 #include <string.h>  // memset

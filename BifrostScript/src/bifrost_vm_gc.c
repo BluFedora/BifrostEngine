@@ -1,6 +1,53 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_gc.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @par
+ *    Bifrost Scriping Language
+ *
+ * @brief
+ *   A simple tracing garbage collector for the Bifrost Scripting Language.
+ *   This uses a very basic mark and sweep algorithm.
+ *
+ *   NOTE(Shareef):
+ *     The memory counted is exclusively what is allocated for objects and the VM
+ *     struct itself.
+ *     Ignored Allocations:
+ *       > Any Array allocation from the Bifrost Array Data Structure.
+ *       > Any HashMap allocation from the Bifrost Array Data Structure.
+ *       > Any Dynamic String from the Bifrost Array Data Structure.
+ *
+ *     To fix this we need :
+ *        > A unified memory model for both the scripting language
+ *          and the data structures. The problem is that architectually the data
+ *          structures are drop in libraries while the VM is a monolithic stateful
+ *          object leading to different ways of customizing allcoations.
+ *          If I do force the VM allocator on the data structures then if you
+ *          use the Bifrost Scripting Language part of the Library you are forced.
+ *          into it's memory model for the data structures.
+ *
+ *          (Maybe this is What Bifrost Needs??, Just one allocator for all.)
+ *            (This once again leads to global state of storing the allocators.)
+ *          (But then you a forced into the whole lib, that's the main problem.)
+ *
+ *        > To reimplement bare bone versions of the data structures just for the
+ *          VM but not being allowed to reuse that code would be VERY inconvenient.
+ *
+ *   References:
+ *     [http://journal.stuffwithstuff.com/2013/12/08/babys-first-garbage-collector/]
+ *
+ *    Something to Think About Language Design Wise.
+ *     [https://stackoverflow.com/questions/28320213/why-do-we-need-to-call-luas-collectgarbage-twice]
+ *
+ * @version 0.0.1-beta
+ * @date    2019-07-01
+ *
+ * @copyright Copyright (c) 2019 Shareef Raheem
+ */
+/******************************************************************************/
 #include "bifrost_vm_gc.h"
 
-#include "bifrost_vm.h"                               // BifrostVM_t
+#include "bifrost/script/bifrost_vm.h"                               // BifrostVM_t
 #include "bifrost/data_structures/bifrost_array_t.h"  // Array_size
 #include "bifrost_vm_function_builder.h"              // BifrostVMFunctionBuilder
 #include "bifrost_vm_obj.h"                           // BifrostObj

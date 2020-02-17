@@ -1,4 +1,24 @@
-#include "bifrost_vm.h"
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm.c
+ * @author Shareef Raheem (http://blufedora.github.io)
+ * @par
+ *    Bifrost Scripting Language
+ *    Dependencies:
+ *      > C99 or later.
+ *      > Bifrost Data Structures Library
+ *      > C Runtime Library
+ *
+ * @brief
+ *  The main API for the Bifrost Scripting Language.
+ *
+ * @version 0.0.1-beta
+ * @date    2019-07-01
+ *
+ * @copyright Copyright (c) 2019 Shareef Abdoul-Raheem
+ */
+/******************************************************************************/
+#include "bifrost/script/bifrost_vm.h"
 
 #include "bifrost_vm_debug.h"
 #include "bifrost_vm_gc.h"

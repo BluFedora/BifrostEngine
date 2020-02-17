@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_lexer.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Tokenizing helpers for strings.
+ *
+ * @version 0.0.1
+ * @date    2019-06-08
+ *
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #include "bifrost_vm_lexer.h"
 
 #include <ctype.h>  /* isdigit, isalpha, isspace */

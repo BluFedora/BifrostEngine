@@ -1,4 +1,22 @@
-// [http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/]
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_parser.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief 
+ *   Handles the pasring of the languages grammar and uses
+ *   the function builder to generate a function.   
+ * 
+ *   The output is a module with an executable function if the
+ *   parser ran into no issues.  
+ * 
+ *   References:
+ *     [http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/]
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #ifndef BIFROST_VM_PARSER_H
 #define BIFROST_VM_PARSER_H
 

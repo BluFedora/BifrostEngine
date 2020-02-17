@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_vm.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -13,6 +14,7 @@
  *
  * @copyright Copyright (c) 2020
  */
+/******************************************************************************/
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 

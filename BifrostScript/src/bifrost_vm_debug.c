@@ -1,7 +1,21 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_debug.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief  
+ *   This contains extra functions for dumping out internal vm
+ *   state into strings.
+ * 
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #include "bifrost_vm_debug.h"
 
-#include "bifrost_vm_obj.h"  //
-#include <stdio.h>           //sprintf
+#include "bifrost_vm_obj.h"  /* */
+#include <stdio.h>           /* sprintf */
 
 static inline void bfDbgIndentPrint(int indent);
 

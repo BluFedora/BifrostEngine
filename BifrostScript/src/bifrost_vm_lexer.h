@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_vm_lexer.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -9,6 +10,7 @@
  *
  * @copyright Copyright (c) 2020
  */
+/******************************************************************************/
 #ifndef BIFROST_VM_LEXER_H
 #define BIFROST_VM_LEXER_H
 

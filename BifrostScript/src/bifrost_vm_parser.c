@@ -1,10 +1,29 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_parser.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief 
+ *   Handles the pasring of the languages grammar and uses
+ *   the function builder to generate a function.   
+ * 
+ *   The output is a module with an executable function if the
+ *   parser ran into no issues.  
+ * 
+ *   References:
+ *     [http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/]
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #include "bifrost_vm_parser.h"
 
 #include "bifrost_vm_function_builder.h"
 #include "bifrost_vm_gc.h"
 #include "bifrost_vm_obj.h"
 #include <assert.h>
-#include <bifrost_vm.h>
+#include <bifrost/script/bifrost_vm.h>
 #include <bifrost/data_structures/bifrost_array_t.h>
 #include <bifrost/data_structures/bifrost_dynamic_string.h>
 #include <stdarg.h> /* va_list, va_start, va_copy, va_end */

@@ -101,8 +101,10 @@ namespace bifrost
 
       void move(void* const* src, void** dest) override
       {
-        (*reinterpret_cast<T**>(dest))->~T();
-        **reinterpret_cast<T**>(dest) = **reinterpret_cast<T* const*>(src);
+        T** t_star_star = reinterpret_cast<T**>(dest);
+
+        (*t_star_star)->~T();
+        **t_star_star = **reinterpret_cast<T* const*>(src);
       }
 
       void* get_value(void** src) override

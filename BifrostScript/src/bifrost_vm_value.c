@@ -1,3 +1,18 @@
+
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_value.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief 
+ *   Helpers for the value representation for the vm.
+ *   Uses Nan-Tagging for compact storage of objects.
+ * 
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #include "bifrost_vm_value.h"
 
 bfVMValue bfVMValue_fromBool(bfBool32 v)

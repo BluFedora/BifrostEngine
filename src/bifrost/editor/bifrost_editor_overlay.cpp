@@ -394,7 +394,7 @@ namespace bifrost::editor
     addMainMenuItem("Component", component_menu_items);
     addMainMenuItem("Help", help_menu_items);
 
-    enqueueDialog(make<WelcomeDialog>());
+    // enqueueDialog(make<WelcomeDialog>());
   }
 
   void EditorOverlay::onLoad(BifrostEngine& engine)

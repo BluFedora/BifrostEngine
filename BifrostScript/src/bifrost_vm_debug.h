@@ -1,3 +1,17 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_vm_debug.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief  
+ *   This contains extra functions for dumping out internal vm
+ *   state into strings.
+ * 
+ * @version 0.0.1
+ * @date    2020-02-16
+ * 
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #ifndef BIFROST_VM_DEBUG_H
 #define BIFROST_VM_DEBUG_H
 
