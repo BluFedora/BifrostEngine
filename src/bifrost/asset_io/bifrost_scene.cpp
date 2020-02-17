@@ -13,7 +13,7 @@ namespace bifrost
 
   void Scene::removeEntity(Entity* entity)
   {
-    m_Memory.dealloc_t(entity);
+    m_Memory.deallocateT(entity);
     m_RootEntities.removeAt(m_RootEntities.find(entity));
   }
 
@@ -21,12 +21,12 @@ namespace bifrost
   {
     for (auto* const comp_storage : m_ComponentStorage)
     {
-      m_Memory.dealloc_t(comp_storage);
+      m_Memory.deallocateT(comp_storage);
     }
   }
 
   Entity* Scene::createEntity(std::string_view name)
   {
-    return m_Memory.alloc_t<Entity>(*this, name);
+    return m_Memory.allocateT<Entity>(*this, name);
   }
 }  // namespace bifrost

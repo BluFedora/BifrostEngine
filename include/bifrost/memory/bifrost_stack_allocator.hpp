@@ -11,40 +11,38 @@
 #ifndef TIDE_STACK_ALLOCATOR_HPP
 #define TIDE_STACK_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp"  /* MemoryManager    */
+#include "bifrost_imemory_manager.hpp" /* MemoryManager    */
 
-#include <cstdint>              /* size_t, uint32_t */
+#include <cstdint> /* size_t, uint32_t */
 
 namespace bifrost
 {
   class StackAllocator : public MemoryManager
   {
-    private:
-      char*       m_StackPtr;
-      std::size_t m_MemoryLeft;
+   private:
+    char*       m_StackPtr;
+    std::size_t m_MemoryLeft;
 
-    public:
-      StackAllocator(char * const memory_block, const std::size_t memory_size);
+   public:
+    StackAllocator(char* const memory_block, const std::size_t memory_size);
 
-      inline size_t usedMemory() const { return size() - m_MemoryLeft; }
+    inline size_t usedMemory() const { return size() - m_MemoryLeft; }
 
-    public:
-      void* alloc(const std::size_t size, const std::size_t alignment)  override;
-      void  dealloc(void* ptr)                                          override;
+   public:
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
-    private:
-      class StackHeader
-      {
-        public:
-          std::size_t block_size;
-          std::size_t align_size;
+   private:
+    class StackHeader
+    {
+     public:
+      std::size_t block_size;
+      std::size_t align_size;
+    };
 
-      };
-
-    public:
-      static constexpr std::size_t header_size = sizeof(StackHeader);
-
+   public:
+    static constexpr std::size_t header_size = sizeof(StackHeader);
   };
-}
+}  // namespace bifrost
 
-#endif // TIDE_STACK_ALLOCATOR_HPP
+#endif  // TIDE_STACK_ALLOCATOR_HPP

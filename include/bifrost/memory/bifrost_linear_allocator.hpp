@@ -9,11 +9,11 @@
       that should happen at the beginning (or end) of each frame.
 */
 /******************************************************************************/
-#ifndef TIDE_LINEAR_ALLOCATOR_HPP
-#define TIDE_LINEAR_ALLOCATOR_HPP
+#ifndef BIFROST_LINEAR_ALLOCATOR_HPP
+#define BIFROST_LINEAR_ALLOCATOR_HPP
 
 #include "bifrost_imemory_manager.hpp" /* MemoryManager */
-#include <exception>                /* exception     */
+#include <exception>                   /* exception     */
 
 namespace bifrost
 {
@@ -21,52 +21,49 @@ namespace bifrost
 
   class linear_allocator_free : public std::exception
   {
-    public:
-      virtual const char* what() const noexcept(true);
-
+   public:
+    virtual const char* what() const noexcept(true);
   };
 
-  class LinearAllocator : public MemoryManager
+  class LinearAllocator final : public MemoryManager
   {
-      friend class LinearAllocatorScope;
+    friend class LinearAllocatorScope;
 
-    public:
-      static constexpr std::size_t header_size = 0u;
+   public:
+    static constexpr std::size_t header_size = 0u;
 
-    private:
-      std::size_t m_MemoryOffset;
+   private:
+    std::size_t m_MemoryOffset;
 
-    public:
-      LinearAllocator(char* memory_block, const std::size_t memory_block_size);
+   public:
+    LinearAllocator(char* memory_block, const std::size_t memory_block_size);
 
-      inline size_t usedMemory() const { return m_MemoryOffset; }
+    inline size_t usedMemory() const { return m_MemoryOffset; }
 
-      void  clear(void);
-      void* alloc(const std::size_t size, const std::size_t alignment)  override;
-      void  dealloc(void*)                                              override;
+    void  clear(void);
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
-    private:
-      char* currentBlock() const;
-
+   private:
+    char* currentBlock() const;
   };
 
   class LinearAllocatorScope
   {
-    private:
-      LinearAllocator& m_Allocator;
-      std::size_t      m_OldOffset;
+   private:
+    LinearAllocator& m_Allocator;
+    std::size_t      m_OldOffset;
 
-    public:
-      LinearAllocatorScope(LinearAllocator& allocator);
+   public:
+    LinearAllocatorScope(LinearAllocator& allocator);
 
-      LinearAllocatorScope(const LinearAllocatorScope& rhs)            = delete;
-      LinearAllocatorScope(LinearAllocatorScope&& rhs)                 = delete;
-      LinearAllocatorScope& operator=(const LinearAllocatorScope& rhs) = delete;
-      LinearAllocatorScope& operator=(LinearAllocatorScope&& rhs)      = delete;
+    LinearAllocatorScope(const LinearAllocatorScope& rhs) = delete;
+    LinearAllocatorScope(LinearAllocatorScope&& rhs)      = delete;
+    LinearAllocatorScope& operator=(const LinearAllocatorScope& rhs) = delete;
+    LinearAllocatorScope& operator=(LinearAllocatorScope&& rhs) = delete;
 
-      ~LinearAllocatorScope();
-
+    ~LinearAllocatorScope();
   };
-}
+}  // namespace bifrost
 
-#endif /* TIDE_LINEAR_ALLOCATOR_HPP */
+#endif /* BIFROST_LINEAR_ALLOCATOR_HPP */

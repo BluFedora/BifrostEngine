@@ -66,8 +66,8 @@ namespace bifrost
    public:
     PoolAllocator(void);
 
-    void* alloc(const std::size_t size, const std::size_t alignment) override;
-    void  dealloc(void* ptr) override;
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
     inline char*       begin() { return m_AllocBlock; }
     inline const char* begin() const { return m_AllocBlock; }
@@ -89,7 +89,7 @@ namespace bifrost
       header->next = nullptr;
     }
 
-  public:
+   public:
     inline void reset()
     {
       m_PoolStart = reinterpret_cast<PoolHeader*>(begin());
@@ -106,10 +106,9 @@ namespace bifrost
   }
 
   template<typename T, std::size_t num_elements>
-  void* PoolAllocator<T, num_elements>::alloc(const std::size_t size, const std::size_t alignment)
+  void* PoolAllocator<T, num_elements>::allocate(const std::size_t size)
   {
     assert(size == sizeof(T) && "This Allocator is made for Objects of one size!");
-    assert(alignment == alignof(T) && "This Allocator is made for Objects of one alignment!");
 
     PoolHeader* const header = m_PoolStart;
 
@@ -124,7 +123,7 @@ namespace bifrost
   }
 
   template<typename T, std::size_t num_elements>
-  void PoolAllocator<T, num_elements>::dealloc(void* ptr)
+  void PoolAllocator<T, num_elements>::deallocate(void* ptr)
   {
     PoolHeader* const header = reinterpret_cast<PoolHeader*>(ptr);
 
@@ -135,6 +134,6 @@ namespace bifrost
     header->next = m_PoolStart;
     m_PoolStart  = header;
   }
-}  // namespace tide
+}  // namespace bifrost
 
-#endif  /* TIDE_POOL_ALLOCATOR_HPP */
+#endif /* TIDE_POOL_ALLOCATOR_HPP */

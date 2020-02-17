@@ -327,7 +327,7 @@ void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t eleme
     allocator = &bfArray_mallocator;
   }
 
-  bfAssert(allocator, "bfArray_new_:: Must pass in  avalid allocator.");
+  bfAssert(allocator, "bfArray_new_:: Must pass in a valid allocator.");
   bfAssert(element_size, "bfArray_new_:: The struct size must be greater than 0.");
   bfAssert(element_alignment, "bfArray_new_:: The struct alignment must be greater than 0.");
   bfAssert(element_alignment < 256, "bfArray_new_:: The struct alignment must be less than 256.");

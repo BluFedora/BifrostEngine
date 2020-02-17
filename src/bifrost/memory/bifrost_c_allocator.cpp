@@ -14,14 +14,13 @@
 
 namespace bifrost
 {
-  CAllocator::CAllocator(void) :
+  CAllocator::CAllocator() :
     IMemoryManager()
   {
   }
 
-  void* CAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  void* CAllocator::allocate(std::size_t size)
   {
-    (void) alignment;
 #if 0
     return std::calloc(1, size);
 #else
@@ -29,8 +28,8 @@ namespace bifrost
 #endif
   }
 
-  void CAllocator::dealloc(void* ptr)
+  void CAllocator::deallocate(void* ptr)
   {
     std::free(ptr);
   }
-}
+}  // namespace bifrost

@@ -309,7 +309,9 @@ namespace bifrost::string_utils
 
   // NOTE(Shareef):
   //   The caller is responsible for freeing any memory this allocates.
+  //   Use 'IMemoryManager::deallcoate' or 'alloc_fmt_free'
   char* alloc_fmt(IMemoryManager& allocator, std::size_t* out, const char* fmt, ...);
+  void  free_fmt(IMemoryManager& allocator, char* ptr);
 }  // namespace bifrost::string_utils
 
-#endif  /* BIFROST_STRING_HPP */
+#endif /* BIFROST_STRING_HPP */

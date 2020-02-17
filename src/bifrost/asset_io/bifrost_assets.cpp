@@ -83,7 +83,7 @@ namespace bifrost
 
       #endif
 
-      DirectoryEntry* const entry = memory.alloc_t<DirectoryEntry>();
+      DirectoryEntry* const entry = memory.allocateT<DirectoryEntry>();
 
       entry->memory      = &memory;
       entry->file_handle = file_handle;
@@ -115,7 +115,7 @@ namespace bifrost
     void closeDirectory(DirectoryEntry* entry)
     {
       ::FindClose(entry->file_handle);
-      entry->memory->dealloc_t(entry);
+      entry->memory->deallocateT(entry);
     }
   }  // namespace path
 

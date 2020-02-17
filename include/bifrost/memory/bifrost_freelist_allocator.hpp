@@ -29,8 +29,8 @@ namespace bifrost
     inline std::size_t usedMemory() const { return m_UsedBytes; }
 
    public:
-    void* alloc(const std::size_t size, const std::size_t alignment) override;
-    void  dealloc(void* ptr) override;
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
    private:
     struct AllocationHeader

@@ -11,9 +11,9 @@
 /******************************************************************************/
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 
-#include <memory> /* align, memset */
+#include <memory> /* memset */
 
-#define cast(o, T)  reinterpret_cast<T>((o))
+#define cast(o, T) reinterpret_cast<T>((o))
 
 namespace bifrost
 {
@@ -26,7 +26,7 @@ namespace bifrost
     this->m_FreeList->size = memory_block_size - FreeListAllocator::header_size;
   }
 
-  void* FreeListAllocator::alloc(const std::size_t size, const std::size_t)
+  void* FreeListAllocator::allocate(std::size_t size)
   {
     FreeListNode* curr_node = this->m_FreeList;
     FreeListNode* prev_node = nullptr;
@@ -64,25 +64,21 @@ namespace bifrost
 
       AllocationHeader* header = reinterpret_cast<AllocationHeader*>(data);
 
-      header->size      = size;
+      header->size = size;
 
       m_UsedBytes += size + moved_fwd;
       return reinterpret_cast<char*>(data) + header_size;
-
-      return nullptr;
     }
 
     return nullptr;
   }
 
-  void FreeListAllocator::dealloc(void* ptr)
+  void FreeListAllocator::deallocate(void* ptr)
   {
-    if (!ptr) return;
+    AllocationHeader* const header = reinterpret_cast<AllocationHeader*>(reinterpret_cast<char*>(ptr) - header_size);
+    FreeListNode* const     node   = reinterpret_cast<FreeListNode*>(reinterpret_cast<char*>(header));
 
-    AllocationHeader* const header  = reinterpret_cast<AllocationHeader*>(reinterpret_cast<char*>(ptr) - header_size);
-    FreeListNode* const node        = reinterpret_cast<FreeListNode*>(reinterpret_cast<char*>(header));
-
-    const std::size_t block_size  = header->size;
+    const std::size_t block_size = header->size;
 
 #if DEBUG_MEMORY
     std::memset(ptr, DEBUG_MEMORY_SIGNATURE, block_size);
@@ -92,10 +88,10 @@ namespace bifrost
 
     m_UsedBytes -= node->size;
 
-    FreeListNode* current   = m_FreeList;
-    FreeListNode* previous  = nullptr;
-    void* const node_begin  = node->begin();
-    void* const node_end    = node->end();
+    FreeListNode* current    = m_FreeList;
+    FreeListNode* previous   = nullptr;
+    void* const   node_begin = node->begin();
+    void* const   node_end   = node->end();
 
     while (current)
     {
@@ -113,7 +109,7 @@ namespace bifrost
       }
 
       previous = current;
-      current = current->next;
+      current  = current->next;
     }
 
     if (current && current->begin() == node_end)
@@ -134,7 +130,7 @@ namespace bifrost
       }
       else
       {
-        node->next = previous->next;
+        node->next     = previous->next;
         previous->next = node;
       }
     }
@@ -144,6 +140,6 @@ namespace bifrost
       m_FreeList = node;
     }
   }
-}
+}  // namespace bifrost
 
 #undef cast

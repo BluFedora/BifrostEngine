@@ -139,7 +139,7 @@ namespace bifrost
 
       m_DeleteList->onUnload(m_Engine);
       m_DeleteList->onDestroy(m_Engine);
-      m_Memory.dealloc_t(m_DeleteList);
+      m_Memory.deallocateT(m_DeleteList);
 
       m_DeleteList = next;
     }

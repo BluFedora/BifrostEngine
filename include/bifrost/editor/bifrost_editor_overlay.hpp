@@ -136,7 +136,7 @@ namespace bifrost::editor
   template<typename T>
   void deallocateT(T* ptr)
   {
-    allocator().dealloc_t(ptr);
+    allocator().deallocateT(ptr);
   }
 
   template<typename T>

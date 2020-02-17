@@ -178,7 +178,7 @@ namespace bifrost::meta
         args[i.value] = arguments[i.value];
       });
 
-      Class* obj = static_cast<Class*>(memory.alloc(sizeof(Class), alignof(Class)));
+      Class* obj = static_cast<Class*>(memory.allocate(sizeof(Class)));
       construct_from_any(obj, args);
       return obj;
     }
@@ -210,8 +210,8 @@ namespace bifrost::meta
 
       m_IsArray = true;
 
-      m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<decltype(m_Size)>>(m_Size));
-      m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<decltype(m_Capacity)>>(m_Capacity));
+      m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<decltype(m_Size)>>(m_Size));
+      m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<decltype(m_Capacity)>>(m_Capacity));
     }
 
     BaseClassMetaInfo* containedType() const override;
@@ -267,8 +267,8 @@ namespace bifrost::meta
           {
             if (!s_Info)
             {
-              auto* info = gRttiMemory().alloc_t<ClassMetaInfo<T>>(member.name());
-              s_Info = info;
+              auto* info = gRttiMemory().allocateT<ClassMetaInfo<T>>(member.name());
+              s_Info     = info;
               info->populateFields();
             }
           }
@@ -279,15 +279,15 @@ namespace bifrost::meta
     }
   };
 
-#define TYPE_INFO_SPEC(T)                                                             \
-  template<>                                                                          \
-  struct TypeInfo<T>                                                                  \
-  {                                                                                   \
-    static BaseClassMetaInfo*& get()                                                  \
-    {                                                                                 \
-      static BaseClassMetaInfo* s_Info = gRttiMemory().alloc_t<ClassMetaInfo<T>>(#T); \
-      return s_Info;                                                                  \
-    }                                                                                 \
+#define TYPE_INFO_SPEC(T)                                                               \
+  template<>                                                                            \
+  struct TypeInfo<T>                                                                    \
+  {                                                                                     \
+    static BaseClassMetaInfo*& get()                                                    \
+    {                                                                                   \
+      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ClassMetaInfo<T>>(#T); \
+      return s_Info;                                                                    \
+    }                                                                                   \
   }
 
   TYPE_INFO_SPEC(std::byte);
@@ -321,7 +321,7 @@ namespace bifrost::meta
   {
     static BaseClassMetaInfo* get()
     {
-      static BaseClassMetaInfo* s_Info = gRttiMemory().alloc_t<ArrayClassMetaInfo<T>>();
+      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ArrayClassMetaInfo<T>>();
       return s_Info;
     }
   };
@@ -373,22 +373,22 @@ namespace bifrost::meta
 
       if constexpr (meta::is_ctor_v<MemberT>)
       {
-        m_Ctors.push(gRttiMemory().alloc_t<CtorMetaInfo<Class, MemberT>>());
+        m_Ctors.push(gRttiMemory().allocateT<CtorMetaInfo<Class, MemberT>>());
       }
 
       if constexpr (meta::is_field_v<MemberT>)
       {
-        m_Members.push(gRttiMemory().alloc_t<MemberMetaInfo<MemberT>>(member));
+        m_Members.push(gRttiMemory().allocateT<MemberMetaInfo<MemberT>>(member));
       }
 
       if constexpr (meta::is_property_v<MemberT>)
       {
-        m_Properties.push(gRttiMemory().alloc_t<PropertyMetaInfo<MemberT>>(member));
+        m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<MemberT>>(member));
       }
 
       if constexpr (meta::is_function_v<MemberT>)
       {
-        m_Methods.push(gRttiMemory().alloc_t<MethodMetaInfo<MemberT>>(member));
+        m_Methods.push(gRttiMemory().allocateT<MethodMetaInfo<MemberT>>(member));
       }
     });
   }

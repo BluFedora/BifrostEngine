@@ -24,8 +24,8 @@ namespace bifrost
     ProxyAllocator(IMemoryManager& real_allocator);
 
    public:
-    void* alloc(std::size_t size, std::size_t alignment) override;
-    void  dealloc(void* ptr) override;
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
    public:
     static constexpr std::size_t header_size = 0u;
@@ -40,8 +40,8 @@ namespace bifrost
     NoFreeAllocator(IMemoryManager& real_allocator);
 
    public:
-    void* alloc(std::size_t size, std::size_t alignment) override;
-    void  dealloc(void* ptr) override;
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
    public:
     static constexpr std::size_t header_size = 0u;

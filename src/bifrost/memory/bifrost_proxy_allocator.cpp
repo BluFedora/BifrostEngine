@@ -17,14 +17,14 @@ namespace bifrost
   {
   }
 
-  void* ProxyAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  void* ProxyAllocator::allocate(std::size_t size)
   {
-    return m_Impl.alloc(size, alignment);
+    return m_Impl.allocate(size);
   }
 
-  void ProxyAllocator::dealloc(void* ptr)
+  void ProxyAllocator::deallocate(void* ptr)
   {
-    m_Impl.dealloc(ptr);
+    m_Impl.deallocate(ptr);
   }
 
   NoFreeAllocator::NoFreeAllocator(IMemoryManager& real_allocator) :
@@ -32,12 +32,12 @@ namespace bifrost
   {
   }
 
-  void* NoFreeAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  void* NoFreeAllocator::allocate(const std::size_t size)
   {
-    return m_Impl.alloc(size, alignment);
+    return m_Impl.allocate(size);
   }
 
-  void NoFreeAllocator::dealloc(void* ptr)
+  void NoFreeAllocator::deallocate(void* ptr)
   {
     (void)ptr;
     // m_Impl.dealloc(ptr);

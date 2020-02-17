@@ -23,14 +23,13 @@ namespace bifrost
   {
   }
 
-  void* StackAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  void* StackAllocator::allocate(const std::size_t size)
   {
-    const auto        real_alignment   = std::max(alignof(StackHeader), alignment);
-    const std::size_t requested_memory = (size + sizeof(StackHeader));
+    const std::size_t requested_memory = size + sizeof(StackHeader);
     std::size_t       block_size       = m_MemoryLeft;
     void*             memory_start     = m_StackPtr;
 
-    if (requested_memory <= m_MemoryLeft && std::align(real_alignment, requested_memory, memory_start, block_size))
+    if (requested_memory <= m_MemoryLeft && std::align(alignof(StackHeader), requested_memory, memory_start, block_size))
     {
       StackHeader* header = reinterpret_cast<StackHeader*>(memory_start);
       header->block_size  = requested_memory;
@@ -44,15 +43,14 @@ namespace bifrost
       return reinterpret_cast<char*>(header) + sizeof(StackHeader);
     }
 
-    // __debugbreak();
     return nullptr;
   }
 
-  void StackAllocator::dealloc(void* ptr)
+  void StackAllocator::deallocate(void* ptr)
   {
     StackHeader* header      = reinterpret_cast<StackHeader*>(static_cast<char*>(ptr) - sizeof(StackHeader));
     const auto   full_size   = (header->block_size + header->align_size);
-    auto         block_start = reinterpret_cast<char*>(header) - header->align_size;
+    const auto   block_start = reinterpret_cast<char*>(header) - header->align_size;
 
     assert((block_start + full_size) == m_StackPtr &&
            "StackAllocator::dealloc : For this type of allocator you MUST deallocate in the reverse order of allocation.");
@@ -64,4 +62,4 @@ namespace bifrost
     std::memset(block_start, DEBUG_MEMORY_SIGNATURE, full_size);
 #endif
   }
-}  // namespace tide
+}  // namespace bifrost

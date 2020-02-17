@@ -195,7 +195,7 @@ namespace bifrost
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
                   "T must publicly derive from the 'bifrost::IGameStateLayer'.");
 
-    T* const state = m_Memory.alloc_t<T>(std::forward<Args>(args)...);
+    T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     pushImpl(state);
     return state;
   }
@@ -206,7 +206,7 @@ namespace bifrost
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
                   "T must publicly derive from the 'bifrost::IGameStateLayer'.");
 
-    T* const state = m_Memory.alloc_t<T>(std::forward<Args>(args)...);
+    T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     pushAfterImpl(after, state);
     return state;
   }
@@ -217,7 +217,7 @@ namespace bifrost
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
                   "T must publicly derive from the 'bifrost::IGameStateLayer'.");
 
-    T* const state = m_Memory.alloc_t<T>(std::forward<Args>(args)...);
+    T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     pushBeforeImpl(before, state);
     return state;
   }
@@ -228,7 +228,7 @@ namespace bifrost
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
                   "T must publicly derive from the 'bifrost::IGameStateLayer'.");
 
-    T* const state = m_Memory.alloc_t<T>(std::forward<Args>(args)...);
+    T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     addOverlayImpl(state);
     return state;
   }

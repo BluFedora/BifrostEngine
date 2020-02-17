@@ -21,29 +21,16 @@
 #define DEBUG_PATTERN_ALIGNMENT 0xFE
 #endif /* DEBUG_MEMORY */
 
-// [memory_returned][ptr_to_start_of_memory][aligned_memory][extra_memory]
-// Allocation:
-//static const size_t ptr_alloc = sizeof(void *);
-//static const size_t align_size = 64;
-//static const size_t request_size = sizeof(RingBuffer)+align_size;
-//static const size_t needed = ptr_alloc+request_size;
-//void * alloc = ::operator new(needed);
-//void *ptr = std::align(align_size, sizeof(RingBuffer),
-//                     alloc+ptr_alloc, request_size);
-//((void **)ptr)[-1] = alloc; // save for delete calls to use
-//return ptr;
-
-// Deallocation:
-//if (ptr)
-//{
-//       void * alloc = ((void **)ptr)[-1];
-//       ::operator delete (alloc);
-//}
-
 namespace bifrost
 {
   class IMemoryManager
   {
+   private:
+    struct ArrayHeader final
+    {
+      std::size_t size;
+    };
+
    protected:
     IMemoryManager(void) = default;
     ~IMemoryManager()    = default;
@@ -55,28 +42,52 @@ namespace bifrost
     IMemoryManager& operator=(const IMemoryManager& rhs) = delete;
     IMemoryManager& operator=(IMemoryManager&& rhs) = delete;
 
-    virtual void* alloc(const std::size_t size, const std::size_t alignment) = 0;
-    virtual void  dealloc(void* ptr)                                         = 0;
+    //-------------------------------------------------------------------------------------//
+    // Base Interface
+    //-------------------------------------------------------------------------------------//
+
+    virtual void* allocate(std::size_t size) = 0;
+    virtual void  deallocate(void* ptr)      = 0;
+
+    //-------------------------------------------------------------------------------------//
+    // Aligned API
+    //-------------------------------------------------------------------------------------//
+
+    void* allocateAligned(std::size_t size, std::size_t alignment);
+    void  deallocateAligned(void* ptr);
+
+    //-------------------------------------------------------------------------------------//
+    // Templated API
+    //-------------------------------------------------------------------------------------//
 
     template<typename T, typename... Args>
-    T* alloc_t(Args&&... args)
+    T* allocateT(Args&&... args)
     {
-      void* mem = alloc(sizeof(T), alignof(T));
+      void* const mem_block = allocate(sizeof(T));
 
-      if (mem)
-      {
-        return new (mem) T(std::forward<decltype(args)>(args)...);
-      }
-
-      return nullptr;
+      return mem_block ? new (mem_block) T(std::forward<decltype(args)>(args)...) : nullptr;
     }
 
-    template<typename T, typename... Args, typename std::enable_if<std::is_trivially_copyable<T>::value, T>::type* = nullptr>
-    T* alloc_array_t(const std::size_t num_elements, Args&&... args)
+    template<typename T>
+    void deallocateT(T* ptr)
+    {
+      if (ptr)
+      {
+        ptr->~T();
+        deallocate(ptr);
+      }
+    }
+
+    //-------------------------------------------------------------------------------------//
+    // Array API
+    //-------------------------------------------------------------------------------------//
+
+    template<typename T>
+    T* allocateArray(std::size_t num_elements, std::size_t element_alignment = alignof(T))
     {
       if (num_elements)
       {
-        T* const array_data = allocate_array<T>(num_elements);
+        T* const array_data = allocateArrayTrivial<T>(num_elements, element_alignment);
 
         if (array_data)
         {
@@ -85,7 +96,7 @@ namespace bifrost
 
           while (elements != elements_end)
           {
-            new (elements++) T(std::forward<decltype(args)>(args)...);
+            new (elements++) T();
           }
         }
 
@@ -95,35 +106,17 @@ namespace bifrost
       return nullptr;
     }
 
-    template<typename T, typename... Args, typename std::enable_if<!std::is_trivially_copyable<T>::value, T>::type* = nullptr>
-    T* alloc_array_t(const std::size_t num_elements, Args&&... args)
-    {
-      T* const array_data = allocate_array<T>(num_elements);
-
-      if (array_data)
-      {
-        T* elements = array_data;
-
-        for (std::size_t i = 0; i < num_elements; ++i)
-        {
-          new (elements++) T(std::forward<decltype(args)>(args)...);
-        }
-      }
-
-      return array_data;
-    }
-    /*
-    template<typename T>
-    T* alloc_array_t(const std::size_t num_elements)
+    template<typename T, typename std::enable_if<std::is_trivially_copyable<T>::value, T>::type* = nullptr>
+    T* allocateArrayTrivial(std::size_t num_elements, std::size_t element_alignment = alignof(T))
     {
       if (num_elements)
       {
-        T* array_data = allocate_array<T>(num_elements);
-        T* elements   = array_data;
+        T* const array_data = allocateAligned(sizeof(ArrayHeader), sizeof(T) * num_elements, element_alignment);
 
-        for (std::size_t i = 0; i < num_elements; ++i)
+        if (array_data)
         {
-          new (elements++) T();
+          ArrayHeader* header = grabHeader(sizeof(ArrayHeader), array_data);
+          header->size        = num_elements;
         }
 
         return array_data;
@@ -131,37 +124,43 @@ namespace bifrost
 
       return nullptr;
     }
-    */
-    //-------------------------------------------------------------------------------------//
-    // NOTE(Shareef): Counted Bytes API
-    //-------------------------------------------------------------------------------------//
 
-    void* alloc_counted_bytes(const std::size_t num_bytes, std::size_t alignment = 8)
-    {
-      return num_bytes ? allocate_array<unsigned char>(num_bytes, alignment) : nullptr;
-    }
-
-    void* reallocate(void* const old_ptr, std::size_t new_size, std::size_t new_alignment = 8)
+    template<typename T>
+    T* arrayResize(T* const old_ptr, std::size_t num_elements, std::size_t element_alignment = alignof(T))
     {
       if (!old_ptr)  // NOTE(Shareef): if old_ptr is null act as malloc
       {
-        return alloc_counted_bytes(new_size, new_alignment);
+        return allocateArray<T>(num_elements, element_alignment);
       }
 
-      if (new_size == 0)  // NOTE(Shareef): if new_size is zero act as 'free'
+      if (num_elements == 0)  // NOTE(Shareef): if new_size is zero act as 'free'
       {
-        dealloc(old_ptr);
+        deallocateArray(old_ptr);
       }
       else  // NOTE(Shareef): attempt to resize the allocation
       {
-        const std::size_t num_bytes_old = array_size(old_ptr);
+        ArrayHeader*      header   = grabHeader(sizeof(ArrayHeader), old_ptr);
+        const std::size_t old_size = header->size;
 
-        if (new_size > num_bytes_old)
+        if (num_elements > old_size)
         {
-          void* const new_mem = alloc_counted_bytes(new_size, new_alignment);
-          std::memcpy(new_mem, old_ptr, num_bytes_old);
-          return new_mem;
+          T* const new_ptr = allocateArrayTrivial<T>(num_elements, element_alignment);
+
+          for (std::size_t i = 0; i < old_size; ++i)
+          {
+            new (new_ptr + i) T(std::move(old_ptr[i]));
+          }
+
+          deallocateArray(old_ptr);
+
+          for (std::size_t i = old_size; i < num_elements; ++i)
+          {
+            new (new_ptr + i) T();
+          }
+
+          return new_ptr;
         }
+
         // NOTE(Shareef): The allocation did not need to be resized.
         return old_ptr;
       }
@@ -169,113 +168,26 @@ namespace bifrost
       return nullptr;
     }
 
-    void deallocate(void* ptr)
-    {
-      if (ptr)
-      {
-        dealloc(reinterpret_cast<char*>(ptr) - sizeof(std::size_t));
-      }
-    }
-
-    //-------------------------------------------------------------------------------------//
-
-    template<typename T, typename... Args>
-    T* realloc_array_t(T* oldPtr, std::size_t num_elements)
-    {
-      T* returned_value = (num_elements != 0) ? oldPtr : nullptr;
-
-      // NOTE(Shareef): reallocate if the old size is not big enough.
-      if (returned_value)
-      {
-        const std::size_t num_elements_old = array_size(oldPtr);
-
-        if (num_elements > num_elements_old)
-        {
-          returned_value = allocate_array<T>(num_elements);
-
-          std::memcpy(reinterpret_cast<char*>(returned_value),
-                      reinterpret_cast<char*>(oldPtr),
-                      num_elements_old * sizeof(T));
-
-          dealloc_array_t<T>(oldPtr);
-        }
-      }
-      // NOTE(Shareef): If oldPtr is nullptr then act as 'malloc'.
-      else if (!oldPtr)
-      {
-        returned_value = allocate_array<T>(num_elements);
-      }
-      // NOTE(Shareef): if num_elements is zero act as 'free'
-      else
-      {
-        dealloc_array_t<T>(oldPtr);
-      }
-
-      return returned_value;
-    }
-
     template<typename T>
-    static inline std::size_t array_size(const T* ptr)
+    void deallocateArray(T* ptr)
     {
-      if (ptr)
+      ArrayHeader* header       = grabHeader(sizeof(ArrayHeader), ptr);
+      T*           elements     = ptr;
+      T* const     elements_end = elements + header->size;
+
+      while (elements != elements_end)
       {
-        return *(reinterpret_cast<const std::size_t*>(ptr) - 1);
+        elements->~T();
+        ++elements;
       }
 
-      return 0;
-    }
-
-    template<typename T>
-    void dealloc_array_t(T* ptr)
-    {
-      if (ptr)
-      {
-        const std::size_t num_elements = array_size(ptr);
-
-        T* elements = ptr;
-
-        for (std::size_t i = 0; i < num_elements; ++i)
-        {
-          elements->~T();
-          ++elements;
-        }
-
-        deallocate(ptr);
-      }
-    }
-
-    template<typename T>
-    void dealloc_t(T* ptr)
-    {
-      if (ptr)
-      {
-        ptr->~T();
-        this->dealloc(ptr);
-      }
+      deallocateAligned(ptr);
     }
 
    private:
-    template<typename T>
-    T* allocate_array(const std::size_t num_elements, const std::size_t alignment = alignof(T))
-    {
-      T* returned_value = reinterpret_cast<T*>(alloc((sizeof(T) * num_elements) + sizeof(std::size_t), alignment));
-
-      if (returned_value)
-      {
-        (*reinterpret_cast<std::size_t*>(returned_value)) = num_elements;
-
-        return reinterpret_cast<T*>(reinterpret_cast<char*>(returned_value) + sizeof(std::size_t));
-      }
-
-      return nullptr;
-    }
-    /*
-    template<typename T>
-    T* allocate_array(const std::size_t num_elements)
-    {
-      return allocate_array<T>(num_elements, alignof(T));
-    }
-    */
+    void*        allocateAligned(std::size_t header_size, std::size_t size, std::size_t alignment);
+    static void* grabHeader(std::size_t header_size, void* ptr);
+    void         deallocateAligned(std::size_t header_size, void* ptr);
   };
 
   class MemoryManager : public IMemoryManager
@@ -283,7 +195,7 @@ namespace bifrost
    public:
     template<typename T,
              typename = std::enable_if_t<std::is_convertible<T*, IMemoryManager*>::value>>
-    static constexpr std::size_t header_size(void)
+    static constexpr std::size_t header_size()
     {
       return T::header_size;
     }
@@ -302,10 +214,10 @@ namespace bifrost
     MemoryManager& operator=(const MemoryManager& rhs) = delete;
     MemoryManager& operator=(MemoryManager&& rhs) = delete;
 
-    inline char*       begin() const { return this->m_MemoryBlockBegin; }
-    inline char*       end() const { return this->m_MemoryBlockEnd; }
-    inline std::size_t size() const { return end() - begin(); }
+    char*       begin() const { return m_MemoryBlockBegin; }
+    char*       end() const { return m_MemoryBlockEnd; }
+    std::size_t size() const { return end() - begin(); }
   };
-}  // namespace tide
+}  // namespace bifrost
 
 #endif /* IMEMORY_MANAGER_HPP */

@@ -15,19 +15,17 @@
 
 namespace bifrost
 {
-  class CAllocator : public IMemoryManager
+  class CAllocator final : public IMemoryManager
   {
-    public:
-      CAllocator(void);
+   public:
+    CAllocator(void);
 
-    public:
-      void* alloc(const std::size_t size, const std::size_t alignment)  override;
-      void  dealloc(void* ptr)                                          override;
+   public:
+    void* allocate(std::size_t size) override;
+    void  deallocate(void* ptr) override;
 
-    public:
-      static constexpr std::size_t header_size = 0u;
-
+    static constexpr std::size_t header_size = 0u;
   };
-}
+}  // namespace bifrost
 
-#endif // CALLOCATOR_HPP
+#endif  // CALLOCATOR_HPP

@@ -21,7 +21,7 @@ namespace bifrost::string_utils
 
     if (string_len > 0)
     {
-      buffer = static_cast<char*>(allocator.alloc(sizeof(char) * (string_len + std::size_t(1u)), alignof(char)));
+      buffer = static_cast<char*>(allocator.allocate(sizeof(char) * (string_len + std::size_t(1u))));
 
       if (buffer)
       {
@@ -39,5 +39,10 @@ namespace bifrost::string_utils
     }
 
     return buffer;
+  }
+
+  void free_fmt(IMemoryManager& allocator, char* ptr)
+  {
+    allocator.deallocate(ptr);
   }
 }  // namespace bifrost::string_utils

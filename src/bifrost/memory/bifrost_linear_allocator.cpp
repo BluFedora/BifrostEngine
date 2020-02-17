@@ -12,7 +12,6 @@
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
 
 // #include <new>    /* bad_alloc  */
-#include <memory> /* align      */
 
 namespace bifrost
 {
@@ -38,27 +37,21 @@ namespace bifrost
     m_MemoryOffset = 0;
   }
 
-  void* LinearAllocator::alloc(const std::size_t size, const std::size_t alignment)
+  void* LinearAllocator::allocate(const std::size_t size)
   {
     if (m_MemoryOffset < this->size())
     {
-      const std::size_t old_loc = end() - currentBlock();
-      std::size_t memory_left = old_loc;
-
       void* ptr = currentBlock();
 
-      if (std::align(alignment, size, ptr, memory_left))
-      {
-        m_MemoryOffset += size + (old_loc - memory_left);
-        return ptr;
-      }
+      m_MemoryOffset += size;
+      return ptr;
     }
 
     // throw std::bad_alloc();
     return nullptr;
   }
 
-  void LinearAllocator::dealloc(void*)
+  void LinearAllocator::deallocate(void*)
   {
     throw linear_allocator_free();
   }
@@ -78,4 +71,4 @@ namespace bifrost
   {
     m_Allocator.m_MemoryOffset = m_OldOffset;
   }
-}
+}  // namespace bifrost

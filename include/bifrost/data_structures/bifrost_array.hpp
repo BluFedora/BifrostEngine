@@ -25,12 +25,12 @@ namespace bifrost
 
       if (ptr)
       {
-        allocator->dealloc(ptr);
+        allocator->deallocate(ptr);
         ptr = nullptr;
       }
       else
       {
-        ptr = allocator->alloc(new_size, alignof(T));
+        ptr = allocator->allocate(new_size);
       }
 
       return ptr;

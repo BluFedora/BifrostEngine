@@ -36,19 +36,19 @@ namespace bifrost::editor
   template<typename T, typename... Args>
   T* make(Args&&... args)
   {
-    return allocator().alloc_t<T>(std::forward<Args>(args)...);
+    return allocator().allocateT<T>(std::forward<Args>(args)...);
   }
 
   namespace ui
   {
     MenuDropdown* makeDropdown(const char* name)
     {
-      return s_EditorMemory.alloc_t<MenuDropdown>(name, s_EditorMemory);
+      return s_EditorMemory.allocateT<MenuDropdown>(name, s_EditorMemory);
     }
 
     MenuAction* makeAction(const char* name, Action* action = nullptr)
     {
-      return s_EditorMemory.alloc_t<MenuAction>(name, action);
+      return s_EditorMemory.allocateT<MenuAction>(name, action);
     }
   }  // namespace ui
 

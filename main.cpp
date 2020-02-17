@@ -949,13 +949,13 @@ bool ImGUIOverlay::inspect(const char* label, Any& object, meta::BaseClassMetaIn
 
           for (std::size_t i = 0; i < size; ++i)
           {
-            auto* const idx_label = bifrost::string_utils::alloc_fmt(g_Engine->mainMemory(), nullptr, "%i", int(i));
+            auto* const idx_label = string_utils::alloc_fmt(g_Engine->mainMemory(), nullptr, "%i", int(i));
             auto        element   = info->arrayGetElementAt(object, i);
             if (inspect(idx_label, element, info->containedType()))
             {
               info->arraySetElementAt(object, i, element);
             }
-            g_Engine->mainMemory().dealloc(idx_label);
+            string_utils::free_fmt(g_Engine->mainMemory(), idx_label);
           }
         }
 
