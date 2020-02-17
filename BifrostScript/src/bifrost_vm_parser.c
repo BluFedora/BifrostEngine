@@ -4,7 +4,7 @@
 #include "bifrost_vm_gc.h"
 #include "bifrost_vm_obj.h"
 #include <assert.h>
-#include <bifrost/bifrost_vm.h>
+#include <bifrost_vm.h>
 #include <bifrost/data_structures/bifrost_array_t.h>
 #include <bifrost/data_structures/bifrost_dynamic_string.h>
 #include <stdarg.h> /* va_list, va_start, va_copy, va_end */

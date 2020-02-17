@@ -1,7 +1,7 @@
 #ifndef BIFROST_VM_OBJ_H
 #define BIFROST_VM_OBJ_H
 
-#include "bifrost/bifrost_vm.h"                             /* bfNativeFnT, bfClassFinalizer, bfVMValue */
+#include "bifrost_vm.h"                                    /* bfNativeFnT, bfClassFinalizer, bfVMValue */
 #include <bifrost/data_structures/bifrost_dynamic_string.h> /* BifrostString, ConstBifrostString        */
 #include <bifrost/data_structures/bifrost_hash_map.h>       /* BifrostHashMap                           */
 

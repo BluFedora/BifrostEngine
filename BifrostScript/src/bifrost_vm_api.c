@@ -1,4 +1,4 @@
-#include "bifrost/bifrost_vm.h"
+#include "bifrost_vm.h"
 
 #include "bifrost_vm_debug.h"
 #include "bifrost_vm_gc.h"

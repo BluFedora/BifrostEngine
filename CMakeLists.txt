@@ -137,9 +137,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp"
   "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
 
-  # Bfrost Script Module
-  "src/bifrost/script/bifrost_vm_build.c"
-
   # Bifrost Math Module
   "src/bifrost/math/bifrost_camera.c"
   "src/bifrost/math/bifrost_mat4x4.c"
@@ -190,6 +187,11 @@ include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
+target_link_libraries(
+  BifrostEngine PRIVATE
+  BifrostScript
+)
+
 # NOTE(Shareef): Allows Visual Studio to detect the use of C++17 while doing static analysis.
 set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
@@ -219,11 +221,11 @@ elseif (APPLE)
 	set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
 endif()
 
-target_link_libraries(BifrostEngine "${BIFROST_ENGINE_GLFW_LIB}")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_GLFW_LIB}")
 
 if (WIN32)
-  target_link_libraries(BifrostEngine "opengl32.lib")
-  target_link_libraries(BifrostEngine ${Vulkan_LIBRARY})
+  target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
+  target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARY})
 elseif (APPLE)
   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/libfmod.dylib")
@@ -231,11 +233,11 @@ elseif (APPLE)
   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_MACOS}/liblua.a")
 endif()
 
-target_link_libraries(BifrostEngine ${Vulkan_LIBRARIES})
+target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARIES})
 
 if(OpenCL_FOUND)
 	include_directories(${OPENCL_INCLUDE_DIR})
-	target_link_libraries(BifrostEngine OpenCL::OpenCL)
+	target_link_libraries(BifrostEngine PRIVATE OpenCL::OpenCL)
 	#target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
 	add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
 else()
@@ -282,3 +284,4 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
 endif()
 
 add_subdirectory(include/bifrost/graphics/)
+add_subdirectory(BifrostScript)

@@ -1,7 +1,7 @@
 #ifndef BIFROST_VM_VALUE_H
 #define BIFROST_VM_VALUE_H
 
-#include "bifrost/bifrost_vm.h" /* uint64_t, bfFloat64 */
+#include "bifrost_vm.h" /* uint64_t, bfFloat64 */
 
 #if __cplusplus
 extern "C" {

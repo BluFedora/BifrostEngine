@@ -1,6 +1,6 @@
 #include "bifrost_vm_gc.h"
 
-#include "bifrost/bifrost_vm.h"                       // BifrostVM_t
+#include "bifrost_vm.h"                               // BifrostVM_t
 #include "bifrost/data_structures/bifrost_array_t.h"  // Array_size
 #include "bifrost_vm_function_builder.h"              // BifrostVMFunctionBuilder
 #include "bifrost_vm_obj.h"                           // BifrostObj

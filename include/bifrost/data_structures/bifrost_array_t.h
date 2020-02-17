@@ -14,7 +14,7 @@
 
     The memory layout:
       [ArrayHeader (capacity | size | stride)][alignment-padding][allocation-offset]^[array-data (uint8_t*)]
-      '^' indicates the pointer you are handed back from the 'bfArray_new' function.
+      The '^' symbol indicates the pointer you are handed back from the 'bfArray_new' function.
 
     Memory Allocation Customization:
       To use your own allocator pass an allocation function to the array.
