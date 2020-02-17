@@ -13,8 +13,8 @@
  *    set of valid cases.
  */
 #define bfInvalidDefaultCase() \
-  default:                          \
-    __debugbreak();                 \
+  default:                     \
+    __debugbreak();            \
     __assume(0)
 
 #if __cplusplus
@@ -69,7 +69,6 @@ static bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
 #endif
 }
 
-  
 static bfStringRange bfMakeStringRangeC(const char* str)
 {
   const char* end = str;

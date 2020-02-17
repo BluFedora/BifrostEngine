@@ -8,7 +8,7 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostScript VERSION 0.1.3 DESCRIPTION "This si a toy comiler and virtual machine for my simple scripting langauge.")
+project(BifrostScript VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -61,11 +61,6 @@ add_library(
   ${BIFROST_SCRIPT_SOURCE_FILES}
 )
 
-add_library(
-  BifrostScript_shared SHARED
-  ${BIFROST_SCRIPT_SOURCE_FILES}
-)
-
 target_include_directories(
   BifrostScript PUBLIC
   ${PROJECT_SOURCE_DIR}/include
@@ -73,7 +68,27 @@ target_include_directories(
 
 set_target_properties(BifrostScript PROPERTIES OUTPUT_NAME BifrostScript_static)
 set_target_properties(BifrostScript PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(BifrostScript PROPERTIES PUBLIC_HEADER include/bifrost_vm.h)
+set_target_properties(BifrostScript PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
 set_target_properties(BifrostScript PROPERTIES CXX_STANDARD 17)
 set_target_properties(BifrostScript PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 # set_target_properties(BifrostScript PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
+
+# Shared Library Setttings
+
+# project(BifrostScript_shared VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
+
+add_library(
+  BifrostScript_shared SHARED
+  ${BIFROST_SCRIPT_SOURCE_FILES}
+  "../src/bifrost/data_structures/bifrost_array_t.c"
+  "../src/bifrost/data_structures/bifrost_dynamic_string.c"
+  "../src/bifrost/data_structures/bifrost_hash_map.c"
+)
+
+target_include_directories(BifrostScript_shared
+    INTERFACE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
+set_target_properties(BifrostScript_shared PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)

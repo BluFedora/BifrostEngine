@@ -189,7 +189,7 @@ add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
 target_link_libraries(
   BifrostEngine PRIVATE
-  BifrostScript
+  BifrostScript_shared
 )
 
 # NOTE(Shareef): Allows Visual Studio to detect the use of C++17 while doing static analysis.
@@ -270,7 +270,8 @@ endif()
   # NOTE(Shareef): Automatically copy the needed dlls to the output directory
 
 if (WIN32)
-	configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"   "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
+	configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
+  configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits

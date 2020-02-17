@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_vm.c
+ * @file   bifrost_vm_api.c
  * @author Shareef Raheem (http://blufedora.github.io)
  * @par
  *    Bifrost Scripting Language
