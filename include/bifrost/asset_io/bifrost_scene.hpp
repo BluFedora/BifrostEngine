@@ -109,7 +109,7 @@ namespace bifrost
       {
         m_ComponentStorage.resize(cid + 1);
 
-        m_ComponentStorage[cid] = m_Memory.alloc_t<ComponentStorage<T>>(m_Memory);
+        m_ComponentStorage[cid] = m_Memory.allocateT<ComponentStorage<T>>(m_Memory);
       }
 
       return m_ComponentStorage[cid]->createComponent(owner);

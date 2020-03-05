@@ -74,6 +74,25 @@ bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
     return lhs_num == rhs_num;
   }
 
+  if (IS_POINTER(lhs) && IS_POINTER(rhs))
+  {
+    BifrostObj* const lhs_obj = BIFROST_AS_OBJ(lhs);
+    BifrostObj* const rhs_obj = BIFROST_AS_OBJ(rhs);
+
+    if (lhs_obj->type == rhs_obj->type)
+    {
+      if (lhs_obj->type == BIFROST_VM_OBJ_STRING)
+      {
+        BifrostObjStr* const lhs_string = (BifrostObjStr*)lhs_obj;
+        BifrostObjStr* const rhs_string = (BifrostObjStr*)rhs_obj;
+
+        return lhs_string->hash == rhs_string->hash && String_cmp(lhs_string->value, rhs_string->value) == 0;
+      }
+    }
+
+    return bfFalse;
+  }
+
   // TODO(Shareef): Specilize things more than just numbers
   return lhs == rhs;
 }

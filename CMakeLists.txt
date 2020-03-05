@@ -41,20 +41,20 @@ set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 # NOTE(Shareef): Print out some CMake Info.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
-		message(STATUS "We are building a DEBUG 64bit build...")
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-		message(STATUS "We are building a DEBUG 32bit build...")
-	endif()
+    message(STATUS "We are building a DEBUG 64bit build...")
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
+    message(STATUS "We are building a DEBUG 32bit build...")
+  endif()
 else()
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
-	  message(STATUS "We are building a RELEASE 64bit build...")
+    message(STATUS "We are building a RELEASE 64bit build...")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-	 message(STATUS "We are building a RELEASE build...")
+   message(STATUS "We are building a RELEASE build...")
   endif()
 endif()
 
   # NOTE(Shareef): Setting the compiler flags we will be using.
-  #    
+  #
   #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
   #   "/WX"   - treat warnings as errors.
   #   "/EHsc" - is for enabling C++ exceptions which we will NOT be using.
@@ -69,7 +69,6 @@ endif()
   #                  addresses. ("Eliminate Duplicate Strings")
   #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
-  #
 if (WIN32)
   set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
   set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
@@ -99,6 +98,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_win.cpp"
 
   # Bifrost Asset Module
+  "src/bifrost/asset_io/bifrost_asset_handle.cpp"
   "src/bifrost/asset_io/bifrost_assets.cpp"
   "src/bifrost/asset_io/bifrost_file.cpp"
   "src/bifrost/asset_io/bifrost_json_parser.cpp"
@@ -127,8 +127,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_gfx_common.c"
-  ## OpenGL Backend
-  # "src/bifrost/graphics/bifrost_gfx_opengl.cpp"
   ## Vulkan Backend
   "src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp"
   "src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c"
@@ -190,20 +188,20 @@ set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${
 ## add_compile_definitions( "dummyDefine=0 /DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /GR /EHsc /std:c++17 /Zc:__cplusplus /DDummy2")
 
 if (WIN32)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
 
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
-		set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-		set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win32")
-		set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
-		set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
-	endif()
-	set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
+    set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win32")
+    set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
+    set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
+  endif()
+  set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
 elseif (APPLE)
-	set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
-	set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
+  set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
+  set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
 endif()
 
 target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_GLFW_LIB}")
@@ -221,41 +219,41 @@ endif()
 target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARIES})
 
 if(OpenCL_FOUND)
-	include_directories(${OPENCL_INCLUDE_DIR})
-	target_link_libraries(BifrostEngine PRIVATE OpenCL::OpenCL)
-	#target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
-	add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
+  include_directories(${OPENCL_INCLUDE_DIR})
+  target_link_libraries(BifrostEngine PRIVATE OpenCL::OpenCL)
+  #target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
+  add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
 else()
-	add_compile_definitions(BIFROST_COMPUTE_OPENCL=0)
+  add_compile_definitions(BIFROST_COMPUTE_OPENCL=0)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
-		# target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/lua53.lib")
-		# target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/fmodL64_vc.lib")
-		# target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/glfw3dll.lib")
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-		# message(STATUS "We are building a DEBUG 32bit build...")
-		# target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/lua53.lib")
-		# target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/fmodL_vc.lib")
-		# target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3dll.lib")
-	endif()
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/lua53.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/fmodL64_vc.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/glfw3dll.lib")
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
+    # message(STATUS "We are building a DEBUG 32bit build...")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/lua53.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/fmodL_vc.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3dll.lib")
+  endif()
 else()
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
-	  # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/lua53.lib")
-	  # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/fmod64_vc.lib")
-	  # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/glfw3dll.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/lua53.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/fmod64_vc.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/glfw3dll.lib")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-	 # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/lua53.lib")
-	 # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/fmod_vc.lib")
-	 # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.lib")
+   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/lua53.lib")
+   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/fmod_vc.lib")
+   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.lib")
   endif()
 endif()
 
   # NOTE(Shareef): Automatically copy the needed dlls to the output directory
 
 if (WIN32)
-	configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
+  configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
   configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
   configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
 endif()

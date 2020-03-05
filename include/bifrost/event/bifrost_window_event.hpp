@@ -207,6 +207,16 @@ namespace bifrost
     IBaseWindow* target;
     std::uint8_t flags;
 
+    bool isAccepted() const
+    {
+      return flags & FLAGS_IS_ACCEPTED;
+    }
+
+    void accept()
+    {
+      flags |= FLAGS_IS_ACCEPTED;
+    }
+
     union
     {
       KeyboardEvent    keyboard;

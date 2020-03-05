@@ -10,7 +10,7 @@ namespace bifrost
     m_Transform{},
     m_Parent{nullptr},
     m_Children{&Entity::m_Hierarchy},
-    m_Components{scene.m_Memory}
+    m_Components{}
   {
     bfTransform_ctor(&m_Transform);
   }
@@ -59,5 +59,16 @@ namespace bifrost
   {
     m_Children.erase(m_Children.makeIterator(* child));
     child->m_Parent = nullptr;
+  }
+
+  void Entity::removeComponent(std::uint32_t type_index)
+  {
+    const auto it = m_Components.find(type_index);
+
+    if (it != m_Components.end())
+    {
+      m_OwningScene.m_ComponentStorage[type_index]->destroyComponent(it->value());
+      m_Components.erase(type_index);
+    }
   }
 }  // namespace bifrost

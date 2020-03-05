@@ -25,6 +25,12 @@ namespace bifrost
     (void)event;
   }
 
+  void IGameStateLayer::onFixedUpdate(BifrostEngine& engine, float delta_time)
+  {
+    (void)engine;
+    (void)delta_time;
+  }
+
   void IGameStateLayer::onUpdate(BifrostEngine& engine, float delta_time)
   {
     (void)engine;

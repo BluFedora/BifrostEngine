@@ -1,10 +1,14 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_imemory_manager.cpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      Implements a basic interface for the various types of memory managers.
+* @file   bifrost_imemory_manager.cpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*  Outlines a basic interface for the various types of memory managers.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
 #include "bifrost/memory/bifrost_imemory_manager.hpp"
@@ -42,9 +46,15 @@ namespace bifrost
 
     if (allocation)
     {
-      void* data_start = alignUpPtr(std::uintptr_t(allocation) + header_size, alignment);
-
+      void*              data_start = alignUpPtr(std::uintptr_t(allocation) + header_size, alignment);
       const std::uint8_t new_offset = std::uint8_t(std::uintptr_t(data_start) - std::uintptr_t(allocation) - header_size);
+
+#if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
+      std::memset(
+       static_cast<std::uint8_t*>(allocation) + header_size,
+       BIFROST_MEMORY_DEBUG_SIGNATURE,
+       new_offset);
+#endif
 
       static_cast<std::uint8_t*>(data_start)[-1] = new_offset;
 
@@ -69,8 +79,8 @@ namespace bifrost
     m_MemoryBlockBegin(memory_block),
     m_MemoryBlockEnd(memory_block + memory_block_size)
   {
-#if DEBUG_MEMORY
-    //std::memset(begin(), DEBUG_MEMORY_SIGNATURE, memory_block_size);
+#if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
+    std::memset(begin(), BIFROST_MEMORY_DEBUG_SIGNATURE, memory_block_size);
 #endif
   }
 }  // namespace bifrost

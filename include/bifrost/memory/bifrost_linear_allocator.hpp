@@ -1,12 +1,16 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_linear_allocator.hpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is very good for temporary memory allocations throughout
-      the frame. There is no individual deallocation but a whole clear operation
-      that should happen at the beginning (or end) of each frame.
+* @file   bifrost_linear_allocator.hpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is very good for temporary memory allocations throughout
+*   the frame. There is no individual deallocation but a whole clear operation
+*   that should happen at the beginning (or end) of each frame.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
 #ifndef BIFROST_LINEAR_ALLOCATOR_HPP

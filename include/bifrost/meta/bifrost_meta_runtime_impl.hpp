@@ -129,10 +129,7 @@ namespace bifrost::meta
     using ArgsTuple = typename CtorConcept::type;
 
    public:
-    CtorMetaInfo() :
-      BaseCtorMetaInfo()
-    {
-    }
+    CtorMetaInfo();
 
    protected:
     bool isCompatible(const Any* arguments) override
@@ -351,6 +348,15 @@ namespace bifrost::meta
     BaseMethodMetaInfo(impl.name(), FnTraits::arity, TypeInfo<ReturnType>::get()),
     m_Impl{impl}
   {
+  }
+
+  template<typename Class, typename CtorConcept>
+  CtorMetaInfo<Class, CtorConcept>::CtorMetaInfo() :
+    BaseCtorMetaInfo()
+  {
+    for_constexpr<std::tuple_size<ArgsTuple>::value>([this](auto i) {
+      m_Parameters.push(TypeInfo<typename std::tuple_element<i.value, ArgsTuple>::type>::get());
+    });
   }
 
   template<typename Class>

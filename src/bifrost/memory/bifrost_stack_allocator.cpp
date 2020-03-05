@@ -1,18 +1,22 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_stack_allocator.cpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is a designed for allocations wher you can guarantee
-      deallocation is in a LIFO (Last in First Out) order.
+* @file   bifrost_stack_allocator.cpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is a designed for allocations where you can guarantee
+*   deallocation is in a LIFO (Last in First Out) order in return you get
+*   some speed.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
 #include "bifrost/memory/bifrost_stack_allocator.hpp"
 
-#include <algorithm> /* max    */
-#include <cassert>   /* assert */
-#include <memory>    /* align  */
+#include <cassert> /* assert */
+#include <memory>  /* align  */
 
 namespace bifrost
 {
@@ -55,11 +59,11 @@ namespace bifrost
     assert((block_start + full_size) == m_StackPtr &&
            "StackAllocator::dealloc : For this type of allocator you MUST deallocate in the reverse order of allocation.");
 
-    this->m_StackPtr -= full_size;
-    this->m_MemoryLeft += full_size;
+    m_StackPtr -= full_size;
+    m_MemoryLeft += full_size;
 
-#if DEBUG_MEMORY
-    std::memset(block_start, DEBUG_MEMORY_SIGNATURE, full_size);
+#if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
+    std::memset(block_start, BIFROST_MEMORY_DEBUG_SIGNATURE, full_size);
 #endif
   }
 }  // namespace bifrost

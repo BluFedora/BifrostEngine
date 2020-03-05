@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_assets.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -12,19 +13,24 @@
  *
  * @copyright Copyright (c) 2019
  */
+/******************************************************************************/
 #ifndef BIFROST_ASSETS_HPP
 #define BIFROST_ASSETS_HPP
 
 #include "bifrost/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
+#include "bifrost/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                  */
+#include <string_view>                                    /* string_view                                  */
 
-#include <string_view> /* string_view */
+class BifrostEngine;
 
 namespace bifrost
 {
-  class BaseAssetHandle;
+  using Engine = ::BifrostEngine;
+
+  class BaseAssetInfo;
 
   using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
@@ -44,6 +50,8 @@ namespace bifrost
    */
   namespace path
   {
+    static constexpr std::size_t MAX_LENGTH = 512;
+
     struct DirectoryEntry;
 
     bool            doesExist(const char* path);
@@ -56,20 +64,78 @@ namespace bifrost
     void            closeDirectory(DirectoryEntry* entry);
   }  // namespace path
 
+  namespace detail
+  {
+    struct UUIDHasher final
+    {
+      std::size_t operator()(const BifrostUUID& uuid) const
+      {
+        // ReSharper disable CppUnreachableCode
+        if constexpr (sizeof(std::size_t) == 4)
+        {
+          return bfString_hashN(uuid.as_number, sizeof(uuid.as_number));
+        }
+        else
+        {
+          return bfString_hashN64(uuid.as_number, sizeof(uuid.as_number));
+        }
+        // ReSharper restore CppUnreachableCode
+      }
+    };
+
+    struct UUIDEqual final
+    {
+      bool operator()(const BifrostUUID& lhs, const BifrostUUID& rhs) const
+      {
+        return bfUUID_isEqual(&lhs, &rhs) != 0;
+      }
+    };
+
+    using AssetMap = HashTable<BifrostUUID, BaseAssetInfo*, 64, UUIDHasher, UUIDEqual>;
+  }  // namespace detail
+
   class Assets final : public bfNonCopyMoveable<Assets>
   {
+   public:
+    inline static const char META_PATH_NAME[] = "_meta";
+
    private:
-    PathToUUIDTable                          m_NameToGUID;  //!< Allows loading assets from path rather than having to know the UUID.
-    HashTable<BifrostUUID, BaseAssetHandle*> m_AssetMap;    //!< Owns the memory for the associated 'BaseAssetHandle*'.
-    BifrostString                            m_RootPath;    //!< Base Path that all assets are relative to.
+    Engine&          m_Engine;      //!< The engine this asset system is attached to.
+    IMemoryManager&  m_Memory;      //!< Where to grab memory for the asset info.
+    PathToUUIDTable  m_NameToGUID;  //!< Allows loading assets from path rather than having to know the UUID.
+    detail::AssetMap m_AssetMap;    //!< Owns the memory for the associated 'BaseAssetHandle*'.
+    BifrostString    m_RootPath;    //!< Base Path that all assets are relative to.
+    String           m_MetaPath;    //!< Path that all assets meta files located in.
 
    public:
-    Assets();
+    explicit Assets(Engine& engine, IMemoryManager& memory);
 
-    AssetError setRootPath(std::string_view path);
+    template<typename T>
+    void indexAsset(StringRange path, StringRange meta_file_name)
+    {
+      bool              create_new;
+      const BifrostUUID uuid = indexAssetImpl(path, meta_file_name, create_new, meta::TypeInfo<T>::get());
+
+      if (create_new)
+      {
+        T* const asset_handle = m_Memory.allocateT<T>(path, uuid);
+        m_AssetMap.emplace(uuid, asset_handle);
+      }
+    }
+
+    void loadMeta(StringRange meta_file_name);
+
+    AssetError setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
     void       setRootPath(std::nullptr_t);
 
     ~Assets();
+
+    // TODO: Rmeove this
+
+    detail::AssetMap& assetMap() { return m_AssetMap; }
+
+   private:
+    BifrostUUID indexAssetImpl(StringRange path, StringRange meta_file_name, bool& create_new, meta::BaseClassMetaInfo* type_info);  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
   };
 }  // namespace bifrost
 

@@ -56,7 +56,8 @@ int main(int argc, const char* argv[])
 
   if (err)
   {
-    errorHandler(vm, err, 0, vm.errorString());
+    waitForInput();
+    return err;
   }
 
   std::free(const_cast<char*>(load_file.source));

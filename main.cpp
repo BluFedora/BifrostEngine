@@ -1,11 +1,13 @@
 #include "bifrost/bifrost_version.h"
 
+#define NOMINMAX
+
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
+#include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/core/bifrost_game_state_machine.hpp"
 #include "bifrost/data_structures/bifrost_any.hpp"
 #include "bifrost/data_structures/bifrost_string.hpp"
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
-#include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/platform/bifrost_window_glfw.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
 
@@ -22,7 +24,6 @@
 #include <utility>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include "bifrost/core/bifrost_engine.hpp"
 #include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
 
@@ -210,9 +211,9 @@ static char source[4096] = R"(
     static var i = 2;
   };
 
-  func update()
+  func update(dt)
   {
-    cam:update(0.4);
+    cam:update(dt);
 
     // BigFunc();
     // print AnotherOne();
@@ -261,8 +262,7 @@ namespace bifrost
    public:
     void update(float dt)
     {
-      std::printf("Camera::update(@ %f) with %f as dt.\n", m_ElapsedTime, dt);
-
+      // std::printf("Camera::update(@ %f) with %f as dt.\n", m_ElapsedTime, dt);
       m_ElapsedTime += dt;
     }
   };
@@ -298,7 +298,7 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
     mw = mode->width;
     mh = mode->height;
 
-    overlap = max(0, min(wx + ww, mx + mw) - max(wx, mx)) * max(0, min(wy + wh, my + mh) - max(wy, my));
+    overlap = std::max(0, std::min(wx + ww, mx + mw) - std::max(wx, mx)) * std::max(0, std::min(wy + wh, my + mh) - std::max(wy, my));
 
     if (bestoverlap < overlap)
     {
@@ -323,6 +323,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   TestClass my_obj = {74, "This message will be in Y"};
 
+  /*
   try
   {
     std::cout << "Meta Testing Bed: \n";
@@ -341,12 +342,11 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     });
 
     std::cout << "x = " << my_obj.x << "\n";
-
-    std::cout << "Meta Testing End: \n\n";
   }
   catch (...)
   {
   }
+  */
 
   if (!startupGLFW(nullptr, nullptr))
   {
@@ -362,11 +362,14 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   }
   */
 
+  const std::size_t main_memory_size = 100000000u;
+  char*             main_memory      = new char[main_memory_size];
+
   {
     WindowGLFW    window{};
-    BifrostEngine engine{argc, argv};
+    BifrostEngine engine{main_memory, main_memory_size, argc, argv};
 
-    if (!window.open("Bifrost Engine"))
+    if (!window.open("Shareef's 2020 Game Engine"))
     {
       return -1;
     }
@@ -374,7 +377,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     g_Engine = &engine;
     g_Window = window.handle();
 
-    glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    glfwSetWindowSizeLimits(window.handle(), 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
     const BifrostEngineCreateParams params =
      {
@@ -404,7 +407,6 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     vm.stackResize(5);
 
     vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
-
     vm.moduleMake(0, "bifrost");
     vm.stackStore(0, camera_clz_bindings);
     vm.stackLoadVariable(1, 0, "Camera");
@@ -445,11 +447,28 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       update_fn = vm.stackMakeHandle(0);
     }
 
-    std::cout << "\n\nScripting Language Test End\n";
+    const auto CurrentTimeSeconds = []() -> float {
+      return float(glfwGetTime());
+    };
+
+    const float frame_rate       = 60.0f;
+    const float min_frame_rate   = 4.0f;
+    const float time_step_ms     = 1.0f / frame_rate;
+    const float max_time_step_ms = 1.0f / min_frame_rate;
+
+    float current_time     = CurrentTimeSeconds();
+    float time_accumulator = 0.0f;
 
     while (!window.wantsToClose())
     {
-      int window_width, window_height;
+      const float new_time   = CurrentTimeSeconds();
+      const float delta_time = std::min(new_time - current_time, max_time_step_ms);
+
+      current_time = new_time;
+      time_accumulator += delta_time;
+
+      int window_width,
+       window_height;
       glfwGetWindowSize(window.handle(), &window_width, &window_height);
 
       glfwPollEvents();
@@ -486,29 +505,37 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
       if (engine.beginFrame())
       {
+        if (update_fn)
+        {
+          vm.stackResize(1);
+          vm.stackLoadHandle(0, update_fn);
+
+          if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+          {
+            vm.call(0, delta_time);
+          }
+        }
+
         editor::imgui::beginFrame(
          engine.renderer().surface(),
          float(window_width),
          float(window_height),
          float(glfwGetTime()));
-        engine.update();
 
-        if (update_fn)
+        while (time_accumulator >= time_step_ms)
         {
-          // vm.stackResize(1);
-          // vm.stackLoadHandle(0, update_fn);
-
-          if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-          {
-            // vm.call(0);
-          }
+          engine.fixedUpdate(time_step_ms);
+          time_accumulator -= time_step_ms;
         }
 
-        editor::imgui::endFrame(engine.renderer().mainCommandList());
-        engine.endFrame();
-      }
+        engine.update(delta_time);
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1));
+        // const float render_alpha = time_accumulator / time_step_ms; // currentState * alpha + previousState * ( 1.0 - alpha )
+
+        engine.drawBegin();
+        editor::imgui::endFrame(engine.renderer().mainCommandList());
+        engine.drawEnd();
+      }
     }
 
     vm.stackDestroyHandle(update_fn);
@@ -516,6 +543,8 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     engine.deinit();
     window.close();
   }
+
+  delete[] main_memory;
 
   shutdownGLFW();
 
@@ -597,52 +626,6 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
   ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 5.0f, 5.0f), 0, ImVec2(1.0f, 0.0f));
   ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
   ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
-  window("RTTI", [this]() {
-    if (m_SelectedEntity)
-    {
-      Any v = &m_SelectedEntity->transform();
-      inspect("Transform", v, meta::TypeInfo<BifrostTransform>::get());
-
-      m_SelectedEntity->forEachComp([this](BaseObjectT* comp) {
-        auto* t = comp->type();
-
-        inspect(t->name().data(), comp);
-      });
-    }
-
-    auto& memory = bifrost::meta::gRttiMemoryBacking();
-    ImGui::Text("Memory Usage %i / %i", int(memory.usedMemory()), int(memory.size()));
-
-    for (auto& type : bifrost::meta::gRegistry())
-    {
-      const auto& name = type.key();
-
-      if (ImGui::TreeNode(type.value(), "%.*s", name.length(), name.data()))
-      {
-        auto* const type_info = type.value();
-
-        ImGui::Text("Size: %i, Alignment %i", int(type_info->size()), int(type_info->alignment()));
-
-        for (auto& field : type_info->members())
-        {
-          ImGui::Text("member: %.*s", field->name().length(), field->name().data());
-        }
-
-        for (auto& prop : type_info->properties())
-        {
-          ImGui::Text("prop: %.*s", prop->name().length(), prop->name().data());
-        }
-
-        for (auto& method : type_info->methods())
-        {
-          ImGui::Text("method: %.*s", method->name().length(), method->name().data());
-        }
-
-        ImGui::Separator();
-        ImGui::TreePop();
-      }
-    }
-  });
 #if 0
   window("Scripting", [&engine]() {
     static std::future<BifrostVMError> s_WaitForCompile;
@@ -733,7 +716,7 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
 #endif
 }
 
-void ImGUIOverlay::inspect(const char* label, bifrost::BaseObjectT* object) const
+void ImGUIOverlay::inspect(const char* label, BaseObjectT* object) const
 {
   Any a = object;
   inspect(label, a, object->type());
@@ -979,21 +962,9 @@ bool ImGUIOverlay::inspect(const char* label, Any& object, meta::BaseClassMetaIn
   return did_change;
 }
 
-static void cb()
-{
-  std::printf("I dont return anything\n");
-}
-
 void MainDemoLayer::onLoad(BifrostEngine& engine)
 {
-  FunctionView<void(void)> test_view;
-
-  test_view.bind(cb);
-
-  test_view();
-  test_view.safeCall();
-
-  engine.stateMachine().addOverlay<ImGUIOverlay>("ImGui 0");
+  // engine.stateMachine().addOverlay<ImGUIOverlay>("ImGui 0");
 #if 0
   auto mye              = new bifrost::Entity("Hello I am an entity");
   auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");

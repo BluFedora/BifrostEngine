@@ -1,36 +1,37 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_stack_allocator.hpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is a designed for allocations where you can guarantee
-      deallocation is in a LIFO (Last in First Out) order.
+* @file   bifrost_stack_allocator.hpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is a designed for allocations where you can guarantee
+*   deallocation is in a LIFO (Last in First Out) order in return you get
+*   some speed.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#ifndef TIDE_STACK_ALLOCATOR_HPP
-#define TIDE_STACK_ALLOCATOR_HPP
+#ifndef BIFROST_STACK_ALLOCATOR_HPP
+#define BIFROST_STACK_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp" /* MemoryManager    */
-
-#include <cstdint> /* size_t, uint32_t */
+#include "bifrost_imemory_manager.hpp" /* MemoryManager */
 
 namespace bifrost
 {
-  class StackAllocator : public MemoryManager
+  class StackAllocator final : public MemoryManager
   {
    private:
     char*       m_StackPtr;
     std::size_t m_MemoryLeft;
 
    public:
-    StackAllocator(char* const memory_block, const std::size_t memory_size);
+    StackAllocator(char* memory_block, std::size_t memory_size);
 
-    inline size_t usedMemory() const { return size() - m_MemoryLeft; }
-
-   public:
-    void* allocate(std::size_t size) override;
-    void  deallocate(void* ptr) override;
+    std::size_t usedMemory() const { return size() - m_MemoryLeft; }
+    void*       allocate(std::size_t size) override;
+    void        deallocate(void* ptr) override;
 
    private:
     class StackHeader
@@ -45,4 +46,4 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-#endif  // TIDE_STACK_ALLOCATOR_HPP
+#endif /* BIFROST_STACK_ALLOCATOR_HPP */

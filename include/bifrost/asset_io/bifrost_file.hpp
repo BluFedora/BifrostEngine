@@ -43,15 +43,13 @@ namespace bifrost
     /// A path for a folder has no following '/'.
     /// Returns the new length of the path.
     std::size_t canonicalizePath(char* path_bgn, const char* path_end);
-    std::size_t canonicalizePath(char* path_bgn); // Gives you the length
+    std::size_t canonicalizePath(char* path_bgn);  // Gives you the length
 
-    // These function assumes a canonical path by the calling of 'canonicalizePath'.
-    StringRange directoryOfFile(const StringRange& path);
-
-    // String pathFileName(String filename);
-    // String pathFileDir(String filename);
-    // void   replaceAll(String& path, char replace = '\\', char with = '/');
-  }  // namespace file
+    // These functions assumes a canonical path by the calling of 'canonicalizePath'.
+    StringRange directoryOfFile(const StringRange& path);  // In canonical style.
+    StringRange extensionOfFile(const StringRange& path);  // Includes the '.ext', if no extension a null path is returned.
+    StringRange fileNameOfPath(const StringRange& path);   // 'filename.ext'
+  }                                                        // namespace file
 
   class File final
   {
@@ -76,6 +74,8 @@ namespace bifrost
 
     File(const File& rhs) = delete;
     File(File&& rhs)      = delete;
+    File& operator=(const File& rhs) = delete;
+    File& operator=(File&& rhs) = delete;
 
     // Basic FileIO //
     operator bool() const { return isOpen(); }

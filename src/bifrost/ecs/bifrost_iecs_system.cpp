@@ -1,16 +1,21 @@
 /******************************************************************************/
 /*!
-* @file   $itemname$
+* @file   bifrost_iecs_system.cpp
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
 * @brief
 *
 * @version 0.0.1
-* @date    $year$-XX-XX
+* @date    2020-XX-XX
 *
-* @copyright Copyright (c) $year$
+* @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_HPP
-#define BIFROST_HPP
+#include "bifrost/ecs/bifrost_iecs_system.hpp"
 
-#endif /* BIFROST_HPP */
+namespace bifrost
+{
+  IECSSystem::IECSSystem() :
+    m_IsEnabled{true}
+  {
+  }
+}  // namespace bifrost

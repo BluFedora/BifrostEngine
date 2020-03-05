@@ -17,9 +17,12 @@ namespace bifrost::editor::imgui
     bfBufferHandle        index_buffer;
     bfBufferHandle        uniform_buffer;
     bfDescriptorSetHandle descriptor_set;
+    bfTextureHandle       current_texture;
 
     void create(bfGfxDeviceHandle device, bfShaderProgramHandle program, bfTextureHandle font)
     {
+      current_texture = nullptr;
+
       bfBufferCreateParams buffer_params;
       buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = 0x100 * 2;
@@ -31,9 +34,18 @@ namespace bifrost::editor::imgui
       uint64_t sizes  = sizeof(Mat4x4);
 
       descriptor_set = bfShaderProgram_createDescriptorSet(program, 0);
-      bfDescriptorSet_setCombinedSamplerTextures(descriptor_set, 0, 0, &font, 1);
       bfDescriptorSet_setUniformBuffers(descriptor_set, 1, 0, &offset, &sizes, &uniform_buffer, 1);
-      bfDescriptorSet_flushWrites(descriptor_set);
+      setTexture(font);
+    }
+
+    void setTexture(bfTextureHandle texture)
+    {
+      if (current_texture != texture)
+      {
+        bfDescriptorSet_setCombinedSamplerTextures(descriptor_set, 0, 0, &texture, 1);
+        bfDescriptorSet_flushWrites(descriptor_set);
+        current_texture = texture;
+      }
     }
 
     void checkSizes(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size)
@@ -79,7 +91,7 @@ namespace bifrost::editor::imgui
     bfVertexLayoutSetHandle vertex_layout;
     bfShaderModuleHandle    vertex_shader;
     bfShaderModuleHandle    fragment_shader;
-    UIFrameData             buffers[3]; // TODO(Shareef): This needs to read from The GfxContext's number of frames.
+    UIFrameData             buffers[3];  // TODO(Shareef): This needs to read from The GfxContext's number of frames.
     bfTextureHandle         font;
     bfShaderProgramHandle   program;
   };
@@ -295,7 +307,7 @@ namespace bifrost::editor::imgui
 
     if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) /*|| glfwGetInputMode(g_Window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED*/)
     {
-      bifrost::WindowGLFW* window = reinterpret_cast<bifrost::WindowGLFW*>(static_cast<bifrost::IBaseWindow*>(io.ClipboardUserData));
+      WindowGLFW* window = reinterpret_cast<WindowGLFW*>(static_cast<IBaseWindow*>(io.ClipboardUserData));
 
       ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
       if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
@@ -387,6 +399,10 @@ namespace bifrost::editor::imgui
         {
           const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 
+          if (pcmd->TextureId) {
+            frame.setTexture((bfTextureHandle)pcmd->TextureId);
+          }
+
           if (pcmd->UserCallback)
           {
             if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
@@ -410,7 +426,6 @@ namespace bifrost::editor::imgui
             {
               clip_rect.x = std::max(0.0f, clip_rect.x);
               clip_rect.y = std::max(0.0f, clip_rect.y);
-              ;
 
               bfGfxCmdList_setScissorRect(
                command_list,

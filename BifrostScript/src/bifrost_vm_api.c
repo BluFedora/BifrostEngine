@@ -948,7 +948,7 @@ static void bfVM_decode(const bfInstruction inst, uint8_t* op_out, uint32_t* ra_
   *rsbx_out = bfVM_decodeRsBx(inst);
 }
 
-static bfBool32 bfVM_ensureStackspace2(BifrostVM* self, size_t stack_space, const bfVMValue* top)
+static bfBool32 bfVM_ensureStackspace(BifrostVM* self, size_t stack_space, const bfVMValue* top)
 {
   const size_t stack_size     = Array_size(&self->stack);
   const size_t stack_used     = top - self->stack;
@@ -963,24 +963,18 @@ static bfBool32 bfVM_ensureStackspace2(BifrostVM* self, size_t stack_space, cons
   return bfFalse;
 }
 
-static void bfVM_ensureStackspace(BifrostVM* self, size_t stack_space)
-{
-  const size_t stack_used     = self->stack_top - self->stack;
-  const size_t requested_size = stack_used + stack_space;
-
-  if (bfVM_ensureStackspace2(self, stack_space, self->stack_top))
-  {
-    self->stack_top = self->stack + requested_size;
-  }
-}
-
 BifrostVMStackFrame* bfVM_pushCallFrame(BifrostVM* self, BifrostObjFn* fn, size_t new_start)
 {
   const size_t old_top = self->stack_top - self->stack;
 
   if (fn)
   {
-    bfVM_ensureStackspace(self, fn->needed_stack_space);
+    const size_t stack_space = new_start + fn->needed_stack_space;
+
+    if (bfVM_ensureStackspace(self, stack_space, self->stack_top))
+    {
+      self->stack_top = self->stack + stack_space;
+    }
   }
   else
   {
@@ -1059,6 +1053,13 @@ frame_start:;
   BifrostObjModule*    current_module = frame->fn->module;
   bfVMValue*           constants      = frame->fn->constants;
   bfVMValue*           locals         = self->stack + frame->stack;
+  size_t               stack_size     = Array_size(&self->stack);
+
+  // TODO(SR): Only in Debug Builds
+  if (stack_size < (frame->stack + frame->fn->needed_stack_space))
+  {
+    __debugbreak();
+  }
 
   while (bfTrue)
   {
@@ -1189,7 +1190,8 @@ frame_start:;
         }
         else
         {
-          locals[regs[REG_RA]] = constants[regs[REG_RBx] - BIFROST_VM_OP_LOAD_BASIC_CONSTANT];
+          locals[regs[REG_RA]] =
+           constants[regs[REG_RBx] - BIFROST_VM_OP_LOAD_BASIC_CONSTANT];
         }
 
         break;
@@ -1272,7 +1274,7 @@ frame_start:;
                   BF_RUNTIME_ERROR("'%s::call' must be defined as a function to use instance as function.\n", clz->name);
                 }
 
-                if (bfVM_ensureStackspace2(self, num_args + (size_t)1, locals + ra))
+                if (bfVM_ensureStackspace(self, num_args + (size_t)1, locals + ra))
                 {
                   BF_REFRESH_LOCALS();
                 }
@@ -1397,6 +1399,11 @@ frame_start:;
         locals[regs[REG_RA]] = bfVMValue_fromBool(bfVMValue_ee(locals[regs[REG_RB]], locals[regs[REG_RC]]));
         break;
       }
+      case BIFROST_VM_OP_CMP_NE:
+      {
+        locals[regs[REG_RA]] = bfVMValue_fromBool(!bfVMValue_ee(locals[regs[REG_RB]], locals[regs[REG_RC]]));
+        break;
+      }
       case BIFROST_VM_OP_CMP_LT:
       {
         locals[regs[REG_RA]] = bfVMValue_fromBool(bfVMValue_lt(locals[regs[REG_RB]], locals[regs[REG_RC]]));
@@ -1448,7 +1455,6 @@ frame_start:;
       default:
       {
         BF_RUNTIME_ERROR("Invalid OP: %i\n", (int)op);
-        // break;
       }
     }
 
@@ -1478,8 +1484,8 @@ done:
 BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args)
 {
   bfVM_assertStackIndex(self, idx);
-  bfVMValue      value = self->stack_top[idx];
-  BifrostVMError err   = BIFROST_VM_ERROR_NONE;
+  const bfVMValue value = self->stack_top[idx];
+  BifrostVMError  err   = BIFROST_VM_ERROR_NONE;
 
   assert(IS_POINTER(value));
 
@@ -1533,8 +1539,8 @@ BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char
   {
     bfGCPushRoot(self, &module_obj->super);
 
-    err = bfVM_compileIntoModule(self, module_obj, source, source_length) ||
-          bfVM_runModule(self, module_obj);
+    // Short Circuit. The || operator turns ints into bools (0 or 1) so can't assign directly.
+    ((err = bfVM_compileIntoModule(self, module_obj, source, source_length))) || ((err = bfVM_runModule(self, module_obj)));
 
     bfVM_stackResize(self, 1);
     self->stack_top[0] = FROM_POINTER(module_obj);

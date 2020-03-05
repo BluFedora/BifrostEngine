@@ -1,6 +1,7 @@
 #include "bifrost/asset_io/bifrost_file.hpp"
 
 #if _WIN32 /* Windows */
+#define NOMINMAX
 #include <Windows.h>
 #include <cassert>
 #include <io.h>
@@ -27,12 +28,12 @@ namespace bifrost
     }
 
     template<typename F>
-    static std::size_t canonicalizePath_(char* path_bgn, F&& condition)
+    static std::size_t canonicalizePath_(char* path_bgn, F&& not_at_end)
     {
       const char* const path_bgn_cpy = path_bgn;
 
       // Replaces all '\' => '/' for cross-platform compatibility.
-      while (condition(path_bgn))
+      while (not_at_end(path_bgn))
       {
         if (*path_bgn == '\\')
         {
@@ -80,40 +81,29 @@ namespace bifrost
 
       return {path.bgn, end};
     }
-    /*
-    String pathFileName(String filename)
-    {
-      const std::size_t last_slash_idx = filename.find_last_of("\\/");
 
-      if (last_slash_idx != std::string::npos)
+    StringRange extensionOfFile(const StringRange& path)
+    {
+      const char* dot_start = path.end;
+
+      while (dot_start != path.bgn)
       {
-        filename.erase(0, last_slash_idx + 1);
+        if (*dot_start == '.')
+        {
+          return {dot_start, path.end};
+        }
+
+        --dot_start;
       }
 
-      std::size_t period_idx;
-
-      do
-      {
-        period_idx = filename.rfind('.');
-
-        if (period_idx == std::string::npos)
-          break;
-        filename.erase(period_idx);
-      } while (period_idx != std::string::npos);
-
-      return filename;
+      return {nullptr, nullptr};
     }
 
-    void replaceAll(String& path, char replace, char with)
+    StringRange fileNameOfPath(const StringRange& path)
     {
-      std::transform(path.begin(), path.end(), path.begin(), [replace, with](char c) -> char
-      {
-        if (c == replace) 
-          return with;
-        return c;
-      });
+      const StringRange directory = directoryOfFile(path);
+      return {std::min(directory.end + 1, path.end), path.end};
     }
-    */
   }  // namespace file
 
   bool File::exists(const char* path)

@@ -186,7 +186,9 @@ namespace bifrost::meta
 
       for (auto& ctor : m_Ctors)
       {
-        if (sizeof...(Args) == ctor->paremeters().size())
+        const std::size_t num_ctor_params = ctor->paremeters().size();
+
+        if (sizeof...(Args) == num_ctor_params)
         {
           if (ctor->isCompatible(any_arguments))
           {

@@ -1,11 +1,15 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_proxy_allocator.cpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is not really an allocator at all but allows for more
-      debugging opportunities if the occasion arises.
+* @file   bifrost_proxy_allocator.cpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is not really an allocator at all but allows for more
+*   debugging opportunities when the occasions arise.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"

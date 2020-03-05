@@ -37,6 +37,7 @@ namespace bifrost
     virtual void onCreate(BifrostEngine& engine);
     virtual void onLoad(BifrostEngine& engine);
     virtual void onEvent(BifrostEngine& engine, Event& event);
+    virtual void onFixedUpdate(BifrostEngine& engine, float delta_time);
     virtual void onUpdate(BifrostEngine& engine, float delta_time);
     virtual void onUnload(BifrostEngine& engine);
     virtual void onDestroy(BifrostEngine& engine);

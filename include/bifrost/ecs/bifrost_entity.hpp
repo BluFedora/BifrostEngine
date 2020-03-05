@@ -1,10 +1,9 @@
 /*!
- * @file bifrost_entity.hpp
+ * @file   bifrost_entity.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *   This engine's concept of a GameObject / Actor.
- *   An entity is a bag of components with a 'BifrostTransform' and name.
- *   
+ *   An entity is a bag of components with a 'BifrostTransform' and a name.
  *
  * @version 0.0.1
  * @date    2019-12-22
@@ -14,15 +13,13 @@
 #ifndef BIFROST_ENTITY_HPP
 #define BIFROST_ENTITY_HPP
 
-#include "bifrost/asset_io/bifrost_scene.hpp"    // Scene
-#include "bifrost/core/bifrost_base_object.hpp"  // BaseObject
-#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
-#include "bifrost/math/bifrost_transform.h"  // BifrostTransform
+#include "bifrost/asset_io/bifrost_scene.hpp"                  // Scene
+#include "bifrost/core/bifrost_base_object.hpp"                // BaseObject
+#include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // ListView
+#include "bifrost/math/bifrost_transform.h"                    // BifrostTransform
 
 namespace bifrost
 {
-  // class Scene;
-
   class Entity;
 
   using EntityList = intrusive::ListView<Entity>;
@@ -32,13 +29,13 @@ namespace bifrost
     BIFROST_META_FRIEND;
 
    private:
-    Scene&                                           m_OwningScene;
-    std::string                                      m_Name;
-    BifrostTransform                                 m_Transform;
-    Entity*                                          m_Parent;
-    EntityList                                       m_Children;
-    intrusive::Node<Entity>                          m_Hierarchy;
-    Array<std::pair<std::uint32_t, dense_map::ID_t>> m_Components;  // <type, id>
+    Scene&                                    m_OwningScene;
+    std::string                               m_Name;
+    BifrostTransform                          m_Transform;
+    Entity*                                   m_Parent;
+    EntityList                                m_Children;
+    intrusive::Node<Entity>                   m_Hierarchy;
+    HashTable<std::uint32_t, dense_map::ID_t> m_Components;  // <type, id>
 
    public:
     Entity(Scene& scene, std::string_view name);
@@ -53,7 +50,7 @@ namespace bifrost
     {
       for (const auto& c_data : m_Components)
       {
-        f(m_OwningScene.m_ComponentStorage[c_data.first]->getComponent(c_data.second));
+        f(m_OwningScene.m_ComponentStorage[c_data.key()]->getComponent(c_data.value()));
       }
     }
 
@@ -61,17 +58,56 @@ namespace bifrost
     void    setParent(Entity* new_parent);
 
     template<typename T>
-    T* add()
+    T& add()
     {
+      T* const comp = get<T>();
+
+      if (comp)
+      {
+        return *comp;
+      }
+
       const dense_map::ID_t index = m_OwningScene.addComponent<T>(*this);
       m_Components.emplace(T::s_ComponentID, index);
-      return (T*)m_OwningScene.m_ComponentStorage[T::s_ComponentID]->getComponent(index);
+      return *idToComponent<T>(index);
+    }
+
+    template<typename T>
+    T* get() const
+    {
+      const auto it = m_Components.find(T::s_ComponentID);
+
+      if (it != m_Components.end())
+      {
+        return idToComponent<T>(it->value());
+      }
+
+      return nullptr;
+    }
+
+    template<typename T>
+    bool has() const
+    {
+      return get<T>() != nullptr;
+    }
+
+    template<typename T>
+    void remove()
+    {
+      removeComponent(T::s_ComponentID);
     }
 
     ~Entity();
 
    private:
+    template<typename T>
+    T* idToComponent(dense_map::ID_t id)
+    {
+      return (T*)m_OwningScene.m_ComponentStorage[T::s_ComponentID]->getComponent(id);
+    }
+
     void removeChild(Entity* child);
+    void removeComponent(std::uint32_t type_index);
   };
 
 }  // namespace bifrost

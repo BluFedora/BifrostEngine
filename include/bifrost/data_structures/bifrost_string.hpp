@@ -34,9 +34,33 @@ namespace bifrost
     {
     }
 
+    StringRange(const char* cstring) :
+      bfStringRange{bfMakeStringRangeC(cstring)}
+    {
+    }
+
+    StringRange() :
+      StringRange{nullptr, nullptr}
+    {
+    }
+
     [[nodiscard]] std::size_t length() const
     {
+      // bfStringRange_length();
       return end - bgn;
+    }
+
+    [[nodiscard]] bool operator==(const StringRange& rhs) const
+    {
+      const std::size_t lhs_length = length();
+      const std::size_t rhs_length = rhs.length();
+      // TODO(Shareef): Can this be optimized by not using 'strncmp' since 'strncmp' checks for 'NUL' aswell?
+      return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
+    }
+
+    [[nodiscard]] bool operator!=(const StringRange& rhs) const
+    {
+      return !(*this == rhs);
     }
   };
 
@@ -56,14 +80,20 @@ namespace bifrost
     {
     }
 
-    String(const char* bgn, const char* end) :
-      m_Handle{String_newLen(bgn, end - bgn)}
-    {
-    }
-
     String(const char* bgn, std::size_t length) :
       m_Handle{String_newLen(bgn, length)}
     {
+    }
+
+    String(const char* bgn, const char* end) :
+      String(bgn, end - bgn)
+    {
+    }
+
+    String(const bfStringRange range) :
+      String(range.bgn, range.end)
+    {
+      
     }
 
     String(const String& rhs) :
@@ -244,7 +274,10 @@ namespace bifrost
 
     void clear()
     {
-      ::String_clear(&m_Handle);
+      if (m_Handle)
+      {
+        ::String_clear(&m_Handle);
+      }
     }
 
     ~String()

@@ -1,12 +1,16 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_linear_allocator.cpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is very good for temporary memory allocations throughout
-      the frame. There is no invidual deallocation but a whole clear operation
-      that should happen at the beginning of each frame.
+* @file   bifrost_linear_allocator.cpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is very good for temporary memory allocations throughout
+*   the frame. There is no individual deallocation but a whole clear operation
+*   that should happen at the beginning (or end) of each frame.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
@@ -28,10 +32,10 @@ namespace bifrost
 
   void LinearAllocator::clear()
   {
-#ifdef DEBUG_MEMORY
+#ifdef BIFROST_MEMORY_DEBUG_WIPE_MEMORY
     if (m_MemoryOffset)
     {
-      std::memset(begin(), DEBUG_MEMORY_SIGNATURE, m_MemoryOffset);
+      std::memset(begin(), BIFROST_MEMORY_DEBUG_SIGNATURE, m_MemoryOffset);
     }
 #endif
     m_MemoryOffset = 0;

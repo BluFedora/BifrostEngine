@@ -4,8 +4,122 @@
 #include "bifrost/bifrost.hpp"
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
+
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
+
+// TODO(Shareef): This is useful for the engine aswell.
+template<std::size_t size>
+class FixedLinearAllocator
+{
+ private:
+  char            m_MemoryBacking[size];
+  LinearAllocator m_LinearAllocator;
+  NoFreeAllocator m_NoFreeAdapter;
+
+ public:
+  FixedLinearAllocator() :
+    m_MemoryBacking{},
+    m_LinearAllocator{m_MemoryBacking, size},
+    m_NoFreeAdapter{m_LinearAllocator}
+  {
+  }
+
+  LinearAllocator& linear() { return m_LinearAllocator; }
+  IMemoryManager&  memory() { return m_NoFreeAdapter; }
+
+  operator IMemoryManager&()
+  {
+    return memory();
+  }
+};
+
+// clang-format off
+template<std::size_t Size>
+class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<BlockAllocator<Size>>
+// clang-format on
+{
+  struct MemoryBlock final
+  {
+    char            memory_backing[Size];
+    IMemoryManager& allocator;
+    MemoryBlock*    next;
+
+    explicit MemoryBlock(MemoryBlock* prev) :
+      memory_backing{},
+      allocator{memory_backing, Size},
+      next{nullptr}
+    {
+      if (prev)
+      {
+        prev->next = this;
+      }
+    }
+  };
+
+ private:
+  IMemoryManager& m_BlockAllocator;
+  MemoryBlock     m_SmallBacking;
+  MemoryBlock*    m_Tail;
+
+ public:
+  explicit BlockAllocator(IMemoryManager& block_allocator) :
+    m_BlockAllocator{block_allocator},
+    m_SmallBacking{nullptr},
+    m_Tail{&m_SmallBacking}
+  {
+  }
+
+  void* allocate(std::size_t size) override
+  {
+    // TODO(Shareef): Handle the case of - If Size <= size.
+    void* ptr = m_Tail->allocator.allocate(size);
+
+    if (!ptr)
+    {
+      MemoryBlock* new_block = m_BlockAllocator.allocateT<MemoryBlock>(m_Tail);
+
+      if (!new_block)
+      {
+        return nullptr;
+      }
+
+      m_Tail = new_block;
+
+      ptr = new_block->allocator.allocate(size);
+    }
+
+    return ptr;
+  }
+
+  void deallocate(void* ptr) override
+  {
+    MemoryBlock* cursor = &m_SmallBacking;
+
+    while (cursor)
+    {
+      if (cursor->memory_backing >= ptr && ptr < (cursor->memory_backing + Size))
+      {
+        cursor->allocator.deallocate(ptr);
+        break;
+      }
+
+      cursor = cursor->next;
+    }
+  }
+
+  virtual ~BlockAllocator()
+  {
+    MemoryBlock* cursor = &m_SmallBacking;
+
+    while (cursor)
+    {
+      MemoryBlock* const next = cursor->next;
+      m_BlockAllocator.deallocateT(cursor);
+      cursor = next;
+    }
+  }
+};
 
 namespace bifrost::editor
 {
@@ -36,7 +150,7 @@ namespace bifrost::editor
   template<typename T, typename... Args>
   T* make(Args&&... args)
   {
-    return allocator().allocateT<T>(std::forward<Args>(args)...);
+    return allocator().allocateT<T>(std::forward<Args&&>(args)...);
   }
 
   namespace ui
@@ -87,7 +201,7 @@ namespace bifrost::editor
   };
 
   template<typename TRet = void>
-  class MemberAction final : public Action
+  class MemberAction : public Action
   {
    private:
     TRet (EditorOverlay::*m_Fn)();
@@ -176,13 +290,20 @@ namespace bifrost::editor
       {
         if (ImGui::Button("Create"))
         {
-          String full_path = m_ProjectPath;
+          String full_path{m_ProjectPath};
 
           full_path.append("/");
           full_path.append(m_ProjectName);
 
           if (path::createDirectory(full_path.cstr()))
           {
+            const String meta_path = full_path + "/_meta";
+
+            if (!path::createDirectory(meta_path.cstr()))
+            {
+              bfLogError("Failed to create '%s' directory", meta_path.cstr());
+            }
+
             const String project_file_path = full_path + "/Project.project.json";
 
             const JsonValue json = JsonValue{
@@ -251,8 +372,6 @@ namespace bifrost::editor
 
   void ui::MainMenu::endItem()
   {
-    ImGui::Text(" | FPS COUNTER HERE | ");
-
     ImGui::EndMainMenuBar();
   }
 
@@ -287,6 +406,20 @@ namespace bifrost::editor
     }
   };
 
+  class ARefreshAsset final : public MemberAction<void>
+  {
+   public:
+    explicit ARefreshAsset() :
+      MemberAction<void>{&EditorOverlay::assetRefresh}
+    {
+    }
+
+    bool isActive(const ActionContext& ctx) const override
+    {
+      return ctx.editor->currentlyOpenProject() != nullptr;
+    }
+  };
+
   template<std::size_t N>
   void addMainMenuItem(const char* name, ui::BaseMenuItem* (&menu_items)[N])
   {
@@ -300,7 +433,7 @@ namespace bifrost::editor
     s_MainMenuBar.addItem(menu);
   }
 
-  void EditorOverlay::onCreate(BifrostEngine& engine)
+  void EditorOverlay::onCreate(Engine& engine)
   {
     m_Engine = &engine;
 
@@ -345,7 +478,7 @@ namespace bifrost::editor
     m_Actions.emplace("New Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
     m_Actions.emplace("Open Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
     m_Actions.emplace("Close Project", ActionPtr(make<ACloseProject>()));
-    m_Actions.emplace("Asset Import", nullptr);
+    m_Actions.emplace("Asset Refresh", ActionPtr(make<ARefreshAsset>()));
 
     ui::BaseMenuItem* file_menu_items[] =
      {
@@ -358,7 +491,7 @@ namespace bifrost::editor
 
     ui::BaseMenuItem* asset_menu_items[] =
      {
-      ui::makeAction("Import", findAction("Asset Import")),
+      ui::makeAction("Refresh", findAction("Asset Refresh")),
      };
 
     ui::BaseMenuItem* edit_menu_items[] =
@@ -397,15 +530,16 @@ namespace bifrost::editor
     // enqueueDialog(make<WelcomeDialog>());
   }
 
-  void EditorOverlay::onLoad(BifrostEngine& engine)
+  void EditorOverlay::onLoad(Engine& engine)
   {
   }
 
-  void EditorOverlay::onEvent(BifrostEngine& engine, Event& event)
+  void EditorOverlay::onEvent(Engine& engine, Event& event)
   {
+    event.accept();
   }
 
-  void EditorOverlay::onUpdate(BifrostEngine& engine, float delta_time)
+  void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
     static const float window_width  = 350.0f;
     static const float window_margin = 5.0f;
@@ -421,6 +555,16 @@ namespace bifrost::editor
       menu_bar_height = ImGui::GetWindowSize().y;
 
       s_MainMenuBar.doAction(action_ctx);
+
+      m_FpsTimer -= delta_time;
+
+      if (m_FpsTimer <= 0.0f)
+      {
+        m_CurrentFps = int(1.0f / delta_time);
+        m_FpsTimer   = 1.0f;
+      }
+
+      ImGui::Text("| %ifps |", m_CurrentFps);
       s_MainMenuBar.endItem();
     }
 
@@ -438,10 +582,74 @@ namespace bifrost::editor
       {
         ImGui::Text("%s", m_OpenProject->name().cstr());
         ImGui::Separator();
+
+        if (ImGui::CollapsingHeader("Assets"))
+        {
+          for (const auto& asset : engine.assets().assetMap())
+          {
+            BaseAssetInfo* const asset_handle = asset.value();
+
+            if (ImGui::TreeNode(asset_handle->path().cstr()))
+            {
+              const auto type = asset_handle->type();
+
+              ImGui::Text("UUID    : %s", asset_handle->uuid().as_string);
+              ImGui::Text("RefCount: %i", asset_handle->refCount());
+
+              if (type)
+              {
+                ImGui::Text("Type Name: '%s'", type->name().data());
+              }
+              else
+              {
+                ImGui::Text("Unregistered Type <nullptr>");
+              }
+
+              ImGui::TreePop();
+            }
+          }
+        }
       }
 
       ImGui::End();
     }
+
+    if (ImGui::Begin("RTTI"))
+    {
+      auto& memory = meta::gRttiMemoryBacking();
+      ImGui::Text("Memory Usage %i / %i", int(memory.usedMemory()), int(memory.size()));
+
+      for (auto& type : meta::gRegistry())
+      {
+        const auto& name = type.key();
+
+        if (ImGui::TreeNode(type.value(), "%.*s", name.length(), name.data()))
+        {
+          auto* const type_info = type.value();
+
+          ImGui::Text("Size: %i, Alignment %i", int(type_info->size()), int(type_info->alignment()));
+
+          for (auto& field : type_info->members())
+          {
+            ImGui::Text("member: %.*s", field->name().length(), field->name().data());
+          }
+
+          for (auto& prop : type_info->properties())
+          {
+            ImGui::Text("prop: %.*s", prop->name().length(), prop->name().data());
+          }
+
+          for (auto& method : type_info->methods())
+          {
+            ImGui::Text("method: %.*s", method->name().length(), method->name().data());
+          }
+
+          ImGui::Separator();
+          ImGui::TreePop();
+        }
+      }
+    }
+    ImGui::End();
 
     if (m_OpenNewDialog)
     {
@@ -469,19 +677,20 @@ namespace bifrost::editor
     }
   }
 
-  void EditorOverlay::onUnload(BifrostEngine& engine)
+  void EditorOverlay::onUnload(Engine& engine)
   {
   }
 
-  void EditorOverlay::onDestroy(BifrostEngine& engine)
+  void EditorOverlay::onDestroy(Engine& engine)
   {
+    enqueueDialog(nullptr);
   }
 
   Action* EditorOverlay::findAction(const char* name) const
   {
     ActionPtr* action_ptr = m_Actions.at(name);
 
-    return action_ptr ? action_ptr->get()  : nullptr;
+    return action_ptr ? action_ptr->get() : nullptr;
   }
 
   void EditorOverlay::enqueueDialog(ui::Dialog* dlog)
@@ -516,34 +725,53 @@ namespace bifrost::editor
     return did_open;
   }
 
-  bool EditorOverlay::openProject(StringRange path)
+  bool EditorOverlay::openProject(const StringRange path)
   {
-    const String path_str = {path.bgn, path.end};
+    const String path_str = {path};
     File         project_file{path_str, file::FILE_MODE_READ};
 
     if (project_file)
     {
       const StringRange project_dir       = file::directoryOfFile(path);
-      const String      project_meta_path = project_dir + String("/_meta");
+      String            project_meta_path = project_dir;
+
+      project_meta_path.append("/");
+      project_meta_path.append(Assets::META_PATH_NAME);
 
       String project_json_str{};
       project_file.readAll(project_json_str);
 
-      bfLogPrint("Directory(%.*s)", int(project_dir.length()), project_dir.bgn);
       bfLogPush("Open This Project:");
+      bfLogPrint("Directory(%.*s)", int(project_dir.length()), project_dir.bgn);
       bfLogPrint("%s", project_json_str.cstr());
-
-      if (path::doesExist(project_meta_path.cstr()))
-      {
-      }
-      else
-      {
-        bfLogWarn("Project does not have meta asset files. (%s)", project_meta_path.cstr());
-      }
-
       bfLogPop();
 
       const AssetError err = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
+
+      if (!path::doesExist(project_meta_path.cstr()) && !path::createDirectory(project_meta_path.cstr()))
+      {
+        bfLogWarn("Project does not have meta asset files. (%s)", project_meta_path.cstr());
+      }
+      else
+      {
+        FixedLinearAllocator<1024> allocator;
+        path::DirectoryEntry*      dir = path::openDirectory(allocator.memory(), project_meta_path);
+
+        if (dir)
+        {
+          do
+          {
+            const char* name = entryFilename(dir);
+
+            if (isFile(dir))
+            {
+              m_Engine->assets().loadMeta(bfMakeStringRangeC(name));
+            }
+          } while (readNextEntry(dir));
+
+          closeDirectory(dir);
+        }
+      }
 
       if (err == AssetError::NONE)
       {
@@ -557,7 +785,7 @@ namespace bifrost::editor
         {
           const auto& project_name_str = project_name->as<string_t>();
 
-          m_OpenProject.reset(make<Project>(String(project_name_str.c_str())));
+          m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), project_dir, std::move(project_meta_path)));
 
           return true;
         }
@@ -570,5 +798,153 @@ namespace bifrost::editor
   void EditorOverlay::closeProject()
   {
     m_OpenProject.reset(nullptr);
+  }
+
+  // Asset Management
+
+  struct FileExtensionHandler final
+  {
+    using Callback = void (*)(Assets& engine, StringRange relative_path, StringRange meta_name);
+
+    StringRange ext;
+    Callback    handler;
+
+    FileExtensionHandler(StringRange extension, Callback callback) :
+      ext{extension},
+      handler{callback}
+    {
+    }
+  };
+
+  struct MetaAssetPath final
+  {
+    char*       file_name{nullptr};
+    StringRange meta_name;
+  };
+
+  template<typename T>
+  static void fileExtensionHandlerImpl(Assets& assets, StringRange relative_path, StringRange meta_name)
+  {
+    assets.indexAsset<T>(relative_path, meta_name);
+  }
+
+  static const FileExtensionHandler s_AssetHandlers[] =
+   {
+    {".png", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".jpg", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".jpeg", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".ppm", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".pgm", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".bmp", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".tga", &fileExtensionHandlerImpl<AssetTextureInfo>},
+    {".psd", &fileExtensionHandlerImpl<AssetTextureInfo>},
+
+    {".glsl", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+    {".frag", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+    {".vert", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+
+    {".shader", &fileExtensionHandlerImpl<AssetShadeProgramInfo>},
+
+    // {".obj", &fileExtensionHandlerImpl<AssetShadeProgramHandle>},
+    // {".gltf", &fileExtensionHandlerImpl<AssetShadeProgramHandle>},
+  };
+
+  static void                        assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string);
+  static const FileExtensionHandler* assetFindHandler(StringRange relative_path);
+
+  void EditorOverlay::assetRefresh()
+  {
+    const auto& path = m_OpenProject->path();
+
+    if (path::doesExist(path.cstr()))
+    {
+      FixedLinearAllocator<1024> allocator;
+      List<MetaAssetPath>        metas_to_check{allocator};
+
+      assetFindAssets(metas_to_check, path, "");
+
+      for (const auto& meta : metas_to_check)
+      {
+        const char* const                 relative_path_bgn = meta.file_name + path.length() + 1;
+        const StringRange                 relative_path     = {relative_path_bgn, relative_path_bgn + std::strlen(relative_path_bgn)};
+        const FileExtensionHandler* const handler           = assetFindHandler(relative_path);
+
+        if (handler)
+        {
+          bfLogPush("(%s)", meta.file_name);
+          {
+            const StringRange file_name = file::fileNameOfPath(relative_path);
+
+            bfLogPrint("Meta-Name    : (%s)", meta.meta_name.bgn);
+            bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
+            bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
+
+            handler->handler(m_Engine->assets(), relative_path, meta.meta_name);
+          }
+          bfLogPop();
+        }
+        else
+        {
+          bfLogWarn("Unknown file type (%s)", meta.file_name);
+        }
+
+        string_utils::free_fmt(allocator, meta.file_name);
+        string_utils::free_fmt(allocator, const_cast<char*>(meta.meta_name.bgn));
+      }
+    }
+  }
+
+  static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string)
+  {
+    FixedLinearAllocator<512> allocator;
+    path::DirectoryEntry*     dir = path::openDirectory(allocator.memory(), path);
+
+    if (dir)
+    {
+      do
+      {
+        const char* name = entryFilename(dir);
+
+        if (name[0] != '.' && name[0] != '_')
+        {
+          if (isDirectory(dir))
+          {
+            assetFindAssets(metas, path + "/" + name, current_string + name + ".");
+          }
+          else
+          {
+            auto& m = metas.emplaceBack();
+
+            m.file_name = string_utils::alloc_fmt(metas.memory(), nullptr, "%s/%s", path.cstr(), name);
+
+            std::size_t meta_name_length;
+            char* const meta_name = string_utils::alloc_fmt(metas.memory(), &meta_name_length, "%s%s.meta", current_string.cstr(), name);
+
+            m.meta_name = {meta_name, meta_name + meta_name_length};
+          }
+        }
+      } while (readNextEntry(dir));
+
+      closeDirectory(dir);
+    }
+    else
+    {
+      bfLogError("Could not open directory (%s)!", path.cstr());
+    }
+  }
+
+  static const FileExtensionHandler* assetFindHandler(StringRange relative_path)
+  {
+    const StringRange file_ext = file::extensionOfFile(relative_path);
+
+    for (const auto& handler : s_AssetHandlers)
+    {
+      if (handler.ext == file_ext)
+      {
+        return &handler;
+      }
+    }
+
+    return nullptr;
   }
 }  // namespace bifrost::editor

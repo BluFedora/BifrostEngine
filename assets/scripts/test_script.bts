@@ -1,18 +1,12 @@
 // This is an import for the standard math lib
 // asking for the 'math_print' function.
-import "std:math"                       for math_print;
-import "std:array"                      for Array;
-import "assets/scripts/test_module.bts" for hello, hi;
 import "std:memory"                     for gc as CollectGarbage;
 import "std:functional"                 for Closure as C, Closure = C2, Closure;
 
-// Any class with a function called 'call' can have it's instances be called like a function.
+// Any class with a method named 'call' can have it's instances be called like a function.
 // Current implementation does have quite a bit of overhead to it so for most performance just do:
 // 'instance:call(...)'
 
-/*
-  Multi Line Comment.
-*/
 class Hello
 {
   // Class initializers must
@@ -77,28 +71,13 @@ class Hello
 func class_create()
 {
   var inst = new Hello(420);
+  var test0 = new Hello.differentCtor("Hello good sir");
 
   // inst.new_field = new Hello(11);
   // print inst.new_field.h;
 
   inst.h = "New Value";
   print inst.h;
-
-/*
-  switch (value)
-  {
-    case 0:
-    {
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-*/
-
-  var test0 = new Hello.differentCtor("Hello good sir");
 
   print 0;
   test0[3];
@@ -154,10 +133,8 @@ func testNative()
   var mathobj = new Math;
 
   print Math.mult(4, 9) == mathobj.mult(4, 3);
-
   print Math.mult(4, 3);
   print mathobj.mult(4, 3);
-
   print facAndMult(9, 3);
 }
 
@@ -204,7 +181,6 @@ else
   print "This should NOT run";
 }
 print "--------------------- BOOLEAN TESTS ---------------------";
-
 
 //if (true || alwaysFalse())
 //{

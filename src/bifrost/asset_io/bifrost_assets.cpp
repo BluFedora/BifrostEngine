@@ -14,14 +14,18 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp"
-#include "bifrost/platform/bifrost_platform.h"  // HANDLE
+#include "bifrost/asset_io/bifrost_file.hpp"           // File
+#include "bifrost/asset_io/bifrost_json_parser.hpp"    //
+#include "bifrost/asset_io/bifrost_json_value.hpp"     // JsonValue
+#include "bifrost/memory/bifrost_linear_allocator.hpp" /* LinearAllocator */
+#include "bifrost/meta/bifrost_meta_runtime.hpp"       //
+#include "bifrost/platform/bifrost_platform.h"         //
 
-#include <filesystem> /*  */
+#include <filesystem> /* filesystem::* */
 
 #if BIFROST_PLATFORM_WINDOWS
 #define NOMINMAX
-#include <Windows.h>
+#include <Windows.h>  // HANDLE
 #else
 #include <dirent.h>
 #endif
@@ -56,13 +60,15 @@ namespace bifrost
 
     DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path)
     {
-      char              null_terminated_path[MAX_PATH] = {'\0'};
-      const std::size_t null_terminated_path_length    = std::min(path.length(), bfCArraySize(null_terminated_path));
+      char        null_terminated_path[MAX_PATH] = {'\0'};
+      std::size_t null_terminated_path_length    = std::min(path.length(), bfCArraySize(null_terminated_path));
 
       std::strncpy(null_terminated_path, path.bgn, null_terminated_path_length);
-      null_terminated_path[null_terminated_path_length] = '\0';
+      null_terminated_path[null_terminated_path_length++] = '\\';
+      null_terminated_path[null_terminated_path_length++] = '*';
+      null_terminated_path[null_terminated_path_length]   = '\0';
 
-      #if BIFROST_PLATFORM_WINDOWS
+#if BIFROST_PLATFORM_WINDOWS
       WIN32_FIND_DATA out_data;
       const HANDLE    file_handle = ::FindFirstFileA(null_terminated_path, &out_data);
 
@@ -70,9 +76,8 @@ namespace bifrost
       {
         return nullptr;
       }
-      #else
-
-      DIR* const file_handle = opendir(null_terminated_path);
+#else
+      DIR* const     file_handle = opendir(null_terminated_path);
 
       if (!file_handle)
       {
@@ -81,7 +86,7 @@ namespace bifrost
 
       struct dirent* const = readdir(file_handle);
 
-      #endif
+#endif
 
       DirectoryEntry* const entry = memory.allocateT<DirectoryEntry>();
 
@@ -119,11 +124,94 @@ namespace bifrost
     }
   }  // namespace path
 
-  Assets::Assets() :
+  Assets::Assets(Engine& engine, IMemoryManager& memory) :
+    m_Engine{engine},
+    m_Memory{memory},
     m_NameToGUID{},
     m_AssetMap{},
-    m_RootPath{nullptr}
+    m_RootPath{nullptr},
+    m_MetaPath{}
   {
+  }
+
+  BifrostUUID Assets::indexAssetImpl(const StringRange path, StringRange meta_file_name, bool& create_new, meta::BaseClassMetaInfo* type_info)
+  {
+    const String path_key = path;
+    const auto   it_name  = m_NameToGUID.find(path_key);
+
+    if (it_name != m_NameToGUID.end())
+    {
+      const auto it_asset = m_AssetMap.find(it_name->value());
+
+      if (it_asset != m_AssetMap.end())
+      {
+        // Do Updates?
+        create_new = false;
+        return it_name->value();
+      }
+    }
+
+    BifrostUUID uuid = bfUUID_generate();
+
+    char            path_buffer[path::MAX_LENGTH + 1];
+    LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
+
+    // TODO(Shareef): Make this a helper function.
+    string_utils::alloc_fmt(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
+
+    const JsonValue json = JsonValue{
+     std::pair{std::string("Path"), std::string(path.bgn, path.end)},
+     std::pair{std::string("UUID"), std::string(uuid.as_string)},
+     std::pair{std::string("Type"), std::string(type_info->name())},
+    };
+
+    std::string json_str;
+    json.toString(json_str, true, 4);
+
+    File project_file{path_buffer, file::FILE_MODE_WRITE};
+
+    if (project_file)
+    {
+      project_file.writeBytes(json_str.c_str(), json_str.length());
+      project_file.close();
+    }
+
+    m_NameToGUID.emplace(path_key, uuid);
+
+    create_new = true;
+    return uuid;
+  }
+
+  void Assets::loadMeta(StringRange meta_file_name)
+  {
+    char            path_buffer[path::MAX_LENGTH + 1];
+    LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
+
+    // TODO(Shareef): Make this a helper function.
+    string_utils::alloc_fmt(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
+
+    File project_file{path_buffer, file::FILE_MODE_READ};
+
+    if (project_file)
+    {
+      String output;
+      project_file.readAll(output);
+
+      JsonValue                loaded_data = JsonParser::parse(output);
+      const std::string        path        = loaded_data["Path"];
+      const std::string        uuid_str    = loaded_data["UUID"];
+      const std::string        type        = loaded_data["Type"];
+      BifrostUUID              uuid        = bfUUID_fromString(uuid_str.c_str());
+      meta::BaseClassMetaInfo* type_info   = meta::TypeInfoFromName(type);
+
+      Any asset_handle = type_info->instantiate(m_Memory, StringRange(path.c_str(), path.c_str() + path.length()), uuid);
+      BaseAssetInfo* asset_handle_p = asset_handle.as<BaseAssetInfo*>();
+
+      m_AssetMap.emplace(uuid, asset_handle_p);
+      m_NameToGUID.emplace(path.c_str(), uuid);
+
+      project_file.close();
+    }
   }
 
   AssetError Assets::setRootPath(std::string_view path)
@@ -152,18 +240,27 @@ namespace bifrost
 
     setRootPath(nullptr);
 
-    m_RootPath = String_newLen(nullptr, 0);
+    if (!m_RootPath)
+    {
+      m_RootPath = String_newLen(nullptr, 0);
+    }
 
     const fs_string_type fs_path_str = fs_path.native();
 
     String_resize(&m_RootPath, fs_path_str.length());
 
-    int i = 0;
+    int path_length = 0;
 
     for (const auto path_char : fs_path_str)
     {
-      m_RootPath[i++] = static_cast<char>(path_char);
+      m_RootPath[path_length++] = static_cast<char>(path_char);
     }
+
+    m_MetaPath.clear();
+    m_MetaPath.append(m_RootPath, path_length);
+    m_MetaPath.append(META_PATH_NAME, sizeof(META_PATH_NAME) - 1);
+
+    // TODO: Canonicalize Paths
 
     return AssetError::NONE;
   }
@@ -175,13 +272,15 @@ namespace bifrost
 
     if (m_RootPath)
     {
-      String_delete(m_RootPath);
-      m_RootPath = nullptr;
+      String_clear(&m_RootPath);
     }
   }
 
   Assets::~Assets()
   {
-    setRootPath(nullptr);
+    if (m_RootPath)
+    {
+      String_delete(m_RootPath);
+    }
   }
 }  // namespace bifrost

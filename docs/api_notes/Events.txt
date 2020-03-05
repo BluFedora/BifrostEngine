@@ -32,7 +32,6 @@ EventManager {
 //   'add'       and 'remove'
 //   'connect'   and 'disconnect'
 
-
 The event system can store a contiguous list of EventData,
   uint8_t header;
   char    event_data[...];

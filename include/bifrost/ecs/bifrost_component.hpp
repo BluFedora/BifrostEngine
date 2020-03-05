@@ -35,7 +35,7 @@ namespace bifrost
   };
 
   template<typename TDerived>
-  class Component : public BaseObject<Component<TDerived>, TDerived>
+  class Component : public BaseObject<TDerived>
   {
    public:
     static std::uint32_t s_ComponentID;

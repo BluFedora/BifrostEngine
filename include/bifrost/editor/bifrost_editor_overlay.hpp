@@ -146,49 +146,61 @@ namespace bifrost::editor
   {
    private:
     String m_Name;
+    String m_Path;
+    String m_MetaPath;
 
    public:
-    explicit Project(String&& name) :
-      m_Name{std::move(name)}
+    explicit Project(String&& name, String&& path, String&& meta_path) :
+      m_Name{name},
+      m_Path{path},
+      m_MetaPath{meta_path}
     {
     }
 
     const String& name() const { return m_Name; }
+    const String& path() const { return m_Path; }
+    const String& metaPath() const { return m_MetaPath; }
   };
 
   using ActionPtr  = UniquePtr<Action>;
   using ProjectPtr = UniquePtr<Project>;
 
+  class ARefreshAsset;
+
   class EditorOverlay final : public IGameStateLayer
   {
+    friend class ARefreshAsset;
+
    private:
     ui::Dialog*                  m_CurrentDialog = nullptr;
     bool                         m_OpenNewDialog = false;
     HashTable<String, ActionPtr> m_Actions       = {};
-    BifrostEngine*               m_Engine        = nullptr;
+    Engine*                      m_Engine        = nullptr;
     ProjectPtr                   m_OpenProject   = nullptr;
+    float                        m_FpsTimer      = 0.0f;
+    int                          m_CurrentFps    = 0;
+    AssetHandle<bfTexture>       m_TestTexture   = nullptr;
 
    protected:
-    void onCreate(BifrostEngine& engine) override;
-    void onLoad(BifrostEngine& engine) override;
-    void onEvent(BifrostEngine& engine, Event& event) override;
-    void onUpdate(BifrostEngine& engine, float delta_time) override;
-    void onUnload(BifrostEngine& engine) override;
-    void onDestroy(BifrostEngine& engine) override;
+    void onCreate(Engine& engine) override;
+    void onLoad(Engine& engine) override;
+    void onEvent(Engine& engine, Event& event) override;
+    void onUpdate(Engine& engine, float delta_time) override;
+    void onUnload(Engine& engine) override;
+    void onDestroy(Engine& engine) override;
 
    public:
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
-
-    const char* name() override
-    {
-      return "Bifrost Editor";
-    }
+    const char*       name() override { return "Bifrost Editor"; }
 
     Action* findAction(const char* name) const;
     void    enqueueDialog(ui::Dialog* dlog);
     bool    openProjectDialog();
     bool    openProject(StringRange path);
     void    closeProject();
+
+   private:
+    void assetRefresh();
   };
 }  // namespace bifrost::editor
 

@@ -20,16 +20,19 @@ class BifrostEngine;
 
 namespace bifrost
 {
+  class IBaseObject
+  {
+  public:
+    virtual meta::BaseClassMetaInfo* type() = 0;
+    virtual ~IBaseObject()                  = default;
+  };
+
   // NOTE(Shareef): Use this class as the base type.
 
-  class BaseObjectT : public meta::Factory<BaseObjectT>
+  class BaseObjectT : public meta::Factory<BaseObjectT>, public IBaseObject
   {
    protected:
     explicit BaseObjectT(PrivateCtorTag) {}
-
-   public:
-    virtual meta::BaseClassMetaInfo* type() = 0;
-    virtual ~BaseObjectT()                  = default;
   };
 
   namespace detail

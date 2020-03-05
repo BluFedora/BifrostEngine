@@ -1,20 +1,24 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_pool_allocator.hpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is a designed for static (known at compile time)
-      pools of objects. Features O(1) allocation and O(1) deletion.
+* @file   bifrost_linear_allocator.hpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is a designed for static (known at compile time)
+*   pools of objects. Features O(1) allocation and O(1) deletion.
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#ifndef TIDE_POOL_ALLOCATOR_HPP
-#define TIDE_POOL_ALLOCATOR_HPP
+#ifndef BIFROST_POOL_ALLOCATOR_HPP
+#define BIFROST_POOL_ALLOCATOR_HPP
 
 #include "bifrost_imemory_manager.hpp"
 
-#include <cassert> /* assert     */
-#include <memory>  /* align      */
+#include <cassert> /* assert  */
+#include <cstdint> /* uint8_t */
 
 namespace bifrost
 {
@@ -64,25 +68,25 @@ namespace bifrost
     PoolHeader* m_PoolStart;
 
    public:
-    PoolAllocator(void);
+    PoolAllocator();
 
     void* allocate(std::size_t size) override;
     void  deallocate(void* ptr) override;
 
-    inline char*       begin() { return m_AllocBlock; }
-    inline const char* begin() const { return m_AllocBlock; }
-    inline char*       end() { return m_AllocBlock + size(); }
-    inline const char* end() const { return m_AllocBlock + size(); }
-    inline std::size_t size() const { return sizeof(m_AllocBlock); }
+    char*       begin() { return m_AllocBlock; }
+    const char* begin() const { return m_AllocBlock; }
+    char*       end() { return m_AllocBlock + size(); }
+    const char* end() const { return m_AllocBlock + size(); }
+    std::size_t size() const { return sizeof(m_AllocBlock); }
 
    private:
-    inline void init() const
+    void init() const
     {
       PoolHeader* header = m_PoolStart;
 
       for (std::size_t i = 0; i < num_elements - 1; ++i)
       {
-        header->next = reinterpret_cast<PoolHeader*>(reinterpret_cast<uint8_t*>(header) + pool_stride);
+        header->next = reinterpret_cast<PoolHeader*>(reinterpret_cast<std::uint8_t*>(header) + pool_stride);
         header       = header->next;
       }
 
@@ -90,7 +94,7 @@ namespace bifrost
     }
 
    public:
-    inline void reset()
+    void reset()
     {
       m_PoolStart = reinterpret_cast<PoolHeader*>(begin());
       init();
@@ -118,7 +122,7 @@ namespace bifrost
       return reinterpret_cast<void*>(header);
     }
 
-    throw std::bad_alloc();
+    // throw std::bad_alloc();
     return nullptr;
   }
 
@@ -127,8 +131,8 @@ namespace bifrost
   {
     PoolHeader* const header = reinterpret_cast<PoolHeader*>(ptr);
 
-#ifdef DEBUG_MEMORY
-    std::memset(ptr, DEBUG_MEMORY_SIGNATURE, pool_stride);
+#ifdef BIFROST_MEMORY_DEBUG_WIPE_MEMORY
+    std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, pool_stride);
 #endif
 
     header->next = m_PoolStart;
@@ -136,4 +140,4 @@ namespace bifrost
   }
 }  // namespace bifrost
 
-#endif /* TIDE_POOL_ALLOCATOR_HPP */
+#endif /* BIFROST_POOL_ALLOCATOR_HPP */

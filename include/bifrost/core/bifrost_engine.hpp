@@ -3,8 +3,10 @@
 
 #include "bifrost/asset_io/test.h"
 #include "bifrost/bifrost.hpp"
+#include "bifrost/ecs/bifrost_iecs_system.hpp"  // IECSSystem
 #include "bifrost/event/bifrost_window_event.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
+
 #include "glfw/glfw3.h"
 
 using namespace bifrost;
@@ -15,7 +17,7 @@ struct BifrostEngineCreateParams : public bfGfxContextCreateParams
   std::uint32_t height;
 };
 
-class Model
+class Model final
 {
   bfBufferHandle vertex_buffer = nullptr;
   size_t         num_vertices  = 0;
@@ -101,11 +103,11 @@ class BaseRenderer
   bfTextureHandle              m_DepthBuffer;
   std::vector<bfGfxBaseHandle> m_Resources;
   Mat4x4                       m_ModelView;
-  ::Camera                     m_Camera;
+  Camera                       m_Camera;
   float                        m_Time;
 
  public:
-  BaseRenderer() :
+  explicit BaseRenderer() :
     m_GfxBackend{nullptr},
     m_GfxDevice{nullptr},
     m_MainCmdList{nullptr},
@@ -133,20 +135,9 @@ class BaseRenderer
     Camera_init(&m_Camera, &cam_pos, &cam_up, 0.0f, 0.0f);
   }
 
-  bfGfxContextHandle context() const
-  {
-    return m_GfxBackend;
-  }
-
-  bfTextureHandle surface() const
-  {
-    return m_MainSurface;
-  }
-
-  bfGfxCommandListHandle mainCommandList() const
-  {
-    return m_MainCmdList;
-  }
+  bfGfxContextHandle     context() const { return m_GfxBackend; }
+  bfTextureHandle        surface() const { return m_MainSurface; }
+  bfGfxCommandListHandle mainCommandList() const { return m_MainCmdList; }
 
   void startup(const bfGfxContextCreateParams& gfx_create_params)
   {
@@ -342,7 +333,6 @@ class BaseRenderer
     std::memcpy(uniform_buffer_ptr, &m_ModelView, sizeof(m_ModelView));
     std::memcpy((unsigned char*)uniform_buffer_ptr + 0x100, &model2, sizeof(model2));
     bfBuffer_unMap(m_UniformBuffer);
-
     // Camera END
 
     bfAttachmentInfo main_surface;
@@ -396,8 +386,8 @@ class BaseRenderer
       bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
       bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
 
-      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
-      s_Model.draw(m_MainCmdList);
+      // bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
+      // s_Model.draw(m_MainCmdList);
 
       bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
       bfGfxCmdList_bindIndexBuffer(m_MainCmdList, m_IndexBuffer, 0, BIFROST_INDEX_TYPE_UINT16);
@@ -445,16 +435,18 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   BaseRenderer                 m_Renderer;
   Scene*                       m_CurrentScene;
   Assets                       m_Assets;
+  Array<IECSSystem*>           m_Systems;
 
  public:
-  BifrostEngine(int argc, const char* argv[]) :
+  BifrostEngine(char* main_memory, std::size_t main_memmory_size, int argc, const char* argv[]) :
     m_CmdlineArgs{argc, argv},
-    m_MainMemory{new char[100000000ull], 100000000ull},
+    m_MainMemory{main_memory, main_memmory_size},
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
     m_Renderer{},
     m_CurrentScene{nullptr},
-    m_Assets{}
+    m_Assets{*this, m_MainMemory},
+    m_Systems{m_MainMemory}
   {
   }
 
@@ -530,23 +522,34 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
   void onEvent(Event& evt)
   {
-    for (auto it = m_StateMachine.rbegin(); (evt.flags & bifrost::Event::FLAGS_IS_ACCEPTED) == 0 && it != m_StateMachine.rend(); ++it)
+    for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != m_StateMachine.rend(); ++it)
     {
       it->onEvent(*this, evt);
     }
   }
 
-  void update()
+  void fixedUpdate(float delta_time)
   {
-    m_Renderer.frameUpdate();
-
     for (auto& state : m_StateMachine)
     {
-      state.onUpdate(*this, 0.0f);
+      state.onFixedUpdate(*this, delta_time);
     }
   }
 
-  void endFrame()
+  void update(float delta_time)
+  {
+    for (auto& state : m_StateMachine)
+    {
+      state.onUpdate(*this, delta_time);
+    }
+  }
+
+  void drawBegin()
+  {
+    m_Renderer.frameUpdate();
+  }
+
+  void drawEnd()
   {
     m_Renderer.frameEnd();
   }
@@ -557,11 +560,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     m_Scripting.destroy();
     bfLogger_deinit();
     m_Renderer.cleanup();
-  }
-
-  ~BifrostEngine()
-  {
-    delete[] m_MainMemory.begin();
+    m_Systems.clear();
   }
 };
 

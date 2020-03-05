@@ -41,3 +41,44 @@ but then what you have left is an empty husk of a reference.
 
 // [https://blogs.unity3d.com/2014/05/16/custom-operator-should-we-keep-it/]
 // [https://jacx.net/2015/11/20/dont-use-equals-null-on-unity-objects.html]
+
+----- Engine Dependencies -----
+
+AssetIO
+  Utility
+  DataStructures
+
+Core
+  DataStructures
+  Memory
+
+DataStructures
+  Utility
+  Memory
+
+Debug
+  Platform
+
+Event
+  C++99
+
+Graphics
+  C++11 / C99
+  DataStructures
+
+Memory
+  C++11
+
+MetaSystem
+  Memory
+  DataStructures
+
+Platform
+  StandardDefs/Core
+  Event
+  DataStructures
+  Utility
+
+Utility
+  C++17 or C99
+  Platform

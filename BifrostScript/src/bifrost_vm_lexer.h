@@ -50,48 +50,48 @@ typedef enum
   BIFROST_TOKEN_AS          = 48, /*!< as                                    */
   BIFROST_TOKEN_SUPER       = 49, /*!< super                                 */
 
-  // Depracated names
+  // Deprecated names
   R_PAREN   = BIFROST_TOKEN_R_PAREN,
   L_SQR_BOI = BIFROST_TOKEN_L_SQR_BOI,
   R_SQR_BOI = BIFROST_TOKEN_R_SQR_BOI,
   L_CURLY   = BIFROST_TOKEN_L_CURLY,
   R_CURLY   = BIFROST_TOKEN_R_CURLY,
-  HASHTAG   = 6,        // #
+  HASHTAG   = 6,                    // #
   COLON     = BIFROST_TOKEN_COLON,  // @BIFROST_TOKEN_COLON
   COMMA     = BIFROST_TOKEN_COMMA,  // @BIFROST_TOKEN_COMMA
-  EQUALS    = 10,       // @BIFROST_TOKEN_EQUALS
-  PLUS      = 11,       // +
-  MINUS     = 12,       // -
-  MULT,                 // *
-  DIV,                  // /
-  PLUS_EQUALS,          // +=
-  MINUS_EQUALS,         // -=
-  INCREMENT,            // ++
-  DECREMENT,            // --
-  DOT,                  // @BIFROST_TOKEN_DOT
-  IDENTIFIER,           // @BIFROST_TOKEN_IDENTIFIER
-  VAR_DECL,             // var
-  IMPORT,               // import
-  FUNC,                 // func
-  BIFROST_TOKEN_CLASS,  // class
-  CTRL_IF,              // @BIFROST_TOKEN_CTRL_IF
-  CTRL_ELSE,            // @BIFROST_TOKEN_CTRL_ELSE
-  CTRL_EE,              // ==
-  CTRL_LT,              // <
-  CTRL_GT,              // >
-  CTRL_LE,              // <=
-  CTRL_GE,              // >=
-  CTRL_OR,              // ||
-  CTRL_AND,             // &&
-  CTRL_NE,              // !=
-  CTRL_FOR    = 37,     // for
-  CTRL_RETURN = 38,     // return
-  CTRL_NEGATE = 39,     // !
-  CONST_STR   = 40,     // "<...>"
-  CONST_REAL  = 41,     // 01234567890.0123456789
-  CONST_BOOL  = 42,     // true, false
-  CONST_NIL   = 43,     // nil
-  EOP         = 44,     // End of Program
+  EQUALS    = 10,                   // @BIFROST_TOKEN_EQUALS
+  PLUS      = 11,                   // +
+  MINUS     = 12,                   // -
+  MULT,                             // *
+  DIV,                              // /
+  PLUS_EQUALS,                      // +=
+  MINUS_EQUALS,                     // -=
+  INCREMENT,                        // ++
+  DECREMENT,                        // --
+  DOT,                              // @BIFROST_TOKEN_DOT
+  IDENTIFIER,                       // @BIFROST_TOKEN_IDENTIFIER
+  VAR_DECL,                         // var
+  IMPORT,                           // import
+  FUNC,                             // func
+  BIFROST_TOKEN_CLASS,              // class
+  CTRL_IF,                          // @BIFROST_TOKEN_CTRL_IF
+  CTRL_ELSE,                        // @BIFROST_TOKEN_CTRL_ELSE
+  CTRL_EE,                          // ==
+  CTRL_LT,                          // <
+  CTRL_GT,                          // >
+  CTRL_LE,                          // <=
+  CTRL_GE,                          // >=
+  CTRL_OR,                          // ||
+  CTRL_AND,                         // &&
+  CTRL_NE,                          // !=
+  CTRL_FOR    = 37,                 // for
+  CTRL_RETURN = 38,                 // return
+  CTRL_NEGATE = 39,                 // !
+  CONST_STR   = 40,                 // "<...>"
+  CONST_REAL  = 41,                 // 01234567890.0123456789
+  CONST_BOOL  = 42,                 // true, false
+  CONST_NIL   = 43,                 // nil
+  EOP         = 44,                 // End of Program
 
   // basics, keywords, meta, literals, literals, flow control
   // TODO(SR): Tokens: '/=', '*=', '%', '%=', '|', '&', '~', '>>', '<<'

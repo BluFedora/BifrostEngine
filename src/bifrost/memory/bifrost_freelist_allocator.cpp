@@ -1,12 +1,16 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_freelist_allocator.cpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is a the most generic custom allocator with the heaviest
-      overhead. This has the largest header size of any allocator but can be
-      used as a direct replacement for "malloc/new" and "free/delete".
+* @file   bifrost_freelist_allocator.cpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This allocator is a the most generic custom allocator with the heaviest
+*   overhead. This has the largest header size of any allocator but can be
+*   used as a direct replacement for "malloc/new" and "free/delete".
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
@@ -80,8 +84,8 @@ namespace bifrost
 
     const std::size_t block_size = header->size;
 
-#if DEBUG_MEMORY
-    std::memset(ptr, DEBUG_MEMORY_SIGNATURE, block_size);
+#if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
+    std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, block_size);
 #endif
 
     node->size = block_size;

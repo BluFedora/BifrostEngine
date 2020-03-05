@@ -1,15 +1,19 @@
 /******************************************************************************/
 /*!
-  @file   bifrost_c_allocator.hpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @brief
-      This allocator is a wrapper around the built in memory allocator.
-      Implemented using "malloc / calloc" and "free".
+* @file   bifrost_c_allocator.hpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*  This allocator is a wrapper around the built in memory allocator.
+*  Implemented using "malloc / calloc" and "free".
+*
+* @version 0.0.1
+* @date    2019-12-26
+*
+* @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#ifndef CALLOCATOR_HPP
-#define CALLOCATOR_HPP
+#ifndef BIFORST_C_ALLOCATOR_HPP
+#define BIFORST_C_ALLOCATOR_HPP
 
 #include "bifrost_imemory_manager.hpp"
 
@@ -18,7 +22,7 @@ namespace bifrost
   class CAllocator final : public IMemoryManager
   {
    public:
-    CAllocator(void);
+    CAllocator();
 
    public:
     void* allocate(std::size_t size) override;
@@ -28,4 +32,4 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-#endif  // CALLOCATOR_HPP
+#endif  /* BIFORST_C_ALLOCATOR_HPP */

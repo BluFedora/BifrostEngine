@@ -1,7 +1,16 @@
-/*!
+/******************************************************************************/
+ /*!
+ * @file   bifrost_uuid.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *  Platform abstraction for generating globally unique identifiers.
+ *   Platform abstraction for generating globally unique identifiers.
+ *
+ * @version 0.0.1
+ * @date    2019-12-28
+ *
+ * @copyright Copyright (c) 2019
  */
+/******************************************************************************/
 #ifndef BIFROST_UUID_H
 #define BIFROST_UUID_H
 

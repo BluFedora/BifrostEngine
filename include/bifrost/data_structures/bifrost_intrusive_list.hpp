@@ -315,6 +315,7 @@ namespace bifrost
     T&                 front() { return *m_InternalList.front().cast(); }
     T&                 back() { return *m_InternalList.back().cast(); }
     [[nodiscard]] bool isEmpty() const { return m_InternalList.isEmpty(); }
+    IMemoryManager&    memory() const { return m_Memory; }
 
     template<typename... Args>
     T& emplaceBack(Args&&... args)
@@ -336,7 +337,7 @@ namespace bifrost
     template<typename... Args>
     T& insert(iterator pos, Args&&... args)
     {
-      Node* node      = m_Memory.alloc_t<Node>();
+      Node* node      = m_Memory.allocateT<Node>();
       T*    node_data = new (&node->data_storage) T(std::forward<Args>(args)...);
 
       m_InternalList.insert(pos.m_Current, *node);

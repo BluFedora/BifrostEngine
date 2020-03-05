@@ -94,6 +94,7 @@ BIFROST_MATH_API void  Camera_setFovY(Camera* cam, const float value);
 BIFROST_MATH_API void  Camera_onResize(Camera* cam, uint width, uint height);
 BIFROST_MATH_API void  Camera_setProjectionModified(Camera* cam);
 BIFROST_MATH_API Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size);
+
 #ifdef __cplusplus
 }
 #endif
