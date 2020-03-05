@@ -118,6 +118,8 @@ typedef struct BifrostObjNativeFn_t
   int32_t     arity;
   uint32_t    num_statics;
   bfVMValue*  statics;  // Fixed size array.
+  uint16_t    extra_data_size;
+  char        extra_data[bfStructHack]; /* This is for native data. */
 
 } BifrostObjNativeFn;
 
@@ -156,7 +158,7 @@ BifrostObjModule*    bfVM_createModule(struct BifrostVM_t* self, bfStringRange n
 BifrostObjClass*     bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, BifrostObjClass* base_clz, size_t extra_data);
 BifrostObjInstance*  bfVM_createInstance(struct BifrostVM_t* self, BifrostObjClass* clz);
 BifrostObjFn*        bfVM_createFunction(struct BifrostVM_t* self, BifrostObjModule* module);
-BifrostObjNativeFn*  bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics);
+BifrostObjNativeFn*  bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics, uint16_t extra_data);
 BifrostObjStr*       bfVM_createString(struct BifrostVM_t* self, bfStringRange value);
 BifrostObjReference* bfVM_createReference(struct BifrostVM_t* self, size_t extra_data_size);
 BifrostObjWeakRef*   bfVM_createWeakRef(struct BifrostVM_t* self, void* data);

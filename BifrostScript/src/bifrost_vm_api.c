@@ -385,7 +385,7 @@ BifrostObjClass* createClassBinding(BifrostVM* self, bfVMValue obj, const Bifros
 
   while (method->name && method->fn)
   {
-    BifrostObjNativeFn* const fn = bfVM_createNativeFn(self, method->fn, method->arity, method->num_statics);
+    BifrostObjNativeFn* const fn = bfVM_createNativeFn(self, method->fn, method->arity, method->num_statics, method->extra_data);
 
     bfGCPushRoot(self, &fn->super);
     bfVM_xSetVariable(&clz->symbols, self, bfMakeStringRangeC(method->name), FROM_POINTER(fn));
@@ -575,7 +575,7 @@ BifrostVMError bfVM_stackStoreVariable(BifrostVM* self, size_t inst_or_class_or_
 
 BifrostVMError bfVM_stackStoreNativeFn(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity)
 {
-  return bfVM_stackStoreClosure(self, inst_or_class_or_module, field, func, arity, 0);
+  return bfVM_stackStoreClosure(self, inst_or_class_or_module, field, func, arity, 0, 0);
 }
 
 BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t static_idx)
@@ -595,14 +595,14 @@ BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t sta
   return BIFROST_VM_ERROR_NONE;
 }
 
-BifrostVMError bfVM_stackStoreClosure(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics)
+BifrostVMError bfVM_stackStoreClosure(BifrostVM* self, size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics, uint16_t extra_data)
 {
   bfVM_assertStackIndex(self, inst_or_class_or_module);
 
   const bfVMValue     obj      = self->stack_top[inst_or_class_or_module];
   const bfStringRange var_name = bfMakeStringRangeC(field);
 
-  if (bfVM__stackStoreVariable(self, obj, var_name, FROM_POINTER(bfVM_createNativeFn(self, func, arity, num_statics))))
+  if (bfVM__stackStoreVariable(self, obj, var_name, FROM_POINTER(bfVM_createNativeFn(self, func, arity, num_statics, extra_data))))
   {
     return BIFROST_VM_ERROR_INVALID_OP_ON_TYPE;
   }
@@ -639,6 +639,36 @@ BifrostVMError bfVM_closureSetStatic(BifrostVM* self, size_t closure_idx, size_t
   native_fn->statics[static_idx] = self->stack_top[value_idx];
 
   return BIFROST_VM_ERROR_NONE;
+}
+
+void* bfVM_closureStackGetExtraData(BifrostVM* self, size_t closure_idx)
+{
+  bfVM_assertStackIndex(self, closure_idx);
+
+  const bfVMValue obj = self->stack_top[closure_idx];
+
+  if (!IS_POINTER(obj))
+  {
+    return NULL;
+  }
+
+  BifrostObj* obj_ptr = BIFROST_AS_OBJ(obj);
+
+  if (obj_ptr->type != BIFROST_VM_OBJ_NATIVE_FN)
+  {
+    return NULL;
+  }
+
+  BifrostObjNativeFn* native_fn = (BifrostObjNativeFn*)obj_ptr;
+
+  return native_fn->extra_data;
+}
+
+void* bfVM_closureGetExtraData(BifrostVM* self)
+{
+  BifrostObjNativeFn* const native_fn = self->current_native_fn;
+
+  return native_fn ? native_fn->extra_data : NULL;
 }
 
 BifrostVMError bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind)
@@ -689,6 +719,7 @@ void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx)
 
   if (IS_NULL(value))
   {
+    __debugbreak();
     return NULL;
   }
 
@@ -699,24 +730,23 @@ void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx)
   if (obj->type == BIFROST_VM_OBJ_INSTANCE)
   {
     BifrostObjInstance* inst = (BifrostObjInstance*)obj;
-
     return inst->extra_data;
   }
-  else if (obj->type == BIFROST_VM_OBJ_REFERENCE)
+
+  if (obj->type == BIFROST_VM_OBJ_REFERENCE)
   {
     BifrostObjReference* inst = (BifrostObjReference*)obj;
     return inst->extra_data;
   }
-  else if (obj->type == BIFROST_VM_OBJ_WEAK_REF)
+
+  if (obj->type == BIFROST_VM_OBJ_WEAK_REF)
   {
     BifrostObjWeakRef* inst = (BifrostObjWeakRef*)obj;
     return inst->data;
   }
-  else
-  {
-    assert(!"This object is not a instance.");
-  }
 
+  assert(!"This object is not a instance.");
+  __debugbreak();
   return NULL;
 }
 
@@ -1314,7 +1344,7 @@ frame_start:;
 
           if (obj->type == BIFROST_VM_OBJ_NATIVE_FN)
           {
-            const BifrostObjNativeFn* const fn = (const BifrostObjNativeFn*)obj;
+            BifrostObjNativeFn* const fn = (BifrostObjNativeFn*)obj;
 
             if (fn->arity >= 0 && num_args != (uint32_t)fn->arity)
             {

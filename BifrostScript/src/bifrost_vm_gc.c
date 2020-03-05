@@ -515,7 +515,7 @@ size_t bfGCObjectSize(BifrostObj* obj)
     }
     case BIFROST_VM_OBJ_NATIVE_FN:
     {
-      return sizeof(BifrostObjNativeFn) + ((BifrostObjNativeFn*)obj)->num_statics * sizeof(bfVMValue);
+      return sizeof(BifrostObjNativeFn) + ((BifrostObjNativeFn*)obj)->num_statics * sizeof(bfVMValue) + ((BifrostObjNativeFn*)obj)->extra_data_size;
     }
     case BIFROST_VM_OBJ_STRING:
     {

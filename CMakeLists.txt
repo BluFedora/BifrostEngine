@@ -136,13 +136,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
 
   # Bifrost Memory Module
-  "src/bifrost/memory/bifrost_c_allocator.cpp"
-  "src/bifrost/memory/bifrost_freelist_allocator.cpp"
-  "src/bifrost/memory/bifrost_imemory_manager.cpp"
-  "src/bifrost/memory/bifrost_linear_allocator.cpp"
-  "src/bifrost/memory/bifrost_pool_allocator.cpp"
-  "src/bifrost/memory/bifrost_proxy_allocator.cpp"
-  "src/bifrost/memory/bifrost_stack_allocator.cpp"
+  "BifrostMemory/src/*.cpp"
 
   # Bifrost Meta Module
   "src/bifrost/meta/bifrost_meta_runtime.cpp"
@@ -168,6 +162,7 @@ find_package(OpenCL)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostMemory/include)
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})

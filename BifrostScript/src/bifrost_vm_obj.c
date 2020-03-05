@@ -102,13 +102,14 @@ BifrostObjFn* bfVM_createFunction(struct BifrostVM_t* self, BifrostObjModule* mo
   return fn;
 }
 
-BifrostObjNativeFn* bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics)
+BifrostObjNativeFn* bfVM_createNativeFn(struct BifrostVM_t* self, bfNativeFnT fn_ptr, int32_t arity, uint32_t num_statics, uint16_t extra_data)
 {
-  BifrostObjNativeFn* fn = allocObj(self, sizeof(BifrostObjNativeFn) + sizeof(bfVMValue) * num_statics, BIFROST_VM_OBJ_NATIVE_FN);
+  BifrostObjNativeFn* fn = allocObj(self, sizeof(BifrostObjNativeFn) + sizeof(bfVMValue) * num_statics + extra_data, BIFROST_VM_OBJ_NATIVE_FN);
   fn->value              = fn_ptr;
   fn->arity              = arity;
   fn->num_statics        = num_statics;
   fn->statics            = (bfVMValue*)((char*)fn + sizeof(BifrostObjNativeFn));
+  fn->extra_data_size    = extra_data;
 
   return fn;
 }

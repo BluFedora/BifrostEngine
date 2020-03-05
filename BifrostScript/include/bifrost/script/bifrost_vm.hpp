@@ -205,20 +205,21 @@ namespace bifrost
   }
 
   template<typename ClzT, typename... Args>
-  BifrostMethodBind vmMakeCtorBinding(const char* name = "ctor", uint32_t num_statics = 0)
+  BifrostMethodBind vmMakeCtorBinding(const char* name = "ctor", uint32_t num_statics = 0, uint16_t extra_data = 0u)
   {
     /* NOTE(Shareef): +1 for the self argument */
-    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1, num_statics};
+    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1, num_statics, extra_data};
   }
 
   template<auto mem_fn>
-  BifrostMethodBind vmMakeMemberBinding(const char* name, uint32_t num_statics = 0)
+  BifrostMethodBind vmMakeMemberBinding(const char* name, uint32_t num_statics = 0, uint16_t extra_data = 0u)
   {
     return {
      name,
      &vmNativeFnWrapper<mem_fn>,
      meta::function_traits<decltype(mem_fn)>::arity,
      num_statics,
+     extra_data,
     };
   }
 
@@ -231,7 +232,7 @@ namespace bifrost
   template<typename ClzT, typename... Args>
   BifrostVMClassBind vmMakeClassBinding(const char* name, Args&&... methods)
   {
-    static BifrostMethodBind s_Methods[] = {methods..., {nullptr, nullptr, 0, 0}};
+    static BifrostMethodBind s_Methods[] = {methods..., {nullptr, nullptr, 0, 0, 0}};
 
     BifrostVMClassBind clz_bind;
 
@@ -365,9 +366,9 @@ namespace bifrost
       bfVM_stackStoreNativeFn(self(), idx, variable, func, arity);
     }
 
-    BifrostVMError stackStoreClosure(size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics)
+    BifrostVMError stackStoreClosure(size_t inst_or_class_or_module, const char* field, bfNativeFnT func, int32_t arity, uint32_t num_statics = 0u, uint16_t extra_data = 0u)
     {
-      return bfVM_stackStoreClosure(self(), inst_or_class_or_module, field, func, arity, num_statics);
+      return bfVM_stackStoreClosure(self(), inst_or_class_or_module, field, func, arity, num_statics, extra_data);
     }
 
     BifrostVMError closureGetStatic(size_t dst_idx, size_t static_idx)
@@ -394,16 +395,16 @@ namespace bifrost
 
       const std::size_t old_size = stackSize();
 
-      // TODO(Shareef): Also specialize on
       if constexpr (fn_traits::is_member_fn)
       {
-        // NOTE(Shareef): Space for the 'idx' (module) and 'idx + 1' (Closure) 'idx + 2' (WeakRef).
+        // NOTE(Shareef): Space for the 'idx' (module) and 'idx + 1' (Closure)
 
-        stackResize(idx + 3);
-        stackStoreClosure(idx, variable, &callMember<Fn>, fn_traits::arity, 1);
+        stackResize(idx + 2);
+        stackStoreClosure(idx, variable, &callMember<Fn>, fn_traits::arity, 1, sizeof(func));
         stackLoadVariable(idx + 1, idx, variable);
-        stackMakeWeakRef(idx + 2, std::addressof(func));
-        closureSetStatic(idx + 1, 0, idx + 2);
+
+        void* const extra_data = bfVM_closureStackGetExtraData(self(), idx + 1);
+        std::memcpy(extra_data, &func, sizeof(func));
       }
       else
       {
@@ -595,16 +596,9 @@ namespace bifrost
     }
 
     template<typename Fn>
-    static void callMember(BifrostVM* vm, int arity)
+    static void callMember(BifrostVM* vm, int /*arity*/)
     {
-      static constexpr size_t STATIC_FN_POINTER_IDX = 0;
-
-      const size_t extra_start = arity + 1;
-
-      bfVM_stackResize(vm, extra_start + 1);
-      bfVM_closureGetStatic(vm, extra_start, STATIC_FN_POINTER_IDX);
-
-      callImplShared<Fn>(vm, static_cast<Fn*>(bfVM_stackReadInstance(vm, extra_start)));
+      callImplShared<Fn>(vm, static_cast<Fn*>(bfVM_closureGetExtraData(vm)));
     }
   };
 
