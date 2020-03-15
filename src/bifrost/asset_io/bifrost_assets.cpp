@@ -153,14 +153,14 @@ namespace bifrost
 
     BifrostUUID uuid = bfUUID_generate();
 
-    char            path_buffer[path::MAX_LENGTH + 1];
+    char            path_buffer[path::MAX_LENGTH];
     LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
 
     // TODO(Shareef): Make this a helper function.
     string_utils::alloc_fmt(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
 
     const JsonValue json = JsonValue{
-     std::pair{std::string("Path"), std::string(path.bgn, path.end)},
+     std::pair{std::string("Path"), std::string(path.bgn, path.end())},
      std::pair{std::string("UUID"), std::string(uuid.as_string)},
      std::pair{std::string("Type"), std::string(type_info->name())},
     };
@@ -184,7 +184,7 @@ namespace bifrost
 
   void Assets::loadMeta(StringRange meta_file_name)
   {
-    char            path_buffer[path::MAX_LENGTH + 1];
+    char            path_buffer[path::MAX_LENGTH];
     LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
 
     // TODO(Shareef): Make this a helper function.
@@ -203,6 +203,12 @@ namespace bifrost
       const std::string        type        = loaded_data["Type"];
       BifrostUUID              uuid        = bfUUID_fromString(uuid_str.c_str());
       meta::BaseClassMetaInfo* type_info   = meta::TypeInfoFromName(type);
+
+      if (!type_info)
+      {
+        std::printf("[Assets::loadMeta]: WARNING could not find asset datatype: %s\n", type.c_str());
+        return;
+      }
 
       Any asset_handle = type_info->instantiate(m_Memory, StringRange(path.c_str(), path.c_str() + path.length()), uuid);
       BaseAssetInfo* asset_handle_p = asset_handle.as<BaseAssetInfo*>();
@@ -245,7 +251,7 @@ namespace bifrost
       m_RootPath = String_newLen(nullptr, 0);
     }
 
-    const fs_string_type fs_path_str = fs_path.native();
+    const fs_string_type& fs_path_str = fs_path.native();
 
     String_resize(&m_RootPath, fs_path_str.length());
 

@@ -5,11 +5,11 @@
 #include "bifrost/core/bifrost_igame_state_layer.hpp"
 #include "imgui/imgui.h"
 
-class ImGUIOverlay final : public bifrost::IGameStateLayer
+class ImGUIOverlay final : public IGameStateLayer
 {
  private:
-  const char*      m_Name;
-  bifrost::Entity* m_SelectedEntity;
+  const char* m_Name;
+  Entity*     m_SelectedEntity;
 
  public:
   ImGUIOverlay(const char* name = "ImGUI Overlay") :
@@ -26,8 +26,8 @@ class ImGUIOverlay final : public bifrost::IGameStateLayer
  protected:
   void onUpdate(BifrostEngine& engine, float delta_time) override;
 
-  void inspect(const char* label, bifrost::BaseObjectT* object) const;
-  bool inspect(const char* label, bifrost::Any& object, bifrost::meta::BaseClassMetaInfo* class_info) const;
+  void inspect(const char* label, BaseObjectT* object) const;
+  bool inspect(const char* label, Any& object, meta::BaseClassMetaInfo* class_info) const;
 
  private:
   template<typename F>

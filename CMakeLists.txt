@@ -26,7 +26,7 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/docs/bifrost_version.h.in"
   "${PROJECT_BINARY_DIR}/bifrost/bifrost_version.h"
 )
-include_directories("${PROJECT_BINARY_DIR}")
+include_directories(${PROJECT_BINARY_DIR})
 
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
 
@@ -85,9 +85,6 @@ endif()
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
-  # "engine/memory/*.cpp"
-  # "engine/*.cpp"
-
   # Libs
   "lib/include/glad/glad.c"
   "lib/include/imgui/imgui.cpp"
@@ -98,12 +95,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_win.cpp"
 
   # Bifrost Asset Module
-  "src/bifrost/asset_io/bifrost_asset_handle.cpp"
-  "src/bifrost/asset_io/bifrost_assets.cpp"
-  "src/bifrost/asset_io/bifrost_file.cpp"
-  "src/bifrost/asset_io/bifrost_json_parser.cpp"
-  "src/bifrost/asset_io/bifrost_json_value.cpp"
-  "src/bifrost/asset_io/bifrost_scene.cpp"
+  "src/bifrost/asset_io/*.cpp"
 
   # Bifrost Core Module
   "src/bifrost/core/bifrost_game_state_machine.cpp"
@@ -266,3 +258,4 @@ endif()
 add_subdirectory(include/bifrost/graphics/)
 add_subdirectory(BifrostScript)
 add_subdirectory(BifrostMath)
+add_subdirectory(BifrostExperiments)

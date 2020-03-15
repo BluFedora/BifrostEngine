@@ -80,23 +80,23 @@ namespace bifrost
     {
       /* Not implemented on MinGW:
         "sorry, unimplemented: non-trivial designated initializers not supported"
-  static const char escape[256] =
-  {
-    ['a']   = '\a',
-    ['b']   = '\b',
-    ['f']   = '\f',
-    ['n']   = '\n',
-    ['r']   = '\r',
-    ['t']   = '\t',
-    ['v']   = '\v',
-    ['\\']  = '\\',
-    ['\'']  = '\'',
-    ['"']   = '\"',
-    ['?']   = '\?'
+      static const char escape[256] =
+      {
+        ['a']   = '\a',
+        ['b']   = '\b',
+        ['f']   = '\f',
+        ['n']   = '\n',
+        ['r']   = '\r',
+        ['t']   = '\t',
+        ['v']   = '\v',
+        ['\\']  = '\\',
+        ['\'']  = '\'',
+        ['"']   = '\"',
+        ['?']   = '\?',
 
-    // ... all the rest are 0 ...
-  };
-  */
+        // ... all the rest are 0 ...
+      };
+      */
       switch (c)
       {
         case 'a': return '\a';

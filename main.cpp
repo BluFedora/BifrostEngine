@@ -10,11 +10,9 @@
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/platform/bifrost_window_glfw.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
-
+#include "imgui/imgui.h"
 #include <bifrost/bifrost.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
-
-#include "imgui/imgui.h"
 
 #include <chrono>
 #include <functional>
@@ -29,31 +27,6 @@
 
 namespace bifrost
 {
-  class SpriteComponent : public Component<SpriteComponent>
-  {
-   public:
-    SpriteComponent(Entity& owner) :
-      Component<SpriteComponent>(owner)
-    {
-      std::printf("Created a SpriteComponent\n");
-    }
-
-    void spriteMethod()
-    {
-      std::printf("Calling spriteMethod\n");
-    }
-  };
-
-  class MeshComponent : public Component<MeshComponent>
-  {
-   public:
-    MeshComponent(Entity& owner) :
-      Component<MeshComponent>(owner)
-    {
-      std::printf("Created a MeshComponent\n");
-    }
-  };
-
   namespace meta
   {
     template<>
@@ -71,24 +44,6 @@ namespace bifrost
        field("world_scale", &BifrostTransform::world_scale),
        field("local_transform", &BifrostTransform::local_transform),
        field("world_transform", &BifrostTransform::world_transform));
-
-      return member_ptrs;
-    }
-
-    template<>
-    const auto& Meta::registerMembers<SpriteComponent>()
-    {
-      static auto member_ptrs = members(
-       class_info<SpriteComponent, Component<SpriteComponent>>("SpriteComponent"));
-
-      return member_ptrs;
-    }
-
-    template<>
-    const auto& Meta::registerMembers<MeshComponent>()
-    {
-      static auto member_ptrs = members(
-       class_info<MeshComponent, Component<MeshComponent>>("MeshComponent"));
 
       return member_ptrs;
     }
@@ -230,8 +185,6 @@ static char source[4096] = R"(
   }
 )";
 
-using namespace bifrost;
-
 namespace ErrorCodes
 {
   static constexpr int GLFW_FAILED_TO_INIT = -1;
@@ -323,31 +276,6 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   TestClass my_obj = {74, "This message will be in Y"};
 
-  /*
-  try
-  {
-    std::cout << "Meta Testing Bed: \n";
-
-    for_each(meta::membersOf<TestClass>(), [&my_obj](const auto& member) {
-      std::cout << member.name() << " : ";
-
-      if constexpr (bfmeta::is_function_v<decltype(member)>)
-      {
-        member.call(&my_obj, 6);
-      }
-      else
-      {
-        std::cout << member.get(my_obj) << std::endl;
-      }
-    });
-
-    std::cout << "x = " << my_obj.x << "\n";
-  }
-  catch (...)
-  {
-  }
-  */
-
   if (!startupGLFW(nullptr, nullptr))
   {
     return ErrorCodes::GLFW_FAILED_TO_INIT;
@@ -397,8 +325,6 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     engine.stateMachine().push<MainDemoLayer>();
     engine.stateMachine().addOverlay<editor::EditorOverlay>();
-
-    std::cout << "\n\nScripting Language Test Begin\n";
 
     VM& vm = engine.scripting();
 
@@ -451,10 +377,10 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       return float(glfwGetTime());
     };
 
-    const float frame_rate       = 60.0f;
-    const float min_frame_rate   = 4.0f;
-    const float time_step_ms     = 1.0f / frame_rate;
-    const float max_time_step_ms = 1.0f / min_frame_rate;
+    static constexpr float frame_rate       = 60.0f;
+    static constexpr float min_frame_rate   = 4.0f;
+    static constexpr float time_step_ms     = 1.0f / frame_rate;
+    static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
 
     float current_time     = CurrentTimeSeconds();
     float time_accumulator = 0.0f;
@@ -594,11 +520,6 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
             if (ImGui::Button("Select"))
             {
               m_SelectedEntity = &entity;
-            }
-
-            if (ImGui::Button("Add Sprite Component"))
-            {
-              entity.add<SpriteComponent>();
             }
 
             rec(entity.children(), rec);
@@ -1003,5 +924,3 @@ void MainDemoLayer::onLoad(BifrostEngine& engine)
   }
 #endif
 }
-
-#include "src/bifrost/asset_io/test.cpp"

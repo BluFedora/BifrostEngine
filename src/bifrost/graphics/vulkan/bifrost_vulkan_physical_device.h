@@ -25,7 +25,7 @@ BIFROST_DEFINE_HANDLE(Texture)
   VkImageView        tex_view;
   VkSampler          tex_sampler;
   VkImageLayout      tex_layout;
-  VkFormat tex_format;
+  VkFormat           tex_format;
   BifrostSampleFlags tex_samples;
 };
 
@@ -78,7 +78,7 @@ typedef struct VulkanExtensionList_t
 
 typedef struct VulkanPhysicalDevice_t
 {
-  bfGfxContextHandle parent;
+  bfGfxContextHandle               parent;
   VkPhysicalDevice                 handle;
   VkPhysicalDeviceMemoryProperties memory_properties;
   VkPhysicalDeviceProperties       device_properties;

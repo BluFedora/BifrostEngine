@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_uuid.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Platform abstraction for generating globally unique identifiers.
+ *
+ * @version 0.0.1
+ * @date    2019-12-28
+ *
+ * @copyright Copyright (c) 2019
+ */
+/******************************************************************************/
 #include "bifrost/utility/bifrost_uuid.h"
 
 #include "bifrost/platform/bifrost_platform.h" /* BIFROST_PLATFORM_* */
@@ -79,7 +92,7 @@ BifrostUUID bfUUID_fromString(const char source[37])
   source_wide[37] = L'}';
   source_wide[38] = L'\0';
 
-  mbstowcs(source_wide + 1, source, 36);  // <cstdlib>
+  mbstowcs(source_wide + 1, source, 36);  /* <cstdlib> */
 
   if (IIDFromString(source_wide, &out) == S_OK)
   {

@@ -12,12 +12,17 @@ project(BifrostScript VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virt
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include_directories("${PROJECT_BINARY_DIR}")
-
-set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
-
+  # GCC / Clang
+  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
+  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
+  #   "-std=c++17"                = "/std:c++17"
+  #   "-fno-rtti"                 = "/GR-"
+  #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  # using Intel C++
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # NOTE(Shareef): Setting the compiler flags we will be using.
   #    
   #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
@@ -35,18 +40,15 @@ set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
   #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
-if (WIN32)
   set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
   set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-else()
-  # GCC / Clang
-  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "-std=c++17"                = "/std:c++17"
-  #   "-fno-rtti"                 = "/GR-"
-  #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
 endif()
+
+include_directories("${PROJECT_BINARY_DIR}")
+
+set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 file(GLOB_RECURSE BIFROST_SCRIPT_SOURCE_FILES
   "src/bifrost_vm_build.c"

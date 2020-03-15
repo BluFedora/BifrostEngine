@@ -49,24 +49,15 @@ typedef enum bfBufferPropertyFlags_t
 
 typedef enum bfBufferUsageFlags_t
 {
-  BIFROST_BUF_TRANSFER_SRC = (1 << 0),
-  /* NOTE(Shareef): Can be used to transfer data out of.             */
-  BIFROST_BUF_TRANSFER_DST = (1 << 1),
-  /* NOTE(Shareef): Can be used to transfer data into.               */
-  BIFROST_BUF_UNIFORM_TEXEL_BUFFER = (1 << 2),
-  /* NOTE(Shareef): Can be used to TODO                              */
-  BIFROST_BUF_STORAGE_TEXEL_BUFFER = (1 << 3),
-  /* NOTE(Shareef): Can be used to TODO                              */
-  BIFROST_BUF_UNIFORM_BUFFER = (1 << 4),
-  /* NOTE(Shareef): Can be used to store Uniform data.               */
-  BIFROST_BUF_STORAGE_BUFFER = (1 << 5),
-  /* NOTE(Shareef): Can be used to store SSBO data                   */
-  BIFROST_BUF_INDEX_BUFFER = (1 << 6),
-  /* NOTE(Shareef): Can be used to store Index data.                 */
-  BIFROST_BUF_VERTEX_BUFFER = (1 << 7),
-  /* NOTE(Shareef): Can be used to store Vertex data.                */
-  BIFROST_BUF_INDIRECT_BUFFER = (1 << 8),
-  /* NOTE(Shareef): Can be used to store Indirect Draw Command data. */
+  BIFROST_BUF_TRANSFER_SRC         = (1 << 0), /*!< Can be used to transfer data out of.             */
+  BIFROST_BUF_TRANSFER_DST         = (1 << 1), /*!< Can be used to transfer data into.               */
+  BIFROST_BUF_UNIFORM_TEXEL_BUFFER = (1 << 2), /*!< Can be used to TODO                              */
+  BIFROST_BUF_STORAGE_TEXEL_BUFFER = (1 << 3), /*!< Can be used to TODO                              */
+  BIFROST_BUF_UNIFORM_BUFFER       = (1 << 4), /*!< Can be used to store Uniform data.               */
+  BIFROST_BUF_STORAGE_BUFFER       = (1 << 5), /*!< Can be used to store SSBO data                   */
+  BIFROST_BUF_INDEX_BUFFER         = (1 << 6), /*!< Can be used to store Index data.                 */
+  BIFROST_BUF_VERTEX_BUFFER        = (1 << 7), /*!< Can be used to store Vertex data.                */
+  BIFROST_BUF_INDIRECT_BUFFER      = (1 << 8), /*!< Can be used to store Indirect Draw Command data. */
 
   /* NOTE(Shareef):
        Allows for mapped allocations to be shared by keeping it
@@ -74,8 +65,7 @@ typedef enum bfBufferUsageFlags_t
        Requirements :
          'BIFROST_BPF_HOST_MAPPABLE'
   */
-  BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER = (1 << 9)
-  /* NOTE(Shareef): Can be used for data that is streamed to the gpu */
+  BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER = (1 << 9) /*!< NOTE(Shareef): Can be used for data that is streamed to the gpu */
 
 } bfBufferUsageFlags;
 

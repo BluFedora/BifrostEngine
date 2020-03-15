@@ -103,7 +103,7 @@ namespace bifrost::meta
     using tuple_type_raw = FunctionTuple<Args...>;
   };
 
-  // In C++17 and on 'noexcept'-ness is part of a function's type.
+  // In C++17 and onward 'noexcept'-ness is part of a function's type.
 #if __cplusplus > 201402L  // After C++14
 
   template<typename R, typename... Args>

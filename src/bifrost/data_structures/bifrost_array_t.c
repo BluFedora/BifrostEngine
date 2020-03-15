@@ -595,7 +595,7 @@ void* bfArray_pop(void** self)
 
 void bfArray_sortRange(void** self, size_t bgn, size_t end, ArraySortCompare compare)
 {
-  ArrayHeader* header = grabHeader(self);
+  ArrayHeader* const header = grabHeader(self);
 
   bfAssert(bgn < header->size, "bfArray_sortRange:: bgn must be less than the size.");
   bfAssert(end <= header->size, "bfArray_sortRange:: end must be less than or equal to the size.");
@@ -616,10 +616,10 @@ void bfArray_sort(void** self, ArraySortCompare compare)
 
 void bfArray_delete(void** self)
 {
-  ArrayHeader* header       = grabHeader(self);
-  const size_t header_size_ = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);
-  const size_t header_size  = header_size_ + (header->alignment - 1);
-  const size_t data_size    = header->size * header->stride;
+  ArrayHeader* const header       = grabHeader(self);
+  const size_t       header_size_ = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);
+  const size_t       header_size  = header_size_ + (header->alignment - 1);
+  const size_t       data_size    = header->size * header->stride;
 
   header->allocator(header->user_data, header, header_size + data_size);
 }

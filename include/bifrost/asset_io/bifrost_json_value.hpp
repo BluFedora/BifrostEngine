@@ -4,8 +4,8 @@
 #include "bifrost/data_structures/bifrost_hash_table.hpp" /* HashTable */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* String    */
 #include "bifrost/data_structures/bifrost_variant.hpp"    /* Variant   */
-#include <string>
-#include <vector> /* vector    */
+#include <string>                                         /* */
+#include <vector>                                         /* vector    */
 
 namespace bifrost
 {
@@ -17,6 +17,13 @@ namespace bifrost
   using object_t    = HashTable<string_t, JsonValue, 32>;
   using boolean_t   = bool;
   using JsonValue_t = Variant<string_t, array_t, object_t, number_t, boolean_t>;
+
+  // const int i0 = sizeof(string_t);     // 40
+  // const int i1 = sizeof(number_t);     // 8
+  // const int i2 = sizeof(array_t);      // 32
+  // const int i3 = sizeof(object_t);     // 16
+  // const int i4 = sizeof(boolean_t);    // 1
+  // const int i5 = sizeof(JsonValue_t);  // 48
 
   class JsonValue : public JsonValue_t
   {
@@ -77,9 +84,9 @@ namespace bifrost
     }
 
     // Array API
-    JsonValue&  operator[](const typename array_t::size_type index);
+    JsonValue&  operator[](array_t::size_type index);
     void        push_back(const JsonValue& value);
-    JsonValue&  at(const typename array_t::size_type index);
+    JsonValue&  at(array_t::size_type index);
     std::size_t size() const;
 
     // Meta

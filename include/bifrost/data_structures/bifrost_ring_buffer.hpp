@@ -162,7 +162,7 @@ namespace bifrost
 
    public:
     RingBuffer(IMemoryManager& memory, size_t initial_size) :
-      base_t(reinterpret_cast<T*>(m_Memory.alloc(sizeof(T) * initial_size, alignof(T)))),
+      base_t(reinterpret_cast<T*>(m_Memory.allocateAligned(sizeof(T) * initial_size, alignof(T)))),
       m_Memory{memory}
     {
       base_t::wrap.capacity = initial_size;
@@ -179,13 +179,13 @@ namespace bifrost
       if (base_t::isFull())
       {
         const std::size_t new_capacity = capacity() * 2;
-        auto              new_buffer   = m_Memory.alloc(sizeof(T) * new_capacity, alignof(T));
+        auto              new_buffer   = m_Memory.allocateAligned(sizeof(T) * new_capacity, alignof(T));
         base_t::forEach(
          [new_buffer](const size_t i, T& element) mutable {
            new (new_buffer + i) T(std::move(element));
            element.~T();
          });
-        m_Memory.dealloc(base_t::buffer);
+        m_Memory.deallocateAligned(base_t::buffer);
         base_t::buffer = new_buffer;
         base_t::head   = 0;
         base_t::tail   = size();
@@ -196,7 +196,7 @@ namespace bifrost
 
     ~RingBuffer()
     {
-      m_Memory.dealloc(base_t::buffer);
+      m_Memory.deallocateAligned(base_t::buffer);
     }
   };
 }  // namespace bifrost

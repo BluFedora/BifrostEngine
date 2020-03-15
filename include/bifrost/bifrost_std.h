@@ -25,6 +25,8 @@ static constexpr size_t bfCArraySize(const T((&)[N]))
   return N;
 }
 
+#define bfSizeOfField(T, member) (sizeof(T::member))
+
 #if 0
 template<typename T>
 T bfClamp(T min_value, T value, T max_value)
@@ -35,6 +37,7 @@ T bfClamp(T min_value, T value, T max_value)
 
 #else
 #define bfCArraySize(arr) ((sizeof(arr) / sizeof(0 [arr])) / ((size_t)(!(sizeof(arr) % sizeof(0 [arr])))))  //(sizeof((arr)) / sizeof((arr)[0]))
+#define bfSizeOfField(T, member) (sizeof(((T*)0)->member))
 #endif
 
 #if __cplusplus

@@ -21,6 +21,8 @@ namespace bifrost
 
   class IECSSystem
   {
+    friend class ::BifrostEngine;
+
    private:
      bool m_IsEnabled;
 

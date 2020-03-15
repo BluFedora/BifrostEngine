@@ -11,7 +11,7 @@ namespace bifrost
   namespace editor::imgui
   {
     void startup(bfGfxContextHandle graphics, IBaseWindow& window);
-    void onEvent(const Event& evt);
+    void onEvent(Event& evt);
     void beginFrame(bfTextureHandle surface, float window_width, float window_height, float current_time);
     void endFrame(bfGfxCommandListHandle command_list);
     void shutdown();

@@ -4,6 +4,7 @@
 
 #include <cctype>   // isdigit
 #include <cstdlib>  // atoi
+#include <cstdint>
 
 static void skip_line(const char *data, uint *pointer, uint file_length)
 {

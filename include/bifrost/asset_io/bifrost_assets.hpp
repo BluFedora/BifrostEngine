@@ -111,7 +111,7 @@ namespace bifrost
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
     template<typename T>
-    void indexAsset(StringRange path, StringRange meta_file_name)
+    BifrostUUID indexAsset(StringRange path, StringRange meta_file_name)
     {
       bool              create_new;
       const BifrostUUID uuid = indexAssetImpl(path, meta_file_name, create_new, meta::TypeInfo<T>::get());
@@ -121,6 +121,8 @@ namespace bifrost
         T* const asset_handle = m_Memory.allocateT<T>(path, uuid);
         m_AssetMap.emplace(uuid, asset_handle);
       }
+
+      return uuid;
     }
 
     void loadMeta(StringRange meta_file_name);
@@ -130,7 +132,7 @@ namespace bifrost
 
     ~Assets();
 
-    // TODO: Rmeove this
+    // TODO: Remove this
 
     detail::AssetMap& assetMap() { return m_AssetMap; }
 

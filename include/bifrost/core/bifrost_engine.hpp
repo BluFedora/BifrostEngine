@@ -7,6 +7,9 @@
 #include "bifrost/event/bifrost_window_event.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 
+#include <tuple>
+#include <utility>
+
 #include "glfw/glfw3.h"
 
 using namespace bifrost;
@@ -100,11 +103,11 @@ class BaseRenderer
   bfShaderProgramHandle        m_ShaderProgram;
   bfDescriptorSetHandle        m_TestMaterial;
   bfDescriptorSetHandle        m_TestMaterial2;
+  bfTextureHandle              m_ColorBuffer;
   bfTextureHandle              m_DepthBuffer;
   std::vector<bfGfxBaseHandle> m_Resources;
   Mat4x4                       m_ModelView;
   Camera                       m_Camera;
-  float                        m_Time;
 
  public:
   explicit BaseRenderer() :
@@ -122,11 +125,11 @@ class BaseRenderer
     m_ShaderProgram{nullptr},
     m_TestMaterial{nullptr},
     m_TestMaterial2{nullptr},
+    m_ColorBuffer{nullptr},
     m_DepthBuffer{nullptr},
     m_Resources{},
     m_ModelView{},
-    m_Camera{},
-    m_Time{0.0f}
+    m_Camera{}
   {
     Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
     Vec3f cam_up  = {0.0f, 1.0f, 0.0f, 0.0f};
@@ -137,7 +140,9 @@ class BaseRenderer
 
   bfGfxContextHandle     context() const { return m_GfxBackend; }
   bfTextureHandle        surface() const { return m_MainSurface; }
+  bfTextureHandle        colorBuffer() const { return m_ColorBuffer; }
   bfGfxCommandListHandle mainCommandList() const { return m_MainCmdList; }
+  Camera&                camera() { return m_Camera; }
 
   void startup(const bfGfxContextCreateParams& gfx_create_params)
   {
@@ -232,6 +237,12 @@ class BaseRenderer
     bfDescriptorSet_setUniformBuffers(m_TestMaterial2, 1, 0, &offset, &sizes, &m_UniformBuffer, 1);
     bfDescriptorSet_flushWrites(m_TestMaterial2);
 
+    create_texture = bfTextureCreateParams_initColorAttachment(1280, 720, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, bfTrue, bfFalse);
+
+    m_ColorBuffer = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
+    bfTexture_loadData(m_ColorBuffer, nullptr, 0);
+    bfTexture_setSampler(m_ColorBuffer, &sampler);
+
     m_Resources.push_back(m_TestMaterial);
     m_Resources.push_back(m_TestMaterial2);
     m_Resources.push_back(m_ShaderModuleF);
@@ -241,6 +252,7 @@ class BaseRenderer
     m_Resources.push_back(m_VertexBuffer);
     m_Resources.push_back(m_IndexBuffer);
     m_Resources.push_back(m_UniformBuffer);
+    m_Resources.push_back(m_ColorBuffer);
 
     s_Model.load(m_GfxDevice, "assets/models/rhino.obj");
   }
@@ -284,7 +296,7 @@ class BaseRenderer
     Mat4x4 rot, scl, trans;
 
     Mat4x4_initScalef(&scl, 1.4f, 1.4f, 1.0f);
-    Mat4x4_initRotationf(&rot, 0.0f, 0.0f, m_Time * 20.0f);
+    Mat4x4_initRotationf(&rot, 0.0f, 0.0f, 20.0f);
     Mat4x4_initTranslatef(&trans, 0.0f, 3.0f, 1.0f);
     Mat4x4_mult(&rot, &scl, &m_ModelView);
 
@@ -335,64 +347,99 @@ class BaseRenderer
     bfBuffer_unMap(m_UniformBuffer);
     // Camera END
 
-    bfAttachmentInfo main_surface;
-    main_surface.texture      = m_MainSurface;
-    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    main_surface.may_alias    = bfFalse;
-
-    bfAttachmentInfo depth_buffer;
-    depth_buffer.texture      = m_DepthBuffer;
-    depth_buffer.final_layout = BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_buffer.may_alias    = bfFalse;
-
-    auto renderpass_info = bfRenderpassInfo_init(1);
-    bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, 1 | 2);
-    bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
-    bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addAttachment(&renderpass_info, &depth_buffer);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    bfRenderpassInfo_addDepthOut(&renderpass_info, 0, 1, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    // bfRenderpassInfo_addInput(&renderpass_info, 0x1);
-    // bfRenderpassInfo_addDependencies(&renderpass_info, 0x1);
-
-    BifrostClearValue clear_colors[2];
-    clear_colors[0].color.float32[0] = 0.8f;
-    clear_colors[0].color.float32[1] = 0.6f;
-    clear_colors[0].color.float32[2] = 1.0f;
-    clear_colors[0].color.float32[3] = 1.0f;
-
-    clear_colors[1].depthStencil.depth   = 1.0f;
-    clear_colors[1].depthStencil.stencil = 0;
-
-    bfTextureHandle attachments[] = {m_MainSurface, m_DepthBuffer};
-
-    bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
-    bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
-    bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
-    bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
-
-    bfGfxCmdList_beginRenderpass(m_MainCmdList);
     {
-      uint64_t buffer_offset = 0;
+      const auto color_buffer = m_MainSurface;
 
-      bfGfxCmdList_setDepthTesting(m_MainCmdList, bfTrue);
-      bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
-      bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
+      bfAttachmentInfo main_surface;
+      main_surface.texture      = color_buffer;
+      main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;//BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      main_surface.may_alias    = bfFalse;
 
-      bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
-      bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
+      bfAttachmentInfo depth_buffer;
+      depth_buffer.texture      = m_DepthBuffer;
+      depth_buffer.final_layout = BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+      depth_buffer.may_alias    = bfFalse;
 
-      // bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
-      // s_Model.draw(m_MainCmdList);
+      auto renderpass_info = bfRenderpassInfo_init(1);
+      bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setClearOps(&renderpass_info, (1 << 0) | (1 << 1));
+      bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
+      bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
+      bfRenderpassInfo_addAttachment(&renderpass_info, &depth_buffer);
+      bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+      bfRenderpassInfo_addDepthOut(&renderpass_info, 0, 1, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+      // bfRenderpassInfo_addInput(&renderpass_info, 0x1);
+      // bfRenderpassInfo_addDependencies(&renderpass_info, 0x1);
 
-      bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
-      bfGfxCmdList_bindIndexBuffer(m_MainCmdList, m_IndexBuffer, 0, BIFROST_INDEX_TYPE_UINT16);
-      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial2, 1);
-      bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
+      BifrostClearValue clear_colors[2];
+      clear_colors[0].color.float32[0] = 0.8f;
+      clear_colors[0].color.float32[1] = 0.6f;
+      clear_colors[0].color.float32[2] = 1.0f;
+      clear_colors[0].color.float32[3] = 1.0f;
+
+      clear_colors[1].depthStencil.depth   = 1.0f;
+      clear_colors[1].depthStencil.stencil = 0;
+
+      bfTextureHandle attachments[] = {color_buffer, m_DepthBuffer};
+
+      bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
+      bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
+      bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
+      bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
+
+      bfGfxCmdList_beginRenderpass(m_MainCmdList);
+      {
+        uint64_t buffer_offset = 0;
+
+        bfGfxCmdList_setDepthTesting(m_MainCmdList, bfTrue);
+        bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
+        bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
+
+        bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
+        bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
+
+        bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
+        s_Model.draw(m_MainCmdList);
+
+        bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
+        bfGfxCmdList_bindIndexBuffer(m_MainCmdList, m_IndexBuffer, 0, BIFROST_INDEX_TYPE_UINT16);
+        bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial2, 1);
+        bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
+      }
+      bfGfxCmdList_endRenderpass(m_MainCmdList);
+    }
+    {
+      bfAttachmentInfo main_surface;
+      main_surface.texture      = m_MainSurface;
+      main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      main_surface.may_alias    = bfFalse;
+
+      auto renderpass_info = bfRenderpassInfo_init(1);
+      bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setClearOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
+      bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
+      bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+      BifrostClearValue clear_colors[1];
+      clear_colors[0].color.float32[0] = 0.8f;
+      clear_colors[0].color.float32[1] = 0.6f;
+      clear_colors[0].color.float32[2] = 1.0f;
+      clear_colors[0].color.float32[3] = 1.0f;
+
+      bfTextureHandle attachments[] = {m_MainSurface};
+
+      bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
+      bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
+      bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
+      bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
+      bfGfxCmdList_beginRenderpass(m_MainCmdList);
     }
   }
 
@@ -402,8 +449,6 @@ class BaseRenderer
     bfGfxCmdList_end(m_MainCmdList);
     bfGfxCmdList_submit(m_MainCmdList);
     bfGfxContext_endFrame(m_GfxBackend);
-
-    m_Time += 1.0f / 60.0f;
   }
 
   void cleanup()
@@ -538,15 +583,55 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
   void update(float delta_time)
   {
+    for (auto& system : m_Systems)
+    {
+      if (!system->isEnabled())
+      {
+        continue;
+      }
+
+      system->onFrameBegin(*this, delta_time);
+    }
+
     for (auto& state : m_StateMachine)
     {
       state.onUpdate(*this, delta_time);
+    }
+
+    for (auto& system : m_Systems)
+    {
+      if (!system->isEnabled())
+      {
+        continue;
+      }
+
+      system->onFrameUpdate(*this, delta_time);
+    }
+
+    for (auto& system : m_Systems)
+    {
+      if (!system->isEnabled())
+      {
+        continue;
+      }
+
+      system->onFrameEnd(*this, delta_time);
     }
   }
 
   void drawBegin()
   {
     m_Renderer.frameUpdate();
+
+    for (auto& system : m_Systems)
+    {
+      if (!system->isEnabled())
+      {
+        continue;
+      }
+
+      system->onFrameDraw(*this, 0.0f);
+    }
   }
 
   void drawEnd()

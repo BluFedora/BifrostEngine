@@ -1963,7 +1963,7 @@ void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint
   {
     image_infos[i].sampler     = textures[i]->tex_sampler;
     image_infos[i].imageView   = textures[i]->tex_view;
-    image_infos[i].imageLayout = textures[i]->tex_layout;
+    image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; //textures[i]->tex_layout;
   }
 }
 

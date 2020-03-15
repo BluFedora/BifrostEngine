@@ -216,7 +216,7 @@ namespace bifrost::editor::imgui
     }
   }
 
-  void onEvent(const Event& evt)
+  void onEvent(Event& evt)
   {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -286,6 +286,11 @@ namespace bifrost::editor::imgui
       }
       default:
         break;
+    }
+
+    if (io.WantCaptureKeyboard || io.WantCaptureMouse)
+    {
+      evt.accept();
     }
   }
 

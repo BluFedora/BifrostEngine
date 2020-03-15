@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_dynamic_string.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -6,8 +7,8 @@
  *  Handles dynamic string operations.
  *
  *  Parameter Sematics:
- *     Paramters with "BifrostString" or "ConstBifrostString" MUST be created with
- *     "String_new" or "String_newLen" or "String_clone" otherwise if
+ *     Paramters with "BifrostString" or "ConstBifrostString" MUST be created
+ *     with "String_new" or "String_newLen" or "String_clone" otherwise if
  *     "const char*" is the parameter type then either a normal C string
  *     or a BifrostString can be passed in.
  *
@@ -16,11 +17,12 @@
  *
  * @copyright Copyright (c) 2019
  */
+/******************************************************************************/
 #ifndef BIFROST_DYNAMIC_STRING_H
 #define BIFROST_DYNAMIC_STRING_H
 
-#include <stddef.h> /* size_t   */
-#include <stdint.h> /* uint32_t */
+#include <stddef.h> /* size_t             */
+#include <stdint.h> /* uint32_t, uint64_t */
 
 #define STR_FAST_CMP 1
 

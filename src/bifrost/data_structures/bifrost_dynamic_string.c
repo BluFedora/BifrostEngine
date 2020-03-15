@@ -22,7 +22,7 @@
 #endif
 
 #ifndef bfAssert
-#define bfAssert(cond, msg) assert((cond) && msg)
+#define bfAssert(cond, msg) assert((cond) && (msg))
 #endif
 
 #include <assert.h> /* assert                             */

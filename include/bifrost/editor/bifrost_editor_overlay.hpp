@@ -1,13 +1,32 @@
+/******************************************************************************/
+/*!
+* @file   bifrost_editor_overlay.hpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*
+* @version 0.0.1
+* @date    $year$-XX-XX
+*
+* @copyright Copyright (c) $year$
+*/
+/******************************************************************************/
 #ifndef BIFROST_EDITOR_OVERLAY_HPP
 #define BIFROST_EDITOR_OVERLAY_HPP
 
 #include "bifrost/bifrost.hpp"
+#include "bifrost_editor_filesystem.hpp"
 
 namespace bifrost::editor
 {
   class EditorOverlay;
 
   IMemoryManager& allocator();
+
+  template<typename T>
+  void deallocateT(T* ptr)
+  {
+    allocator().deallocateT(ptr);
+  }
 
   struct ActionContext final
   {
@@ -134,12 +153,6 @@ namespace bifrost::editor
   }  // namespace ui
 
   template<typename T>
-  void deallocateT(T* ptr)
-  {
-    allocator().deallocateT(ptr);
-  }
-
-  template<typename T>
   using UniquePtr = std::unique_ptr<T, meta::function_caller<&deallocateT<T>>>;
 
   class Project final
@@ -157,7 +170,7 @@ namespace bifrost::editor
     {
     }
 
-    const String& name() const { return m_Name; }
+    String&       name() { return m_Name; }
     const String& path() const { return m_Path; }
     const String& metaPath() const { return m_MetaPath; }
   };
@@ -172,14 +185,15 @@ namespace bifrost::editor
     friend class ARefreshAsset;
 
    private:
-    ui::Dialog*                  m_CurrentDialog = nullptr;
-    bool                         m_OpenNewDialog = false;
-    HashTable<String, ActionPtr> m_Actions       = {};
-    Engine*                      m_Engine        = nullptr;
-    ProjectPtr                   m_OpenProject   = nullptr;
-    float                        m_FpsTimer      = 0.0f;
-    int                          m_CurrentFps    = 0;
-    AssetHandle<bfTexture>       m_TestTexture   = nullptr;
+    ui::Dialog*                  m_CurrentDialog;
+    bool                         m_OpenNewDialog;
+    HashTable<String, ActionPtr> m_Actions;
+    Engine*                      m_Engine;
+    ProjectPtr                   m_OpenProject;
+    float                        m_FpsTimer;
+    int                          m_CurrentFps;
+    AssetTextureHandle           m_TestTexture;
+    FileSystem                   m_FileSystem;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -190,6 +204,8 @@ namespace bifrost::editor
     void onDestroy(Engine& engine) override;
 
    public:
+    EditorOverlay();
+
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     const char*       name() override { return "Bifrost Editor"; }
 
@@ -198,9 +214,7 @@ namespace bifrost::editor
     bool    openProjectDialog();
     bool    openProject(StringRange path);
     void    closeProject();
-
-   private:
-    void assetRefresh();
+    void    assetRefresh();
   };
 }  // namespace bifrost::editor
 

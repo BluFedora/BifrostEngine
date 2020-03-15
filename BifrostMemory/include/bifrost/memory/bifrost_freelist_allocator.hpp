@@ -49,8 +49,8 @@ namespace bifrost
       std::size_t   size;
 
      public:
-      inline unsigned char* begin() const { return reinterpret_cast<unsigned char*>(const_cast<FreeListNode*>(this)); }
-      inline unsigned char* end() const { return begin() + size + header_size; }
+      unsigned char* begin() const { return reinterpret_cast<unsigned char*>(const_cast<FreeListNode*>(this)); }
+      unsigned char* end() const { return begin() + size + header_size; }
     };
 
     static_assert(sizeof(FreeListNode) == sizeof(AllocationHeader), "FreeListNode needs to the same size as AllocationHeader");

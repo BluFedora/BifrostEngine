@@ -186,6 +186,11 @@ namespace bifrost::intrusive
         erase(begin());
       }
     }
+
+    ~ListView()
+    {
+      clear();
+    }
   };
 }  // namespace bifrost::intrusive
 
@@ -225,12 +230,14 @@ namespace bifrost
       {
         self_type it = (*this);
         ++it;
+
         return it;
       }
 
       self_type operator++()  // Pre-fix
       {
         ++m_Current;
+
         return *this;
       }
 
@@ -245,6 +252,7 @@ namespace bifrost
       self_type operator--()  // Pre-fix
       {
         --m_Current;
+
         return *this;
       }
 
@@ -252,6 +260,7 @@ namespace bifrost
       {
         self_type it = (*this);
         --(*this);
+
         return it;
       }
 
@@ -348,9 +357,7 @@ namespace bifrost
     iterator erase(iterator pos)
     {
       pos->cast()->~T();
-
-      iterator it = iterator(m_InternalList.erase(pos.m_Current));
-      return it;
+      return iterator(m_InternalList.erase(pos.m_Current));
     }
 
     void clear()

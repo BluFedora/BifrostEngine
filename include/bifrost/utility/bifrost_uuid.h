@@ -20,8 +20,8 @@ extern "C" {
 
 typedef struct BifrostUUID_t
 {
-  char as_number[16];
-  char as_string[37];
+  char as_number[16]; /*!< The number as a string.                                       */
+  char as_string[37]; /*!< Nul terminated string. '00000000-0000-0000-0000-000000000000' */
 
 } BifrostUUID;
 

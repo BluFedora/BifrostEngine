@@ -25,6 +25,8 @@
 /******************************************************************************/
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 
+#include "bifrost/core/bifrost_engine.hpp" /* Engine */
+
 namespace bifrost
 {
   BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info) :
@@ -116,7 +118,12 @@ namespace bifrost
     {
       if (m_Info->m_RefCount == 0)
       {
-        m_Info->load(*m_Engine);
+        if (!m_Info->load(*m_Engine))
+        {
+          // TODO(Shareef): Handle this better.
+          //   Failed to load asset.
+          __debugbreak();
+        }
       }
 
       ++m_Info->m_RefCount;
@@ -126,5 +133,25 @@ namespace bifrost
   void* BaseAssetHandle::payload() const
   {
     return m_Info ? m_Info->m_Payload : nullptr;
+  }
+
+  void detail::releaseGfxHandle(Engine& engine, bfGfxBaseHandle handle)
+  {
+    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
+
+    bfGfxDevice_release(device, handle);
+  }
+
+  bool AssetTextureInfo::load(Engine& engine)
+  {
+    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
+
+    const bfTextureCreateParams params = bfTextureCreateParams_init2D(
+      BIFROST_TEXTURE_UNKNOWN_SIZE,
+      BIFROST_TEXTURE_UNKNOWN_SIZE,
+      BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
+
+    m_Handle = bfGfxDevice_newTexture(device, &params);
+    return bfTexture_loadFile(m_Handle, m_Path.cstr());
   }
 }  // namespace bifrost

@@ -35,15 +35,15 @@ class FixedLinearAllocator
 };
 
 // clang-format off
-template<std::size_t Size>
+template<std::size_t Size, typename TAllocator = FreeListAllocator>
 class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<BlockAllocator<Size>>
 // clang-format on
 {
   struct MemoryBlock final
   {
-    char            memory_backing[Size];
-    IMemoryManager& allocator;
-    MemoryBlock*    next;
+    char         memory_backing[Size];
+    TAllocator   allocator;
+    MemoryBlock* next;
 
     explicit MemoryBlock(MemoryBlock* prev) :
       memory_backing{},
@@ -72,6 +72,8 @@ class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<Bl
 
   void* allocate(std::size_t size) override
   {
+    assert(size <= Size);
+
     // TODO(Shareef): Handle the case of - If Size <= size.
     void* ptr = m_Tail->allocator.allocate(size);
 
@@ -125,13 +127,19 @@ namespace bifrost::editor
 {
   using namespace intrusive;
 
-  static char              s_EditorMemoryBacking[4096];
+  static char              s_EditorMemoryBacking[4096 * 2];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
   static ui::MainMenu      s_MainMenuBar("Main Menu", s_EditorMemory);
 
   IMemoryManager& allocator()
   {
     return s_EditorMemory;
+  }
+
+  template<typename T, typename... Args>
+  T* make(Args&&... args)
+  {
+    return allocator().allocateT<T>(std::forward<Args&&>(args)...);
   }
 
   bool ActionContext::actionButton(const char* name) const
@@ -145,12 +153,6 @@ namespace bifrost::editor
     }
 
     return false;
-  }
-
-  template<typename T, typename... Args>
-  T* make(Args&&... args)
-  {
-    return allocator().allocateT<T>(std::forward<Args&&>(args)...);
   }
 
   namespace ui
@@ -326,6 +328,119 @@ namespace bifrost::editor
       else
       {
         ImGui::Button("Please Select a Valid Path");
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button("Cancel"))
+      {
+        close();
+      }
+    }
+  };
+
+  class NewFolderDialog : public ui::Dialog
+  {
+   private:
+    String m_BasePath;
+    char   m_FolderName[120];  // 120 is the max folder name length on windows.
+
+   public:
+    explicit NewFolderDialog(const String& base_path) :
+      Dialog("New Folder"),
+      m_BasePath{base_path},
+      m_FolderName{"FolderName"}
+    {
+    }
+
+    void show(const ActionContext& ctx) override
+    {
+      ImGui::InputText("Name", m_FolderName, sizeof(m_FolderName));
+
+      ImGui::Separator();
+
+      if (file::isValidName(m_FolderName))
+      {
+        if (ImGui::Button("Create"))
+        {
+          String full_path{m_BasePath};
+
+          full_path.append("/");
+          full_path.append(m_FolderName);
+
+          if (path::createDirectory(full_path.cstr()))
+          {
+            ctx.editor->assetRefresh();
+          }
+          else
+          {
+            bfLogError("Failed to create Folder: %s", full_path.cstr());
+          }
+
+          close();
+        }
+      }
+      else
+      {
+        ImGui::Button("Please Use a Valid Name");
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button("Cancel"))
+      {
+        close();
+      }
+    }
+  };
+
+  template<typename TAsset>
+  class BaseNewAssetDialog : public ui::Dialog
+  {
+   protected:
+    String m_BasePath;
+    char   m_AssetName[120];  // 120 is the max folder name length on windows.
+
+   public:
+    explicit BaseNewAssetDialog(const String& base_path) :
+      Dialog("New Asset"),
+      m_BasePath{base_path},
+      m_AssetName{"NewAsset"}
+    {
+    }
+
+    virtual bool createAsset(String& full_path) = 0;
+
+    void show(const ActionContext& ctx) override
+    {
+      ImGui::InputText("Name", m_AssetName, sizeof(m_AssetName));
+
+      ImGui::Separator();
+
+      if (file::isValidName(m_AssetName))
+      {
+        if (ImGui::Button("Create"))
+        {
+          String full_path{m_BasePath};
+
+          full_path.append("/");
+          full_path.append(m_AssetName);
+
+          if (createAsset(full_path))
+          {
+            ctx.editor->assetRefresh();
+          }
+          else
+          {
+            bfLogError("Failed to create Asset: %s", full_path.cstr());
+          }
+
+          close();
+        }
+      }
+      else
+      {
+        ImGui::Button("Please Use a Valid Name");
       }
 
       ImGui::SameLine();
@@ -522,7 +637,7 @@ namespace bifrost::editor
     addMainMenuItem("File", file_menu_items);
     addMainMenuItem("Asset", asset_menu_items);
     addMainMenuItem("Edit", edit_menu_items);
-    addMainMenuItem("View / Window", view_menu_items);
+    addMainMenuItem("View", view_menu_items);
     addMainMenuItem("Entity", entity_menu_items);
     addMainMenuItem("Component", component_menu_items);
     addMainMenuItem("Help", help_menu_items);
@@ -534,19 +649,74 @@ namespace bifrost::editor
   {
   }
 
+  static const float invalid_mouse_postion = -1.0f;
+  static const float mouse_speed           = 0.01f;
+  float              oldx                  = invalid_mouse_postion;
+  float              oldy                  = invalid_mouse_postion;
+
   void EditorOverlay::onEvent(Engine& engine, Event& event)
   {
+    auto& mouse_evt = event.mouse;
+
+    if (event.type == EventType::ON_MOUSE_DOWN || event.type == EventType::ON_MOUSE_UP)
+    {
+      oldx = invalid_mouse_postion;
+      oldy = invalid_mouse_postion;
+    }
+    else if (event.type == EventType::ON_MOUSE_MOVE)
+    {
+      if (mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
+      {
+        const float newx = float(mouse_evt.x);
+        const float newy = float(mouse_evt.y);
+
+        if (oldx == invalid_mouse_postion)
+        {
+          oldx = newx;
+        }
+
+        if (oldy == invalid_mouse_postion)
+        {
+          oldy = newy;
+        }
+
+        Camera_mouse(&engine.renderer().camera(), (newx - oldx) * mouse_speed, (newy - oldy) * mouse_speed);
+
+        oldx = newx;
+        oldy = newy;
+      }
+    }
+
     event.accept();
+  }
+
+  static int ImGuiStringCallback(ImGuiInputTextCallbackData* data)
+  {
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+    {
+      auto* str = static_cast<String*>(data->UserData);
+      IM_ASSERT(data->Buf == str->cstr());
+      str->resize(data->BufTextLen);
+      data->Buf = const_cast<char*>(str->cstr());
+    }
+
+    return 0;
+  }
+
+  bool inspect(const char* label, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None)
+  {
+    flags |= ImGuiInputTextFlags_CallbackResize;
+    return ImGui::InputText(label, const_cast<char*>(string.cstr()), string.capacity() + 1, flags, &ImGuiStringCallback, static_cast<void*>(&string));
   }
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
+    ImGui::ShowDemoWindow();
+
     static const float window_width  = 350.0f;
     static const float window_margin = 5.0f;
 
     const ActionContext action_ctx{this};
-
-    // ImGui::ShowDemoWindow();
 
     float menu_bar_height = 0.0f;
 
@@ -564,14 +734,22 @@ namespace bifrost::editor
         m_FpsTimer   = 1.0f;
       }
 
-      ImGui::Text("| %ifps |", m_CurrentFps);
+      ImGui::Text("| %ifps | Memory (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
       s_MainMenuBar.endItem();
     }
 
     ImGuiIO& io = ImGui::GetIO();
 
+    if (ImGui::Begin("Scene View"))
+    {
+      // ImGui::Image(engine.renderer().colorBuffer(), ImVec2(100, 100));
+    }
+    ImGui::End();
+
     if (m_OpenProject)
     {
+      const auto display_width = io.DisplaySize.x;
+
       const auto height = io.DisplaySize.y - (window_margin * 2.0f) - menu_bar_height;
 
       ImGui::SetNextWindowPos(ImVec2(window_margin, menu_bar_height + window_margin));
@@ -580,8 +758,15 @@ namespace bifrost::editor
 
       if (ImGui::Begin("Project View"))
       {
-        ImGui::Text("%s", m_OpenProject->name().cstr());
         ImGui::Separator();
+
+        if (inspect("Project Name", m_OpenProject->name()))
+        {
+        }
+
+        ImGui::Separator();
+
+        m_FileSystem.uiShow(*this);
 
         if (ImGui::CollapsingHeader("Assets"))
         {
@@ -612,8 +797,18 @@ namespace bifrost::editor
       }
 
       ImGui::End();
-    }
 
+      ImGui::SetNextWindowPos(ImVec2(display_width - window_margin, menu_bar_height + window_margin), 0, ImVec2(1.0f, 0.0f));
+      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Appearing);
+      ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
+
+      if (ImGui::Begin("Inspector View"))
+      {
+      }
+
+      ImGui::End();
+    }
+    /*
     if (ImGui::Begin("RTTI"))
     {
       auto& memory = meta::gRttiMemoryBacking();
@@ -650,7 +845,7 @@ namespace bifrost::editor
       }
     }
     ImGui::End();
-
+    */
     if (m_OpenNewDialog)
     {
       if (m_CurrentDialog)
@@ -684,6 +879,19 @@ namespace bifrost::editor
   void EditorOverlay::onDestroy(Engine& engine)
   {
     enqueueDialog(nullptr);
+  }
+
+  EditorOverlay::EditorOverlay() :
+    m_CurrentDialog{nullptr},
+    m_OpenNewDialog{false},
+    m_Actions{},
+    m_Engine{nullptr},
+    m_OpenProject{nullptr},
+    m_FpsTimer{0.0f},
+    m_CurrentFps{0},
+    m_TestTexture{nullptr},
+    m_FileSystem{allocator()}
+  {
   }
 
   Action* EditorOverlay::findAction(const char* name) const
@@ -787,6 +995,7 @@ namespace bifrost::editor
 
           m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), project_dir, std::move(project_meta_path)));
 
+          assetRefresh();
           return true;
         }
       }
@@ -804,7 +1013,7 @@ namespace bifrost::editor
 
   struct FileExtensionHandler final
   {
-    using Callback = void (*)(Assets& engine, StringRange relative_path, StringRange meta_name);
+    using Callback = BifrostUUID (*)(Assets& engine, StringRange relative_path, StringRange meta_name);
 
     StringRange ext;
     Callback    handler;
@@ -819,13 +1028,14 @@ namespace bifrost::editor
   struct MetaAssetPath final
   {
     char*       file_name{nullptr};
-    StringRange meta_name;
+    StringRange meta_name{nullptr, nullptr};
+    FileEntry*  entry{nullptr};
   };
 
   template<typename T>
-  static void fileExtensionHandlerImpl(Assets& assets, StringRange relative_path, StringRange meta_name)
+  static BifrostUUID fileExtensionHandlerImpl(Assets& assets, StringRange relative_path, StringRange meta_name)
   {
-    assets.indexAsset<T>(relative_path, meta_name);
+    return assets.indexAsset<T>(relative_path, meta_name);
   }
 
   static const FileExtensionHandler s_AssetHandlers[] =
@@ -842,14 +1052,15 @@ namespace bifrost::editor
     {".glsl", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
     {".frag", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
     {".vert", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+    {".spv", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
 
     {".shader", &fileExtensionHandlerImpl<AssetShadeProgramInfo>},
 
-    // {".obj", &fileExtensionHandlerImpl<AssetShadeProgramHandle>},
-    // {".gltf", &fileExtensionHandlerImpl<AssetShadeProgramHandle>},
+    // {".obj", &fileExtensionHandlerImpl<>},
+    // {".gltf", &fileExtensionHandlerImpl<>},
   };
 
-  static void                        assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string);
+  static void                        assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry);
   static const FileExtensionHandler* assetFindHandler(StringRange relative_path);
 
   void EditorOverlay::assetRefresh()
@@ -858,10 +1069,11 @@ namespace bifrost::editor
 
     if (path::doesExist(path.cstr()))
     {
-      FixedLinearAllocator<1024> allocator;
+      FixedLinearAllocator<2048> allocator;
       List<MetaAssetPath>        metas_to_check{allocator};
 
-      assetFindAssets(metas_to_check, path, "");
+      m_FileSystem.clear("Assets", path);
+      assetFindAssets(metas_to_check, path, "", m_FileSystem, m_FileSystem.root());
 
       for (const auto& meta : metas_to_check)
       {
@@ -879,7 +1091,7 @@ namespace bifrost::editor
             bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
             bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
 
-            handler->handler(m_Engine->assets(), relative_path, meta.meta_name);
+            meta.entry->uuid = handler->handler(m_Engine->assets(), relative_path, meta.meta_name);
           }
           bfLogPop();
         }
@@ -894,10 +1106,10 @@ namespace bifrost::editor
     }
   }
 
-  static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string)
+  static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry)
   {
-    FixedLinearAllocator<512> allocator;
-    path::DirectoryEntry*     dir = path::openDirectory(allocator.memory(), path);
+    FixedLinearAllocator<512> dir_allocator;
+    path::DirectoryEntry*     dir = path::openDirectory(dir_allocator, path);
 
     if (dir)
     {
@@ -907,9 +1119,13 @@ namespace bifrost::editor
 
         if (name[0] != '.' && name[0] != '_')
         {
-          if (isDirectory(dir))
+          const bool   is_directory = isDirectory(dir);
+          const String full_path    = path + "/" + name;
+          FileEntry&   entry        = filesystem.makeNode(name, full_path, !is_directory);
+
+          if (is_directory)
           {
-            assetFindAssets(metas, path + "/" + name, current_string + name + ".");
+            assetFindAssets(metas, full_path, current_string + name + ".", filesystem, entry);
           }
           else
           {
@@ -921,8 +1137,12 @@ namespace bifrost::editor
             char* const meta_name = string_utils::alloc_fmt(metas.memory(), &meta_name_length, "%s%s.meta", current_string.cstr(), name);
 
             m.meta_name = {meta_name, meta_name + meta_name_length};
+            m.entry     = &entry;
           }
+
+          parent_entry.children.pushFront(entry);
         }
+
       } while (readNextEntry(dir));
 
       closeDirectory(dir);
@@ -946,5 +1166,67 @@ namespace bifrost::editor
     }
 
     return nullptr;
+  }
+
+  // bifrost_editor_filesystem.hpp
+
+  void FileSystem::uiShow(EditorOverlay& editor) const
+  {
+    if (m_Root)
+    {
+      uiShowImpl(editor, root());
+    }
+  }
+
+  void FileSystem::uiShowImpl(EditorOverlay& editor, FileEntry& entry)
+  {
+    if (entry.is_file)
+    {
+      if (ImGui::Selectable(entry.path.cstr()))
+      {
+      }
+
+      auto flags = ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
+
+      if (ImGui::BeginDragDropSource(flags))
+      {
+        if (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
+        {
+          ImGui::Text("UUID %s", entry.uuid.as_string);
+        }
+
+        ImGui::SetDragDropPayload("File", entry.path.cstr(), entry.path.length());
+        ImGui::EndDragDropSource();
+      }
+    }
+    else
+    {
+      const bool is_open = ImGui::TreeNode(entry.path.cstr());
+
+      if (ImGui::BeginPopupContextItem())
+      {
+        if (ImGui::BeginMenu("Create"))
+        {
+          if (ImGui::MenuItem("Folder"))
+          {
+            editor.enqueueDialog(make<NewFolderDialog>(entry.full_path));
+          }
+
+          ImGui::EndMenu();
+        }
+
+        ImGui::EndPopup();
+      }
+
+      if (is_open)
+      {
+        for (FileEntry& child : entry.children)
+        {
+          uiShowImpl(editor, child);
+        }
+
+        ImGui::TreePop();
+      }
+    }
   }
 }  // namespace bifrost::editor

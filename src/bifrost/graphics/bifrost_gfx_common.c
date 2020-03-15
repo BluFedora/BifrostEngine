@@ -133,6 +133,10 @@ void bfRenderpassInfo_setStencilStoreOps(bfRenderpassInfo* self, bfLoadStoreFlag
 
 void bfRenderpassInfo_addAttachment(bfRenderpassInfo* self, const bfAttachmentInfo* info)
 {
+  if (info->texture->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT) {
+    // info->texture->tex_layout = info->final_layout;
+  }
+
   self->attachments[self->num_attachments++] = *info;
 }
 
@@ -212,7 +216,7 @@ static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_
 
   if (can_be_input)
   {
-    self->flags |= BIFROST_TEX_IS_INPUT_ATTACHMENT;
+    self->flags |= BIFROST_TEX_IS_INPUT_ATTACHMENT | BIFROST_TEX_IS_SAMPLED;
   }
 
   if (is_transient)

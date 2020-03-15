@@ -217,13 +217,13 @@ namespace bifrost
 
     void sortRange(size_t bgn, size_t end, ArraySortCompare compare)
     {
-      // TODO(SR): This only works if T is trivially locatable.
+      // TODO(SR): This only works if T is "trivially relocatable".
       ::bfArray_sortRange(rawData(), bgn, end, compare);
     }
 
     void sort(ArraySortCompare compare)
     {
-      // TODO(SR): This only works if T is trivially locatable.
+      // TODO(SR): This only works if T is "trivially relocatable".
       ::bfArray_sort(rawData(), compare);
     }
 

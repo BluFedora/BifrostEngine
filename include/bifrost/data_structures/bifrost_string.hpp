@@ -47,7 +47,7 @@ namespace bifrost
     [[nodiscard]] std::size_t length() const
     {
       // bfStringRange_length();
-      return end - bgn;
+      return bfStringRange::end - bgn;
     }
 
     [[nodiscard]] bool operator==(const StringRange& rhs) const
@@ -61,6 +61,16 @@ namespace bifrost
     [[nodiscard]] bool operator!=(const StringRange& rhs) const
     {
       return !(*this == rhs);
+    }
+
+    const char* begin() const
+    {
+      return bgn;
+    }
+
+    const char* end() const
+    {
+      return bfStringRange::end;
     }
   };
 
@@ -304,7 +314,7 @@ namespace bifrost
 
   inline String operator+(const StringRange& lhs, const String& rhs)
   {
-    String result = {lhs.bgn, lhs.end};
+    String result = {lhs.begin(), lhs.end()};
     result.append(rhs);
     return result;
   }

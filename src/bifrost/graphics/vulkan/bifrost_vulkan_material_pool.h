@@ -7,7 +7,6 @@
 #if __cplusplus
 extern "C" {
 #endif
-// Material Pool
 typedef struct DescriptorLink_t
 {
   VkDescriptorPool         handle;
@@ -38,7 +37,7 @@ typedef struct MaterialPool_t
 
 BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* params);
 void                   MaterialPool_alloc(BifrostDescriptorPool* self, bfDescriptorSetHandle desc_set);
-void                   MaterialPool_free(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set);
+void                   MaterialPool_free(BifrostDescriptorPool* self, bfDescriptorSetHandle desc_set);
 void                   MaterialPool_delete(BifrostDescriptorPool* self);
 
 typedef BifrostDescriptorPool VulkanDescriptorPool;

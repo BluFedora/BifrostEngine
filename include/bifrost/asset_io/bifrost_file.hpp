@@ -38,6 +38,7 @@ namespace bifrost
 
     // TODO(SR): These path helpers can probably be in a separate file.
     bool pathEndsIn(const char* path, const char* ending, int ending_len = -1, int path_len = -1);
+    bool isValidName(const StringRange& path);
 
     /// All slashes are forward slashes '/'.
     /// A path for a folder has no following '/'.
@@ -49,7 +50,8 @@ namespace bifrost
     StringRange directoryOfFile(const StringRange& path);  // In canonical style.
     StringRange extensionOfFile(const StringRange& path);  // Includes the '.ext', if no extension a null path is returned.
     StringRange fileNameOfPath(const StringRange& path);   // 'filename.ext'
-  }                                                        // namespace file
+
+  }  // namespace file
 
   class File final
   {

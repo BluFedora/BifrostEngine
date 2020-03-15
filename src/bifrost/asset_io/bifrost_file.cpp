@@ -27,6 +27,29 @@ namespace bifrost
       return std::strncmp(path + path_len - ending_len, ending, ending_len) == 0;
     }
 
+    bool isValidName(const StringRange& path)
+    {
+      static const char invalid_chars[] = "\0<>:\"/\\|?*.";
+
+      if (path.length() == 0)
+      {
+        return false;
+      }
+
+      for (const char c : path)
+      {
+        for (const char invalid_char : invalid_chars)
+        {
+          if (c == invalid_char)
+          {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    }
+
     template<typename F>
     static std::size_t canonicalizePath_(char* path_bgn, F&& not_at_end)
     {
@@ -67,7 +90,7 @@ namespace bifrost
 
     StringRange directoryOfFile(const StringRange& path)
     {
-      const char* end = path.end;
+      const char* end = path.end();
 
       while (end != path.bgn)
       {
@@ -84,13 +107,13 @@ namespace bifrost
 
     StringRange extensionOfFile(const StringRange& path)
     {
-      const char* dot_start = path.end;
+      const char* dot_start = path.end();
 
       while (dot_start != path.bgn)
       {
         if (*dot_start == '.')
         {
-          return {dot_start, path.end};
+          return {dot_start, path.end()};
         }
 
         --dot_start;
@@ -102,7 +125,7 @@ namespace bifrost
     StringRange fileNameOfPath(const StringRange& path)
     {
       const StringRange directory = directoryOfFile(path);
-      return {std::min(directory.end + 1, path.end), path.end};
+      return {std::min(directory.end() + 1, path.end()), path.end()};
     }
   }  // namespace file
 
