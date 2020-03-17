@@ -14,6 +14,7 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
+#include "bifrost/asset_io/bifrost_asset_handle.hpp"
 #include "bifrost/asset_io/bifrost_file.hpp"           // File
 #include "bifrost/asset_io/bifrost_json_parser.hpp"    //
 #include "bifrost/asset_io/bifrost_json_value.hpp"     // JsonValue
@@ -44,6 +45,12 @@ namespace bifrost
     bool createDirectory(const char* path)
     {
       return files::create_directory(path);
+    }
+
+    bool deleteDirectory(const char* path)
+    {
+      std::error_code err;
+      return files::remove_all(path, err);
     }
 
     struct DirectoryEntry
@@ -182,6 +189,49 @@ namespace bifrost
     return uuid;
   }
 
+  BaseAssetInfo* Assets::findAssetInfo(const BifrostUUID& uuid)
+  {
+    const auto it = m_AssetMap.find(uuid);
+
+    if (it != m_AssetMap.end())
+    {
+      return it->value();
+    }
+
+    return nullptr;
+  }
+
+  bool Assets::isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info)
+  {
+    meta::BaseClassMetaInfo* const handle_type       = handle.typeInfo();
+    meta::BaseClassMetaInfo* const info_payload_type = info->payloadType();
+
+    return handle_type == info_payload_type;
+  }
+
+  bool Assets::tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const
+  {
+    if (isHandleCompatible(handle, info))
+    {
+      handle = BaseAssetHandle(m_Engine, info, handle.m_TypeInfo);
+      return true;
+    }
+
+    return false;
+  }
+
+  String Assets::fullPath(const BaseAssetInfo& info) const
+  {
+    String full_path = m_RootPath;
+
+    full_path.reserve(full_path.size() + 1 + info.path().size());
+
+    full_path.append('/');
+    full_path.append(info.path());
+
+    return full_path;
+  }
+
   void Assets::loadMeta(StringRange meta_file_name)
   {
     char            path_buffer[path::MAX_LENGTH];
@@ -210,7 +260,7 @@ namespace bifrost
         return;
       }
 
-      Any asset_handle = type_info->instantiate(m_Memory, StringRange(path.c_str(), path.c_str() + path.length()), uuid);
+      Any            asset_handle   = type_info->instantiate(m_Memory, StringRange(path.c_str(), path.c_str() + path.length()), uuid);
       BaseAssetInfo* asset_handle_p = asset_handle.as<BaseAssetInfo*>();
 
       m_AssetMap.emplace(uuid, asset_handle_p);

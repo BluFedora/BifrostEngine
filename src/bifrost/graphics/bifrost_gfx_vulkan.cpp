@@ -341,6 +341,8 @@ bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, int window_idx
 
 void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
+  // TODO: This whole set of garbage collection should maybe get called not every frame??
+
   BifrostGfxObjectBase* prev         = nullptr;
   BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
   BifrostGfxObjectBase* release_list = nullptr;
@@ -393,6 +395,14 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
       else if (release_list->type == BIFROST_GFX_OBJECT_FRAMEBUFFER)
       {
         self->logical_device->cache_framebuffer.remove(release_list->hash_code);
+      }
+      else if (release_list->type == BIFROST_GFX_OBJECT_DESCRIPTOR_SET)
+      {
+        self->logical_device->cache_descriptor_set.remove(release_list->hash_code);
+      }
+      else
+      {
+        assert(!"Need to updated this check.");
       }
 
       bfGfxDevice_release(self->logical_device, release_list);
@@ -1963,7 +1973,7 @@ void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint
   {
     image_infos[i].sampler     = textures[i]->tex_sampler;
     image_infos[i].imageView   = textures[i]->tex_view;
-    image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; //textures[i]->tex_layout;
+    image_infos[i].imageLayout = textures[i]->tex_layout;
   }
 }
 

@@ -123,9 +123,9 @@ BIFROST_META_REGISTER(bifrost::Scene)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<Scene>("Scene"),                                                                //
-     ctor<IMemoryManager&>(),                                                                   //
-     field_readonly("m_RootEntities", &Scene::m_RootEntities, offsetof(Scene, m_RootEntities))  //
+     class_info<Scene>("Scene"),                               //
+     ctor<IMemoryManager&>(),                                  //
+     field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
     )
   BIFROST_META_END()
 }

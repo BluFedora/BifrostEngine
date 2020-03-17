@@ -13,39 +13,30 @@ namespace bifrost::editor::imgui
 
   struct UIFrameData
   {
-    bfBufferHandle        vertex_buffer;
-    bfBufferHandle        index_buffer;
-    bfBufferHandle        uniform_buffer;
-    bfDescriptorSetHandle descriptor_set;
-    bfTextureHandle       current_texture;
+    bfBufferHandle  vertex_buffer;
+    bfBufferHandle  index_buffer;
+    bfBufferHandle  uniform_buffer;
 
-    void create(bfGfxDeviceHandle device, bfShaderProgramHandle program, bfTextureHandle font)
+    void create(bfGfxDeviceHandle device)
     {
-      current_texture = nullptr;
-
       bfBufferCreateParams buffer_params;
       buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = 0x100 * 2;
       buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
 
       uniform_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
+    }
 
+    void setTexture(bfGfxCommandListHandle command_list, bfTextureHandle texture)
+    {
       uint64_t offset = 0;
       uint64_t sizes  = sizeof(Mat4x4);
 
-      descriptor_set = bfShaderProgram_createDescriptorSet(program, 0);
-      bfDescriptorSet_setUniformBuffers(descriptor_set, 1, 0, &offset, &sizes, &uniform_buffer, 1);
-      setTexture(font);
-    }
+      bfDescriptorSetInfo desc_set = bfDescriptorSetInfo_make();
+      bfDescriptorSetInfo_addTexture(&desc_set, 0, 0, &texture, 1);
+      bfDescriptorSetInfo_addUniform(&desc_set, 1, 0, &offset, &sizes, &uniform_buffer, 1);
 
-    void setTexture(bfTextureHandle texture)
-    {
-      if (current_texture != texture)
-      {
-        bfDescriptorSet_setCombinedSamplerTextures(descriptor_set, 0, 0, &texture, 1);
-        bfDescriptorSet_flushWrites(descriptor_set);
-        current_texture = texture;
-      }
+      bfGfxCmdList_bindDescriptorSet(command_list, 0, &desc_set);
     }
 
     void checkSizes(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size)
@@ -80,7 +71,6 @@ namespace bifrost::editor::imgui
       bfGfxDevice_release(device, vertex_buffer);
       bfGfxDevice_release(device, index_buffer);
       bfGfxDevice_release(device, uniform_buffer);
-      bfGfxDevice_release(device, descriptor_set);
     }
   };
 
@@ -155,6 +145,9 @@ namespace bifrost::editor::imgui
     s_MouseCursors[ImGuiMouseCursor_ResizeNESW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
     s_MouseCursors[ImGuiMouseCursor_ResizeNWSE] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
 
+    // Docking
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
     // Renderer Setup
 
     std::memset(&s_RenderData, 0x0, sizeof(s_RenderData));
@@ -212,7 +205,7 @@ namespace bifrost::editor::imgui
 
     for (auto& buffer : s_RenderData.buffers)
     {
-      buffer.create(device, s_RenderData.program, s_RenderData.font);
+      buffer.create(device);
     }
   }
 
@@ -287,11 +280,6 @@ namespace bifrost::editor::imgui
       default:
         break;
     }
-
-    if (io.WantCaptureKeyboard || io.WantCaptureMouse)
-    {
-      evt.accept();
-    }
   }
 
   void beginFrame(bfTextureHandle surface, float window_width, float window_height, float current_time)
@@ -340,7 +328,7 @@ namespace bifrost::editor::imgui
     bfGfxCmdList_bindIndexBuffer(command_list, frame.index_buffer, 0, sizeof(ImDrawIdx) == 2 ? BIFROST_INDEX_TYPE_UINT16 : BIFROST_INDEX_TYPE_UINT32);
     // ReSharper restore CppUnreachableCode
     bfGfxCmdList_bindProgram(command_list, s_RenderData.program);
-    bfGfxCmdList_bindDescriptorSets(command_list, 0, &frame.descriptor_set, 1);
+    frame.setTexture(command_list, s_RenderData.font);
     bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);
   }
 
@@ -404,8 +392,13 @@ namespace bifrost::editor::imgui
         {
           const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 
-          if (pcmd->TextureId) {
-            frame.setTexture((bfTextureHandle)pcmd->TextureId);
+          if (pcmd->TextureId)
+          {
+            frame.setTexture(command_list, (bfTextureHandle)pcmd->TextureId);
+          }
+          else
+          {
+            frame.setTexture(command_list, s_RenderData.font);
           }
 
           if (pcmd->UserCallback)

@@ -6,7 +6,7 @@
  *    Bifrost Scripting Language
  *    Dependencies:
  *      > C99 or later.
- *      > Bifrost Data Structures Library
+ *      > Bifrost C Data Structures Library
  *      > C Runtime Library
  *
  * @brief

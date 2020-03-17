@@ -11,8 +11,7 @@
 namespace bifrost::meta
 {
   class InvalidMethodCall
-  {
-  };
+  {};
 
   template<typename Base, typename MemberConcept>
   class PropertyMetaInfoCRTP : public Base
@@ -56,16 +55,6 @@ namespace bifrost::meta
 
    public:
     PropertyMetaInfo(const MemberConcept& impl);
-  };
-
-  template<typename MemberConcept>
-  class MemberMetaInfo final : public PropertyMetaInfoCRTP<BaseMemberMetaInfo, MemberConcept>
-  {
-    using Class     = typename MemberConcept::class_t;
-    using PropertyT = typename MemberConcept::type;
-
-   public:
-    MemberMetaInfo(const MemberConcept& impl);
   };
 
   template<typename FunctionConcept>
@@ -238,7 +227,16 @@ namespace bifrost::meta
   {
     static BaseClassMetaInfo*& get()
     {
-      static BaseClassMetaInfo* s_Info = nullptr;
+      //
+      // NOTE(Shareef):
+      //   Since this is a static variable. for a templated function.
+      //   Pointer Comparisons still work for type checking since each insatciation of this
+      //   function gives a different address.
+      //   Also the name "___NoTypeInfo___" is not registered to the global map
+      //   since this uses the base class's constructor.
+      //
+      static BaseClassMetaInfo  s_NullType = {"___NoTypeInfo___", 0, 0};
+      static BaseClassMetaInfo* s_Info     = nullptr;
 
       if (s_Info == nullptr)
       {
@@ -270,6 +268,11 @@ namespace bifrost::meta
             }
           }
         });
+
+        if (!s_Info)
+        {
+          s_Info = &s_NullType;
+        }
       }
 
       return s_Info;
@@ -337,12 +340,6 @@ namespace bifrost::meta
   {
   }
 
-  template<typename MemberConcept>
-  MemberMetaInfo<MemberConcept>::MemberMetaInfo(const MemberConcept& impl) :
-    PropertyMetaInfoCRTP<BaseMemberMetaInfo, MemberConcept>(impl, impl.offset())
-  {
-  }
-
   template<typename FunctionConcept>
   MethodMetaInfo<FunctionConcept>::MethodMetaInfo(const FunctionConcept& impl) :
     BaseMethodMetaInfo(impl.name(), FnTraits::arity, TypeInfo<ReturnType>::get()),
@@ -374,7 +371,12 @@ namespace bifrost::meta
 
       if constexpr (meta::is_class_v<MemberT>)
       {
-        // m_BaseClasses.push(TypeInfo<typename MemberT::type_base>::get());
+        using base_type = member_type_base<decltype(member)>;
+
+        if constexpr (!std::is_same_v<base_type, void>)
+        {
+          m_BaseClasses.push(TypeInfo<base_type>::get());
+        }
       }
 
       if constexpr (meta::is_ctor_v<MemberT>)
@@ -382,12 +384,7 @@ namespace bifrost::meta
         m_Ctors.push(gRttiMemory().allocateT<CtorMetaInfo<Class, MemberT>>());
       }
 
-      if constexpr (meta::is_field_v<MemberT>)
-      {
-        m_Members.push(gRttiMemory().allocateT<MemberMetaInfo<MemberT>>(member));
-      }
-
-      if constexpr (meta::is_property_v<MemberT>)
+      if constexpr (meta::is_property_v<MemberT> || meta::is_field_v<MemberT>)
       {
         m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<MemberT>>(member));
       }

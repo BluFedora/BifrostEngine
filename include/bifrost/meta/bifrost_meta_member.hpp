@@ -59,6 +59,7 @@ namespace bifrost::meta
   {
    public:
     using type                        = std::tuple<Args...>;
+    using type_base                   = type;
     static constexpr bool is_writable = true;
     using is_function                 = std::bool_constant<false>;
     static constexpr bool is_readable = false;
@@ -75,6 +76,7 @@ namespace bifrost::meta
   {
    public:
     using type                        = std::decay_t<PropertyT>;
+    using type_base                   = type;
     using class_t                     = Class;
     using member_ptr                  = PropertyT class_t::*;
     using is_function                 = std::bool_constant<false>;
@@ -90,17 +92,13 @@ namespace bifrost::meta
 
    private:
     member_ptr     m_Pointer;
-    std::ptrdiff_t m_Offset;
 
    public:
-    explicit RawMember(const char* name, member_ptr ptr, std::ptrdiff_t offset) :
+    explicit RawMember(const char* name, member_ptr ptr) :
       BaseMember{name},
-      m_Pointer{ptr},
-      m_Offset{offset}
+      m_Pointer{ptr}
     {
     }
-
-    [[nodiscard]] std::ptrdiff_t offset() const { return m_Offset; }
 
     // NOTE(Shareef)
     //   This should always be true.
@@ -132,6 +130,7 @@ namespace bifrost::meta
   {
    public:
     using type                        = std::decay_t<PropertyT>;
+    using type_base                   = type;
     using class_t                     = Class;
     using getter_t                    = const type& (class_t::*)() const;
     using setter_t                    = void (class_t::*)(const type&);
@@ -175,6 +174,7 @@ namespace bifrost::meta
   {
    public:
     using type                        = std::decay_t<PropertyT>;
+    using type_base                   = type;
     using class_t                     = Class;
     using getter_t                    = type (class_t::*)() const;
     using setter_t                    = void (class_t::*)(type);
@@ -222,6 +222,7 @@ namespace bifrost::meta
   {
    public:
     using type        = R (Class::*)(Args...);
+    using type_base   = type;
     using class_t     = Class;
     using is_function = std::bool_constant<true>;
 
@@ -284,6 +285,7 @@ namespace bifrost::meta
   {
    public:
     using type        = R (Class::*)(Args...) const;
+    using type_base   = type;
     using class_t     = Class;
     using is_function = std::bool_constant<true>;
 
@@ -359,15 +361,15 @@ namespace bifrost::meta
   }
 
   template<bool is_readonly = false, typename Clz, typename T>
-  decltype(auto) field(const char* name, T Clz::*ptr, std::ptrdiff_t offset = 0u)
+  decltype(auto) field(const char* name, T Clz::*ptr)
   {
-    return RawMember<Clz, T, is_readonly>(name, ptr, offset);
+    return RawMember<Clz, T, is_readonly>(name, ptr);
   }
 
   template<typename Clz, typename T>
-  decltype(auto) field_readonly(const char* name, T Clz::*ptr, std::ptrdiff_t offset = 0u)
+  decltype(auto) field_readonly(const char* name, T Clz::*ptr)
   {
-    return field<true>(name, ptr, offset);
+    return field<true>(name, ptr);
   }
 
   template<typename Clz, typename T>
@@ -454,6 +456,9 @@ namespace bifrost::meta
 
   template<typename MemberType>
   using member_type_t = typename member_t<MemberType>::type;
+
+  template<typename MemberType>
+  using member_type_base = typename member_t<MemberType>::type_base;
 }  // namespace bifrost::meta
 
 #define BIFROST_META_FRIEND friend class ::bifrost::meta::Meta

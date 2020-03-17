@@ -21,9 +21,9 @@
 #include "asset_io/bifrost_scene.hpp"
 
 // Core
-#include "bifrost/core/bifrost_base_object.hpp"
-#include "bifrost/core/bifrost_game_state_machine.hpp"
-#include "bifrost/core/bifrost_igame_state_layer.hpp"
+#include "core/bifrost_base_object.hpp"
+#include "core/bifrost_game_state_machine.hpp"
+#include "core/bifrost_igame_state_layer.hpp"
 
 // Data Structures
 #include "data_structures/bifrost_array_t.h"

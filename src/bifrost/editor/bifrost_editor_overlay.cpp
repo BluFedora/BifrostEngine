@@ -5,7 +5,9 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 
-#include <imgui/imgui.h>          /* ImGUI::* */
+#include <imgui/imgui.h> /* ImGUI::* */
+
+#include "imgui/imgui_internal.h"
 #include <nativefiledialog/nfd.h> /* nfd**    */
 
 // TODO(Shareef): This is useful for the engine aswell.
@@ -687,35 +689,26 @@ namespace bifrost::editor
       }
     }
 
-    event.accept();
-  }
-
-  static int ImGuiStringCallback(ImGuiInputTextCallbackData* data)
-  {
-    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
     {
-      auto* str = static_cast<String*>(data->UserData);
-      IM_ASSERT(data->Buf == str->cstr());
-      str->resize(data->BufTextLen);
-      data->Buf = const_cast<char*>(str->cstr());
+      ImGuiIO& io = ImGui::GetIO();
+
+      if (io.WantCaptureKeyboard || io.WantCaptureMouse)
+      {
+        event.accept();
+      }
     }
 
-    return 0;
-  }
-
-  bool inspect(const char* label, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None)
-  {
-    flags |= ImGuiInputTextFlags_CallbackResize;
-    return ImGui::InputText(label, const_cast<char*>(string.cstr()), string.capacity() + 1, flags, &ImGuiStringCallback, static_cast<void*>(&string));
+    event.accept();
   }
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    ImGui::ShowDemoWindow();
-
     static const float window_width  = 350.0f;
     static const float window_margin = 5.0f;
 
+    m_Inspector.setAssets(&engine.assets());
+
+    // ImGui::ShowDemoWindow();
     const ActionContext action_ctx{this};
 
     float menu_bar_height = 0.0f;
@@ -740,9 +733,45 @@ namespace bifrost::editor
 
     ImGuiIO& io = ImGui::GetIO();
 
+    // Dock Space
+    {
+      static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+      ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+      ImGuiViewport*   viewport     = ImGui::GetMainViewport();
+
+      ImGui::SetNextWindowPos(viewport->GetWorkPos());
+      ImGui::SetNextWindowSize(viewport->GetWorkSize());
+      ImGui::SetNextWindowViewport(viewport->ID);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+      window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+      window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+      if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        window_flags |= ImGuiWindowFlags_NoBackground;
+
+      ImGui::Begin("DockSpace Demo", nullptr, window_flags);
+
+      const ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+      ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+      ImGui::End();
+
+      ImGui::PopStyleVar(3);
+
+      ImGui::DockBuilderDockWindow("Scene View", dockspace_id);
+    }
+
     if (ImGui::Begin("Scene View"))
     {
-      // ImGui::Image(engine.renderer().colorBuffer(), ImVec2(100, 100));
+      const auto titlebar_height = ImGui::GetCursorPosY();
+      auto       content_area    = ImGui::GetContentRegionMax();
+      content_area.y -= titlebar_height;
+
+      ImGui::Image(engine.renderer().colorBuffer(), content_area);
     }
     ImGui::End();
 
@@ -752,15 +781,15 @@ namespace bifrost::editor
 
       const auto height = io.DisplaySize.y - (window_margin * 2.0f) - menu_bar_height;
 
-      ImGui::SetNextWindowPos(ImVec2(window_margin, menu_bar_height + window_margin));
-      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Appearing);
-      ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
+      ImGui::SetNextWindowPos(ImVec2(window_margin, menu_bar_height + window_margin), ImGuiCond_Once);
+      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Once);
+      // ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
 
       if (ImGui::Begin("Project View"))
       {
         ImGui::Separator();
 
-        if (inspect("Project Name", m_OpenProject->name()))
+        if (imgui_ext::inspect("Project Name", m_OpenProject->name()))
         {
         }
 
@@ -768,47 +797,38 @@ namespace bifrost::editor
 
         m_FileSystem.uiShow(*this);
 
-        if (ImGui::CollapsingHeader("Assets"))
+        ImGui::Separator();
+
+        /*
+        String        m_Path;      //!< A path relative to the project to the actual asset file.
+        BifrostUUID   m_UUID;      //!< Uniquely identifies the asset.
+        std::uint16_t m_RefCount;  //!< How many live references in the engine.
+        */
+
+        for (const auto& asset_info : engine.assets().assetMap())
         {
-          for (const auto& asset : engine.assets().assetMap())
-          {
-            BaseAssetInfo* const asset_handle = asset.value();
-
-            if (ImGui::TreeNode(asset_handle->path().cstr()))
-            {
-              const auto type = asset_handle->type();
-
-              ImGui::Text("UUID    : %s", asset_handle->uuid().as_string);
-              ImGui::Text("RefCount: %i", asset_handle->refCount());
-
-              if (type)
-              {
-                ImGui::Text("Type Name: '%s'", type->name().data());
-              }
-              else
-              {
-                ImGui::Text("Unregistered Type <nullptr>");
-              }
-
-              ImGui::TreePop();
-            }
-          }
+          ImGui::Text("Path(%s)", asset_info.value()->path().c_str());
+          ImGui::Text("UUID(%s)", asset_info.value()->uuid().as_string);
+          ImGui::Text("RefCount(%i)", int(asset_info.value()->refCount()));
         }
       }
 
       ImGui::End();
 
-      ImGui::SetNextWindowPos(ImVec2(display_width - window_margin, menu_bar_height + window_margin), 0, ImVec2(1.0f, 0.0f));
-      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Appearing);
-      ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
+      ImGui::SetNextWindowPos(ImVec2(display_width - window_margin, menu_bar_height + window_margin), ImGuiCond_Once, ImVec2(1.0f, 0.0f));
+      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Once);
+      // ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
 
       if (ImGui::Begin("Inspector View"))
       {
+        m_Inspector.beginDocument(false);
+        m_Inspector.serialize("Test Texture", m_TestTexture);
+        m_Inspector.endDocument();
       }
 
       ImGui::End();
     }
-    /*
+    //*
     if (ImGui::Begin("RTTI"))
     {
       auto& memory = meta::gRttiMemoryBacking();
@@ -824,9 +844,9 @@ namespace bifrost::editor
 
           ImGui::Text("Size: %i, Alignment %i", int(type_info->size()), int(type_info->alignment()));
 
-          for (auto& field : type_info->members())
+          for (auto& base_type : type_info->baseClasses())
           {
-            ImGui::Text("member: %.*s", field->name().length(), field->name().data());
+            ImGui::Text("base: %.*s", base_type->name().length(), base_type->name().data());
           }
 
           for (auto& prop : type_info->properties())
@@ -845,7 +865,7 @@ namespace bifrost::editor
       }
     }
     ImGui::End();
-    */
+    //*/
     if (m_OpenNewDialog)
     {
       if (m_CurrentDialog)
@@ -890,7 +910,8 @@ namespace bifrost::editor
     m_FpsTimer{0.0f},
     m_CurrentFps{0},
     m_TestTexture{nullptr},
-    m_FileSystem{allocator()}
+    m_FileSystem{allocator()},
+    m_Inspector{allocator()}
   {
   }
 
@@ -1054,7 +1075,7 @@ namespace bifrost::editor
     {".vert", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
     {".spv", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
 
-    {".shader", &fileExtensionHandlerImpl<AssetShadeProgramInfo>},
+    {".shader", &fileExtensionHandlerImpl<AssetShaderProgramInfo>},
 
     // {".obj", &fileExtensionHandlerImpl<>},
     // {".gltf", &fileExtensionHandlerImpl<>},
@@ -1170,38 +1191,115 @@ namespace bifrost::editor
 
   // bifrost_editor_filesystem.hpp
 
-  void FileSystem::uiShow(EditorOverlay& editor) const
+  void FileSystem::clear(String&& name, const String& path)
+  {
+    clearImpl();
+    m_Root = &makeNode(std::move(name), path, false);
+  }
+
+  FileEntry& FileSystem::makeNode(String&& name, const String& path, bool is_file)
+  {
+    FileEntry* const entry = m_Memory.allocateT<FileEntry>(std::move(name), path, is_file);
+    m_AllNodes.push(entry);
+
+    return *entry;
+  }
+
+  void FileSystem::uiShow(EditorOverlay& editor)
   {
     if (m_Root)
     {
-      uiShowImpl(editor, root());
+      static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_Hideable;
+
+      if (ImGui::BeginTable("File System", 2, flags))
+      {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 10);
+        ImGui::TableAutoHeaders();
+
+        uiShowImpl(editor, root());
+        ImGui::EndTable();
+      }
+
+      if (m_HasBeenModified)
+      {
+        editor.assetRefresh();
+        m_HasBeenModified = false;
+      }
     }
+  }
+
+  StringRange FileSystem::relativePath(const FileEntry& entry) const
+  {
+    static constexpr std::size_t OFFSET_FROM_SLASH = 1;
+
+    const std::size_t full_path_length = entry.full_path.length();
+    const std::size_t root_path_length = root().full_path.length();
+    const std::size_t length_diff      = full_path_length - root_path_length;
+    const char* const path_bgn         = entry.full_path.cstr() + root_path_length + OFFSET_FROM_SLASH;
+
+    return {path_bgn, length_diff};
+  }
+
+  void FileSystem::remove(FileEntry& entry)
+  {
+    if (path::deleteDirectory(entry.full_path.cstr()))
+    {
+      m_HasBeenModified = true;
+    }
+  }
+
+  FileSystem::~FileSystem()
+  {
+    clearImpl();
   }
 
   void FileSystem::uiShowImpl(EditorOverlay& editor, FileEntry& entry)
   {
+    ImGui::TableNextRow();
+
     if (entry.is_file)
     {
-      if (ImGui::Selectable(entry.path.cstr()))
+      ImGui::TreeNodeEx(entry.name.cstr(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth);
+
+      const StringRange rel_path = relativePath(entry);
+
+      if (ImGui::IsItemHovered())
       {
+        ImGui::SetTooltip("Name(%s)\nFullPath(%s)\nRelPath(%.*s)", entry.name.cstr(), entry.full_path.cstr(), int(rel_path.length()), rel_path.begin());
       }
 
-      auto flags = ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
+      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+      {
+        
+      }
+
+      if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
+      {
+        bfLogPrint("Clicked On %s", entry.uuid.as_string);
+      }
+
+      const auto flags = ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
 
       if (ImGui::BeginDragDropSource(flags))
       {
-        if (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
+        if constexpr (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
         {
           ImGui::Text("UUID %s", entry.uuid.as_string);
         }
 
-        ImGui::SetDragDropPayload("File", entry.path.cstr(), entry.path.length());
+        ImGui::SetDragDropPayload("Asset.UUID", &entry.uuid, sizeof(BifrostUUID));
         ImGui::EndDragDropSource();
       }
+
+      ImGui::TableNextCell();
+      ImGui::TextUnformatted("Asset");
+
+      ImGui::TreePop();
     }
     else
     {
-      const bool is_open = ImGui::TreeNode(entry.path.cstr());
+      const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), ImGuiTreeNodeFlags_SpanFullWidth);
 
       if (ImGui::BeginPopupContextItem())
       {
@@ -1215,8 +1313,16 @@ namespace bifrost::editor
           ImGui::EndMenu();
         }
 
+        if (ImGui::MenuItem("Delete"))
+        {
+          remove(entry);
+        }
+
         ImGui::EndPopup();
       }
+
+      ImGui::TableNextCell();
+      ImGui::TextUnformatted("Folder");
 
       if (is_open)
       {

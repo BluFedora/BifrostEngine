@@ -538,6 +538,72 @@ void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t bindi
    nullptr);
 }
 
+void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info)
+{
+  const bfShaderProgramHandle program = self->pipeline_state.program;
+
+  assert(set_index < program->num_desc_set_layouts);
+
+  const VkPipelineBindPoint bind_point = self->pipeline_state.renderpass ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+
+  assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
+
+  const uint64_t        hash_code = bifrost::vk::hash(0x0, desc_set_info);
+  bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code);
+
+  if (!desc_set)
+  {
+    desc_set = bfShaderProgram_createDescriptorSet(program, set_index);
+
+    for (uint32_t i = 0; i < desc_set_info->num_bindings; ++i)
+    {
+      const bfDescriptorElementInfo* binding_info = &desc_set_info->bindings[i];
+
+      switch (binding_info->type)
+      {
+        case BIFROST_DESCRIPTOR_ELEMENT_TEXTURE:
+          bfDescriptorSet_setCombinedSamplerTextures(
+           desc_set,
+           binding_info->binding,
+           binding_info->array_element_start,
+           (bfTextureHandle*)binding_info->handles,
+           binding_info->num_handles);
+          break;
+        case BIFROST_DESCRIPTOR_ELEMENT_BUFFER:
+          bfDescriptorSet_setUniformBuffers(
+           desc_set,
+           binding_info->binding,
+           binding_info->array_element_start,
+           binding_info->offsets,
+           binding_info->sizes,
+           (bfBufferHandle*)binding_info->handles,
+           binding_info->num_handles);
+          break;
+        case BIFROST_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
+          assert(!"Not supported yet.");
+          break;
+      }
+    }
+
+    bfDescriptorSet_flushWrites(desc_set);
+
+    self->parent->cache_descriptor_set.insert(hash_code, desc_set);
+    AddCachedResource(self->parent, &desc_set->super, hash_code);
+  }
+
+  vkCmdBindDescriptorSets(
+   self->handle,
+   bind_point,
+   self->pipeline_state.program->layout,
+   set_index,
+   1,
+   &desc_set->handle,
+   0,
+   nullptr);
+
+  UpdateResourceFrame(self->context, &desc_set->super);
+}
+
 static void flushPipeline(bfGfxCommandListHandle self)
 {
   const uint64_t hash_code = bifrost::vk::hash(0x0, &self->pipeline_state);
@@ -897,12 +963,19 @@ void bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandLi
 
 void bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self)
 {
+  auto& render_pass_info = self->pipeline_state.renderpass->info;
+
+  for (std::uint32_t i = 0; i < render_pass_info.num_attachments; ++i)
+  {
+    render_pass_info.attachments[i].texture->tex_layout = bfVkConvertImgLayout(render_pass_info.attachments[i].final_layout);
+  }
+
   vkCmdEndRenderPass(self->handle);
 }
 
 void bfGfxCmdList_end(bfGfxCommandListHandle self)
 {
-  VkResult err = vkEndCommandBuffer(self->handle);
+  const VkResult err = vkEndCommandBuffer(self->handle);
 
   if (err)
   {
@@ -1009,7 +1082,7 @@ namespace bifrost::vk
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {
-    // TODO DO NOT HASH THESE FIELDS ID THESE BITS ARE SET
+    // TODO DO NOT HASH THESE FIELDS IF THESE BITS ARE SET
     //  uint64_t dynamic_stencil_cmp_mask : 1;
     //  uint64_t dynamic_stencil_write_mask : 1;
     //  uint64_t dynamic_stencil_reference : 1;
@@ -1139,6 +1212,33 @@ namespace bifrost::vk
   {
     self = hash::addU32(self, attachment_ref_info->attachment_index);
     self = hash::addU32(self, attachment_ref_info->layout);
+
+    return self;
+  }
+
+  std::uint64_t hash(std::uint64_t self, const bfDescriptorSetInfo* desc_set_info)
+  {
+    self = hash::addU32(self, desc_set_info->num_bindings);
+
+    for (uint32_t i = 0; i < desc_set_info->num_bindings; ++i)
+    {
+      const bfDescriptorElementInfo* binding = &desc_set_info->bindings[i];
+
+      self = hash::addU32(self, binding->binding);
+      self = hash::addU32(self, binding->array_element_start);
+      self = hash::addU32(self, binding->num_handles);
+
+      for (uint32_t j = 0; j < binding->num_handles; ++j)
+      {
+        self = hash::addPointer(self, binding->handles[i]);
+
+        if (binding->type == BIFROST_DESCRIPTOR_ELEMENT_BUFFER)
+        {
+          self = hash::addU64(self, binding->offsets[j]);
+          self = hash::addU64(self, binding->sizes[j]);
+        }
+      }
+    }
 
     return self;
   }

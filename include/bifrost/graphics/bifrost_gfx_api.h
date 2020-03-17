@@ -389,6 +389,39 @@ void                  bfShaderProgram_compile(bfShaderProgramHandle self);
 bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle self, uint32_t index);
 
 /* Descriptor Set */
+typedef enum bfDescriptorElementInfoType_t
+{
+  BIFROST_DESCRIPTOR_ELEMENT_TEXTURE,
+  BIFROST_DESCRIPTOR_ELEMENT_BUFFER,
+  BIFROST_DESCRIPTOR_ELEMENT_BUFFER_VIEW,
+
+} bfDescriptorElementInfoType;
+
+typedef struct bfDescriptorElementInfo_t
+{
+  bfDescriptorElementInfoType type;
+  uint32_t                    binding;
+  uint32_t                    array_element_start;
+  bfGfxBaseHandle             handles[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
+  uint32_t                    num_handles; /* also size of bfDescriptorElementInfo::offsets and bfDescriptorElementInfo::sizes */
+  uint64_t                    offsets[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
+  uint64_t                    sizes[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
+
+} bfDescriptorElementInfo;
+
+typedef struct bfDescriptorSetInfo_t
+{
+  bfDescriptorElementInfo bindings[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
+  uint32_t                num_bindings;
+
+} bfDescriptorSetInfo;
+
+bfDescriptorSetInfo bfDescriptorSetInfo_make(void);
+void                bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
+void                bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
+
+/* The Descriptor Set API is for 'Immutable' Bindings otherwise use the bfDescriptorSetInfo API */
+
 void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
 void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
 void bfDescriptorSet_flushWrites(bfDescriptorSetHandle self);
@@ -459,6 +492,7 @@ void     bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t bi
 void     bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
 void     bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
 void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
+void     bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info);                   // Call after pipeline is setup.
 void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);                                              // Draw Cmds
 void     bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
 void     bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);

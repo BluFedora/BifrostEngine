@@ -3,21 +3,22 @@
 
 #include "bifrost/graphics/bifrost_gfx_api.h"
 #include "bifrost_vulkan_hash.hpp"
-#include "bifrost_vulkan_physical_device.h"
-#include "bifrost_vulkan_mem_allocator.h"
 #include "bifrost_vulkan_material_pool.h"
+#include "bifrost_vulkan_mem_allocator.h"
+#include "bifrost_vulkan_physical_device.h"
 
 BIFROST_DEFINE_HANDLE(GfxDevice)
 {
-  VulkanPhysicalDevice*                       parent;
-  VkDevice                                    handle;
-  PoolAllocator                               device_memory_allocator;
-  VulkanDescriptorPool*                       descriptor_pool;
-  VkQueue                                     queues[BIFROST_GFX_QUEUE_MAX];
-  bifrost::vk::ObjectHashCache<bfRenderpass>  cache_renderpass;
-  bifrost::vk::ObjectHashCache<bfPipeline>    cache_pipeline;
-  bifrost::vk::ObjectHashCache<bfFramebuffer> cache_framebuffer;
-  BifrostGfxObjectBase*                       cached_resources;
+  VulkanPhysicalDevice*                         parent;
+  VkDevice                                      handle;
+  PoolAllocator                                 device_memory_allocator;
+  VulkanDescriptorPool*                         descriptor_pool;
+  VkQueue                                       queues[BIFROST_GFX_QUEUE_MAX];
+  bifrost::vk::ObjectHashCache<bfRenderpass>    cache_renderpass;
+  bifrost::vk::ObjectHashCache<bfPipeline>      cache_pipeline;
+  bifrost::vk::ObjectHashCache<bfFramebuffer>   cache_framebuffer;
+  bifrost::vk::ObjectHashCache<bfDescriptorSet> cache_descriptor_set;
+  BifrostGfxObjectBase*                         cached_resources; /* Linked List */
 };
 
 #if __cplusplus

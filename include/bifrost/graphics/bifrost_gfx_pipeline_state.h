@@ -181,10 +181,10 @@ typedef enum
 
 typedef enum BifrostColorMask_t
 {
-  BIFROST_COLOR_MASK_R = 1 << 0,
-  BIFROST_COLOR_MASK_G = 1 << 1,
-  BIFROST_COLOR_MASK_B = 1 << 2,
-  BIFROST_COLOR_MASK_A = 1 << 3,
+  BIFROST_COLOR_MASK_R    = 1 << 0,
+  BIFROST_COLOR_MASK_G    = 1 << 1,
+  BIFROST_COLOR_MASK_B    = 1 << 2,
+  BIFROST_COLOR_MASK_A    = 1 << 3,
   BIFROST_COLOR_MASK_RGBA = BIFROST_COLOR_MASK_R | BIFROST_COLOR_MASK_G | BIFROST_COLOR_MASK_B | BIFROST_COLOR_MASK_A,
 
 } BifrostColorMask;
@@ -209,7 +209,7 @@ typedef struct
   uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;           // 2
   uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;      // 1
   uint64_t do_depth_clamp : 1;                                          // 1
-  uint64_t do_depth_bounds_test : 1;                                          // 1
+  uint64_t do_depth_bounds_test : 1;                                    // 1
   uint64_t depth_write : BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS;       // 1
   uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;        // 3 (BifrostCompareOp)
   uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS;  // 1
@@ -251,11 +251,11 @@ typedef struct
   uint64_t dynamic_stencil_write_mask : 1;
   uint64_t dynamic_stencil_reference : 1;
 
-  uint64_t pad : 19; // Padding may be important for consistent hashing behavior.
+  uint64_t pad : 19;  // Padding may be important for consistent hashing behavior.
 
 } bfPipelineState;  // 107 bits (21 extra bits)
 
- // constexpr auto i = sizeof(bfPipelineState);
+// constexpr auto i = sizeof(bfPipelineState);
 
 typedef struct BifrostViewport_t
 {
@@ -311,7 +311,7 @@ typedef struct bfPipelineCache_t
   float                    line_width;
   BifrostPipelineDepthInfo depth;
   float                    min_sample_shading;
-  uint32_t                 sample_mask;  // must default to 0xFFFFFFFF
+  uint32_t                 sample_mask; /* must default to 0xFFFFFFFF */
   uint32_t                 subpass_index;
   bfFramebufferBlending    blending[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfShaderProgramHandle    program;

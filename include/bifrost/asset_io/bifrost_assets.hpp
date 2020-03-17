@@ -22,7 +22,6 @@
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                  */
-#include <string_view>                                    /* string_view                                  */
 
 class BifrostEngine;
 
@@ -31,6 +30,7 @@ namespace bifrost
   using Engine = ::BifrostEngine;
 
   class BaseAssetInfo;
+  class BaseAssetHandle;
 
   using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
@@ -56,6 +56,7 @@ namespace bifrost
 
     bool            doesExist(const char* path);
     bool            createDirectory(const char* path);
+    bool            deleteDirectory(const char* path);
     DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path);
     bool            isDirectory(const DirectoryEntry* entry);
     bool            isFile(const DirectoryEntry* entry);
@@ -99,6 +100,9 @@ namespace bifrost
    public:
     inline static const char META_PATH_NAME[] = "_meta";
 
+   public:
+    static bool isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info);
+
    private:
     Engine&          m_Engine;      //!< The engine this asset system is attached to.
     IMemoryManager&  m_Memory;      //!< Where to grab memory for the asset info.
@@ -111,29 +115,30 @@ namespace bifrost
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
     template<typename T>
-    BifrostUUID indexAsset(StringRange path, StringRange meta_file_name)
+    BifrostUUID indexAsset(StringRange relative_path, StringRange meta_file_name)
     {
       bool              create_new;
-      const BifrostUUID uuid = indexAssetImpl(path, meta_file_name, create_new, meta::TypeInfo<T>::get());
+      const BifrostUUID uuid = indexAssetImpl(relative_path, meta_file_name, create_new, meta::TypeInfo<T>::get());
 
       if (create_new)
       {
-        T* const asset_handle = m_Memory.allocateT<T>(path, uuid);
+        T* const asset_handle = m_Memory.allocateT<T>(relative_path, uuid);
         m_AssetMap.emplace(uuid, asset_handle);
       }
 
       return uuid;
     }
 
-    void loadMeta(StringRange meta_file_name);
-
-    AssetError setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
-    void       setRootPath(std::nullptr_t);
+    BaseAssetInfo* findAssetInfo(const BifrostUUID& uuid);
+    bool           tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const;
+    String         fullPath(const BaseAssetInfo& info) const;
+    void           loadMeta(StringRange meta_file_name);
+    AssetError     setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
+    void           setRootPath(std::nullptr_t);
 
     ~Assets();
 
     // TODO: Remove this
-
     detail::AssetMap& assetMap() { return m_AssetMap; }
 
    private:

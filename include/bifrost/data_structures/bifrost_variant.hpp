@@ -373,6 +373,9 @@ namespace bifrost
     }
   };
 
+  template<typename T>
+  using Optional = Variant<T>;
+
   template<typename FVisitor, typename TVariant, typename T, typename... Ts>
   static auto visit_helper(FVisitor&& f, const TVariant& variant) -> decltype(f(T()))
   {

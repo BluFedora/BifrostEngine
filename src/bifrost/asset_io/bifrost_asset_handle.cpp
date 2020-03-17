@@ -29,28 +29,33 @@
 
 namespace bifrost
 {
-  BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info) :
+  BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info) :
     m_Engine{&engine},
-    m_Info{info}
+    m_Info{info},
+    m_TypeInfo{type_info}
   {
+    acquire();
   }
 
-  BaseAssetHandle::BaseAssetHandle() noexcept :
+  BaseAssetHandle::BaseAssetHandle(meta::BaseClassMetaInfo* type_info) noexcept :
     m_Engine{nullptr},
-    m_Info{nullptr}
+    m_Info{nullptr},
+    m_TypeInfo{type_info}
   {
   }
 
   BaseAssetHandle::BaseAssetHandle(const BaseAssetHandle& rhs) noexcept :
     m_Engine{rhs.m_Engine},
-    m_Info(rhs.m_Info)
+    m_Info(rhs.m_Info),
+    m_TypeInfo{rhs.m_TypeInfo}
   {
     acquire();
   }
 
   BaseAssetHandle::BaseAssetHandle(BaseAssetHandle&& rhs) noexcept :
     m_Engine{rhs.m_Engine},
-    m_Info{rhs.m_Info}
+    m_Info{rhs.m_Info},
+    m_TypeInfo{rhs.m_TypeInfo}
   {
     rhs.m_Engine = nullptr;
     rhs.m_Info   = nullptr;
@@ -83,11 +88,6 @@ namespace bifrost
     return *this;
   }
 
-  BaseAssetHandle::operator bool() const
-  {
-    return isValid();
-  }
-
   bool BaseAssetHandle::isValid() const
   {
     return m_Info != nullptr;
@@ -100,6 +100,7 @@ namespace bifrost
       if (--m_Info->m_RefCount == 0)
       {
         m_Info->unload(*m_Engine);
+        m_Info->destroy();
       }
 
       m_Engine = nullptr;
@@ -132,7 +133,7 @@ namespace bifrost
 
   void* BaseAssetHandle::payload() const
   {
-    return m_Info ? m_Info->m_Payload : nullptr;
+    return m_Info ? m_Info->payload() : nullptr;
   }
 
   void detail::releaseGfxHandle(Engine& engine, bfGfxBaseHandle handle)
@@ -147,11 +148,14 @@ namespace bifrost
     const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
 
     const bfTextureCreateParams params = bfTextureCreateParams_init2D(
-      BIFROST_TEXTURE_UNKNOWN_SIZE,
-      BIFROST_TEXTURE_UNKNOWN_SIZE,
-      BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
+     BIFROST_TEXTURE_UNKNOWN_SIZE,
+     BIFROST_TEXTURE_UNKNOWN_SIZE,
+     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
 
-    m_Handle = bfGfxDevice_newTexture(device, &params);
-    return bfTexture_loadFile(m_Handle, m_Path.cstr());
+    m_Payload.set<bfTextureHandle>(bfGfxDevice_newTexture(device, &params));
+
+    const String full_path = engine.assets().fullPath(*this);
+
+    return bfTexture_loadFile(m_Payload.as<bfTextureHandle>(), full_path.cstr());
   }
 }  // namespace bifrost

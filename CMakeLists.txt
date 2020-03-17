@@ -116,6 +116,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Editor Module
   "src/bifrost/editor/bifrost_editor_overlay.cpp"
+  "src/bifrost/editor/bifrost_editor_serializer.cpp"
 
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_gfx_common.c"
@@ -155,6 +156,7 @@ include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostMemory/include)
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperments/include)
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})

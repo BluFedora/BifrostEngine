@@ -133,7 +133,8 @@ void bfRenderpassInfo_setStencilStoreOps(bfRenderpassInfo* self, bfLoadStoreFlag
 
 void bfRenderpassInfo_addAttachment(bfRenderpassInfo* self, const bfAttachmentInfo* info)
 {
-  if (info->texture->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT) {
+  if (info->texture->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  {
     // info->texture->tex_layout = info->final_layout;
   }
 
@@ -183,6 +184,52 @@ void bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDep
 
   memcpy(self->dependencies, dependencies, num_dependencies * sizeof(bfSubpassDependency));
   self->num_dependencies += num_dependencies;
+}
+
+bfDescriptorSetInfo bfDescriptorSetInfo_make(void)
+{
+  bfDescriptorSetInfo self;
+  self.num_bindings = 0;
+
+  return self;
+}
+
+void bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures)
+{
+  assert(self->num_bindings < BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS);
+
+  self->bindings[self->num_bindings].type                = BIFROST_DESCRIPTOR_ELEMENT_TEXTURE;
+  self->bindings[self->num_bindings].binding             = binding;
+  self->bindings[self->num_bindings].array_element_start = array_element_start;
+  self->bindings[self->num_bindings].num_handles         = num_textures;
+
+  for (uint32_t i = 0; i < num_textures; ++i)
+  {
+    self->bindings[self->num_bindings].handles[i] = textures[i];
+    self->bindings[self->num_bindings].offsets[i] = 0;
+    self->bindings[self->num_bindings].sizes[i]   = 0;
+  }
+
+  ++self->num_bindings;
+}
+
+void bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
+{
+  assert(self->num_bindings < BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS);
+
+  self->bindings[self->num_bindings].type                = BIFROST_DESCRIPTOR_ELEMENT_BUFFER;
+  self->bindings[self->num_bindings].binding             = binding;
+  self->bindings[self->num_bindings].array_element_start = array_element_start;
+  self->bindings[self->num_bindings].num_handles         = num_buffers;
+
+  for (uint32_t i = 0; i < num_buffers; ++i)
+  {
+    self->bindings[self->num_bindings].handles[i] = buffers[i];
+    self->bindings[self->num_bindings].offsets[i] = offsets[i];
+    self->bindings[self->num_bindings].sizes[i]   = sizes[i];
+  }
+
+  ++self->num_bindings;
 }
 
 static bfSubpassCache* grabSubpass(bfRenderpassInfo* self, uint16_t subpass_index)

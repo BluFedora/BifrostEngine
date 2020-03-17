@@ -5,9 +5,9 @@
 * @brief
 *
 * @version 0.0.1
-* @date    $year$-XX-XX
+* @date    2020-03-16
 *
-* @copyright Copyright (c) $year$
+* @copyright Copyright (c) 2020
 */
 /******************************************************************************/
 #ifndef BIFROST_EDITOR_OVERLAY_HPP
@@ -15,6 +15,7 @@
 
 #include "bifrost/bifrost.hpp"
 #include "bifrost_editor_filesystem.hpp"
+#include "bifrost_editor_serializer.hpp"
 
 namespace bifrost::editor
 {
@@ -194,6 +195,7 @@ namespace bifrost::editor
     int                          m_CurrentFps;
     AssetTextureHandle           m_TestTexture;
     FileSystem                   m_FileSystem;
+    ImGuiSerializer              m_Inspector;
 
    protected:
     void onCreate(Engine& engine) override;

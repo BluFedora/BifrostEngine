@@ -26,9 +26,6 @@ class ImGUIOverlay final : public IGameStateLayer
  protected:
   void onUpdate(BifrostEngine& engine, float delta_time) override;
 
-  void inspect(const char* label, BaseObjectT* object) const;
-  bool inspect(const char* label, Any& object, meta::BaseClassMetaInfo* class_info) const;
-
  private:
   template<typename F>
   static bool window(const char* name, F&& content, bool* is_open = nullptr, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
@@ -46,7 +43,7 @@ class ImGUIOverlay final : public IGameStateLayer
   }
 };
 
-class MainDemoLayer final : public bifrost::IGameStateLayer
+class MainDemoLayer final : public IGameStateLayer
 {
  public:
   const char* name() override

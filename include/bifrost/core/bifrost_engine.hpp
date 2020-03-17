@@ -237,7 +237,7 @@ class BaseRenderer
     bfDescriptorSet_setUniformBuffers(m_TestMaterial2, 1, 0, &offset, &sizes, &m_UniformBuffer, 1);
     bfDescriptorSet_flushWrites(m_TestMaterial2);
 
-    create_texture = bfTextureCreateParams_initColorAttachment(1280, 720, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, bfTrue, bfFalse);
+    create_texture = bfTextureCreateParams_initColorAttachment(1280 / 4, 720 / 4, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, bfTrue, bfFalse);
 
     m_ColorBuffer = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
     bfTexture_loadData(m_ColorBuffer, nullptr, 0);
@@ -269,8 +269,8 @@ class BaseRenderer
       {
         m_MainSurface = bfGfxDevice_requestSurface(m_MainCmdList);
 
-        const std::uint32_t surface_w = bfTexture_width(m_MainSurface);
-        const std::uint32_t surface_h = bfTexture_height(m_MainSurface);
+        const std::uint32_t surface_w = bfTexture_width(m_ColorBuffer);
+        const std::uint32_t surface_h = bfTexture_height(m_ColorBuffer);
 
         if (!m_DepthBuffer || bfTexture_width(m_DepthBuffer) != surface_w || bfTexture_height(m_DepthBuffer) != surface_h)
         {
@@ -348,11 +348,11 @@ class BaseRenderer
     // Camera END
 
     {
-      const auto color_buffer = m_MainSurface;
+      const auto color_buffer = m_ColorBuffer;
 
       bfAttachmentInfo main_surface;
       main_surface.texture      = color_buffer;
-      main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;//BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      main_surface.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
       main_surface.may_alias    = bfFalse;
 
       bfAttachmentInfo depth_buffer;
@@ -420,7 +420,7 @@ class BaseRenderer
       auto renderpass_info = bfRenderpassInfo_init(1);
       bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
       bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-      bfRenderpassInfo_setClearOps(&renderpass_info, 0x0);
+      bfRenderpassInfo_setClearOps(&renderpass_info, bfBit(0));
       bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
       bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
       bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
@@ -428,9 +428,9 @@ class BaseRenderer
       bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
       BifrostClearValue clear_colors[1];
-      clear_colors[0].color.float32[0] = 0.8f;
+      clear_colors[0].color.float32[0] = 0.6f;
       clear_colors[0].color.float32[1] = 0.6f;
-      clear_colors[0].color.float32[2] = 1.0f;
+      clear_colors[0].color.float32[2] = 0.75f;
       clear_colors[0].color.float32[3] = 1.0f;
 
       bfTextureHandle attachments[] = {m_MainSurface};

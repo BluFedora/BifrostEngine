@@ -23,7 +23,7 @@ namespace bifrost::editor
 
   struct FileEntry final
   {
-    String                         path;
+    String                         name; // TODO: Make Name Just a StringRange into 'FileEntry::full_path'
     String                         full_path;
     bool                           is_file;
     BifrostUUID                    uuid;
@@ -32,7 +32,7 @@ namespace bifrost::editor
 
    public:
     FileEntry(String&& name, const String& full_path, bool is_file) :
-      path{name},
+      name{name},
       full_path{full_path},
       is_file{is_file},
       uuid{bfUUID_makeEmpty()},
@@ -48,40 +48,29 @@ namespace bifrost::editor
     IMemoryManager&   m_Memory;
     Array<FileEntry*> m_AllNodes;
     FileEntry*        m_Root;
+    bool              m_HasBeenModified;
 
    public:
     explicit FileSystem(IMemoryManager& memory) :
       m_Memory{memory},
       m_AllNodes{memory},
-      m_Root{nullptr}
+      m_Root{nullptr},
+      m_HasBeenModified{false}
     {
     }
 
     FileEntry& root() const { return *m_Root; }
 
-    void clear(String&& name, const String& path)
-    {
-      clearImpl();
-      m_Root = &makeNode(std::move(name), path, false);
-    }
+    void        clear(String&& name, const String& path);
+    FileEntry&  makeNode(String&& name, const String& path, bool is_file);
+    void        uiShow(EditorOverlay& editor);
+    StringRange relativePath(const FileEntry& entry) const;
+    void        remove(FileEntry& entry);
 
-    FileEntry& makeNode(String&& name, const String& path, bool is_file)
-    {
-      FileEntry* const entry = m_Memory.allocateT<FileEntry>(std::move(name), path, is_file);
-      m_AllNodes.push(entry);
-
-      return *entry;
-    }
-
-    void uiShow(EditorOverlay& editor) const;
-
-    ~FileSystem()
-    {
-      clearImpl();
-    }
+    ~FileSystem();
 
    private:
-    static void uiShowImpl(EditorOverlay& editor, FileEntry& entry);
+    void uiShowImpl(EditorOverlay& editor, FileEntry& entry);
 
     void clearImpl()
     {

@@ -5,8 +5,6 @@
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/core/bifrost_game_state_machine.hpp"
-#include "bifrost/data_structures/bifrost_any.hpp"
-#include "bifrost/data_structures/bifrost_string.hpp"
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/platform/bifrost_window_glfw.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
@@ -483,9 +481,6 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
 
   const auto height = io.DisplaySize.y - 10.0f;
 
-  ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f));
-  ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
-  ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
   if (ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoMove))
   {
     auto* const scene = engine.currentScene();
@@ -544,9 +539,6 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
   }
   ImGui::End();
 
-  ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 5.0f, 5.0f), 0, ImVec2(1.0f, 0.0f));
-  ImGui::SetNextWindowSize(ImVec2(350.0f, height), ImGuiCond_Appearing);
-  ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
 #if 0
   window("Scripting", [&engine]() {
     static std::future<BifrostVMError> s_WaitForCompile;
@@ -637,255 +629,8 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
 #endif
 }
 
-void ImGUIOverlay::inspect(const char* label, BaseObjectT* object) const
-{
-  Any a = object;
-  inspect(label, a, object->type());
-}
-
-template<typename T>
-static bool InspectInt(const char* label, bifrost::Any& object, bool* did_change = nullptr)
-{
-  if (object.is<T>())
-  {
-    int value = int(object.as<T>());
-
-    if (ImGui::DragInt(label, &value))
-    {
-      if constexpr (std::is_unsigned_v<T>)
-      {
-        value = value < 0 ? 0 : value;
-      }
-
-      object.assign<T>(value);
-
-      if (did_change)
-      {
-        *did_change = true;
-      }
-    }
-    else
-    {
-      if (did_change)
-      {
-        *did_change = false;
-      }
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-template<typename T>
-static bool InspectFloat(const char* label, bifrost::Any& object, bool* did_change = nullptr)
-{
-  if (object.is<T>())
-  {
-    float value = float(object.as<T>());
-
-    if (ImGui::DragFloat(label, &value))
-    {
-      object.assign<T>(value);
-
-      if (did_change)
-      {
-        *did_change = true;
-      }
-    }
-    else
-    {
-      if (did_change)
-      {
-        *did_change = false;
-      }
-    }
-
-    return true;
-  }
-
-  if (object.is<T*>())
-  {
-    float value = float(*object.as<T*>());
-
-    if (ImGui::DragFloat(label, &value))
-    {
-      *object.as<T*>() = T(value);
-
-      if (did_change)
-      {
-        *did_change = true;
-      }
-    }
-    else
-    {
-      if (did_change)
-      {
-        *did_change = false;
-      }
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-static int inspectStringCallback(ImGuiInputTextCallbackData* data)
-{
-  if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
-  {
-    auto* str = static_cast<std::string*>(data->UserData);
-    IM_ASSERT(data->Buf == str->c_str());
-    str->resize(data->BufTextLen);
-    data->Buf = const_cast<char*>(str->c_str());
-  }
-
-  return 0;
-}
-
-bool inspect(const char* label, std::string& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None)
-{
-  flags |= ImGuiInputTextFlags_CallbackResize;
-  return ImGui::InputText(label, const_cast<char*>(string.c_str()), string.capacity() + 1, flags, inspectStringCallback, static_cast<void*>(&string));
-}
-
-bool ImGUIOverlay::inspect(const char* label, Any& object, meta::BaseClassMetaInfo* info) const
-{
-  bool did_change = false;
-
-  if (object.isEmpty())
-  {
-    ImGui::Text("%s : <empty>", label);
-  }
-  else if (InspectInt<char>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::int8_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::uint8_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::int16_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::uint16_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::int32_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::uint32_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::int64_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectInt<std::uint64_t>(label, object, &did_change))
-  {
-  }
-  else if (InspectFloat<float>(label, object, &did_change))
-  {
-  }
-  else if (InspectFloat<double>(label, object, &did_change))
-  {
-  }
-  else if (InspectFloat<long double>(label, object, &did_change))
-  {
-  }
-  else if (object.is<Vec3f>())
-  {
-    did_change = ImGui::DragFloat3(label, &object.as<Vec3f>().x);
-  }
-  else if (object.is<Vec3f*>())
-  {
-    did_change = ImGui::DragFloat3(label, &object.as<Vec3f*>()->x);
-  }
-  else if (object.is<std::string>())
-  {
-    did_change = ::inspect(label, object.as<std::string>());
-  }
-  else if (object.is<std::string*>())
-  {
-    did_change = ::inspect(label, *object.as<std::string*>());
-  }
-  else if (object.is<void*>())
-  {
-    ImGui::Text("%s : <%p>", label, object.as<void*>());
-  }
-  else if (object.is<bool>())
-  {
-    ImGui::Checkbox(label, &object.as<bool>());
-  }
-  else if (object.is<std::byte>())
-  {
-    ImGui::Text("%s : <byte>", label);
-  }
-  else if (info)
-  {
-    if (object.as<void*>() != nullptr)
-    {
-      if (ImGui::TreeNode(label))
-      {
-        for (auto& field : info->members())
-        {
-          auto field_value = field->get(object);
-
-          inspect(field->name().data(), field_value, field->type());
-        }
-
-        for (auto& prop : info->properties())
-        {
-          auto field_value = prop->get(object);
-
-          if (inspect(prop->name().data(), field_value, prop->type()))
-          {
-            prop->set(object, field_value);
-            did_change = true;
-          }
-        }
-
-        if (info->isArray())
-        {
-          const std::size_t size = info->arraySize(object);
-
-          for (std::size_t i = 0; i < size; ++i)
-          {
-            auto* const idx_label = string_utils::alloc_fmt(g_Engine->mainMemory(), nullptr, "%i", int(i));
-            auto        element   = info->arrayGetElementAt(object, i);
-            if (inspect(idx_label, element, info->containedType()))
-            {
-              info->arraySetElementAt(object, i, element);
-            }
-            string_utils::free_fmt(g_Engine->mainMemory(), idx_label);
-          }
-        }
-
-        ImGui::TreePop();
-      }
-    }
-    else
-    {
-      if (ImGui::Button("Create"))
-      {
-        object     = info->instantiate(g_Engine->mainMemory());
-        did_change = true;
-      }
-    }
-  }
-  else
-  {
-    ImGui::Text("%s : <unknown>", label);
-  }
-
-  return did_change;
-}
-
 void MainDemoLayer::onLoad(BifrostEngine& engine)
 {
-  // engine.stateMachine().addOverlay<ImGUIOverlay>("ImGui 0");
 #if 0
   auto mye              = new bifrost::Entity("Hello I am an entity");
   auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");

@@ -45,4 +45,20 @@ namespace bifrost::string_utils
   {
     allocator.deallocate(ptr);
   }
+
+  char* fmt_buffer(char* buffer, const size_t buffer_size, std::size_t* out_size, const char* fmt, ...)
+  {
+    std::va_list args;
+
+    va_start(args, fmt);
+    const int string_len = vsnprintf(buffer, buffer_size, fmt, args);
+    va_end(args);
+
+    if (out_size)
+    {
+      *out_size = string_len < 0 ? 0 : string_len;
+    }
+
+    return buffer;
+  }
 }  // namespace bifrost::string_utils

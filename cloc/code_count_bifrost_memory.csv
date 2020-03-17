@@ -1,0 +1,10 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (16.0 files/s, 1112.0 lines/s)"
+C++,..\BifrostMemory\src\bifrost_freelist_allocator.cpp,27,15,107,
+C++,..\BifrostMemory\src\bifrost_imemory_manager.cpp,15,13,58,
+C++,..\BifrostMemory\src\bifrost_linear_allocator.cpp,11,17,50,
+C++,..\BifrostMemory\src\bifrost_stack_allocator.cpp,12,15,42,
+C,..\BifrostMemory\src\bifrost_memory_manip.c,19,12,36,
+C++,..\BifrostMemory\src\bifrost_proxy_allocator.cpp,6,15,28,
+C++,..\BifrostMemory\src\bifrost_c_allocator.cpp,4,14,21,
+C++,..\BifrostMemory\src\bifrost_pool_allocator.cpp,1,14,4,
+,,,,346,

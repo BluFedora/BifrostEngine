@@ -18,14 +18,14 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
-#include "bifrost/data_structures/bifrost_string.hpp" /* */
-#include "bifrost_vm.h"                               /* bfVM_*                   */
-#include "meta/bifrost_meta_function_traits.hpp"      /* function_traits          */
-#include "meta/bifrost_meta_utils.hpp"                /* for_each                 */
-#include "utility/bifrost_non_copy_move.hpp"          /* bfNonCopyMoveable        */
-#include <string>                                     /* string                   */
-#include <tuple>                                      /* tuple                    */
-#include <type_traits>                                /* decay_t, is_arithmetic_v */
+#include "bifrost/data_structures/bifrost_string.hpp"    /* String                   */
+#include "bifrost/meta/bifrost_meta_function_traits.hpp" /* function_traits          */
+#include "bifrost/meta/bifrost_meta_utils.hpp"           /* for_each                 */
+#include "bifrost/utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
+#include "bifrost_vm.h"                                  /* bfVM_*                   */
+#include <string>                                        /* string                   */
+#include <tuple>                                         /* tuple                    */
+#include <type_traits>                                   /* decay_t, is_arithmetic_v */
 
 namespace bifrost
 {
@@ -55,12 +55,12 @@ namespace bifrost
       {
         return bfVM_stackReadBool(self, slot);
       }
-      else if constexpr (std::is_same_v<T, StringRange> || std::is_same_v<T, std::string>)
+      else if constexpr (std::is_same_v<T, String> || std::is_same_v<T, StringRange> || std::is_same_v<T, std::string>)
       {
         std::size_t       str_size;
         const char* const str = bfVM_stackReadString(self, slot, &str_size);
 
-        // NOTE(Shareef): Both 'StringRange' and 'std::string' have a iterator / pointer style ctor.
+        // NOTE(Shareef): 'String', 'StringRange' and 'std::string' have an iterator style ctor.
         return {str, str + str_size};
       }
       else if constexpr (std::is_pointer_v<T>)
@@ -92,7 +92,7 @@ namespace bifrost
 
       if constexpr (!std::is_same_v<RawT, RetainStack>)
       {
-        if constexpr (std::is_same_v<RawT, std::string>)
+        if constexpr (std::is_same_v<RawT, std::string> || std::is_same_v<RawT, String>)
         {
           bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
         }

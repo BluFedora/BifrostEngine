@@ -13,11 +13,11 @@ namespace bifrost::meta
 {
   class BaseClassMetaInfo;
 
-  using RttiAllocatorType        = NoFreeAllocator;
   using RttiAllocatorBackingType = LinearAllocator;
+  using RttiAllocatorType        = NoFreeAllocator;
 
-  RttiAllocatorType&                               gRttiMemory();
   RttiAllocatorBackingType&                        gRttiMemoryBacking();
+  RttiAllocatorType&                               gRttiMemory();
   HashTable<std::string_view, BaseClassMetaInfo*>& gRegistry();
 
   class BaseCtorMetaInfo
@@ -65,18 +65,6 @@ namespace bifrost::meta
 
     virtual Any  get(const Any& instance)             = 0;
     virtual void set(Any& instance, const Any& value) = 0;
-  };
-
-  class BaseMemberMetaInfo : public BasePropertyMetaInfo
-  {
-   protected:
-    std::ptrdiff_t m_Offset;
-
-   protected:
-    BaseMemberMetaInfo(std::string_view name, BaseClassMetaInfo* type, std::ptrdiff_t offset);
-
-   public:
-    [[nodiscard]] std::ptrdiff_t offset() const { return m_Offset; }
   };
 
   class BaseMethodMetaInfo : public BaseMetaInfo
@@ -141,10 +129,12 @@ namespace bifrost::meta
 
   class BaseClassMetaInfo : public BaseMetaInfo
   {
+    template<typename T>
+    friend struct TypeInfo;
+
    protected:
     Array<BaseClassMetaInfo*>    m_BaseClasses;
     Array<BaseCtorMetaInfo*>     m_Ctors;
-    Array<BaseMemberMetaInfo*>   m_Members;
     Array<BasePropertyMetaInfo*> m_Properties;
     Array<BaseMethodMetaInfo*>   m_Methods;
     std::size_t                  m_Size;
@@ -162,7 +152,6 @@ namespace bifrost::meta
     [[nodiscard]] bool                  isMap() const { return m_IsMap; }
     const Array<BaseClassMetaInfo*>&    baseClasses() const { return m_BaseClasses; }
     const Array<BaseCtorMetaInfo*>&     ctors() const { return m_Ctors; }
-    const Array<BaseMemberMetaInfo*>&   members() const { return m_Members; }
     const Array<BasePropertyMetaInfo*>& properties() const { return m_Properties; }
     const Array<BaseMethodMetaInfo*>&   methods() const { return m_Methods; }
 
@@ -200,7 +189,6 @@ namespace bifrost::meta
       return InvalidCtorCall{};
     }
 
-    BaseMemberMetaInfo*   findMember(std::string_view name) const;
     BasePropertyMetaInfo* findProperty(std::string_view name) const;
     BaseMethodMetaInfo*   findMethod(std::string_view name) const;
 

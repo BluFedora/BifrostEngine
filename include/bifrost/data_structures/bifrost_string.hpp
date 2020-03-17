@@ -34,6 +34,11 @@ namespace bifrost
     {
     }
 
+    StringRange(const char* bgn, std::size_t length) :
+      bfStringRange{bgn, bgn + length}
+    {
+    }
+
     StringRange(const char* cstring) :
       bfStringRange{bfMakeStringRangeC(cstring)}
     {
@@ -103,7 +108,6 @@ namespace bifrost
     String(const bfStringRange range) :
       String(range.bgn, range.end)
     {
-      
     }
 
     String(const String& rhs) :
@@ -192,12 +196,23 @@ namespace bifrost
       return ::String_length(m_Handle);
     }
 
+    [[nodiscard]] std::size_t size() const
+    {
+      return length();
+    }
+
     [[nodiscard]] std::size_t capacity() const
     {
       return ::String_capacity(m_Handle);
     }
 
     [[nodiscard]] const char* cstr() const
+    {
+      return String_cstr(m_Handle);
+    }
+
+    // For STL Compat.
+    [[nodiscard]] const char* c_str() const
     {
       return String_cstr(m_Handle);
     }
@@ -355,6 +370,7 @@ namespace bifrost::string_utils
   //   Use 'IMemoryManager::deallcoate' or 'alloc_fmt_free'
   char* alloc_fmt(IMemoryManager& allocator, std::size_t* out, const char* fmt, ...);
   void  free_fmt(IMemoryManager& allocator, char* ptr);
+  char* fmt_buffer(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, ...);
 }  // namespace bifrost::string_utils
 
 #endif /* BIFROST_STRING_HPP */

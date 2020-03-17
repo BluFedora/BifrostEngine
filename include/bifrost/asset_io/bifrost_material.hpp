@@ -17,42 +17,42 @@
 
 namespace bifrost
 {
-  class ShaderProgram final : public detail::GfxHandle<bfShaderProgramHandle>
+  class ShaderProgram final : public BaseObject<ShaderProgram>
   {
    private:
     AssetShaderModuleHandle m_VertexShader;
     AssetShaderModuleHandle m_FragmentShader;
 
    public:
-    ShaderProgram(const StringRange& path, const BifrostUUID& uuid) :
-      GfxHandle<bfShaderProgramHandle>(path, uuid),
+    ShaderProgram() :
+      BaseObject<ShaderProgram>(),
       m_VertexShader{nullptr},
       m_FragmentShader{nullptr}
     {
-      m_Payload = this;
     }
   };
 
-  class Material final : public detail::GfxHandle<bfDescriptorSetHandle>
+  // using AssetShaderProgramHandle = AssetHandle<ShaderProgram>;
+
+  class Material final : public BaseObject<Material>
   {
    private:
     AssetShaderProgramHandle m_ShaderProgram;
     AssetTextureHandle       m_DiffuseTexture;
 
    public:
-    Material(const StringRange& path, const BifrostUUID& uuid) :
-      GfxHandle<bfDescriptorSetHandle>(path, uuid),
+    explicit Material() :
+      BaseObject<Material>(),
       m_ShaderProgram{nullptr},
       m_DiffuseTexture{nullptr}
     {
-      m_Payload = this;
     }
 
-    bool                load(Engine& engine) override;
-    AssetTextureHandle& diffuseTexture() { return m_DiffuseTexture; }
+    const AssetShaderProgramHandle& shaderProgram() const { return m_ShaderProgram; }
+    const AssetTextureHandle&       diffuseTexture() const { return m_DiffuseTexture; }
   };
 
-  using AssetMaterialHandle = AssetHandle<Material, Material>;
+  using AssetMaterialHandle = AssetHandle<Material>;
 }  // namespace bifrost
 
 #endif /* BIFROST_MATERIAL_HPP */
