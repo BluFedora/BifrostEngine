@@ -222,6 +222,14 @@ namespace bifrost
       rhs.m_TypeID = invalid_type();
     }
 
+    template<typename T>
+    self_t& operator=(const self_t& value)
+    {
+      set<T>(value);
+      return *this;
+    }
+
+
     self_t& operator=(const self_t& old)
     {
       if (this != &old)

@@ -28,13 +28,15 @@ namespace bifrost::meta
 
     Any get(const Any& instance) override final
     {
+      Class& instance_as_class = *instance.as<Class*>();
+
       if constexpr (std::is_lvalue_reference<decltype(m_Impl.get(*instance.as<Class*>()))>::value)
       {
-        return &m_Impl.get(*instance.as<Class*>());
+        return &m_Impl.get(instance_as_class);
       }
       else
       {
-        return m_Impl.get(*instance.as<Class*>());
+        return m_Impl.get(instance_as_class);
       }
     }
 
@@ -42,7 +44,16 @@ namespace bifrost::meta
     {
       if constexpr (MemberConcept::is_writable)
       {
-        m_Impl.set(*instance.as<Class*>(), value.as<PropertyT>());
+        Class& instance_as_class = *instance.as<Class*>();
+
+        if constexpr (std::is_lvalue_reference<decltype(m_Impl.get(*instance.as<Class*>()))>::value)
+        {
+          m_Impl.set(instance_as_class, *value.as<PropertyT*>());
+        }
+        else
+        {
+          m_Impl.set(instance_as_class, value.as<PropertyT>());
+        }
       }
     }
   };

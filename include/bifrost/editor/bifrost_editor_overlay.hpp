@@ -217,6 +217,10 @@ namespace bifrost::editor
     bool    openProject(StringRange path);
     void    closeProject();
     void    assetRefresh();
+
+  private:
+    void buttonAction(const ActionContext& ctx, const char* action_name) const;
+    void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
   };
 }  // namespace bifrost::editor
 

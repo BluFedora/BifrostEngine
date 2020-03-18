@@ -107,6 +107,8 @@ void   bfArray_clear(void** self);
 void   bfArray_reserve(void** self, size_t num_elements);
 void   bfArray_resize(void** self, size_t num_elements);
 void   bfArray_push(void** self, const void* element);
+void   bfArray_insert(void** self, size_t index, const void* element);
+void*  bfArray_insertEmplace(void** self, size_t index);
 void*  bfArray_emplace(void** self);
 void*  bfArray_emplaceN(void** self, size_t num_elements);
 void*  bfArray_at(void** self, size_t index);

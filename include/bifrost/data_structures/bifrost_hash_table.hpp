@@ -6,6 +6,10 @@
       This is a basic unordered hash map that uses linear probing rather than
       a linked list causing references to nodes in the table to be unstable
       so DO NOT store references long after you are given them.
+
+      TODO: A good optimization would be for all functions taking in a key to
+            take in a templated key as to not for a constructionof a TKey specifically.
+            Ex: A String vs StringRange shoudl be allowed tp be compared as is.
 */
 /******************************************************************************/
 #ifndef BIFROST_HASH_TABLE_HPP
@@ -152,7 +156,7 @@ namespace bifrost
            typename TValue,
            std::size_t initial_size = 128,
            typename Hasher          = std::hash<TKey>,
-           typename TEqual          = std::equal_to<TKey>>
+           typename TEqual          = std::equal_to<>> // std::equal_to<TKey>
   class HashTable
   {
    private:

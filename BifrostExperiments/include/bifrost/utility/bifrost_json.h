@@ -28,13 +28,13 @@ extern "C" {
 typedef enum bfJsonEvent_t
 {
   BIFROST_JSON_EVENT_BEGIN_DOCUMENT,
+  BIFROST_JSON_EVENT_END_DOCUMENT,
   BIFROST_JSON_EVENT_BEGIN_ARRAY,
   BIFROST_JSON_EVENT_END_ARRAY,
   BIFROST_JSON_EVENT_BEGIN_OBJECT,
+  BIFROST_JSON_EVENT_END_OBJECT,
   BIFROST_JSON_EVENT_KEY,
   BIFROST_JSON_EVENT_VALUE,
-  BIFROST_JSON_EVENT_END_OBJECT,
-  BIFROST_JSON_EVENT_END_DOCUMENT,
   BIFROST_JSON_EVENT_PARSE_ERROR,
 
 } bfJsonEvent;
@@ -74,6 +74,7 @@ void*         bfJsonParser_userStorage(const bfJsonParserContext* ctx);
 void*         bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
 /* Writer API (Object -> String) */
 BifrostJsonWriter* bfJsonWriter_new(bfJsonAllocFn alloc_fn);
+size_t             bfJsonWriter_length(const BifrostJsonWriter* self);
 void               bfJsonWriter_beginArray(BifrostJsonWriter* self);
 void               bfJsonWriter_endArray(BifrostJsonWriter* self);
 void               bfJsonWriter_beginObject(BifrostJsonWriter* self);

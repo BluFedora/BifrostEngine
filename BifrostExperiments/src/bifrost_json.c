@@ -211,6 +211,11 @@ BifrostJsonWriter* bfJsonWriter_new(bfJsonAllocFn alloc_fn)
   return self;
 }
 
+size_t bfJsonWriter_length(const BifrostJsonWriter* self)
+{
+  return self->string_size;
+}
+
 void bfJsonWriter_beginArray(BifrostJsonWriter* self)
 {
   bfJsonWriter_write(self, "[", 1);
@@ -229,13 +234,67 @@ void bfJsonWriter_beginObject(BifrostJsonWriter* self)
 void bfJsonWriter_key(BifrostJsonWriter* self, bfStringRange key)
 {
   bfJsonWriter_valueString(self, key);
-  bfJsonWriter_write(self, ":", 1);
+  bfJsonWriter_write(self, " : ", 3);
 }
 
 void bfJsonWriter_valueString(BifrostJsonWriter* self, bfStringRange value)
 {
   bfJsonWriter_write(self, "\"", 1);
-  bfJsonWriter_write(self, value.bgn, value.end - value.bgn);
+
+  for (const char* it = value.bgn; it != value.end; ++it)
+  {
+    const char* write;
+    size_t      write_length;
+
+    switch (it[0])
+    {
+      case '"':
+      {
+        write        = "\\\"";
+        write_length = 2;
+        break;
+      }
+      case '\'':
+      {
+        write        = "\\\'";
+        write_length = 2;
+        break;
+      }
+      case '\n':
+      {
+        write        = "\\n";
+        write_length = 2;
+        break;
+      }
+      case '\r':
+      {
+        write        = "\\r";
+        write_length = 2;
+        break;
+      }
+      case '\t':
+      {
+        write        = "\\t";
+        write_length = 2;
+        break;
+      }
+      case '\\':
+      {
+        write        = "\\\\";
+        write_length = 2;
+        break;
+      }
+      default:
+      {
+        write        = it;
+        write_length = 1;
+        break;
+      }
+    }
+
+    bfJsonWriter_write(self, write, write_length);
+  }
+
   bfJsonWriter_write(self, "\"", 1);
 }
 

@@ -101,7 +101,7 @@ typedef struct BifrostStringHeader_t
 } BifrostStringHeader;
 
 static BifrostStringHeader* String_getHeader(ConstBifrostString self);
-static void                 string_append(BifrostString* self, size_t newSize, const char* str);
+static void                 string_append(BifrostString* self, size_t appended_size, const char* str);
 static void                 string_insert(BifrostString* self, size_t index, size_t stringLength, const char* str);
 
 BifrostString String_new(const char* initial_data)
@@ -202,17 +202,17 @@ void String_cset(BifrostString* self, const char* str)
 
 void String_cappend(BifrostString* self, const char* str)
 {
-  string_append(self, String_length(*self) + (size_t)strlen(str), str);
+  string_append(self, (size_t)strlen(str), str);
 }
 
 void String_cappendLen(BifrostString* self, const char* str, size_t len)
 {
-  string_append(self, String_length(*self) + len, str);
+  string_append(self, len, str);
 }
 
 void String_append(BifrostString* self, ConstBifrostString str)
 {
-  string_append(self, String_length(*self) + String_length(str), String_cstr(str));
+  string_append(self, String_length(str), String_cstr(str));
 }
 
 void String_cinsert(BifrostString* self, size_t index, const char* str)
@@ -423,11 +423,16 @@ static BifrostStringHeader* String_getHeader(ConstBifrostString self)
   return (BifrostStringHeader*)(self - sizeof(BifrostStringHeader));
 }
 
-static void string_append(BifrostString* self, size_t newSize, const char* str)
+static void string_append(BifrostString* self, size_t appended_size, const char* str)
 {
-  String_reserve(self, newSize + 1);
-  strcpy((*self) + String_length(*self), str);
-  String_getHeader(*self)->length = newSize;
+  const size_t self_size = String_length(*self);
+  const size_t new_size  = self_size + appended_size;
+
+  String_reserve(self, new_size + 1);
+
+  strncpy(*self + self_size, str, appended_size);
+  String_getHeader(*self)->length = new_size;
+  (*self)[new_size]               = '\0';
 }
 
 static void string_insert(BifrostString* self, size_t index, size_t stringLength, const char* str)

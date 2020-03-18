@@ -7,6 +7,7 @@
 #include "bifrost/core/bifrost_game_state_machine.hpp"
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/platform/bifrost_window_glfw.hpp"
+#include "bifrost/utility/bifrost_json.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
 #include "imgui/imgui.h"
 #include <bifrost/bifrost.hpp>
@@ -22,31 +23,6 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
-
-namespace bifrost
-{
-  namespace meta
-  {
-    template<>
-    const auto& Meta::registerMembers<BifrostTransform>()
-    {
-      static auto member_ptrs = members(
-       class_info<BifrostTransform>("Transform"),
-       ctor<>(),
-       field("origin", &BifrostTransform::origin),
-       field("local_position", &BifrostTransform::local_position),
-       field("local_rotation", &BifrostTransform::local_rotation),
-       field("local_scale", &BifrostTransform::local_scale),
-       field("world_position", &BifrostTransform::world_position),
-       field("world_rotation", &BifrostTransform::world_rotation),
-       field("world_scale", &BifrostTransform::world_scale),
-       field("local_transform", &BifrostTransform::local_transform),
-       field("world_transform", &BifrostTransform::world_transform));
-
-      return member_ptrs;
-    }
-  }  // namespace meta
-}  // namespace bifrost
 
 class TestClass
 {
@@ -479,66 +455,6 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
 {
   ImGuiIO& io = ImGui::GetIO();
 
-  const auto height = io.DisplaySize.y - 10.0f;
-
-  if (ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoMove))
-  {
-    auto* const scene = engine.currentScene();
-
-    if (scene)
-    {
-      if (ImGui::Selectable("Create"))
-      {
-        static int        id   = 0;
-        const std::string name = "New Entity" + std::to_string(id++);
-        scene->addEntity(name);
-      }
-
-      const auto inspectEntityArray = [this](const EntityList& entities, auto& rec) -> void {
-        Entity* add_child_to = nullptr;
-
-        for (auto& entity : entities)
-        {
-          ImGui::PushID(&entity);
-          const bool open = ImGui::TreeNode(entity.name().c_str());
-          if (ImGui::BeginPopupContextItem())
-          {
-            if (ImGui::Selectable("Add Child"))
-            {
-              add_child_to = &entity;
-            }
-
-            ImGui::EndPopup();
-          }
-          if (open)
-          {
-            if (ImGui::Button("Select"))
-            {
-              m_SelectedEntity = &entity;
-            }
-
-            rec(entity.children(), rec);
-            ImGui::TreePop();
-          }
-          ImGui::PopID();
-          // inspect(entity->name().c_str(), entity);
-        }
-
-        if (add_child_to)
-          for (int i = 0; i < 10; ++i)
-            add_child_to->addChild("My Child");
-      };
-
-      // inspectEntityArray(engine.currentScene()->rootEntities(), inspectEntityArray);
-    }
-    else
-    {
-      ImGui::Text("NO SCENE OPEN");
-    }
-    // inspect("Scene", engine.currentScene());
-  }
-  ImGui::End();
-
 #if 0
   window("Scripting", [&engine]() {
     static std::future<BifrostVMError> s_WaitForCompile;
@@ -631,6 +547,32 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
 
 void MainDemoLayer::onLoad(BifrostEngine& engine)
 {
+  json::Value test_json = {
+   json::Pair{
+    "My Test Key",
+    {
+     json::Pair{"Hello", 4.56},
+     json::Pair{
+      "Sub Array",
+      {
+       "Item 0",
+       "Item 1",
+       "Item 2",
+       65,
+      },
+     },
+    },
+   },
+  };
+
+  String test_json_str;
+  toString(test_json, test_json_str);
+
+  bfLogPrint("-------------JSON TEST------------");
+  bfLogPrint("%s", test_json_str.c_str());
+  bfLogPrint("%s", test_json["My Test Key"]["Sub Array"][0].as<String>().c_str());
+  bfLogPrint("----------------------------------");
+
 #if 0
   auto mye              = new bifrost::Entity("Hello I am an entity");
   auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");

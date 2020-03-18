@@ -37,6 +37,9 @@
 
 class BifrostEngine;
 
+typedef struct Vec2f_t Vec2f;
+typedef struct Vec3f_t Vec3f;
+
 namespace bifrost
 {
   using Engine = ::BifrostEngine;
@@ -108,9 +111,9 @@ namespace bifrost
    public:
     SerializerMode mode() const { return m_Mode; }
 
-    virtual void beginDocument(bool is_array = false)               = 0;
-    virtual void pushObject(StringRange key)                        = 0;
-    virtual void pushArray(StringRange key)                         = 0;
+    virtual bool beginDocument(bool is_array = false)               = 0;
+    virtual bool pushObject(StringRange key)                        = 0;
+    virtual bool pushArray(StringRange key)                         = 0;
     virtual void serialize(StringRange key, std::int8_t& value)     = 0;
     virtual void serialize(StringRange key, std::uint8_t& value)    = 0;
     virtual void serialize(StringRange key, std::int16_t& value)    = 0;
@@ -122,19 +125,32 @@ namespace bifrost
     virtual void serialize(StringRange key, float& value)           = 0;
     virtual void serialize(StringRange key, double& value)          = 0;
     virtual void serialize(StringRange key, long double& value)     = 0;
+    virtual void serialize(StringRange key, Vec2f& value)           = 0;
+    virtual void serialize(StringRange key, Vec3f& value)           = 0;
     virtual void serialize(StringRange key, String& value)          = 0;
     virtual void serialize(StringRange key, BaseAssetInfo& value)   = 0;
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;
     virtual void serialize(StringRange key, IBaseObject& value)
     {
-      pushObject(key);
-      serialize(value);
-      popObject();
+      if (pushObject(key))
+      {
+        serialize(value);
+        popObject();
+      }
     }
-    virtual void serialize(IBaseObject& value) = 0;
-    virtual void popObject()                   = 0;
-    virtual void popArray()                    = 0;
-    virtual void endDocument()                 = 0;
+    virtual void serialize(IBaseObject& value);
+    virtual void serialize(StringRange key, Any& value, meta::BaseClassMetaInfo* type_info);
+    virtual void serialize(Any& value, meta::BaseClassMetaInfo* type_info);
+    virtual void popObject()   = 0;
+    virtual void popArray()    = 0;
+    virtual void endDocument() = 0;
+
+    template<typename T>
+    void serializeT(StringRange key, T* value)
+    {
+      Any obj = value;
+      serialize(key, obj, meta::TypeInfo<T>::get());
+    }
 
     virtual ~ISerializer() = default;
   };

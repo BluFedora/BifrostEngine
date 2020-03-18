@@ -29,6 +29,119 @@
 
 namespace bifrost
 {
+  static constexpr int s_MaxDigitsUInt64 = 20;
+
+  void ISerializer::serialize(IBaseObject& value)
+  {
+    meta::BaseClassMetaInfo* const type_info = value.type();
+
+    // TODO: This should never be null but ok.
+    if (type_info)
+    {
+      Any object = &value;
+      serialize(object, type_info);
+    }
+  }
+
+  void ISerializer::serialize(StringRange key, Any& value, meta::BaseClassMetaInfo* type_info)
+  {
+    bool is_primitive = false;
+
+    meta::for_each_template_and_pointer<
+     // std::byte,
+     std::int8_t,
+     std::uint8_t,
+     std::int16_t,
+     std::uint16_t,
+     std::int32_t,
+     std::uint32_t,
+     std::int64_t,
+     std::uint64_t,
+     float,
+     double,
+     long double,
+     Vec2f,
+     Vec3f,
+     String>([this, &key, &value, &is_primitive](auto t) {
+      using T = bfForEachTemplateT(t);
+
+      if (!is_primitive && value.is<T>())
+      {
+        if constexpr (std::is_pointer_v<T>)
+        {
+          auto& v = *value.as<T>();
+          serialize(key, v);
+        }
+        else
+        {
+          T value_copy = value.as<T>();
+
+          serialize(key, value_copy);
+          value.assign<T>(value_copy);
+        }
+
+        is_primitive = true;
+      }
+    });
+
+    if (!is_primitive)
+    {
+      bool is_open;
+      if (type_info->isArray())
+      {
+        is_open = pushArray(key);
+      }
+      else
+      {
+        is_open = pushObject(key);
+      }
+
+      if (is_open)
+      {
+        serialize(value, type_info);
+
+        if (type_info->isArray())
+        {
+          popArray();
+        }
+        else
+        {
+          popObject();
+        }
+      }
+    }
+  }
+
+  void ISerializer::serialize(Any& value, meta::BaseClassMetaInfo* type_info)
+  {
+    for (auto& prop : type_info->properties())
+    {
+      auto field_value = prop->get(value);
+
+      serialize(StringRange(prop->name().data(), prop->name().size()), field_value, prop->type());
+      prop->set(value, field_value);
+    }
+
+    if (type_info->isArray())
+    {
+      const std::size_t size = type_info->arraySize(value);
+      char              label_buffer[s_MaxDigitsUInt64 + 1];
+      LinearAllocator   label_alloc{label_buffer, sizeof(label_buffer)};
+
+      for (std::size_t i = 0; i < size; ++i)
+      {
+        std::size_t idx_label_length;
+        auto* const idx_label = string_utils::alloc_fmt(label_alloc, &idx_label_length, "%i", int(i));
+        auto        element   = type_info->arrayGetElementAt(value, i);
+
+        serialize(StringRange(idx_label, idx_label_length), element, type_info->containedType());
+        type_info->arraySetElementAt(value, i, element);
+
+        label_alloc.clear();
+      }
+    }
+  }
+
   BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info) :
     m_Engine{&engine},
     m_Info{info},

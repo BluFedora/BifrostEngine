@@ -470,6 +470,31 @@ void bfArray_push(void** self, const void* element)
   memcpy(destination_element, element, header->stride);
 }
 
+void bfArray_insert(void** self, size_t index, const void* element)
+{
+  void*        dst    = bfArray_insertEmplace(self, index);
+  ArrayHeader* header = grabHeader(self);
+  const size_t stride = header->stride;
+
+  memcpy(dst, element, stride);
+}
+
+void* bfArray_insertEmplace(void** self, size_t index)
+{
+  ArrayHeader* header = grabHeader(self);
+  const size_t size   = header->size;
+  const size_t stride = header->stride;
+  ++header->size;
+
+  bfAssert(index <= size, "bfArray_insert:: index must be less than or equal to the size.");
+
+  bfArray_reserve(self, size + 1);
+
+  memmove(bfArray_at(self, index + 1), bfArray_at(self, index), stride * (size - index));
+
+  return bfArray_at(self, index);
+}
+
 void* bfArray_emplace(void** self)
 {
   return bfArray_emplaceN(self, 1);

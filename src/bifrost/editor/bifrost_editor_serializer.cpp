@@ -14,6 +14,7 @@
 
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/math/bifrost_vec3.h"
+#include "bifrost/math/bifrost_vec2.h"
 
 namespace bifrost::editor
 {
@@ -28,221 +29,196 @@ namespace bifrost::editor
   {
   }
 
-  void ImGuiSerializer::beginDocument(bool is_array)
+  bool ImGuiSerializer::beginDocument(bool is_array)
   {
     auto& obj    = m_IsOpenStack.emplace();
-    obj.is_open  = true;
     obj.is_array = is_array;
+
+    return true;
   }
 
-  void ImGuiSerializer::pushObject(StringRange key)
+  bool ImGuiSerializer::pushObject(StringRange key)
   {
     setNameBuffer(key);
+    const bool is_open = ImGui::TreeNode(m_NameBuffer);
 
-    auto& obj    = m_IsOpenStack.emplace();
-    obj.is_open  = ImGui::TreeNode(m_NameBuffer);
-    obj.is_array = false;
+    if (is_open)
+    {
+      auto& obj    = m_IsOpenStack.emplace();
+      obj.is_array = false;
+    }
+
+    return is_open;
   }
 
-  void ImGuiSerializer::pushArray(StringRange key)
+  bool ImGuiSerializer::pushArray(StringRange key)
   {
     setNameBuffer(key);
+    const bool is_open = ImGui::TreeNode(m_NameBuffer);
 
-    auto& obj       = m_IsOpenStack.emplace();
-    obj.is_open     = ImGui::TreeNode(m_NameBuffer);
-    obj.is_array    = true;
-    obj.array_index = 0;
+    if (is_open)
+    {
+      auto& obj    = m_IsOpenStack.emplace();
+      obj.is_array = true;
+      obj.array_index = 0;
+    }
+
+    return is_open;
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int8_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S8, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S8, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint8_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U8, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U8, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int16_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S16, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S16, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint16_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U16, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U16, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int32_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S32, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S32, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint32_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U32, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U32, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int64_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S64, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S64, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint64_t& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U64, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U64, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, float& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Float, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Float, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, double& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value, s_DragSpeed);
-    }
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, long double& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      double value_d = double(value);
-      ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed);
-      value = value_d;
-    }
+    double value_d = double(value);
+
+    setNameBuffer(key);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed);
+    value = value_d;
+  }
+
+  void ImGuiSerializer::serialize(StringRange key, Vec2f& value)
+  {
+    setNameBuffer(key);
+    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed);
+  }
+
+  void ImGuiSerializer::serialize(StringRange key, Vec3f& value)
+  {
+    setNameBuffer(key);
+    ImGui::DragFloat3(m_NameBuffer, &value.x, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, String& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      imgui_ext::inspect(m_NameBuffer, value);
-    }
+    setNameBuffer(key);
+    imgui_ext::inspect(m_NameBuffer, value);
   }
 
   void ImGuiSerializer::serialize(StringRange key, BaseAssetInfo& value)
   {
-    if (top().is_open)
-    {
-      setNameBuffer(key);
-      ImGui::Text("Inspect : BaseAssetInfo");
-    }
+    setNameBuffer(key);
+    ImGui::Text("Inspect : BaseAssetInfo");
   }
 
   void ImGuiSerializer::serialize(StringRange key, BaseAssetHandle& value)
   {
-    if (top().is_open)
+    setNameBuffer(key);
+
+    if (value)
     {
-      setNameBuffer(key);
-
-      if (value)
+      if (ImGui::Button("clear"))
       {
-        if (ImGui::Button("clear"))
-        {
-          value.release();
-          // has_changed      = true;
-        }
-
-        ImGui::SameLine();
+        value.release();
+        // has_changed      = true;
       }
 
-      const char* const name        = value ? value.info()->path().c_str() : "<null>";
-      const auto        name_length = value ? value.info()->path().length() : sizeof("<null>");
+      ImGui::SameLine();
+    }
 
-      ImGui::InputText(m_NameBuffer, const_cast<char*>(name), name_length, ImGuiInputTextFlags_ReadOnly);
+    const char* const name        = value ? value.info()->path().c_str() : "<null>";
+    const auto        name_length = value ? value.info()->path().length() : sizeof("<null>");
 
-      if (ImGui::BeginDragDropTarget())
+    ImGui::InputText(m_NameBuffer, const_cast<char*>(name), name_length, ImGuiInputTextFlags_ReadOnly);
+
+    if (ImGui::BeginDragDropTarget())
+    {
+      const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+
+      if (payload && payload->IsDataType("Asset.UUID"))
       {
-        const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+        const BifrostUUID* data = (const BifrostUUID*)payload->Data;
 
-        if (payload && payload->IsDataType("Asset.UUID"))
+        assert(payload->DataSize == sizeof(BifrostUUID));
+
+        const auto info = m_Assets->findAssetInfo(*data);
+
+        if (info && Assets::isHandleCompatible(value, info) && ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
         {
-          const BifrostUUID* data = (const BifrostUUID*)payload->Data;
-
-          assert(payload->DataSize == sizeof(BifrostUUID));
-
-          const auto info = m_Assets->findAssetInfo(*data);
-
-          if (info && Assets::isHandleCompatible(value, info) && ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
-          {
-            m_Assets->tryAssignHandle(value, info);
-          }
+          m_Assets->tryAssignHandle(value, info);
         }
-
-        ImGui::EndDragDropTarget();
       }
+
+      ImGui::EndDragDropTarget();
     }
   }
 
   void ImGuiSerializer::serialize(IBaseObject& value)
   {
-    if (top().is_open)
-    {
-      meta::BaseClassMetaInfo* const type = value.type();
+    meta::BaseClassMetaInfo* const type = value.type();
 
-      if (type)
-      {
-        Any obj = &value;
-        imgui_ext::inspect(m_NameBuffer, obj, type);
-      }
-      else
-      {
-        ImGui::Text("Inspect : IBaseObject");
-      }
+    if (type)
+    {
+      Any obj = &value;
+      imgui_ext::inspect(m_NameBuffer, obj, type);
+    }
+    else
+    {
+      ImGui::Text("Inspect : IBaseObject");
     }
   }
 
   void ImGuiSerializer::popObject()
   {
-    if (top().is_open)
-    {
-      ImGui::TreePop();
-    }
-
+    ImGui::TreePop();
     m_IsOpenStack.pop();
   }
 

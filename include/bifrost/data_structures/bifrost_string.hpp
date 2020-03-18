@@ -280,7 +280,7 @@ namespace bifrost
       }
     }
 
-    void unescape()
+    void unescape() // const
     {
       String_unescape(m_Handle);
     }

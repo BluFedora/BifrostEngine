@@ -592,15 +592,15 @@ namespace bifrost::editor
     colors[ImGuiCol_ButtonHovered]     = ImVec4(0.45f, 0.43f, 0.52f, 0.86f);
     colors[ImGuiCol_ButtonActive]      = ImVec4(0.26f, 0.24f, 0.30f, 0.82f);
 
-    m_Actions.emplace("New Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
-    m_Actions.emplace("Open Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
+    m_Actions.emplace("File.New.Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
+    m_Actions.emplace("File.Open.Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
     m_Actions.emplace("Close Project", ActionPtr(make<ACloseProject>()));
     m_Actions.emplace("Asset Refresh", ActionPtr(make<ARefreshAsset>()));
 
     ui::BaseMenuItem* file_menu_items[] =
      {
-      ui::makeDropdown("New")->addItem(ui::makeAction("Project", findAction("New Project"))),
-      ui::makeDropdown("Open")->addItem(ui::makeAction("Project", findAction("Open Project"))),
+      ui::makeDropdown("New")->addItem(ui::makeAction("Project", findAction("File.New.Project"))),
+      ui::makeDropdown("Open")->addItem(ui::makeAction("Project", findAction("File.Open.Project"))),
       ui::makeDropdown("Save")->addItem(ui::makeAction("Project")),
       ui::makeAction("Close Project", findAction("Close Project")),
       ui::makeAction("Exit"),
@@ -706,10 +706,11 @@ namespace bifrost::editor
     static const float window_width  = 350.0f;
     static const float window_margin = 5.0f;
 
+    const ActionContext action_ctx{this};
+
     m_Inspector.setAssets(&engine.assets());
 
     // ImGui::ShowDemoWindow();
-    const ActionContext action_ctx{this};
 
     float menu_bar_height = 0.0f;
 
@@ -765,15 +766,42 @@ namespace bifrost::editor
       ImGui::DockBuilderDockWindow("Scene View", dockspace_id);
     }
 
-    if (ImGui::Begin("Scene View"))
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+    if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
     {
-      const auto titlebar_height = ImGui::GetCursorPosY();
-      auto       content_area    = ImGui::GetContentRegionMax();
-      content_area.y -= titlebar_height;
+      const auto content_area = ImGui::GetContentRegionAvail();
 
-      ImGui::Image(engine.renderer().colorBuffer(), content_area);
+      if (m_OpenProject)
+      {
+        ImGui::Image(engine.renderer().colorBuffer(), content_area);
+      }
+      else
+      {
+        static const char* s_StrNoProjectOpen = "No Project Open";
+        static const char* s_StrNewProject    = "  New Project  ";
+        static const char* s_StrOpenProject   = "  Open Project ";
+
+        const auto text_size  = ImGui::CalcTextSize(s_StrNoProjectOpen);
+        const auto mid_screen = (ImGui::GetWindowSize() - text_size) * 0.5f;
+
+        ImGui::SetCursorPos(
+         (ImGui::GetWindowSize() - text_size) * 0.5f);
+
+        ImGui::Text(s_StrNoProjectOpen);
+
+        ImGui::SetCursorPosX(mid_screen.x);
+
+        buttonAction(action_ctx, "File.New.Project", s_StrNewProject);
+
+        ImGui::SetCursorPosX(mid_screen.x);
+
+        buttonAction(action_ctx, "File.Open.Project", s_StrOpenProject);
+      }
     }
     ImGui::End();
+    ImGui::PopStyleVar(3);
 
     if (m_OpenProject)
     {
@@ -783,7 +811,6 @@ namespace bifrost::editor
 
       ImGui::SetNextWindowPos(ImVec2(window_margin, menu_bar_height + window_margin), ImGuiCond_Once);
       ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Once);
-      // ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
 
       if (ImGui::Begin("Project View"))
       {
@@ -796,39 +823,33 @@ namespace bifrost::editor
         ImGui::Separator();
 
         m_FileSystem.uiShow(*this);
-
-        ImGui::Separator();
-
-        /*
-        String        m_Path;      //!< A path relative to the project to the actual asset file.
-        BifrostUUID   m_UUID;      //!< Uniquely identifies the asset.
-        std::uint16_t m_RefCount;  //!< How many live references in the engine.
-        */
-
-        for (const auto& asset_info : engine.assets().assetMap())
-        {
-          ImGui::Text("Path(%s)", asset_info.value()->path().c_str());
-          ImGui::Text("UUID(%s)", asset_info.value()->uuid().as_string);
-          ImGui::Text("RefCount(%i)", int(asset_info.value()->refCount()));
-        }
       }
 
       ImGui::End();
 
       ImGui::SetNextWindowPos(ImVec2(display_width - window_margin, menu_bar_height + window_margin), ImGuiCond_Once, ImVec2(1.0f, 0.0f));
       ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Once);
-      // ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, height), ImVec2(600.0f, height));
 
       if (ImGui::Begin("Inspector View"))
       {
+        static BifrostTransform transform = {};
+        static bool             once      = true;
+
+        if (once)
+        {
+          bfTransform_ctor(&transform);
+          once = false;
+        }
+
         m_Inspector.beginDocument(false);
+        m_Inspector.serializeT("Transform", &transform);
         m_Inspector.serialize("Test Texture", m_TestTexture);
         m_Inspector.endDocument();
       }
 
       ImGui::End();
     }
-    //*
+    /*
     if (ImGui::Begin("RTTI"))
     {
       auto& memory = meta::gRttiMemoryBacking();
@@ -961,6 +982,11 @@ namespace bifrost::editor
 
     if (project_file)
     {
+      if (currentlyOpenProject())
+      {
+        closeProject();
+      }
+
       const StringRange project_dir       = file::directoryOfFile(path);
       String            project_meta_path = project_dir;
 
@@ -1127,6 +1153,38 @@ namespace bifrost::editor
     }
   }
 
+  void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name) const
+  {
+    buttonAction(ctx, action_name, action_name);
+  }
+
+  void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const
+  {
+    Action* const action = findAction(action_name);
+
+    const bool is_disabled = action == nullptr || !action->isActive(ctx);
+
+    if (is_disabled)
+    {
+      ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+    }
+
+    if (ImGui::Button(custom_label))
+    {
+      if (!is_disabled)
+      {
+        action->execute(ctx);
+      }
+    }
+
+    if (is_disabled)
+    {
+      ImGui::PopItemFlag();
+      ImGui::PopStyleVar();
+    }
+  }
+
   static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry)
   {
     FixedLinearAllocator<512> dir_allocator;
@@ -1271,7 +1329,6 @@ namespace bifrost::editor
 
       if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
       {
-        
       }
 
       if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
@@ -1299,7 +1356,14 @@ namespace bifrost::editor
     }
     else
     {
-      const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), ImGuiTreeNodeFlags_SpanFullWidth);
+      ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanFullWidth;
+
+      if (&entry == &root())
+      {
+        flags |= ImGuiTreeNodeFlags_DefaultOpen;
+      }
+
+      const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), flags);
 
       if (ImGui::BeginPopupContextItem())
       {

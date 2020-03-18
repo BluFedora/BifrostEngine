@@ -10,13 +10,12 @@
 #define BIFROST_ARRAY_HPP
 
 #include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
-#include "bifrost/utility/bifrost_non_copy_move.hpp"  /* bfNonCopyMoveable<T> */
 #include "bifrost_array_t.h"                          /* bfArray_*            */
 
 namespace bifrost
 {
   template<typename T>
-  class Array final : bfNonCopyable<Array<T>>
+  class Array final
   {
    private:
     static void* allocate(void* user_data, void* ptr, std::size_t new_size)
@@ -45,10 +44,38 @@ namespace bifrost
     {
     }
 
+    explicit Array(IMemoryManager& memory, std::initializer_list<T>&& values, const std::size_t alignment = alignof(T)) :
+      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignment, &memory))}
+    {
+      reserve(values.size());
+
+      for (const T& value : values)
+      {
+        push(value);
+      }
+    }
+
+    Array(const Array& rhs) noexcept :
+      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignof(T), &rhs.memory()))}
+    {
+      copyFrom(rhs);
+    }
+
     Array(Array&& rhs) noexcept :
       m_Data{rhs.m_Data}
     {
       rhs.m_Data = nullptr;
+    }
+
+    Array& operator=(const T& rhs) noexcept
+    {
+      if (this != &rhs)
+      {
+        clear();
+        copyFrom(rhs);
+      }
+
+      return *this;
     }
 
     Array& operator=(T&& rhs) noexcept
@@ -80,7 +107,7 @@ namespace bifrost
     void copy(Array<T>& src, std::size_t num_elements)
     {
       // ::bfArray_copy(rawData(), &src.m_Data, num_elements);
-
+      // TODO: This function sucks, what to make it better?
       resize(num_elements);
       std::copy(src.m_Data, src.m_Data + num_elements, m_Data);
     }
@@ -97,6 +124,7 @@ namespace bifrost
 
     void reserve(std::size_t num_elements)
     {
+      // TODO(SR): This only works if T is trivially locatable.
       ::bfArray_reserve(rawData(), num_elements);
     }
 
@@ -149,6 +177,13 @@ namespace bifrost
       }
 
       return elements;
+    }
+
+    template<typename... Args>
+    void insert(std::size_t index, Args&&... args)
+    {
+      // TODO(SR): This only works if T is trivially locatable.
+      new (bfArray_insertEmplace(rawData(), index)) T(std::forward<Args>(args)...);
     }
 
     T& at(std::size_t index)
@@ -237,6 +272,16 @@ namespace bifrost
     }
 
    private:
+    void copyFrom(const Array& rhs)
+    {
+      reserve(rhs.size());
+
+      for (const T& value : rhs)
+      {
+        push(value);
+      }
+    }
+
     void** rawData()
     {
       return reinterpret_cast<void**>(&m_Data);

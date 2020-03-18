@@ -94,6 +94,10 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_common.c"
   "lib/include/nativefiledialog/nfd_win.cpp"
 
+  # Experiments
+  "BifrostExperiments/src/*.cpp"
+  "BifrostExperiments/src/*.c"
+
   # Bifrost Asset Module
   "src/bifrost/asset_io/*.cpp"
 
@@ -136,6 +140,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Utility Module
   "src/bifrost/utility/bifrost_hash.cpp"
+  "src/bifrost/utility/bifrost_json.cpp"
   "src/bifrost/utility/bifrost_uuid.c"
 
   # Editor
@@ -156,7 +161,7 @@ include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostMemory/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperments/include)
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})

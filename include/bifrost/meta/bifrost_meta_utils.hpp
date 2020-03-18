@@ -95,6 +95,31 @@ namespace bifrost::meta
       }
     };
 
+    template<std::size_t, typename T, typename... Args>
+    class for_each_template_and_pointer_impl
+    {
+     public:
+      template<typename F>
+      static void impl(F&& func)
+      {
+        func(type_holder<T>());
+        func(type_holder<T*>());
+        for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
+      }
+    };
+
+    template<typename T>
+    class for_each_template_and_pointer_impl<1, T>
+    {
+     public:
+      template<typename F>
+      static void impl(F&& func)
+      {
+        func(type_holder<T>());
+        func(type_holder<T*>());
+      }
+    };
+
     template<std::size_t N>
     struct num
     {
@@ -108,12 +133,19 @@ namespace bifrost::meta
     }
   }  // namespace detail
 
-  #define bfForEachTemplateT(t) typename std::decay<decltype((t))>::type::held_type
+#define bfForEachTemplateT(t) typename std::decay<decltype((t))>::type::held_type
 
   template<typename... Args, typename F>
   void for_each_template(F&& func)
   {
     detail::for_each_template_impl<sizeof...(Args), Args...>::impl(func);
+  }
+
+  // Same as 'for_each_template' but adds the T* version.
+  template<typename... Args, typename F>
+  void for_each_template_and_pointer(F&& func)
+  {
+    detail::for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
   }
 
   //

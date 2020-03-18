@@ -18,13 +18,6 @@ namespace bifrost
   using boolean_t   = bool;
   using JsonValue_t = Variant<string_t, array_t, object_t, number_t, boolean_t>;
 
-  // const int i0 = sizeof(string_t);     // 40
-  // const int i1 = sizeof(number_t);     // 8
-  // const int i2 = sizeof(array_t);      // 32
-  // const int i3 = sizeof(object_t);     // 16
-  // const int i4 = sizeof(boolean_t);    // 1
-  // const int i5 = sizeof(JsonValue_t);  // 48
-
   class JsonValue : public JsonValue_t
   {
    public:

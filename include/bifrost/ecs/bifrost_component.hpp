@@ -12,6 +12,7 @@
 
 #include "bifrost/core/bifrost_base_object.hpp"           // BaseObject
 #include "bifrost/data_structures/bifrost_dense_map.hpp"  // denseMap<T>
+#include "bifrost/utility/bifrost_non_copy_move.hpp"      // bfNonCopyMoveable<T>
 
 namespace bifrost
 {
