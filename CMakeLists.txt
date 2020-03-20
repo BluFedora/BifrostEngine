@@ -132,6 +132,9 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp"
   "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
 
+  # Bifrost Math Module
+  "BifrostMath/src/*.cpp"
+
   # Bifrost Memory Module
   "BifrostMemory/src/*.cpp"
 

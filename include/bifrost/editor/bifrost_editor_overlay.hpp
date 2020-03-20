@@ -13,7 +13,9 @@
 #ifndef BIFROST_EDITOR_OVERLAY_HPP
 #define BIFROST_EDITOR_OVERLAY_HPP
 
+#include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/bifrost.hpp"
+#include "bifrost/math/bifrost_rect2.hpp"
 #include "bifrost_editor_filesystem.hpp"
 #include "bifrost_editor_serializer.hpp"
 
@@ -160,18 +162,21 @@ namespace bifrost::editor
   {
    private:
     String m_Name;
-    String m_Path;
+    String m_ProjectFilePath;
+    String m_Path;  // TODO: Make it a StringRange of 'Project::m_ProjectFilePath'
     String m_MetaPath;
 
    public:
-    explicit Project(String&& name, String&& path, String&& meta_path) :
+    explicit Project(String&& name, String&& project_file, String&& path, String&& meta_path) :
       m_Name{name},
+      m_ProjectFilePath{project_file},
       m_Path{path},
       m_MetaPath{meta_path}
     {
     }
 
     String&       name() { return m_Name; }
+    String&       projectFilePath() { return m_ProjectFilePath; }
     const String& path() const { return m_Path; }
     const String& metaPath() const { return m_MetaPath; }
   };
@@ -181,21 +186,26 @@ namespace bifrost::editor
 
   class ARefreshAsset;
 
+  using ActionMap  = HashTable<String, ActionPtr>;
+  using Selectable = Variant<IBaseObject*, BaseAssetHandle>;
+
   class EditorOverlay final : public IGameStateLayer
   {
     friend class ARefreshAsset;
 
    private:
-    ui::Dialog*                  m_CurrentDialog;
-    bool                         m_OpenNewDialog;
-    HashTable<String, ActionPtr> m_Actions;
-    Engine*                      m_Engine;
-    ProjectPtr                   m_OpenProject;
-    float                        m_FpsTimer;
-    int                          m_CurrentFps;
-    AssetTextureHandle           m_TestTexture;
-    FileSystem                   m_FileSystem;
-    ImGuiSerializer              m_Inspector;
+    ui::Dialog*        m_CurrentDialog;
+    bool               m_OpenNewDialog;
+    ActionMap          m_Actions;
+    Engine*            m_Engine;
+    ProjectPtr         m_OpenProject;
+    float              m_FpsTimer;
+    int                m_CurrentFps;
+    AssetTextureHandle m_TestTexture;
+    FileSystem         m_FileSystem;
+    ImGuiSerializer    m_Inspector;
+    Rect2i             m_SceneViewViewport;  // Global Window Coordinates
+    Selectable         m_SelectedObject;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -210,17 +220,25 @@ namespace bifrost::editor
 
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     const char*       name() override { return "Bifrost Editor"; }
+    Engine&           engine() const { return *m_Engine; }
 
     Action* findAction(const char* name) const;
     void    enqueueDialog(ui::Dialog* dlog);
     bool    openProjectDialog();
     bool    openProject(StringRange path);
+    void    saveProject();
     void    closeProject();
     void    assetRefresh();
+    bool    isPointOverSceneView(const Vector2i& point) const;
+    void    select(IBaseObject* object) { m_SelectedObject = object; }
+    void    select(const BaseAssetHandle& handle) { m_SelectedObject = handle; }
+    void    select(std::nullptr_t) { m_SelectedObject.destroy(); }
 
-  private:
+   private:
     void buttonAction(const ActionContext& ctx, const char* action_name) const;
-    void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
+    void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label, const ImVec2& size = ImVec2(0.0f, 0.0f)) const;
+    void selectableAction(const ActionContext& ctx, const char* action_name) const;
+    void selectableAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
   };
 }  // namespace bifrost::editor
 

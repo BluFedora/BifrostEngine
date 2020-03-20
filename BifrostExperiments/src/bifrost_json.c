@@ -461,7 +461,7 @@ static void bfJsonIncrement(bfJsonParserContext* ctx)
 
 static void bfJsonSkipSpace(bfJsonParserContext* ctx)
 {
-  if (ctx->current_location < ctx->source_end && bfJsonIsSpace(bfJsonCurrentChar(ctx)))
+  while (ctx->current_location < ctx->source_end && bfJsonIsSpace(bfJsonCurrentChar(ctx)))
   {
     bfJsonIncrement(ctx);
   }

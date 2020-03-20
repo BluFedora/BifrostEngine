@@ -25,11 +25,41 @@
 /******************************************************************************/
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 
+#include "bifrost/asset_io/bifrost_json_serializer.hpp"
+#include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/core/bifrost_engine.hpp" /* Engine */
+#include "bifrost/utility/bifrost_json.hpp"
 
 namespace bifrost
 {
   static constexpr int s_MaxDigitsUInt64 = 20;
+
+  void ISerializer::serialize(StringRange key, Vec2f& value)
+  {
+    pushObject(key);
+    serialize("x", value.x);
+    serialize("y", value.y);
+    popObject();
+  }
+
+  void ISerializer::serialize(StringRange key, Vec3f& value)
+  {
+    pushObject(key);
+    serialize("x", value.x);
+    serialize("y", value.y);
+    serialize("z", value.z);
+    serialize("w", value.w);
+    popObject();
+  }
+
+  void ISerializer::serialize(StringRange key, IBaseObject& value)
+  {
+    if (pushObject(key))
+    {
+      serialize(value);
+      popObject();
+    }
+  }
 
   void ISerializer::serialize(IBaseObject& value)
   {
@@ -47,7 +77,7 @@ namespace bifrost
   {
     bool is_primitive = false;
 
-    meta::for_each_template_and_pointer<
+    meta::for_each_template_and_pointer_and_const<
      // std::byte,
      std::int8_t,
      std::uint8_t,
@@ -62,15 +92,25 @@ namespace bifrost
      long double,
      Vec2f,
      Vec3f,
-     String>([this, &key, &value, &is_primitive](auto t) {
+     String,
+     BifrostUUID,
+     BaseAssetHandle>([this, &key, &value, &is_primitive](auto t) {
       using T = bfForEachTemplateT(t);
 
       if (!is_primitive && value.is<T>())
       {
         if constexpr (std::is_pointer_v<T>)
         {
-          auto& v = *value.as<T>();
-          serialize(key, v);
+          if constexpr (std::is_const_v<std::remove_pointer_t<T>>)
+          {
+            auto& v = const_cast<std::remove_const_t<std::remove_pointer_t<T>>&>(*value.as<T>());
+            serialize(key, v);
+          }
+          else
+          {
+            auto& v = *value.as<T>();
+            serialize(key, v);
+          }
         }
         else
         {
@@ -131,7 +171,7 @@ namespace bifrost
       for (std::size_t i = 0; i < size; ++i)
       {
         std::size_t idx_label_length;
-        auto* const idx_label = string_utils::alloc_fmt(label_alloc, &idx_label_length, "%i", int(i));
+        auto* const idx_label = string_utils::fmtAlloc(label_alloc, &idx_label_length, "%i", int(i));
         auto        element   = type_info->arrayGetElementAt(value, i);
 
         serialize(StringRange(idx_label, idx_label_length), element, type_info->containedType());
@@ -244,7 +284,7 @@ namespace bifrost
     }
   }
 
-  void* BaseAssetHandle::payload() const
+  IBaseObject* BaseAssetHandle::payload() const
   {
     return m_Info ? m_Info->payload() : nullptr;
   }
@@ -265,10 +305,50 @@ namespace bifrost
      BIFROST_TEXTURE_UNKNOWN_SIZE,
      BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
 
-    m_Payload.set<bfTextureHandle>(bfGfxDevice_newTexture(device, &params));
+    Texture& texture = m_Payload.set<Texture>(device);
+
+    texture.m_Handle = bfGfxDevice_newTexture(device, &params);
 
     const String full_path = engine.assets().fullPath(*this);
 
-    return bfTexture_loadFile(m_Payload.as<bfTextureHandle>(), full_path.cstr());
+    return bfTexture_loadFile(texture.m_Handle, full_path.cstr());
+  }
+
+  bool AssetShaderProgramInfo::load(Engine& engine)
+  {
+    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
+
+    m_Payload.set<ShaderProgram>(device);
+
+    const String full_path = engine.assets().fullPath(*this);
+
+    File file{full_path, file::FILE_MODE_READ};
+
+    if (file)
+    {
+      String json_str;
+
+      char              alloc_buffer1[1024];
+      char              alloc_buffer2[1024 * 8];
+      LinearAllocator   alloc1{alloc_buffer1, sizeof(alloc_buffer1)};
+      FreeListAllocator alloc2{alloc_buffer2, sizeof(alloc_buffer2)};
+
+      std::size_t buffer_size;
+      char*       buffer = file.readAll(alloc1, buffer_size);
+
+      json::Value json_value = json::fromString(buffer, buffer_size - 1);
+
+      JsonSerializerReader reader{engine.assets(), alloc2, json_value};
+
+      ISerializer& serializer = reader;
+
+      serializer.beginDocument(false);
+      serializer.serialize(m_Payload.as<ShaderProgram>());
+      serializer.endDocument();
+
+      file.close();
+    }
+
+    return true;
   }
 }  // namespace bifrost

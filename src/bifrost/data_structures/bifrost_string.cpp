@@ -7,7 +7,7 @@
 
 namespace bifrost::string_utils
 {
-  char* alloc_fmt(IMemoryManager& allocator, std::size_t* out, const char* fmt, ...)
+  char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...)
   {
     // TIDE_ASSERT(fmt != nullptr, "A null format is not allowed.");
 
@@ -16,7 +16,7 @@ namespace bifrost::string_utils
 
     va_start(args, fmt);
     va_copy(args_cpy, args);
-    const int string_len = vsnprintf(nullptr, 0, fmt, args);
+    const int string_len = std::vsnprintf(nullptr, 0, fmt, args);
     va_end(args);
 
     if (string_len > 0)
@@ -25,7 +25,7 @@ namespace bifrost::string_utils
 
       if (buffer)
       {
-        vsprintf(buffer, fmt, args_cpy);
+        std::vsprintf(buffer, fmt, args_cpy);
 
         buffer[string_len] = '\0';
       }
@@ -33,25 +33,25 @@ namespace bifrost::string_utils
 
     va_end(args_cpy);
 
-    if (out)
+    if (out_size)
     {
-      *out = buffer ? string_len : 0u;
+      *out_size = buffer ? string_len : 0u;
     }
 
     return buffer;
   }
 
-  void free_fmt(IMemoryManager& allocator, char* ptr)
+  void fmtFree(IMemoryManager& allocator, char* ptr)
   {
     allocator.deallocate(ptr);
   }
 
-  char* fmt_buffer(char* buffer, const size_t buffer_size, std::size_t* out_size, const char* fmt, ...)
+  bool fmtBuffer(char* buffer, const size_t buffer_size, std::size_t* out_size, const char* fmt, ...)
   {
     std::va_list args;
 
     va_start(args, fmt);
-    const int string_len = vsnprintf(buffer, buffer_size, fmt, args);
+    const int string_len = std::vsnprintf(buffer, buffer_size, fmt, args);
     va_end(args);
 
     if (out_size)
@@ -59,6 +59,6 @@ namespace bifrost::string_utils
       *out_size = string_len < 0 ? 0 : string_len;
     }
 
-    return buffer;
+    return 0 <= string_len && string_len < int(buffer_size);
   }
 }  // namespace bifrost::string_utils

@@ -34,7 +34,7 @@ namespace bifrost
     template<size_t arg1, size_t arg2, size_t... others>
     struct static_max<arg1, arg2, others...>
     {
-      static constexpr size_t value = (arg1 >= arg2) ? static_max<arg1, others...>::value : static_max<arg2, others...>::value;
+      static constexpr size_t value = arg1 >= arg2 ? static_max<arg1, others...>::value : static_max<arg2, others...>::value;
     };
   }  // namespace detail
 
@@ -103,7 +103,7 @@ namespace bifrost
     }
   };
 #endif
-  template<typename...>
+  template<typename... Ts>
   struct contains
   {
     static constexpr bool value = false;
@@ -229,7 +229,6 @@ namespace bifrost
       return *this;
     }
 
-
     self_t& operator=(const self_t& old)
     {
       if (this != &old)
@@ -268,13 +267,15 @@ namespace bifrost
     }
 
     template<typename T, typename... Args>
-    void set(Args&&... args)
+    T& set(Args&&... args)
     {
       static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
 
       destroy();
       new (&m_Data) T(std::forward<Args>(args)...);
       m_TypeID = type_of<T>();
+
+      return as<T>();
     }
 
     template<typename T, std::enable_if_t<contains<T, Ts...>::value> = 0>
@@ -384,21 +385,62 @@ namespace bifrost
   template<typename T>
   using Optional = Variant<T>;
 
-  template<typename FVisitor, typename TVariant, typename T, typename... Ts>
-  static auto visit_helper(FVisitor&& f, const TVariant& variant) -> decltype(f(T()))
-  {
-    if (variant.template is<T>())
-    {
-      return f(variant.template as<T>());
-    }
+  struct BadVisitException final
+  {};
 
-    return visit_helper<FVisitor, TVariant, Ts...>(f, variant);
+  namespace detail
+  {
+    template<typename TVisitor, typename... Ts>
+    struct is_callable_by_type_list;
+
+    template<typename TVisitor, typename T>
+    struct is_callable_by_type_list<TVisitor, T>
+    {
+      static constexpr bool value = std::is_invocable_v<TVisitor, T>;
+    };
+
+    template<typename TVisitor, typename T, typename... Ts>
+    struct is_callable_by_type_list<TVisitor, T, Ts...>
+    {
+      static constexpr bool value = is_callable_by_type_list<TVisitor, T>::value || is_callable_by_type_list<TVisitor, Ts...>::value;
+    };
+
+    template<typename FVisitor, typename TVariant, typename T, typename... Ts>
+    static auto visit_helper(FVisitor&& visitor, TVariant& variant) -> decltype(visitor(variant.template as<T>()))
+    {
+      using ReturnType = decltype(visitor(variant.template as<T>()));
+
+      if constexpr (std::is_invocable_v<FVisitor, T>)
+      {
+        if (variant.template is<T>())
+        {
+          return visitor(variant.template as<T>());
+        }
+      }
+
+      if constexpr (sizeof...(Ts) > 0)
+      {
+        return visit_helper<FVisitor, TVariant, Ts...>(std::forward<FVisitor>(visitor), variant);
+      }
+      else
+      {
+        throw BadVisitException{};
+      }
+    }
+  }  // namespace detail
+
+  template<typename FVisitor, typename... Ts>
+  static void visit(FVisitor&& visitor, Variant<Ts...>& variant)
+  {
+    detail::visit_helper<FVisitor, Variant<Ts...>, Ts...>(std::forward<FVisitor>(visitor), variant);
   }
 
   template<typename FVisitor, typename... Ts>
-  static void visit(FVisitor&& visitor, const Variant<Ts...>& variant)
+  static decltype(auto) visit_all(FVisitor&& visitor, Variant<Ts...>& variant)
   {
-    visit_helper<FVisitor, Variant<Ts...>, Ts...>(visitor, variant);
+    static_assert(detail::is_callable_by_type_list<FVisitor, Ts...>::value, "The visitor does not handle all types contained in the Variant.");
+
+    return detail::visit_helper<FVisitor, Variant<Ts...>, Ts...>(std::forward<FVisitor>(visitor), variant);
   }
 }  // namespace bifrost
 

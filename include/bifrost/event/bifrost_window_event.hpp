@@ -14,6 +14,12 @@
 
 namespace bifrost
 {
+  namespace KeyCode
+  {
+    // TODO: The rest of the keys...
+    static constexpr int ESCAPE = 256;
+  }
+
   struct KeyboardEvent final
   {
     enum flags_t

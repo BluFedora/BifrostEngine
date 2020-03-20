@@ -53,11 +53,11 @@ namespace bifrost::json
 
            if (event == BIFROST_JSON_EVENT_BEGIN_ARRAY)
            {
-             value_data->set<detail::Array_t>(s_ArrayAllocator);
+             value_data->set<Array>(s_ArrayAllocator);
            }
            else
            {
-             value_data->set<detail::Object_t>();
+             value_data->set<Object>();
            }
            break;
          }
@@ -156,8 +156,8 @@ namespace bifrost::json
       bfJsonWriter_beginObject(json_writer);
       toStringRecNewline(json_writer);
 
-      const detail::Object_t& obj           = value.as<detail::Object_t>();
-      bool                    is_first_item = true;
+      const Object& obj           = value.as<Object>();
+      bool          is_first_item = true;
 
       for (const auto& it : obj)
       {
@@ -182,8 +182,8 @@ namespace bifrost::json
       bfJsonWriter_beginArray(json_writer);
       toStringRecNewline(json_writer);
 
-      const detail::Array_t& arr           = value.as<detail::Array_t>();
-      bool                   is_first_item = true;
+      const Array& arr           = value.as<Array>();
+      bool         is_first_item = true;
 
       for (const auto& it : arr)
       {
@@ -227,6 +227,7 @@ namespace bifrost::json
     toStringRec(json_writer, json, 0);
 
     out.reserve(bfJsonWriter_length(json_writer));
+    out.clear();
 
     bfJsonWriter_forEachBlock(
      json_writer, [](const bfJsonStringBlock* block, void* ud) {
@@ -242,13 +243,13 @@ namespace bifrost::json
   Value::Value(detail::ObjectInitializer&& values) :
     Base_t()
   {
-    set<detail::Object_t>(std::forward<detail::ObjectInitializer>(values));
+    set<Object>(std::forward<detail::ObjectInitializer>(values));
   }
 
   Value::Value(detail::ArrayInitializer&& values) :
     Base_t()
   {
-    set<detail::Array_t>(s_ArrayAllocator, std::forward<detail::ArrayInitializer>(values));
+    set<Array>(s_ArrayAllocator, std::forward<detail::ArrayInitializer>(values));
   }
 
   Value::Value(const char* value) :
@@ -277,31 +278,31 @@ namespace bifrost::json
 
   Value& Value::operator=(detail::ObjectInitializer&& values)
   {
-    set<detail::Object_t>(std::forward<detail::ObjectInitializer>(values));
+    set<Object>(std::forward<detail::ObjectInitializer>(values));
     return *this;
   }
 
   Value& Value::operator=(detail::ArrayInitializer&& values)
   {
-    set<detail::Array_t>(s_ArrayAllocator, std::forward<detail::ArrayInitializer>(values));
+    set<Array>(s_ArrayAllocator, std::forward<detail::ArrayInitializer>(values));
     return *this;
   }
 
   Value& Value::operator[](const StringRange& key)
   {
-    return cast<detail::Object_t>()[key];
+    return cast<Object>()[key];
   }
 
   Value& Value::operator[](const char* key)
   {
-    return cast<detail::Object_t>()[key];
+    return cast<Object>()[key];
   }
 
   Value* Value::at(const StringRange& key) const
   {
     if (isObject())
     {
-      return as<detail::Object_t>().at(key);
+      return as<Object>().at(key);
     }
 
     return nullptr;
@@ -309,27 +310,27 @@ namespace bifrost::json
 
   Value& Value::operator[](int index)
   {
-    return cast<detail::Array_t>(s_ArrayAllocator)[index];
+    return cast<Array>(s_ArrayAllocator)[index];
   }
 
   void Value::push(const Value& item)
   {
-    cast<detail::Array_t>(s_ArrayAllocator).push(item);
+    cast<Array>(s_ArrayAllocator).push(item);
   }
 
   void Value::insert(std::size_t index, const Value& item)
   {
-    cast<detail::Array_t>(s_ArrayAllocator).insert(index, item);
+    cast<Array>(s_ArrayAllocator).insert(index, item);
   }
 
   Value& Value::back()
   {
-    return cast<detail::Array_t>(s_ArrayAllocator).back();
+    return cast<Array>(s_ArrayAllocator).back();
   }
 
   void Value::pop()
   {
-    cast<detail::Array_t>(s_ArrayAllocator).pop();
+    cast<Array>(s_ArrayAllocator).pop();
   }
 
   void Value::add(StringRange key, const Value& value)

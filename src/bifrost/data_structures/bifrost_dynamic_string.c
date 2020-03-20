@@ -227,26 +227,6 @@ void String_insert(BifrostString* self, size_t index, ConstBifrostString str)
 
 static unsigned char escape_convert(const unsigned char c)
 {
-  /* Not implemented on MinGW:
-        "sorry, unimplemented: non-trivial designated initializers not supported"
-  static const char escape[256] =
-  {
-    ['a']   = '\a',
-    ['b']   = '\b',
-    ['f']   = '\f',
-    ['n']   = '\n',
-    ['r']   = '\r',
-    ['t']   = '\t',
-    ['v']   = '\v',
-    ['\\']  = '\\',
-    ['\'']  = '\'',
-    ['"']   = '\"',
-    ['?']   = '\?'
-
-    // ... all the rest are 0 ...
-  };
-  */
-
   switch (c)
   {
     case 'a': return '\a';
@@ -429,8 +409,8 @@ static void string_append(BifrostString* self, size_t appended_size, const char*
   const size_t new_size  = self_size + appended_size;
 
   String_reserve(self, new_size + 1);
-
   strncpy(*self + self_size, str, appended_size);
+
   String_getHeader(*self)->length = new_size;
   (*self)[new_size]               = '\0';
 }

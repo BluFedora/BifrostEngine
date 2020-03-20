@@ -5,14 +5,17 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 
-#include <imgui/imgui.h> /* ImGUI::* */
-
-#include "imgui/imgui_internal.h"
+#include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
+
+#include "bifrost/asset_io/bifrost_json_serializer.hpp"
+#include "bifrost/asset_io/bifrost_material.hpp"
+#include "bifrost/utility/bifrost_json.hpp"
+#include "imgui/imgui_internal.h"
 
 // TODO(Shareef): This is useful for the engine aswell.
 template<std::size_t size>
-class FixedLinearAllocator
+class FixedLinearAllocator final
 {
  private:
   char            m_MemoryBacking[size];
@@ -74,9 +77,8 @@ class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<Bl
 
   void* allocate(std::size_t size) override
   {
-    assert(size <= Size);
+    assert(size <= Size);  // TODO(Shareef): Handle the case of If Size <= size.
 
-    // TODO(Shareef): Handle the case of - If Size <= size.
     void* ptr = m_Tail->allocator.allocate(size);
 
     if (!ptr)
@@ -114,7 +116,7 @@ class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<Bl
 
   virtual ~BlockAllocator()
   {
-    MemoryBlock* cursor = &m_SmallBacking;
+    MemoryBlock* cursor = m_SmallBacking.next;
 
     while (cursor)
     {
@@ -129,7 +131,7 @@ namespace bifrost::editor
 {
   using namespace intrusive;
 
-  static char              s_EditorMemoryBacking[4096 * 2];
+  static char              s_EditorMemoryBacking[4096 * 4];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
   static ui::MainMenu      s_MainMenuBar("Main Menu", s_EditorMemory);
 
@@ -161,12 +163,12 @@ namespace bifrost::editor
   {
     MenuDropdown* makeDropdown(const char* name)
     {
-      return s_EditorMemory.allocateT<MenuDropdown>(name, s_EditorMemory);
+      return make<MenuDropdown>(name, s_EditorMemory);
     }
 
     MenuAction* makeAction(const char* name, Action* action = nullptr)
     {
-      return s_EditorMemory.allocateT<MenuAction>(name, action);
+      return make<MenuAction>(name, action);
     }
   }  // namespace ui
 
@@ -222,28 +224,6 @@ namespace bifrost::editor
     }
 
     ~MemberAction() override = default;
-  };
-
-  class WelcomeDialog : public ui::Dialog
-  {
-   public:
-    explicit WelcomeDialog() :
-      Dialog("Welcome")
-    {
-    }
-
-    void show(const ActionContext& ctx) override
-    {
-      if (ctx.actionButton("New Project"))
-      {
-        close();
-      }
-
-      if (ImGui::Button("Open Project") && ctx.editor->openProjectDialog())
-      {
-        close();
-      }
-    }
   };
 
   class NewProjectDialog : public ui::Dialog
@@ -357,17 +337,23 @@ namespace bifrost::editor
 
     void show(const ActionContext& ctx) override
     {
-      ImGui::InputText("Name", m_FolderName, sizeof(m_FolderName));
+      ImGui::PushID(this);
+
+      if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+      ImGui::SetItemDefaultFocus();
+      const bool enter_hit = ImGui::InputText("Name", m_FolderName, sizeof(m_FolderName), ImGuiInputTextFlags_EnterReturnsTrue);
 
       ImGui::Separator();
 
       if (file::isValidName(m_FolderName))
       {
-        if (ImGui::Button("Create"))
+        if (enter_hit || ImGui::Button("Create"))
         {
           String full_path{m_BasePath};
 
-          full_path.append("/");
+          full_path.append('/');
           full_path.append(m_FolderName);
 
           if (path::createDirectory(full_path.cstr()))
@@ -393,48 +379,53 @@ namespace bifrost::editor
       {
         close();
       }
+
+      ImGui::PopID();
     }
   };
 
-  template<typename TAsset>
-  class BaseNewAssetDialog : public ui::Dialog
+  class FolderRenameDialog : public ui::Dialog
   {
-   protected:
-    String m_BasePath;
-    char   m_AssetName[120];  // 120 is the max folder name length on windows.
+   private:
+    FileEntry& m_FileEntry;
+    char       m_FolderName[120];  // 120 is the max folder name length on windows.
 
    public:
-    explicit BaseNewAssetDialog(const String& base_path) :
-      Dialog("New Asset"),
-      m_BasePath{base_path},
-      m_AssetName{"NewAsset"}
+    explicit FolderRenameDialog(FileEntry& file_entry) :
+      Dialog("Rename Folder"),
+      m_FileEntry{file_entry},
+      m_FolderName{"_"}
     {
+      std::strcpy(m_FolderName, m_FileEntry.name.c_str());
     }
-
-    virtual bool createAsset(String& full_path) = 0;
 
     void show(const ActionContext& ctx) override
     {
-      ImGui::InputText("Name", m_AssetName, sizeof(m_AssetName));
+      ImGui::PushID(this);
+
+      if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+      ImGui::SetItemDefaultFocus();
+      const bool enter_hit = ImGui::InputText("Name", m_FolderName, sizeof(m_FolderName), ImGuiInputTextFlags_EnterReturnsTrue);
 
       ImGui::Separator();
 
-      if (file::isValidName(m_AssetName))
+      if (file::isValidName(m_FolderName))
       {
-        if (ImGui::Button("Create"))
+        if (enter_hit || ImGui::Button("Rename"))
         {
-          String full_path{m_BasePath};
-
-          full_path.append("/");
-          full_path.append(m_AssetName);
-
-          if (createAsset(full_path))
+          if (path::renameDirectory(m_FileEntry.full_path.cstr(), m_FolderName))
           {
-            ctx.editor->assetRefresh();
+            const StringRange base_path = file::directoryOfFile(m_FileEntry.full_path);
+
+            m_FileEntry.name = m_FolderName;
+            m_FileEntry.full_path.resize(base_path.length() + 1);  // The + 1 adds the '/'
+            m_FileEntry.full_path.append(m_FileEntry.name);
           }
           else
           {
-            bfLogError("Failed to create Asset: %s", full_path.cstr());
+            bfLogError("Failed to rename Folder: %s", m_FileEntry.full_path.cstr());
           }
 
           close();
@@ -451,6 +442,8 @@ namespace bifrost::editor
       {
         close();
       }
+
+      ImGui::PopID();
     }
   };
 
@@ -509,6 +502,20 @@ namespace bifrost::editor
   {
   }
 
+  class ASaveProject final : public MemberAction<void>
+  {
+   public:
+    explicit ASaveProject() :
+      MemberAction<void>{&EditorOverlay::saveProject}
+    {
+    }
+
+    bool isActive(const ActionContext& ctx) const override
+    {
+      return ctx.editor->currentlyOpenProject() != nullptr;
+    }
+  };
+
   class ACloseProject : public Action
   {
    public:
@@ -557,58 +564,77 @@ namespace bifrost::editor
     ImGuiStyle&   style  = ImGui::GetStyle();
     ImVec4* const colors = style.Colors;
 
-    style.FrameRounding    = 2.0f;
-    style.FramePadding     = ImVec2(4.0f, 2.0f);
-    style.FrameBorderSize  = 1.0f;
-    style.WindowBorderSize = 1.0f;
-    style.WindowPadding    = ImVec2(5.0f, 5.0f);
-    style.WindowRounding   = 3.0f;
-    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-    style.ChildRounding    = 2.0f;
-    style.GrabMinSize      = 6.0f;
-    style.GrabRounding     = 2.0f;
+    style.FrameRounding       = 2.0f;
+    style.FramePadding        = ImVec2(4.0f, 2.0f);
+    style.FrameBorderSize     = 1.0f;
+    style.WindowBorderSize    = 1.0f;
+    style.WindowPadding       = ImVec2(5.0f, 5.0f);
+    style.WindowRounding      = 3.0f;
+    style.WindowTitleAlign    = ImVec2(0.5f, 0.5f);
+    style.ChildRounding       = 2.0f;
+    style.GrabMinSize         = 6.0f;
+    style.GrabRounding        = 2.0f;
+    style.ColorButtonPosition = ImGuiDir_Left;
+    style.ItemSpacing         = ImVec2(4.0f, 4.0f);
+    style.IndentSpacing       = 12.0f;
+    style.PopupRounding       = 2.0f;
+    style.ScrollbarRounding   = 3.0f;
+    style.TabRounding         = 2.0f;
 
-    colors[ImGuiCol_Text]              = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_WindowBg]          = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
-    colors[ImGuiCol_FrameBg]           = ImVec4(0.06f, 0.06f, 0.07f, 0.54f);
-    colors[ImGuiCol_TitleBgActive]     = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_Border]            = ImVec4(0.09f, 0.05f, 0.11f, 0.38f);
-    colors[ImGuiCol_TitleBg]           = ImVec4(0.19f, 0.19f, 0.19f, 1.00f);
-    colors[ImGuiCol_TitleBgCollapsed]  = ImVec4(0.00f, 0.00f, 0.00f, 0.66f);
-    colors[ImGuiCol_CheckMark]         = ImVec4(0.87f, 0.87f, 0.87f, 1.00f);
-    colors[ImGuiCol_ResizeGrip]        = ImVec4(0.00f, 0.00f, 0.00f, 0.36f);
-    colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.29f, 0.28f, 0.33f, 0.81f);
-    colors[ImGuiCol_ResizeGripActive]  = ImVec4(0.16f, 0.15f, 0.20f, 0.95f);
-    colors[ImGuiCol_Tab]               = ImVec4(0.12f, 0.09f, 0.16f, 0.86f);
-    colors[ImGuiCol_TabActive]         = ImVec4(0.41f, 0.39f, 0.44f, 1.00f);
-    colors[ImGuiCol_Header]            = ImVec4(0.08f, 0.08f, 0.09f, 0.31f);
-    colors[ImGuiCol_HeaderHovered]     = ImVec4(0.26f, 0.26f, 0.27f, 0.80f);
-    colors[ImGuiCol_HeaderActive]      = ImVec4(0.14f, 0.15f, 0.16f, 1.00f);
-    colors[ImGuiCol_FrameBgHovered]    = ImVec4(0.63f, 0.65f, 0.68f, 0.44f);
-    colors[ImGuiCol_FrameBgActive]     = ImVec4(0.37f, 0.38f, 0.40f, 0.89f);
-    colors[ImGuiCol_SliderGrab]        = ImVec4(0.75f, 0.75f, 0.77f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive]  = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-    colors[ImGuiCol_Button]            = ImVec4(0.51f, 0.53f, 0.71f, 0.40f);
-    colors[ImGuiCol_ButtonHovered]     = ImVec4(0.45f, 0.43f, 0.52f, 0.86f);
-    colors[ImGuiCol_ButtonActive]      = ImVec4(0.26f, 0.24f, 0.30f, 0.82f);
+    colors[ImGuiCol_Text]               = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    colors[ImGuiCol_WindowBg]           = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
+    colors[ImGuiCol_FrameBg]            = ImVec4(0.06f, 0.06f, 0.07f, 0.54f);
+    colors[ImGuiCol_TitleBgActive]      = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+    colors[ImGuiCol_Border]             = ImVec4(0.09f, 0.05f, 0.11f, 0.38f);
+    colors[ImGuiCol_TitleBg]            = ImVec4(0.19f, 0.19f, 0.19f, 1.00f);
+    colors[ImGuiCol_TitleBgCollapsed]   = ImVec4(0.00f, 0.00f, 0.00f, 0.66f);
+    colors[ImGuiCol_CheckMark]          = ImVec4(0.87f, 0.87f, 0.87f, 1.00f);
+    colors[ImGuiCol_ResizeGrip]         = ImVec4(0.00f, 0.00f, 0.00f, 0.36f);
+    colors[ImGuiCol_ResizeGripHovered]  = ImVec4(0.29f, 0.28f, 0.33f, 0.81f);
+    colors[ImGuiCol_ResizeGripActive]   = ImVec4(0.16f, 0.15f, 0.20f, 0.95f);
+    colors[ImGuiCol_Tab]                = ImVec4(0.12f, 0.09f, 0.16f, 0.86f);
+    colors[ImGuiCol_TabActive]          = ImVec4(0.41f, 0.39f, 0.44f, 1.00f);
+    colors[ImGuiCol_Header]             = ImVec4(0.08f, 0.08f, 0.09f, 0.31f);
+    colors[ImGuiCol_HeaderHovered]      = ImVec4(0.26f, 0.26f, 0.27f, 0.80f);
+    colors[ImGuiCol_HeaderActive]       = ImVec4(0.14f, 0.15f, 0.16f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered]     = ImVec4(0.63f, 0.65f, 0.68f, 0.44f);
+    colors[ImGuiCol_FrameBgActive]      = ImVec4(0.37f, 0.38f, 0.40f, 0.89f);
+    colors[ImGuiCol_SliderGrab]         = ImVec4(0.75f, 0.75f, 0.77f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive]   = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+    colors[ImGuiCol_Button]             = ImVec4(0.51f, 0.53f, 0.71f, 0.40f);
+    colors[ImGuiCol_ButtonHovered]      = ImVec4(0.45f, 0.43f, 0.52f, 0.86f);
+    colors[ImGuiCol_ButtonActive]       = ImVec4(0.26f, 0.24f, 0.30f, 0.82f);
+    colors[ImGuiCol_ChildBg]            = ImVec4(0.00f, 0.00f, 0.00f, 0.11f);
+    colors[ImGuiCol_BorderShadow]       = ImVec4(1.00f, 1.00f, 1.00f, 0.04f);
+    colors[ImGuiCol_TextDisabled]       = ImVec4(0.59f, 0.57f, 0.65f, 1.00f);
+    colors[ImGuiCol_SeparatorHovered]   = ImVec4(0.62f, 0.62f, 0.62f, 0.78f);
+    colors[ImGuiCol_SeparatorActive]    = ImVec4(0.66f, 0.66f, 0.66f, 1.00f);
+    colors[ImGuiCol_TabHovered]         = ImVec4(0.48f, 0.45f, 0.53f, 0.80f);
+    colors[ImGuiCol_TabUnfocused]       = ImVec4(0.22f, 0.22f, 0.27f, 1.00f);
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.28f, 0.27f, 0.35f, 1.00f);
+    colors[ImGuiCol_DockingPreview]     = ImVec4(0.19f, 0.31f, 0.33f, 0.70f);
+    colors[ImGuiCol_TextSelectedBg]     = ImVec4(0.44f, 0.58f, 0.61f, 0.35f);
 
     m_Actions.emplace("File.New.Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
     m_Actions.emplace("File.Open.Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
-    m_Actions.emplace("Close Project", ActionPtr(make<ACloseProject>()));
-    m_Actions.emplace("Asset Refresh", ActionPtr(make<ARefreshAsset>()));
+    m_Actions.emplace("File.Save.Project", ActionPtr(make<ASaveProject>()));
+    m_Actions.emplace("Project.Close", ActionPtr(make<ACloseProject>()));
+    m_Actions.emplace("Asset.Refresh", ActionPtr(make<ARefreshAsset>()));
 
     ui::BaseMenuItem* file_menu_items[] =
      {
-      ui::makeDropdown("New")->addItem(ui::makeAction("Project", findAction("File.New.Project"))),
-      ui::makeDropdown("Open")->addItem(ui::makeAction("Project", findAction("File.Open.Project"))),
-      ui::makeDropdown("Save")->addItem(ui::makeAction("Project")),
-      ui::makeAction("Close Project", findAction("Close Project")),
-      ui::makeAction("Exit"),
+      ui::makeDropdown("New")
+       ->addItem(ui::makeAction("Project", findAction("File.New.Project"))),
+      ui::makeDropdown("Open")
+       ->addItem(ui::makeAction("Project", findAction("File.Open.Project"))),
+      ui::makeDropdown("Save")
+       ->addItem(ui::makeAction("Project", findAction("File.Save.Project"))),
+      ui::makeAction("Close Project", findAction("Project.Close")),
      };
 
     ui::BaseMenuItem* asset_menu_items[] =
      {
-      ui::makeAction("Refresh", findAction("Asset Refresh")),
+      ui::makeAction("Refresh", findAction("Asset.Refresh")),
      };
 
     ui::BaseMenuItem* edit_menu_items[] =
@@ -643,8 +669,6 @@ namespace bifrost::editor
     addMainMenuItem("Entity", entity_menu_items);
     addMainMenuItem("Component", component_menu_items);
     addMainMenuItem("Help", help_menu_items);
-
-    // enqueueDialog(make<WelcomeDialog>());
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -655,6 +679,7 @@ namespace bifrost::editor
   static const float mouse_speed           = 0.01f;
   float              oldx                  = invalid_mouse_postion;
   float              oldy                  = invalid_mouse_postion;
+  static bool        is_dragging_mouse     = false;
 
   void EditorOverlay::onEvent(Engine& engine, Event& event)
   {
@@ -664,10 +689,22 @@ namespace bifrost::editor
     {
       oldx = invalid_mouse_postion;
       oldy = invalid_mouse_postion;
+
+      if (event.type == EventType::ON_MOUSE_DOWN)
+      {
+        if (isPointOverSceneView({mouse_evt.x, mouse_evt.y}))
+        {
+          is_dragging_mouse = true;
+        }
+      }
+      else
+      {
+        is_dragging_mouse = false;
+      }
     }
     else if (event.type == EventType::ON_MOUSE_MOVE)
     {
-      if (mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
+      if (is_dragging_mouse && mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
       {
         const float newx = float(mouse_evt.x);
         const float newy = float(mouse_evt.y);
@@ -688,11 +725,21 @@ namespace bifrost::editor
         oldy = newy;
       }
     }
+    else if (event.type == EventType::ON_KEY_DOWN)
+    {
+      if (event.keyboard.key == KeyCode::ESCAPE)
+      {
+        if (m_CurrentDialog)
+        {
+          m_CurrentDialog->close();
+        }
+      }
+    }
 
     {
       ImGuiIO& io = ImGui::GetIO();
 
-      if (io.WantCaptureKeyboard || io.WantCaptureMouse)
+      if (io.WantCaptureKeyboard || io.WantCaptureMouse || is_dragging_mouse)
       {
         event.accept();
       }
@@ -703,20 +750,15 @@ namespace bifrost::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    static const float window_width  = 350.0f;
-    static const float window_margin = 5.0f;
-
     const ActionContext action_ctx{this};
 
     m_Inspector.setAssets(&engine.assets());
 
     // ImGui::ShowDemoWindow();
 
-    float menu_bar_height = 0.0f;
-
     if (s_MainMenuBar.beginItem(action_ctx))
     {
-      menu_bar_height = ImGui::GetWindowSize().y;
+      // menu_bar_height = ImGui::GetWindowSize().y;
 
       s_MainMenuBar.doAction(action_ctx);
 
@@ -731,8 +773,6 @@ namespace bifrost::editor
       ImGui::Text("| %ifps | Memory (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
       s_MainMenuBar.endItem();
     }
-
-    ImGuiIO& io = ImGui::GetIO();
 
     // Dock Space
     {
@@ -754,9 +794,27 @@ namespace bifrost::editor
       if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
         window_flags |= ImGuiWindowFlags_NoBackground;
 
-      ImGui::Begin("DockSpace Demo", nullptr, window_flags);
+      ImGui::Begin("Main DockSpace", nullptr, window_flags);
 
       const ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+
+      // Initial layout
+      if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr)
+      {
+        ImGui::DockBuilderRemoveNode(dockspace_id);                             // Clear out existing layout
+        ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);  // Add empty node
+        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+
+        ImGuiID       dock_main_id  = dockspace_id;
+        const ImGuiID dock_id_left  = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+        const ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+
+        ImGui::DockBuilderDockWindow("Project View", dock_id_left);
+        ImGui::DockBuilderDockWindow("Inspector View", dock_id_right);
+
+        ImGui::DockBuilderFinish(dockspace_id);
+      }
+
       ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
       ImGui::End();
@@ -766,16 +824,51 @@ namespace bifrost::editor
       ImGui::DockBuilderDockWindow("Scene View", dockspace_id);
     }
 
+    static const float s_SceneViewPadding = 2.0f;
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(s_SceneViewPadding, s_SceneViewPadding));
     if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
     {
-      const auto content_area = ImGui::GetContentRegionAvail();
-
       if (m_OpenProject)
       {
-        ImGui::Image(engine.renderer().colorBuffer(), content_area);
+        const auto   color_buffer        = engine.renderer().colorBuffer();
+        const auto   color_buffer_width  = bfTexture_width(color_buffer);
+        const auto   color_buffer_height = bfTexture_height(color_buffer);
+        const auto   content_area        = ImGui::GetContentRegionAvail();
+        const auto   draw_region         = rect::aspectRatioDrawRegion(color_buffer_width, color_buffer_height, uint32_t(content_area.x), uint32_t(content_area.y));
+        auto* const  window_draw         = ImGui::GetWindowDrawList();
+        const ImVec2 window_pos          = ImGui::GetWindowPos();
+        const ImVec2 cursor_offset       = ImGui::GetCursorPos();
+        const ImVec2 full_offset         = window_pos + cursor_offset;
+        const ImVec2 position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
+        const ImVec2 position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
+
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None))
+        {
+          m_SceneViewViewport.setLeft(int(position_min.x));
+          m_SceneViewViewport.setTop(int(position_min.y));
+          m_SceneViewViewport.setRight(int(position_max.x));
+          m_SceneViewViewport.setBottom(int(position_max.y));
+        }
+        else
+        {
+          m_SceneViewViewport = {};
+        }
+
+        window_draw->AddImageRounded(
+         color_buffer,
+         position_min,
+         position_max,
+         ImVec2(0.0f, 0.0f),
+         ImVec2(1.0f, 1.0f),
+         0xFFFFFFFF,
+         5.0f,
+         ImDrawCornerFlags_All);
+
+        // ImGui::SetCursorPos(ImVec2(float(draw_region.left()) + s_SceneViewPadding, float(draw_region.top()) + s_SceneViewPadding));
+        // ImGui::Image(engine.renderer().colorBuffer(), ImVec2(float(draw_region.width()), float(draw_region.height())));
       }
       else
       {
@@ -803,15 +896,17 @@ namespace bifrost::editor
     ImGui::End();
     ImGui::PopStyleVar(3);
 
+    if (ImGui::Begin("Command Palette"))
+    {
+      for (const auto& action : m_Actions)
+      {
+        buttonAction(action_ctx, action.key().cstr(), action.key().cstr(), ImVec2(-1.0f, 0.0f));
+      }
+    }
+    ImGui::End();
+
     if (m_OpenProject)
     {
-      const auto display_width = io.DisplaySize.x;
-
-      const auto height = io.DisplaySize.y - (window_margin * 2.0f) - menu_bar_height;
-
-      ImGui::SetNextWindowPos(ImVec2(window_margin, menu_bar_height + window_margin), ImGuiCond_Once);
-      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Once);
-
       if (ImGui::Begin("Project View"))
       {
         ImGui::Separator();
@@ -827,9 +922,6 @@ namespace bifrost::editor
 
       ImGui::End();
 
-      ImGui::SetNextWindowPos(ImVec2(display_width - window_margin, menu_bar_height + window_margin), ImGuiCond_Once, ImVec2(1.0f, 0.0f));
-      ImGui::SetNextWindowSize(ImVec2(window_width, height), ImGuiCond_Once);
-
       if (ImGui::Begin("Inspector View"))
       {
         static BifrostTransform transform = {};
@@ -844,6 +936,22 @@ namespace bifrost::editor
         m_Inspector.beginDocument(false);
         m_Inspector.serializeT("Transform", &transform);
         m_Inspector.serialize("Test Texture", m_TestTexture);
+
+        if (m_SelectedObject.valid())
+        {
+          if (m_Inspector.pushObject("Asset"))
+          {
+            visit_all(
+             meta::overloaded{
+              [this](IBaseObject* object) { m_Inspector.serialize(*object); },
+              [this, &engine](auto& asset_handle) { if (asset_handle) { m_Inspector.serialize(*asset_handle.payload()); } },
+             },
+             m_SelectedObject);
+
+            m_Inspector.popObject();
+          }
+        }
+
         m_Inspector.endDocument();
       }
 
@@ -932,7 +1040,9 @@ namespace bifrost::editor
     m_CurrentFps{0},
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
-    m_Inspector{allocator()}
+    m_Inspector{allocator()},
+    m_SceneViewViewport{},
+    m_SelectedObject{nullptr}
   {
   }
 
@@ -1009,8 +1119,8 @@ namespace bifrost::editor
       }
       else
       {
-        FixedLinearAllocator<1024> allocator;
-        path::DirectoryEntry*      dir = path::openDirectory(allocator.memory(), project_meta_path);
+        FixedLinearAllocator<512> allocator;
+        path::DirectoryEntry*     dir = path::openDirectory(allocator.memory(), project_meta_path);
 
         if (dir)
         {
@@ -1040,7 +1150,7 @@ namespace bifrost::editor
         {
           const auto& project_name_str = project_name->as<string_t>();
 
-          m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), project_dir, std::move(project_meta_path)));
+          m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), path, project_dir, std::move(project_meta_path)));
 
           assetRefresh();
           return true;
@@ -1049,6 +1159,27 @@ namespace bifrost::editor
     }
 
     return false;
+  }
+
+  void EditorOverlay::saveProject()
+  {
+    File file{m_OpenProject->projectFilePath(), file::FILE_MODE_WRITE};
+
+    if (file)
+    {
+      using namespace json;
+
+      const Value project_save_data = {
+       Pair{"Name", m_OpenProject->name()},
+       Pair{"Path", m_OpenProject->path()},
+      };
+
+      ::String json_data;
+      toString(project_save_data, json_data);
+
+      file.writeBytes(json_data.cstr(), json_data.size());
+      file.close();
+    }
   }
 
   void EditorOverlay::closeProject()
@@ -1060,7 +1191,7 @@ namespace bifrost::editor
 
   struct FileExtensionHandler final
   {
-    using Callback = BifrostUUID (*)(Assets& engine, StringRange relative_path, StringRange meta_name);
+    using Callback = BifrostUUID (*)(Assets& engine, StringRange relative_path);
 
     StringRange ext;
     Callback    handler;
@@ -1074,15 +1205,14 @@ namespace bifrost::editor
 
   struct MetaAssetPath final
   {
-    char*       file_name{nullptr};
-    StringRange meta_name{nullptr, nullptr};
-    FileEntry*  entry{nullptr};
+    char*      file_name{nullptr};
+    FileEntry* entry{nullptr};
   };
 
   template<typename T>
-  static BifrostUUID fileExtensionHandlerImpl(Assets& assets, StringRange relative_path, StringRange meta_name)
+  static BifrostUUID fileExtensionHandlerImpl(Assets& assets, StringRange relative_path)
   {
-    return assets.indexAsset<T>(relative_path, meta_name);
+    return assets.indexAsset<T>(relative_path);
   }
 
   static const FileExtensionHandler s_AssetHandlers[] =
@@ -1134,11 +1264,10 @@ namespace bifrost::editor
           {
             const StringRange file_name = file::fileNameOfPath(relative_path);
 
-            bfLogPrint("Meta-Name    : (%s)", meta.meta_name.bgn);
             bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
             bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
 
-            meta.entry->uuid = handler->handler(m_Engine->assets(), relative_path, meta.meta_name);
+            meta.entry->uuid = handler->handler(m_Engine->assets(), relative_path);
           }
           bfLogPop();
         }
@@ -1147,10 +1276,14 @@ namespace bifrost::editor
           bfLogWarn("Unknown file type (%s)", meta.file_name);
         }
 
-        string_utils::free_fmt(allocator, meta.file_name);
-        string_utils::free_fmt(allocator, const_cast<char*>(meta.meta_name.bgn));
+        string_utils::fmtFree(allocator, meta.file_name);
       }
     }
+  }
+
+  bool EditorOverlay::isPointOverSceneView(const Vector2i& point) const
+  {
+    return m_SceneViewViewport.intersects(point);
   }
 
   void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name) const
@@ -1158,11 +1291,10 @@ namespace bifrost::editor
     buttonAction(ctx, action_name, action_name);
   }
 
-  void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const
+  void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label, const ImVec2& size) const
   {
-    Action* const action = findAction(action_name);
-
-    const bool is_disabled = action == nullptr || !action->isActive(ctx);
+    Action* const action      = findAction(action_name);
+    const bool    is_disabled = action == nullptr || !action->isActive(ctx);
 
     if (is_disabled)
     {
@@ -1170,7 +1302,7 @@ namespace bifrost::editor
       ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
     }
 
-    if (ImGui::Button(custom_label))
+    if (ImGui::Button(custom_label, size))
     {
       if (!is_disabled)
       {
@@ -1182,6 +1314,23 @@ namespace bifrost::editor
     {
       ImGui::PopItemFlag();
       ImGui::PopStyleVar();
+    }
+  }
+
+  void EditorOverlay::selectableAction(const ActionContext& ctx, const char* action_name) const
+  {
+    selectableAction(ctx, action_name, action_name);
+  }
+
+  void EditorOverlay::selectableAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const
+  {
+    Action* const              action           = findAction(action_name);
+    const bool                 is_disabled      = action == nullptr || !action->isActive(ctx);
+    const ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_None | ImGuiSelectableFlags_Disabled * is_disabled;
+
+    if (ImGui::Selectable(custom_label, false, selectable_flags))
+    {
+      action->execute(ctx);
     }
   }
 
@@ -1210,12 +1359,7 @@ namespace bifrost::editor
           {
             auto& m = metas.emplaceBack();
 
-            m.file_name = string_utils::alloc_fmt(metas.memory(), nullptr, "%s/%s", path.cstr(), name);
-
-            std::size_t meta_name_length;
-            char* const meta_name = string_utils::alloc_fmt(metas.memory(), &meta_name_length, "%s%s.meta", current_string.cstr(), name);
-
-            m.meta_name = {meta_name, meta_name + meta_name_length};
+            m.file_name = string_utils::fmtAlloc(metas.memory(), nullptr, "%s/%s", path.cstr(), name);
             m.entry     = &entry;
           }
 
@@ -1267,12 +1411,12 @@ namespace bifrost::editor
   {
     if (m_Root)
     {
-      static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_Hideable;
+      static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_Hideable | ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_Hideable;
 
       if (ImGui::BeginTable("File System", 2, flags))
       {
         ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 10);
+        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableAutoHeaders();
 
         uiShowImpl(editor, root());
@@ -1291,12 +1435,12 @@ namespace bifrost::editor
   {
     static constexpr std::size_t OFFSET_FROM_SLASH = 1;
 
-    const std::size_t full_path_length = entry.full_path.length();
     const std::size_t root_path_length = root().full_path.length();
-    const std::size_t length_diff      = full_path_length - root_path_length;
+    const std::size_t full_path_length = entry.full_path.length();
     const char* const path_bgn         = entry.full_path.cstr() + root_path_length + OFFSET_FROM_SLASH;
+    const char* const path_end         = path_bgn + (full_path_length - root_path_length - OFFSET_FROM_SLASH);
 
-    return {path_bgn, length_diff};
+    return {path_bgn, path_end};
   }
 
   void FileSystem::remove(FileEntry& entry)
@@ -1333,7 +1477,12 @@ namespace bifrost::editor
 
       if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
       {
-        bfLogPrint("Clicked On %s", entry.uuid.as_string);
+        auto& assets = editor.engine().assets();
+
+        if (auto* info = assets.findAssetInfo(entry.uuid))
+        {
+          editor.select(assets.makeHandle(*info));
+        }
       }
 
       const auto flags = ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
@@ -1356,14 +1505,53 @@ namespace bifrost::editor
     }
     else
     {
-      ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanFullWidth;
+      ImGuiTreeNodeFlags tree_node_flags   = ImGuiTreeNodeFlags_SpanFullWidth;
+      const auto         drag_source_flags = ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
+      FileEntry* const   entry_ptr         = &entry;
+      const bool         is_root           = entry_ptr == &root();
 
-      if (&entry == &root())
+      if (is_root)
       {
-        flags |= ImGuiTreeNodeFlags_DefaultOpen;
+        tree_node_flags |= ImGuiTreeNodeFlags_DefaultOpen;
       }
 
-      const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), flags);
+      const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
+
+      if (ImGui::BeginDragDropSource(drag_source_flags))
+      {
+        if constexpr (!(drag_source_flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
+        {
+          ImGui::Text("Moving Folder %s", entry.name.c_str());
+        }
+
+        ImGui::SetDragDropPayload("FileSystem.Folder", &entry_ptr, sizeof(FileEntry*));
+        ImGui::EndDragDropSource();
+      }
+
+      if (ImGui::BeginDragDropTarget())
+      {
+        const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+
+        if (payload && payload->IsDataType("FileSystem.Folder"))
+        {
+          FileEntry* const data = *static_cast<FileEntry**>(payload->Data);
+
+          assert(payload->DataSize == sizeof(FileEntry*));
+
+          if (data != entry_ptr && ImGui::AcceptDragDropPayload("FileSystem.Folder", ImGuiDragDropFlags_None))
+          {
+            const char* const destination_path = entry.full_path.c_str();
+            const char* const source_path      = data->full_path.c_str();
+
+            if (path::moveDirectory(destination_path, source_path))
+            {
+              m_HasBeenModified = true;
+            }
+          }
+        }
+
+        ImGui::EndDragDropTarget();
+      }
 
       if (ImGui::BeginPopupContextItem())
       {
@@ -1374,7 +1562,54 @@ namespace bifrost::editor
             editor.enqueueDialog(make<NewFolderDialog>(entry.full_path));
           }
 
+          if (ImGui::MenuItem("Shader Program"))
+          {
+            bfLogPush("Create Shader Program");
+            {
+              static const StringRange extenstion = ".shader";
+
+              const String      name               = "Test Shader";
+              const StringRange rel_dir_path       = relativePath(entry);
+              Assets&           assets             = editor.engine().assets();
+              const String      file_name          = "/" + name + extenstion;
+              const String      full_file_path     = entry.full_path + file_name;
+              const String      relative_file_path = rel_dir_path + file_name;
+
+              bfLogPrint("RelFilePath  (%s)", relative_file_path.c_str());
+              bfLogPrint("FullFilePath (%s)", full_file_path.c_str());
+
+              const BifrostUUID        uuid   = assets.indexAsset<AssetShaderProgramInfo>(relative_file_path);
+              BaseAssetInfo* const     info   = assets.findAssetInfo(uuid);
+              AssetShaderProgramHandle handle = nullptr;
+
+              if (assets.tryAssignHandle(handle, info))
+              {
+                JsonSerializerWriter json_serializer{allocator()};
+
+                json_serializer.beginDocument(false);
+                json_serializer.serialize(*handle);
+                json_serializer.endDocument();
+
+                String json_string;
+                toString(json_serializer.document(), json_string);
+
+                File file{full_file_path, file::FILE_MODE_WRITE};
+
+                file.writeBytes(json_string.cstr(), json_string.length());
+                file.close();
+
+                m_HasBeenModified = true;
+              }
+            }
+            bfLogPop();
+          }
+
           ImGui::EndMenu();
+        }
+
+        if (ImGui::MenuItem("Rename"))
+        {
+          editor.enqueueDialog(make<FolderRenameDialog>(entry));
         }
 
         if (ImGui::MenuItem("Delete"))

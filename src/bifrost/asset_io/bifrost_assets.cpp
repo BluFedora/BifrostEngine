@@ -14,7 +14,7 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"
+#include "bifrost/asset_io/bifrost_asset_handle.hpp"   //
 #include "bifrost/asset_io/bifrost_file.hpp"           // File
 #include "bifrost/asset_io/bifrost_json_parser.hpp"    //
 #include "bifrost/asset_io/bifrost_json_value.hpp"     // JsonValue
@@ -45,6 +45,32 @@ namespace bifrost
     bool createDirectory(const char* path)
     {
       return files::create_directory(path);
+    }
+
+    bool renameDirectory(const char* full_path, const char* new_name)
+    {
+      const StringRange base_path = file::directoryOfFile(full_path);
+      files::path       old_path  = {base_path.begin(), base_path.end()};
+      files::path       new_path  = old_path;
+      std::error_code   err;
+
+      old_path /= base_path.end() + 1;
+      new_path /= new_name;
+
+      files::rename(old_path, new_path, err);
+      return !err;
+    }
+
+    bool moveDirectory(const char* dst_path, const char* src_path)
+    {
+      const StringRange src_base_path  = file::directoryOfFile(src_path);
+      const char*       src_name_start = src_base_path.end() + 1;
+      const files::path old_path       = src_path;
+      const files::path new_path       = files::path(dst_path) / src_name_start;
+      std::error_code   err;
+
+      files::rename(old_path, new_path, err);
+      return !err;
     }
 
     bool deleteDirectory(const char* path)
@@ -131,6 +157,14 @@ namespace bifrost
     }
   }  // namespace path
 
+  bool Assets::isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info)
+  {
+    meta::BaseClassMetaInfo* const handle_type       = handle.typeInfo();
+    meta::BaseClassMetaInfo* const info_payload_type = info->payloadType();
+
+    return handle_type == info_payload_type;
+  }
+
   Assets::Assets(Engine& engine, IMemoryManager& memory) :
     m_Engine{engine},
     m_Memory{memory},
@@ -141,10 +175,9 @@ namespace bifrost
   {
   }
 
-  BifrostUUID Assets::indexAssetImpl(const StringRange path, StringRange meta_file_name, bool& create_new, meta::BaseClassMetaInfo* type_info)
+  BifrostUUID Assets::indexAssetImpl(const StringRange relative_path, bool& create_new, meta::BaseClassMetaInfo* type_info)
   {
-    const String path_key = path;
-    const auto   it_name  = m_NameToGUID.find(path_key);
+    const auto it_name = m_NameToGUID.find(relative_path);
 
     if (it_name != m_NameToGUID.end())
     {
@@ -158,16 +191,19 @@ namespace bifrost
       }
     }
 
-    BifrostUUID uuid = bfUUID_generate();
-
+    BifrostUUID     uuid = bfUUID_generate();
+    char            meta_path_buffer[path::MAX_LENGTH];
     char            path_buffer[path::MAX_LENGTH];
+    LinearAllocator alloc_meta_path{meta_path_buffer, sizeof(meta_path_buffer)};
     LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
+    std::size_t     meta_file_name_length = 0;
+    char*           meta_file_name        = metaFileName(alloc_meta_path, relative_path, meta_file_name_length);
 
     // TODO(Shareef): Make this a helper function.
-    string_utils::alloc_fmt(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
+    string_utils::fmtAlloc(alloc_path, nullptr, "%s/%s/%s", m_RootPath, META_PATH_NAME, meta_file_name);
 
     const JsonValue json = JsonValue{
-     std::pair{std::string("Path"), std::string(path.bgn, path.end())},
+     std::pair{std::string("Path"), std::string(relative_path.bgn, relative_path.end())},
      std::pair{std::string("UUID"), std::string(uuid.as_string)},
      std::pair{std::string("Type"), std::string(type_info->name())},
     };
@@ -183,7 +219,7 @@ namespace bifrost
       project_file.close();
     }
 
-    m_NameToGUID.emplace(path_key, uuid);
+    m_NameToGUID.emplace(relative_path, uuid);
 
     create_new = true;
     return uuid;
@@ -201,14 +237,6 @@ namespace bifrost
     return nullptr;
   }
 
-  bool Assets::isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info)
-  {
-    meta::BaseClassMetaInfo* const handle_type       = handle.typeInfo();
-    meta::BaseClassMetaInfo* const info_payload_type = info->payloadType();
-
-    return handle_type == info_payload_type;
-  }
-
   bool Assets::tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const
   {
     if (isHandleCompatible(handle, info))
@@ -218,6 +246,11 @@ namespace bifrost
     }
 
     return false;
+  }
+
+  BaseAssetHandle Assets::makeHandle(BaseAssetInfo& info) const
+  {
+    return BaseAssetHandle(m_Engine, &info, info.payloadType());
   }
 
   String Assets::fullPath(const BaseAssetInfo& info) const
@@ -232,13 +265,25 @@ namespace bifrost
     return full_path;
   }
 
+  char* Assets::metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const
+  {
+    char* const buffer     = string_utils::fmtAlloc(allocator, &out_string_length, "%.*s%s", int(relative_path.length()), relative_path.begin(), META_FILE_EXTENSION);
+    char* const buffer_end = buffer + out_string_length;
+
+    std::transform(buffer, buffer_end, buffer, [](const char character) {
+      return character == '/' ? '.' : character;
+    });
+
+    return buffer;
+  }
+
   void Assets::loadMeta(StringRange meta_file_name)
   {
     char            path_buffer[path::MAX_LENGTH];
     LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
 
     // TODO(Shareef): Make this a helper function.
-    string_utils::alloc_fmt(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
+    string_utils::fmtAlloc(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
 
     File project_file{path_buffer, file::FILE_MODE_READ};
 

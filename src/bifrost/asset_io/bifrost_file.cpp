@@ -1,5 +1,7 @@
 #include "bifrost/asset_io/bifrost_file.hpp"
 
+#include "bifrost/memory/bifrost_imemory_manager.hpp"
+
 #if _WIN32 /* Windows */
 #define NOMINMAX
 #include <Windows.h>
@@ -388,5 +390,27 @@ namespace bifrost
       out.append(*file_stream_bgn);
       ++file_stream_bgn;
     }
+  }
+
+  char* File::readAll(IMemoryManager& allocator, std::size_t& out_size)
+  {
+    const std::size_t expected_size = size();
+
+    char* const buffer = static_cast<char*>(allocator.allocate(expected_size + 1));
+
+    std::istreambuf_iterator<char>       file_stream_bgn = m_FileStream;
+    const std::istreambuf_iterator<char> file_stream_end = std::istreambuf_iterator<char>();
+
+    std::size_t index = 0;
+
+    while (file_stream_bgn != file_stream_end && index < expected_size)
+    {
+      buffer[index++] = *file_stream_bgn;
+      ++file_stream_bgn;
+    }
+
+    buffer[++index] = '\0';
+    out_size = index;
+    return buffer;
   }
 }  // namespace bifrost

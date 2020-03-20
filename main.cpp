@@ -565,6 +565,18 @@ void MainDemoLayer::onLoad(BifrostEngine& engine)
    },
   };
 
+  const auto s = visit_all(
+   meta::overloaded{
+    [](json::Object& obj) -> String {
+      bfLogPrint("Visited an Object.");
+      return "Object";
+    },
+    [](auto& sink) -> String {
+      bfLogPrint("Visited an XXX.");
+      return "Sink";
+    }},
+   test_json);
+
   String test_json_str;
   toString(test_json, test_json_str);
 
@@ -572,7 +584,6 @@ void MainDemoLayer::onLoad(BifrostEngine& engine)
   bfLogPrint("%s", test_json_str.c_str());
   bfLogPrint("%s", test_json["My Test Key"]["Sub Array"][0].as<String>().c_str());
   bfLogPrint("----------------------------------");
-
 #if 0
   auto mye              = new bifrost::Entity("Hello I am an entity");
   auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");

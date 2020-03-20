@@ -13,8 +13,8 @@
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
 #include "bifrost/asset_io/bifrost_assets.hpp"
-#include "bifrost/math/bifrost_vec3.h"
 #include "bifrost/math/bifrost_vec2.h"
+#include "bifrost/math/bifrost_vec3.h"
 
 namespace bifrost::editor
 {
@@ -58,8 +58,8 @@ namespace bifrost::editor
 
     if (is_open)
     {
-      auto& obj    = m_IsOpenStack.emplace();
-      obj.is_array = true;
+      auto& obj       = m_IsOpenStack.emplace();
+      obj.is_array    = true;
       obj.array_index = 0;
     }
 
@@ -144,7 +144,7 @@ namespace bifrost::editor
   void ImGuiSerializer::serialize(StringRange key, Vec3f& value)
   {
     setNameBuffer(key);
-    ImGui::DragFloat3(m_NameBuffer, &value.x, s_DragSpeed);
+    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, String& value)
@@ -153,10 +153,10 @@ namespace bifrost::editor
     imgui_ext::inspect(m_NameBuffer, value);
   }
 
-  void ImGuiSerializer::serialize(StringRange key, BaseAssetInfo& value)
+  void ImGuiSerializer::serialize(StringRange key, BifrostUUID& value)
   {
     setNameBuffer(key);
-    ImGui::Text("Inspect : BaseAssetInfo");
+    ImGui::InputText(m_NameBuffer, value.as_string, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
   }
 
   void ImGuiSerializer::serialize(StringRange key, BaseAssetHandle& value)
@@ -174,10 +174,31 @@ namespace bifrost::editor
       ImGui::SameLine();
     }
 
-    const char* const name        = value ? value.info()->path().c_str() : "<null>";
-    const auto        name_length = value ? value.info()->path().length() : sizeof("<null>");
+    const char* const preview_name  = value ? value.info()->path().c_str() : "<null>";
+    BaseAssetInfo*    assigned_info = nullptr;
 
-    ImGui::InputText(m_NameBuffer, const_cast<char*>(name), name_length, ImGuiInputTextFlags_ReadOnly);
+    if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightLargest))
+    {
+      for (const auto& asset_info_it : m_Assets->assetMap())
+      {
+        BaseAssetInfo* const asset_info = asset_info_it.value();
+
+        if (Assets::isHandleCompatible(value, asset_info))
+        {
+          const bool is_selected = asset_info == value.info();
+
+          if (ImGui::Selectable(asset_info->path().cstr(), is_selected, ImGuiSelectableFlags_None))
+          {
+            if (!is_selected)
+            {
+              assigned_info = asset_info;
+            }
+          }
+        }
+      }
+
+      ImGui::EndCombo();
+    }
 
     if (ImGui::BeginDragDropTarget())
     {
@@ -185,7 +206,7 @@ namespace bifrost::editor
 
       if (payload && payload->IsDataType("Asset.UUID"))
       {
-        const BifrostUUID* data = (const BifrostUUID*)payload->Data;
+        const BifrostUUID* data = static_cast<const BifrostUUID*>(payload->Data);
 
         assert(payload->DataSize == sizeof(BifrostUUID));
 
@@ -193,14 +214,19 @@ namespace bifrost::editor
 
         if (info && Assets::isHandleCompatible(value, info) && ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
         {
-          m_Assets->tryAssignHandle(value, info);
+          assigned_info = info;
         }
       }
 
       ImGui::EndDragDropTarget();
     }
-  }
 
+    if (assigned_info)
+    {
+      m_Assets->tryAssignHandle(value, assigned_info);
+    }
+  }
+  /*
   void ImGuiSerializer::serialize(IBaseObject& value)
   {
     meta::BaseClassMetaInfo* const type = value.type();
@@ -215,7 +241,7 @@ namespace bifrost::editor
       ImGui::Text("Inspect : IBaseObject");
     }
   }
-
+  */
   void ImGuiSerializer::popObject()
   {
     ImGui::TreePop();
@@ -238,11 +264,11 @@ namespace bifrost::editor
 
     if (obj.is_array)
     {
-      string_utils::fmt_buffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%i", obj.array_index);
+      string_utils::fmtBuffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%i", obj.array_index);
     }
     else
     {
-      string_utils::fmt_buffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%.*s", int(key.length()), key.begin());
+      string_utils::fmtBuffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%.*s", int(key.length()), key.begin());
     }
   }
 
@@ -418,6 +444,10 @@ namespace bifrost::editor
     {
       ImGui::Checkbox(label, &object.as<bool>());
     }
+    else if (object.is<BaseAssetHandle>())
+    {
+      
+    }
     else if (object.is<std::byte>())
     {
       ImGui::Text("%s : <byte>", label);
@@ -448,7 +478,7 @@ namespace bifrost::editor
               char            label_buffer[s_MaxDigitsUInt64 + 1];
               LinearAllocator label_alloc{label_buffer, sizeof(label_buffer)};
 
-              auto* const idx_label = string_utils::alloc_fmt(label_alloc, nullptr, "%i", int(i));
+              auto* const idx_label = string_utils::fmtAlloc(label_alloc, nullptr, "%i", int(i));
               auto        element   = info->arrayGetElementAt(object, i);
 
               if (inspect(idx_label, element, info->containedType()))

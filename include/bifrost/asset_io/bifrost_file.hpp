@@ -116,7 +116,8 @@ namespace bifrost
     File& read(T& data);
 
     // 'out' will be appended to so remeber to clear if beforehand if need-be
-    void readAll(String& out);
+    void  readAll(String& out);
+    char* readAll(IMemoryManager& allocator, std::size_t& out_size); // the returned buffer will be nul terminated but out_size includes that in the size.
 
     template<typename T>
     File& operator<<(const T& data)

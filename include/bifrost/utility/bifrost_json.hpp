@@ -25,13 +25,16 @@ namespace bifrost::json
 {
   class Value;
 
-  using Pair = std::pair<String, Value>;
+  using Pair    = std::pair<String, Value>;
+  using Object  = HashTable<String, Value, 16>;
+  using Array   = bifrost::Array<Value>;
+  using String  = bifrost::String;
+  using Number  = double;
+  using Boolean = bool;
 
   namespace detail
   {
-    using Object_t          = HashTable<String, Value, 16>;
-    using Array_t           = Array<Value>;
-    using Value_t           = Variant<Object_t, Array_t, String, double, bool>;
+    using Value_t           = Variant<Object, Array, String, Number, Boolean>;
     using ObjectInitializer = std::initializer_list<Pair>;
     using ArrayInitializer  = std::initializer_list<Value>;
   }  // namespace detail
@@ -94,8 +97,8 @@ namespace bifrost::json
       return Base_t::as<T>();
     }
 
-    bool isObject() const { return Base_t::is<detail::Object_t>(); }
-    bool isArray() const { return Base_t::is<detail::Array_t>(); }
+    bool isObject() const { return Base_t::is<Object>(); }
+    bool isArray() const { return Base_t::is<Array>(); }
     bool isString() const { return Base_t::is<String>(); }
     bool isNumber() const { return Base_t::is<double>(); }
     bool isBoolean() const { return Base_t::is<bool>(); }
@@ -121,7 +124,7 @@ namespace bifrost::json
 
     // Array API
 
-    Value& operator[](int index); // Must be an int as to not conflict with the 'const char* key' overload.
+    Value& operator[](int index);  // Must be an int as to not conflict with the 'const char* key' overload.
     void   push(const Value& item);
     void   insert(std::size_t index, const Value& item);
     Value& back();

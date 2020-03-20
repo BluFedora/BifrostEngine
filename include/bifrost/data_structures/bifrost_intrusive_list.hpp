@@ -136,7 +136,9 @@ namespace bifrost::intrusive
     ListIterator<T>    begin() { return ListIterator<T>(&m_Head, m_Link); }
     ListIterator<T>    end() { return ListIterator<T>(m_Head.prev, m_Link); }
     T&                 front() { return *m_Head.next; }
+    const T&           front() const { return *m_Head.next; }
     T&                 back() { return *(m_Head.prev->prev->next); }
+    const T&           back() const { return *(m_Head.prev->prev->next); }
     [[nodiscard]] bool isEmpty() const { return &m_Head == m_Head.prev; }
 
     void pushBack(T& node)
@@ -306,6 +308,11 @@ namespace bifrost
       {
         return reinterpret_cast<T*>(&data_storage);
       }
+
+      const T* cast() const
+      {
+        return reinterpret_cast<const T*>(&data_storage);
+      }
     };
 
    private:
@@ -322,7 +329,9 @@ namespace bifrost
     iterator           begin() { return iterator(m_InternalList.begin()); }
     iterator           end() { return iterator(m_InternalList.end()); }
     T&                 front() { return *m_InternalList.front().cast(); }
+    const T&           front() const { return *m_InternalList.front().cast(); }
     T&                 back() { return *m_InternalList.back().cast(); }
+    const T&           back() const { return *m_InternalList.back().cast(); }
     [[nodiscard]] bool isEmpty() const { return m_InternalList.isEmpty(); }
     IMemoryManager&    memory() const { return m_Memory; }
 
@@ -356,8 +365,18 @@ namespace bifrost
 
     iterator erase(iterator pos)
     {
-      pos->cast()->~T();
+      pos.m_Current->cast()->~T();
       return iterator(m_InternalList.erase(pos.m_Current));
+    }
+
+    void popBack()
+    {
+      erase(--end());
+    }
+
+    void popFront()
+    {
+      erase(begin());
     }
 
     void clear()

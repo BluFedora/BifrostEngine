@@ -48,6 +48,7 @@ namespace bifrost::editor
     IMemoryManager&   m_Memory;
     Array<FileEntry*> m_AllNodes;
     FileEntry*        m_Root;
+    FileEntry*        m_RenamedNode;
     bool              m_HasBeenModified;
 
    public:
@@ -55,6 +56,7 @@ namespace bifrost::editor
       m_Memory{memory},
       m_AllNodes{memory},
       m_Root{nullptr},
+      m_RenamedNode{nullptr},
       m_HasBeenModified{false}
     {
     }

@@ -47,14 +47,6 @@ namespace bifrost
   // TODO(Shareef): Remove the extra data in 'BaseAssetHandle' for non editor builds.
   // TODO(Shareef): Make is so 'AssetTagList::m_Tags' does not own the string but rather just references a string pool or something.
 
-  namespace string_utils
-  {
-    inline BifrostString fromStringview(const std::string_view source)
-    {
-      return String_newLen(source.data(), source.length());
-    }
-  }  // namespace string_utils
-
   class AssetTagList
   {
    private:
@@ -111,33 +103,26 @@ namespace bifrost
    public:
     SerializerMode mode() const { return m_Mode; }
 
-    virtual bool beginDocument(bool is_array = false)               = 0;
-    virtual bool pushObject(StringRange key)                        = 0;
-    virtual bool pushArray(StringRange key)                         = 0;
-    virtual void serialize(StringRange key, std::int8_t& value)     = 0;
-    virtual void serialize(StringRange key, std::uint8_t& value)    = 0;
-    virtual void serialize(StringRange key, std::int16_t& value)    = 0;
-    virtual void serialize(StringRange key, std::uint16_t& value)   = 0;
-    virtual void serialize(StringRange key, std::int32_t& value)    = 0;
-    virtual void serialize(StringRange key, std::uint32_t& value)   = 0;
-    virtual void serialize(StringRange key, std::int64_t& value)    = 0;
-    virtual void serialize(StringRange key, std::uint64_t& value)   = 0;
-    virtual void serialize(StringRange key, float& value)           = 0;
-    virtual void serialize(StringRange key, double& value)          = 0;
-    virtual void serialize(StringRange key, long double& value)     = 0;
-    virtual void serialize(StringRange key, Vec2f& value)           = 0;
-    virtual void serialize(StringRange key, Vec3f& value)           = 0;
+    virtual bool beginDocument(bool is_array = false)             = 0;
+    virtual bool pushObject(StringRange key)                      = 0;
+    virtual bool pushArray(StringRange key)                       = 0;
+    virtual void serialize(StringRange key, std::int8_t& value)   = 0;
+    virtual void serialize(StringRange key, std::uint8_t& value)  = 0;
+    virtual void serialize(StringRange key, std::int16_t& value)  = 0;
+    virtual void serialize(StringRange key, std::uint16_t& value) = 0;
+    virtual void serialize(StringRange key, std::int32_t& value)  = 0;
+    virtual void serialize(StringRange key, std::uint32_t& value) = 0;
+    virtual void serialize(StringRange key, std::int64_t& value)  = 0;
+    virtual void serialize(StringRange key, std::uint64_t& value) = 0;
+    virtual void serialize(StringRange key, float& value)         = 0;
+    virtual void serialize(StringRange key, double& value)        = 0;
+    virtual void serialize(StringRange key, long double& value)   = 0;
+    virtual void serialize(StringRange key, Vec2f& value);
+    virtual void serialize(StringRange key, Vec3f& value);
     virtual void serialize(StringRange key, String& value)          = 0;
-    virtual void serialize(StringRange key, BaseAssetInfo& value)   = 0;
+    virtual void serialize(StringRange key, BifrostUUID& value)     = 0;
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;
-    virtual void serialize(StringRange key, IBaseObject& value)
-    {
-      if (pushObject(key))
-      {
-        serialize(value);
-        popObject();
-      }
-    }
+    virtual void serialize(StringRange key, IBaseObject& value);
     virtual void serialize(IBaseObject& value);
     virtual void serialize(StringRange key, Any& value, meta::BaseClassMetaInfo* type_info);
     virtual void serialize(Any& value, meta::BaseClassMetaInfo* type_info);
@@ -181,7 +166,7 @@ namespace bifrost
     std::uint16_t      refCount() const { return m_RefCount; }
 
     // Implemented by AssetInfo<T, TPayload>
-    virtual void*                    payload()           = 0;
+    virtual IBaseObject*             payload()           = 0;
     virtual meta::BaseClassMetaInfo* payloadType() const = 0;
     virtual void                     destroy()           = 0;
 
@@ -225,13 +210,13 @@ namespace bifrost
     AssetInfo(const StringRange path, const BifrostUUID uuid) :
       BaseAssetInfo(path, uuid)
     {
-      // static_assert(std::is_base_of<BaseObjectT, TPayload>::value, "Only reflect-able types should be used as a payload.");
+      static_assert(std::is_base_of<BaseObjectT, TPayload>::value, "Only reflect-able types should be used as a payload.");
 
       // Force the Compiler to register the type.
       (void)s_IsRegistered;
     }
 
-    void* payload() override final
+    IBaseObject* payload() override final
     {
       return m_Payload.template is<TPayload>() ? &m_Payload.template as<TPayload>() : nullptr;
     }
@@ -250,14 +235,9 @@ namespace bifrost
     {
       (void)engine;
 
-      if constexpr (std::is_base_of_v<IBaseObject, TPayload>)
+      if (payload())
       {
-        if (payload())
-        {
-          serializer.beginDocument(false);
-          serializer.serialize(*static_cast<TPayload*>(payload()));
-          serializer.endDocument();
-        }
+        serializer.serialize(*payload());
       }
     }
   };
@@ -279,10 +259,9 @@ namespace bifrost
 
    protected:
     explicit BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info);
+    explicit BaseAssetHandle(meta::BaseClassMetaInfo* type_info) noexcept;
 
    public:
-    // NOTE(Shareef): Only Invalid 'AssetHandle's may be constructed from external sources.
-    explicit BaseAssetHandle(meta::BaseClassMetaInfo* type_info) noexcept;
     BaseAssetHandle(const BaseAssetHandle& rhs) noexcept;
     BaseAssetHandle(BaseAssetHandle&& rhs) noexcept;
     BaseAssetHandle& operator=(const BaseAssetHandle& rhs) noexcept;
@@ -292,6 +271,7 @@ namespace bifrost
     bool                     isValid() const;
     void                     release();
     BaseAssetInfo*           info() const { return m_Info; }
+    IBaseObject*             payload() const;
     meta::BaseClassMetaInfo* typeInfo() const { return m_TypeInfo; }
 
     bool operator==(const BaseAssetHandle& rhs) const { return m_Info == rhs.m_Info; }
@@ -300,8 +280,7 @@ namespace bifrost
     ~BaseAssetHandle();
 
    protected:
-    void  acquire() const;
-    void* payload() const;
+    void acquire() const;
   };
 
   //
@@ -345,83 +324,5 @@ namespace bifrost
   };
 
 }  // namespace bifrost
-
-// TODO(Shareef): Make this Another Header?
-#include "bifrost/graphics/bifrost_gfx_api.h"
-
-namespace bifrost
-{
-  namespace detail
-  {
-    void releaseGfxHandle(Engine& engine, bfGfxBaseHandle handle);
-
-    template<typename TSelf, typename T>
-    class GfxHandle : public AssetInfo<T, TSelf>
-    {
-      BIFROST_META_FRIEND;
-
-     public:
-      GfxHandle(const StringRange path, const BifrostUUID uuid) :
-        AssetInfo<T, TSelf>(path, uuid)
-      {
-      }
-
-      void unload(Engine& engine) override final
-      {
-        releaseGfxHandle(engine, *reinterpret_cast<T*>(this->payload()));
-      }
-    };
-  }  // namespace detail
-
-  // Asset Infos
-
-  class AssetTextureInfo final : public detail::GfxHandle<AssetTextureInfo, bfTextureHandle>
-  {
-    using BaseT = GfxHandle<AssetTextureInfo, bfTextureHandle>;
-
-   public:
-    using BaseT::BaseT;
-
-    bool load(Engine& engine) override;
-  };
-
-  class AssetShaderModuleInfo final : public detail::GfxHandle<AssetShaderModuleInfo, bfShaderModuleHandle>
-  {
-    using BaseT = GfxHandle<AssetShaderModuleInfo, bfShaderModuleHandle>;
-
-   public:
-    using BaseT::BaseT;
-  };
-
-  class AssetShaderProgramInfo final : public detail::GfxHandle<AssetShaderProgramInfo, bfShaderProgramHandle>
-  {
-    using BaseT = GfxHandle<AssetShaderProgramInfo, bfShaderProgramHandle>;
-
-   public:
-    using BaseT::BaseT;
-  };
-
-  // Asset Handles
-
-  using AssetTextureHandle       = AssetHandle<bfTextureHandle>;
-  using AssetShaderModuleHandle  = AssetHandle<bfShaderModuleHandle>;
-  using AssetShaderProgramHandle = AssetHandle<bfShaderProgramHandle>;
-}  // namespace bifrost
-
-#define BIFROST_META_REGISTER_GFX(n)           \
-  BIFROST_META_REGISTER(bifrost::n)            \
-  {                                            \
-    BIFROST_META_BEGIN()                       \
-      BIFROST_META_MEMBERS(                    \
-       meta::class_info<n>(#n),                \
-       meta::ctor<StringRange, BifrostUUID>()) \
-    BIFROST_META_END()                         \
-  }
-
-BIFROST_META_REGISTER_GFX(AssetTextureInfo)
-BIFROST_META_REGISTER_GFX(AssetShaderModuleInfo)
-BIFROST_META_REGISTER_GFX(AssetShaderProgramInfo)
-
-#undef BIFROST_META_REGISTER_GFX
 
 #endif /* BIFROST_ASSET_HANDLE_HPP */

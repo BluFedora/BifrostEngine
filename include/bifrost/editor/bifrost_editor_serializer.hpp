@@ -57,9 +57,9 @@ namespace bifrost::editor
     void serialize(StringRange key, Vec2f& value) override;
     void serialize(StringRange key, Vec3f& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, BaseAssetInfo& value) override;
+    void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
-    void serialize(IBaseObject& value) override;
+    using ISerializer::serialize;
     void popObject() override;
     void popArray() override;
     void endDocument() override;

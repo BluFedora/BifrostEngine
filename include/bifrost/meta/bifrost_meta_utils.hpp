@@ -37,10 +37,6 @@ namespace bifrost::meta
   template<typename Tuple, typename F, std::size_t... Indices>
   constexpr void for_each_impl(Tuple&& tuple, F&& f, std::index_sequence<Indices...>)
   {
-    //using swallow = int[];
-    //(void)swallow{1,
-    //              (f(std::get<Indices>(std::forward<Tuple>(tuple))), void(), int{})...};
-
     (f(std::get<Indices>(tuple)), ...);
   }
 
@@ -104,6 +100,7 @@ namespace bifrost::meta
       {
         func(type_holder<T>());
         func(type_holder<T*>());
+        func(type_holder<const T*>());
         for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
       }
     };
@@ -117,6 +114,7 @@ namespace bifrost::meta
       {
         func(type_holder<T>());
         func(type_holder<T*>());
+        func(type_holder<const T*>());
       }
     };
 
@@ -143,7 +141,7 @@ namespace bifrost::meta
 
   // Same as 'for_each_template' but adds the T* version.
   template<typename... Args, typename F>
-  void for_each_template_and_pointer(F&& func)
+  void for_each_template_and_pointer_and_const(F&& func)
   {
     detail::for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
   }

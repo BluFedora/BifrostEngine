@@ -196,6 +196,11 @@ namespace bifrost
       return ::String_length(m_Handle);
     }
 
+    [[nodiscard]] std::size_t isEmpty() const
+    {
+      return !m_Handle || length() == 0u;
+    }
+
     [[nodiscard]] std::size_t size() const
     {
       return length();
@@ -280,7 +285,7 @@ namespace bifrost
       }
     }
 
-    void unescape() // const
+    void unescape()  // const
     {
       String_unescape(m_Handle);
     }
@@ -329,7 +334,7 @@ namespace bifrost
 
   inline String operator+(const StringRange& lhs, const String& rhs)
   {
-    String result = {lhs.begin(), lhs.end()};
+    String result = lhs;
     result.append(rhs);
     return result;
   }
@@ -365,12 +370,16 @@ namespace bifrost::string_utils
     }
   };
 
-  // NOTE(Shareef):
-  //   The caller is responsible for freeing any memory this allocates.
-  //   Use 'IMemoryManager::deallcoate' or 'alloc_fmt_free'
-  char* alloc_fmt(IMemoryManager& allocator, std::size_t* out, const char* fmt, ...);
-  void  free_fmt(IMemoryManager& allocator, char* ptr);
-  char* fmt_buffer(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, ...);
+  // String Formatting Functions //
+
+  // The caller is responsible for freeing any memory this allocates.
+  // Use 'fmtFree' to deallocate memory.
+  char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...);
+  // Deallocates memory from 'fmtAlloc'
+  void fmtFree(IMemoryManager& allocator, char* ptr);
+  // Uses the passed in buffer for the formatting.
+  // Returns if the buffer was big enough.
+  bool fmtBuffer(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, ...);
 }  // namespace bifrost::string_utils
 
 #endif /* BIFROST_STRING_HPP */

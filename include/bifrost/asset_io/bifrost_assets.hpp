@@ -45,8 +45,8 @@ namespace bifrost
    * @brief
    *  Basic abstraction over a path.
    *
-   *  Glorified string utilities with some extra utilities to
-   *  make working with paths cross-platform and less painful.
+   *  Glorified string utilities with some extras to make
+   *  working with paths cross-platform and less painful.
    */
   namespace path
   {
@@ -56,6 +56,8 @@ namespace bifrost
 
     bool            doesExist(const char* path);
     bool            createDirectory(const char* path);
+    bool            renameDirectory(const char* full_path, const char* new_name);  // ex: renameDirectory("C:/my/path", "new_path_name") => "C:/my/new_path_name
+    bool            moveDirectory(const char* dst_path, const char* src_path);     // ex: moveDirectory("C:/my/path", "C:/some/folder") => "C:/my/path/folder"
     bool            deleteDirectory(const char* path);
     DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path);
     bool            isDirectory(const DirectoryEntry* entry);
@@ -98,7 +100,8 @@ namespace bifrost
   class Assets final : public bfNonCopyMoveable<Assets>
   {
    public:
-    inline static const char META_PATH_NAME[] = "_meta";
+    inline static const char META_PATH_NAME[]      = "_meta";
+    inline static const char META_FILE_EXTENSION[] = ".meta";
 
    public:
     static bool isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info);
@@ -115,10 +118,10 @@ namespace bifrost
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
     template<typename T>
-    BifrostUUID indexAsset(StringRange relative_path, StringRange meta_file_name)
+    BifrostUUID indexAsset(StringRange relative_path)  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
     {
       bool              create_new;
-      const BifrostUUID uuid = indexAssetImpl(relative_path, meta_file_name, create_new, meta::TypeInfo<T>::get());
+      const BifrostUUID uuid = indexAssetImpl(relative_path, create_new, meta::TypeInfo<T>::get());
 
       if (create_new)
       {
@@ -129,12 +132,14 @@ namespace bifrost
       return uuid;
     }
 
-    BaseAssetInfo* findAssetInfo(const BifrostUUID& uuid);
-    bool           tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const;
-    String         fullPath(const BaseAssetInfo& info) const;
-    void           loadMeta(StringRange meta_file_name);
-    AssetError     setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
-    void           setRootPath(std::nullptr_t);
+    BaseAssetInfo*  findAssetInfo(const BifrostUUID& uuid);
+    bool            tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const;
+    BaseAssetHandle makeHandle(BaseAssetInfo& info) const;
+    String          fullPath(const BaseAssetInfo& info) const;
+    char*           metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
+    void            loadMeta(StringRange meta_file_name);
+    AssetError      setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
+    void            setRootPath(std::nullptr_t);
 
     ~Assets();
 
@@ -142,7 +147,7 @@ namespace bifrost
     detail::AssetMap& assetMap() { return m_AssetMap; }
 
    private:
-    BifrostUUID indexAssetImpl(StringRange path, StringRange meta_file_name, bool& create_new, meta::BaseClassMetaInfo* type_info);  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
+    BifrostUUID indexAssetImpl(StringRange relative_path, bool& create_new, meta::BaseClassMetaInfo* type_info);
   };
 }  // namespace bifrost
 
