@@ -240,7 +240,7 @@ namespace bifrost::meta
     {
       //
       // NOTE(Shareef):
-      //   Since this is a static variable. for a templated function.
+      //   Since this is a static variable for a templated function:
       //   Pointer Comparisons still work for type checking since each insatciation of this
       //   function gives a different address.
       //   Also the name "___NoTypeInfo___" is not registered to the global map
@@ -269,7 +269,7 @@ namespace bifrost::meta
 #undef TYPE_INFO_SPEC
 
         for_each(meta::membersOf<T>(), [](const auto& member) {
-          if constexpr (meta::is_class_v<decltype(member)>)
+          if constexpr (meta::is_class_v<decltype(member)> || meta::is_enum_v<decltype(member)>)
           {
             if (!s_Info)
             {
@@ -388,6 +388,11 @@ namespace bifrost::meta
         {
           m_BaseClasses.push(TypeInfo<base_type>::get());
         }
+      }
+
+      if constexpr (meta::is_enum_v<MemberT>)
+      {
+        m_IsEnum = true;
       }
 
       if constexpr (meta::is_ctor_v<MemberT>)

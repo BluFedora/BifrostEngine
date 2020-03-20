@@ -24,6 +24,7 @@ namespace bifrost::editor
   ImGuiSerializer::ImGuiSerializer(IMemoryManager& memory) :
     ISerializer(SerializerMode::INSPECTING),
     m_IsOpenStack{memory},
+    m_HasChangedStack{memory},
     m_NameBuffer{'\0'},
     m_Assets{nullptr}
   {
@@ -34,6 +35,7 @@ namespace bifrost::editor
     auto& obj    = m_IsOpenStack.emplace();
     obj.is_array = is_array;
 
+    beginChangeCheck();
     return true;
   }
 
@@ -51,7 +53,7 @@ namespace bifrost::editor
     return is_open;
   }
 
-  bool ImGuiSerializer::pushArray(StringRange key)
+  bool ImGuiSerializer::pushArray(StringRange key, std::size_t& size)
   {
     setNameBuffer(key);
     const bool is_open = ImGui::TreeNode(m_NameBuffer);
@@ -63,67 +65,68 @@ namespace bifrost::editor
       obj.array_index = 0;
     }
 
+    size = 0;
     return is_open;
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int8_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S8, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S8, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint8_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U8, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U8, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int16_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S16, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S16, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint16_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U16, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U16, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int32_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S32, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S32, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint32_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U32, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U32, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int64_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S64, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S64, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint64_t& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U64, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U64, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, float& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Float, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Float, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, double& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, long double& value)
@@ -131,32 +134,32 @@ namespace bifrost::editor
     double value_d = double(value);
 
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed);
     value = value_d;
   }
 
   void ImGuiSerializer::serialize(StringRange key, Vec2f& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, Vec3f& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
   }
 
   void ImGuiSerializer::serialize(StringRange key, String& value)
   {
     setNameBuffer(key);
-    imgui_ext::inspect(m_NameBuffer, value);
+    hasChangedTop() |= imgui_ext::inspect(m_NameBuffer, value);
   }
 
   void ImGuiSerializer::serialize(StringRange key, BifrostUUID& value)
   {
     setNameBuffer(key);
-    ImGui::InputText(m_NameBuffer, value.as_string, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
+    hasChangedTop() |= ImGui::InputText(m_NameBuffer, value.as_string, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
   }
 
   void ImGuiSerializer::serialize(StringRange key, BaseAssetHandle& value)
@@ -168,7 +171,7 @@ namespace bifrost::editor
       if (ImGui::Button("clear"))
       {
         value.release();
-        // has_changed      = true;
+        hasChangedTop() |= true;
       }
 
       ImGui::SameLine();
@@ -223,25 +226,60 @@ namespace bifrost::editor
 
     if (assigned_info)
     {
-      m_Assets->tryAssignHandle(value, assigned_info);
+      if (m_Assets->tryAssignHandle(value, assigned_info))
+      {
+        hasChangedTop() |= true;
+      }
     }
   }
-  /*
-  void ImGuiSerializer::serialize(IBaseObject& value)
-  {
-    meta::BaseClassMetaInfo* const type = value.type();
 
-    if (type)
+  void ImGuiSerializer::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
+  {
+    setNameBuffer(key);
+
+    const std::uint64_t mask           = type_info->enumValueMask();
+    const std::uint64_t original_value = enum_value & mask;
+    std::uint64_t       new_value      = original_value;
+    const char*         preview_name   = nullptr;
+
+    for (const auto& props : type_info->properties())
     {
-      Any obj = &value;
-      imgui_ext::inspect(m_NameBuffer, obj, type);
+      if ((props->get(&enum_value).as<std::uint64_t>() & mask) == original_value)
+      {
+        preview_name = props->name().data();
+        break;
+      }
     }
-    else
+
+    if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_None))
     {
-      ImGui::Text("Inspect : IBaseObject");
+      for (const auto& props : type_info->properties())
+      {
+        const std::uint64_t value       = props->get(&enum_value).as<std::uint64_t>() & mask;
+        const bool          is_selected = value == original_value;
+
+        if (ImGui::Selectable(props->name().data(), is_selected, ImGuiSelectableFlags_None))
+        {
+          if (!is_selected)
+          {
+            new_value = value;
+          }
+        }
+      }
+
+      ImGui::EndCombo();
+    }
+
+    const bool has_changed = original_value != new_value;
+
+    hasChangedTop() |= has_changed;
+
+    if (has_changed)
+    {
+      type_info->enumValueWrite(enum_value, new_value);
     }
   }
-  */
+
   void ImGuiSerializer::popObject()
   {
     ImGui::TreePop();
@@ -255,7 +293,20 @@ namespace bifrost::editor
 
   void ImGuiSerializer::endDocument()
   {
+    endChangedCheck();
     m_IsOpenStack.pop();
+  }
+
+  void ImGuiSerializer::beginChangeCheck()
+  {
+    m_HasChangedStack.emplace(false);
+  }
+
+  bool ImGuiSerializer::endChangedCheck()
+  {
+    const bool result = m_HasChangedStack.back();
+    m_HasChangedStack.pop();
+    return result;
   }
 
   void ImGuiSerializer::setNameBuffer(StringRange key)
@@ -446,7 +497,6 @@ namespace bifrost::editor
     }
     else if (object.is<BaseAssetHandle>())
     {
-      
     }
     else if (object.is<std::byte>())
     {

@@ -124,11 +124,12 @@ namespace bifrost::json
 
     // Array API
 
-    Value& operator[](int index);  // Must be an int as to not conflict with the 'const char* key' overload.
-    void   push(const Value& item);
-    void   insert(std::size_t index, const Value& item);
-    Value& back();
-    void   pop();
+    Value&      operator[](int index);  // Must be an int as to not conflict with the 'const char* key' overload.
+    std::size_t size() const;
+    void        push(const Value& item);
+    void        insert(std::size_t index, const Value& item);
+    Value&      back();
+    void        pop();
 
     // Special Operations
 

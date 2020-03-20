@@ -4,6 +4,7 @@
 // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 
 #include "bifrost/data_structures/bifrost_string.hpp" /* String, StringRange */
+#include "bifrost/memory/bifrost_imemory_manager.hpp" /* TenpBuffer          */
 #include <algorithm>                                  /* reverse             */
 #include <fstream>                                    /* fstream, ios        */
 
@@ -89,6 +90,7 @@ namespace bifrost
     void            close();
 
     // Binary API (Endian Independent as Long as You Use this class for both reading and writing) //
+
     File& writeBytes(const char* bytes, std::streamsize size);
     File& writeInt8(std::int8_t value);
     File& writeInt16(std::int16_t value);
@@ -112,12 +114,21 @@ namespace bifrost
     // Templated (Binary) API //
     template<typename T>
     File& write(const T& data);
+    File& write(const String& data);
     template<typename T>
     File& read(T& data);
 
-    // 'out' will be appended to so remeber to clear if beforehand if need-be
-    void  readAll(String& out);
-    char* readAll(IMemoryManager& allocator, std::size_t& out_size); // the returned buffer will be nul terminated but out_size includes that in the size.
+    // Read All API //
+
+    // 'out' will be appended to so remember to clear if beforehand if need-be
+    void readAll(String& out);
+
+    // the returned buffer will be nul terminated but out_size includes that in the size.
+    // Remember to free the buffer.
+    char* readAll(IMemoryManager& allocator, std::size_t& out_size);
+
+    // Same as the above overload except destructors handle freeing.
+    TempBuffer readAll(IMemoryManager& allocator);
 
     template<typename T>
     File& operator<<(const T& data)

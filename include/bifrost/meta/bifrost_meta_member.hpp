@@ -24,10 +24,9 @@ namespace bifrost::meta
   class ClassInfo final : public BaseMember
   {
    public:
-    using type      = Class;
-    using type_base = Base;
-    using class_t   = Class;
-    // using member_ptr                         = Class;
+    using type                        = Class;
+    using type_base                   = Base;
+    using class_t                     = Class;
     static constexpr bool is_writable = true;
     using is_function                 = std::bool_constant<false>;
     static constexpr bool is_readable = false;
@@ -54,6 +53,71 @@ namespace bifrost::meta
     [[nodiscard]] std::size_t alignment() const { return m_Alignment; }
   };
 
+  template<typename Class>
+  class EnumInfo final : public BaseMember
+  {
+   public:
+    using type                        = Class;
+    using type_base                   = type;
+    using class_t                     = Class;
+    static constexpr bool is_writable = true;
+    using is_function                 = std::bool_constant<false>;
+    static constexpr bool is_readable = false;
+    static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
+    static constexpr bool is_field    = false;
+    static constexpr bool is_property = false;
+    static constexpr bool is_pointer  = false;
+    static constexpr bool is_enum     = true;
+
+   public:
+    explicit EnumInfo(const char* name) :
+      BaseMember{name}
+    {
+    }
+  };
+
+  template<typename Class>
+  class EnumElement final : public BaseMember
+  {
+  public:
+    using type                        = Class;
+    using type_base                   = type;
+    using class_t                     = Class;
+    static constexpr bool is_writable = true;
+    using is_function                 = std::bool_constant<false>;
+    static constexpr bool is_readable = true;
+    static constexpr bool is_class    = false;
+    static constexpr bool is_ctor     = false;
+    static constexpr bool is_field    = false;
+    static constexpr bool is_property = true;
+    static constexpr bool is_pointer  = false;
+    static constexpr bool is_enum     = true;
+
+  private:
+    std::size_t m_Value;
+
+  public:
+    explicit EnumElement(const char* name, std::size_t value) :
+      BaseMember{name},
+      m_Value{value}
+    {
+    }
+
+    std::size_t value() const { return m_Value; }
+
+    type get(const Class& obj) const
+    {
+      (void)obj;
+      return (type)value();
+    }
+
+    void set(Class& obj, const type& value) const
+    {
+      obj = value;
+    }
+  };
+
   template<typename... Args>
   class CtorInfo final
   {
@@ -71,7 +135,7 @@ namespace bifrost::meta
     static constexpr bool is_enum     = false;
   };
 
-  template<typename Class, typename PropertyT, bool read_only>
+  template<typename Class, typename PropertyT, typename CastToT, bool read_only>
   class RawMember final : public BaseMember
   {
    public:
@@ -91,7 +155,7 @@ namespace bifrost::meta
     static constexpr bool is_value    = false;
 
    private:
-    member_ptr     m_Pointer;
+    member_ptr m_Pointer;
 
    public:
     explicit RawMember(const char* name, member_ptr ptr) :
@@ -106,21 +170,21 @@ namespace bifrost::meta
     //   are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
 
-    [[nodiscard]] PropertyT& get(Class& obj) const
+    [[nodiscard]] CastToT& get(Class& obj) const
     {
       return obj.*m_Pointer;
     }
 
-    [[nodiscard]] PropertyT& rGet(Class& obj) const
+    [[nodiscard]] CastToT& rGet(Class& obj) const
     {
       return obj.*m_Pointer;
     }
 
-    void set(Class& obj, const type& value) const
+    void set(Class& obj, const CastToT& value) const
     {
       if constexpr (!read_only)
       {
-        (obj.*m_Pointer) = value;
+        (obj.*m_Pointer) = static_cast<const PropertyT&>(value);
       }
     }
   };
@@ -363,7 +427,13 @@ namespace bifrost::meta
   template<bool is_readonly = false, typename Clz, typename T>
   decltype(auto) field(const char* name, T Clz::*ptr)
   {
-    return RawMember<Clz, T, is_readonly>(name, ptr);
+    return RawMember<Clz, T, T, is_readonly>(name, ptr);
+  }
+
+  template<typename TBase, bool is_readonly = false, typename Clz, typename T>
+  decltype(auto) field(const char* name, T Clz::*ptr)
+  {
+    return RawMember<Clz, T, TBase, is_readonly>(name, ptr);
   }
 
   template<typename Clz, typename T>
@@ -394,6 +464,19 @@ namespace bifrost::meta
   decltype(auto) function(const char* name, R (Clz::*fn)(Args...) const)
   {
     return FnCMember<Clz, R, Args...>(name, fn);
+  }
+
+  template<typename Enum>
+  decltype(auto) enum_info(const char* name)
+  {
+    return EnumInfo<Enum>(name);
+  }
+
+  template<typename Enum>
+  decltype(auto) enum_element(const char* name, const Enum& value)
+  {
+    static_assert(std::is_enum_v<Enum>, "Value must be an enum value.");
+    return EnumElement<Enum>(name, std::size_t(value));
   }
 
   class Meta final
@@ -438,6 +521,9 @@ namespace bifrost::meta
 
   template<typename MemberT>
   static constexpr bool is_class_v = std::decay_t<MemberT>::is_class;
+
+  template<typename MemberT>
+  static constexpr bool is_enum_v = std::decay_t<MemberT>::is_enum;
 
   template<typename MemberT>
   static constexpr bool is_ctor_v = std::decay_t<MemberT>::is_ctor;

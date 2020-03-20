@@ -20,6 +20,42 @@ namespace bifrost::json
 {
   static CAllocator s_ArrayAllocator = {};
 
+  static Value** readStorage(bfJsonParserContext* ctx)
+  {
+    return static_cast<Value**>(bfJsonParser_userStorage(ctx));
+  }
+
+  static Value* readStorageValue(bfJsonParserContext* ctx)
+  {
+    return *readStorage(ctx);
+  }
+
+  static Value* readParentStorageValue(bfJsonParserContext* ctx)
+  {
+    return *static_cast<Value**>(bfJsonParser_parentUserStorage(ctx));
+  }
+
+  static Value* makeChildItem(Value& parent, const StringRange& key)
+  {
+    if (parent.isObject())
+    {
+      return &parent[key];
+    }
+
+    if (parent.isArray())
+    {
+      parent.push(Value());
+      return &parent.back();
+    }
+
+    return nullptr;
+  }
+
+  static void writeStorage(bfJsonParserContext* ctx, Value* value)
+  {
+    *readStorage(ctx) = value;
+  }
+
   Value fromString(char* source, std::size_t source_length)
   {
     struct Context final
@@ -36,47 +72,36 @@ namespace bifrost::json
 
        switch (event)
        {
-         case BIFROST_JSON_EVENT_END_DOCUMENT:
+         case BIFROST_JSON_EVENT_BEGIN_DOCUMENT:
          {
-           Value* document_data = static_cast<Value*>(bfJsonParser_userStorage(ctx));
-
-           user_context->document = *document_data;
-
-           document_data->~Value();
+           writeStorage(ctx, nullptr);
            break;
          }
-         case BIFROST_JSON_EVENT_BEGIN_DOCUMENT:
+         case BIFROST_JSON_EVENT_END_DOCUMENT:
+         {
+           break;
+         }
          case BIFROST_JSON_EVENT_BEGIN_ARRAY:
          case BIFROST_JSON_EVENT_BEGIN_OBJECT:
          {
-           Value* value_data = new (bfJsonParser_userStorage(ctx)) Value();
+           Value* const parent_value  = readParentStorageValue(ctx);
+           Value* const current_value = parent_value == nullptr ? &user_context->document : makeChildItem(*parent_value, user_context->last_key);
 
            if (event == BIFROST_JSON_EVENT_BEGIN_ARRAY)
            {
-             value_data->set<Array>(s_ArrayAllocator);
+             current_value->set<Array>(s_ArrayAllocator);
            }
            else
            {
-             value_data->set<Object>();
+             current_value->set<Object>();
            }
+
+           writeStorage(ctx, current_value);
            break;
          }
          case BIFROST_JSON_EVENT_END_ARRAY:
          case BIFROST_JSON_EVENT_END_OBJECT:
          {
-           Value* parent_value = static_cast<Value*>(bfJsonParser_parentUserStorage(ctx));
-           Value* array_data   = static_cast<Value*>(bfJsonParser_userStorage(ctx));
-
-           if (parent_value->isObject())
-           {
-             (*parent_value)[user_context->last_key] = *array_data;
-           }
-           else
-           {
-             parent_value->push(*array_data);
-           }
-
-           array_data->~Value();
            break;
          }
          case BIFROST_JSON_EVENT_KEY:
@@ -86,7 +111,14 @@ namespace bifrost::json
          }
          case BIFROST_JSON_EVENT_VALUE:
          {
-           Value& value_data = *static_cast<Value*>(bfJsonParser_userStorage(ctx));
+           Value* current_value = readStorageValue(ctx);
+
+           if (!current_value)
+           {
+             current_value = &user_context->document;
+           }
+
+           Value& value_data = *current_value;
 
            switch (bfJsonParser_valueType(ctx))
            {
@@ -311,6 +343,16 @@ namespace bifrost::json
   Value& Value::operator[](int index)
   {
     return cast<Array>(s_ArrayAllocator)[index];
+  }
+
+  std::size_t Value::size() const
+  {
+    if (isArray())
+    {
+      return as<Array>().size();
+    }
+
+    return 0u;
   }
 
   void Value::push(const Value& item)

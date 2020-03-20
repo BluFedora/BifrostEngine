@@ -126,27 +126,22 @@ namespace bifrost
 
     if (!is_primitive)
     {
-      bool is_open;
-      if (type_info->isArray())
+      if (type_info->isEnum())
       {
-        is_open = pushArray(key);
+        auto& v = *value.as<std::uint64_t*>();
+        serialize(key, v, type_info);
       }
       else
       {
-        is_open = pushObject(key);
-      }
+        std::size_t array_size;
+        const bool  is_array = type_info->isArray();
+        const bool  is_open  = is_array ? pushArray(key, array_size) : pushObject(key);
 
-      if (is_open)
-      {
-        serialize(value, type_info);
+        if (is_open)
+        {
+          serialize(value, type_info);
 
-        if (type_info->isArray())
-        {
-          popArray();
-        }
-        else
-        {
-          popObject();
+          is_array ? popArray() : popObject();
         }
       }
     }
@@ -252,8 +247,7 @@ namespace bifrost
     {
       if (--m_Info->m_RefCount == 0)
       {
-        m_Info->unload(*m_Engine);
-        m_Info->destroy();
+        m_Info->unload();
       }
 
       m_Engine = nullptr;
@@ -266,7 +260,7 @@ namespace bifrost
     release();
   }
 
-  void BaseAssetHandle::acquire() const
+  void BaseAssetHandle::acquire()
   {
     if (m_Info)
     {
@@ -274,9 +268,9 @@ namespace bifrost
       {
         if (!m_Info->load(*m_Engine))
         {
-          // TODO(Shareef): Handle this better.
-          //   Failed to load asset.
-          __debugbreak();
+          m_Engine = nullptr;
+          m_Info   = nullptr;
+          return;
         }
       }
 
@@ -293,6 +287,7 @@ namespace bifrost
   {
     const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
 
+    bfGfxDevice_flush(device);
     bfGfxDevice_release(device, handle);
   }
 
@@ -314,6 +309,33 @@ namespace bifrost
     return bfTexture_loadFile(texture.m_Handle, full_path.cstr());
   }
 
+  ShaderModule::ShaderModule(bfGfxDeviceHandle device) :
+    BaseT(device)
+  {
+  }
+
+  bool AssetShaderModuleInfo::load(Engine& engine)
+  {
+    const bfGfxDeviceHandle device        = bfGfxContext_device(engine.renderer().context());
+    ShaderModule&           shader_module = m_Payload.set<ShaderModule>(device);
+
+    shader_module.m_Handle = bfGfxDevice_newShaderModule(device, m_Type);
+
+    return true;
+  }
+
+  void AssetShaderModuleInfo::serialize(Engine& engine, ISerializer& serializer)
+  {
+    serializer.serializeT("m_Type", &m_Type);
+  }
+
+  ShaderProgram::ShaderProgram(bfGfxDeviceHandle device) :
+    BaseT(device),
+    m_VertexShader{nullptr},
+    m_FragmentShader{nullptr}
+  {
+  }
+
   bool AssetShaderProgramInfo::load(Engine& engine)
   {
     const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
@@ -326,19 +348,12 @@ namespace bifrost
 
     if (file)
     {
-      String json_str;
-
-      char              alloc_buffer1[1024];
-      char              alloc_buffer2[1024 * 8];
-      LinearAllocator   alloc1{alloc_buffer1, sizeof(alloc_buffer1)};
-      FreeListAllocator alloc2{alloc_buffer2, sizeof(alloc_buffer2)};
-
       std::size_t buffer_size;
-      char*       buffer = file.readAll(alloc1, buffer_size);
+      char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
 
       json::Value json_value = json::fromString(buffer, buffer_size - 1);
 
-      JsonSerializerReader reader{engine.assets(), alloc2, json_value};
+      JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
 
       ISerializer& serializer = reader;
 
@@ -349,6 +364,14 @@ namespace bifrost
       file.close();
     }
 
+    return true;
+  }
+
+  bool AssetShaderProgramInfo::save(Engine& engine, ISerializer& serializer)
+  {
+    (void)engine;
+
+    serializer.serialize(*payload());
     return true;
   }
 }  // namespace bifrost

@@ -27,6 +27,11 @@ class BifrostEngine;
 
 namespace bifrost
 {
+  namespace json
+  {
+    class Value;
+  }
+
   using Engine = ::BifrostEngine;
 
   class BaseAssetInfo;
@@ -107,12 +112,13 @@ namespace bifrost
     static bool isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info);
 
    private:
-    Engine&          m_Engine;      //!< The engine this asset system is attached to.
-    IMemoryManager&  m_Memory;      //!< Where to grab memory for the asset info.
-    PathToUUIDTable  m_NameToGUID;  //!< Allows loading assets from path rather than having to know the UUID.
-    detail::AssetMap m_AssetMap;    //!< Owns the memory for the associated 'BaseAssetHandle*'.
-    BifrostString    m_RootPath;    //!< Base Path that all assets are relative to.
-    String           m_MetaPath;    //!< Path that all assets meta files located in.
+    Engine&                m_Engine;          //!< The engine this asset system is attached to.
+    IMemoryManager&        m_Memory;          //!< Where to grab memory for the asset info.
+    PathToUUIDTable        m_NameToGUID;      //!< Allows loading assets from path rather than having to know the UUID.
+    detail::AssetMap       m_AssetMap;        //!< Owns the memory for the associated 'BaseAssetHandle*'.
+    BifrostString          m_RootPath;        //!< Base Path that all assets are relative to.
+    String                 m_MetaPath;        //!< Path that all assets meta files located in.
+    Array<BaseAssetHandle> m_DirtyAssetList;  //!< Assets that have unsaved modifications.
 
    public:
     explicit Assets(Engine& engine, IMemoryManager& memory);
@@ -120,13 +126,16 @@ namespace bifrost
     template<typename T>
     BifrostUUID indexAsset(StringRange relative_path)  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
     {
+      auto* const       type_info = meta::TypeInfo<T>::get();
       bool              create_new;
-      const BifrostUUID uuid = indexAssetImpl(relative_path, create_new, meta::TypeInfo<T>::get());
+      const BifrostUUID uuid = indexAssetImpl(relative_path, create_new, type_info);
 
       if (create_new)
       {
         T* const asset_handle = m_Memory.allocateT<T>(relative_path, uuid);
         m_AssetMap.emplace(uuid, asset_handle);
+        asset_handle->m_TypeInfo = type_info;
+        markDirty(makeHandle(*asset_handle));
       }
 
       return uuid;
@@ -137,9 +146,13 @@ namespace bifrost
     BaseAssetHandle makeHandle(BaseAssetInfo& info) const;
     String          fullPath(const BaseAssetInfo& info) const;
     char*           metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
+    TempBuffer      metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const;
     void            loadMeta(StringRange meta_file_name);
     AssetError      setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
     void            setRootPath(std::nullptr_t);
+    void            markDirty(const BaseAssetHandle& asset);
+    bool            writeJsonToFile(const StringRange& path, const json::Value& value) const;
+    void            saveAssets();
 
     ~Assets();
 

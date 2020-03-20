@@ -51,13 +51,6 @@ namespace bifrost::meta
     m_Parameters.resize(arity);
   }
 
-  BaseEnumMetaInfo::BaseEnumMetaInfo(std::string_view name, std::size_t num_values) :
-    BaseMetaInfo(name),
-    m_Elements{gRttiMemory()}
-  {
-    m_Elements.resize(num_values);
-  }
-
   BaseClassMetaInfo::BaseClassMetaInfo(std::string_view name, std::size_t size, std::size_t alignment) :
     BaseMetaInfo{name},
     m_BaseClasses{gRttiMemory()},
@@ -67,7 +60,8 @@ namespace bifrost::meta
     m_Size{size},
     m_Alignment{alignment},
     m_IsArray{false},
-    m_IsMap{false}
+    m_IsMap{false},
+    m_IsEnum{false}
   {
   }
 
@@ -95,6 +89,53 @@ namespace bifrost::meta
     }
 
     return nullptr;
+  }
+
+  std::uint64_t BaseClassMetaInfo::enumValueMask() const
+  {
+    std::uint64_t mask;
+
+    switch (size())
+    {
+    case 1:
+      mask = 0xFF;
+      break;
+    case 2:
+      mask = 0xFFFF;
+      break;
+    case 4:
+      mask = 0xFFFFFFFF;
+      break;
+    case 8:
+      mask = 0xFFFFFFFFFFFFFFFF;
+      break;
+    default:
+      mask = 0x0;
+      break;
+    }
+
+    return mask;
+  }
+
+  void BaseClassMetaInfo::enumValueWrite(std::uint64_t& enum_object, std::uint64_t new_value) const
+  {
+    switch (size())
+    {
+    case 1:
+      *reinterpret_cast<std::uint8_t*>(&enum_object) = std::uint8_t(new_value);
+      break;
+    case 2:
+      *reinterpret_cast<std::uint16_t*>(&enum_object) = std::uint16_t(new_value);
+      break;
+    case 4:
+      *reinterpret_cast<std::uint32_t*>(&enum_object) = std::uint32_t(new_value);
+      break;
+    case 8:
+      *reinterpret_cast<std::uint64_t*>(&enum_object) = std::uint64_t(new_value);
+      break;
+    default:
+      break;
+    }
   }
 
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name)

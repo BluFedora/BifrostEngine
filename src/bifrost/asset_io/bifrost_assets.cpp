@@ -14,10 +14,11 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"   //
-#include "bifrost/asset_io/bifrost_file.hpp"           // File
-#include "bifrost/asset_io/bifrost_json_parser.hpp"    //
-#include "bifrost/asset_io/bifrost_json_value.hpp"     // JsonValue
+#include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
+#include "bifrost/asset_io/bifrost_file.hpp"             // File
+#include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
+#include "bifrost/asset_io/bifrost_json_value.hpp"       // JsonValue
+
 #include "bifrost/memory/bifrost_linear_allocator.hpp" /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"       //
 #include "bifrost/platform/bifrost_platform.h"         //
@@ -30,6 +31,8 @@
 #else
 #include <dirent.h>
 #endif
+
+#include "bifrost/core/bifrost_engine.hpp"  // THIS HAS AN GLFW HEADER WHICH FUCKS WITH WINDOWS.h
 
 namespace bifrost
 {
@@ -171,7 +174,8 @@ namespace bifrost
     m_NameToGUID{},
     m_AssetMap{},
     m_RootPath{nullptr},
-    m_MetaPath{}
+    m_MetaPath{},
+    m_DirtyAssetList{memory}
   {
   }
 
@@ -191,33 +195,7 @@ namespace bifrost
       }
     }
 
-    BifrostUUID     uuid = bfUUID_generate();
-    char            meta_path_buffer[path::MAX_LENGTH];
-    char            path_buffer[path::MAX_LENGTH];
-    LinearAllocator alloc_meta_path{meta_path_buffer, sizeof(meta_path_buffer)};
-    LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
-    std::size_t     meta_file_name_length = 0;
-    char*           meta_file_name        = metaFileName(alloc_meta_path, relative_path, meta_file_name_length);
-
-    // TODO(Shareef): Make this a helper function.
-    string_utils::fmtAlloc(alloc_path, nullptr, "%s/%s/%s", m_RootPath, META_PATH_NAME, meta_file_name);
-
-    const JsonValue json = JsonValue{
-     std::pair{std::string("Path"), std::string(relative_path.bgn, relative_path.end())},
-     std::pair{std::string("UUID"), std::string(uuid.as_string)},
-     std::pair{std::string("Type"), std::string(type_info->name())},
-    };
-
-    std::string json_str;
-    json.toString(json_str, true, 4);
-
-    File project_file{path_buffer, file::FILE_MODE_WRITE};
-
-    if (project_file)
-    {
-      project_file.writeBytes(json_str.c_str(), json_str.length());
-      project_file.close();
-    }
+    const BifrostUUID uuid = bfUUID_generate();
 
     m_NameToGUID.emplace(relative_path, uuid);
 
@@ -277,39 +255,62 @@ namespace bifrost
     return buffer;
   }
 
+  TempBuffer Assets::metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const
+  {
+    std::size_t buffer_size;
+    char*       buffer = string_utils::fmtAlloc(allocator, &buffer_size, "%s/%s/%.*s", String_cstr(m_RootPath), META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
+
+    return {allocator, buffer, buffer_size};
+  }
+
   void Assets::loadMeta(StringRange meta_file_name)
   {
-    char            path_buffer[path::MAX_LENGTH];
-    LinearAllocator alloc_path{path_buffer, sizeof(path_buffer)};
+    char             path_buffer[path::MAX_LENGTH];
+    LinearAllocator  alloc_path{path_buffer, sizeof(path_buffer)};
+    NoFreeAllocator  alloc_path_adapter{alloc_path};
+    const TempBuffer meta_file_path = metaFullPath(alloc_path_adapter, meta_file_name);
 
-    // TODO(Shareef): Make this a helper function.
-    string_utils::fmtAlloc(alloc_path, nullptr, "%s/%s/%.*s", m_RootPath, META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
-
-    File project_file{path_buffer, file::FILE_MODE_READ};
+    File project_file{meta_file_path.buffer(), file::FILE_MODE_READ};
 
     if (project_file)
     {
-      String output;
-      project_file.readAll(output);
+      std::size_t buffer_size;
+      char*       buffer = project_file.readAll(m_Memory, buffer_size);
 
-      JsonValue                loaded_data = JsonParser::parse(output);
-      const std::string        path        = loaded_data["Path"];
-      const std::string        uuid_str    = loaded_data["UUID"];
-      const std::string        type        = loaded_data["Type"];
-      BifrostUUID              uuid        = bfUUID_fromString(uuid_str.c_str());
-      meta::BaseClassMetaInfo* type_info   = meta::TypeInfoFromName(type);
+      json::Value loaded_data = json::fromString(buffer, buffer_size);
 
-      if (!type_info)
+      m_Memory.deallocate(buffer);
+
+      const String             path      = loaded_data.get<String>("Path");
+      const String             uuid_str  = loaded_data.get<String>("UUID");
+      const String             type      = loaded_data.get<String>("Type");
+      meta::BaseClassMetaInfo* type_info = meta::TypeInfoFromName(std::string_view{type.begin(), type.length()});
+
+      if (!type_info || uuid_str.isEmpty())
       {
         std::printf("[Assets::loadMeta]: WARNING could not find asset datatype: %s\n", type.c_str());
         return;
       }
 
-      Any            asset_handle   = type_info->instantiate(m_Memory, StringRange(path.c_str(), path.c_str() + path.length()), uuid);
+      BifrostUUID uuid = bfUUID_fromString(uuid_str.c_str());
+
+      if (bfUUID_isEmpty(&uuid))
+      {
+        std::printf("[Assets::loadMeta]: WARNING failed to load UUID.");
+        return;
+      }
+
+      Any            asset_handle   = type_info->instantiate(m_Memory, StringRange(path), uuid);
       BaseAssetInfo* asset_handle_p = asset_handle.as<BaseAssetInfo*>();
 
       m_AssetMap.emplace(uuid, asset_handle_p);
       m_NameToGUID.emplace(path.c_str(), uuid);
+
+      JsonSerializerReader reader{*this, m_Memory, loaded_data};
+
+      reader.beginDocument(false);
+      asset_handle_p->serialize(m_Engine, reader);
+      reader.endDocument();
 
       project_file.close();
     }
@@ -375,6 +376,81 @@ namespace bifrost
     {
       String_clear(&m_RootPath);
     }
+  }
+
+  void Assets::markDirty(const BaseAssetHandle& asset)
+  {
+    if (asset && !asset.info()->m_IsDirty)
+    {
+      m_DirtyAssetList.push(asset);
+      asset.info()->m_IsDirty = true;
+    }
+  }
+
+  bool Assets::writeJsonToFile(const StringRange& path, const json::Value& value) const
+  {
+    File file_out{path, file::FILE_MODE_WRITE};
+
+    if (file_out)
+    {
+      String json_string;
+      toString(value, json_string);
+      file_out.write(json_string);
+      file_out.close();
+
+      return true;
+    }
+
+    return false;
+  }
+
+  void Assets::saveAssets()
+  {
+    for (const auto& asset : m_DirtyAssetList)
+    {
+      const LinearAllocatorScope asset_scope           = {m_Engine.tempMemory()};
+      BaseAssetInfo* const       info                  = asset.info();
+      std::size_t                meta_file_name_length = 0u;
+      char*                      meta_file_name        = metaFileName(m_Engine.tempMemoryNoFree(), info->path(), meta_file_name_length);
+      const TempBuffer           meta_file_path        = metaFullPath(m_Engine.tempMemoryNoFree(), {meta_file_name, meta_file_name + meta_file_name_length});
+
+      {
+        const LinearAllocatorScope json_writer_scope = {m_Engine.tempMemory()};
+        JsonSerializerWriter       json_writer       = JsonSerializerWriter{m_Engine.tempMemoryNoFree()};
+
+        json_writer.beginDocument(false);
+        const bool is_engine_asset = info->save(m_Engine, json_writer);
+        json_writer.endDocument();
+
+        if (is_engine_asset)
+        {
+          const String full_path = fullPath(*info);
+
+          writeJsonToFile(full_path, json_writer.document());
+        }
+      }
+      {
+        const LinearAllocatorScope json_writer_scope = {m_Engine.tempMemory()};
+        JsonSerializerWriter       json_writer       = JsonSerializerWriter{m_Engine.tempMemoryNoFree()};
+
+        json_writer.beginDocument(false);
+        info->serialize(m_Engine, json_writer);
+
+        String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
+
+        json_writer.serialize("Path", const_cast<String&>(info->path()));
+        json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
+        json_writer.serialize("Type", type_info_name);
+
+        json_writer.endDocument();
+
+        writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
+      }
+
+      info->m_IsDirty = false;
+    }
+
+    m_DirtyAssetList.clear();
   }
 
   Assets::~Assets()

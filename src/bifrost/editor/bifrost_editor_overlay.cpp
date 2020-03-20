@@ -924,31 +924,36 @@ namespace bifrost::editor
 
       if (ImGui::Begin("Inspector View"))
       {
-        static BifrostTransform transform = {};
-        static bool             once      = true;
-
-        if (once)
-        {
-          bfTransform_ctor(&transform);
-          once = false;
-        }
-
         m_Inspector.beginDocument(false);
-        m_Inspector.serializeT("Transform", &transform);
-        m_Inspector.serialize("Test Texture", m_TestTexture);
 
         if (m_SelectedObject.valid())
         {
-          if (m_Inspector.pushObject("Asset"))
-          {
-            visit_all(
-             meta::overloaded{
-              [this](IBaseObject* object) { m_Inspector.serialize(*object); },
-              [this, &engine](auto& asset_handle) { if (asset_handle) { m_Inspector.serialize(*asset_handle.payload()); } },
-             },
-             m_SelectedObject);
+          visit_all(
+           meta::overloaded{
+            [this](IBaseObject* object) { m_Inspector.serialize(*object); },
+            [this, &engine](auto& asset_handle) {
+              if (asset_handle)
+              {
+                m_Inspector.beginChangeCheck();
+                m_Inspector.serialize(*asset_handle.payload());
+                ImGui::Separator();
 
-            m_Inspector.popObject();
+                asset_handle.info()->serialize(engine, m_Inspector);
+
+                if (m_Inspector.endChangedCheck())
+                {
+                  engine.assets().markDirty(asset_handle);
+                }
+              }
+            },
+           },
+           m_SelectedObject);
+
+          ImGui::Separator();
+
+          if (ImGui::Button("Clear Selection"))
+          {
+            select(nullptr);
           }
         }
 
@@ -1163,6 +1168,8 @@ namespace bifrost::editor
 
   void EditorOverlay::saveProject()
   {
+    m_Engine->assets().saveAssets();
+
     File file{m_OpenProject->projectFilePath(), file::FILE_MODE_WRITE};
 
     if (file)
@@ -1226,9 +1233,9 @@ namespace bifrost::editor
     {".tga", &fileExtensionHandlerImpl<AssetTextureInfo>},
     {".psd", &fileExtensionHandlerImpl<AssetTextureInfo>},
 
-    {".glsl", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
-    {".frag", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
-    {".vert", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+    // {".glsl", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+    // {".frag", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
+    // {".vert", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
     {".spv", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
 
     {".shader", &fileExtensionHandlerImpl<AssetShaderProgramInfo>},

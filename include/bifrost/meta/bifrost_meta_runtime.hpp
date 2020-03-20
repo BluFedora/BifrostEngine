@@ -96,34 +96,6 @@ namespace bifrost::meta
     virtual Any invokeImpl(const Any* arguments) = 0;
   };
 
-  class BaseEnumElementMetaInfo : public BaseMetaInfo
-  {
-   protected:
-    std::size_t m_Value;
-
-   protected:
-    BaseEnumElementMetaInfo(std::string_view name, std::size_t value) :
-      BaseMetaInfo(name),
-      m_Value{value}
-    {
-    }
-
-   public:
-    [[nodiscard]] std::size_t value() const { return m_Value; }
-  };
-
-  class BaseEnumMetaInfo : public BaseMetaInfo
-  {
-   protected:
-    Array<BaseEnumElementMetaInfo*> m_Elements;
-
-   protected:
-    BaseEnumMetaInfo(std::string_view name, std::size_t num_values);
-
-   public:
-    [[nodiscard]] const Array<BaseEnumElementMetaInfo*>& elements() const { return m_Elements; }
-  };
-
   struct InvalidCtorCall
   {};
 
@@ -141,6 +113,7 @@ namespace bifrost::meta
     std::size_t                  m_Alignment;
     bool                         m_IsArray;
     bool                         m_IsMap;
+    bool                         m_IsEnum;
 
    protected:
     BaseClassMetaInfo(std::string_view name, std::size_t size, std::size_t alignment);
@@ -148,6 +121,7 @@ namespace bifrost::meta
    public:
     [[nodiscard]] std::size_t           size() const { return m_Size; }
     [[nodiscard]] std::size_t           alignment() const { return m_Alignment; }
+    [[nodiscard]] bool                  isEnum() const { return m_IsEnum; }
     [[nodiscard]] bool                  isArray() const { return m_IsArray; }
     [[nodiscard]] bool                  isMap() const { return m_IsMap; }
     const Array<BaseClassMetaInfo*>&    baseClasses() const { return m_BaseClasses; }
@@ -198,6 +172,8 @@ namespace bifrost::meta
     virtual bool               arraySetElementAt(Any& instance, std::size_t index, Any& value) { return false; }
     virtual Any                mapGetElementAt(Any& instance, Any& key) { return {}; }
     virtual bool               mapSetElementAt(Any& instance, Any& key, Any& value) { return false; }
+    std::uint64_t              enumValueMask() const;
+    void                       enumValueWrite(std::uint64_t& enum_object, std::uint64_t new_value) const;
   };
 
   using BaseUnionMetaInfo  = BaseClassMetaInfo;

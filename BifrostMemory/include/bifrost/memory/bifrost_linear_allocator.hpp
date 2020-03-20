@@ -40,7 +40,7 @@ namespace bifrost
     std::size_t m_MemoryOffset;
 
    public:
-    LinearAllocator(char* memory_block, const std::size_t memory_block_size);
+    LinearAllocator(char* memory_block, std::size_t memory_block_size);
 
     size_t usedMemory() const { return m_MemoryOffset; }
 

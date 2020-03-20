@@ -32,7 +32,7 @@ namespace bifrost
 
     bool beginDocument(bool is_array) override;
     bool pushObject(StringRange key) override;
-    bool pushArray(StringRange key) override;
+    bool pushArray(StringRange key, std::size_t& size) override;
     void serialize(StringRange key, std::int8_t& value) override;
     void serialize(StringRange key, std::uint8_t& value) override;
     void serialize(StringRange key, std::int16_t& value) override;
@@ -47,6 +47,7 @@ namespace bifrost
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
+    void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;
@@ -81,7 +82,7 @@ namespace bifrost
 
     bool beginDocument(bool is_array) override;
     bool pushObject(StringRange key) override;
-    bool pushArray(StringRange key) override;
+    bool pushArray(StringRange key, std::size_t& size) override;
     void serialize(StringRange key, std::int8_t& value) override;
     void serialize(StringRange key, std::uint8_t& value) override;
     void serialize(StringRange key, std::int16_t& value) override;
@@ -96,6 +97,7 @@ namespace bifrost
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
+    void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;

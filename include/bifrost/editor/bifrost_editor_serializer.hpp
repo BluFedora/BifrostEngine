@@ -32,6 +32,7 @@ namespace bifrost::editor
 
    private:
     Array<ObjectStackInfo> m_IsOpenStack;
+    Array<bool>            m_HasChangedStack;
     char                   m_NameBuffer[256];
     Assets*                m_Assets;
 
@@ -42,7 +43,7 @@ namespace bifrost::editor
 
     bool beginDocument(bool is_array) override;
     bool pushObject(StringRange key) override;
-    bool pushArray(StringRange key) override;
+    bool pushArray(StringRange key, std::size_t& size) override;
     void serialize(StringRange key, std::int8_t& value) override;
     void serialize(StringRange key, std::uint8_t& value) override;
     void serialize(StringRange key, std::int16_t& value) override;
@@ -59,13 +60,18 @@ namespace bifrost::editor
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
+    void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;
     void endDocument() override;
 
+    void beginChangeCheck();
+    bool endChangedCheck();
+
    private:
     ObjectStackInfo& top() { return m_IsOpenStack.back(); }
+    bool&            hasChangedTop() { return m_HasChangedStack.back(); }
     void             setNameBuffer(StringRange key);
   };
 
@@ -85,17 +91,17 @@ namespace bifrost::meta
   inline const auto& Meta::registerMembers<BifrostTransform>()
   {
     static auto member_ptrs = members(
-      class_info<BifrostTransform>("Transform"),
-      ctor<>(),
-      field("origin", &BifrostTransform::origin),
-      field("local_position", &BifrostTransform::local_position),
-      field("local_rotation", &BifrostTransform::local_rotation),
-      field("local_scale", &BifrostTransform::local_scale),
-      field("world_position", &BifrostTransform::world_position),
-      field("world_rotation", &BifrostTransform::world_rotation),
-      field("world_scale", &BifrostTransform::world_scale),
-      field("local_transform", &BifrostTransform::local_transform),
-      field("world_transform", &BifrostTransform::world_transform));
+     class_info<BifrostTransform>("Transform"),
+     ctor<>(),
+     field("origin", &BifrostTransform::origin),
+     field("local_position", &BifrostTransform::local_position),
+     field("local_rotation", &BifrostTransform::local_rotation),
+     field("local_scale", &BifrostTransform::local_scale),
+     field("world_position", &BifrostTransform::world_position),
+     field("world_rotation", &BifrostTransform::world_rotation),
+     field("world_scale", &BifrostTransform::world_scale),
+     field("local_transform", &BifrostTransform::local_transform),
+     field("world_transform", &BifrostTransform::world_transform));
 
     return member_ptrs;
   }

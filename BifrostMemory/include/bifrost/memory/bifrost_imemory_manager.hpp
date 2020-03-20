@@ -37,7 +37,7 @@ namespace bifrost
   class IMemoryManager
   {
    private:
-   /*!
+    /*!
     * @brief
     *   Header for all array API allocated blocks.
     */
@@ -424,6 +424,69 @@ namespace bifrost
     char*       begin() const { return m_MemoryBlockBegin; }
     char*       end() const { return m_MemoryBlockEnd; }
     std::size_t size() const { return end() - begin(); }
+  };
+
+  class TempBuffer final
+  {
+   private:
+    IMemoryManager* m_Allocator;
+    char*           m_Buffer;
+    std::size_t     m_Size;
+
+   public:
+    TempBuffer(IMemoryManager& allocator, char* buffer, std::size_t size) :
+      m_Allocator{&allocator},
+      m_Buffer{buffer},
+      m_Size{size}
+    {
+    }
+
+    TempBuffer(IMemoryManager& allocator, std::size_t size) :
+      TempBuffer(allocator, static_cast<char*>(allocator.allocate(size)), size)
+    {
+    }
+
+    TempBuffer(const TempBuffer& rhs) = delete;
+
+    TempBuffer(TempBuffer&& rhs) noexcept :
+      m_Allocator{rhs.m_Allocator},
+      m_Buffer{rhs.m_Buffer},
+      m_Size{rhs.m_Size}
+    {
+      rhs.m_Buffer = nullptr;
+      rhs.m_Size   = 0;
+    }
+
+    TempBuffer& operator=(const TempBuffer& rhs) = delete;
+
+    TempBuffer& operator=(TempBuffer&& rhs) noexcept
+    {
+      if (this != &rhs)
+      {
+        m_Allocator     = rhs.m_Allocator;
+        m_Buffer        = rhs.m_Buffer;
+        m_Size          = rhs.m_Size;
+        rhs.m_Allocator = nullptr;
+        rhs.m_Buffer    = nullptr;
+        rhs.m_Size      = 0;
+        // ^ All three fields don't need to be set to null.
+        // Since if any are null this is an invalid buffer.
+      }
+
+      return *this;
+    }
+
+    IMemoryManager& allocator() const { return *m_Allocator; }
+    char*           buffer() const { return m_Buffer; }
+    std::size_t     size() const { return m_Size; }
+
+    ~TempBuffer()
+    {
+      if (m_Allocator)
+      {
+        m_Allocator->deallocate(m_Buffer);
+      }
+    }
   };
 }  // namespace bifrost
 

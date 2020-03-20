@@ -188,17 +188,30 @@ namespace bifrost
         m_Handle = String_new("");
       }
 
-      ::String_resize(&m_Handle, new_size);
+      if (new_size)
+      {
+        ::String_resize(&m_Handle, new_size);
+      }
+    }
+
+    const char* begin() const
+    {
+      return m_Handle;
+    }
+
+    const char* end() const
+    {
+      return m_Handle + length();
     }
 
     [[nodiscard]] std::size_t length() const
     {
-      return ::String_length(m_Handle);
+      return m_Handle ? ::String_length(m_Handle) : 0u;
     }
 
     [[nodiscard]] std::size_t isEmpty() const
     {
-      return !m_Handle || length() == 0u;
+      return length() == 0u;
     }
 
     [[nodiscard]] std::size_t size() const

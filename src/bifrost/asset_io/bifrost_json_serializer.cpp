@@ -48,8 +48,10 @@ namespace bifrost
     return true;
   }
 
-  bool JsonSerializerWriter::pushArray(StringRange key)
+  bool JsonSerializerWriter::pushArray(StringRange key, std::size_t& size)
   {
+    size = 0;
+
     json::Value* const current = &currentObject()[key];
 
     *current = json::detail::ArrayInitializer{};
@@ -137,6 +139,44 @@ namespace bifrost
     }
   }
 
+  void JsonSerializerWriter::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
+  {
+    pushObject(key);
+
+    switch (type_info->size())
+    {
+      case 1:
+        serialize("value", *reinterpret_cast<std::uint8_t*>(&enum_value));
+        break;
+      case 2:
+        serialize("value", *reinterpret_cast<std::uint16_t*>(&enum_value));
+        break;
+      case 4:
+        serialize("value", *reinterpret_cast<std::uint32_t*>(&enum_value));
+        break;
+      case 8:
+        serialize("value", *reinterpret_cast<std::uint64_t*>(&enum_value));
+        break;
+      default:
+        break;
+    }
+
+    const std::uint64_t mask           = type_info->enumValueMask();
+
+
+    for (const auto& props : type_info->properties())
+    {
+      if ((props->get(&enum_value).as<std::size_t>() & mask) == (enum_value & mask))
+      {
+        String name = props->name().data();
+        serialize("name", name);
+        break;
+      }
+    }
+
+    popObject();
+  }
+
   void JsonSerializerWriter::popObject()
   {
     m_ObjectStack.popBack();
@@ -172,32 +212,33 @@ namespace bifrost
     return true;
   }
 
-  bool JsonSerializerReader::pushArray(StringRange key)
+  bool JsonSerializerReader::pushArray(StringRange key, std::size_t& size)
   {
-    m_ObjectStack.emplaceBack(&currentObject()[key], 0);
+    json::Value* const object = &currentObject()[key];
+
+    size = object->size();
+
+    m_ObjectStack.emplaceBack(object, 0);
     return true;
   }
 
   template<typename T>
   static void readNumber(JsonSerializerReader::ObjectStackNode& object, StringRange key, T& value)
   {
-    if (object.array_index > -1)
+    if (object.array_index > -1 && object.object->isArray())
     {
-      if (object.object->isArray())
+      json::Array& arr = object.object->as<json::Array>();
+
+      if (object.array_index < int(arr.size()))
       {
-        json::Array& arr = object.object->as<json::Array>();
+        auto& json_number = arr[object.array_index];
 
-        if (object.array_index < arr.size())
+        if (json_number.isNumber())
         {
-          auto& json_number = arr[object.array_index];
-
-          if (json_number.isNumber())
-          {
-            value = T(json_number.as<json::Number>());
-          }
-
-          ++object.array_index;
+          value = T(json_number.as<json::Number>());
         }
+
+        ++object.array_index;
       }
     }
     else if (object.object->isObject())
@@ -271,7 +312,7 @@ namespace bifrost
       {
         json::Array& arr = object.object->as<json::Array>();
 
-        if (object.array_index < arr.size())
+        if (object.array_index < int(arr.size()))
         {
           auto& json_number = arr[object.array_index];
 
@@ -317,6 +358,31 @@ namespace bifrost
 
       popObject();
     }
+  }
+
+  void JsonSerializerReader::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
+  {
+    pushObject(key);
+
+    switch (type_info->size())
+    {
+    case 1:
+      serialize("value", *reinterpret_cast<std::uint8_t*>(&enum_value));
+      break;
+    case 2:
+      serialize("value", *reinterpret_cast<std::uint16_t*>(&enum_value));
+      break;
+    case 4:
+      serialize("value", *reinterpret_cast<std::uint32_t*>(&enum_value));
+      break;
+    case 8:
+      serialize("value", *reinterpret_cast<std::uint64_t*>(&enum_value));
+      break;
+    default:
+      break;
+    }
+
+    popObject();
   }
 
   void JsonSerializerReader::popObject()

@@ -177,14 +177,19 @@ namespace bifrost
   std::size_t File::size() const
   {
 #if _WIN32
+    // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019#requirements
+
     WIN32_FILE_ATTRIBUTE_DATA fileInfo;
     const BOOL                fOk = GetFileAttributesExA(m_FileName.cstr(), GetFileExInfoStandard, &fileInfo);
 
     if (!fOk)
       return -1;
 
-    assert(0 == fileInfo.nFileSizeHigh);
-    return std::size_t(fileInfo.nFileSizeLow);
+    LARGE_INTEGER size;
+    size.HighPart = fileInfo.nFileSizeHigh;
+    size.LowPart = fileInfo.nFileSizeLow;
+
+    return std::size_t(size.QuadPart);
 #else
     struct stat st;
     stat(m_FileName.cstr(), &st);
@@ -378,9 +383,15 @@ namespace bifrost
     return *this;
   }
 
+  File& File::write(const String& data)
+  {
+    writeBytes(data.c_str(), data.length());
+    return *this;
+  }
+
   void File::readAll(String& out)
   {
-    out.reserve(size());
+    out.reserve(out.size() + size());
 
     std::istreambuf_iterator<char>       file_stream_bgn = m_FileStream;
     const std::istreambuf_iterator<char> file_stream_end = std::istreambuf_iterator<char>();
@@ -409,8 +420,15 @@ namespace bifrost
       ++file_stream_bgn;
     }
 
-    buffer[++index] = '\0';
-    out_size = index;
+    buffer[index++] = '\0';
+    out_size        = index;
     return buffer;
+  }
+
+  TempBuffer File::readAll(IMemoryManager& allocator)
+  {
+    std::size_t buffer_size;
+    char*       buffer = readAll(allocator, buffer_size);
+    return {allocator, buffer, buffer_size};
   }
 }  // namespace bifrost

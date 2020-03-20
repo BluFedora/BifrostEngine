@@ -105,7 +105,7 @@ namespace bifrost
 
     virtual bool beginDocument(bool is_array = false)             = 0;
     virtual bool pushObject(StringRange key)                      = 0;
-    virtual bool pushArray(StringRange key)                       = 0;
+    virtual bool pushArray(StringRange key, std::size_t& size)    = 0;
     virtual void serialize(StringRange key, std::int8_t& value)   = 0;
     virtual void serialize(StringRange key, std::uint8_t& value)  = 0;
     virtual void serialize(StringRange key, std::int16_t& value)  = 0;
@@ -124,6 +124,7 @@ namespace bifrost
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;
     virtual void serialize(StringRange key, IBaseObject& value);
     virtual void serialize(IBaseObject& value);
+    virtual void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) = 0;
     virtual void serialize(StringRange key, Any& value, meta::BaseClassMetaInfo* type_info);
     virtual void serialize(Any& value, meta::BaseClassMetaInfo* type_info);
     virtual void popObject()   = 0;
@@ -142,13 +143,16 @@ namespace bifrost
 
   class BaseAssetInfo : private bfNonCopyMoveable<BaseAssetInfo>
   {
+    friend class Assets;
     friend class BaseAssetHandle;
 
    protected:
-    String        m_Path;      //!< A path relative to the project to the actual asset file.
-    BifrostUUID   m_UUID;      //!< Uniquely identifies the asset.
-    std::uint16_t m_RefCount;  //!< How many live references in the engine.
-    AssetTagList  m_Tags;      //!< Tags associated with this asset.
+    String                   m_Path;      //!< A path relative to the project to the actual asset file.
+    BifrostUUID              m_UUID;      //!< Uniquely identifies the asset.
+    std::uint16_t            m_RefCount;  //!< How many live references in the engine.
+    AssetTagList             m_Tags;      //!< Tags associated with this asset.
+    bool                     m_IsDirty;   //!< THis asset wants to be saved.
+    meta::BaseClassMetaInfo* m_TypeInfo;  //!<
 
    protected:
     BaseAssetInfo(const StringRange path, BifrostUUID uuid) :
@@ -156,7 +160,9 @@ namespace bifrost
       m_Path{path},
       m_UUID{uuid},
       m_RefCount{0u},
-      m_Tags{}
+      m_Tags{},
+      m_IsDirty{false},
+      m_TypeInfo{nullptr}
     {
     }
 
@@ -165,23 +171,30 @@ namespace bifrost
     const BifrostUUID& uuid() const { return m_UUID; }
     std::uint16_t      refCount() const { return m_RefCount; }
 
-    // Implemented by AssetInfo<T, TPayload>
+    // Implemented by AssetInfo<T, TPayload> //
+
     virtual IBaseObject*             payload()           = 0;
     virtual meta::BaseClassMetaInfo* payloadType() const = 0;
-    virtual void                     destroy()           = 0;
+    virtual void                     unload()            = 0;
 
-    // Implemented by children of AssetInfo<T, TPayload>
+    // Implemented by children of AssetInfo<T, TPayload> //
+
+    // Called when the asset should be loaded.
     virtual bool load(Engine& engine)
     {
       (void)engine;
       return false;
     }
 
-    virtual void unload(Engine& engine)
+    // Serializing of Asset Content
+    virtual bool save(Engine& engine, ISerializer& serializer)
     {
       (void)engine;
+      (void)serializer;
+      return false;
     }
 
+    // Serializing of Meta Content
     virtual void serialize(Engine& engine, ISerializer& serializer)
     {
       (void)engine;
@@ -226,19 +239,9 @@ namespace bifrost
       return s_IsRegistered;
     }
 
-    void destroy() override final
+    void unload() override final
     {
       m_Payload.destroy();
-    }
-
-    void serialize(Engine& engine, ISerializer& serializer) override
-    {
-      (void)engine;
-
-      if (payload())
-      {
-        serializer.serialize(*payload());
-      }
     }
   };
 
@@ -246,7 +249,7 @@ namespace bifrost
   meta::BaseClassMetaInfo* AssetInfo<TPayload, TInfo>::s_IsRegistered = registerImpl();
 
   //
-  // This class MUST not have any virtual members.
+  // This class MUST not have any virtual functions.
   //
   class BaseAssetHandle
   {
@@ -280,7 +283,7 @@ namespace bifrost
     ~BaseAssetHandle();
 
    protected:
-    void acquire() const;
+    void acquire();
   };
 
   //
@@ -322,7 +325,6 @@ namespace bifrost
 
     ~AssetHandle() = default;
   };
-
 }  // namespace bifrost
 
 #endif /* BIFROST_ASSET_HANDLE_HPP */

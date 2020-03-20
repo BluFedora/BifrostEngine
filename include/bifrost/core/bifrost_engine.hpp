@@ -352,7 +352,7 @@ class BaseRenderer
 
       bfAttachmentInfo main_surface;
       main_surface.texture      = color_buffer;
-      main_surface.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      main_surface.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;  // BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
       main_surface.may_alias    = bfFalse;
 
       bfAttachmentInfo depth_buffer;
@@ -475,6 +475,8 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
  private:
   std::pair<int, const char**> m_CmdlineArgs;
   FreeListAllocator            m_MainMemory;
+  LinearAllocator              m_TempMemory;
+  NoFreeAllocator              m_TempAdapter;
   GameStateMachine             m_StateMachine;
   VM                           m_Scripting;
   BaseRenderer                 m_Renderer;
@@ -483,9 +485,11 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   Array<IECSSystem*>           m_Systems;
 
  public:
-  BifrostEngine(char* main_memory, std::size_t main_memmory_size, int argc, const char* argv[]) :
+  BifrostEngine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
     m_CmdlineArgs{argc, argv},
-    m_MainMemory{main_memory, main_memmory_size},
+    m_MainMemory{main_memory, main_memory_size},
+    m_TempMemory{static_cast<char*>(m_MainMemory.allocate(main_memory_size / 4)), main_memory_size / 4},
+    m_TempAdapter{m_TempMemory},
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
     m_Renderer{},
@@ -496,6 +500,8 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   }
 
   FreeListAllocator& mainMemory() { return m_MainMemory; }
+  LinearAllocator&   tempMemory() { return m_TempMemory; }
+  IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
   GameStateMachine&  stateMachine() { return m_StateMachine; }
   VM&                scripting() { return m_Scripting; }
   BaseRenderer&      renderer() { return m_Renderer; }

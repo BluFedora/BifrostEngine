@@ -16,36 +16,11 @@
 #include "bifrost/bifrost_math.h"               /* Vec3f, Mat4x4                             */
 #include "bifrost/core/bifrost_base_object.hpp" /* BaseObject<T>                             */
 #include "bifrost/ecs/bifrost_component.hpp"    /* BaseComponentStorage, ComponentStorage<T> */
+#include "bifrost_asset_handle.hpp"             /* AssetInfo<T1, T2>                         */
 
 namespace bifrost
 {
   class Entity;
-
-  BIFROST_META_REGISTER(Vec3f){
-   BIFROST_META_BEGIN()
-    BIFROST_META_MEMBERS(
-     class_info<Vec3f>("Vec3f"),  //
-     ctor<>(),                    //
-     field("x", &Vec3f::x),       //
-     field("y", &Vec3f::y),       //
-     field("z", &Vec3f::z),       //
-     field("w", &Vec3f::w)        //
-     )
-     BIFROST_META_END()}
-
-  BIFROST_META_REGISTER(Quaternionf)
-  {
-    BIFROST_META_BEGIN()
-      BIFROST_META_MEMBERS(
-       class_info<Quaternionf>("Quaternionf"),  //
-       ctor<>(),                                //
-       field("x", &Quaternionf::x),             //
-       field("y", &Quaternionf::y),             //
-       field("z", &Quaternionf::z),             //
-       field("w", &Quaternionf::w)              //
-      )
-    BIFROST_META_END()
-  }
 
   /*!
    * @brief
@@ -117,15 +92,52 @@ namespace bifrost
 
     Entity* createEntity(std::string_view name);
   };
+
+  class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>
+  {
+   private:
+    using BaseT = AssetInfo<Scene, AssetSceneInfo>;
+
+   public:
+    using BaseT::BaseT;
+
+    bool load(Engine& engine) override;
+  };
+
+  using AssetSceneHandle = AssetHandle<Scene>;
 }  // namespace bifrost
 
-BIFROST_META_REGISTER(bifrost::Scene)
+BIFROST_META_REGISTER(Quaternionf){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<Quaternionf>("Quaternionf"),  //
+   ctor<>(),                                //
+   field("x", &Quaternionf::x),             //
+   field("y", &Quaternionf::y),             //
+   field("z", &Quaternionf::z),             //
+   field("w", &Quaternionf::w)              //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bifrost::Scene){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<Scene>("Scene"),                               //
+   ctor<IMemoryManager&>(),                                  //
+   field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(Vec3f)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<Scene>("Scene"),                               //
-     ctor<IMemoryManager&>(),                                  //
-     field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
+     class_info<Vec3f>("Vec3f"),  //
+     ctor<>(),                    //
+     field("x", &Vec3f::x),       //
+     field("y", &Vec3f::y),       //
+     field("z", &Vec3f::z),       //
+     field("w", &Vec3f::w)        //
     )
   BIFROST_META_END()
 }

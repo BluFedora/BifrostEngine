@@ -78,19 +78,24 @@ namespace bifrost
     using BaseT = BaseGraphicsResource<ShaderModule, bfShaderModuleHandle>;
 
    public:
-    explicit ShaderModule(bfGfxDeviceHandle device) :
-      BaseT(device)
-    {
-    }
+    explicit ShaderModule(bfGfxDeviceHandle device);
   };
 
   class AssetShaderModuleInfo final : public AssetInfo<ShaderModule, AssetShaderModuleInfo>
   {
+    BIFROST_META_FRIEND;
+
    private:
     using BaseT = AssetInfo<ShaderModule, AssetShaderModuleInfo>;
 
+   private:
+    BifrostShaderType m_Type = BIFROST_SHADER_TYPE_VERTEX;
+
    public:
     using BaseT::BaseT;
+
+    bool load(Engine& engine) override;
+    void serialize(Engine& engine, ISerializer& serializer) override;
   };
 
   using AssetShaderModuleHandle = AssetHandle<ShaderModule>;
@@ -108,18 +113,7 @@ namespace bifrost
     AssetShaderModuleHandle m_FragmentShader;
 
    public:
-    explicit ShaderProgram(bfGfxDeviceHandle device) :
-      BaseT(device),
-      m_VertexShader{nullptr},
-      m_FragmentShader{nullptr}
-    {
-    }
-
-   private:
-    const BaseAssetHandle& metaVertexShader() const { return m_VertexShader; }
-    void                   setMetaVertexShader(const BaseAssetHandle& value) { m_VertexShader = (AssetShaderModuleHandle&)value; }
-    const BaseAssetHandle& metaFragmentShader() const { return m_FragmentShader; }
-    void                   setMetaFragmentShader(const BaseAssetHandle& value) { m_FragmentShader = (AssetShaderModuleHandle&)value; }
+    explicit ShaderProgram(bfGfxDeviceHandle device);
   };
 
   class AssetShaderProgramInfo final : public AssetInfo<ShaderProgram, AssetShaderProgramInfo>
@@ -130,6 +124,7 @@ namespace bifrost
     using BaseT::BaseT;
 
     bool load(Engine& engine) override;
+    bool save(Engine& engine, ISerializer& serializer) override;
   };
 
   using AssetShaderProgramHandle = AssetHandle<ShaderProgram>;
@@ -155,6 +150,20 @@ namespace bifrost
   using AssetMaterialHandle = AssetHandle<Material>;
 }  // namespace bifrost
 
+BIFROST_META_REGISTER(BifrostShaderType){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   enum_info<BifrostShaderType>("BifrostShaderType"),                                                         //
+   enum_element("BIFROST_SHADER_TYPE_VERTEX", BIFROST_SHADER_TYPE_VERTEX),                                    //
+   enum_element("BIFROST_SHADER_TYPE_TESSELLATION_CONTROL", BIFROST_SHADER_TYPE_TESSELLATION_CONTROL),        //
+   enum_element("BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION", BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION),  //
+   enum_element("BIFROST_SHADER_TYPE_GEOMETRY", BIFROST_SHADER_TYPE_GEOMETRY),                                //
+   enum_element("BIFROST_SHADER_TYPE_FRAGMENT", BIFROST_SHADER_TYPE_FRAGMENT),                                //
+   enum_element("BIFROST_SHADER_TYPE_COMPUTE", BIFROST_SHADER_TYPE_COMPUTE),                                  //
+   enum_element("BIFROST_SHADER_TYPE_MAX", BIFROST_SHADER_TYPE_MAX)                                           //
+   )
+   BIFROST_META_END()}
+
 BIFROST_META_REGISTER(bifrost::Texture){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
@@ -165,14 +174,22 @@ BIFROST_META_REGISTER(bifrost::Texture){
    )
    BIFROST_META_END()}
 
+BIFROST_META_REGISTER(bifrost::AssetShaderModuleInfo){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<AssetShaderModuleInfo>("AssetShaderModuleInfo"),  //
+   ctor<StringRange, BifrostUUID>(),
+   field("m_Type", &AssetShaderModuleInfo::m_Type))
+   BIFROST_META_END()}
+
 BIFROST_META_REGISTER(bifrost::ShaderProgram)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<ShaderProgram>("ShaderProgram"),                                                              //
-     ctor<bfGfxDeviceHandle>(),                                                                               //
-     property("m_VertexShader", &ShaderProgram::metaVertexShader, &ShaderProgram::setMetaVertexShader),       //
-     property("m_FragmentShader", &ShaderProgram::metaFragmentShader, &ShaderProgram::setMetaFragmentShader)  //
+     class_info<ShaderProgram>("ShaderProgram"),                                   //
+     ctor<bfGfxDeviceHandle>(),                                                    //
+     field<BaseAssetHandle>("m_VertexShader", &ShaderProgram::m_VertexShader),     //
+     field<BaseAssetHandle>("m_FragmentShader", &ShaderProgram::m_FragmentShader)  //
     )
   BIFROST_META_END()
 }
