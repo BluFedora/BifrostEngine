@@ -18,7 +18,7 @@
 
 namespace bifrost
 {
-  Entity* Scene::addEntity(const std::string_view name)
+  Entity* Scene::addEntity(const StringRange& name)
   {
     Entity* entity = createEntity(name);
     m_RootEntities.push(entity);
@@ -39,7 +39,7 @@ namespace bifrost
     }
   }
 
-  Entity* Scene::createEntity(std::string_view name)
+  Entity* Scene::createEntity(const StringRange& name)
   {
     return m_Memory.allocateT<Entity>(*this, name);
   }

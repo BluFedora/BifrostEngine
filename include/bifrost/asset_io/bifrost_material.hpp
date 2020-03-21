@@ -20,8 +20,6 @@ namespace bifrost
 {
   namespace detail
   {
-    void releaseGfxHandle(Engine& engine, bfGfxBaseHandle handle);
-
     // clang-format off
     template<typename TSelf, typename THandle>
     class BaseGraphicsResource : public BaseObject<TSelf>, private bfNonCopyMoveable<TSelf>
@@ -37,6 +35,25 @@ namespace bifrost
         m_Handle{nullptr}
       {
       }
+
+      void destroyHandle()
+      {
+        if (m_Handle)
+        {
+          // TODO: This probably will not scale well.
+          bfGfxDevice_flush(m_GraphicsDevice);
+          bfGfxDevice_release(m_GraphicsDevice, m_Handle);
+          m_Handle = nullptr;
+        }
+      }
+
+      virtual ~BaseGraphicsResource()
+      {
+        destroyHandle();
+      }
+
+     public:
+      THandle handle() const { return m_Handle; }
     };
   }  // namespace detail
 
@@ -111,9 +128,16 @@ namespace bifrost
    private:
     AssetShaderModuleHandle m_VertexShader;
     AssetShaderModuleHandle m_FragmentShader;
+    std::uint32_t           m_NumDescriptorSets;
 
    public:
     explicit ShaderProgram(bfGfxDeviceHandle device);
+
+    std::uint32_t numDescriptorSets() const { return m_NumDescriptorSets; }
+    void          setNumDescriptorSets(std::uint32_t value);
+
+   private:
+    void createImpl();
   };
 
   class AssetShaderProgramInfo final : public AssetInfo<ShaderProgram, AssetShaderProgramInfo>
@@ -131,6 +155,8 @@ namespace bifrost
 
   class Material final : public BaseObject<Material>
   {
+    BIFROST_META_FRIEND;
+
    private:
     AssetShaderProgramHandle m_ShaderProgram;
     AssetTextureHandle       m_DiffuseTexture;
@@ -145,6 +171,17 @@ namespace bifrost
 
     const AssetShaderProgramHandle& shaderProgram() const { return m_ShaderProgram; }
     const AssetTextureHandle&       diffuseTexture() const { return m_DiffuseTexture; }
+  };
+
+  class AssetMaterialInfo final : public AssetInfo<Material, AssetMaterialInfo>
+  {
+    using BaseT = AssetInfo<Material, AssetMaterialInfo>;
+
+   public:
+    using BaseT::BaseT;
+
+    bool load(Engine& engine) override;
+    bool save(Engine& engine, ISerializer& serializer) override;
   };
 
   using AssetMaterialHandle = AssetHandle<Material>;
@@ -174,6 +211,14 @@ BIFROST_META_REGISTER(bifrost::Texture){
    )
    BIFROST_META_END()}
 
+BIFROST_META_REGISTER(bifrost::AssetTextureInfo){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<AssetTextureInfo>("AssetTextureInfo"),  //
+   ctor<StringRange, BifrostUUID>()                   //
+   )
+   BIFROST_META_END()}
+
 BIFROST_META_REGISTER(bifrost::AssetShaderModuleInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
@@ -182,15 +227,40 @@ BIFROST_META_REGISTER(bifrost::AssetShaderModuleInfo){
    field("m_Type", &AssetShaderModuleInfo::m_Type))
    BIFROST_META_END()}
 
-BIFROST_META_REGISTER(bifrost::ShaderProgram)
+BIFROST_META_REGISTER(bifrost::ShaderProgram){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<ShaderProgram>("ShaderProgram"),                                                                //
+   ctor<bfGfxDeviceHandle>(),                                                                                 //
+   property("m_NumDescriptorSets", &ShaderProgram::numDescriptorSets, &ShaderProgram::setNumDescriptorSets),  //
+   field<BaseAssetHandle>("m_VertexShader", &ShaderProgram::m_VertexShader),                                  //
+   field<BaseAssetHandle>("m_FragmentShader", &ShaderProgram::m_FragmentShader)                               //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bifrost::AssetShaderProgramInfo){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<AssetShaderModuleInfo>("AssetShaderProgramInfo"),  //
+   ctor<StringRange, BifrostUUID>())
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bifrost::Material){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<Material>("Material"),                                        //
+   ctor<>(),                                                                //
+   field<BaseAssetHandle>("m_ShaderProgram", &Material::m_ShaderProgram),   //
+   field<BaseAssetHandle>("m_DiffuseTexture", &Material::m_DiffuseTexture)  //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bifrost::AssetMaterialInfo)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<ShaderProgram>("ShaderProgram"),                                   //
-     ctor<bfGfxDeviceHandle>(),                                                    //
-     field<BaseAssetHandle>("m_VertexShader", &ShaderProgram::m_VertexShader),     //
-     field<BaseAssetHandle>("m_FragmentShader", &ShaderProgram::m_FragmentShader)  //
-    )
+     class_info<AssetMaterialInfo>("AssetMaterialInfo"),  //
+     ctor<StringRange, BifrostUUID>())
   BIFROST_META_END()
 }
 

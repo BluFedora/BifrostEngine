@@ -273,6 +273,8 @@ namespace bifrost
   {
     if (!m_WindowHandle)
     {
+      glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+
       m_WindowHandle = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
       if (m_WindowHandle)

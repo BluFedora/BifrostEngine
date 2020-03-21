@@ -447,6 +447,68 @@ namespace bifrost::editor
     }
   };
 
+  template<typename TAssetInfo>
+  class NewAssetDialog : public ui::Dialog
+  {
+   private:
+    FileEntry&  m_FileEntry;
+    char        m_AssetName[120];
+    StringRange m_Extension;
+
+   public:
+    explicit NewAssetDialog(const char* dialog_name, FileEntry& file_entry, const StringRange& default_name, const StringRange& ext) :
+      Dialog(dialog_name),
+      m_FileEntry{file_entry},
+      m_AssetName{"_"},
+      m_Extension{ext}
+    {
+      std::strncpy(m_AssetName, default_name.begin(), default_name.length());
+    }
+
+    void show(const ActionContext& ctx) override
+    {
+      ImGui::PushID(this);
+
+      if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+      ImGui::SetItemDefaultFocus();
+      const bool enter_hit = ImGui::InputText("Name", m_AssetName, sizeof(m_AssetName), ImGuiInputTextFlags_EnterReturnsTrue);
+
+      ImGui::Separator();
+
+      if (file::isValidName(m_AssetName))
+      {
+        if (enter_hit || ImGui::Button("Create"))
+        {
+          const StringRange rel_dir_path       = ctx.editor->fileSystem().relativePath(m_FileEntry);
+          Assets&           assets             = ctx.editor->engine().assets();
+          const String      file_name          = "/" + (m_AssetName + m_Extension);
+          const String      relative_file_path = rel_dir_path + file_name;
+
+          assets.indexAsset<TAssetInfo>(relative_file_path);
+          assets.saveAssets();
+          ctx.editor->assetRefresh();
+
+          close();
+        }
+      }
+      else
+      {
+        ImGui::Button("Please Use a Valid Name");
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button("Cancel"))
+      {
+        close();
+      }
+
+      ImGui::PopID();
+    }
+  };
+
   bool ui::MenuDropdown::beginItem(const ActionContext& ctx)
   {
     return ImGui::BeginMenu(name());
@@ -962,7 +1024,7 @@ namespace bifrost::editor
 
       ImGui::End();
     }
-    /*
+    //*
     if (ImGui::Begin("RTTI"))
     {
       auto& memory = meta::gRttiMemoryBacking();
@@ -1239,6 +1301,8 @@ namespace bifrost::editor
     {".spv", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
 
     {".shader", &fileExtensionHandlerImpl<AssetShaderProgramInfo>},
+
+    {".material", &fileExtensionHandlerImpl<AssetMaterialInfo>},
 
     // {".obj", &fileExtensionHandlerImpl<>},
     // {".gltf", &fileExtensionHandlerImpl<>},
@@ -1571,44 +1635,12 @@ namespace bifrost::editor
 
           if (ImGui::MenuItem("Shader Program"))
           {
-            bfLogPush("Create Shader Program");
-            {
-              static const StringRange extenstion = ".shader";
+            editor.enqueueDialog(make<NewAssetDialog<AssetShaderProgramInfo>>("Make Shader", entry, "New Shader", ".shader"));
+          }
 
-              const String      name               = "Test Shader";
-              const StringRange rel_dir_path       = relativePath(entry);
-              Assets&           assets             = editor.engine().assets();
-              const String      file_name          = "/" + name + extenstion;
-              const String      full_file_path     = entry.full_path + file_name;
-              const String      relative_file_path = rel_dir_path + file_name;
-
-              bfLogPrint("RelFilePath  (%s)", relative_file_path.c_str());
-              bfLogPrint("FullFilePath (%s)", full_file_path.c_str());
-
-              const BifrostUUID        uuid   = assets.indexAsset<AssetShaderProgramInfo>(relative_file_path);
-              BaseAssetInfo* const     info   = assets.findAssetInfo(uuid);
-              AssetShaderProgramHandle handle = nullptr;
-
-              if (assets.tryAssignHandle(handle, info))
-              {
-                JsonSerializerWriter json_serializer{allocator()};
-
-                json_serializer.beginDocument(false);
-                json_serializer.serialize(*handle);
-                json_serializer.endDocument();
-
-                String json_string;
-                toString(json_serializer.document(), json_string);
-
-                File file{full_file_path, file::FILE_MODE_WRITE};
-
-                file.writeBytes(json_string.cstr(), json_string.length());
-                file.close();
-
-                m_HasBeenModified = true;
-              }
-            }
-            bfLogPop();
+          if (ImGui::MenuItem("Material"))
+          {
+            editor.enqueueDialog(make<NewAssetDialog<AssetMaterialInfo>>("Make Material", entry, "New Material", ".material"));
           }
 
           ImGui::EndMenu();
@@ -1640,5 +1672,15 @@ namespace bifrost::editor
         ImGui::TreePop();
       }
     }
+  }
+
+  void FileSystem::clearImpl()
+  {
+    for (FileEntry* const entry : m_AllNodes)
+    {
+      m_Memory.deallocateT(entry);
+    }
+
+    m_AllNodes.clear();
   }
 }  // namespace bifrost::editor

@@ -49,6 +49,11 @@ namespace bifrost
     {
     }
 
+    StringRange(std::nullptr_t) :
+      StringRange{nullptr, nullptr}
+    {
+    }
+
     [[nodiscard]] std::size_t length() const
     {
       // bfStringRange_length();
@@ -96,7 +101,7 @@ namespace bifrost
     }
 
     String(const char* bgn, std::size_t length) :
-      m_Handle{String_newLen(bgn, length)}
+      m_Handle{length ? String_newLen(bgn, length) : nullptr}
     {
     }
 

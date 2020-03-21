@@ -161,8 +161,7 @@ namespace bifrost
         break;
     }
 
-    const std::uint64_t mask           = type_info->enumValueMask();
-
+    const std::uint64_t mask = type_info->enumValueMask();
 
     for (const auto& props : type_info->properties())
     {
@@ -203,18 +202,46 @@ namespace bifrost
   bool JsonSerializerReader::beginDocument(bool is_array)
   {
     m_ObjectStack.emplaceBack(&m_Document, is_array ? 0 : -1);
-    return true;
+    return m_Document.isArray()  == is_array;
   }
 
   bool JsonSerializerReader::pushObject(StringRange key)
   {
-    m_ObjectStack.emplaceBack(&currentObject()[key], -1);
+    json::Value& current_obj = currentObject();
+
+    if (current_obj.isArray())
+    {
+      m_ObjectStack.emplaceBack(&current_obj[currentNode().array_index++], -1);
+    }
+    else if (current_obj.isObject())
+    {
+      m_ObjectStack.emplaceBack(&current_obj[key], -1);
+    }
+    else
+    {
+      return false;
+    }
+
     return true;
   }
 
   bool JsonSerializerReader::pushArray(StringRange key, std::size_t& size)
   {
-    json::Value* const object = &currentObject()[key];
+    json::Value& current_obj = currentObject();
+    json::Value* object;
+
+    if (current_obj.isArray())
+    {
+      object = &current_obj[currentNode().array_index++];
+    }
+    else if (current_obj.isObject())
+    {
+      object = &current_obj[key];
+    }
+    else
+    {
+      return false;
+    }
 
     size = object->size();
 
@@ -366,20 +393,20 @@ namespace bifrost
 
     switch (type_info->size())
     {
-    case 1:
-      serialize("value", *reinterpret_cast<std::uint8_t*>(&enum_value));
-      break;
-    case 2:
-      serialize("value", *reinterpret_cast<std::uint16_t*>(&enum_value));
-      break;
-    case 4:
-      serialize("value", *reinterpret_cast<std::uint32_t*>(&enum_value));
-      break;
-    case 8:
-      serialize("value", *reinterpret_cast<std::uint64_t*>(&enum_value));
-      break;
-    default:
-      break;
+      case 1:
+        serialize("value", *reinterpret_cast<std::uint8_t*>(&enum_value));
+        break;
+      case 2:
+        serialize("value", *reinterpret_cast<std::uint16_t*>(&enum_value));
+        break;
+      case 4:
+        serialize("value", *reinterpret_cast<std::uint32_t*>(&enum_value));
+        break;
+      case 8:
+        serialize("value", *reinterpret_cast<std::uint64_t*>(&enum_value));
+        break;
+      default:
+        break;
     }
 
     popObject();

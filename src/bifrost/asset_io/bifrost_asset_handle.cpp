@@ -177,6 +177,35 @@ namespace bifrost
     }
   }
 
+  bool BaseAssetInfo::defaultLoad(Engine& engine)
+  {
+    const String full_path = engine.assets().fullPath(*this);
+
+    File file{full_path, file::FILE_MODE_READ};
+
+    if (file)
+    {
+      std::size_t buffer_size;
+      char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
+
+      json::Value json_value = json::fromString(buffer, buffer_size - 1);
+
+      JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
+
+      ISerializer& serializer = reader;
+
+      serializer.beginDocument(false);
+      serializer.serialize(*payload());
+      serializer.endDocument();
+
+      file.close();
+
+      return true;
+    }
+
+    return false;
+  }
+
   BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info) :
     m_Engine{&engine},
     m_Info{info},
@@ -281,97 +310,5 @@ namespace bifrost
   IBaseObject* BaseAssetHandle::payload() const
   {
     return m_Info ? m_Info->payload() : nullptr;
-  }
-
-  void detail::releaseGfxHandle(Engine& engine, bfGfxBaseHandle handle)
-  {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
-
-    bfGfxDevice_flush(device);
-    bfGfxDevice_release(device, handle);
-  }
-
-  bool AssetTextureInfo::load(Engine& engine)
-  {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
-
-    const bfTextureCreateParams params = bfTextureCreateParams_init2D(
-     BIFROST_TEXTURE_UNKNOWN_SIZE,
-     BIFROST_TEXTURE_UNKNOWN_SIZE,
-     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
-
-    Texture& texture = m_Payload.set<Texture>(device);
-
-    texture.m_Handle = bfGfxDevice_newTexture(device, &params);
-
-    const String full_path = engine.assets().fullPath(*this);
-
-    return bfTexture_loadFile(texture.m_Handle, full_path.cstr());
-  }
-
-  ShaderModule::ShaderModule(bfGfxDeviceHandle device) :
-    BaseT(device)
-  {
-  }
-
-  bool AssetShaderModuleInfo::load(Engine& engine)
-  {
-    const bfGfxDeviceHandle device        = bfGfxContext_device(engine.renderer().context());
-    ShaderModule&           shader_module = m_Payload.set<ShaderModule>(device);
-
-    shader_module.m_Handle = bfGfxDevice_newShaderModule(device, m_Type);
-
-    return true;
-  }
-
-  void AssetShaderModuleInfo::serialize(Engine& engine, ISerializer& serializer)
-  {
-    serializer.serializeT("m_Type", &m_Type);
-  }
-
-  ShaderProgram::ShaderProgram(bfGfxDeviceHandle device) :
-    BaseT(device),
-    m_VertexShader{nullptr},
-    m_FragmentShader{nullptr}
-  {
-  }
-
-  bool AssetShaderProgramInfo::load(Engine& engine)
-  {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
-
-    m_Payload.set<ShaderProgram>(device);
-
-    const String full_path = engine.assets().fullPath(*this);
-
-    File file{full_path, file::FILE_MODE_READ};
-
-    if (file)
-    {
-      std::size_t buffer_size;
-      char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
-
-      json::Value json_value = json::fromString(buffer, buffer_size - 1);
-
-      JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
-
-      ISerializer& serializer = reader;
-
-      serializer.beginDocument(false);
-      serializer.serialize(m_Payload.as<ShaderProgram>());
-      serializer.endDocument();
-
-      file.close();
-    }
-
-    return true;
-  }
-
-  bool AssetShaderProgramInfo::save(Engine& engine, ISerializer& serializer)
-  {
-    (void)engine;
-
-    serializer.serialize(*payload());
-    return true;
   }
 }  // namespace bifrost

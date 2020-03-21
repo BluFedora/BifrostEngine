@@ -18,6 +18,37 @@ namespace bifrost
 {
   class Entity;
 
+  /*
+    Planned Component Types;
+
+      * AudioSource
+      * ParticleEmitter
+      * AIAgent
+      * Sprite
+      * Animator2D (SpriteAnimator)
+        > Needs Sprite
+      * Mesh
+      * Animator3D (MeshAnimator)
+        > Needs Mesh
+      * TimelineAnimator
+      * Tilemap
+      * Collider2D
+        > Needs: RigidBody2D
+      * Collider3D
+        > Needs: RigidBody3D
+      * RigidBody2D
+      * RigidBody3D
+      * LightSource
+      * GUI?
+        > Text, Button, Etc
+      * Combat/Health?
+
+    Built In Scripts:
+
+      * ParallaxBackground
+      * CameraTarget
+  */
+
   class BaseComponentStorage : bfNonCopyMoveable<BaseComponentStorage>
   {
    public:

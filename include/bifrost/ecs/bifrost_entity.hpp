@@ -30,7 +30,7 @@ namespace bifrost
 
    private:
     Scene&                                    m_OwningScene;
-    std::string                               m_Name;
+    String                                    m_Name;
     BifrostTransform                          m_Transform;
     Entity*                                   m_Parent;
     EntityList                                m_Children;
@@ -38,12 +38,12 @@ namespace bifrost
     HashTable<std::uint32_t, dense_map::ID_t> m_Components;  // <type, id>
 
    public:
-    Entity(Scene& scene, std::string_view name);
+    Entity(Scene& scene, const StringRange& name);
 
-    [[nodiscard]] Scene&             scene() const { return m_OwningScene; }
-    [[nodiscard]] const std::string& name() const { return m_Name; }
-    [[nodiscard]] BifrostTransform&  transform() { return m_Transform; }
-    [[nodiscard]] const EntityList&  children() const { return m_Children; }
+    [[nodiscard]] Scene&            scene() const { return m_OwningScene; }
+    [[nodiscard]] const String&     name() const { return m_Name; }
+    [[nodiscard]] BifrostTransform& transform() { return m_Transform; }
+    [[nodiscard]] const EntityList& children() const { return m_Children; }
 
     template<typename F>
     void forEachComp(F&& f)
@@ -54,7 +54,7 @@ namespace bifrost
       }
     }
 
-    Entity* addChild(std::string_view name);
+    Entity* addChild(const StringRange& name);
     void    setParent(Entity* new_parent);
 
     template<typename T>
@@ -96,6 +96,8 @@ namespace bifrost
     {
       removeComponent(T::s_ComponentID);
     }
+
+    void serialize(ISerializer& serializer);
 
     ~Entity();
 

@@ -1,10 +1,23 @@
+/*!
+* @file   bifrost_entity.cpp
+* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @brief
+*   This engine's concept of a GameObject / Actor.
+*   An entity is a bag of components with a 'BifrostTransform' and a name.
+*
+* @version 0.0.1
+* @date    2019-12-22
+*
+* @copyright Copyright (c) 2019
+*/
 #include "bifrost/ecs/bifrost_entity.hpp"
 
+#include "bifrost/asset_io/bifrost_asset_handle.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
 
 namespace bifrost
 {
-  Entity::Entity(Scene& scene, const std::string_view name) :
+  Entity::Entity(Scene& scene, const StringRange& name) :
     m_OwningScene{scene},
     m_Name{name},
     m_Transform{},
@@ -15,7 +28,7 @@ namespace bifrost
     bfTransform_ctor(&m_Transform);
   }
 
-  Entity* Entity::addChild(std::string_view name)
+  Entity* Entity::addChild(const StringRange& name)
   {
     Entity* child   = m_OwningScene.createEntity(name);
     child->m_Parent = this;
@@ -45,6 +58,44 @@ namespace bifrost
     }
   }
 
+  void Entity::serialize(ISerializer& serializer)
+  {
+    serializer.serialize("m_Name", m_Name);
+    serializer.serializeT("m_Transform", &m_Transform);
+
+    std::size_t num_components = 0;
+
+    if (serializer.pushArray("m_Components", num_components))
+    {
+      if (serializer.mode() != SerializerMode::LOADING)
+      {
+        forEachComp([&serializer](BaseObjectT* component) {
+          meta::BaseClassMetaInfo* const type_info = component->type();
+          const std::string_view         type_name = type_info->name();
+
+          if (serializer.pushObject({type_name.data(), type_name.size()}))
+          {
+            serializer.serialize(*component);
+            serializer.popObject();
+          }
+        });
+      }
+      else
+      {
+        for (std::size_t i = 0; i < num_components; ++i)
+        {
+          if (serializer.pushObject(nullptr))
+          {
+            
+            serializer.popObject();
+          }
+        }
+      }
+
+      serializer.popArray();
+    }
+  }
+
   Entity::~Entity()
   {
     if (m_Parent)
@@ -57,7 +108,7 @@ namespace bifrost
 
   void Entity::removeChild(Entity* child)
   {
-    m_Children.erase(m_Children.makeIterator(* child));
+    m_Children.erase(m_Children.makeIterator(*child));
     child->m_Parent = nullptr;
   }
 

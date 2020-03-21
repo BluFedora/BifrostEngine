@@ -221,6 +221,7 @@ namespace bifrost::editor
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     const char*       name() override { return "Bifrost Editor"; }
     Engine&           engine() const { return *m_Engine; }
+    FileSystem&       fileSystem() { return m_FileSystem; }
 
     Action* findAction(const char* name) const;
     void    enqueueDialog(ui::Dialog* dlog);

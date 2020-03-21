@@ -302,6 +302,7 @@ namespace bifrost
 
       Any            asset_handle   = type_info->instantiate(m_Memory, StringRange(path), uuid);
       BaseAssetInfo* asset_handle_p = asset_handle.as<BaseAssetInfo*>();
+      asset_handle_p->m_TypeInfo    = type_info;
 
       m_AssetMap.emplace(uuid, asset_handle_p);
       m_NameToGUID.emplace(path.c_str(), uuid);

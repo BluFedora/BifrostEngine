@@ -73,16 +73,7 @@ namespace bifrost::editor
 
    private:
     void uiShowImpl(EditorOverlay& editor, FileEntry& entry);
-
-    void clearImpl()
-    {
-      for (FileEntry* const entry : m_AllNodes)
-      {
-        m_Memory.deallocateT(entry);
-      }
-
-      m_AllNodes.clear();
-    }
+    void clearImpl();
   };
 }  // namespace bifrost::editor
 

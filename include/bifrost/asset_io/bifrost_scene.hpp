@@ -46,7 +46,7 @@ namespace bifrost
 
     // Entity Management
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
-    Entity*               addEntity(std::string_view name);
+    Entity*               addEntity(const StringRange& name);
     void                  removeEntity(Entity* entity);
 
     // Component Management
@@ -90,7 +90,7 @@ namespace bifrost
       return m_ComponentStorage[cid]->createComponent(owner);
     }
 
-    Entity* createEntity(std::string_view name);
+    Entity* createEntity(const StringRange& name);
   };
 
   class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>

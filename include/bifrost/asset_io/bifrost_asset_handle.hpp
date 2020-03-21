@@ -103,6 +103,24 @@ namespace bifrost
    public:
     SerializerMode mode() const { return m_Mode; }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // API / Implementation Notes:
+    //   * If you are within an Array all 'StringRange key' paramaters are ignored,
+    //     as a result of this condition you may pass in nullptr.
+    //       > An implemetation is allowed to do something special with the key
+    //         if it is not nullptr though,
+    //
+    //   * The return value in pushArray's "std::size_t& size" is only useful for
+    //     SerializerMode::LOADING. Otherise you are going to receive 0.
+    // 
+    //   * Scopes for 'pushObject' and 'pushArray' are only valid if they return true.
+    //     Only class 'popObject' and 'popArray' respectively only if 'pushXXX' returned true.
+    //
+    //   * Only begin reading the document if 'beginDocument' returned true.
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
     virtual bool beginDocument(bool is_array = false)             = 0;
     virtual bool pushObject(StringRange key)                      = 0;
     virtual bool pushArray(StringRange key, std::size_t& size)    = 0;
@@ -151,8 +169,8 @@ namespace bifrost
     BifrostUUID              m_UUID;      //!< Uniquely identifies the asset.
     std::uint16_t            m_RefCount;  //!< How many live references in the engine.
     AssetTagList             m_Tags;      //!< Tags associated with this asset.
-    bool                     m_IsDirty;   //!< THis asset wants to be saved.
-    meta::BaseClassMetaInfo* m_TypeInfo;  //!<
+    bool                     m_IsDirty;   //!< This asset wants to be saved.
+    meta::BaseClassMetaInfo* m_TypeInfo;  //!< The type info for the subclasses.
 
    protected:
     BaseAssetInfo(const StringRange path, BifrostUUID uuid) :
@@ -200,6 +218,9 @@ namespace bifrost
       (void)engine;
       (void)serializer;
     }
+
+    // Helpers //
+    bool defaultLoad(Engine& engine);
 
     virtual ~BaseAssetInfo() = default;
   };
