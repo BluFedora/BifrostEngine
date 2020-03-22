@@ -110,7 +110,7 @@ namespace bifrost
       shader.createImpl();
     }
 
-    return true; // TODO: File doesn't exit on create.
+    return true;  // TODO: File doesn't exit on create.
   }
 
   bool AssetShaderProgramInfo::save(Engine& engine, ISerializer& serializer)
@@ -126,7 +126,7 @@ namespace bifrost
   {
     m_Payload.set<Material>();
     defaultLoad(engine);
-    return true; // TODO: File doesn't exit on create.
+    return true;  // TODO: File doesn't exit on create.
   }
 
   bool AssetMaterialInfo::save(Engine& engine, ISerializer& serializer)
@@ -134,6 +134,56 @@ namespace bifrost
     (void)engine;
 
     serializer.serialize(*payload());
+
+    return true;
+  }
+
+  void loadObj(IMemoryManager& temp_allocator, Array<BasicVertex>& out, const char* obj_file_data, std::size_t obj_file_data_length);
+
+  Model::Model(bfGfxDeviceHandle device) :
+    BaseT(device),
+    m_NumVertices{0u}
+  {
+  }
+
+  void Model::draw(bfGfxCommandListHandle cmd_list)
+  {
+    uint64_t buffer_offset = 0;
+    bfGfxCmdList_bindVertexBuffers(cmd_list, 0, &m_Handle, 1, &buffer_offset);
+    bfGfxCmdList_draw(cmd_list, 0, m_NumVertices);
+  }
+
+  bool AssetModelInfo::load(Engine& engine)
+  {
+    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
+    Model&                  model  = m_Payload.set<Model>(device);
+
+    LinearAllocatorScope scope{engine.tempMemory()};
+    {
+      const String& full_path = engine.assets().fullPath(*this);
+
+      long  file_data_size;
+      char* file_data = LoadFileIntoMemory(full_path.cstr(), &file_data_size);
+
+      Array<BasicVertex> vertices{engine.tempMemoryNoFree()};
+      loadObj(engine.tempMemoryNoFree(), vertices, file_data, file_data_size);
+
+      model.m_NumVertices = (uint32_t)vertices.size();
+
+      bfBufferCreateParams buffer_params;
+      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
+      buffer_params.allocation.size       = sizeof(BasicVertex) * model.m_NumVertices;
+      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+
+      model.m_Handle = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);
+
+      void* const vertex_buffer_ptr = bfBuffer_map(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
+
+      std::memcpy(vertex_buffer_ptr, vertices.data(), (size_t)buffer_params.allocation.size);
+
+      bfBuffer_flushRange(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      bfBuffer_unMap(model.m_Handle);
+    }
 
     return true;
   }

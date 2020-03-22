@@ -51,13 +51,13 @@ namespace bifrost
     BIFROST_META_FRIEND;
 
    private:
-    Scene&                                    m_OwningScene;
-    String                                    m_Name;
-    BifrostTransform                          m_Transform;
-    Entity*                                   m_Parent;
-    EntityList                                m_Children;
-    intrusive::Node<Entity>                   m_Hierarchy;
-    HashTable<std::uint32_t, dense_map::ID_t> m_Components;  // <type, id>
+    Scene&                  m_OwningScene;
+    String                  m_Name;
+    BifrostTransform        m_Transform;
+    Entity*                 m_Parent;
+    EntityList              m_Children;
+    intrusive::Node<Entity> m_Hierarchy;
+    ComponentHandleStorage  m_ComponentHandles;
 
    public:
     Entity(Scene& scene, const StringRange& name);
@@ -66,15 +66,6 @@ namespace bifrost
     [[nodiscard]] const String&     name() const { return m_Name; }
     [[nodiscard]] BifrostTransform& transform() { return m_Transform; }
     [[nodiscard]] const EntityList& children() const { return m_Children; }
-
-    template<typename F>
-    void forEachComp(F&& f)
-    {
-      for (const auto& c_data : m_Components)
-      {
-        f(m_OwningScene.m_ComponentStorage[c_data.key()]->getComponent(c_data.value()));
-      }
-    }
 
     Entity* addChild(const StringRange& name);
     void    setParent(Entity* new_parent);
@@ -89,19 +80,18 @@ namespace bifrost
         return *comp;
       }
 
-      const dense_map::ID_t index = m_OwningScene.addComponent<T>(*this);
-      m_Components.emplace(T::s_ComponentID, index);
-      return *idToComponent<T>(index);
+      m_ComponentHandles.get<T>() = getComponentList<T>().add(*this);;
+      return *get<T>();
     }
 
     template<typename T>
     T* get() const
     {
-      const auto it = m_Components.find(T::s_ComponentID);
+      const auto handle = m_ComponentHandles.get<T>();
 
-      if (it != m_Components.end())
+      if (handle.isValid())
       {
-        return idToComponent<T>(it->value());
+        return &getComponentList<T>().find(handle);
       }
 
       return nullptr;
@@ -116,7 +106,10 @@ namespace bifrost
     template<typename T>
     void remove()
     {
-      removeComponent(T::s_ComponentID);
+      if (has<T>())
+      {
+        getComponentList<T>().remove(m_ComponentHandles.get<T>());
+      }
     }
 
     void serialize(ISerializer& serializer);
@@ -125,13 +118,12 @@ namespace bifrost
 
    private:
     template<typename T>
-    T* idToComponent(dense_map::ID_t id)
+    DenseMap<T>& getComponentList() const
     {
-      return (T*)m_OwningScene.m_ComponentStorage[T::s_ComponentID]->getComponent(id);
+      return m_OwningScene.m_ActiveComponents.get<T>();
     }
 
     void removeChild(Entity* child);
-    void removeComponent(std::uint32_t type_index);
   };
 }  // namespace bifrost
 

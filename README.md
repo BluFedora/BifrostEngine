@@ -8,7 +8,7 @@ The main engine requires C++17 but there are submodules which are C99, C11, or C
 ## Build System 
 
 - CMake v3.8
-- Currently only supports MSVC (VS2019) but eventually also support Clang and GCC.
+- Currently only supports MSVC (VS2019) but eventually will also support Clang and GCC.
 
 ## Engine Modules
 

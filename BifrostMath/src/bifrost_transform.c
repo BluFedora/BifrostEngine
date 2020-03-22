@@ -1,6 +1,7 @@
 #include "bifrost/math/bifrost_transform.h"
 
 #include <math.h>  // quat::sqrt
+#include <stddef.h> // NULL
 
 #define EPSILONf 0.00001f
 #define DEG_TO_RADf 0.01745329251f

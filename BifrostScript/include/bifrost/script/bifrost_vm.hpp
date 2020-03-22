@@ -562,12 +562,6 @@ namespace bifrost
     }
 
    private:
-    template<typename FObj, typename Ret, typename... Args>
-    static Ret stackStore_(FObj* obj, Args&&... args)
-    {
-      return meta::invoke(obj, args);
-    }
-
     template<typename Fn>
     static void callImplShared(BifrostVM* vm, Fn* fn_obj)
     {

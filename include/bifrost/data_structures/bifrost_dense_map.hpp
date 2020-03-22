@@ -73,8 +73,6 @@ namespace bifrost
 
     class iterator
     {
-      friend class GameStateMachine;
-
      public:
       typedef iterator    self_type;
       typedef TObject     value_type;

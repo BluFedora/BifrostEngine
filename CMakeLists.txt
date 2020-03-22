@@ -30,7 +30,7 @@ include_directories(${PROJECT_BINARY_DIR})
 
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
 
-set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_GENERATOR_PLATFORM x64)
 
   # NOTE(Shareef): Sets the output directory to be in a reasonable place.
@@ -53,6 +53,17 @@ else()
   endif()
 endif()
 
+  # GCC / Clang
+  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
+  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
+  #   "-std=c++17"                = "/std:c++17"
+  #   "-fno-rtti"                 = "/GR-"
+  #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  # using Intel C++
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # NOTE(Shareef): Setting the compiler flags we will be using.
   #
   #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
@@ -69,17 +80,9 @@ endif()
   #                  addresses. ("Eliminate Duplicate Strings")
   #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
-if (WIN32)
+  #
   set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
   set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-else()
-  # GCC / Clang
-  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "-std=c++17"                = "/std:c++17"
-  #   "-fno-rtti"                 = "/GR-"
-  #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
 endif()
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
@@ -116,7 +119,8 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost ECS Module
   "src/bifrost/ecs/bifrost_entity.cpp"
-  "src/bifrost/ecs/bifrost_component.cpp"
+  "src/bifrost/ecs/bifrost_base_component.cpp"
+  "src/bifrost/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
   "src/bifrost/editor/bifrost_editor_overlay.cpp"
@@ -186,14 +190,14 @@ set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
-
+  
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
     set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win32")
     set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
-    set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
+    # set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
   endif()
   set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
 elseif (APPLE)
@@ -251,8 +255,8 @@ endif()
 
 if (WIN32)
   configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
-  configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
-  configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
+  # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
+  # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits

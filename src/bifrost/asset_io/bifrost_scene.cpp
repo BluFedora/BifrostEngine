@@ -19,6 +19,15 @@
 
 namespace bifrost
 {
+  Scene::Scene(IMemoryManager& memory):
+    BaseObject<Scene>{},
+    m_Memory{memory},
+    m_RootEntities{memory},
+    m_ActiveComponents{memory},
+    m_InactiveComponents{memory}
+  {
+  }
+
   Entity* Scene::addEntity(const StringRange& name)
   {
     Entity* entity = createEntity(name);
@@ -61,14 +70,6 @@ namespace bifrost
       }
 
       serializer.popArray();
-    }
-  }
-
-  Scene::~Scene()
-  {
-    for (auto* const comp_storage : m_ComponentStorage)
-    {
-      m_Memory.deallocateT(comp_storage);
     }
   }
 

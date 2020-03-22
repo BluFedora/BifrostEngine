@@ -1,6 +1,8 @@
 #ifndef TIDE_CONTAINER_TUPLE_HPP
 #define TIDE_CONTAINER_TUPLE_HPP
 
+#include "bifrost/meta/bifrost_meta_utils.hpp" /* for_each_template */
+
 #include <tuple> /* size_t, tuple */
 
 namespace bifrost
@@ -55,24 +57,46 @@ namespace bifrost
   template<template<typename...> class TContainer, typename... Args>
   class ContainerTuple : private detail::unique_types<Args...>
   {
+    struct CtorEachTag final
+    {};
+    struct CtorCopyTag final
+    {};
+
    private:
-    using ContainerTupleImpl = std::tuple<TContainer<Args>...>;
+    template<typename T>
+    using TContainerStorage  = std::aligned_storage_t<sizeof(T), alignof(T)>;
+    using ContainerTupleImpl = std::tuple<TContainerStorage<TContainer<Args>>...>;
 
    private:
     ContainerTupleImpl m_Impl;
 
    public:
-    inline ContainerTuple(void) noexcept :
-      m_Impl()
+    template<typename... CtorArgs>
+    ContainerTuple(CtorArgs&&... args) noexcept :
+      m_Impl{}
     {
+      meta::for_each_template<Args...>([this, &args...](auto t) {
+        using T = bfForEachTemplateT(t);
+
+        new (&this->get<T>()) TContainer<T>(std::forward<CtorArgs>(args)...);
+      });
     }
 
-    inline ContainerTupleImpl& raw() noexcept
+    ~ContainerTuple()
+    {
+      meta::for_each_template<Args...>([this](auto t) {
+        using T = bfForEachTemplateT(t);
+
+        this->get<T>().~TContainer<T>();
+      });
+    }
+
+    ContainerTupleImpl& raw() noexcept
     {
       return m_Impl;
     }
 
-    inline const ContainerTupleImpl& raw() const noexcept
+    const ContainerTupleImpl& raw() const noexcept
     {
       return m_Impl;
     }
@@ -80,15 +104,34 @@ namespace bifrost
     template<typename T>
     TContainer<T>& get() noexcept
     {
-      return std::get<detail::get_index_of_element_from_tuple_by_type_impl<T, 0, Args...>::value>(raw());
+      return getContainer<TContainer<T>, T>();
     }
 
     template<typename T>
     const TContainer<T>& get() const noexcept
     {
-      return std::get<detail::get_index_of_element_from_tuple_by_type_impl<T, 0, Args...>::value>(raw());
+      return getConstContainer<TContainer<T>, T>();
+    }
+
+   private:
+    template<typename TCont, typename TElem>
+    TCont& getContainer()
+    {
+      return *reinterpret_cast<TCont*>(&std::get<indexOfType<TElem>()>(raw()));
+    }
+
+    template<typename TCont, typename TElem>
+    const TCont& getConstContainer() const
+    {
+      return *reinterpret_cast<const TCont*>(&std::get<indexOfType<TElem>()>(raw()));
+    }
+
+    template<typename T>
+    static constexpr std::size_t indexOfType()
+    {
+      return detail::get_index_of_element_from_tuple_by_type_impl<T, 0, Args...>::value;
     }
   };
-}  // namespace tide
+}  // namespace bifrost
 
 #endif /* TIDE_CONTAINER_TUPLE_HPP */

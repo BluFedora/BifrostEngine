@@ -32,7 +32,6 @@
 #include "debug/bifrost_dbg_logger.h"
 
 // ECS
-#include "ecs/bifrost_component.hpp"
 #include "ecs/bifrost_entity.hpp"
 
 // Graphics

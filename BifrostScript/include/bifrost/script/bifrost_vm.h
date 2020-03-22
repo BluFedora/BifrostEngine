@@ -21,9 +21,9 @@
 #ifndef BIFROST_VM_API_H
 #define BIFROST_VM_API_H
 
+#include "bifrost/bifrost_std.h"                            /* bfStringRange, int32_t, size_t */
 #include "bifrost/data_structures/bifrost_dynamic_string.h" /* BifrostString                  */
 #include "bifrost/data_structures/bifrost_hash_map.h"       /* BifrostHashMap                 */
-#include "bifrost_std.h"                                    /* bfStringRange, int32_t, size_t */
 #include "bifrost_vm_export.h"                              /* BIFROST_VM_API                 */
 
 #if __cplusplus

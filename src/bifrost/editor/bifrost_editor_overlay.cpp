@@ -1305,20 +1305,16 @@ namespace bifrost::editor
     {".bmp", &fileExtensionHandlerImpl<AssetTextureInfo>},
     {".tga", &fileExtensionHandlerImpl<AssetTextureInfo>},
     {".psd", &fileExtensionHandlerImpl<AssetTextureInfo>},
-
-    // {".glsl", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
-    // {".frag", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
-    // {".vert", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
     {".spv", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
-
     {".shader", &fileExtensionHandlerImpl<AssetShaderProgramInfo>},
-
     {".material", &fileExtensionHandlerImpl<AssetMaterialInfo>},
-
     {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
+    {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
 
-    // {".obj", &fileExtensionHandlerImpl<>},
     // {".gltf", &fileExtensionHandlerImpl<>},
+    // {".glsl", &fileExtensionHandlerImpl<>},
+    // {".frag", &fileExtensionHandlerImpl<>},
+    // {".vert", &fileExtensionHandlerImpl<>},
   };
 
   static void                        assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry);
@@ -1757,10 +1753,29 @@ namespace bifrost::editor
 
         visit_all(
          meta::overloaded{
-          [this](IBaseObject* object) { m_Serializer.serialize(*object); },
+          [this](IBaseObject* object) {
+            m_Serializer.serialize(*object);
+          },
           [this, &current_scene, &engine](Entity* object) {
             m_Serializer.beginChangeCheck();
             object->serialize(m_Serializer);
+
+            if (!object->has<MeshRenderer>())
+            {
+              if (ImGui::Button("Add Mesh Renderer"))
+              {
+                object->add<MeshRenderer>();
+              }  
+            }
+            else
+            {
+              MeshRenderer* const renderer = object->get<MeshRenderer>();
+
+              m_Serializer.serialize("material", renderer->material());
+              m_Serializer.serialize("model", renderer->model());
+            }
+
+            
 
             if (m_Serializer.endChangedCheck())
             {

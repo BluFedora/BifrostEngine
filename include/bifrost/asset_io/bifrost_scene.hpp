@@ -13,10 +13,10 @@
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
-#include "bifrost/bifrost_math.h"               /* Vec3f, Mat4x4                             */
-#include "bifrost/core/bifrost_base_object.hpp" /* BaseObject<T>                             */
-#include "bifrost/ecs/bifrost_component.hpp"    /* BaseComponentStorage, ComponentStorage<T> */
-#include "bifrost_asset_handle.hpp"             /* AssetInfo<T1, T2>                         */
+#include "bifrost/bifrost_math.h"                    /* Vec3f, Mat4x4     */
+#include "bifrost/core/bifrost_base_object.hpp"      /* BaseObject<T>     */
+#include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
+#include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
 
 namespace bifrost
 {
@@ -32,66 +32,39 @@ namespace bifrost
     friend class Entity;
 
    private:
-    IMemoryManager&              m_Memory;
-    Array<Entity*>               m_RootEntities;
-    Array<BaseComponentStorage*> m_ComponentStorage;
+    IMemoryManager&  m_Memory;
+    Array<Entity*>   m_RootEntities;
+    ComponentStorage m_ActiveComponents;
+    ComponentStorage m_InactiveComponents;
 
    public:
-    explicit Scene(IMemoryManager& memory) :
-      m_Memory{memory},
-      m_RootEntities{memory},
-      m_ComponentStorage{memory}
-    {
-    }
+    explicit Scene(IMemoryManager& memory);
 
     // Entity Management
+
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
     Entity*               addEntity(const StringRange& name);
     void                  removeEntity(Entity* entity);
 
-    // Component Management
+    // Component
 
-    template<typename T, typename F>
-    void forEachComponent(F&& fn)
+    template<typename T>
+    DenseMap<T>& components()
     {
-      const std::uint32_t cid = T::s_ComponentID;
-
-      if (cid < m_ComponentStorage.size())
-      {
-        BaseComponentStorage* storage = m_ComponentStorage[cid];
-
-        if (storage)
-        {
-          const std::size_t num_components = storage->numComponents();
-
-          for (std::size_t i = 0; i < num_components; ++i)
-          {
-            fn(static_cast<T*>(storage->componentAt(i)));
-          }
-        }
-      }
+      return m_ActiveComponents.get<T>();
     }
+
+    template<typename T>
+    const DenseMap<T>& components() const
+    {
+      return m_ActiveComponents.get<T>();
+    }
+
+    // Extra
 
     void serialize(ISerializer& serializer);
 
-    ~Scene() override;
-
    private:
-    template<typename T>
-    dense_map::ID_t addComponent(Entity& owner)
-    {
-      const std::uint32_t cid = T::s_ComponentID;
-
-      if (m_ComponentStorage.size() <= cid)
-      {
-        m_ComponentStorage.resize(cid + 1);
-
-        m_ComponentStorage[cid] = m_Memory.allocateT<ComponentStorage<T>>(m_Memory);
-      }
-
-      return m_ComponentStorage[cid]->createComponent(owner);
-    }
-
     Entity* createEntity(const StringRange& name);
   };
 

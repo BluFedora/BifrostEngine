@@ -46,7 +46,12 @@ endif()
 
 include_directories("${PROJECT_BINARY_DIR}")
 
-set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
+  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
+  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win32)
+endif()
+
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
@@ -114,6 +119,5 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 target_compile_definitions(BifrostScript_cli PRIVATE BIFROST_VM_EXPORT_STATIC)
-
 
 target_link_libraries(BifrostScript_cli PRIVATE BifrostScript)

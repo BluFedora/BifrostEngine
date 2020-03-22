@@ -17,6 +17,7 @@
 #include "bifrost_vec2.h" /* Vec2f, Vec2i */
 
 #include <algorithm> /* min, max */
+#include <cstdint>   /* uint32_t */
 
 namespace bifrost
 {

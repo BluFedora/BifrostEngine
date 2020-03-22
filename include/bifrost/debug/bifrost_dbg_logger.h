@@ -66,7 +66,7 @@ typedef struct IBifrostDbgLogger_t
 // Main API
 void bfLogger_init(const IBifrostDbgLogger* logger);
 void bfLogPush_(const char* file, const char* func, int line, const char* format, ...);
-void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, __format_string const char* format, ...);
+void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, /*__format_string*/ const char* format, ...);
 #if __cplusplus
 void bfLogPop_(const char* file, const char* func, int line, unsigned amount = 1);
 #else

@@ -4,6 +4,7 @@
 #include <stddef.h> /* size_t             */
 #include <stdint.h> /* uint32_t, uint64_t */
 
+#if _MSC_VER
 /*!
  * @brief
  *  NOTE(Shareef):
@@ -16,6 +17,11 @@
   default:                     \
     __debugbreak();            \
     __assume(0)
+#else
+#define bfInvalidDefaultCase() \
+  default:                     \
+    break
+#endif
 
 #if __cplusplus
 #undef bfCArraySize
@@ -57,7 +63,11 @@ typedef struct bfStringRange_t
 
 } bfStringRange;
 
-static bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
+#if __cplusplus
+constexpr
+#endif
+ static bfStringRange
+ bfMakeStringRangeLen(const char* bgn, size_t length)
 {
 #if __cplusplus
   return {
@@ -72,7 +82,11 @@ static bfStringRange bfMakeStringRangeLen(const char* bgn, size_t length)
 #endif
 }
 
-static bfStringRange bfMakeStringRangeC(const char* str)
+#if __cplusplus
+constexpr
+#endif
+ static bfStringRange
+ bfMakeStringRangeC(const char* str)
 {
   const char* end = str;
 

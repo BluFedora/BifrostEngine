@@ -16,6 +16,7 @@
 #include "bifrost_dynamic_string.h" /* ConstBifrostString */
 
 #include <cstddef>   /* size_t        */
+#include <cstring>   /* strncmp       */
 #include <stdexcept> /* runtime_error */
 
 namespace bifrost
@@ -24,32 +25,32 @@ namespace bifrost
 
   struct StringRange : public bfStringRange
   {
-    StringRange(const bfStringRange& rhs) :
+    constexpr StringRange(const bfStringRange& rhs) :
       bfStringRange{rhs}
     {
     }
 
-    StringRange(const char* bgn, const char* end) :
+    constexpr StringRange(const char* bgn, const char* end) :
       bfStringRange{bgn, end}
     {
     }
 
-    StringRange(const char* bgn, std::size_t length) :
+    constexpr StringRange(const char* bgn, std::size_t length) :
       bfStringRange{bgn, bgn + length}
     {
     }
 
-    StringRange(const char* cstring) :
+    constexpr StringRange(const char* cstring) :
       bfStringRange{bfMakeStringRangeC(cstring)}
     {
     }
 
-    StringRange() :
+    constexpr StringRange() :
       StringRange{nullptr, nullptr}
     {
     }
 
-    StringRange(std::nullptr_t) :
+    constexpr StringRange(std::nullptr_t) :
       StringRange{nullptr, nullptr}
     {
     }
@@ -68,12 +69,10 @@ namespace bifrost
       return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
     }
 
-
     [[nodiscard]] bool operator==(const char* rhs) const
     {
       return std::strncmp(bgn, rhs, length()) == 0;
     }
-
 
     [[nodiscard]] bool operator!=(const StringRange& rhs) const
     {

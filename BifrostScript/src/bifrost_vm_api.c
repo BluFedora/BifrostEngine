@@ -719,7 +719,6 @@ void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx)
 
   if (IS_NULL(value))
   {
-    __debugbreak();
     return NULL;
   }
 
@@ -746,7 +745,6 @@ void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx)
   }
 
   assert(!"This object is not a instance.");
-  __debugbreak();
   return NULL;
 }
 
@@ -1088,7 +1086,9 @@ frame_start:;
   // TODO(SR): Only in Debug Builds
   if (stack_size < (frame->stack + frame->fn->needed_stack_space))
   {
+    #if _MSC_VER
     __debugbreak();
+    #endif
   }
 
   while (bfTrue)

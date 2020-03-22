@@ -3,7 +3,9 @@
 #include "bifrost/memory/bifrost_imemory_manager.hpp"
 
 #if _WIN32 /* Windows */
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
 #include <cassert>
 #include <io.h>
