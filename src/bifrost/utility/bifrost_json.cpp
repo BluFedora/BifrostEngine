@@ -360,6 +360,11 @@ namespace bifrost::json
     cast<Array>(s_ArrayAllocator).push(item);
   }
 
+  Value& Value::push()
+  {
+    return cast<Array>(s_ArrayAllocator).emplace(nullptr);
+  }
+
   void Value::insert(std::size_t index, const Value& item)
   {
     cast<Array>(s_ArrayAllocator).insert(index, item);

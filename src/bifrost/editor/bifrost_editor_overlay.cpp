@@ -485,10 +485,18 @@ namespace bifrost::editor
           Assets&           assets             = ctx.editor->engine().assets();
           const String      file_name          = "/" + (m_AssetName + m_Extension);
           const String      relative_file_path = rel_dir_path + file_name;
+          const json::Value empty_object       = json::Object{};
 
-          assets.indexAsset<TAssetInfo>(relative_file_path);
-          assets.saveAssets();
-          ctx.editor->assetRefresh();
+          if (assets.writeJsonToFile(assets.fullPath(relative_file_path), empty_object))
+          {
+            assets.indexAsset<TAssetInfo>(relative_file_path);
+            assets.saveAssets();
+            ctx.editor->assetRefresh();
+          }
+          else
+          {
+            bfLogError("Failed to create asset: %s", m_AssetName);
+          }
 
           close();
         }
@@ -682,6 +690,7 @@ namespace bifrost::editor
     m_Actions.emplace("File.Save.Project", ActionPtr(make<ASaveProject>()));
     m_Actions.emplace("Project.Close", ActionPtr(make<ACloseProject>()));
     m_Actions.emplace("Asset.Refresh", ActionPtr(make<ARefreshAsset>()));
+    m_Actions.emplace("View.AddInspector", ActionPtr(make<MemberAction<void>>(&EditorOverlay::viewAddInspector)));
 
     ui::BaseMenuItem* file_menu_items[] =
      {
@@ -698,17 +707,17 @@ namespace bifrost::editor
      {
       ui::makeAction("Refresh", findAction("Asset.Refresh")),
      };
-
+    /*
     ui::BaseMenuItem* edit_menu_items[] =
      {
       ui::makeAction("Copy"),
      };
-
+     */
     ui::BaseMenuItem* view_menu_items[] =
      {
-      ui::makeAction("DUMMY_ITEM"),
+      ui::makeAction("Add Inspector", findAction("View.AddInspector")),
      };
-
+    /*
     ui::BaseMenuItem* entity_menu_items[] =
      {
       ui::makeAction("DUMMY_ITEM"),
@@ -723,14 +732,14 @@ namespace bifrost::editor
      {
       ui::makeAction("DUMMY_ITEM"),
      };
-
+     */
     addMainMenuItem("File", file_menu_items);
     addMainMenuItem("Asset", asset_menu_items);
-    addMainMenuItem("Edit", edit_menu_items);
+    // addMainMenuItem("Edit", edit_menu_items);
     addMainMenuItem("View", view_menu_items);
-    addMainMenuItem("Entity", entity_menu_items);
-    addMainMenuItem("Component", component_menu_items);
-    addMainMenuItem("Help", help_menu_items);
+    // addMainMenuItem("Entity", entity_menu_items);
+    // addMainMenuItem("Component", component_menu_items);
+    // addMainMenuItem("Help", help_menu_items);
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -814,8 +823,6 @@ namespace bifrost::editor
   {
     const ActionContext action_ctx{this};
 
-    m_Inspector.setAssets(&engine.assets());
-
     // ImGui::ShowDemoWindow();
 
     if (s_MainMenuBar.beginItem(action_ctx))
@@ -867,11 +874,13 @@ namespace bifrost::editor
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);  // Add empty node
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
-        ImGuiID       dock_main_id  = dockspace_id;
-        const ImGuiID dock_id_left  = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
-        const ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+        ImGuiID       dock_main_id        = dockspace_id;
+        ImGuiID       dock_id_left_top    = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+        const ImGuiID dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left_top, ImGuiDir_Down, 0.5f, nullptr, &dock_id_left_top);
+        const ImGuiID dock_id_right       = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
 
-        ImGui::DockBuilderDockWindow("Project View", dock_id_left);
+        ImGui::DockBuilderDockWindow("Project View", dock_id_left_top);
+        ImGui::DockBuilderDockWindow("Hierarchy View", dock_id_left_bottom);
         ImGui::DockBuilderDockWindow("Inspector View", dock_id_right);
 
         ImGui::DockBuilderFinish(dockspace_id);
@@ -958,17 +967,10 @@ namespace bifrost::editor
     ImGui::End();
     ImGui::PopStyleVar(3);
 
-    if (ImGui::Begin("Command Palette"))
-    {
-      for (const auto& action : m_Actions)
-      {
-        buttonAction(action_ctx, action.key().cstr(), action.key().cstr(), ImVec2(-1.0f, 0.0f));
-      }
-    }
-    ImGui::End();
-
     if (m_OpenProject)
     {
+      const auto current_scene = engine.currentScene();
+
       if (ImGui::Begin("Project View"))
       {
         ImGui::Separator();
@@ -980,51 +982,60 @@ namespace bifrost::editor
         ImGui::Separator();
 
         m_FileSystem.uiShow(*this);
-      }
 
+        ImGui::Separator();
+      }
       ImGui::End();
 
-      if (ImGui::Begin("Inspector View"))
+      if (ImGui::Begin("Hierarchy View"))
       {
-        m_Inspector.beginDocument(false);
-
-        if (m_SelectedObject.valid())
+        if (current_scene)
         {
-          visit_all(
-           meta::overloaded{
-            [this](IBaseObject* object) { m_Inspector.serialize(*object); },
-            [this, &engine](auto& asset_handle) {
-              if (asset_handle)
-              {
-                m_Inspector.beginChangeCheck();
-                m_Inspector.serialize(*asset_handle.payload());
-                ImGui::Separator();
+          if (ImGui::Button("Add Entity"))
+          {
+            current_scene->addEntity("Untitled");
 
-                asset_handle.info()->serialize(engine, m_Inspector);
-
-                if (m_Inspector.endChangedCheck())
-                {
-                  engine.assets().markDirty(asset_handle);
-                }
-              }
-            },
-           },
-           m_SelectedObject);
+            engine.assets().markDirty(current_scene);
+          }
 
           ImGui::Separator();
 
-          if (ImGui::Button("Clear Selection"))
+          for (Entity* const root_entity : current_scene->rootEntities())
           {
-            select(nullptr);
+            if (ImGui::Selectable(root_entity->name().cstr()))
+            {
+              select(root_entity);
+            }
           }
         }
+        else
+        {
+          ImGui::TextUnformatted("(No Scene Open)");
 
-        m_Inspector.endDocument();
+          if (ImGui::IsItemHovered())
+          {
+            ImGui::SetTooltip("Create a new Scene by right clicking a folder 'Create->Scene'\nThen double click the newly created Scene asset.");
+          }
+        }
       }
-
       ImGui::End();
+
+      for (Inspector& inspector : m_InspectorWindows)
+      {
+        inspector.uiShow(*this);
+      }
     }
-    //*
+    /*
+
+    if (ImGui::Begin("Command Palette"))
+    {
+    for (const auto& action : m_Actions)
+    {
+    buttonAction(action_ctx, action.key().cstr(), action.key().cstr(), ImVec2(-1.0f, 0.0f));
+    }
+    }
+    ImGui::End();
+
     if (ImGui::Begin("RTTI"))
     {
       auto& memory = meta::gRttiMemoryBacking();
@@ -1107,10 +1118,10 @@ namespace bifrost::editor
     m_CurrentFps{0},
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
-    m_Inspector{allocator()},
     m_SceneViewViewport{},
-    m_SelectedObject{nullptr}
+    m_InspectorWindows{allocator()}
   {
+    viewAddInspector();
   }
 
   Action* EditorOverlay::findAction(const char* name) const
@@ -1304,6 +1315,8 @@ namespace bifrost::editor
 
     {".material", &fileExtensionHandlerImpl<AssetMaterialInfo>},
 
+    {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
+
     // {".obj", &fileExtensionHandlerImpl<>},
     // {".gltf", &fileExtensionHandlerImpl<>},
   };
@@ -1350,6 +1363,11 @@ namespace bifrost::editor
         string_utils::fmtFree(allocator, meta.file_name);
       }
     }
+  }
+
+  void EditorOverlay::viewAddInspector()
+  {
+    m_InspectorWindows.emplace(allocator());
   }
 
   bool EditorOverlay::isPointOverSceneView(const Vector2i& point) const
@@ -1464,6 +1482,17 @@ namespace bifrost::editor
 
   // bifrost_editor_filesystem.hpp
 
+  FileEntry::FileEntry(String&& name, const String& full_path, bool is_file) :
+    name{name},
+    full_path{full_path},
+    file_extension{file::extensionOfFile(this->full_path)},
+    is_file{is_file},
+    uuid{bfUUID_makeEmpty()},
+    children{&FileEntry::next},
+    next{}
+  {
+  }
+
   void FileSystem::clear(String&& name, const String& path)
   {
     clearImpl();
@@ -1535,15 +1564,24 @@ namespace bifrost::editor
     {
       ImGui::TreeNodeEx(entry.name.cstr(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth);
 
-      const StringRange rel_path = relativePath(entry);
+      // const StringRange rel_path = relativePath(entry);
 
       if (ImGui::IsItemHovered())
       {
-        ImGui::SetTooltip("Name(%s)\nFullPath(%s)\nRelPath(%.*s)", entry.name.cstr(), entry.full_path.cstr(), int(rel_path.length()), rel_path.begin());
+        // ImGui::SetTooltip("Name(%s)\nFullPath(%s)\nRelPath(%.*s)", entry.name.cstr(), entry.full_path.cstr(), int(rel_path.length()), rel_path.begin());
       }
 
       if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
       {
+        if (entry.file_extension == ".scene")
+        {
+          auto& assets = editor.engine().assets();
+
+          if (auto* info = assets.findAssetInfo(entry.uuid))
+          {
+            editor.engine().openScene(assets.makeHandleT<AssetSceneHandle>(*info));
+          }
+        }
       }
 
       if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
@@ -1633,6 +1671,11 @@ namespace bifrost::editor
             editor.enqueueDialog(make<NewFolderDialog>(entry.full_path));
           }
 
+          if (ImGui::MenuItem("Scene"))
+          {
+            editor.enqueueDialog(make<NewAssetDialog<AssetSceneInfo>>("Make Scene", entry, "New Scene", ".scene"));
+          }
+
           if (ImGui::MenuItem("Shader Program"))
           {
             editor.enqueueDialog(make<NewAssetDialog<AssetShaderProgramInfo>>("Make Shader", entry, "New Shader", ".shader"));
@@ -1682,5 +1725,76 @@ namespace bifrost::editor
     }
 
     m_AllNodes.clear();
+  }
+
+  void Inspector::uiShow(EditorOverlay& editor)
+  {
+    if (ImGui::Begin("Inspector View", nullptr, ImGuiWindowFlags_MenuBar))
+    {
+      Engine& engine = editor.engine();
+
+      m_Serializer.setAssets(&engine.assets());
+
+      if (ImGui::BeginMenuBar())
+      {
+        if (ImGui::BeginMenu("Options"))
+        {
+          if (ImGui::MenuItem("Is Selection Locked", nullptr, &m_IsLocked))
+          {
+          }
+
+          ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+      }
+
+      m_Serializer.beginDocument(false);
+
+      if (m_SelectedObject.valid())
+      {
+        AssetSceneHandle current_scene = engine.currentScene();
+
+        visit_all(
+         meta::overloaded{
+          [this](IBaseObject* object) { m_Serializer.serialize(*object); },
+          [this, &current_scene, &engine](Entity* object) {
+            m_Serializer.beginChangeCheck();
+            object->serialize(m_Serializer);
+
+            if (m_Serializer.endChangedCheck())
+            {
+              engine.assets().markDirty(current_scene);
+            }
+          },
+          [this, &engine](auto& asset_handle) {
+            if (asset_handle)
+            {
+              m_Serializer.beginChangeCheck();
+              m_Serializer.serialize(*asset_handle.payload());
+              ImGui::Separator();
+
+              asset_handle.info()->serialize(engine, m_Serializer);
+
+              if (m_Serializer.endChangedCheck())
+              {
+                engine.assets().markDirty(asset_handle);
+              }
+            }
+          },
+         },
+         m_SelectedObject);
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Clear Selection"))
+        {
+          select(nullptr);
+        }
+      }
+
+      m_Serializer.endDocument();
+    }
+    ImGui::End();
   }
 }  // namespace bifrost::editor

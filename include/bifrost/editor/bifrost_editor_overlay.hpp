@@ -17,6 +17,7 @@
 #include "bifrost/bifrost.hpp"
 #include "bifrost/math/bifrost_rect2.hpp"
 #include "bifrost_editor_filesystem.hpp"
+#include "bifrost_editor_inspector.hpp"
 #include "bifrost_editor_serializer.hpp"
 
 namespace bifrost::editor
@@ -186,8 +187,7 @@ namespace bifrost::editor
 
   class ARefreshAsset;
 
-  using ActionMap  = HashTable<String, ActionPtr>;
-  using Selectable = Variant<IBaseObject*, BaseAssetHandle>;
+  using ActionMap = HashTable<String, ActionPtr>;
 
   class EditorOverlay final : public IGameStateLayer
   {
@@ -203,9 +203,8 @@ namespace bifrost::editor
     int                m_CurrentFps;
     AssetTextureHandle m_TestTexture;
     FileSystem         m_FileSystem;
-    ImGuiSerializer    m_Inspector;
     Rect2i             m_SceneViewViewport;  // Global Window Coordinates
-    Selectable         m_SelectedObject;
+    Array<Inspector>   m_InspectorWindows;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -230,10 +229,17 @@ namespace bifrost::editor
     void    saveProject();
     void    closeProject();
     void    assetRefresh();
+    void    viewAddInspector();
     bool    isPointOverSceneView(const Vector2i& point) const;
-    void    select(IBaseObject* object) { m_SelectedObject = object; }
-    void    select(const BaseAssetHandle& handle) { m_SelectedObject = handle; }
-    void    select(std::nullptr_t) { m_SelectedObject.destroy(); }
+
+    template<typename T>
+    void select(T&& selectable)
+    {
+      for (Inspector& inspector : m_InspectorWindows)
+      {
+        inspector.select(selectable);
+      }
+    }
 
    private:
     void buttonAction(const ActionContext& ctx, const char* action_name) const;

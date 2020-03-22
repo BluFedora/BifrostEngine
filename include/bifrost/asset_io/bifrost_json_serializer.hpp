@@ -54,7 +54,8 @@ namespace bifrost
     void endDocument() override;
 
    private:
-    json::Value& currentObject() const { return *m_ObjectStack.back(); }
+    json::Value& currentObject() { return *m_ObjectStack.back(); }
+    json::Value& pushX(StringRange key);
   };
 
   class JsonSerializerReader final : public ISerializer

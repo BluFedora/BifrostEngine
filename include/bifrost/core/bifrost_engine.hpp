@@ -6,6 +6,7 @@
 #include "bifrost/ecs/bifrost_iecs_system.hpp"  // IECSSystem
 #include "bifrost/event/bifrost_window_event.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#include "bifrost/memory/bifrost_linear_allocator.hpp"
 
 #include <tuple>
 #include <utility>
@@ -480,7 +481,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   GameStateMachine             m_StateMachine;
   VM                           m_Scripting;
   BaseRenderer                 m_Renderer;
-  Scene*                       m_CurrentScene;
+  Array<AssetSceneHandle>      m_SceneStack;
   Assets                       m_Assets;
   Array<IECSSystem*>           m_Systems;
 
@@ -493,7 +494,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
     m_Renderer{},
-    m_CurrentScene{nullptr},
+    m_SceneStack{m_MainMemory},
     m_Assets{*this, m_MainMemory},
     m_Systems{m_MainMemory}
   {
@@ -507,14 +508,20 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   BaseRenderer&      renderer() { return m_Renderer; }
   Assets&            assets() { return m_Assets; }
 
-  Scene* currentScene() const
+  AssetSceneHandle currentScene() const
   {
-    return m_CurrentScene;
+    if (m_SceneStack.size())
+    {
+      return m_SceneStack.back();
+    }
+
+    return {};
   }
 
-  void loadScene(Scene* scene)
+  void openScene(const AssetSceneHandle& scene)
   {
-    m_CurrentScene = scene;
+    m_SceneStack.clear(); // TODO: Scene Stacking.
+    m_SceneStack.push(scene);
   }
 
   void init(const BifrostEngineCreateParams& params)

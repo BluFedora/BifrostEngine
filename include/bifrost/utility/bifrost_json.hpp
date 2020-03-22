@@ -127,6 +127,7 @@ namespace bifrost::json
     Value&      operator[](int index);  // Must be an int as to not conflict with the 'const char* key' overload.
     std::size_t size() const;
     void        push(const Value& item);
+    Value&      push();
     void        insert(std::size_t index, const Value& item);
     Value&      back();
     void        pop();

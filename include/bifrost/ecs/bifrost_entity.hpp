@@ -18,6 +18,28 @@
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // ListView
 #include "bifrost/math/bifrost_transform.h"                    // BifrostTransform
 
+namespace bifrost::meta
+{
+  template<>
+  inline const auto& Meta::registerMembers<BifrostTransform>()
+  {
+    static auto member_ptrs = members(
+     class_info<BifrostTransform>("Transform"),
+     ctor<>(),
+     field("origin", &BifrostTransform::origin),
+     field("local_position", &BifrostTransform::local_position),
+     field("local_rotation", &BifrostTransform::local_rotation),
+     field("local_scale", &BifrostTransform::local_scale),
+     field("world_position", &BifrostTransform::world_position),
+     field("world_rotation", &BifrostTransform::world_rotation),
+     field("world_scale", &BifrostTransform::world_scale),
+     field("local_transform", &BifrostTransform::local_transform),
+     field("world_transform", &BifrostTransform::world_transform));
+
+    return member_ptrs;
+  }
+}  // namespace bifrost::meta
+
 namespace bifrost
 {
   class Entity;
@@ -111,7 +133,18 @@ namespace bifrost
     void removeChild(Entity* child);
     void removeComponent(std::uint32_t type_index);
   };
-
 }  // namespace bifrost
+
+BIFROST_META_REGISTER(bifrost::Entity)
+{
+  BIFROST_META_BEGIN()
+    BIFROST_META_MEMBERS(
+     class_info<Entity>("Entity"),               //
+     ctor<Scene&, const StringRange&>(),         //
+     field("m_Name", &Entity::m_Name),           //
+     field("m_Transform", &Entity::m_Transform)  //
+    )
+  BIFROST_META_END()
+}
 
 #endif /* BIFROST_ENTITY_HPP */

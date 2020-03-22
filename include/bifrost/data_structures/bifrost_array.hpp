@@ -104,6 +104,7 @@ namespace bifrost
     [[nodiscard]] T*          data() { return begin(); }
     [[nodiscard]] const T*    data() const { return begin(); }
 
+    /*
     void copy(Array<T>& src, std::size_t num_elements)
     {
       // ::bfArray_copy(rawData(), &src.m_Data, num_elements);
@@ -111,6 +112,7 @@ namespace bifrost
       resize(num_elements);
       std::copy(src.m_Data, src.m_Data + num_elements, m_Data);
     }
+    */
 
     void clear()
     {
@@ -188,22 +190,22 @@ namespace bifrost
 
     T& at(std::size_t index)
     {
-      return ::bfArray_at(rawData(), index);
+      return *static_cast<T*>(::bfArray_at(rawData(), index));
     }
 
     const T& at(std::size_t index) const
     {
-      return ::bfArray_at(rawData(), index);
+      return *static_cast<const T*>(::bfArray_at(rawData(), index));
     }
 
     T& operator[](std::size_t index)
     {
-      return m_Data[index];
+      return at(index); // return m_Data[index];
     }
 
     const T& operator[](std::size_t index) const
     {
-      return m_Data[index];
+      return at(index); // return m_Data[index];
     }
 
     T* binarySearchRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare = nullptr)

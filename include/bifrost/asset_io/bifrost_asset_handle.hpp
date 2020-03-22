@@ -109,7 +109,7 @@ namespace bifrost
     //   * If you are within an Array all 'StringRange key' paramaters are ignored,
     //     as a result of this condition you may pass in nullptr.
     //       > An implemetation is allowed to do something special with the key
-    //         if it is not nullptr though,
+    //         if it is not nullptr though.
     //
     //   * The return value in pushArray's "std::size_t& size" is only useful for
     //     SerializerMode::LOADING. Otherise you are going to receive 0.

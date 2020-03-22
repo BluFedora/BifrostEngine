@@ -15,6 +15,7 @@
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/math/bifrost_vec2.h"
 #include "bifrost/math/bifrost_vec3.h"
+#include "bifrost/memory/bifrost_linear_allocator.hpp"
 
 namespace bifrost::editor
 {
@@ -316,6 +317,7 @@ namespace bifrost::editor
     if (obj.is_array)
     {
       string_utils::fmtBuffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%i", obj.array_index);
+      ++obj.array_index;
     }
     else
     {

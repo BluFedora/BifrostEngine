@@ -21,7 +21,6 @@ namespace bifrost
     m_Document{},
     m_ObjectStack{memory}
   {
-    m_ObjectStack.emplaceBack(&m_Document);
   }
 
   bool JsonSerializerWriter::beginDocument(bool is_array)
@@ -35,27 +34,23 @@ namespace bifrost
       m_Document = json::detail::ObjectInitializer{};
     }
 
+    m_ObjectStack.emplaceBack(&m_Document);
+
     return true;
   }
 
   bool JsonSerializerWriter::pushObject(StringRange key)
   {
-    json::Value* const current = &currentObject()[key];
-
-    *current = json::detail::ObjectInitializer{};
-    m_ObjectStack.emplaceBack(current);
+    pushX(key) = json::detail::ObjectInitializer{};
 
     return true;
   }
 
   bool JsonSerializerWriter::pushArray(StringRange key, std::size_t& size)
   {
+    pushX(key) = json::detail::ArrayInitializer{};
+
     size = 0;
-
-    json::Value* const current = &currentObject()[key];
-
-    *current = json::detail::ArrayInitializer{};
-    m_ObjectStack.emplaceBack(current);
 
     return true;
   }
@@ -191,6 +186,16 @@ namespace bifrost
     m_ObjectStack.popBack();
   }
 
+  json::Value& JsonSerializerWriter::pushX(StringRange key)
+  {
+    auto& current_obj = currentObject();
+
+    json::Value* const current = current_obj.isArray() ? &current_obj.push() : &current_obj[key];
+    m_ObjectStack.emplaceBack(current);
+
+    return *current;
+  }
+
   JsonSerializerReader::JsonSerializerReader(Assets& assets, IMemoryManager& memory, json::Value& document) :
     ISerializer(SerializerMode::LOADING),
     m_Assets{assets},
@@ -201,8 +206,14 @@ namespace bifrost
 
   bool JsonSerializerReader::beginDocument(bool is_array)
   {
-    m_ObjectStack.emplaceBack(&m_Document, is_array ? 0 : -1);
-    return m_Document.isArray()  == is_array;
+    const bool is_valid = m_Document.isArray() == is_array;
+
+    if (is_valid)
+    {
+      m_ObjectStack.emplaceBack(&m_Document, is_array ? 0 : -1);
+    }
+
+    return is_valid;
   }
 
   bool JsonSerializerReader::pushObject(StringRange key)

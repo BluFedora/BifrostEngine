@@ -72,6 +72,8 @@ namespace bifrost
       }
     }
 
+    void serialize(ISerializer& serializer);
+
     ~Scene() override;
 
    private:
@@ -102,6 +104,7 @@ namespace bifrost
     using BaseT::BaseT;
 
     bool load(Engine& engine) override;
+    bool save(Engine& engine, ISerializer& serializer) override;
   };
 
   using AssetSceneHandle = AssetHandle<Scene>;
@@ -126,6 +129,13 @@ BIFROST_META_REGISTER(bifrost::Scene){
    ctor<IMemoryManager&>(),                                  //
    field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
    )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bifrost::AssetSceneInfo){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<AssetSceneInfo>("AssetSceneInfo"),  //
+   ctor<StringRange, BifrostUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(Vec3f)

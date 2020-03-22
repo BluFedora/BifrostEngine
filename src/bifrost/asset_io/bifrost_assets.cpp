@@ -217,9 +217,9 @@ namespace bifrost
 
   bool Assets::tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const
   {
-    if (isHandleCompatible(handle, info))
+    if (info && isHandleCompatible(handle, info))
     {
-      handle = BaseAssetHandle(m_Engine, info, handle.m_TypeInfo);
+      handle = makeHandle(*info);
       return true;
     }
 
@@ -233,12 +233,17 @@ namespace bifrost
 
   String Assets::fullPath(const BaseAssetInfo& info) const
   {
-    String full_path = m_RootPath;
+    return fullPath(info.path());
+  }
 
-    full_path.reserve(full_path.size() + 1 + info.path().size());
+  String Assets::fullPath(const StringRange& relative_path) const
+  {
+    String full_path = { m_RootPath, String_length(m_RootPath) };
+
+    full_path.reserve(full_path.size() + 1 + relative_path.length());
 
     full_path.append('/');
-    full_path.append(info.path());
+    full_path.append(relative_path);
 
     return full_path;
   }

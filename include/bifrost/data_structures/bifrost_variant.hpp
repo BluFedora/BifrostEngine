@@ -1,20 +1,20 @@
 #ifndef BIFROST_VARIANT_HPP
 #define BIFROST_VARIANT_HPP
 
-#define TIDE_VARIANT_USE_STATIC_HELPERS 1
+#ifndef BIFROST_VARIANT_USE_STATIC_HELPERS
+#define BIFROST_VARIANT_USE_STATIC_HELPERS 1
+#endif
 
-#ifndef ALLOW_EXCEPTIONS
-#if __cpp_exceptions == 199711
-#define BIFROST_ALLOW_EXCEPTIONS 1
-#else
-#define ALLOW_EXCEPTIONS 0
+#ifndef BIFROST_VARIANT_USE_EXCEPTIONS
+#define BIFROST_VARIANT_USE_EXCEPTIONS (__cpp_exceptions == 199711)
 #endif
-#endif
+
 
 #include "bifrost_container_tuple.hpp"
 
 #include <type_traits> /* aligned_storage                           */
-#if BIFROST_ALLOW_EXCEPTIONS
+
+#if BIFROST_VARIANT_USE_EXCEPTIONS
 #include <typeinfo> /* bad_cast                                     */
 #endif
 
@@ -38,7 +38,7 @@ namespace bifrost
     };
   }  // namespace detail
 
-#if !TIDE_VARIANT_USE_STATIC_HELPERS
+#if !BIFROST_VARIANT_USE_STATIC_HELPERS
   template<std::size_t N, typename... Ts>
   struct variant_helper;
 
@@ -140,7 +140,7 @@ namespace bifrost
 
     using self_t = Variant<Ts...>;
     using data_t = typename std::aligned_storage<data_size, data_align>::type;
-#if TIDE_VARIANT_USE_STATIC_HELPERS
+#if BIFROST_VARIANT_USE_STATIC_HELPERS
     using deleter_t = void (*)(void*);
     using mover_t   = void (*)(void*, void*);
     using copier_t  = void (*)(const void*, void*);
@@ -204,7 +204,14 @@ namespace bifrost
       m_TypeID(invalid_type())
     {
       static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
-      set<T>(data_in);
+
+      try
+      {
+        set<T>(data_in);
+      }
+      catch (...)
+      {
+      }
     }
 
     Variant(const self_t& rhs) :
@@ -219,7 +226,7 @@ namespace bifrost
       m_TypeID(rhs.m_TypeID)
     {
       move(&rhs.m_Data);
-      rhs.m_TypeID = invalid_type();
+      // rhs.m_TypeID = invalid_type();
     }
 
     template<typename T>
@@ -243,9 +250,13 @@ namespace bifrost
 
     self_t& operator=(self_t&& old) noexcept
     {
-      destroy();
-      m_TypeID = old.type();
-      copy(&old.m_Data);
+      if (this != &old)
+      {
+        destroy();
+        m_TypeID = old.type();
+        move(&old.m_Data);
+      }
+
       return *this;
     }
 
@@ -294,7 +305,7 @@ namespace bifrost
 
     template<typename T>
     T& as()
-#if !BIFROST_ALLOW_EXCEPTIONS
+#if !BIFROST_VARIANT_USE_EXCEPTIONS
      noexcept
 #endif
     {
@@ -304,7 +315,7 @@ namespace bifrost
 
     template<typename T>
     [[nodiscard]] const T& as() const
-#if !BIFROST_ALLOW_EXCEPTIONS
+#if !BIFROST_VARIANT_USE_EXCEPTIONS
      noexcept
 #endif
     {
@@ -314,13 +325,13 @@ namespace bifrost
 
     template<typename T>
     T& get()
-#if !BIFROST_ALLOW_EXCEPTIONS
+#if !BIFROST_VARIANT_USE_EXCEPTIONS
      noexcept
 #endif
     {
       static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
 
-#if BIFROST_ALLOW_EXCEPTIONS
+#if BIFROST_VARIANT_USE_EXCEPTIONS
       if (!this->is<T>())
         throw std::bad_cast();
 #endif
@@ -330,13 +341,13 @@ namespace bifrost
 
     template<typename T>
     const T& get() const
-#if !BIFROST_ALLOW_EXCEPTIONS
+#if !BIFROST_VARIANT_USE_EXCEPTIONS
      noexcept
 #endif
     {
       static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
 
-#if BIFROST_ALLOW_EXCEPTIONS
+#if BIFROST_VARIANT_USE_EXCEPTIONS
       if (!this->is<T>())
         throw std::bad_cast();
 #endif
@@ -346,7 +357,7 @@ namespace bifrost
 
     void destroy()
     {
-#if TIDE_VARIANT_USE_STATIC_HELPERS
+#if BIFROST_VARIANT_USE_STATIC_HELPERS
       static constexpr deleter_t s_DeleteTable[] = {delete_void, delete_t<Ts>...};
       s_DeleteTable[type()](&m_Data);
       m_TypeID = type_of<void>();
@@ -363,7 +374,7 @@ namespace bifrost
    private:
     void move(void* old_data)
     {
-#if TIDE_VARIANT_USE_STATIC_HELPERS
+#if BIFROST_VARIANT_USE_STATIC_HELPERS
       static constexpr mover_t s_MoveTable[] = {move_void, move_t<Ts>...};
       s_MoveTable[type()](old_data, &m_Data);
 #else
@@ -373,7 +384,7 @@ namespace bifrost
 
     void copy(const void* old_data)
     {
-#if TIDE_VARIANT_USE_STATIC_HELPERS
+#if BIFROST_VARIANT_USE_STATIC_HELPERS
       static constexpr copier_t s_CopyTable[] = {copy_void, copy_t<Ts>...};
       s_CopyTable[type()](old_data, &m_Data);
 #else

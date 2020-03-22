@@ -288,7 +288,7 @@ typedef struct
   void*              user_data;
   size_t             size;
   size_t             capacity;
-  size_t             stride;
+  uint32_t           stride;
   AllocationOffset_t alignment;
 
 } ArrayHeader;
@@ -330,7 +330,8 @@ void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t eleme
   bfAssert(allocator, "bfArray_new_:: Must pass in a valid allocator.");
   bfAssert(element_size, "bfArray_new_:: The struct size must be greater than 0.");
   bfAssert(element_alignment, "bfArray_new_:: The struct alignment must be greater than 0.");
-  bfAssert(element_alignment < 256, "bfArray_new_:: The struct alignment must be less than 256.");
+  bfAssert(element_alignment < UINT8_MAX, "bfArray_new_:: The struct alignment must be less than 256.");
+  bfAssert(element_size < UINT32_MAX, "bfArray_new_:: The struct alignment must be less than 256.");
   bfAssert((element_alignment & (element_alignment - 1)) == 0, "bfArray_new_:: The struct alignment must be a power of two.");
 
   const size_t header_size     = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);
@@ -341,7 +342,7 @@ void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t eleme
   header->user_data   = allocator_user_data;
   header->size        = 0;
   header->capacity    = 0;
-  header->stride      = element_size;
+  header->stride      = (uint32_t)element_size;
   header->alignment   = (AllocationOffset_t)element_alignment;
 
   void* data_start = alignUpPtr((uintptr_t)header + header_size, header->alignment);
@@ -365,7 +366,7 @@ void* bfArray_begin(void** self)
 
 void* bfArray_end(void** self)
 {
-  // NOTE(Shareef): This function doesn't use 'bfArray_at' since we check the index and @size is technically out of bounds.
+  // NOTE(Shareef): This function doesn't use 'bfArray_at' since we check the index at size is technically out of bounds.
 
   ArrayHeader* header = grabHeader(self);
 

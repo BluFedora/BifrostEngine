@@ -23,23 +23,16 @@ namespace bifrost::editor
 
   struct FileEntry final
   {
-    String                         name; // TODO: Make Name Just a StringRange into 'FileEntry::full_path'
+    String                         name;  // TODO: Make Name Just a StringRange into 'FileEntry::full_path'
     String                         full_path;
+    StringRange                    file_extension;  //!< Backed by FileEntry::full_path.
     bool                           is_file;
     BifrostUUID                    uuid;
     intrusive::ListView<FileEntry> children;
     intrusive::Node<FileEntry>     next;
 
    public:
-    FileEntry(String&& name, const String& full_path, bool is_file) :
-      name{name},
-      full_path{full_path},
-      is_file{is_file},
-      uuid{bfUUID_makeEmpty()},
-      children{&FileEntry::next},
-      next{}
-    {
-    }
+    FileEntry(String&& name, const String& full_path, bool is_file);
   };
 
   class FileSystem final : bfNonCopyMoveable<FileSystem>
@@ -65,9 +58,9 @@ namespace bifrost::editor
 
     void        clear(String&& name, const String& path);
     FileEntry&  makeNode(String&& name, const String& path, bool is_file);
-    void        uiShow(EditorOverlay& editor);
     StringRange relativePath(const FileEntry& entry) const;
     void        remove(FileEntry& entry);
+    void        uiShow(EditorOverlay& editor);
 
     ~FileSystem();
 

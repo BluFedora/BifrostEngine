@@ -26,7 +26,6 @@
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"
-#include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/core/bifrost_engine.hpp" /* Engine */
 #include "bifrost/utility/bifrost_json.hpp"
 
@@ -133,15 +132,12 @@ namespace bifrost
       }
       else
       {
-        std::size_t array_size;
-        const bool  is_array = type_info->isArray();
-        const bool  is_open  = is_array ? pushArray(key, array_size) : pushObject(key);
+        const bool is_open = pushObject(key);
 
         if (is_open)
         {
           serialize(value, type_info);
-
-          is_array ? popArray() : popObject();
+          popObject();
         }
       }
     }
@@ -149,6 +145,8 @@ namespace bifrost
 
   void ISerializer::serialize(Any& value, meta::BaseClassMetaInfo* type_info)
   {
+    const bool is_array = type_info->isArray();
+
     for (auto& prop : type_info->properties())
     {
       auto field_value = prop->get(value);
@@ -157,22 +155,28 @@ namespace bifrost
       prop->set(value, field_value);
     }
 
-    if (type_info->isArray())
+    if (is_array)
     {
-      const std::size_t size = type_info->arraySize(value);
-      char              label_buffer[s_MaxDigitsUInt64 + 1];
-      LinearAllocator   label_alloc{label_buffer, sizeof(label_buffer)};
-
-      for (std::size_t i = 0; i < size; ++i)
+      std::size_t array_size;
+      if (pushArray("Elements", array_size))
       {
-        std::size_t idx_label_length;
-        auto* const idx_label = string_utils::fmtAlloc(label_alloc, &idx_label_length, "%i", int(i));
-        auto        element   = type_info->arrayGetElementAt(value, i);
+        const std::size_t size = type_info->arraySize(value);
+        char              label_buffer[s_MaxDigitsUInt64 + 1];
+        LinearAllocator   label_alloc{label_buffer, sizeof(label_buffer)};
 
-        serialize(StringRange(idx_label, idx_label_length), element, type_info->containedType());
-        type_info->arraySetElementAt(value, i, element);
+        for (std::size_t i = 0; i < size; ++i)
+        {
+          std::size_t idx_label_length;
+          auto* const idx_label = string_utils::fmtAlloc(label_alloc, &idx_label_length, "%i", int(i));
+          auto        element   = type_info->arrayGetElementAt(value, i);
 
-        label_alloc.clear();
+          serialize(StringRange(idx_label, idx_label_length), element, type_info->containedType());
+          type_info->arraySetElementAt(value, i, element);
+
+          label_alloc.clear();
+        }
+
+        popArray();
       }
     }
   }

@@ -23,6 +23,9 @@
 #include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                  */
 
+// TOOD: Make this header leaner
+#include "bifrost_asset_handle.hpp"                       /* AssetHandle<T> */
+
 class BifrostEngine;
 
 namespace bifrost
@@ -144,15 +147,27 @@ namespace bifrost
     BaseAssetInfo*  findAssetInfo(const BifrostUUID& uuid);
     bool            tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const;
     BaseAssetHandle makeHandle(BaseAssetInfo& info) const;
-    String          fullPath(const BaseAssetInfo& info) const;
-    char*           metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
-    TempBuffer      metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const;
-    void            loadMeta(StringRange meta_file_name);
-    AssetError      setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
-    void            setRootPath(std::nullptr_t);
-    void            markDirty(const BaseAssetHandle& asset);
-    bool            writeJsonToFile(const StringRange& path, const json::Value& value) const;
-    void            saveAssets();
+
+    template<typename T>
+    T makeHandleT(BaseAssetInfo& info) const
+    {
+      static_assert(std::is_base_of_v<BaseAssetHandle, T>, "The type specified must derive from BaseAssetHandle.");
+
+      T handle = nullptr;
+      tryAssignHandle(handle, &info);
+      return handle;
+    }
+
+    String     fullPath(const BaseAssetInfo& info) const;
+    String     fullPath(const StringRange& relative_path) const;
+    char*      metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
+    TempBuffer metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const;
+    void       loadMeta(StringRange meta_file_name);
+    AssetError setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
+    void       setRootPath(std::nullptr_t);
+    void       markDirty(const BaseAssetHandle& asset);
+    bool       writeJsonToFile(const StringRange& path, const json::Value& value) const;
+    void       saveAssets();
 
     ~Assets();
 

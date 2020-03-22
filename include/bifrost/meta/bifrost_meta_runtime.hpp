@@ -1,10 +1,16 @@
 #ifndef BIFROST_META_RUNTIME_HPP
 #define BIFROST_META_RUNTIME_HPP
 
+#define BIFROST_META_USE_FREELIST 0
+
 #include "bifrost/data_structures/bifrost_any.hpp"
 #include "bifrost/data_structures/bifrost_array.hpp"
 #include "bifrost/data_structures/bifrost_hash_table.hpp"
+#if BIFROST_META_USE_FREELIST
+#include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#else
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
+#endif
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"
 
 #include <string_view> /* string_view */
@@ -13,8 +19,13 @@ namespace bifrost::meta
 {
   class BaseClassMetaInfo;
 
+#if BIFROST_META_USE_FREELIST
+  using RttiAllocatorBackingType = FreeListAllocator;
+  using RttiAllocatorType        = ProxyAllocator;
+#else
   using RttiAllocatorBackingType = LinearAllocator;
   using RttiAllocatorType        = NoFreeAllocator;
+#endif
 
   RttiAllocatorBackingType&                        gRttiMemoryBacking();
   RttiAllocatorType&                               gRttiMemory();

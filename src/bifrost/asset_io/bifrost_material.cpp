@@ -108,11 +108,9 @@ namespace bifrost
     if (defaultLoad(engine))
     {
       shader.createImpl();
-
-      return true;
     }
 
-    return false;
+    return true; // TODO: File doesn't exit on create.
   }
 
   bool AssetShaderProgramInfo::save(Engine& engine, ISerializer& serializer)
@@ -127,8 +125,8 @@ namespace bifrost
   bool AssetMaterialInfo::load(Engine& engine)
   {
     m_Payload.set<Material>();
-    defaultLoad(engine); // TODO: File doesn't exit on create.
-    return true;
+    defaultLoad(engine);
+    return true; // TODO: File doesn't exit on create.
   }
 
   bool AssetMaterialInfo::save(Engine& engine, ISerializer& serializer)

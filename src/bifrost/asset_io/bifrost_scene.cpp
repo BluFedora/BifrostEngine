@@ -12,9 +12,10 @@
 */
 #include "bifrost/asset_io/bifrost_scene.hpp"
 
-#include "bifrost/core/bifrost_engine.hpp"  /* Engine      */
-#include "bifrost/ecs/bifrost_entity.hpp"   /* Entity      */
-#include "bifrost/utility/bifrost_json.hpp" /* json::Value */
+#include "bifrost/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
+#include "bifrost/core/bifrost_engine.hpp"              /* Engine               */
+#include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
+#include "bifrost/utility/bifrost_json.hpp"             /* json::Value          */
 
 namespace bifrost
 {
@@ -27,8 +28,40 @@ namespace bifrost
 
   void Scene::removeEntity(Entity* entity)
   {
-    m_Memory.deallocateT(entity);
     m_RootEntities.removeAt(m_RootEntities.find(entity));
+    m_Memory.deallocateT(entity);
+  }
+
+  void Scene::serialize(ISerializer& serializer)
+  {
+    std::size_t num_entities;
+    if (serializer.pushArray("m_Entities", num_entities))
+    {
+      if (serializer.mode() == SerializerMode::LOADING)
+      {
+        m_RootEntities.resize(num_entities);
+      }
+      else
+      {
+        num_entities = m_RootEntities.size();
+      }
+
+      for (auto& entity : m_RootEntities)
+      {
+        if (!entity)
+        {
+          entity = createEntity(nullptr);
+        }
+
+        if (serializer.pushObject(entity->name()))
+        {
+          entity->serialize(serializer);
+          serializer.popObject();
+        }
+      }
+
+      serializer.popArray();
+    }
   }
 
   Scene::~Scene()
@@ -46,7 +79,8 @@ namespace bifrost
 
   bool AssetSceneInfo::load(Engine& engine)
   {
-    const String full_path = engine.assets().fullPath(*this);
+    Assets&      assets    = engine.assets();
+    const String full_path = assets.fullPath(*this);
     File         file_in   = {full_path, file::FILE_MODE_READ};
 
     if (file_in)
@@ -58,11 +92,29 @@ namespace bifrost
 
       if (json_value.isObject())
       {
+        JsonSerializerReader json_writer{assets, engine.tempMemoryNoFree(), json_value};
+
+        if (json_writer.beginDocument(false))
+        {
+          scene.serialize(json_writer);
+          json_writer.endDocument();
+        }
       }
 
       return true;
     }
 
     return false;
+  }
+
+  bool AssetSceneInfo::save(Engine& engine, ISerializer& serializer)
+  {
+    (void)engine;
+
+    Scene& scene = m_Payload.as<Scene>();
+
+    scene.serialize(serializer);
+
+    return true;
   }
 }  // namespace bifrost

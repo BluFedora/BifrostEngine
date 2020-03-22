@@ -1,0 +1,60 @@
+{
+    "m_Entities" : [
+        {
+            "m_Name" : "Test Entity",
+            "m_Components" : [
+
+            ],
+            "m_Transform" : {
+                "local_scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "world_rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "local_transform" : {
+
+                },
+                "origin" : {
+                    "y" : 0,
+                    "w" : 0,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "local_rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "world_transform" : {
+
+                },
+                "world_position" : {
+                    "y" : 0,
+                    "w" : 0,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "local_position" : {
+                    "y" : 453453,
+                    "w" : 0,
+                    "x" : 70,
+                    "z" : 0
+                },
+                "world_scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                }
+            }
+        }
+    ]
+}

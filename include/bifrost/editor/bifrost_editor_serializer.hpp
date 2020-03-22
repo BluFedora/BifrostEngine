@@ -83,28 +83,4 @@ namespace bifrost::editor
   }  // namespace imgui_ext
 }  // namespace bifrost::editor
 
-#include "bifrost/math/bifrost_transform.h"
-
-namespace bifrost::meta
-{
-  template<>
-  inline const auto& Meta::registerMembers<BifrostTransform>()
-  {
-    static auto member_ptrs = members(
-     class_info<BifrostTransform>("Transform"),
-     ctor<>(),
-     field("origin", &BifrostTransform::origin),
-     field("local_position", &BifrostTransform::local_position),
-     field("local_rotation", &BifrostTransform::local_rotation),
-     field("local_scale", &BifrostTransform::local_scale),
-     field("world_position", &BifrostTransform::world_position),
-     field("world_rotation", &BifrostTransform::world_rotation),
-     field("world_scale", &BifrostTransform::world_scale),
-     field("local_transform", &BifrostTransform::local_transform),
-     field("world_transform", &BifrostTransform::world_transform));
-
-    return member_ptrs;
-  }
-}  // namespace bifrost::meta
-
 #endif /* BIFROST_EDITOR_SERIALIZER_HPP */

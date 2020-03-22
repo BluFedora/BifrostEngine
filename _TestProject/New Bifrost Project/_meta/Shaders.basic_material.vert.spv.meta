@@ -1,0 +1,9 @@
+{
+    "UUID" : "F240B88E-B7BC-4AF6-A460-EF1AEBE87FD3",
+    "Path" : "Shaders/basic_material.vert.spv",
+    "m_Type" : {
+        "name" : "BIFROST_SHADER_TYPE_VERTEX",
+        "value" : 0
+    },
+    "Type" : "AssetShaderModuleInfo"
+}

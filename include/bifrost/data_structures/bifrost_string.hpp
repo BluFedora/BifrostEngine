@@ -68,6 +68,13 @@ namespace bifrost
       return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
     }
 
+
+    [[nodiscard]] bool operator==(const char* rhs) const
+    {
+      return std::strncmp(bgn, rhs, length()) == 0;
+    }
+
+
     [[nodiscard]] bool operator!=(const StringRange& rhs) const
     {
       return !(*this == rhs);
@@ -268,6 +275,11 @@ namespace bifrost
       {
         m_Handle = String_new(str);
       }
+    }
+
+    void append(const StringRange& str)
+    {
+      append(str.begin(), str.length());
     }
 
     void append(const String& str)
