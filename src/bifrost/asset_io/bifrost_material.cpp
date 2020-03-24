@@ -24,9 +24,9 @@ namespace bifrost
     const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
 
     const bfTextureCreateParams params = bfTextureCreateParams_init2D(
+     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM,
      BIFROST_TEXTURE_UNKNOWN_SIZE,
-     BIFROST_TEXTURE_UNKNOWN_SIZE,
-     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
+     BIFROST_TEXTURE_UNKNOWN_SIZE);
 
     Texture& texture = m_Payload.set<Texture>(device);
 
@@ -138,7 +138,7 @@ namespace bifrost
     return true;
   }
 
-  void loadObj(IMemoryManager& temp_allocator, Array<BasicVertex>& out, const char* obj_file_data, std::size_t obj_file_data_length);
+  void loadObj(IMemoryManager& temp_allocator, Array<StandardVertex>& out, const char* obj_file_data, std::size_t obj_file_data_length);
 
   Model::Model(bfGfxDeviceHandle device) :
     BaseT(device),
@@ -165,14 +165,14 @@ namespace bifrost
       long  file_data_size;
       char* file_data = LoadFileIntoMemory(full_path.cstr(), &file_data_size);
 
-      Array<BasicVertex> vertices{engine.tempMemoryNoFree()};
+      Array<StandardVertex> vertices{engine.tempMemoryNoFree()};
       loadObj(engine.tempMemoryNoFree(), vertices, file_data, file_data_size);
 
       model.m_NumVertices = (uint32_t)vertices.size();
 
       bfBufferCreateParams buffer_params;
       buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
-      buffer_params.allocation.size       = sizeof(BasicVertex) * model.m_NumVertices;
+      buffer_params.allocation.size       = sizeof(StandardVertex) * model.m_NumVertices;
       buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
 
       model.m_Handle = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);

@@ -38,12 +38,15 @@ namespace bifrost
     };
 
     // TODO(SR): These path helpers can probably be in a separate file.
+
+    // TODO(SR): This function should be _modernized_ to use 'StringRange' as that would make things a bit clearer in usage.
+    //           Also this has nothing to do with 'Paths' this is just a string algorithm!?!
     bool pathEndsIn(const char* path, const char* ending, int ending_len = -1, int path_len = -1);
     bool isValidName(const StringRange& path);
 
-    /// All slashes are forward slashes '/'.
-    /// A path for a folder has no following '/'.
-    /// Returns the new length of the path.
+    /// All slashes are forward slashes '/'.      \n
+    /// A path for a folder has no following '/'. \n
+    /// Returns the new length of the path.       \n
     std::size_t canonicalizePath(char* path_bgn, const char* path_end);
     std::size_t canonicalizePath(char* path_bgn);  // Gives you the length
 

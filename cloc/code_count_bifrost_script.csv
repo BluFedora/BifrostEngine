@@ -1,4 +1,4 @@
-language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=2.00 s (16.0 files/s, 4171.5 lines/s)"
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (64.0 files/s, 16694.0 lines/s)"
 C,..\BifrostScript\src\bifrost_vm_api.c,335,66,1426,
 C,..\BifrostScript\src\bifrost_vm_parser.c,297,110,1384,
 C,..\BifrostScript\src\bifrost_vm_lexer.c,77,28,428,

@@ -8,7 +8,7 @@ namespace bifrost
 {
   struct Event;
 
-  namespace editor::imgui
+  namespace imgui
   {
     void startup(bfGfxContextHandle graphics, IBaseWindow& window);
     void onEvent(Event& evt);

@@ -25,6 +25,7 @@
 /******************************************************************************/
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 
+#include "bifrost/asset_io/bifrost_file.hpp"
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"
 #include "bifrost/core/bifrost_engine.hpp" /* Engine */
 #include "bifrost/utility/bifrost_json.hpp"

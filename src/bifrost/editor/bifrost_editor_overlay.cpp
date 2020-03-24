@@ -763,7 +763,7 @@ namespace bifrost::editor
 
       if (event.type == EventType::ON_MOUSE_DOWN)
       {
-        if (isPointOverSceneView({mouse_evt.x, mouse_evt.y}))
+        if (isPointOverSceneView({{mouse_evt.x, mouse_evt.y}}))
         {
           is_dragging_mouse = true;
         }
@@ -790,7 +790,7 @@ namespace bifrost::editor
           oldy = newy;
         }
 
-        Camera_mouse(&engine.renderer().camera(), (newx - oldx) * mouse_speed, (newy - oldy) * mouse_speed);
+        Camera_mouse(&engine.Camera, (newx - oldx) * mouse_speed, (newy - oldy) * mouse_speed);
 
         oldx = newx;
         oldy = newy;
@@ -821,9 +821,9 @@ namespace bifrost::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    const ActionContext action_ctx{this};
-
     // ImGui::ShowDemoWindow();
+
+    const ActionContext action_ctx{this};
 
     if (s_MainMenuBar.beginItem(action_ctx))
     {
@@ -881,7 +881,10 @@ namespace bifrost::editor
 
         ImGui::DockBuilderDockWindow("Project View", dock_id_left_top);
         ImGui::DockBuilderDockWindow("Hierarchy View", dock_id_left_bottom);
-        ImGui::DockBuilderDockWindow("Inspector View", dock_id_right);
+        // ImGui::DockBuilderDockWindow("Inspector View", dock_id_right);
+        m_InspectorDefaultDockspaceID = dock_id_right;
+
+        viewAddInspector();
 
         ImGui::DockBuilderFinish(dockspace_id);
       }
@@ -900,11 +903,36 @@ namespace bifrost::editor
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(s_SceneViewPadding, s_SceneViewPadding));
-    if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
+    if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar))
     {
       if (m_OpenProject)
       {
-        const auto   color_buffer        = engine.renderer().colorBuffer();
+        if (ImGui::BeginMenuBar())
+        {
+          if (ImGui::BeginMenu("GBuffer"))
+          {
+            const char* const k_GBufferNames[k_GfxNumGBufferAttachments] =
+             {
+              "Position.Roughness",
+              "Normal.AO",
+              "Albedo.Metallic",
+             };
+
+            for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
+            {
+              if (ImGui::MenuItem(k_GBufferNames[i], nullptr, m_SceneViewGBuffer == i, true))
+              {
+                m_SceneViewGBuffer = i;
+              }
+            }
+
+            ImGui::EndMenu();
+          }
+
+          ImGui::EndMenuBar();
+        }
+
+        const auto   color_buffer        = engine.renderer().gBuffer().color_attachments[m_SceneViewGBuffer];
         const auto   color_buffer_width  = bfTexture_width(color_buffer);
         const auto   color_buffer_height = bfTexture_height(color_buffer);
         const auto   content_area        = ImGui::GetContentRegionAvail();
@@ -953,7 +981,7 @@ namespace bifrost::editor
         ImGui::SetCursorPos(
          (ImGui::GetWindowSize() - text_size) * 0.5f);
 
-        ImGui::Text(s_StrNoProjectOpen);
+        ImGui::Text("%s", s_StrNoProjectOpen);
 
         ImGui::SetCursorPosX(mid_screen.x);
 
@@ -1101,6 +1129,7 @@ namespace bifrost::editor
 
   void EditorOverlay::onUnload(Engine& engine)
   {
+    m_InspectorWindows.clear();
   }
 
   void EditorOverlay::onDestroy(Engine& engine)
@@ -1119,9 +1148,10 @@ namespace bifrost::editor
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
     m_SceneViewViewport{},
-    m_InspectorWindows{allocator()}
+    m_InspectorWindows{allocator()},
+    m_InspectorDefaultDockspaceID{},
+    m_SceneViewGBuffer{0}
   {
-    viewAddInspector();
   }
 
   Action* EditorOverlay::findAction(const char* name) const
@@ -1363,7 +1393,9 @@ namespace bifrost::editor
 
   void EditorOverlay::viewAddInspector()
   {
-    m_InspectorWindows.emplace(allocator());
+    Inspector& inspector = m_InspectorWindows.emplace(allocator());
+
+    ImGui::DockBuilderDockWindow(inspector.windowID(), m_InspectorDefaultDockspaceID);
   }
 
   bool EditorOverlay::isPointOverSceneView(const Vector2i& point) const
@@ -1723,9 +1755,11 @@ namespace bifrost::editor
     m_AllNodes.clear();
   }
 
+  InspectorID Inspector::s_InspectorIDGenerator = 0;
+
   void Inspector::uiShow(EditorOverlay& editor)
   {
-    if (ImGui::Begin("Inspector View", nullptr, ImGuiWindowFlags_MenuBar))
+    if (ImGui::Begin(m_ID, nullptr, ImGuiWindowFlags_MenuBar))
     {
       Engine& engine = editor.engine();
 
@@ -1765,7 +1799,7 @@ namespace bifrost::editor
               if (ImGui::Button("Add Mesh Renderer"))
               {
                 object->add<MeshRenderer>();
-              }  
+              }
             }
             else
             {
@@ -1774,8 +1808,6 @@ namespace bifrost::editor
               m_Serializer.serialize("material", renderer->material());
               m_Serializer.serialize("model", renderer->model());
             }
-
-            
 
             if (m_Serializer.endChangedCheck())
             {

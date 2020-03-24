@@ -376,6 +376,12 @@ namespace bifrost
   void Assets::setRootPath(std::nullptr_t)
   {
     m_NameToGUID.clear();
+
+    for (const auto& entry : m_AssetMap)
+    {
+      m_Memory.deallocateT(entry.value());
+    }
+
     m_AssetMap.clear();
 
     if (m_RootPath)

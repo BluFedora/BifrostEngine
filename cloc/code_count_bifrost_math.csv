@@ -1,8 +1,9 @@
-language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (12.0 files/s, 3370.0 lines/s)"
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (14.0 files/s, 3518.0 lines/s)"
 C,..\BifrostMath\src\bifrost_mat4x4.c,109,76,458,
-C,..\BifrostMath\src\bifrost_transform.c,68,6,368,
+C,..\BifrostMath\src\bifrost_transform.c,68,6,369,
 C,..\BifrostMath\src\bifrost_camera.c,38,5,181,
 C,..\BifrostMath\src\bifrost_vec3.c,34,14,165,
 C,..\BifrostMath\src\bifrost_vec2.c,17,0,72,
-CMake,..\BifrostMath\CMakeLists.txt,17,9,48,
-,,,,1292,
+,,,,,
+C++,..\BifrostMath\src\bifrost_rect2.cpp,4,13,26,
+,,,,1271,

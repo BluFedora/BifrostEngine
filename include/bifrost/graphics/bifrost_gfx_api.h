@@ -1,3 +1,12 @@
+/*!
+ * @file   bifrost_gfx_api.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date    2020-03-22
+ *
+ * @copyright Copyright (c) 2020
+ */
 #ifndef BIFROST_GFX_API_H
 #define BIFROST_GFX_API_H
 
@@ -17,32 +26,32 @@ typedef uint64_t bfBufferSize;
 
 #define BIFROST_BUFFER_WHOLE_SIZE (~0ull)
 #define BIFROST_TEXTURE_UNKNOWN_SIZE (-1)
+#define BIFROST_SUBPASS_EXTERNAL (~0U)
 
 /* Buffer */
 typedef enum bfBufferPropertyFlags_t
 {
-  // NOTE(Shareef):
-  //   Best for Device Access to the Memory.
+  /// Best for Device Access to the Memory.
   BIFROST_BPF_DEVICE_LOCAL = (1 << 0),
-  // NOTE(Shareef):
-  //   Can be mapped on the host.
+
+  /// Can be mapped on the host.
   BIFROST_BPF_HOST_MAPPABLE = (1 << 1),
-  // NOTE(Shareef):
-  //   You don't need 'vkFlushMappedMemoryRanges' and 'vkInvalidateMappedMemoryRanges' anymore.
+
+  /// You don't need 'vkFlushMappedMemoryRanges' and 'vkInvalidateMappedMemoryRanges' anymore.
   BIFROST_BPF_HOST_CACHE_MANAGED = (1 << 2),
-  // NOTE(Shareef):
-  //   Always host coherent, cached on the host for increased host access speed.
+
+  /// Always host coherent, cached on the host for increased host access speed.
   BIFROST_BPF_HOST_CACHED = (1 << 3),
-  // NOTE(Shareef):
-  //   Implementation defined lazy allocation of the buffer.
-  //   use: vkGetDeviceMemoryCommitment
-  //   CAN NOT HAVE SET: BPF_HOST_MAPPABLE
+
+  /// Implementation defined lazy allocation of the buffer.
+  /// use: vkGetDeviceMemoryCommitment
+  /// CAN NOT HAVE SET: BPF_HOST_MAPPABLE
   BIFROST_BPF_DEVICE_LAZY_ALLOC = (1 << 4),
-  // NOTE(Shareef):
-  //   Only device accessible and allows protected queue operations.
-  //   CAN NOT HAVE SET: BPF_HOST_MAPPABLE      or
-  //   CAN NOT HAVE SET: BPF_HOST_CACHE_MANAGED or
-  //   CAN NOT HAVE SET: BPF_HOST_CACHED
+
+  // Only device accessible and allows protected queue operations.
+  // CAN NOT HAVE SET: BPF_HOST_MAPPABLE      or
+  // CAN NOT HAVE SET: BPF_HOST_CACHE_MANAGED or
+  // CAN NOT HAVE SET: BPF_HOST_CACHED
   BIFROST_BPF_PROTECTED = (1 << 5)
 
 } bfBufferPropertyFlags;
@@ -213,7 +222,7 @@ typedef struct bfTextureCreateParams_t
 
 } bfTextureCreateParams;
 
-bfTextureCreateParams bfTextureCreateParams_init2D(uint32_t width, uint32_t height, BifrostImageFormat format);
+bfTextureCreateParams bfTextureCreateParams_init2D(BifrostImageFormat format, uint32_t width, uint32_t height);
 bfTextureCreateParams bfTextureCreateParams_initCubeMap(uint32_t width, uint32_t height, BifrostImageFormat format);
 bfTextureCreateParams bfTextureCreateParams_initColorAttachment(uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
 bfTextureCreateParams bfTextureCreateParams_initDepthAttachment(uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
@@ -282,6 +291,12 @@ void BifrostGfxObjectBase_ctor(BifrostGfxObjectBase* self, BifrostGfxObjectType 
 // END: Private Impl Header
 
 /* Logical Device */
+typedef struct bfDeviceLimits_t
+{
+  bfBufferSize uniform_buffer_offset_alignment; /* Worst case is 256 (0x100) */
+
+} bfDeviceLimits;
+
 void                  bfGfxDevice_flush(bfGfxDeviceHandle self);
 bfBufferHandle        bfGfxDevice_newBuffer(bfGfxDeviceHandle self, const bfBufferCreateParams* params);
 bfRenderpassHandle    bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params);
@@ -289,6 +304,7 @@ bfShaderModuleHandle  bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, Bifros
 bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self, const bfShaderProgramCreateParams* params);
 bfTextureHandle       bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
 bfTextureHandle       bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list);
+bfDeviceLimits        bfGfxDevice_limits(bfGfxDeviceHandle self);
 void                  bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
 /* Buffer */
@@ -318,7 +334,7 @@ typedef struct bfAttachmentInfo_t
 
 } bfAttachmentInfo;
 
-typedef struct
+typedef struct bfSubpassDependency_t
 {
   uint32_t                  subpasses[2];             // [src, dst]
   BifrostPipelineStageFlags pipeline_stage_flags[2];  // [src, dst]
@@ -339,8 +355,8 @@ typedef struct bfAttachmentRefCache_t
 typedef struct bfSubpassCache_t
 {
   uint16_t             num_out_attachment_refs;
-  bfAttachmentRefCache out_attachment_refs[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   uint16_t             num_in_attachment_refs;
+  bfAttachmentRefCache out_attachment_refs[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfAttachmentRefCache in_attachment_refs[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfAttachmentRefCache depth_attachment;
 
@@ -348,19 +364,19 @@ typedef struct bfSubpassCache_t
 
 typedef struct bfRenderpassInfo_t
 {
-  bfLoadStoreFlags    load_ops;           // 16bits
-  bfLoadStoreFlags    stencil_load_ops;   // 16bits
-  bfLoadStoreFlags    clear_ops;          // 16bits
-  bfLoadStoreFlags    stencil_clear_ops;  // 16bits
-  bfLoadStoreFlags    store_ops;          // 16bits
-  bfLoadStoreFlags    stencil_store_ops;  // 16bits
-  uint16_t            num_subpasses;
-  bfSubpassCache      subpasses[BIFROST_GFX_RENDERPASS_MAX_SUBPASSES];
-  uint32_t            num_attachments;
-  bfAttachmentInfo    attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
-  uint32_t            num_dependencies;
-  bfSubpassDependency dependencies[BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES];
   uint64_t            hash_code;
+  bfLoadStoreFlags    load_ops;
+  bfLoadStoreFlags    stencil_load_ops;
+  bfLoadStoreFlags    clear_ops;
+  bfLoadStoreFlags    stencil_clear_ops;
+  bfLoadStoreFlags    store_ops;
+  bfLoadStoreFlags    stencil_store_ops;
+  uint16_t            num_subpasses;
+  uint16_t            num_attachments;
+  uint16_t            num_dependencies;
+  bfSubpassCache      subpasses[BIFROST_GFX_RENDERPASS_MAX_SUBPASSES];
+  bfAttachmentInfo    attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  bfSubpassDependency dependencies[BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES];
 
 } bfRenderpassInfo;
 
@@ -402,8 +418,8 @@ typedef struct bfDescriptorElementInfo_t
   bfDescriptorElementInfoType type;
   uint32_t                    binding;
   uint32_t                    array_element_start;
-  bfGfxBaseHandle             handles[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
   uint32_t                    num_handles; /* also size of bfDescriptorElementInfo::offsets and bfDescriptorElementInfo::sizes */
+  bfGfxBaseHandle             handles[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
   uint64_t                    offsets[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
   uint64_t                    sizes[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
 
@@ -423,7 +439,7 @@ void                bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, ui
 /* The Descriptor Set API is for 'Immutable' Bindings otherwise use the bfDescriptorSetInfo API */
 
 void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
-void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
+void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
 void bfDescriptorSet_flushWrites(bfDescriptorSetHandle self);
 
 /* Texture */
@@ -492,7 +508,7 @@ void     bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t bi
 void     bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
 void     bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
 void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
-void     bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info);                   // Call after pipeline is setup.
+void     bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info);                 // Call after pipeline is setup.
 void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);                                              // Draw Cmds
 void     bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
 void     bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);

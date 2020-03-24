@@ -98,7 +98,7 @@ BIFROST_MATH_API void  Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix);
 BIFROST_MATH_API Color Vec3f_toColor(const Vec3f* self);
 
 // Color API
-typedef enum EColor_t
+enum
 {
   COLOR_EMPTY                = 0x00000000,
   COLOR_TRANSPARENT          = 0x00FFFFFF,
@@ -242,18 +242,17 @@ typedef enum EColor_t
   COLOR_WHITESMOKE           = 0xFFF5F5F5,
   COLOR_YELLOW               = 0xFF00FFFF,
   COLOR_YELLOWGREEN          = 0xFF32CD9A
+};
 
-} EColor;
-
-BIFROST_MATH_API uchar Color_r(const Color self);
-BIFROST_MATH_API uchar Color_g(const Color self);
-BIFROST_MATH_API uchar Color_b(const Color self);
-BIFROST_MATH_API uchar Color_a(const Color self);
-BIFROST_MATH_API void  Color_setRGBA(Color* self, const uchar r, const uchar g, const uchar b, const uchar a);
-BIFROST_MATH_API void  Color_setR(Color* self, const uint r);
-BIFROST_MATH_API void  Color_setG(Color* self, const uint g);
-BIFROST_MATH_API void  Color_setB(Color* self, const uint b);
-BIFROST_MATH_API void  Color_setA(Color* self, const uint a);
+BIFROST_MATH_API uchar Color_r(Color self);
+BIFROST_MATH_API uchar Color_g(Color self);
+BIFROST_MATH_API uchar Color_b(Color self);
+BIFROST_MATH_API uchar Color_a(Color self);
+BIFROST_MATH_API void  Color_setRGBA(Color* self, uchar r, uchar g, uchar b, uchar a);
+BIFROST_MATH_API void  Color_setR(Color* self, uint r);
+BIFROST_MATH_API void  Color_setG(Color* self, uint g);
+BIFROST_MATH_API void  Color_setB(Color* self, uint b);
+BIFROST_MATH_API void  Color_setA(Color* self, uint a);
 
 #if __cplusplus
 }

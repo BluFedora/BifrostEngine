@@ -205,6 +205,8 @@ namespace bifrost::editor
     FileSystem         m_FileSystem;
     Rect2i             m_SceneViewViewport;  // Global Window Coordinates
     Array<Inspector>   m_InspectorWindows;
+    ImGuiID            m_InspectorDefaultDockspaceID;
+    int                m_SceneViewGBuffer;
 
    protected:
     void onCreate(Engine& engine) override;

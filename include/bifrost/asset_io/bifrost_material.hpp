@@ -71,7 +71,7 @@ namespace bifrost
     }
 
     std::uint32_t width() const { return m_Handle ? bfTexture_width(m_Handle) : 0u; }
-    std::uint32_t height() const { return m_Handle ? bfTexture_width(m_Handle) : 0u; }
+    std::uint32_t height() const { return m_Handle ? bfTexture_height(m_Handle) : 0u; }
   };
 
   class AssetTextureInfo final : public AssetInfo<Texture, AssetTextureInfo>

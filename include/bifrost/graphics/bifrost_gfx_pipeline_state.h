@@ -1,3 +1,13 @@
+/*!
+ * @file   bifrost_gfx_pipeline_state.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date    2020-03-22
+ *
+ * @copyright Copyright (c) 2020
+ *
+ */
 #ifndef BIFROST_GFX_PIPELINE_STATE_H
 #define BIFROST_GFX_PIPELINE_STATE_H
 

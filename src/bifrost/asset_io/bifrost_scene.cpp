@@ -12,6 +12,7 @@
 */
 #include "bifrost/asset_io/bifrost_scene.hpp"
 
+#include "bifrost/asset_io/bifrost_file.hpp"            /* File                 */
 #include "bifrost/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
 #include "bifrost/core/bifrost_engine.hpp"              /* Engine               */
 #include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
@@ -19,7 +20,7 @@
 
 namespace bifrost
 {
-  Scene::Scene(IMemoryManager& memory):
+  Scene::Scene(IMemoryManager& memory) :
     BaseObject<Scene>{},
     m_Memory{memory},
     m_RootEntities{memory},

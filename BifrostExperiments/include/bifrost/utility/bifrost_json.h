@@ -21,7 +21,6 @@
 #if __cplusplus
 extern "C" {
 #endif
-
 #define BIFROST_JSON_USER_STORAGE_SIZE 64
 #define BIFROST_JSON_STRING_BLOCK_SIZE 256
 
@@ -58,8 +57,8 @@ struct bfJsonWriter_t;
 typedef struct bfJsonWriter_t BifrostJsonWriter;
 
 typedef void (*bfJsonFn)(bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
-typedef void* (*bfJsonAllocFn)(size_t size);
-typedef void (*bfJsonFreeFn)(void* ptr);
+typedef void* (*bfJsonAllocFn)(size_t size); /* TODO: Add void* user_data parameter. */
+typedef void (*bfJsonFreeFn)(void* ptr);     /* TODO: Add void* user_data parameter. */
 typedef void (*bfJsonWriterForEachFn)(const bfJsonStringBlock* block, void* user_data);
 
 /* Reader API (String -> Object) */

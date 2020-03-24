@@ -507,13 +507,17 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
     bfGfxCmdList_setAlphaToOne(list, bfFalse);
     bfGfxCmdList_setLogicOp(list, BIFROST_LOGIC_OP_CLEAR);
     bfGfxCmdList_setPolygonFillMode(list, BIFROST_POLYGON_MODE_FILL);
-    bfGfxCmdList_setColorWriteMask(list, 0, BIFROST_COLOR_MASK_RGBA);
-    bfGfxCmdList_setColorBlendOp(list, 0, BIFROST_BLEND_OP_ADD);
-    bfGfxCmdList_setBlendSrc(list, 0, BIFROST_BLEND_FACTOR_SRC_ALPHA);
-    bfGfxCmdList_setBlendDst(list, 0, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
-    bfGfxCmdList_setAlphaBlendOp(list, 0, BIFROST_BLEND_OP_ADD);
-    bfGfxCmdList_setBlendSrcAlpha(list, 0, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDstAlpha(list, 0, BIFROST_BLEND_FACTOR_ZERO);
+
+    for (int i = 0; i < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS; ++i)
+    {
+      bfGfxCmdList_setColorWriteMask(list, i, BIFROST_COLOR_MASK_RGBA);
+      bfGfxCmdList_setColorBlendOp(list, i, BIFROST_BLEND_OP_ADD);
+      bfGfxCmdList_setBlendSrc(list, i, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+      bfGfxCmdList_setBlendDst(list, i, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+      bfGfxCmdList_setAlphaBlendOp(list, i, BIFROST_BLEND_OP_ADD);
+      bfGfxCmdList_setBlendSrcAlpha(list, i, BIFROST_BLEND_FACTOR_ONE);
+      bfGfxCmdList_setBlendDstAlpha(list, i, BIFROST_BLEND_FACTOR_ZERO);
+    }
 
     const auto SetupStencilState = [&list](BifrostStencilFace face) {
       bfGfxCmdList_setStencilFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
@@ -554,6 +558,16 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 bfTextureHandle bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list)
 {
   return &command_list->window->swapchain.img_list.images[command_list->window->image_index];
+}
+
+bfDeviceLimits bfGfxDevice_limits(bfGfxDeviceHandle self)
+{
+  VkPhysicalDeviceLimits& vk_limits = self->parent->device_properties.limits;
+  bfDeviceLimits          limits;
+
+  limits.uniform_buffer_offset_alignment = vk_limits.minUniformBufferOffsetAlignment;
+
+  return limits;
 }
 
 namespace
@@ -1719,6 +1733,8 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self_, cons
 
   BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_SHADER_PROGRAM);
 
+  assert(params->num_desc_sets <= BIFROST_GFX_RENDERPASS_MAX_DESCRIPTOR_SETS);
+
   self->parent               = self_;
   self->layout               = VK_NULL_HANDLE;
   self->num_desc_set_layouts = params->num_desc_sets;
@@ -1769,21 +1785,6 @@ char* LoadFileIntoMemory(const char* const filename, long* out_size)
   }
 
   return buffer;
-}
-
-bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
-{
-  long  buffer_size;
-  char* buffer = LoadFileIntoMemory(file, &buffer_size);
-
-  if (buffer)
-  {
-    const bfBool32 was_successful = bfShaderModule_loadData(self, buffer, buffer_size);
-    free(buffer);
-    return was_successful;
-  }
-
-  return bfFalse;
 }
 
 bfBool32 bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length)
@@ -1977,7 +1978,7 @@ void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint
   }
 }
 
-void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
+void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
 {
   VkWriteDescriptorSet*   write        = bfDescriptorSet__checkForFlush(self, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, array_element_start, num_buffers, 0, 0);
   VkDescriptorBufferInfo* buffer_infos = const_cast<VkDescriptorBufferInfo*>(write->pBufferInfo);

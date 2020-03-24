@@ -12,8 +12,8 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#ifndef BIFORST_C_ALLOCATOR_HPP
-#define BIFORST_C_ALLOCATOR_HPP
+#ifndef BIFROST_C_ALLOCATOR_HPP
+#define BIFROST_C_ALLOCATOR_HPP
 
 #include "bifrost_imemory_manager.hpp"
 
@@ -32,4 +32,4 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-#endif  /* BIFORST_C_ALLOCATOR_HPP */
+#endif  /* BIFROST_C_ALLOCATOR_HPP */

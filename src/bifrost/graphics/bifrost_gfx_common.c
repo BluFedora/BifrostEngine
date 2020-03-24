@@ -4,6 +4,7 @@
 #include "vulkan/bifrost_vulkan_physical_device.h"
 
 #include <assert.h>                       /* assert         */
+#include <stdlib.h>                       /* free */
 #include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions
 
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, uint32_t num_layers);
@@ -32,7 +33,7 @@ bfTextureSamplerProperties bfTextureSamplerProperties_init(BifrostSamplerFilterM
   return props;
 }
 
-bfTextureCreateParams bfTextureCreateParams_init2D(uint32_t width, uint32_t height, BifrostImageFormat format)
+bfTextureCreateParams bfTextureCreateParams_init2D(BifrostImageFormat format, uint32_t width, uint32_t height)
 {
   bfTextureCreateParams ret;
   setupSampler(&ret, width, height, format, 1);
@@ -70,6 +71,21 @@ void bfBuffer_invalidateRange(bfBufferHandle self, bfBufferSize offset, bfBuffer
 void bfBuffer_flushRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 {
   bfBuffer_flushRanges(self, &offset, &size, 1);
+}
+
+bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
+{
+  long  buffer_size;
+  char* buffer = LoadFileIntoMemory(file, &buffer_size);
+
+  if (buffer)
+  {
+    const bfBool32 was_successful = bfShaderModule_loadData(self, buffer, buffer_size);
+    free(buffer);
+    return was_successful;
+  }
+
+  return bfFalse;
 }
 
 bfRenderpassInfo bfRenderpassInfo_init(uint16_t num_subpasses)
@@ -133,11 +149,6 @@ void bfRenderpassInfo_setStencilStoreOps(bfRenderpassInfo* self, bfLoadStoreFlag
 
 void bfRenderpassInfo_addAttachment(bfRenderpassInfo* self, const bfAttachmentInfo* info)
 {
-  if (info->texture->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
-  {
-    // info->texture->tex_layout = info->final_layout;
-  }
-
   self->attachments[self->num_attachments++] = *info;
 }
 
@@ -145,10 +156,11 @@ static bfSubpassCache* grabSubpass(bfRenderpassInfo* self, uint16_t subpass_inde
 
 void bfRenderpassInfo_addColorOut(bfRenderpassInfo* self, uint16_t subpass_index, uint32_t attachment, BifrostImageLayout layout)
 {
-  bfSubpassCache* const       subpass        = grabSubpass(self, subpass_index);
-  bfAttachmentRefCache* const attachment_ref = subpass->out_attachment_refs + subpass->num_out_attachment_refs;
+  bfSubpassCache* const subpass = grabSubpass(self, subpass_index);
 
-  assert((subpass->num_out_attachment_refs + 1) < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS);
+  assert(subpass->num_out_attachment_refs < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS);
+
+  bfAttachmentRefCache* const attachment_ref = subpass->out_attachment_refs + subpass->num_out_attachment_refs;
 
   attachment_ref->attachment_index = attachment;
   attachment_ref->layout           = layout;

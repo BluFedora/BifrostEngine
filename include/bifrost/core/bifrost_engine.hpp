@@ -1,12 +1,17 @@
 #ifndef BIFROST_ENGINE_HPP
 #define BIFROST_ENGINE_HPP
 
-#include "bifrost/asset_io/test.h"
-#include "bifrost/bifrost.hpp"
+#include "bifrost/asset_io/bifrost_assets.hpp"
+#include "bifrost/asset_io/bifrost_scene.hpp"
+#include "bifrost/debug/bifrost_dbg_logger.h"
 #include "bifrost/ecs/bifrost_iecs_system.hpp"  // IECSSystem
 #include "bifrost/event/bifrost_window_event.hpp"
+#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
+#include "bifrost/script/bifrost_vm.hpp"
+#include "bifrost_game_state_machine.hpp"
+#include "bifrost_igame_state_layer.hpp"
 
 #include <tuple>
 #include <utility>
@@ -21,8 +26,7 @@ struct BifrostEngineCreateParams : public bfGfxContextCreateParams
   std::uint32_t height;
 };
 
-static BifrostEngine* g_Engine = nullptr;
-static GLFWwindow*    g_Window = nullptr;
+static GLFWwindow* g_Window = nullptr;
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -38,237 +42,71 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
   }
 }
 
-class BaseRenderer
-{
- private:
-  bfGfxContextHandle           m_GfxBackend;
-  bfGfxDeviceHandle            m_GfxDevice;
-  bfGfxCommandListHandle       m_MainCmdList;
-  bfTextureHandle              m_MainSurface;
-  bfVertexLayoutSetHandle      m_BasicVertexLayout;
-  bfBufferHandle               m_VertexBuffer;
-  bfBufferHandle               m_IndexBuffer;
-  bfBufferHandle               m_UniformBuffer;
-  bfTextureHandle              m_TestTexture;
-  bfShaderModuleHandle         m_ShaderModuleV;
-  bfShaderModuleHandle         m_ShaderModuleF;
-  bfShaderProgramHandle        m_ShaderProgram;
-  bfDescriptorSetHandle        m_TestMaterial;
-  bfDescriptorSetHandle        m_TestMaterial2;
-  bfTextureHandle              m_ColorBuffer;
-  bfTextureHandle              m_DepthBuffer;
-  std::vector<bfGfxBaseHandle> m_Resources;
-  Mat4x4                       m_ModelView;
-  Camera                       m_Camera;
-
- public:
-  explicit BaseRenderer() :
-    m_GfxBackend{nullptr},
-    m_GfxDevice{nullptr},
-    m_MainCmdList{nullptr},
-    m_MainSurface{nullptr},
-    m_BasicVertexLayout{nullptr},
-    m_VertexBuffer{nullptr},
-    m_IndexBuffer{nullptr},
-    m_UniformBuffer{nullptr},
-    m_TestTexture{nullptr},
-    m_ShaderModuleV{nullptr},
-    m_ShaderModuleF{nullptr},
-    m_ShaderProgram{nullptr},
-    m_TestMaterial{nullptr},
-    m_TestMaterial2{nullptr},
-    m_ColorBuffer{nullptr},
-    m_DepthBuffer{nullptr},
-    m_Resources{},
-    m_ModelView{},
-    m_Camera{}
-  {
-    Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
-    Vec3f cam_up  = {0.0f, 1.0f, 0.0f, 0.0f};
-
-    Mat4x4_identity(&m_ModelView);
-    Camera_init(&m_Camera, &cam_pos, &cam_up, 0.0f, 0.0f);
-  }
-
-  bfGfxContextHandle     context() const { return m_GfxBackend; }
-  bfTextureHandle        surface() const { return m_MainSurface; }
-  bfTextureHandle        colorBuffer() const { return m_ColorBuffer; }
-  bfGfxCommandListHandle mainCommandList() const { return m_MainCmdList; }
-  Camera&                camera() { return m_Camera; }
-
-  void startup(const bfGfxContextCreateParams& gfx_create_params)
-  {
-    m_GfxBackend = bfGfxContext_new(&gfx_create_params);
-    m_GfxDevice  = bfGfxContext_device(m_GfxBackend);
-
-    m_BasicVertexLayout = bfVertexLayout_new();
-    bfVertexLayout_addVertexBinding(m_BasicVertexLayout, 0, sizeof(BasicVertex));
-    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(BasicVertex, pos));
-    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(BasicVertex, normal));
-    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(BasicVertex, color));
-    bfVertexLayout_addVertexLayout(m_BasicVertexLayout, 0, BIFROST_VFA_FLOAT32_2, offsetof(BasicVertex, uv));
-
-    bfBufferCreateParams buffer_params;
-    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
-    buffer_params.allocation.size       = sizeof(BasicVertex) * 4;
-    buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
-
-    m_VertexBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
-
-    buffer_params.allocation.size = sizeof(std::uint16_t) * 6;
-    buffer_params.usage           = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
-
-    m_IndexBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
-
-    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
-    buffer_params.allocation.size       = 0x100 * 2;
-    buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
-
-    m_UniformBuffer = bfGfxDevice_newBuffer(m_GfxDevice, &buffer_params);
-
-    const BasicVertex VERTEX_DATA[] =
-     {
-      {Vec3f{-0.5f, -0.5f, 0.0f, 1.0f}, Vec3f{}, {0, 255, 255, 255}, {0.0f, 0.0f}},
-      {Vec3f{+0.5f, -0.5f, 0.0f, 1.0f}, Vec3f{}, {255, 255, 0, 255}, {1.0f, 0.0f}},
-      {Vec3f{+0.5f, +0.5f, 0.0f, 1.0f}, Vec3f{}, {255, 0, 255, 255}, {1.0f, 1.0f}},
-      {Vec3f{-0.5f, +0.5f, 0.0f, 1.0f}, Vec3f{}, {255, 255, 255, 255}, {0.0f, 1.0f}},
-     };
-
-    const uint16_t INDEX_DATA[] = {0u, 1u, 2u, 3u, 2u, 0u};
-
-    void* vertex_buffer_ptr = bfBuffer_map(m_VertexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-    void* index_buffer_ptr  = bfBuffer_map(m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-
-    std::memcpy(vertex_buffer_ptr, VERTEX_DATA, sizeof(VERTEX_DATA));
-    std::memcpy(index_buffer_ptr, INDEX_DATA, sizeof(INDEX_DATA));
-
-    bfBuffer_flushRange(m_VertexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-    bfBuffer_flushRange(m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-    bfBuffer_unMap(m_VertexBuffer);
-    bfBuffer_unMap(m_IndexBuffer);
-
-    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
-    bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
-
-    m_TestTexture = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
-    bfTexture_loadFile(m_TestTexture, "assets/texture.png");
-    bfTexture_setSampler(m_TestTexture, &sampler);
-
-    bfShaderProgramCreateParams create_shader;
-    create_shader.debug_name    = "My Test Shader";
-    create_shader.num_desc_sets = 1;
-
-    m_ShaderModuleV = bfGfxDevice_newShaderModule(m_GfxDevice, BIFROST_SHADER_TYPE_VERTEX);
-    m_ShaderModuleF = bfGfxDevice_newShaderModule(m_GfxDevice, BIFROST_SHADER_TYPE_FRAGMENT);
-    m_ShaderProgram = bfGfxDevice_newShaderProgram(m_GfxDevice, &create_shader);
-
-    bfShaderModule_loadFile(m_ShaderModuleV, "assets/basic_material.vert.spv");
-    bfShaderModule_loadFile(m_ShaderModuleF, "assets/basic_material.frag.spv");
-
-    bfShaderProgram_addModule(m_ShaderProgram, m_ShaderModuleV);
-    bfShaderProgram_addModule(m_ShaderProgram, m_ShaderModuleF);
-
-    bfShaderProgram_addImageSampler(m_ShaderProgram, "u_DiffuseTexture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
-    bfShaderProgram_addUniformBuffer(m_ShaderProgram, "u_ModelTransform", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
-
-    bfShaderProgram_compile(m_ShaderProgram);
-
-    m_TestMaterial  = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0);
-    m_TestMaterial2 = bfShaderProgram_createDescriptorSet(m_ShaderProgram, 0);
-
-    uint64_t offset = 0;
-    uint64_t sizes  = sizeof(m_ModelView);
-
-    bfDescriptorSet_setCombinedSamplerTextures(m_TestMaterial, 0, 0, &m_TestTexture, 1);
-    bfDescriptorSet_setUniformBuffers(m_TestMaterial, 1, 0, &offset, &sizes, &m_UniformBuffer, 1);
-    bfDescriptorSet_flushWrites(m_TestMaterial);
-
-    offset += 0x100;
-
-    bfDescriptorSet_setCombinedSamplerTextures(m_TestMaterial2, 0, 0, &m_TestTexture, 1);
-    bfDescriptorSet_setUniformBuffers(m_TestMaterial2, 1, 0, &offset, &sizes, &m_UniformBuffer, 1);
-    bfDescriptorSet_flushWrites(m_TestMaterial2);
-
-    create_texture = bfTextureCreateParams_initColorAttachment(1280 / 4, 720 / 4, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, bfTrue, bfFalse);
-
-    m_ColorBuffer = bfGfxDevice_newTexture(m_GfxDevice, &create_texture);
-    bfTexture_loadData(m_ColorBuffer, nullptr, 0);
-    bfTexture_setSampler(m_ColorBuffer, &sampler);
-
-    m_Resources.push_back(m_TestMaterial);
-    m_Resources.push_back(m_TestMaterial2);
-    m_Resources.push_back(m_ShaderModuleF);
-    m_Resources.push_back(m_ShaderModuleV);
-    m_Resources.push_back(m_ShaderProgram);
-    m_Resources.push_back(m_TestTexture);
-    m_Resources.push_back(m_VertexBuffer);
-    m_Resources.push_back(m_IndexBuffer);
-    m_Resources.push_back(m_UniformBuffer);
-    m_Resources.push_back(m_ColorBuffer);
-  }
-
-  [[nodiscard]] bool frameBegin()
-  {
-    if (bfGfxContext_beginFrame(m_GfxBackend, -1))
-    {
-      bfGfxCommandListCreateParams thread_command_list{0, -1};
-
-      m_MainCmdList = bfGfxContext_requestCommandList(m_GfxBackend, &thread_command_list);
-
-      if (m_MainCmdList)
-      {
-        m_MainSurface = bfGfxDevice_requestSurface(m_MainCmdList);
-
-        const std::uint32_t surface_w = bfTexture_width(m_ColorBuffer);
-        const std::uint32_t surface_h = bfTexture_height(m_ColorBuffer);
-
-        if (!m_DepthBuffer || bfTexture_width(m_DepthBuffer) != surface_w || bfTexture_height(m_DepthBuffer) != surface_h)
-        {
-          bfGfxDevice_flush(m_GfxDevice);
-          bfGfxDevice_release(m_GfxDevice, m_DepthBuffer);
-
-          bfTextureCreateParams create_depth_tex = bfTextureCreateParams_initDepthAttachment(surface_w, surface_h, BIFROST_IMAGE_FORMAT_D24_UNORM_S8_UINT, bfFalse, bfFalse);
-
-          m_DepthBuffer = bfGfxDevice_newTexture(m_GfxDevice, &create_depth_tex);
-          bfTexture_loadData(m_DepthBuffer, nullptr, 0);
-        }
-
-        return bfGfxCmdList_begin(m_MainCmdList);
-      }
-    }
-
-    return false;
-  }
-
-  void frameUpdate();
-
-  void frameEnd()
-  {
-    bfGfxCmdList_endRenderpass(m_MainCmdList);
-    bfGfxCmdList_end(m_MainCmdList);
-    bfGfxCmdList_submit(m_MainCmdList);
-    bfGfxContext_endFrame(m_GfxBackend);
-  }
-
-  void cleanup()
-  {
-    bfGfxDevice_flush(m_GfxDevice);
-
-    bfGfxDevice_release(m_GfxDevice, m_DepthBuffer);
-
-    for (auto resource : m_Resources)
-    {
-      bfGfxDevice_release(m_GfxDevice, resource);
-    }
-
-    bfVertexLayout_delete(m_BasicVertexLayout);
-    bfGfxContext_delete(m_GfxBackend);
-    m_GfxBackend = nullptr;
-  }
-};
+// const auto limits = bfGfxDevice_limits(m_GfxDevice);
+// m_AlignedUBOSize  = alignedUpSize(sizeof(m_ModelView), (size_t)limits.uniform_buffer_offset_alignment);
 
 class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 {
+  // TEMP CODE START
+ public:
+  struct Camera_t Camera;
+  Mat4x4          ModelView;
+  bfBufferHandle  UniformBuffer;
+  bfTextureHandle DummyTexture;
+  bfGfxFrameInfo  frameInfo;
+
+  void cameraControls()
+  {
+    Mat4x4 rot, scl, trans;
+
+    Mat4x4_initScalef(&scl, 1.4f, 1.4f, 1.0f);
+    Mat4x4_initRotationf(&rot, 0.0f, 0.0f, 20.0f);
+    Mat4x4_initTranslatef(&trans, 0.0f, 3.0f, 1.0f);
+    Mat4x4_mult(&rot, &scl, &ModelView);
+
+    Mat4x4_mult(&trans, &ModelView, &ModelView);
+
+    const auto camera_move_speed = 0.05f;
+
+    const std::tuple<int, void (*)(::Camera*, float), float> CameraControls[] =
+     {
+      {GLFW_KEY_W, &Camera_moveForward, camera_move_speed},
+      {GLFW_KEY_A, &Camera_moveLeft, camera_move_speed},
+      {GLFW_KEY_S, &Camera_moveBackward, camera_move_speed},
+      {GLFW_KEY_D, &Camera_moveRight, camera_move_speed},
+      {GLFW_KEY_Q, &Camera_moveUp, camera_move_speed},
+      {GLFW_KEY_E, &Camera_moveDown, camera_move_speed},
+      {GLFW_KEY_R, &Camera_addPitch, -0.01f},
+      {GLFW_KEY_F, &Camera_addPitch, 0.01f},
+      {GLFW_KEY_H, &Camera_addYaw, 0.01f},
+      {GLFW_KEY_G, &Camera_addYaw, -0.01f},
+     };
+
+    for (const auto& control : CameraControls)
+    {
+      if (glfwGetKey(g_Window, std::get<0>(control)) == GLFW_PRESS)
+      {
+        std::get<1>(control)(&Camera, std::get<2>(control));
+      }
+    }
+
+    int width, height;
+    glfwGetWindowSize(g_Window, &width, &height);
+
+    Camera_onResize(&Camera, width, height);
+    Camera_update(&Camera);
+
+    // Model -> View -> Proj
+    Mat4x4_mult(&Camera.view_cache, &ModelView, &ModelView);
+    Mat4x4_mult(&Camera.proj_cache, &ModelView, &ModelView);
+
+    void* uniform_buffer_ptr = bfBuffer_map(UniformBuffer, 0x100 * frameInfo.frame_index, BIFROST_BUFFER_WHOLE_SIZE);
+    std::memcpy(uniform_buffer_ptr, (char*)&ModelView, sizeof(ModelView));
+    bfBuffer_unMap(UniformBuffer);
+  }
+
+  // TEMP CODE END
+
  private:
   std::pair<int, const char**> m_CmdlineArgs;
   FreeListAllocator            m_MainMemory;
@@ -276,24 +114,34 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   NoFreeAllocator              m_TempAdapter;
   GameStateMachine             m_StateMachine;
   VM                           m_Scripting;
-  BaseRenderer                 m_Renderer;
+  StandardRenderer             m_Renderer;
   Array<AssetSceneHandle>      m_SceneStack;
   Assets                       m_Assets;
   Array<IECSSystem*>           m_Systems;
 
  public:
   BifrostEngine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
+    Camera{},
+    ModelView{},
     m_CmdlineArgs{argc, argv},
     m_MainMemory{main_memory, main_memory_size},
     m_TempMemory{static_cast<char*>(m_MainMemory.allocate(main_memory_size / 4)), main_memory_size / 4},
     m_TempAdapter{m_TempMemory},
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
-    m_Renderer{},
+    m_Renderer{m_MainMemory},
     m_SceneStack{m_MainMemory},
     m_Assets{*this, m_MainMemory},
     m_Systems{m_MainMemory}
   {
+    // TEMP CODE BGN
+    Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
+    Vec3f cam_up  = {0.0f, 1.0f, 0.0f, 0.0f};
+
+    Mat4x4_identity(&ModelView);
+    Camera_init(&Camera, &cam_pos, &cam_up, 0.0f, 0.0f);
+    UniformBuffer = nullptr;
+    // TEMP CODE END
   }
 
   FreeListAllocator& mainMemory() { return m_MainMemory; }
@@ -301,7 +149,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
   GameStateMachine&  stateMachine() { return m_StateMachine; }
   VM&                scripting() { return m_Scripting; }
-  BaseRenderer&      renderer() { return m_Renderer; }
+  StandardRenderer&  renderer() { return m_Renderer; }
   Assets&            assets() { return m_Assets; }
 
   AssetSceneHandle currentScene() const
@@ -316,7 +164,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
   void openScene(const AssetSceneHandle& scene)
   {
-    m_SceneStack.clear(); // TODO: Scene Stacking.
+    m_SceneStack.clear();  // TODO: Scene Stacking.
     m_SceneStack.push(scene);
   }
 
@@ -347,7 +195,17 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     bfLogPush("Engine Init of App: %s", params.app_name);
 
-    m_Renderer.startup(params);
+    m_Renderer.init(params);
+
+    // TEMP CODE BGN
+    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_TEXTURE_UNKNOWN_SIZE);
+    bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
+
+    DummyTexture = bfGfxDevice_newTexture(m_Renderer.device(), &create_texture);
+    bfTexture_loadFile(DummyTexture, "assets/texture.png");
+    bfTexture_setSampler(DummyTexture, &sampler);
+
+    // TEMP CODE END
 
     VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
@@ -428,9 +286,47 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     }
   }
 
-  void drawBegin()
+  void drawBegin(float render_alpha)
   {
-    m_Renderer.frameUpdate();
+    frameInfo = bfGfxContext_getFrameInfo(m_Renderer.context(), -1);
+
+    if (!UniformBuffer)
+    {
+      bfBufferCreateParams buffer_params;
+      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.size       = 0x100 * frameInfo.num_frame_indices;
+      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
+
+      UniformBuffer = bfGfxDevice_newBuffer(m_Renderer.device(), &buffer_params);
+    }
+
+    cameraControls();
+
+    m_Renderer.beginGBufferPass();
+
+    auto scene = currentScene();
+
+    if (scene)
+    {
+      bfDescriptorSetInfo desc_set2 = bfDescriptorSetInfo_make();
+      bfDescriptorSetInfo_addTexture(&desc_set2, 0, 0, &DummyTexture, 1);
+
+      uint64_t            offset    = 0x100 * frameInfo.frame_index;
+      uint64_t            sizes     = sizeof(Mat4x4);
+      bfDescriptorSetInfo desc_set3 = bfDescriptorSetInfo_make();
+      bfDescriptorSetInfo_addUniform(&desc_set3, 0, 0, &offset, &sizes, &UniformBuffer, 1);
+
+      bfGfxCmdList_bindDescriptorSet(m_Renderer.mainCommandList(), 2, &desc_set2);
+      bfGfxCmdList_bindDescriptorSet(m_Renderer.mainCommandList(), 3, &desc_set3);
+
+      for (MeshRenderer& renderer : scene->components<MeshRenderer>())
+      {
+        if (renderer.model())
+        {
+          renderer.model()->draw(m_Renderer.mainCommandList());
+        }
+      }
+    }
 
     for (auto& system : m_Systems)
     {
@@ -439,191 +335,40 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
         continue;
       }
 
-      system->onFrameDraw(*this, 0.0f);
+      system->onFrameDraw(*this, render_alpha);
     }
+
+    m_Renderer.beginForwardSubpass();
+
+    m_Renderer.endPass();
+
+    m_Renderer.beginScreenPass();
   }
 
-  void drawEnd()
+  void drawEnd() const
   {
+    m_Renderer.endPass();
+
     m_Renderer.frameEnd();
   }
 
   void deinit()
   {
+    m_StateMachine.removeAll();
+    m_Scripting.destroy();
     m_SceneStack.clear();
     m_Assets.saveAssets();
     m_Assets.setRootPath(nullptr);
-    m_StateMachine.removeAll();
-    m_Scripting.destroy();
-    bfLogger_deinit();
-    m_Renderer.cleanup();
+    m_Renderer.deinit();
+
+    for (auto& system : m_Systems)
+    {
+      m_MainMemory.deallocateT(system);
+    }
+
     m_Systems.clear();
+    bfLogger_deinit();
   }
 };
-
-inline void BaseRenderer::frameUpdate()
-{
-  // Camera BGN
-  Mat4x4 rot, scl, trans;
-
-  Mat4x4_initScalef(&scl, 1.4f, 1.4f, 1.0f);
-  Mat4x4_initRotationf(&rot, 0.0f, 0.0f, 20.0f);
-  Mat4x4_initTranslatef(&trans, 0.0f, 3.0f, 1.0f);
-  Mat4x4_mult(&rot, &scl, &m_ModelView);
-
-  auto model2 = m_ModelView;
-
-  Mat4x4_mult(&trans, &m_ModelView, &m_ModelView);
-
-  const auto camera_move_speed = 0.05f;
-
-  const std::tuple<int, void (*)(::Camera*, float), float> CameraControls[] =
-  {
-    {GLFW_KEY_W, &Camera_moveForward, camera_move_speed},
-  {GLFW_KEY_A, &Camera_moveLeft, camera_move_speed},
-  {GLFW_KEY_S, &Camera_moveBackward, camera_move_speed},
-  {GLFW_KEY_D, &Camera_moveRight, camera_move_speed},
-  {GLFW_KEY_Q, &Camera_moveUp, camera_move_speed},
-  {GLFW_KEY_E, &Camera_moveDown, camera_move_speed},
-  {GLFW_KEY_R, &Camera_addPitch, -0.01f},
-  {GLFW_KEY_F, &Camera_addPitch, 0.01f},
-  {GLFW_KEY_H, &Camera_addYaw, 0.01f},
-  {GLFW_KEY_G, &Camera_addYaw, -0.01f},
-  };
-
-  for (const auto& control : CameraControls)
-  {
-    if (glfwGetKey(g_Window, std::get<0>(control)) == GLFW_PRESS)
-    {
-      std::get<1>(control)(&m_Camera, std::get<2>(control));
-    }
-  }
-
-  int width, height;
-  glfwGetWindowSize(g_Window, &width, &height);
-
-  Camera_onResize(&m_Camera, width, height);
-  Camera_update(&m_Camera);
-
-  // Model -> View -> Proj
-  Mat4x4_mult(&m_Camera.view_cache, &m_ModelView, &m_ModelView);
-  Mat4x4_mult(&m_Camera.proj_cache, &m_ModelView, &m_ModelView);
-
-  Mat4x4_mult(&m_Camera.view_cache, &model2, &model2);
-  Mat4x4_mult(&m_Camera.proj_cache, &model2, &model2);
-
-  void* uniform_buffer_ptr = bfBuffer_map(m_UniformBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-  std::memcpy(uniform_buffer_ptr, &m_ModelView, sizeof(m_ModelView));
-  std::memcpy((unsigned char*)uniform_buffer_ptr + 0x100, &model2, sizeof(model2));
-  bfBuffer_unMap(m_UniformBuffer);
-  // Camera END
-
-  {
-    const auto color_buffer = m_ColorBuffer;
-
-    bfAttachmentInfo main_surface;
-    main_surface.texture = color_buffer;
-    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    main_surface.may_alias = bfFalse;
-
-    bfAttachmentInfo depth_buffer;
-    depth_buffer.texture = m_DepthBuffer;
-    depth_buffer.final_layout = BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_buffer.may_alias = bfFalse;
-
-    auto renderpass_info = bfRenderpassInfo_init(1);
-    bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, (1 << 0) | (1 << 1));
-    bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
-    bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addAttachment(&renderpass_info, &depth_buffer);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    bfRenderpassInfo_addDepthOut(&renderpass_info, 0, 1, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    // bfRenderpassInfo_addInput(&renderpass_info, 0x1);
-    // bfRenderpassInfo_addDependencies(&renderpass_info, 0x1);
-
-    BifrostClearValue clear_colors[2];
-    clear_colors[0].color.float32[0] = 0.8f;
-    clear_colors[0].color.float32[1] = 0.6f;
-    clear_colors[0].color.float32[2] = 1.0f;
-    clear_colors[0].color.float32[3] = 1.0f;
-
-    clear_colors[1].depthStencil.depth = 1.0f;
-    clear_colors[1].depthStencil.stencil = 0;
-
-    bfTextureHandle attachments[] = {color_buffer, m_DepthBuffer};
-
-    bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
-    bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
-    bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
-    bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
-
-    bfGfxCmdList_beginRenderpass(m_MainCmdList);
-    {
-      uint64_t buffer_offset = 0;
-
-      bfGfxCmdList_setDepthTesting(m_MainCmdList, bfTrue);
-      bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
-      bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
-
-      bfGfxCmdList_bindProgram(m_MainCmdList, m_ShaderProgram);
-      bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_BasicVertexLayout);
-
-      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial, 1);
-
-      auto scene = g_Engine->currentScene();
-
-      if (scene)
-      {
-        for (MeshRenderer& renderer : scene->components<MeshRenderer>())
-        {
-          if (renderer.model())
-          {
-            renderer.model()->draw(m_MainCmdList);
-          }
-        }
-      }
-
-      bfGfxCmdList_bindVertexBuffers(m_MainCmdList, 0, &m_VertexBuffer, 1, &buffer_offset);
-      bfGfxCmdList_bindIndexBuffer(m_MainCmdList, m_IndexBuffer, 0, BIFROST_INDEX_TYPE_UINT16);
-      bfGfxCmdList_bindDescriptorSets(m_MainCmdList, 0, &m_TestMaterial2, 1);
-      bfGfxCmdList_drawIndexed(m_MainCmdList, 6, 0, 0);
-    }
-    bfGfxCmdList_endRenderpass(m_MainCmdList);
-  }
-  {
-    bfAttachmentInfo main_surface;
-    main_surface.texture = m_MainSurface;
-    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    main_surface.may_alias = bfFalse;
-
-    auto renderpass_info = bfRenderpassInfo_init(1);
-    bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, bfBit(0));
-    bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setStoreOps(&renderpass_info, 1);
-    bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-    BifrostClearValue clear_colors[1];
-    clear_colors[0].color.float32[0] = 0.6f;
-    clear_colors[0].color.float32[1] = 0.6f;
-    clear_colors[0].color.float32[2] = 0.75f;
-    clear_colors[0].color.float32[3] = 1.0f;
-
-    bfTextureHandle attachments[] = {m_MainSurface};
-
-    bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
-    bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
-    bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
-    bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
-    bfGfxCmdList_beginRenderpass(m_MainCmdList);
-  }
-}
 
 #endif /* BIFROST_ENGINE_HPP */

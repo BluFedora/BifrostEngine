@@ -12,6 +12,8 @@ cmake_minimum_required(VERSION 3.8)
   # NOTE(Shareef): This sets project's name.
 project(BifrostEngine VERSION 1.0)
 
+# add_subdirectory(lib/include/glslang)
+
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)
 set(BIFROST_ENGINE_VERSION_MINOR 0)
@@ -60,7 +62,7 @@ endif()
   #   "-fno-rtti"                 = "/GR-"
   #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
   if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
+  set(CMAKE_CXX_FLAGS "-Wno-error=deprecated-declarations -std=c++17 -lstdc++fs -fno-rtti -Wall -g")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # using Intel C++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -70,19 +72,18 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   #   "/WX"   - treat warnings as errors.
   #   "/EHsc" - is for enabling C++ exceptions which we will NOT be using.
   #     Reason being the C++ STL uses exceptions like a mother f*cker and with warnings as
-  #   errors on this would not build other wise.
+  #     errors on this would not build other wise.
   #   (alternative is to define: _HAS_EXCEPTIONS but that has some other implications.)
   #   "/GR-"  - Disables RTTI, trying to see if we can do without it for this engine.
   #   "/D_***_SECURE_NO_WARNINGS" - Disable the warnings for not using the "secure"
   #      versions of certain functions.
   #   "/std:c++17" - I needed some new C++17 features for some tEmPlAtE mAgIc
-  #   "/GF"        - String Pooling is very important for the way the Material System works. I want stable
-  #                  addresses. ("Eliminate Duplicate Strings")
+  #   "/GF"        - I want stable addresses. ("Eliminate Duplicate Strings")
   #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
-  set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
+  set(CMAKE_CXX_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
+  set(CMAKE_C_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
 endif()
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
@@ -128,6 +129,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_gfx_common.c"
+  "src/bifrost/graphics/bifrost_standard_renderer.cpp"
   ## Vulkan Backend
   "src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp"
   "src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c"
@@ -141,6 +143,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost Memory Module
   "BifrostMemory/src/*.cpp"
+  "BifrostMemory/src/*.c"
 
   # Bifrost Meta Module
   "src/bifrost/meta/bifrost_meta_runtime.cpp"
@@ -156,7 +159,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   "main.cpp"
  )
-# set(GAME200_SOURCES_FILES game/main.cpp lib/include/glad/glad.c)
 
 # NOTE(Shareef): Add the libraries we are linking against to the target.
 find_package(OpenGL REQUIRED)
@@ -170,6 +172,7 @@ include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostMemory/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
+# include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include/glslang/External/googletest/googletest/include)
 
 add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
 
@@ -200,9 +203,30 @@ if (WIN32)
     # set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
   endif()
   set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
+  
 elseif (APPLE)
   set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
   set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependentd.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRVd.lib")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib")
+else()
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslang.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependent.lib")
+target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV.lib")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapper.lib")
 endif()
 
 target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_GLFW_LIB}")

@@ -1,16 +1,11 @@
-#include "bifrost/bifrost_version.h"
 
 #define NOMINMAX
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/core/bifrost_game_state_machine.hpp"
-#include "bifrost/editor/bifrost_editor_overlay.hpp"
-#include "bifrost/platform/bifrost_window_glfw.hpp"
-#include "bifrost/utility/bifrost_json.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
-#include "imgui/imgui.h"
 #include <bifrost/bifrost.hpp>
+#include <bifrost/bifrost_version.h>
+#include <bifrost/editor/bifrost_editor_overlay.hpp>
+#include <bifrost/platform/bifrost_window_glfw.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
 
 #include <chrono>
@@ -87,7 +82,7 @@ void testFN()
   std::cout << "does this work?" << std::endl;
 }
 
-static char source[4096] = R"(
+static char source[] = R"(
   import "main"    for TestClass, cppFn, BigFunc, AnotherOne;
   import "bifrost" for Camera;
   import "std:io"  for print;
@@ -164,21 +159,6 @@ namespace ErrorCodes
   static constexpr int GLFW_FAILED_TO_INIT = -1;
 }  // namespace ErrorCodes
 
-namespace bifrost::meta
-{
-  template<>
-  const auto& Meta::registerMembers<TestClass>()
-  {
-    static auto member_ptrs = members(
-     field("x", &TestClass::x),
-     property("y", &TestClass::getY, &TestClass::setY),
-     function("myRandomFn", &TestClass::myRandomFn),
-     function("myRandomFn2", &TestClass::myRandomFn2));
-
-    return member_ptrs;
-  }
-}  // namespace bifrost::meta
-
 namespace bifrost
 {
   class Camera
@@ -195,37 +175,29 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-#ifdef _WIN32
-extern "C" {
-__declspec(dllexport) DWORD NvOptimusEnablement                = 0x00000001;
-__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif  //  _WIN32
-
 static GLFWmonitor* get_current_monitor(GLFWwindow* window)
 {
-  int                nmonitors, i;
-  int                wx, wy, ww, wh;
-  int                mx, my, mw, mh;
-  int                overlap, bestoverlap;
-  GLFWmonitor*       bestmonitor;
-  const GLFWvidmode* mode;
+  int nmonitors;
+  int wx, wy, ww, wh;
 
-  bestoverlap = 0;
-  bestmonitor = nullptr;
+  int           bestoverlap = 0;
+  GLFWmonitor*  bestmonitor = nullptr;
+  GLFWmonitor** monitors    = glfwGetMonitors(&nmonitors);
 
   glfwGetWindowPos(window, &wx, &wy);
   glfwGetWindowSize(window, &ww, &wh);
-  GLFWmonitor** monitors = glfwGetMonitors(&nmonitors);
 
-  for (i = 0; i < nmonitors; i++)
+  for (int i = 0; i < nmonitors; i++)
   {
-    mode = glfwGetVideoMode(monitors[i]);
-    glfwGetMonitorPos(monitors[i], &mx, &my);
-    mw = mode->width;
-    mh = mode->height;
+    int                mx, my;
+    const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+    const int          mw   = mode->width;
+    const int          mh   = mode->height;
 
-    overlap = std::max(0, std::min(wx + ww, mx + mw) - std::max(wx, mx)) * std::max(0, std::min(wy + wh, my + mh) - std::max(wy, my));
+    glfwGetMonitorPos(monitors[i], &mx, &my);
+
+    const int overlap = std::max(0, std::min(wx + ww, mx + mw) - std::max(wx, mx)) * std::max(
+                                                                                      0, std::min(wy + wh, my + mh) - std::max(wy, my));
 
     if (bestoverlap < overlap)
     {
@@ -239,8 +211,193 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
 
 static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
+#ifdef _WIN32
+extern "C" {
+__declspec(dllexport) DWORD NvOptimusEnablement                = 0x00000001;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif  //  _WIN32
+
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+
+void testShaderCompiling(const std::string& filename)
+{
+  const TBuiltInResource DefaultTBuiltInResource = {
+   /* .MaxLights = */ 32,
+   /* .MaxClipPlanes = */ 6,
+   /* .MaxTextureUnits = */ 32,
+   /* .MaxTextureCoords = */ 32,
+   /* .MaxVertexAttribs = */ 64,
+   /* .MaxVertexUniformComponents = */ 4096,
+   /* .MaxVaryingFloats = */ 64,
+   /* .MaxVertexTextureImageUnits = */ 32,
+   /* .MaxCombinedTextureImageUnits = */ 80,
+   /* .MaxTextureImageUnits = */ 32,
+   /* .MaxFragmentUniformComponents = */ 4096,
+   /* .MaxDrawBuffers = */ 32,
+   /* .MaxVertexUniformVectors = */ 128,
+   /* .MaxVaryingVectors = */ 8,
+   /* .MaxFragmentUniformVectors = */ 16,
+   /* .MaxVertexOutputVectors = */ 16,
+   /* .MaxFragmentInputVectors = */ 15,
+   /* .MinProgramTexelOffset = */ -8,
+   /* .MaxProgramTexelOffset = */ 7,
+   /* .MaxClipDistances = */ 8,
+   /* .MaxComputeWorkGroupCountX = */ 65535,
+   /* .MaxComputeWorkGroupCountY = */ 65535,
+   /* .MaxComputeWorkGroupCountZ = */ 65535,
+   /* .MaxComputeWorkGroupSizeX = */ 1024,
+   /* .MaxComputeWorkGroupSizeY = */ 1024,
+   /* .MaxComputeWorkGroupSizeZ = */ 64,
+   /* .MaxComputeUniformComponents = */ 1024,
+   /* .MaxComputeTextureImageUnits = */ 16,
+   /* .MaxComputeImageUniforms = */ 8,
+   /* .MaxComputeAtomicCounters = */ 8,
+   /* .MaxComputeAtomicCounterBuffers = */ 1,
+   /* .MaxVaryingComponents = */ 60,
+   /* .MaxVertexOutputComponents = */ 64,
+   /* .MaxGeometryInputComponents = */ 64,
+   /* .MaxGeometryOutputComponents = */ 128,
+   /* .MaxFragmentInputComponents = */ 128,
+   /* .MaxImageUnits = */ 8,
+   /* .MaxCombinedImageUnitsAndFragmentOutputs = */ 8,
+   /* .MaxCombinedShaderOutputResources = */ 8,
+   /* .MaxImageSamples = */ 0,
+   /* .MaxVertexImageUniforms = */ 0,
+   /* .MaxTessControlImageUniforms = */ 0,
+   /* .MaxTessEvaluationImageUniforms = */ 0,
+   /* .MaxGeometryImageUniforms = */ 0,
+   /* .MaxFragmentImageUniforms = */ 8,
+   /* .MaxCombinedImageUniforms = */ 8,
+   /* .MaxGeometryTextureImageUnits = */ 16,
+   /* .MaxGeometryOutputVertices = */ 256,
+   /* .MaxGeometryTotalOutputComponents = */ 1024,
+   /* .MaxGeometryUniformComponents = */ 1024,
+   /* .MaxGeometryVaryingComponents = */ 64,
+   /* .MaxTessControlInputComponents = */ 128,
+   /* .MaxTessControlOutputComponents = */ 128,
+   /* .MaxTessControlTextureImageUnits = */ 16,
+   /* .MaxTessControlUniformComponents = */ 1024,
+   /* .MaxTessControlTotalOutputComponents = */ 4096,
+   /* .MaxTessEvaluationInputComponents = */ 128,
+   /* .MaxTessEvaluationOutputComponents = */ 128,
+   /* .MaxTessEvaluationTextureImageUnits = */ 16,
+   /* .MaxTessEvaluationUniformComponents = */ 1024,
+   /* .MaxTessPatchComponents = */ 120,
+   /* .MaxPatchVertices = */ 32,
+   /* .MaxTessGenLevel = */ 64,
+   /* .MaxViewports = */ 16,
+   /* .MaxVertexAtomicCounters = */ 0,
+   /* .MaxTessControlAtomicCounters = */ 0,
+   /* .MaxTessEvaluationAtomicCounters = */ 0,
+   /* .MaxGeometryAtomicCounters = */ 0,
+   /* .MaxFragmentAtomicCounters = */ 8,
+   /* .MaxCombinedAtomicCounters = */ 8,
+   /* .MaxAtomicCounterBindings = */ 1,
+   /* .MaxVertexAtomicCounterBuffers = */ 0,
+   /* .MaxTessControlAtomicCounterBuffers = */ 0,
+   /* .MaxTessEvaluationAtomicCounterBuffers = */ 0,
+   /* .MaxGeometryAtomicCounterBuffers = */ 0,
+   /* .MaxFragmentAtomicCounterBuffers = */ 1,
+   /* .MaxCombinedAtomicCounterBuffers = */ 1,
+   /* .MaxAtomicCounterBufferSize = */ 16384,
+   /* .MaxTransformFeedbackBuffers = */ 4,
+   /* .MaxTransformFeedbackInterleavedComponents = */ 64,
+   /* .MaxCullDistances = */ 8,
+   /* .MaxCombinedClipAndCullDistances = */ 8,
+   /* .MaxSamples = */ 4,
+   /* .maxMeshOutputVerticesNV = */ 256,
+   /* .maxMeshOutputPrimitivesNV = */ 512,
+   /* .maxMeshWorkGroupSizeX_NV = */ 32,
+   /* .maxMeshWorkGroupSizeY_NV = */ 1,
+   /* .maxMeshWorkGroupSizeZ_NV = */ 1,
+   /* .maxTaskWorkGroupSizeX_NV = */ 32,
+   /* .maxTaskWorkGroupSizeY_NV = */ 1,
+   /* .maxTaskWorkGroupSizeZ_NV = */ 1,
+   /* .maxMeshViewCountNV = */ 4,
+   /* .limits = */ {
+    /* .nonInductiveForLoops = */ true,
+    /* .whileLoops = */ true,
+    /* .doWhileLoops = */ true,
+    /* .generalUniformIndexing = */ true,
+    /* .generalAttributeMatrixVectorIndexing = */ true,
+    /* .generalVaryingIndexing = */ true,
+    /* .generalSamplerIndexing = */ true,
+    /* .generalVariableIndexing = */ true,
+    /* .generalConstantMatrixVectorIndexing = */ true,
+   }};
+
+  glslang::InitializeProcess();
+
+  std::ifstream file(filename);
+
+  if (!file.is_open())
+  {
+    std::cout << "Failed to load shader: " << filename << std::endl;
+    throw std::runtime_error("failed to open file: " + filename);
+  }
+
+  std::string InputGLSL((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+
+  const char*      InputCString = InputGLSL.c_str();
+  EShLanguage      ShaderType   = EShLangVertex;
+  glslang::TShader Shader(ShaderType);
+
+  Shader.setStrings(&InputCString, 1);
+  Shader.setEnvInput(glslang::EShSourceGlsl, ShaderType, glslang::EShClientVulkan, 100);
+  Shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
+  Shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+
+#if 0
+  std::string PreprocessedGLSL;
+
+  if (!Shader.preprocess(&DefaultTBuiltInResource, 100, ENoProfile, false, false, messages, &PreprocessedGLSL, Includer))
+  {
+    std::cout << "GLSL Preprocessing Failed for: " << filename << std::endl;
+    std::cout << Shader.getInfoLog() << std::endl;
+    std::cout << Shader.getInfoDebugLog() << std::endl;
+  }
+
+  const char* PreprocessedCStr = PreprocessedGLSL.c_str();
+  Shader.setStrings(&PreprocessedCStr, 1);
+#endif
+
+  EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
+
+  if (!Shader.parse(&DefaultTBuiltInResource, 100, false, messages))
+  {
+    std::cout << "GLSL Parsing Failed for: " << filename << std::endl;
+    std::cout << Shader.getInfoLog() << std::endl;
+    std::cout << Shader.getInfoDebugLog() << std::endl;
+  }
+
+  glslang::TProgram Program;
+  Program.addShader(&Shader);
+
+  if (!Program.link(messages))
+  {
+    std::cout << "GLSL Linking Failed for: " << filename << std::endl;
+    std::cout << Shader.getInfoLog() << std::endl;
+    std::cout << Shader.getInfoDebugLog() << std::endl;
+  }
+
+  std::vector<unsigned int> SpirV;
+  spv::SpvBuildLogger       logger;
+  glslang::SpvOptions       spvOptions;
+  glslang::GlslangToSpv(*Program.getIntermediate(ShaderType), SpirV, &logger, &spvOptions);
+
+  // Generates an array with the spv code with variable name being varName ;)
+  // glslang::OutputSpvHex(SpirV, "Output.cpp, "varName");
+
+  glslang::FinalizeProcess();
+}
+
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
+  testShaderCompiling("assets/basic_material.vert.glsl");
+
   namespace bfmeta = meta;
   namespace bf     = bifrost;
 
@@ -271,12 +428,11 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     WindowGLFW    window{};
     BifrostEngine engine{main_memory, main_memory_size, argc, argv};
 
-    if (!window.open("Shareef's 2020 Game Engine"))
+    if (!window.open("Mjolnir Editor"))
     {
       return -1;
     }
 
-    g_Engine = &engine;
     g_Window = window.handle();
 
     glfwSetWindowSizeLimits(window.handle(), 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -295,7 +451,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     engine.init(params);
 
-    editor::imgui::startup(engine.renderer().context(), window);
+    imgui::startup(engine.renderer().context(), window);
 
     engine.stateMachine().push<MainDemoLayer>();
     engine.stateMachine().addOverlay<editor::EditorOverlay>();
@@ -367,8 +523,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       current_time = new_time;
       time_accumulator += delta_time;
 
-      int window_width,
-       window_height;
+      int window_width, window_height;
       glfwGetWindowSize(window.handle(), &window_width, &window_height);
 
       glfwPollEvents();
@@ -397,9 +552,11 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
           }
 
           isFullscreen = !isFullscreen;
+
+          evt.accept();
         }
 
-        editor::imgui::onEvent(evt);
+        imgui::onEvent(evt);
         engine.onEvent(evt);
       }
 
@@ -416,11 +573,11 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
           }
         }
 
-        editor::imgui::beginFrame(
+        imgui::beginFrame(
          engine.renderer().surface(),
          float(window_width),
          float(window_height),
-         float(glfwGetTime()));
+         new_time);
 
         while (time_accumulator >= time_step_ms)
         {
@@ -430,16 +587,16 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
         engine.update(delta_time);
 
-        // const float render_alpha = time_accumulator / time_step_ms; // currentState * alpha + previousState * ( 1.0 - alpha )
+        const float render_alpha = time_accumulator / time_step_ms;  // current_state * alpha + previous_state * (1.0f - alpha)
 
-        engine.drawBegin();
-        editor::imgui::endFrame(engine.renderer().mainCommandList());
+        engine.drawBegin(render_alpha);
+        imgui::endFrame(engine.renderer().mainCommandList());
         engine.drawEnd();
       }
     }
 
     vm.stackDestroyHandle(update_fn);
-    editor::imgui::shutdown();
+    imgui::shutdown();
     engine.deinit();
     window.close();
   }
@@ -451,37 +608,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   return 0;
 }
 
-void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
-{
-  ImGuiIO& io = ImGui::GetIO();
-
 #if 0
-  window("Scripting", [&engine]() {
-    static std::future<BifrostVMError> s_WaitForCompile;
-
-    ImGui::PushItemWidth(-1.0f);
-    ImGui::InputTextMultiline("", source, sizeof(source), ImVec2(), ImGuiInputTextFlags_AllowTabInput);
-
-    if (!s_WaitForCompile.valid() || s_WaitForCompile.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready)
-    {
-      if (s_WaitForCompile._Is_ready())
-      {
-        s_WaitForCompile.get();
-      }
-
-      if (ImGui::Button("Run"))
-      {
-        auto& vm = engine.scripting();
-
-        // s_WaitForCompile = std::async(&bifrost::VM::execInModule, &vm, nullptr, source, std::strlen(source));
-
-        vm.execInModule(nullptr, source, std::strlen(source));
-      }
-    }
-
-    ImGui::PopItemWidth();
-  });
-
   window("Game State Machine", [&engine]() {
     ImGui::Text("Sprite ID: %i", SpriteComponent::s_ComponentID);
     ImGui::Text("Mesh ID: %i", MeshComponent::s_ComponentID);
@@ -543,82 +670,3 @@ void ImGUIOverlay::onUpdate(BifrostEngine& engine, float delta_time)
     }
   });
 #endif
-}
-
-void MainDemoLayer::onLoad(BifrostEngine& engine)
-{
-  json::Value test_json = {
-   json::Pair{
-    "My Test Key",
-    {
-     json::Pair{"Hello", 4.56},
-     json::Pair{
-      "Sub Array",
-      {
-       "Item 0",
-       "Item 1",
-       "Item 2",
-       65,
-      },
-     },
-    },
-   },
-  };
-
-  const auto s = visit_all(
-   meta::overloaded{
-    [](json::Object& obj) -> String {
-      bfLogPrint("Visited an Object.");
-      return "Object";
-    },
-    [](auto& sink) -> String {
-      bfLogPrint("Visited an XXX.");
-      return "Sink";
-    }},
-   test_json);
-
-  String test_json_str;
-  toString(test_json, test_json_str);
-
-  bfLogPrint("-------------JSON TEST------------");
-  bfLogPrint("%s", test_json_str.c_str());
-  bfLogPrint("%s", test_json["My Test Key"]["Sub Array"][0].as<String>().c_str());
-  bfLogPrint("----------------------------------");
-#if 0
-  auto mye              = new bifrost::Entity("Hello I am an entity");
-  auto entity_type_info = bifrost::meta::TypeInfoFromName("Entity");
-  auto dynamic_entity   = entity_type_info->instantiate(engine.mainMemory());
-  auto move_method      = entity_type_info->findMethod("move");
-
-  int                write;
-  const bifrost::Any result = move_method->invoke(dynamic_entity, 89, 6.3f, write);
-
-  if (result.is<bifrost::meta::InvalidMethodCall>())
-  {
-    bfLogPrint("Failed to call move on entity");
-  }
-
-  bifrost::Any any1 = 9;
-  bifrost::Any any0 = std::move(any1);
-  bifrost::Any any2 = mye;
-  bifrost::Any any3 = TestClass(42, "HOLD ME TIGHT ANY");
-
-  delete any2.as<bifrost::Entity*>();
-
-  if (any0.is<int>())
-  {
-    bfLogPrint("My Any contains an int with value = %i\n", any0.as<int>());
-  }
-
-  auto sprite_info = bifrost::meta::TypeInfoFromName("SpriteComponent");
-
-  if (sprite_info)
-  {
-    bifrost::SpriteComponent* sprite = sprite_info->instantiate(engine.mainMemory());
-
-    sprite->spriteMethod();
-
-    engine.mainMemory().dealloc_t(sprite);
-  }
-#endif
-}

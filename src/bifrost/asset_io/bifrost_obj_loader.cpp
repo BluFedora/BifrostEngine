@@ -1,11 +1,10 @@
-
-#include "bifrost/asset_io/test.h"
 #include "bifrost/data_structures/bifrost_array.hpp"
 #include "bifrost/math/bifrost_vec3.h"
 
 #include <cctype>  // isdigit
 #include <cstdint>
 #include <cstdlib>  // atoi
+#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 
 namespace bifrost
 {
@@ -107,7 +106,7 @@ namespace bifrost
     position.w = default_w;
   }
 
-  void loadObj(IMemoryManager &temp_allocator, Array<BasicVertex> &out, const char *obj_file_data, std::size_t obj_file_data_length)
+  void loadObj(IMemoryManager &temp_allocator, Array<StandardVertex> &out, const char *obj_file_data, std::size_t obj_file_data_length)
   {
     struct FaceElement final
     {
@@ -234,7 +233,7 @@ namespace bifrost
 
       for (std::size_t j = 0; j < 3; ++j)
       {
-        BasicVertex *vertex = &out.emplace();
+        StandardVertex *vertex = &out.emplace();
 
         const Vec3f *const pos    = face->position[j] == -1 ? NULL : positions.data() + face->position[j] - 1;
         const Vec3f *const normal = face->normal[j] == -1 ? NULL : normals.data() + face->normal[j] - 1;
@@ -255,7 +254,7 @@ namespace bifrost
           vertex->uv = (*uv);
         }
 
-        *reinterpret_cast<std::uint32_t *>(vertex->color) = /*COLOR_AQUA * */ Vec3f_toColor(pos);
+        vertex->color = bfColor4u_fromUint32(Vec3f_toColor(pos));
       }
     }
   }

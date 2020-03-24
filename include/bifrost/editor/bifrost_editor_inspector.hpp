@@ -26,22 +26,39 @@ namespace bifrost
 
 namespace bifrost::editor
 {
-  using Selectable = Variant<IBaseObject*, Entity*, BaseAssetHandle>;
+  using Selectable  = Variant<IBaseObject*, Entity*, BaseAssetHandle>;
+  using InspectorID = std::uint8_t;
+
+  static constexpr char        k_InspectorWindowName[]       = "Inspector Window";
+  static constexpr char        k_InspectorWindowID[5]        = {'#', '#', '#', 'i', 'v'};
+  static constexpr char        k_InspectorWindowNameFormat[] = "%s###iv%i";
+  static constexpr std::size_t k_Uint8MaxCharacters          = 3;
+  static constexpr std::size_t k_InspectorIDBufferSize       = sizeof(k_InspectorWindowName) + sizeof(k_InspectorWindowID) + k_Uint8MaxCharacters;  // 'Inpector Window###iv<int><int><int><nul>'
 
   class Inspector final
   {
    private:
+    static InspectorID s_InspectorIDGenerator;
+
+   private:
     Selectable      m_SelectedObject;
     ImGuiSerializer m_Serializer;
     bool            m_IsLocked;
+    char            m_ID[k_InspectorIDBufferSize];
 
    public:
-    Inspector(IMemoryManager& memory) :
+    explicit Inspector(IMemoryManager& memory) :
       m_SelectedObject{},
       m_Serializer{memory},
-      m_IsLocked{false}
+      m_IsLocked{false},
+      m_ID{'\0'}
     {
+      const int id_number = int(s_InspectorIDGenerator++);
+
+      string_utils::fmtBuffer(m_ID, sizeof(m_ID), nullptr, k_InspectorWindowNameFormat, k_InspectorWindowName, id_number);
     }
+
+    const char* windowID() const { return m_ID; }
 
     void select(IBaseObject* object) { selectImpl(object); }
     void select(Entity* object) { selectImpl(object); }

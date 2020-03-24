@@ -102,3 +102,7 @@ target_include_directories(BifrostMath_shared
 
 target_compile_definitions(BifrostMath_shared PRIVATE BIFROST_MATH_EXPORT)
 set_target_properties(BifrostMath_shared PROPERTIES PUBLIC_HEADER include/bifrost/bifrost_math.h)
+
+set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})

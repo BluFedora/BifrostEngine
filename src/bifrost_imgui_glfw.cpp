@@ -7,15 +7,15 @@
 #include <glfw/glfw3.h>  // Cursors, KeyboardKeys, and Clipboard...
 #include <imgui/imgui.h>
 
-namespace bifrost::editor::imgui
+namespace bifrost::imgui
 {
   using namespace bifrost;
 
   struct UIFrameData
   {
-    bfBufferHandle  vertex_buffer;
-    bfBufferHandle  index_buffer;
-    bfBufferHandle  uniform_buffer;
+    bfBufferHandle vertex_buffer;
+    bfBufferHandle index_buffer;
+    bfBufferHandle uniform_buffer;
 
     void create(bfGfxDeviceHandle device)
     {
@@ -192,7 +192,7 @@ namespace bifrost::editor::imgui
     int            width, height, bytes_per_pixel;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
 
-    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(width, height, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM);
+    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, width, height);
     bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
 
     create_texture.generate_mipmaps = bfFalse;
@@ -217,7 +217,7 @@ namespace bifrost::editor::imgui
     {
       case EventType::ON_WINDOW_RESIZE:
       {
-        io.DisplaySize = ImVec2(float(evt.window.width), float(evt.window.height));
+        // io.DisplaySize = ImVec2(float(evt.window.width), float(evt.window.height));
         break;
       }
       case EventType::ON_MOUSE_MOVE:
@@ -300,9 +300,9 @@ namespace bifrost::editor::imgui
 
     if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) /*|| glfwGetInputMode(g_Window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED*/)
     {
-      WindowGLFW* window = reinterpret_cast<WindowGLFW*>(static_cast<IBaseWindow*>(io.ClipboardUserData));
+      WindowGLFW* const      window       = reinterpret_cast<WindowGLFW*>(static_cast<IBaseWindow*>(io.ClipboardUserData));
+      const ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
 
-      ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
       if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
       {
         glfwSetInputMode(window->handle(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -336,9 +336,8 @@ namespace bifrost::editor::imgui
   {
     if (draw_data)
     {
-      ImGuiIO&   io        = ImGui::GetIO();
-      const auto fb_width  = static_cast<int>(draw_data->DisplaySize.x * io.DisplayFramebufferScale.x);
-      const auto fb_height = static_cast<int>(draw_data->DisplaySize.y * io.DisplayFramebufferScale.y);
+      const auto fb_width  = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+      const auto fb_height = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
       if (fb_width <= 0 || fb_height <= 0)
         return;
 

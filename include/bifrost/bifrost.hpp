@@ -22,6 +22,7 @@
 
 // Core
 #include "core/bifrost_base_object.hpp"
+#include "core/bifrost_engine.hpp"
 #include "core/bifrost_game_state_machine.hpp"
 #include "core/bifrost_igame_state_layer.hpp"
 

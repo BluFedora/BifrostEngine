@@ -6,7 +6,7 @@ extern "C" {
 #endif
 #define BIFROST_GFX_RENDERPASS_MAX_SUBPASSES 16
 #define BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS 8
-#define BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES 32
+#define BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES BIFROST_GFX_RENDERPASS_MAX_SUBPASSES
 
   /*!
    * @brief
@@ -39,6 +39,7 @@ extern "C" {
     static const unsigned VULKAN_PUSH_CONSTANT_SIZE  = 128;
     static const unsigned VULKAN_UBO_SIZE            = 16 * 1024;
     static const unsigned VULKAN_NUM_SPEC_CONSTANTS  = 8;
+    static const unsigned VULKAN_NUM_DYNAMIC_UNIFORM_BUFFEFERS  = 8;
    */
 #if __cplusplus
 }

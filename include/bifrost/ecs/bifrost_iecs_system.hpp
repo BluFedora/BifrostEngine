@@ -21,16 +21,16 @@ namespace bifrost
 
   class IECSSystem
   {
-    friend class ::BifrostEngine;
+    friend class BifrostEngine;
 
    private:
-     bool m_IsEnabled;
+    bool m_IsEnabled;
 
-  public:
+   public:
     bool isEnabled() const { return m_IsEnabled; }
 
    protected:
-     IECSSystem();
+    IECSSystem();
 
     // clang-format off
     virtual void onFrameBegin(Engine& engine, float dt)   { (void)engine; (void)dt;    }
@@ -39,6 +39,7 @@ namespace bifrost
     virtual void onFrameDraw(Engine& engine, float alpha) { (void)engine; (void)alpha; }
     // clang-format on
 
+   public:
     virtual ~IECSSystem() = default;
   };
 }  // namespace bifrost

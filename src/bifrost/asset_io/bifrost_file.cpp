@@ -33,7 +33,7 @@ namespace bifrost
 
     bool isValidName(const StringRange& path)
     {
-      static const char invalid_chars[] = "\0<>:\"/\\|?*.";
+      static const char k_InvalidCharacters[] = "\0<>:\"/\\|?*.";
 
       if (path.length() == 0)
       {
@@ -42,7 +42,7 @@ namespace bifrost
 
       for (const char c : path)
       {
-        for (const char invalid_char : invalid_chars)
+        for (const char invalid_char : k_InvalidCharacters)
         {
           if (c == invalid_char)
           {

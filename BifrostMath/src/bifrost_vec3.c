@@ -167,47 +167,47 @@ Color Vec3f_toColor(const Vec3f* self)
 
 #undef MUL_AND_SHIFT
 
-uchar Color_r(const Color self)
+uchar Color_r(Color self)
 {
   return (uchar)(((0xFFu << 0) & self) >> 0);
 }
 
-uchar Color_g(const Color self)
+uchar Color_g(Color self)
 {
   return (uchar)(((0xFFu << 8) & self) >> 8);
 }
 
-uchar Color_b(const Color self)
+uchar Color_b(Color self)
 {
   return (uchar)(((0xFFu << 16) & self) >> 16);
 }
 
-uchar Color_a(const Color self)
+uchar Color_a(Color self)
 {
   return (uchar)(((0xFFu << 24) & self) >> 24);
 }
 
-void Color_setRGBA(Color* self, const uchar r, const uchar g, const uchar b, const uchar a)
+void Color_setRGBA(Color* self, uchar r, uchar g, uchar b, uchar a)
 {
   (*self) = (r << 0) | (g << 8) | (b << 16) | (a << 24);
 }
 
-void Color_setR(Color* self, const uint r)
+void Color_setR(Color* self, uint r)
 {
   (*self) = ((*self) & ~(0xFFu << 0)) | (r << 0);
 }
 
-void Color_setG(Color* self, const uint g)
+void Color_setG(Color* self, uint g)
 {
   (*self) = ((*self) & ~(0xFFu << 8)) | (g << 8);
 }
 
-void Color_setB(Color* self, const uint b)
+void Color_setB(Color* self, uint b)
 {
   (*self) = ((*self) & ~(0xFFu << 16)) | (b << 16);
 }
 
-void Color_setA(Color* self, const uint a)
+void Color_setA(Color* self, uint a)
 {
   (*self) = ((*self) & ~(0xFFu << 24)) | (a << 24);
 }

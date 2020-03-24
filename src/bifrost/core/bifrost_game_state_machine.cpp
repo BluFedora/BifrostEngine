@@ -54,11 +54,11 @@ namespace bifrost
   {
     IGameStateLayer* const state_prev    = state->m_Prev;
     IGameStateLayer* const state_next    = state->m_Next;
-    const iterator         end           = overlayHeadIt();
-    iterator               prev_it       = m_LayerHead ? find(m_LayerHead, end, state_prev) : end;
-    iterator               next_it       = m_LayerHead ? find(m_LayerHead, end, state_next) : end;
-    const bool             prev_in_layer = prev_it != end;
-    const bool             next_in_layer = next_it != end;
+    const iterator         end_it        = overlayHeadIt();
+    iterator               prev_it       = m_LayerHead ? find(m_LayerHead, end_it, state_prev) : end_it;
+    iterator               next_it       = m_LayerHead ? find(m_LayerHead, end_it, state_next) : end_it;
+    const bool             prev_in_layer = prev_it != end_it;
+    const bool             next_in_layer = next_it != end_it;
 
     if (!prev_in_layer)
     {

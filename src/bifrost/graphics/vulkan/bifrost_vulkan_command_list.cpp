@@ -763,8 +763,18 @@ static void flushPipeline(bfGfxCommandListHandle self)
         clr_state.srcAlphaBlendFactor = bfVkConvertBlendFactor((BifrostBlendFactor)blend.alpha_blend_src);
         clr_state.dstAlphaBlendFactor = bfVkConvertBlendFactor((BifrostBlendFactor)blend.alpha_blend_dst);
         clr_state.alphaBlendOp        = bfVkConvertBlendOp((BifrostBlendOp)blend.alpha_blend_op);
-        clr_state.colorWriteMask      = bfVkConvertColorMask(blend.color_write_mask);
       }
+      else
+      {
+        clr_state.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+        clr_state.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+        clr_state.colorBlendOp        = VK_BLEND_OP_ADD;
+        clr_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        clr_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        clr_state.alphaBlendOp        = VK_BLEND_OP_ADD;
+      }
+
+      clr_state.colorWriteMask = bfVkConvertColorMask(blend.color_write_mask);
     }
 
     color_blend.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -971,6 +981,53 @@ void bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self)
   }
 
   vkCmdEndRenderPass(self->handle);
+#if 0
+  VkMemoryBarrier memoryBarrier = {
+   VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+   nullptr,
+   VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+    VK_ACCESS_INDEX_READ_BIT |
+    VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+    VK_ACCESS_UNIFORM_READ_BIT |
+    VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+    VK_ACCESS_SHADER_READ_BIT |
+    VK_ACCESS_SHADER_WRITE_BIT |
+    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_TRANSFER_READ_BIT |
+    VK_ACCESS_TRANSFER_WRITE_BIT |
+    VK_ACCESS_HOST_READ_BIT |
+    VK_ACCESS_HOST_WRITE_BIT,
+   VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+    VK_ACCESS_INDEX_READ_BIT |
+    VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+    VK_ACCESS_UNIFORM_READ_BIT |
+    VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+    VK_ACCESS_SHADER_READ_BIT |
+    VK_ACCESS_SHADER_WRITE_BIT |
+    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_TRANSFER_READ_BIT |
+    VK_ACCESS_TRANSFER_WRITE_BIT |
+    VK_ACCESS_HOST_READ_BIT |
+    VK_ACCESS_HOST_WRITE_BIT};
+
+  vkCmdPipelineBarrier(
+   self->handle,
+   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // srcStageMask
+   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // dstStageMask
+   0x0,
+   1,               // memoryBarrierCount
+   &memoryBarrier,  // pMemoryBarriers
+   0,
+   nullptr,
+   0,
+   nullptr);
+#endif
 }
 
 void bfGfxCmdList_end(bfGfxCommandListHandle self)

@@ -118,7 +118,7 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
     dep->dstStageMask    = dep_info->pipeline_stage_flags[1];  // TODO(Shareef): Convert using a function
     dep->srcAccessMask   = dep_info->access_flags[0];          // TODO(Shareef): Convert using a function
     dep->dstAccessMask   = dep_info->access_flags[1];          // TODO(Shareef): Convert using a function
-    dep->dependencyFlags = dep_info->reads_same_pixel ? VK_DEPENDENCY_BY_REGION_BIT : 0x0;
+    dep->dependencyFlags = dep_info->reads_same_pixel ? 0x0 : VK_DEPENDENCY_BY_REGION_BIT;
   }
 
   VkRenderPassCreateInfo renderpass_create_info;
