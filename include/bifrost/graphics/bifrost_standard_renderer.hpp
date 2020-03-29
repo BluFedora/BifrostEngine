@@ -19,11 +19,11 @@
 #ifndef BIFROST_STANDARD_RENDERER_HPP
 #define BIFROST_STANDARD_RENDERER_HPP
 
-#include "bifrost/bifrost_math.hpp"                  /* Vec3f, Vec2f, bfColor4u */
-#include "bifrost/data_structures/bifrost_array.hpp" /* Array<T>                */
-#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
-#include "bifrost_gfx_api.h"         /* Bifrost C Gfx API       */
-#include "bifrost_glsl_compiler.hpp" /* GLSLCompiler            */
+#include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
+#include "bifrost/data_structures/bifrost_array.hpp"          /* Array<T>                */
+#include "bifrost/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
+#include "bifrost_gfx_api.h"                                  /* Bifrost C Gfx API       */
+#include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
 namespace bifrost
 {

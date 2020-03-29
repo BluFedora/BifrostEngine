@@ -495,7 +495,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
     vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
     bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_LIST);
-    bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CW);
+    bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CCW);
     bfGfxCmdList_setCullFace(list, BIFROST_CULL_FACE_NONE);
     bfGfxCmdList_setDepthTesting(list, bfFalse);
     bfGfxCmdList_setDepthWrite(list, bfFalse);
@@ -2285,13 +2285,51 @@ static void bfTexture__allocMemory(bfTextureHandle self)
 
 bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
 {
+  static constexpr int     k_NumReqComps = 4;
+  // static constexpr stbi_uc k_PadValue    = 0x00;
+
   int      num_components = 0;
   stbi_uc* texture_data   = stbi_load(file, &self->image_width, &self->image_height, &num_components, STBI_rgb_alpha);
 
   if (texture_data)
   {
-    assert(num_components == 4);
-    bfTexture_loadData(self, reinterpret_cast<const char*>(texture_data), self->image_width * self->image_height * num_components * sizeof(char));
+    const size_t num_req_bytes = self->image_width * self->image_height * k_NumReqComps * sizeof(char);
+    // const size_t num_raw_bytes = self->image_width * self->image_height * num_components * sizeof(char);
+
+    stbi_uc* padded_texture_data = texture_data;
+#if 0
+    if (num_components != k_NumReqComps)
+    {
+      const int num_missing = k_NumReqComps - num_components;
+
+      assert(num_missing > 0);
+
+      padded_texture_data = (stbi_uc*)malloc(num_req_bytes);
+
+      size_t i_pad = 0;
+      size_t i_raw = 0;
+
+      while (i_pad < num_req_bytes && i_raw < num_raw_bytes)
+      {
+        for (int i = 0; i < num_components; ++i)
+        {
+          padded_texture_data[i_pad++] = texture_data[i_raw++];
+        }
+
+        for (int i = 0; i < num_missing; ++i)
+        {
+          padded_texture_data[i_pad++] = k_PadValue;
+        }
+      }
+    }
+#endif
+    bfTexture_loadData(self, reinterpret_cast<const char*>(padded_texture_data), num_req_bytes);
+
+    if (padded_texture_data != texture_data)
+    {
+      free(padded_texture_data);
+    }
+
     stbi_image_free(texture_data);
 
     return bfTrue;

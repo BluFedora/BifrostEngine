@@ -321,6 +321,7 @@ namespace bifrost::imgui
   {
     uint64_t buffer_offset = 0;
 
+    bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_NONE);
     bfGfxCmdList_setDynamicStates(command_list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
     bfGfxCmdList_bindVertexDesc(command_list, s_RenderData.vertex_layout);
     bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame.vertex_buffer, 1, &buffer_offset);

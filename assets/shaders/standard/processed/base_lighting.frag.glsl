@@ -164,9 +164,8 @@ float geometrySchlickGGX(float n_dot_v, float k, float one_minux_k)
 
 float geometrySmith(float n_dot_l, float n_dot_v, float roughnesss)
 {
-  float roughness_plus_one = roughnesss + 1.0;
-  float k                  = (roughness_plus_one * roughness_plus_one) / 8.0;
-  float one_minux_k        = 1.0 - k;
+  float k           = pow2(roughnesss + 1.0) / 8.0;
+  float one_minux_k = 1.0 - k;
 
   return geometrySchlickGGX(n_dot_v, k, one_minux_k) * geometrySchlickGGX(n_dot_l, k, one_minux_k);
 }
@@ -221,21 +220,27 @@ vec3 calcRadiancePoint(vec4 light_color, vec3 light_dir, float inv_radius_pow2)
 }
 
 #if IS_DIRECTIONAL_LIGHT == 1
+
 vec3 calcRadiance(Light light, vec3 light_dir)
 {
   return light.color.xyz * light.color.w;
 }
+
 #elif IS_POINT_LIGHT == 1
+
 vec3 calcRadiance(Light light, vec3 light_dir)
 {
   return calcRadiancePoint(light.color, light_dir, light.inv_radius_pow2);
 }
+
 #elif IS_SPOT_LIGHT == 1
+
 vec3 calcRadiance(Light light, vec3 light_dir)
 {
-  return calcRadiancePoint(light.color, light_dir, light.inv_radius_pow2) * 
+  return calcRadiancePoint(light.color, light_dir, light.inv_radius_pow2) *
          spotAngleAtten(normalize(light_dir), light.direction, light.spot_scale, light.spot_offset);
 }
+
 #endif
 
 //
@@ -308,10 +313,14 @@ float constructLinearDepth(vec2 uv)
   return linear_depth;
 }
 
+#if SSAO
+
 vec3 constructViewPos(vec2 uv)
 {
-  return frag_ViewRay * constructLinearDepth(uv);
+  return frag_ViewRaySSAO * constructLinearDepth(uv);
 }
+
+#endif
 
 vec3 constructWorldPos(vec2 uv)
 {
@@ -362,4 +371,5 @@ void main()
   vec3 lit_color = ambient + light_out;
 
   o_FragColor0 = vec4(gammaCorrection(tonemapping(lit_color)), 1.0f);
+  // o_FragColor0 = vec4(world_normal * 0.5 + 0.5, 1.0f);
 }

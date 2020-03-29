@@ -1360,7 +1360,7 @@ namespace bifrost::editor
 
     if (path::doesExist(path.cstr()))
     {
-      FixedLinearAllocator<2048> allocator;
+      FixedLinearAllocator<2048 * 8> allocator;
       List<MetaAssetPath>        metas_to_check{allocator};
 
       m_FileSystem.clear("Assets", path);

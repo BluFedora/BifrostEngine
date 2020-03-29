@@ -15,10 +15,14 @@ float constructLinearDepth(vec2 uv)
   return linear_depth;
 }
 
+#if SSAO
+
 vec3 constructViewPos(vec2 uv)
 {
-  return frag_ViewRay * constructLinearDepth(uv);
+  return frag_ViewRaySSAO * constructLinearDepth(uv);
 }
+
+#endif
 
 vec3 constructWorldPos(vec2 uv)
 {

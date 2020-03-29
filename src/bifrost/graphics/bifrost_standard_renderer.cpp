@@ -19,10 +19,11 @@
 
 namespace bifrost
 {
-  static const int                        k_BaseResolution[]          = {1920, 1080};
+  static const int                        k_BaseResolution[]          = {1920 / 2, 1080 / 2};
   static const int                        k_AssumedWindow             = -1;
   static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
+  static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
 
   void GBuffer::init(bfGfxDeviceHandle device, int width, int height)
   {
@@ -316,7 +317,7 @@ namespace bifrost
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      k_BaseResolution[0],
      k_BaseResolution[1],
-     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+      BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
      bfTrue,
      bfFalse);
 
@@ -336,19 +337,7 @@ namespace bifrost
       }
     }
 
-#define RGBA(V) {V, V, V, V}
-
-    bfColor4u while_texture_data[] =
-     {
-      RGBA(0xFF),
-      RGBA(0xFF),
-      RGBA(0xFF),
-      RGBA(0xFF),
-     };
-
-#undef RGBA
-
-    m_WhiteTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, 2, 2), k_SamplerNearestClampToEdge, while_texture_data, sizeof(while_texture_data));
+    m_WhiteTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
 
     m_AutoRelease.push(m_DeferredComposite);
     m_AutoRelease.push(m_WhiteTexture);
@@ -597,6 +586,15 @@ namespace bifrost
     bfGfxCmdList_setDepthTesting(m_MainCmdList, bfTrue);
     bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
     bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
+    bfGfxCmdList_setCullFace(m_MainCmdList, BIFROST_CULL_FACE_BACK);
+
+    for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
+    {
+      bfGfxCmdList_setBlendSrc(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendDst(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
+    }
 
     bfGfxCmdList_bindProgram(m_MainCmdList, m_GBufferShader);
     bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_StandardVertexLayout);
@@ -609,6 +607,8 @@ namespace bifrost
     static constexpr std::uint16_t k_StoreFlags        = bfBit(0) | bfBit(1) | bfBit(2);
     static constexpr std::uint16_t k_StencilClearFlags = 0x0;
     static constexpr std::uint16_t k_StencilStoreFlags = 0x0;
+
+    bfGfxCmdList_setCullFace(m_MainCmdList, BIFROST_CULL_FACE_FRONT);
 
     {
       const bfPipelineBarrier barriers[] =
@@ -846,6 +846,10 @@ namespace bifrost
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
 
     bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_StandardVertexLayout);
+    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ZERO);
   }
 
   void StandardRenderer::endPass() const

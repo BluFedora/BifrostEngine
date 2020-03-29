@@ -229,10 +229,13 @@ vec3 ambientLighting(vec3 albedo, float ao)
   return vec3(0.03) * albedo * ao;
 }
 
+// reinhard
 vec3 tonemapping(vec3 color)
 {
   return color / (color + vec3(1.0));
 }
+
+// TODO: Exposure tone mapping "vec3(1.0) - exp(-color * u_Exposure)"
 
 vec3 gammaCorrection(vec3 color)
 {

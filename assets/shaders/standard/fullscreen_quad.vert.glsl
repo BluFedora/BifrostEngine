@@ -52,6 +52,7 @@ const float k_ZDepth = 1.0f;
 
 layout(location = 0) out vec3 frag_ViewRay;
 layout(location = 1) out vec2 frag_UV;
+layout(location = 2) out vec3 frag_ViewRaySSAO;
 
 void main()
 {
@@ -63,8 +64,9 @@ void main()
 
   // Light Volume : float3 positionWS = mul(input.PositionOS, WorldMatrix);
 
-  frag_ViewRay = vec3(world_position) - u_CameraPosition;
-  frag_UV      = uv;
+  frag_ViewRay     = vec3(world_position) - u_CameraPosition;
+  frag_UV          = uv;
+  frag_ViewRaySSAO = clip_position.xyz;
 
   gl_Position = clip_position;
 }

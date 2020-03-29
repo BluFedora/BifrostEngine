@@ -14,6 +14,7 @@ const int k_KernelSize = 128;
 
 layout(location = 0) in vec3 frag_ViewRay;
 layout(location = 1) in vec2 frag_UV;
+layout(location = 2) in vec3 frag_ViewRaySSAO;
 
 
 //
@@ -40,6 +41,7 @@ layout(std140, set = 2, binding = 3) uniform u_Set2
 
 layout(location = 0) out float o_FragColor0;
 
+#define SSAO 1
 //
 // Bad Design Notes:
 //   > Assumes Both Camera and u_DepthTexture uniforms...
@@ -57,10 +59,14 @@ float constructLinearDepth(vec2 uv)
   return linear_depth;
 }
 
+#if SSAO
+
 vec3 constructViewPos(vec2 uv)
 {
-  return frag_ViewRay * constructLinearDepth(uv);
+  return frag_ViewRaySSAO * constructLinearDepth(uv);
 }
+
+#endif
 
 vec3 constructWorldPos(vec2 uv)
 {

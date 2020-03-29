@@ -1,10 +1,10 @@
 #include "bifrost/data_structures/bifrost_array.hpp"
 #include "bifrost/math/bifrost_vec3.h"
 
+#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include <cctype>  // isdigit
 #include <cstdint>
 #include <cstdlib>  // atoi
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 
 namespace bifrost
 {
@@ -89,7 +89,7 @@ namespace bifrost
     }
   }
 
-  static void load_vec3f(Array<Vec3f> &arr, const char *obj_file_data, std::size_t *file_pointer, std::size_t obj_file_data_length, float default_w)
+  static void load_vec3f(Array<Vector3f> &arr, const char *obj_file_data, std::size_t *file_pointer, std::size_t obj_file_data_length, float default_w)
   {
     Vec3f &position = arr.emplace();
 
@@ -122,9 +122,9 @@ namespace bifrost
       int normal[3];
     };
 
-    Array<Vec3f>       positions{temp_allocator};
-    Array<Vec2f>       uvs{temp_allocator};
-    Array<Vec3f>       normals{temp_allocator};
+    Array<Vector3f>    positions{temp_allocator};
+    Array<Vector3f>    normals{temp_allocator};
+    Array<Vector2f>    uvs{temp_allocator};
     Array<Face>        faces{temp_allocator};
     Array<FaceElement> face_elements{temp_allocator};
     std::size_t        file_pointer{0};
@@ -231,30 +231,72 @@ namespace bifrost
     {
       const Face *face = faces.data() + i;
 
+      const Vector3f *const p0 = face->position[0] == -1 ? nullptr : positions.data() + face->position[0] - 1;
+      const Vector3f *const p1 = face->position[1] == -1 ? nullptr : positions.data() + face->position[1] - 1;
+      const Vector3f *const p2 = face->position[2] == -1 ? nullptr : positions.data() + face->position[2] - 1;
+
+      if (!p0 || !p1 || !p2)
+      {
+        continue;
+      }
+
+      const Vector3f u = (*p1) - (*p0);
+      const Vector3f v = (*p2) - (*p0);
+
+      const Vector3f face_normal =
+       {
+        u.y * v.z - u.z * v.y,
+        u.z * v.x - u.x * v.z,
+        u.x * v.y - u.y * v.x,
+        0.0f,
+       };
+
+      // [http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/]
+
+      const Vector2f *const uv0 = face->uv[0] == -1 ? nullptr : uvs.data() + face->uv[0] - 1;
+      const Vector2f *const uv1 = face->uv[1] == -1 ? nullptr : uvs.data() + face->uv[1] - 1;
+      const Vector2f *const uv2 = face->uv[2] == -1 ? nullptr : uvs.data() + face->uv[2] - 1;
+
+      Vector3f face_tangent = {1.0f, 0.0f, 0.0, 0.0f};
+
+      if (uv0 && uv1 && uv2)
+      {
+        const Vector2f delta_uv0 = (*uv1) - (*uv0);
+        const Vector2f delta_uv1 = (*uv2) - (*uv0);
+        const float    r         = 1.0f / std::max(delta_uv0.x * delta_uv1.y - delta_uv0.y * delta_uv1.x, 0.001f);
+
+        face_tangent = (u * delta_uv1.y - v * delta_uv0.y) * r;
+        // face_bitangent = (v * delta_uv1.x - u * delta_uv0.x) * r;
+
+        /*
+        if (glm::dot(glm::cross(n, t), b) < 0.0f){
+          t = t * -1.0f;
+        }
+        */
+      }
+
       for (std::size_t j = 0; j < 3; ++j)
       {
-        StandardVertex *vertex = &out.emplace();
+        StandardVertex *const vertex = &out.emplace();
 
-        const Vec3f *const pos    = face->position[j] == -1 ? NULL : positions.data() + face->position[j] - 1;
-        const Vec3f *const normal = face->normal[j] == -1 ? NULL : normals.data() + face->normal[j] - 1;
-        const Vec2f *const uv     = face->uv[j] == -1 ? NULL : uvs.data() + face->uv[j] - 1;
+        const Vector3f *const pos    = positions.data() + face->position[j] - 1;
+        const Vector3f *const normal = face->normal[j] == -1 ? nullptr : normals.data() + face->normal[j] - 1;
+        const Vector2f *const uv     = face->uv[j] == -1 ? nullptr : uvs.data() + face->uv[j] - 1;
 
         if (pos)
         {
-          Vec3f_copy(&vertex->pos, pos);
+          vertex->pos = *pos;
         }
 
-        if (normal)
-        {
-          Vec3f_copy(&vertex->normal, normal);
-        }
+        vertex->normal  = normal ? *normal : face_normal;
+        vertex->tangent = face_tangent;
 
         if (uv)
         {
-          vertex->uv = (*uv);
+          vertex->uv = *uv;
         }
 
-        vertex->color = bfColor4u_fromUint32(Vec3f_toColor(pos));
+        vertex->color = bfColor4u_fromUint32(0xFFFFFFFF);
       }
     }
   }

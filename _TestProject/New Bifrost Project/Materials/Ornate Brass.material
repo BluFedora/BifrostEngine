@@ -1,0 +1,17 @@
+{
+    "m_AlbedoTexture" : {
+        "uuid" : "01263CDA-3962-47EC-B7AE-44EF5529CE1D"
+    },
+    "m_MetallicTexture" : {
+        "uuid" : "6EC11067-EB7D-47AD-988B-9CFADBF2B852"
+    },
+    "m_NormalTexture" : {
+        "uuid" : "A2E1E9E5-47C6-4317-8842-527AEEFC3AC6"
+    },
+    "m_RoughnessTexture" : {
+        "uuid" : "C2BE0E4B-8E5F-4890-AE10-D7AB82926FD2"
+    },
+    "m_AmbientOcclusionTexture" : {
+        "uuid" : "C6A4DAD6-5389-4419-AC02-FAFF56224104"
+    }
+}

@@ -14,6 +14,7 @@ const int k_KernelSize = 128;
 
 layout(location = 0) in vec3 frag_ViewRay;
 layout(location = 1) in vec2 frag_UV;
+layout(location = 2) in vec3 frag_ViewRaySSAO;
 
 #include "assets/shaders/standard/camera.ubo.glsl"
 
@@ -30,6 +31,7 @@ layout(std140, set = 2, binding = 3) uniform u_Set2
 
 layout(location = 0) out float o_FragColor0;
 
+#define SSAO 1
 #include "assets/shaders/standard/position_encode.glsl"
 #include "assets/shaders/standard/normal_encode.glsl"
 
