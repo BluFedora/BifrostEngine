@@ -15,6 +15,7 @@
 #define BIFROST_RECT2_HPP
 
 #include "bifrost_vec2.h" /* Vec2f, Vec2i */
+#include "bifrost_vec3.h" /* Vec3f        */
 
 #include <algorithm> /* min, max */
 #include <cstdint>   /* uint32_t */
@@ -29,14 +30,6 @@ namespace bifrost
       T x;
       T y;
     };
-
-    template<>
-    struct Vec2T<float> : public Vec2f
-    {};
-
-    template<>
-    struct Vec2T<int> : public Vec2i
-    {};
 
     template<typename T>
     Vec2T<T> operator*(const Vec2T<T>& lhs, T rhs)
@@ -79,6 +72,104 @@ namespace bifrost
     {
       return lhs.x != rhs.x && lhs.y != rhs.y;
     }
+
+    template<>
+    struct Vec2T<float> : public Vec2f
+    {
+      Vec2T(float x, float y) :
+        Vec2f{x, y}
+      {
+      }
+
+      Vec2T(const Vec2f& rhs) :
+        Vec2f{rhs}
+      {
+      }
+
+      Vec2T() = default;
+    };
+
+    template<>
+    struct Vec2T<int> : public Vec2i
+    {};
+
+    template<typename T>
+    struct Vec3T
+    {
+      T x;
+      T y;
+      T z;
+      T w;
+    };
+
+    template<typename T>
+    Vec3T<T> operator*(const Vec3T<T>& lhs, T rhs)
+    {
+      return Vec3T<T>{lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
+    }
+
+    template<typename T>
+    Vec3T<T> operator*(T lhs, const Vec3T<T>& rhs)
+    {
+      return rhs * lhs;
+    }
+
+    template<typename T>
+    Vec3T<T> operator+(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
+    {
+      return Vec3T<T>{lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w};
+    }
+
+    template<typename T>
+    Vec3T<T> operator-(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
+    {
+      return Vec3T<T>{lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w};
+    }
+
+    template<typename T>
+    bool operator-(const Vec3T<T>& lhs)
+    {
+      return Vec3T<T>{-lhs.x, -lhs.y, -lhs.z};
+    }
+
+    template<typename T>
+    bool operator==(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
+    {
+      return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+    }
+
+    template<typename T>
+    bool operator!=(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
+    {
+      return lhs.x != rhs.x && lhs.y != rhs.y && lhs.y != rhs.z;
+    }
+
+    template<>
+    struct Vec3T<float> : public Vec3f
+    {
+      Vec3T(float x, float y, float z, float w = 1.0f) :
+        Vec3f{x, y, z, w}
+      {
+      }
+
+      Vec3T(float xyzw) :
+        Vec3f{xyzw, xyzw, xyzw, xyzw}
+      {
+      }
+
+      Vec3T(const Vec3f& rhs) :
+        Vec3f{rhs}
+      {
+      }
+
+      Vec3T() = default;
+
+      Vec3T& operator*=(float scalar)
+      {
+        *this = *this * scalar;
+        return *this;
+      }
+    };
 
     template<typename T>
     class Rect2T
@@ -300,11 +391,14 @@ namespace bifrost
   }  // namespace detail
 
   using Rect2i   = detail::Rect2T<int>;
-  using Rect2ui  = detail::Rect2T<unsigned int>;
+  using Rect2u   = detail::Rect2T<unsigned int>;
   using Rect2f   = detail::Rect2T<float>;
   using Vector2i = detail::Vec2T<int>;
   using Vector2u = detail::Vec2T<unsigned int>;
   using Vector2f = detail::Vec2T<float>;
+  using Vector3i = detail::Vec3T<int>;
+  using Vector3u = detail::Vec3T<unsigned int>;
+  using Vector3f = detail::Vec3T<float>;
 
   // NOTE(Shareef):
   //   This namespace contains some utilities for manipulating rectangles.

@@ -95,7 +95,7 @@ typedef int(__cdecl* bfArrayFindCompare)(const void*, const void*);
 // For all functions pass a pointer to the array.
 
 void*  bfArray_mallocator(void* user_data, void* ptr, size_t size);  // Default allocator uses C-Libs 'malloc' and 'free'.
-void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data);
+void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data); // if allocator == NULL then allocator = bfArray_mallocator;
 void*  bfArray_userData(void** self);
 void*  bfArray_begin(void** self);
 void*  bfArray_end(void** self);

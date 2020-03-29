@@ -323,6 +323,8 @@ typedef enum BifrostPipelineStageFlags_t
 
 } BifrostPipelineStageFlags;
 
+typedef uint32_t BifrostPipelineStageBits;
+
 typedef enum BifrostAccessFlags_t
 {
   BIFROST_ACCESS_INDIRECT_COMMAND_READ_BIT          = 0x00000001,
@@ -344,6 +346,8 @@ typedef enum BifrostAccessFlags_t
   BIFROST_ACCESS_MEMORY_WRITE_BIT                   = 0x00010000,
 
 } BifrostAccessFlags;
+
+typedef uint32_t BifrostAccessFlagsBits;
 
 typedef enum BifrostSampleFlags_t
 {
@@ -382,6 +386,7 @@ typedef enum BifrostGfxQueueType_t
   BIFROST_GFX_QUEUE_TRANSFER,
   BIFROST_GFX_QUEUE_PRESENT,
   BIFROST_GFX_QUEUE_MAX,
+  BIFROST_GFX_QUEUE_IGNORE = ~0U,
 
 } BifrostGfxQueueType;
 #if __cplusplus

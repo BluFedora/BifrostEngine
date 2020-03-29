@@ -331,7 +331,7 @@ void* bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t eleme
   bfAssert(element_size, "bfArray_new_:: The struct size must be greater than 0.");
   bfAssert(element_alignment, "bfArray_new_:: The struct alignment must be greater than 0.");
   bfAssert(element_alignment < UINT8_MAX, "bfArray_new_:: The struct alignment must be less than 256.");
-  bfAssert(element_size < UINT32_MAX, "bfArray_new_:: The struct alignment must be less than 256.");
+  bfAssert(element_size < UINT32_MAX, "bfArray_new_:: The struct alignment must be less than UINT32_MAX.");
   bfAssert((element_alignment & (element_alignment - 1)) == 0, "bfArray_new_:: The struct alignment must be a power of two.");
 
   const size_t header_size     = sizeof(ArrayHeader) + sizeof(AllocationOffset_t);

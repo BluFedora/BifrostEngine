@@ -20,12 +20,12 @@ bfVMValue bfVMValue_fromBool(bfBool32 v)
   return v ? VAL_TRUE : VAL_FALSE;
 }
 
-bfVMNumberT bfVmValue_asNumber(bfVMValue self)
+bfFloat64 bfVmValue_asNumber(bfVMValue self)
 {
   union
   {
-    uint64_t    bits64;
-    bfVMNumberT num;
+    uint64_t  bits64;
+    bfFloat64 num;
   } c;
 
   c.bits64 = self;
@@ -68,8 +68,8 @@ bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
 {
   if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
   {
-    const bfVMNumberT lhs_num = bfVmValue_asNumber(lhs);
-    const bfVMNumberT rhs_num = bfVmValue_asNumber(rhs);
+    const bfFloat64 lhs_num = bfVmValue_asNumber(lhs);
+    const bfFloat64 rhs_num = bfVmValue_asNumber(rhs);
 
     return lhs_num == rhs_num;
   }

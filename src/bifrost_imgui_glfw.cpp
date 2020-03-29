@@ -370,7 +370,7 @@ namespace bifrost::imgui
         index_buffer_ptr += cmd_list->IdxBuffer.Size;
       }
 
-      Mat4x4_ortho(uniform_buffer_ptr, 0.0f, float(fb_width), float(fb_height), 0.0f, 0.0f, 1.0f);
+      Mat4x4_orthoVk(uniform_buffer_ptr, 0.0f, float(fb_width), float(fb_height), 0.0f, 0.0f, 1.0f);
 
       bfBuffer_unMap(frame.vertex_buffer);
       bfBuffer_unMap(frame.index_buffer);

@@ -6,7 +6,7 @@
  * @version 0.0.1
  * @date    2020-03-21
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2020
  */
 #ifndef BIFROST_MESH_RENDERER_HPP
 #define BIFROST_MESH_RENDERER_HPP
@@ -24,7 +24,7 @@ namespace bifrost
 
    public:
     explicit MeshRenderer(Entity& owner) :
-      Component<MeshRenderer>(owner),
+      Base(owner),
       m_Material{nullptr},
       m_Model{nullptr}
     {

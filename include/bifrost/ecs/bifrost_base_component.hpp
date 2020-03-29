@@ -66,6 +66,8 @@ namespace bifrost
 
    public:
     explicit BaseComponent(Entity& owner);
+
+    Entity& owner() const { return *m_Owner; }
   };
 
   /*!
@@ -73,11 +75,13 @@ namespace bifrost
   *   The class to inherit from.
   */
   template<typename TSelf>
-  class Component : BaseComponent
+  class Component : public BaseComponent
   {
     friend class Entity;
 
    public:
+    using Base = Component<TSelf>;
+
     explicit Component(Entity& owner) :
       BaseComponent(owner)
     {

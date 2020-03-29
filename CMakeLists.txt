@@ -130,6 +130,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_gfx_common.c"
   "src/bifrost/graphics/bifrost_standard_renderer.cpp"
+  "src/bifrost/graphics/bifrost_glsl_compiler.cpp"
   ## Vulkan Backend
   "src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp"
   "src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c"

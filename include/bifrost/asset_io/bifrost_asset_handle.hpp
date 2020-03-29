@@ -37,8 +37,10 @@
 
 class BifrostEngine;
 
-typedef struct Vec2f_t Vec2f;
-typedef struct Vec3f_t Vec3f;
+typedef struct Vec2f_t     Vec2f;
+typedef struct Vec3f_t     Vec3f;
+typedef struct bfColor4f_t bfColor4f;
+typedef struct bfColor4u_t bfColor4u;
 
 namespace bifrost
 {
@@ -113,7 +115,7 @@ namespace bifrost
     //
     //   * The return value in pushArray's "std::size_t& size" is only useful for
     //     SerializerMode::LOADING. Otherise you are going to receive 0.
-    // 
+    //
     //   * Scopes for 'pushObject' and 'pushArray' are only valid if they return true.
     //     Only class 'popObject' and 'popArray' respectively only if 'pushXXX' returned true.
     //
@@ -137,6 +139,8 @@ namespace bifrost
     virtual void serialize(StringRange key, long double& value)   = 0;
     virtual void serialize(StringRange key, Vec2f& value);
     virtual void serialize(StringRange key, Vec3f& value);
+    virtual void serialize(StringRange key, bfColor4f& value);
+    virtual void serialize(StringRange key, bfColor4u& value);
     virtual void serialize(StringRange key, String& value)          = 0;
     virtual void serialize(StringRange key, BifrostUUID& value)     = 0;
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;

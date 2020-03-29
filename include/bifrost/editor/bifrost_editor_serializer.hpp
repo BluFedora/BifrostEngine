@@ -57,6 +57,8 @@ namespace bifrost::editor
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, Vec2f& value) override;
     void serialize(StringRange key, Vec3f& value) override;
+    void serialize(StringRange key, bfColor4f& value) override;
+    void serialize(StringRange key, bfColor4u& value) override;
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;

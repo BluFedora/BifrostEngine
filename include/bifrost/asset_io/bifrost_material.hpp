@@ -158,19 +158,28 @@ namespace bifrost
     BIFROST_META_FRIEND;
 
    private:
-    AssetShaderProgramHandle m_ShaderProgram;
-    AssetTextureHandle       m_DiffuseTexture;
+    AssetTextureHandle m_AlbedoTexture;
+    AssetTextureHandle m_NormalTexture;
+    AssetTextureHandle m_MetallicTexture;
+    AssetTextureHandle m_RoughnessTexture;
+    AssetTextureHandle m_AmbientOcclusionTexture;
 
    public:
     explicit Material() :
-      BaseObject<Material>(),
-      m_ShaderProgram{nullptr},
-      m_DiffuseTexture{nullptr}
+      Base(),
+      m_AlbedoTexture{nullptr},
+      m_NormalTexture{nullptr},
+      m_MetallicTexture{nullptr},
+      m_RoughnessTexture{nullptr},
+      m_AmbientOcclusionTexture{nullptr}
     {
     }
 
-    const AssetShaderProgramHandle& shaderProgram() const { return m_ShaderProgram; }
-    const AssetTextureHandle&       diffuseTexture() const { return m_DiffuseTexture; }
+    const AssetTextureHandle& albedoTexture() const { return m_AlbedoTexture; }
+    const AssetTextureHandle& normalTexture() const { return m_NormalTexture; }
+    const AssetTextureHandle& metallicTexture() const { return m_MetallicTexture; }
+    const AssetTextureHandle& roughnessTexture() const { return m_RoughnessTexture; }
+    const AssetTextureHandle& ambientOcclusionTexture() const { return m_AmbientOcclusionTexture; }
   };
 
   class AssetMaterialInfo final : public AssetInfo<Material, AssetMaterialInfo>
@@ -208,7 +217,7 @@ namespace bifrost
   {
     using BaseT = AssetInfo<Model, AssetModelInfo>;
 
-  public:
+   public:
     using BaseT::BaseT;
 
     bool load(Engine& engine) override;
@@ -275,13 +284,24 @@ BIFROST_META_REGISTER(bifrost::AssetShaderProgramInfo){
    ctor<StringRange, BifrostUUID>())
    BIFROST_META_END()}
 
+/*
+AssetTextureHandle m_AlbedoTexture;
+AssetTextureHandle m_NormalTexture;
+AssetTextureHandle m_MetallicTexture;
+AssetTextureHandle m_RoughnessTexture;
+AssetTextureHandle m_AmbientOcclusionTexture;
+*/
+
 BIFROST_META_REGISTER(bifrost::Material){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   class_info<Material>("Material"),                                        //
-   ctor<>(),                                                                //
-   field<BaseAssetHandle>("m_ShaderProgram", &Material::m_ShaderProgram),   //
-   field<BaseAssetHandle>("m_DiffuseTexture", &Material::m_DiffuseTexture)  //
+   class_info<Material>("Material"),                                                          //
+   ctor<>(),                                                                                  //
+   field<BaseAssetHandle>("m_AlbedoTexture", &Material::m_AlbedoTexture),                     //
+   field<BaseAssetHandle>("m_NormalTexture", &Material::m_NormalTexture),                     //
+   field<BaseAssetHandle>("m_MetallicTexture", &Material::m_MetallicTexture),                 //
+   field<BaseAssetHandle>("m_RoughnessTexture", &Material::m_RoughnessTexture),               //
+   field<BaseAssetHandle>("m_AmbientOcclusionTexture", &Material::m_AmbientOcclusionTexture)  //
    )
    BIFROST_META_END()}
 

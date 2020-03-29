@@ -52,6 +52,32 @@ namespace bifrost
     popObject();
   }
 
+  void ISerializer::serialize(StringRange key, bfColor4f& value)
+  {
+    if (pushObject(key))
+    {
+      serialize("r", value.r);
+      serialize("g", value.g);
+      serialize("b", value.b);
+      serialize("a", value.a);
+
+      popObject();
+    }
+  }
+
+  void ISerializer::serialize(StringRange key, bfColor4u& value)
+  {
+    if (pushObject(key))
+    {
+      serialize("r", value.r);
+      serialize("g", value.g);
+      serialize("b", value.b);
+      serialize("a", value.a);
+
+      popObject();
+    }
+  }
+
   void ISerializer::serialize(StringRange key, IBaseObject& value)
   {
     if (pushObject(key))

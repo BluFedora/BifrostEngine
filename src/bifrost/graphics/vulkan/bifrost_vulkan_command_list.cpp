@@ -6,6 +6,8 @@
 
 #define CUSTOM_ALLOC nullptr
 
+extern VkImageAspectFlags bfTexture__aspect(bfTextureHandle self);
+
 static void AddCachedResource(bfGfxDeviceHandle device, BifrostGfxObjectBase* obj, std::uint64_t hash_code)
 {
   obj->hash_code           = hash_code;
@@ -27,6 +29,143 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
 
   self->dynamic_state_dirty = 0xFFFF;
   return error == VK_SUCCESS;
+}
+
+static bfPipelineBarrier bfPipelineBarrier_makeBase(bfPipelineBarrierType type, BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access)
+{
+  bfPipelineBarrier result{};
+
+  memset(&result, 0x0, sizeof(bfPipelineBarrier));
+
+  result.type              = type;
+  result.access[0]         = src_access;
+  result.access[1]         = dst_access;
+  result.queue_transfer[0] = BIFROST_GFX_QUEUE_IGNORE;
+  result.queue_transfer[1] = BIFROST_GFX_QUEUE_IGNORE;
+
+  return result;
+}
+
+bfPipelineBarrier bfPipelineBarrier_memory(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access)
+{
+  return bfPipelineBarrier_makeBase(BIFROST_PIPELINE_BARRIER_MEMORY, src_access, dst_access);
+}
+
+bfPipelineBarrier bfPipelineBarrier_buffer(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size)
+{
+  bfPipelineBarrier result = bfPipelineBarrier_makeBase(BIFROST_PIPELINE_BARRIER_BUFFER, src_access, dst_access);
+
+  result.info.buffer.handle = buffer;
+  result.info.buffer.offset = offset;
+  result.info.buffer.size   = size;
+
+  // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
+  return result;
+}
+
+bfPipelineBarrier bfPipelineBarrier_image(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfTextureHandle image, BifrostImageLayout new_layout)
+{
+  bfPipelineBarrier result = bfPipelineBarrier_makeBase(BIFROST_PIPELINE_BARRIER_IMAGE, src_access, dst_access);
+
+  result.info.image.handle               = image;
+  result.info.image.layout_transition[0] = image->tex_layout;
+  result.info.image.layout_transition[1] = new_layout;
+  result.info.image.base_mip_level       = 0;
+  result.info.image.level_count          = image->image_miplevels;
+  result.info.image.base_array_layer     = 0;
+  result.info.image.layer_count          = image->image_depth;
+
+  return result;
+}
+
+void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel)
+{
+  std::uint32_t         num_memory_barriers = 0;
+  VkMemoryBarrier       memory_barriers[BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES];
+  std::uint32_t         num_buffer_barriers = 0;
+  VkBufferMemoryBarrier buffer_barriers[BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES];
+  std::uint32_t         num_image_barriers = 0;
+  VkImageMemoryBarrier  image_barriers[BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES];
+
+  const std::uint32_t* queue_list = self->parent->parent->queue_list.family_index;
+
+  for (uint32_t i = 0; i < num_barriers; ++i)
+  {
+    const bfPipelineBarrier* const pl_barrier = barriers + i;
+
+    switch (pl_barrier->type)
+    {
+      case BIFROST_PIPELINE_BARRIER_MEMORY:
+      {
+        assert(num_memory_barriers < BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES);
+
+        VkMemoryBarrier* const barrier = memory_barriers + num_memory_barriers;
+        barrier->sType                 = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        barrier->pNext                 = nullptr;
+        barrier->srcAccessMask         = bfVkConvertAccessFlags(pl_barrier->access[0]);
+        barrier->dstAccessMask         = bfVkConvertAccessFlags(pl_barrier->access[1]);
+
+        ++num_memory_barriers;
+        break;
+      }
+      case BIFROST_PIPELINE_BARRIER_BUFFER:
+      {
+        assert(num_buffer_barriers < BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES);
+
+        VkBufferMemoryBarrier* const barrier = buffer_barriers + num_buffer_barriers;
+        barrier->sType                       = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier->pNext                       = nullptr;
+        barrier->srcAccessMask               = bfVkConvertAccessFlags(pl_barrier->access[0]);
+        barrier->dstAccessMask               = bfVkConvertAccessFlags(pl_barrier->access[1]);
+        barrier->srcQueueFamilyIndex         = bfConvertQueueIndex(queue_list, pl_barrier->queue_transfer[0]);
+        barrier->dstQueueFamilyIndex         = bfConvertQueueIndex(queue_list, pl_barrier->queue_transfer[1]);
+        barrier->buffer                      = pl_barrier->info.buffer.handle->handle;
+        barrier->offset                      = pl_barrier->info.buffer.offset;
+        barrier->size                        = pl_barrier->info.buffer.size;
+
+        ++num_buffer_barriers;
+        break;
+      }
+      case BIFROST_PIPELINE_BARRIER_IMAGE:
+      {
+        assert(num_image_barriers < BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES);
+
+        VkImageMemoryBarrier* const barrier      = image_barriers + num_image_barriers;
+        barrier->sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier->pNext                           = nullptr;
+        barrier->srcAccessMask                   = bfVkConvertAccessFlags(pl_barrier->access[0]);
+        barrier->dstAccessMask                   = bfVkConvertAccessFlags(pl_barrier->access[1]);
+        barrier->oldLayout                       = bfVkConvertImgLayout(pl_barrier->info.image.layout_transition[0]);
+        barrier->newLayout                       = bfVkConvertImgLayout(pl_barrier->info.image.layout_transition[1]);
+        barrier->srcQueueFamilyIndex             = bfConvertQueueIndex(queue_list, pl_barrier->queue_transfer[0]);
+        barrier->dstQueueFamilyIndex             = bfConvertQueueIndex(queue_list, pl_barrier->queue_transfer[1]);
+        barrier->image                           = pl_barrier->info.image.handle->tex_image;
+        barrier->subresourceRange.aspectMask     = bfTexture__aspect(pl_barrier->info.image.handle);
+        barrier->subresourceRange.baseMipLevel   = pl_barrier->info.image.base_mip_level;
+        barrier->subresourceRange.levelCount     = pl_barrier->info.image.level_count;
+        barrier->subresourceRange.baseArrayLayer = pl_barrier->info.image.base_array_layer;
+        barrier->subresourceRange.layerCount     = pl_barrier->info.image.layer_count;
+
+        pl_barrier->info.image.handle->tex_layout = pl_barrier->info.image.layout_transition[1];
+
+        ++num_image_barriers;
+        break;
+      }
+        bfInvalidDefaultCase();
+    }
+  }
+
+  vkCmdPipelineBarrier(
+   self->handle,
+   bfVkConvertPipelineStageFlags(src_stage),
+   bfVkConvertPipelineStageFlags(dst_stage),
+   reads_same_pixel ? VK_DEPENDENCY_BY_REGION_BIT : 0x0,
+   num_memory_barriers,
+   memory_barriers,
+   num_buffer_barriers,
+   buffer_barriers,
+   num_image_barriers,
+   image_barriers);
 }
 
 void bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass)
@@ -548,7 +687,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
   assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
 
-  const uint64_t        hash_code = bifrost::vk::hash(0x0, desc_set_info);
+  const uint64_t        hash_code = bifrost::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
   bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code);
 
   if (!desc_set)
@@ -594,7 +733,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
   vkCmdBindDescriptorSets(
    self->handle,
    bind_point,
-   self->pipeline_state.program->layout,
+    program->layout,
    set_index,
    1,
    &desc_set->handle,
@@ -977,7 +1116,7 @@ void bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self)
 
   for (std::uint32_t i = 0; i < render_pass_info.num_attachments; ++i)
   {
-    render_pass_info.attachments[i].texture->tex_layout = bfVkConvertImgLayout(render_pass_info.attachments[i].final_layout);
+    render_pass_info.attachments[i].texture->tex_layout = render_pass_info.attachments[i].final_layout;
   }
 
   vkCmdEndRenderPass(self->handle);
@@ -1273,9 +1412,9 @@ namespace bifrost::vk
     return self;
   }
 
-  std::uint64_t hash(std::uint64_t self, const bfDescriptorSetInfo* desc_set_info)
+  std::uint64_t hash(const bfDescriptorSetLayoutInfo& parent, const bfDescriptorSetInfo* desc_set_info)
   {
-    self = hash::addU32(self, desc_set_info->num_bindings);
+    std::uint64_t self = hash::addU32(0x0, desc_set_info->num_bindings);
 
     for (uint32_t i = 0; i < desc_set_info->num_bindings; ++i)
     {
@@ -1284,6 +1423,7 @@ namespace bifrost::vk
       self = hash::addU32(self, binding->binding);
       self = hash::addU32(self, binding->array_element_start);
       self = hash::addU32(self, binding->num_handles);
+      self = hash::addU32(self, parent.layout_bindings[i].stageFlags);
 
       for (uint32_t j = 0; j < binding->num_handles; ++j)
       {

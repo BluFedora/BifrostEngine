@@ -45,7 +45,7 @@ namespace bifrost
   using Vector = std::vector<T>;
 
   template<typename T>
-  static inline void deleteList(const Vector<T>& items)
+  static void deleteList(const Vector<T>& items)
   {
     for (auto* item : items)
     {
@@ -118,7 +118,7 @@ namespace bifrost
   struct BarrierMemory : BarrierExecution
   {
     std::uint32_t src_access;  // BifrostAccessFlags
-    std::uint32_t dst_access;  //  BifrostAccessFlags
+    std::uint32_t dst_access;  // BifrostAccessFlags
 
     explicit BarrierMemory(
      std::uint32_t src_stage,
@@ -132,7 +132,7 @@ namespace bifrost
     }
   };
 
-  /*
+  //*
   struct BarrierImage final : public BarrierMemory
   {
     BifrostImageLayout old_layout;
@@ -140,16 +140,13 @@ namespace bifrost
     std::uint32_t      src_queue;
     std::uint32_t      dst_queue;
     bfTextureHandle    image;
-    std::uint32_t      aspect;
-    // BIFROST_IMAGE_ASPECT_COLOR_BIT   = 0x00000001,
-    // BIFROST_IMAGE_ASPECT_DEPTH_BIT   = 0x00000002,
-    // BIFROST_IMAGE_ASPECT_STENCIL_BIT = 0x00000004,
+    // std::uint32_t      aspect;
     std::uint32_t base_mip_level;
     std::uint32_t level_count;
     std::uint32_t base_array_layer;
     std::uint32_t layer_count;
   };
-  */
+  //*/
 
   struct BarrierSubpassDep final : public BarrierMemory
   {
@@ -171,7 +168,7 @@ namespace bifrost
     }
   };
 
-  /*
+  //*
   struct BarrierBuffer final : public BarrierMemory
   {
     std::uint32_t  src_queue;
@@ -180,7 +177,7 @@ namespace bifrost
     std::uint64_t  offset;
     std::uint64_t  size;
   };
-  */
+  //*/
 
   // Could either be read or write.
   namespace BufferUsage
@@ -686,7 +683,7 @@ namespace bifrost
     Vector<std::uint8_t>       m_Bytecode;
     std::uint8_t*              m_BytecodePos;  // TODO: Make this local to the execute function.
     Vector<BarrierMemory>      m_MemoryBarriers;
-    Vector<BarrierSubpassDep>  m_SubpassBarriers;  // TODO: MAke this renderpass local
+    Vector<BarrierSubpassDep>  m_SubpassBarriers;  // TODO: Make this renderpass local
 
    public:
     explicit RenderGraph() :
@@ -938,7 +935,7 @@ namespace bifrost
 
     BarrierRef addBarrier(const BarrierMemory& dep)
     {
-      BarrierRef ret = {BarrierType::MEMORY, uint32_t(m_MemoryBarriers.size())};
+      const BarrierRef ret = {BarrierType::MEMORY, uint32_t(m_MemoryBarriers.size())};
       bytecodeWriteAction(BytecodeInst::MEMORY_BARRIER, ret.index);
       m_MemoryBarriers.push_back(dep);
       return ret;
@@ -946,7 +943,7 @@ namespace bifrost
 
     BarrierRef addSubpassBarrier(const BarrierSubpassDep& dep)
     {
-      BarrierRef ret = {BarrierType::SUBPASS_DEP, uint32_t(m_SubpassBarriers.size())};
+      const BarrierRef ret = {BarrierType::SUBPASS_DEP, uint32_t(m_SubpassBarriers.size())};
       m_SubpassBarriers.push_back(dep);
       return ret;
     }
@@ -1009,7 +1006,7 @@ namespace bifrost
   template<typename TRes, typename TDesc>
   static ResourceRef readResource(RenderpassBase* pass, TRes* res, const TDesc& desc)
   {
-    ResourceRef ref = ResourceRef::create(res, desc, true);
+    const ResourceRef ref = ResourceRef::create(res, desc, true);
     res->readers.push_back(pass);
     pass->reads.push_back(ref);
     return ref;
@@ -1018,7 +1015,7 @@ namespace bifrost
   template<typename TRes, typename TDesc>
   static ResourceRef writeResource(RenderpassBase* pass, TRes* res, const TDesc& desc)
   {
-    ResourceRef ref = ResourceRef::create(res, desc, false);
+    const ResourceRef ref = ResourceRef::create(res, desc, false);
     res->writers.push_back(pass);
     pass->writes.push_back(ref);
     return ref;
@@ -1182,13 +1179,12 @@ int main()
   using namespace std;
   using namespace bifrost;
 
-  std::cout << "Render Pass Prototype BGN\n\n";
-
   RenderGraph graph;
 
   struct GBufferData
   {
-    ImageResource* outputs[5];
+    ImageResource* gBufferImages[4];
+    ImageResource* lightingComposite;
   };
 
   bfTextureHandle physical_resources[5] = {nullptr};
@@ -1198,81 +1194,52 @@ int main()
   //   samples          : Gotten by the texture.
   //   initial_layout   : last layout it was in or VK_IMAGE_LAYOUT_UNDEFINED.
   //     optimization: Always VK_IMAGE_LAYOUT_UNDEFINED if we loadOp::Clear or loadOpDontCare
-  graph.registerResource("g_Pos", physical_resources[0]);
-  graph.registerResource("g_Normal", physical_resources[1]);
-  graph.registerResource("g_Spec", physical_resources[2]);
-  graph.registerResource("g_Mat", physical_resources[3]);
-  graph.registerResource("g_Depth", physical_resources[4]);
+
+  graph.registerResource("g_PosRough", physical_resources[0]);
+  graph.registerResource("g_NormalAO", physical_resources[1]);
+  graph.registerResource("g_AlbedoMetallic", physical_resources[2]);
+  graph.registerResource("g_Depth", physical_resources[3]);
+  graph.registerResource("LightingComposite", physical_resources[4]);
 
   graph.addGraphicsPass<GBufferData>(
-   "GPass",
+   "GBufferPass",
    [](Renderpass<GBufferData>& pass, GBufferData& data) {
-     data.outputs[0] = pass.addAttachment("g_Pos", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[1] = pass.addAttachment("g_Normal", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[2] = pass.addAttachment("g_Spec", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[3] = pass.addAttachment("g_Mat", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[4] = pass.addAttachment("g_Depth", BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[0] = pass.addAttachment("g_PosRough", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[1] = pass.addAttachment("g_NormalAO", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[2] = pass.addAttachment("g_AlbedoMetallic", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[3] = pass.addAttachment("g_Depth", BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
 
      pass.addPass(
       [](SubpassBase& subpass, GBufferData& data) {
         subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
         subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
         subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-        subpass.refAttachment(4, PipelineStage::FRAGMENT, ImageUsage::WRITE_DEPTH_WRITE_STENCIL);
+        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::WRITE_DEPTH_WRITE_STENCIL);
       },
       [](RenderGraph& graph, const GBufferData& data) {
-        // Do Draw Code Here
-        std::cout << "Draw 1\n";
+        PRINT_OUT("GBuffer Drawing Happens Here.");
       });
    });
 
   graph.addGraphicsPass<GBufferData>(
-   "GPass0",
+   "Lighting Compositing Pass",
    [](Renderpass<GBufferData>& pass, GBufferData& data) {
-     data.outputs[0] = pass.addAttachment("g_Pos", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[1] = pass.addAttachment("g_Normal", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[2] = pass.addAttachment("g_Spec", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[3] = pass.addAttachment("g_Mat", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.outputs[4] = pass.addAttachment("g_Depth", BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[0]  = pass.addAttachment("g_PosRough", BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[1]  = pass.addAttachment("g_NormalAO", BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[2]  = pass.addAttachment("g_AlbedoMetallic", BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[3]  = pass.addAttachment("g_Depth", BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
+     data.lightingComposite = pass.addAttachment("LightingComposite", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
 
-     // Main G Pass
-     pass.addPass(
-      [](SubpassBase& subpass, GBufferData& data) {
-        subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-        subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-        subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-      },
-      [](RenderGraph& graph, const GBufferData& data) {
-        // Do Draw Code Here
-        std::cout << "GPass0 pass 0\n";
-      });
-
-     // Lighting Pass
-     pass.addPass(
-      [](SubpassBase& subpass, GBufferData& data) {
-        subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
-        subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
-        subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
-        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
-      },
-      [](RenderGraph& graph, const GBufferData& data) {
-        // Do Draw Code Here
-        std::cout << "Draw 2\n";
-      });
-
-     // Extra Pass
      pass.addPass(
       [](SubpassBase& subpass, GBufferData& data) {
         subpass.refAttachment(0, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
         subpass.refAttachment(1, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
         subpass.refAttachment(2, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
-        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::READ_COLOR);
+        subpass.refAttachment(3, PipelineStage::FRAGMENT, ImageUsage::WRITE_DEPTH_WRITE_STENCIL);
+        subpass.refAttachment(4, PipelineStage::FRAGMENT, ImageUsage::WRITE_COLOR);
       },
       [](RenderGraph& graph, const GBufferData& data) {
-        // Do Draw Code Here
-        std::cout << "Draw 3\n";
+        PRINT_OUT("Light Compositing Drawing Happens Here.");
       });
    });
 
@@ -1283,7 +1250,7 @@ int main()
   graph.execute();
   std::cout << "\n\n";
 
-  std::cout << "\nRender Pass Prototype END\n";
+  getchar();
   return 0;
 }
 #endif

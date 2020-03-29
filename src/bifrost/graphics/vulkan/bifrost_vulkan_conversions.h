@@ -9,12 +9,12 @@ extern "C" {
 #endif
 VkFormat              bfVkConvertFormat(BifrostImageFormat format);
 VkImageLayout         bfVkConvertImgLayout(BifrostImageLayout layout);
-VkSampleCountFlags    bfVkConvertSampleFlags(uint32_t flags);          // BifrostSampleFlags
+VkSampleCountFlags    bfVkConvertSampleFlags(uint32_t flags);  // BifrostSampleFlags
 VkSampleCountFlagBits bfVkConvertSampleCount(BifrostSampleFlags bit);
 VkClearValue          bfVKConvertClearColor(const BifrostClearValue* color);
 VkIndexType           bfVkConvertIndexType(BifrostIndexType idx_type);
 VkShaderStageFlagBits bfVkConvertShaderType(BifrostShaderType type);
-VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageFlags flags);
+VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageBits flags);
 VkPrimitiveTopology   bfVkConvertTopology(BifrostDrawMode draw_mode);
 VkViewport            bfVkConvertViewport(const BifrostViewport* viewport);
 VkRect2D              bfVkConvertScissorRect(const BifrostScissorRect* viewport);
@@ -22,7 +22,7 @@ VkPolygonMode         bfVkConvertPolygonMode(BifrostPolygonFillMode polygon_mode
 VkCullModeFlags       bfVkConvertCullModeFlags(uint32_t cull_face_flags);  // BifrostCullFaceFlags
 VkFrontFace           bfVkConvertFrontFace(BifrostFrontFace front_face);
 VkFormat              bfVkConvertVertexFormatAttrib(BifrostVertexFormatAttribute vertex_format_attrib);
-VkFlags               bfVkConvertBufferUsageFlags(uint16_t flags);  // bfBufferUsageFlags
+VkFlags               bfVkConvertBufferUsageFlags(uint16_t flags);     // bfBufferUsageFlags
 VkFlags               bfVkConvertBufferPropertyFlags(uint16_t flags);  // bfBufferProperyFlags
 VkImageType           bfVkConvertTextureType(BifrostTextureType type);
 VkFilter              bfVkConvertSamplerFilterMode(BifrostSamplerFilterMode mode);
@@ -32,7 +32,10 @@ VkStencilOp           bfVkConvertStencilOp(BifrostStencilOp op);
 VkLogicOp             bfVkConvertLogicOp(BifrostLogicOp op);
 VkBlendFactor         bfVkConvertBlendFactor(BifrostBlendFactor factor);
 VkBlendOp             bfVkConvertBlendOp(BifrostBlendOp factor);
-VkFlags               bfVkConvertColorMask(uint16_t flags); // BifrostColorMask
+VkFlags               bfVkConvertColorMask(uint16_t flags);  // BifrostColorMask
+VkPipelineStageFlags  bfVkConvertPipelineStageFlags(BifrostPipelineStageBits flags);
+VkAccessFlags         bfVkConvertAccessFlags(BifrostAccessFlagsBits flags);
+uint32_t              bfConvertQueueIndex(const uint32_t queue_list[BIFROST_GFX_QUEUE_MAX], BifrostGfxQueueType type);
 
 VkImageView bfCreateImageView(
  VkDevice           device,

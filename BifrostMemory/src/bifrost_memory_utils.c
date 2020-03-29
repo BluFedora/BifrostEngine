@@ -13,7 +13,7 @@
 
 #include <assert.h> /* assert */
 
-size_t alignedUpSize(size_t size, size_t required_alignment)
+size_t alignUpSize(size_t size, size_t required_alignment)
 {
   assert(required_alignment > 0 && (required_alignment & (required_alignment - 1)) == 0 && "alignedUpSize:: The alignment must be a non-zero power of two.");
 

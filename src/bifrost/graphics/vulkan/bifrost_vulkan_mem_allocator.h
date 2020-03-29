@@ -1,6 +1,9 @@
 #ifndef BIFROST_VULKAN_MEM_ALLOCATOR_H
 #define BIFROST_VULKAN_MEM_ALLOCATOR_H
 
+// References:
+//   [http://kylehalladay.com/blog/tutorial/2017/12/13/Custom-Allocators-Vulkan.html]
+
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
 #include <vulkan/vulkan.h>

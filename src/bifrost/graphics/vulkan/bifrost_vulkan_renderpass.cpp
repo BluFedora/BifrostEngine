@@ -68,7 +68,7 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
     att->storeOp        = bitsToStoreOp(i, params->store_ops);
     att->stencilLoadOp  = bitsToLoadOp(i, params->stencil_load_ops, params->stencil_clear_ops);
     att->stencilStoreOp = bitsToStoreOp(i, params->stencil_store_ops);
-    att->initialLayout  = att_info->texture->tex_layout;
+    att->initialLayout  = bfVkConvertImgLayout(att_info->texture->tex_layout);
     att->finalLayout    = bfVkConvertImgLayout(att_info->final_layout);
   }
 
@@ -114,10 +114,10 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
 
     dep->srcSubpass      = dep_info->subpasses[0];
     dep->dstSubpass      = dep_info->subpasses[1];
-    dep->srcStageMask    = dep_info->pipeline_stage_flags[0];  // TODO(Shareef): Convert using a function
-    dep->dstStageMask    = dep_info->pipeline_stage_flags[1];  // TODO(Shareef): Convert using a function
-    dep->srcAccessMask   = dep_info->access_flags[0];          // TODO(Shareef): Convert using a function
-    dep->dstAccessMask   = dep_info->access_flags[1];          // TODO(Shareef): Convert using a function
+    dep->srcStageMask    = bfVkConvertPipelineStageFlags(dep_info->pipeline_stage_flags[0]);
+    dep->dstStageMask    = bfVkConvertPipelineStageFlags(dep_info->pipeline_stage_flags[1]);
+    dep->srcAccessMask   = bfVkConvertAccessFlags(dep_info->access_flags[0]);
+    dep->dstAccessMask   = bfVkConvertAccessFlags(dep_info->access_flags[1]);
     dep->dependencyFlags = dep_info->reads_same_pixel ? 0x0 : VK_DEPENDENCY_BY_REGION_BIT;
   }
 

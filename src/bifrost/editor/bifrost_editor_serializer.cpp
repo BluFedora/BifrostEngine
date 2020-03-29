@@ -13,6 +13,7 @@
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
 #include "bifrost/asset_io/bifrost_assets.hpp"
+#include "bifrost/bifrost_math.h"
 #include "bifrost/math/bifrost_vec2.h"
 #include "bifrost/math/bifrost_vec3.h"
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
@@ -149,6 +150,41 @@ namespace bifrost::editor
   {
     setNameBuffer(key);
     hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
+  }
+
+  void ImGuiSerializer::serialize(StringRange key, bfColor4f& value)
+  {
+    setNameBuffer(key);
+
+    hasChangedTop() |= ImGui::ColorEdit4(m_NameBuffer, &value.r, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueWheel);
+  }
+
+  void ImGuiSerializer::serialize(StringRange key, bfColor4u& value)
+  {
+    static constexpr float k_ToFloatingPoint = 1.0f / 255.0f;
+    static constexpr float k_ToUint8Point    = 255.0f;
+
+    setNameBuffer(key);
+
+    bfColor4f value4f =
+     {
+      float(value.r) * k_ToFloatingPoint,
+      float(value.g) * k_ToFloatingPoint,
+      float(value.g) * k_ToFloatingPoint,
+      float(value.a) * k_ToFloatingPoint,
+     };
+
+    const bool has_changed = ImGui::ColorEdit4(m_NameBuffer, &value4f.r, ImGuiColorEditFlags__OptionsDefault);
+
+    if (has_changed)
+    {
+      value.r = std::uint8_t(value4f.r * k_ToUint8Point);
+      value.g = std::uint8_t(value4f.g * k_ToUint8Point);
+      value.b = std::uint8_t(value4f.b * k_ToUint8Point);
+      value.a = std::uint8_t(value4f.a * k_ToUint8Point);
+    }
+
+    hasChangedTop() |= has_changed;
   }
 
   void ImGuiSerializer::serialize(StringRange key, String& value)

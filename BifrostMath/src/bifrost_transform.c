@@ -1,7 +1,8 @@
 #include "bifrost/math/bifrost_transform.h"
 
-#include <math.h>  // quat::sqrt
-#include <stddef.h> // NULL
+#include <assert.h>  // assert
+#include <math.h>    // quat::sqrt
+#include <stddef.h>  // NULL
 
 #define EPSILONf 0.00001f
 #define DEG_TO_RADf 0.01745329251f
@@ -297,6 +298,11 @@ Vec3f bfQuaternionf_backwardVec(const Quaternionf* self)
 
 // Transform
 
+enum
+{
+  k_MaxTransformQueueStack = 128,
+};
+
 void bfTransform_ctor(BifrostTransform* self)
 {
   Vec3f_set(&self->origin, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -308,10 +314,12 @@ void bfTransform_ctor(BifrostTransform* self)
   Vec3f_set(&self->world_scale, 1.0f, 1.0f, 1.0f, 0.0f);
   Mat4x4_identity(&self->local_transform);
   Mat4x4_identity(&self->world_transform);
-  self->parent       = NULL;
-  self->first_child  = NULL;
-  self->next_sibling = NULL;
-  self->prev_sibling = NULL;
+  self->parent           = NULL;
+  self->first_child      = NULL;
+  self->next_sibling     = NULL;
+  self->prev_sibling     = NULL;
+  bfTransform_flushChanges(self);
+  self->needs_gpu_upload = 1;
 }
 
 void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value)
@@ -381,8 +389,8 @@ void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value)
 void bfTransform_flushChanges(BifrostTransform* self)
 {
   // TODO(Shareef): Make this dynamic?
-  BifrostTransform* work_stack[128] = {NULL};
-  int               work_stack_top  = 0;
+  BifrostTransform* work_stack[k_MaxTransformQueueStack] = {NULL};
+  int               work_stack_top                       = 0;
 
   work_stack[work_stack_top++] = self;
 
@@ -390,13 +398,15 @@ void bfTransform_flushChanges(BifrostTransform* self)
   Mat4x4 rotation_mat;
   Mat4x4 scale_mat;
   Mat4x4 origin_mat;
+  Vec3f  total_translation;
 
   while (work_stack_top)
   {
     BifrostTransform*       node        = work_stack[--work_stack_top];
     const BifrostTransform* node_parent = node->parent;
+    BifrostTransform*       child       = node->first_child;
 
-    Vec3f total_translation = node->local_position;
+    total_translation = node->local_position;
     Vec3f_add(&total_translation, &node->origin);
 
     Mat4x4_initTranslatef(&translation_mat, total_translation.x, total_translation.y, total_translation.z);
@@ -427,13 +437,20 @@ void bfTransform_flushChanges(BifrostTransform* self)
       node->world_transform = node->local_transform;
     }
 
-    BifrostTransform* child = node->first_child;
+    if (Mat4x4_inverse(&node->world_transform, &node->normal_transform))
+    {
+      Mat4x4_transpose(&node->normal_transform);
+    }
 
     while (child)
     {
+      assert(work_stack_top < k_MaxTransformQueueStack);
+
       work_stack[work_stack_top++] = child;
       child                        = child->next_sibling;
     }
+
+    node->needs_gpu_upload = 1;
   }
 }
 

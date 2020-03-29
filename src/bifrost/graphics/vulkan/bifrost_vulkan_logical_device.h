@@ -29,7 +29,6 @@ BIFROST_DEFINE_HANDLE(Renderpass)
   BifrostGfxObjectBase super;
   VkRenderPass         handle;
   bfRenderpassInfo     info;
-  uint64_t             hash_code;
 };
 
 BIFROST_DEFINE_HANDLE(Framebuffer)
@@ -99,7 +98,7 @@ typedef struct
 
 } bfShaderModuleList;
 
-typedef struct
+typedef struct bfDescriptorSetLayoutInfo_t
 {
   uint32_t                     num_layout_bindings;
   VkDescriptorSetLayoutBinding layout_bindings[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];

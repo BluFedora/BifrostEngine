@@ -210,7 +210,7 @@ typedef struct
     prefix, infix, prec                   \
   }
 
-static const GrammarRule s_Rules[BIFROST_TOKEN_SUPER + 1] =
+static const GrammarRule s_Rules[BIFROST_TOKEN_AT_SIGN + 1] =
  {
   /*  0 */ GRAMMAR_BOTH(parseGroup, parseCall, PREC_CALL),  // (BIFROST_TOKEN_L_PAREN);
   /*  1 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_R_PAREN);
@@ -262,9 +262,8 @@ static const GrammarRule s_Rules[BIFROST_TOKEN_SUPER + 1] =
   /* 47 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_STATIC)
   /* 48 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_AS)
   /* 49 */ GRAMMAR_PREFIX(parseSuper),                      // (BIFROST_TOKEN_SUPER)
+  /* 50 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_AT_SIGN)
 };
-
-// static_assert(std::size(s_Rules) == (std::size_t(TokenType::EOP) + 1u), "This parse table must match each token.");
 
 static void bfEmitError(BifrostParser* self, const char* format, ...)
 {
@@ -466,7 +465,7 @@ void bfParser_dtor(BifrostParser* self)
   // NOTE(Shareef): Handles the case where a script is recompiled into
   //   The same module.
   // TODO(Shareef): This is probably horrible broken and since other
-  //   thinsg probably need to be cleared from the module during a recompile.
+  //   things probably need to be cleared from the module during a recompile (this module is reused).
   BifrostObjFn* const module_fn = &self->current_module->init_fn;
   if (module_fn->name)
   {

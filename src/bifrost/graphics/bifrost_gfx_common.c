@@ -1,8 +1,5 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
-// TODO: This is bad
-#include "vulkan/bifrost_vulkan_physical_device.h"
-
 #include <assert.h>                       /* assert         */
 #include <stdlib.h>                       /* free */
 #include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions
@@ -185,7 +182,7 @@ void bfRenderpassInfo_addInput(bfRenderpassInfo* self, uint16_t subpass_index, u
   assert(subpass->num_in_attachment_refs + 1 < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS);
 
   attachment_ref->attachment_index = attachment;
-  attachment_ref->layout           = self->attachments[attachment].texture->tex_layout;  // TODO: This is bad
+  attachment_ref->layout = bfTexture_layout(self->attachments[attachment].texture);
 
   ++subpass->num_in_attachment_refs;
 }
@@ -242,6 +239,11 @@ void bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding,
   }
 
   ++self->num_bindings;
+}
+
+void bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, bfBool32 reads_same_pixel)
+{
+  bfGfxCmdList_pipelineBarriers(self, src_stage, dst_stage, NULL, 0, reads_same_pixel);
 }
 
 static bfSubpassCache* grabSubpass(bfRenderpassInfo* self, uint16_t subpass_index)

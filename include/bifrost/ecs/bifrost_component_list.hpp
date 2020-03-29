@@ -30,6 +30,7 @@ namespace bifrost
   //
 
   class MeshRenderer;
+  class Light;
 
   struct ComponentTypeInfo final
   {
@@ -41,8 +42,8 @@ namespace bifrost
   // All Engine Components must be listed here.
   //
   using ComponentPack = meta::ParameterPack<
-    MeshRenderer
-   >;
+   MeshRenderer,
+   Light>;
 
   namespace component
   {
@@ -53,6 +54,7 @@ namespace bifrost
     static constexpr ComponentTypeInfo g_EngineComponentInfo[ComponentPack::size] =
      {
       {"MeshRenderer"},
+      {"Light"},
     };
   }  // namespace component
 

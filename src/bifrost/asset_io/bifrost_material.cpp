@@ -19,24 +19,6 @@
 
 namespace bifrost
 {
-  bool AssetTextureInfo::load(Engine& engine)
-  {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
-
-    const bfTextureCreateParams params = bfTextureCreateParams_init2D(
-     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM,
-     BIFROST_TEXTURE_UNKNOWN_SIZE,
-     BIFROST_TEXTURE_UNKNOWN_SIZE);
-
-    Texture& texture = m_Payload.set<Texture>(device);
-
-    texture.m_Handle = bfGfxDevice_newTexture(device, &params);
-
-    const String full_path = engine.assets().fullPath(*this);
-
-    return bfTexture_loadFile(texture.m_Handle, full_path.cstr());
-  }
-
   ShaderModule::ShaderModule(bfGfxDeviceHandle device) :
     BaseT(device)
   {

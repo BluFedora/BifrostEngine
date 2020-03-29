@@ -9,6 +9,9 @@
 #include <cstring>                                   /* memset                */
 #include <type_traits>                               /* is_trivially_copyable */
 
+struct bfDescriptorSetLayoutInfo_t;
+typedef struct bfDescriptorSetLayoutInfo_t bfDescriptorSetLayoutInfo;
+
 namespace bifrost::vk
 {
   //
@@ -174,7 +177,7 @@ namespace bifrost::vk
   std::uint64_t hash(std::uint64_t self, const bfAttachmentInfo* attachment_info);
   std::uint64_t hash(std::uint64_t self, const bfSubpassCache* subpass_info);
   std::uint64_t hash(std::uint64_t self, const bfAttachmentRefCache* attachment_ref_info);
-  std::uint64_t hash(std::uint64_t self, const bfDescriptorSetInfo* desc_set_info);
+  std::uint64_t hash(const bfDescriptorSetLayoutInfo& parent, const bfDescriptorSetInfo* desc_set_info);
 }  // namespace bifrost::vk
 
 #endif /* BIFROST_VULKAN_HASH_HPP */

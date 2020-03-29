@@ -69,7 +69,7 @@ VkShaderStageFlagBits bfVkConvertShaderType(BifrostShaderType type)
   return VK_SHADER_STAGE_ALL;
 }
 
-VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageFlags flags)
+VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageBits flags)
 {
   VkShaderStageFlagBits result = 0x0;
 
@@ -369,7 +369,7 @@ VkLogicOp bfVkConvertLogicOp(BifrostLogicOp op)
 
 VkBlendFactor bfVkConvertBlendFactor(BifrostBlendFactor factor)
 {
-#define CONVERT(X)           \
+#define CONVERT(X)               \
   case BIFROST_BLEND_FACTOR_##X: \
     return VK_BLEND_FACTOR_##X
 
@@ -418,31 +418,94 @@ VkBlendOp bfVkConvertBlendOp(BifrostBlendOp factor)
   return VK_BLEND_OP_ADD;
 }
 
+static void ifAndSet(uint32_t* result, uint32_t flags_in, uint32_t bifrost_flag, uint32_t vulkan_flag)
+{
+  if (flags_in & bifrost_flag)
+  {
+    *result |= vulkan_flag;
+  }
+}
+
 VkFlags bfVkConvertColorMask(uint16_t flags)
 {
   VkFlags result = 0x0;
 
-  if (flags & BIFROST_COLOR_MASK_R)
-  {
-    result |= VK_COLOR_COMPONENT_R_BIT;
-  }
-
-  if (flags & BIFROST_COLOR_MASK_G)
-  {
-    result |= VK_COLOR_COMPONENT_G_BIT;
-  }
-
-  if (flags & BIFROST_COLOR_MASK_B)
-  {
-    result |= VK_COLOR_COMPONENT_B_BIT;
-  }
-
-  if (flags & BIFROST_COLOR_MASK_A)
-  {
-    result |= VK_COLOR_COMPONENT_A_BIT;
-  }
+  ifAndSet(&result, flags, BIFROST_COLOR_MASK_R, VK_COLOR_COMPONENT_R_BIT);
+  ifAndSet(&result, flags, BIFROST_COLOR_MASK_G, VK_COLOR_COMPONENT_G_BIT);
+  ifAndSet(&result, flags, BIFROST_COLOR_MASK_B, VK_COLOR_COMPONENT_B_BIT);
+  ifAndSet(&result, flags, BIFROST_COLOR_MASK_A, VK_COLOR_COMPONENT_A_BIT);
 
   return result;
+}
+
+VkPipelineStageFlags bfVkConvertPipelineStageFlags(BifrostPipelineStageBits flags)
+{
+  VkPipelineStageFlags result = 0x0;
+
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+  ifAndSet(&result, flags, BIFROST_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+  return result;
+}
+
+VkAccessFlags bfVkConvertAccessFlags(BifrostAccessFlagsBits flags)
+{
+  VkAccessFlags result = 0x0;
+
+  ifAndSet(&result, flags, BIFROST_ACCESS_INDIRECT_COMMAND_READ_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_INDEX_READ_BIT, VK_ACCESS_INDEX_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_UNIFORM_READ_BIT, VK_ACCESS_UNIFORM_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_INPUT_ATTACHMENT_READ_BIT, BIFROST_ACCESS_INPUT_ATTACHMENT_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_SHADER_READ_BIT, BIFROST_ACCESS_SHADER_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_SHADER_WRITE_BIT, BIFROST_ACCESS_SHADER_WRITE_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_COLOR_ATTACHMENT_READ_BIT, BIFROST_ACCESS_COLOR_ATTACHMENT_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_TRANSFER_READ_BIT, BIFROST_ACCESS_TRANSFER_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_TRANSFER_WRITE_BIT, BIFROST_ACCESS_TRANSFER_WRITE_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_HOST_READ_BIT, BIFROST_ACCESS_HOST_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_HOST_WRITE_BIT, BIFROST_ACCESS_HOST_WRITE_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_MEMORY_READ_BIT, BIFROST_ACCESS_MEMORY_READ_BIT);
+  ifAndSet(&result, flags, BIFROST_ACCESS_MEMORY_WRITE_BIT, BIFROST_ACCESS_MEMORY_WRITE_BIT);
+
+  return result;
+}
+
+uint32_t bfConvertQueueIndex(const uint32_t queue_list[BIFROST_GFX_QUEUE_MAX], BifrostGfxQueueType type)
+{
+  switch (type)
+  {
+    case BIFROST_GFX_QUEUE_GRAPHICS:
+    case BIFROST_GFX_QUEUE_COMPUTE:
+    case BIFROST_GFX_QUEUE_TRANSFER:
+    case BIFROST_GFX_QUEUE_PRESENT:
+      return queue_list[type];
+    case BIFROST_GFX_QUEUE_IGNORE:
+      return VK_QUEUE_FAMILY_IGNORED;
+    default:
+    case BIFROST_GFX_QUEUE_MAX:
+      assert(!"Invalid queue type");
+      break;
+  }
+
+  return -1;
 }
 
 // Internal API

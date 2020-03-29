@@ -790,7 +790,7 @@ namespace bifrost::editor
           oldy = newy;
         }
 
-        Camera_mouse(&engine.Camera, (newx - oldx) * mouse_speed, (newy - oldy) * mouse_speed);
+        Camera_mouse(&engine.Camera, (newx - oldx) * mouse_speed, (newy - oldy) * -mouse_speed);
 
         oldx = newx;
         oldy = newy;
@@ -898,11 +898,11 @@ namespace bifrost::editor
       ImGui::DockBuilderDockWindow("Scene View", dockspace_id);
     }
 
-    static const float s_SceneViewPadding = 2.0f;
+    static const float k_SceneViewPadding = 2.0f;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(s_SceneViewPadding, s_SceneViewPadding));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_SceneViewPadding, k_SceneViewPadding));
     if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar))
     {
       if (m_OpenProject)
@@ -913,9 +913,8 @@ namespace bifrost::editor
           {
             const char* const k_GBufferNames[k_GfxNumGBufferAttachments] =
              {
-              "Position.Roughness",
-              "Normal.AO",
-              "Albedo.Metallic",
+              "Normalxy.Roughness.Metallic",
+              "Albedo.AmbientOcclusio_t",
              };
 
             for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
@@ -932,7 +931,7 @@ namespace bifrost::editor
           ImGui::EndMenuBar();
         }
 
-        const auto   color_buffer        = engine.renderer().gBuffer().color_attachments[m_SceneViewGBuffer];
+        const auto   color_buffer        = engine.renderer().compositeScene();
         const auto   color_buffer_width  = bfTexture_width(color_buffer);
         const auto   color_buffer_height = bfTexture_height(color_buffer);
         const auto   content_area        = ImGui::GetContentRegionAvail();
@@ -998,6 +997,11 @@ namespace bifrost::editor
     if (m_OpenProject)
     {
       const auto current_scene = engine.currentScene();
+
+      if (ImGui::DragFloat3("Cam Pos", &engine.Camera.position.x))
+      {
+        Camera_setViewModified(&engine.Camera);
+      }
 
       if (ImGui::Begin("Project View"))
       {
@@ -1808,6 +1812,29 @@ namespace bifrost::editor
               m_Serializer.serialize("material", renderer->material());
               m_Serializer.serialize("model", renderer->model());
             }
+
+            if (!object->has<Light>())
+            {
+              if (ImGui::Button("Add Light"))
+              {
+                object->add<Light>();
+              }
+            }
+            else
+            {
+              Light* const light = object->get<Light>();
+
+              bfColor4f color  = light->colorIntensity();
+              float radius = light->radius();
+
+              m_Serializer.serialize("Color.I", color);
+              m_Serializer.serialize("m_Radius", radius);
+
+              light->setColor(color);
+              light->setRadius(radius);
+            }
+
+            bfTransform_flushChanges(&object->transform());
 
             if (m_Serializer.endChangedCheck())
             {

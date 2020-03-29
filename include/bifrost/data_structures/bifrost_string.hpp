@@ -116,6 +116,17 @@ namespace bifrost
     {
     }
 
+    template<typename T>
+    String(T bgn, const T& end) :
+      String()
+    {
+      while (bgn != end)
+      {
+        append(*bgn);
+        ++bgn;
+      }
+    }
+
     String(const bfStringRange range) :
       String(range.bgn, range.end)
     {

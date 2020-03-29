@@ -17,13 +17,4 @@ void main()
   gl_Position = u_Projection * vec4(position, 0.0, 1.0);
   frag_Color  = color;
   frag_UV     = uv;
-
-  // For Vulkan
-  gl_Position.y = -gl_Position.y;
-  gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
-  // Alternative is to pre mult proj by :
-  //   |+1.0 +0.0 +0.0 +0.0|
-  //   |+0.0 -1.0 +0.0 +0.0|
-  //   |+0.0 +0.0 +1/2 +1/2|
-  //   |+0.0 +0.0 +0.0 +1.0|
 }

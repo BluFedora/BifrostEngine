@@ -50,22 +50,9 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   // TEMP CODE START
  public:
   struct Camera_t Camera;
-  Mat4x4          ModelView;
-  bfBufferHandle  UniformBuffer;
-  bfTextureHandle DummyTexture;
-  bfGfxFrameInfo  frameInfo;
 
   void cameraControls()
   {
-    Mat4x4 rot, scl, trans;
-
-    Mat4x4_initScalef(&scl, 1.4f, 1.4f, 1.0f);
-    Mat4x4_initRotationf(&rot, 0.0f, 0.0f, 20.0f);
-    Mat4x4_initTranslatef(&trans, 0.0f, 3.0f, 1.0f);
-    Mat4x4_mult(&rot, &scl, &ModelView);
-
-    Mat4x4_mult(&trans, &ModelView, &ModelView);
-
     const auto camera_move_speed = 0.05f;
 
     const std::tuple<int, void (*)(::Camera*, float), float> CameraControls[] =
@@ -95,14 +82,6 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     Camera_onResize(&Camera, width, height);
     Camera_update(&Camera);
-
-    // Model -> View -> Proj
-    Mat4x4_mult(&Camera.view_cache, &ModelView, &ModelView);
-    Mat4x4_mult(&Camera.proj_cache, &ModelView, &ModelView);
-
-    void* uniform_buffer_ptr = bfBuffer_map(UniformBuffer, 0x100 * frameInfo.frame_index, BIFROST_BUFFER_WHOLE_SIZE);
-    std::memcpy(uniform_buffer_ptr, (char*)&ModelView, sizeof(ModelView));
-    bfBuffer_unMap(UniformBuffer);
   }
 
   // TEMP CODE END
@@ -122,7 +101,6 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
  public:
   BifrostEngine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
     Camera{},
-    ModelView{},
     m_CmdlineArgs{argc, argv},
     m_MainMemory{main_memory, main_memory_size},
     m_TempMemory{static_cast<char*>(m_MainMemory.allocate(main_memory_size / 4)), main_memory_size / 4},
@@ -137,10 +115,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     // TEMP CODE BGN
     Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
     Vec3f cam_up  = {0.0f, 1.0f, 0.0f, 0.0f};
-
-    Mat4x4_identity(&ModelView);
     Camera_init(&Camera, &cam_pos, &cam_up, 0.0f, 0.0f);
-    UniformBuffer = nullptr;
     // TEMP CODE END
   }
 
@@ -197,16 +172,6 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     m_Renderer.init(params);
 
-    // TEMP CODE BGN
-    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, BIFROST_TEXTURE_UNKNOWN_SIZE, BIFROST_TEXTURE_UNKNOWN_SIZE);
-    bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
-
-    DummyTexture = bfGfxDevice_newTexture(m_Renderer.device(), &create_texture);
-    bfTexture_loadFile(DummyTexture, "assets/texture.png");
-    bfTexture_setSampler(DummyTexture, &sampler);
-
-    // TEMP CODE END
-
     VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
     vm_params.print_fn = [](BifrostVM*, const char* message) {
@@ -229,7 +194,8 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   {
     m_StateMachine.purgeStates();
 
-    return m_Renderer.frameBegin();
+    cameraControls();
+    return m_Renderer.frameBegin(Camera);
   }
 
   void onEvent(Event& evt)
@@ -288,19 +254,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
   void drawBegin(float render_alpha)
   {
-    frameInfo = bfGfxContext_getFrameInfo(m_Renderer.context(), -1);
-
-    if (!UniformBuffer)
-    {
-      bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
-      buffer_params.allocation.size       = 0x100 * frameInfo.num_frame_indices;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
-
-      UniformBuffer = bfGfxDevice_newBuffer(m_Renderer.device(), &buffer_params);
-    }
-
-    cameraControls();
+    const auto cmd_list = m_Renderer.mainCommandList();
 
     m_Renderer.beginGBufferPass();
 
@@ -308,23 +262,19 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     if (scene)
     {
-      bfDescriptorSetInfo desc_set2 = bfDescriptorSetInfo_make();
-      bfDescriptorSetInfo_addTexture(&desc_set2, 0, 0, &DummyTexture, 1);
-
-      uint64_t            offset    = 0x100 * frameInfo.frame_index;
-      uint64_t            sizes     = sizeof(Mat4x4);
-      bfDescriptorSetInfo desc_set3 = bfDescriptorSetInfo_make();
-      bfDescriptorSetInfo_addUniform(&desc_set3, 0, 0, &offset, &sizes, &UniformBuffer, 1);
-
-      bfGfxCmdList_bindDescriptorSet(m_Renderer.mainCommandList(), 2, &desc_set2);
-      bfGfxCmdList_bindDescriptorSet(m_Renderer.mainCommandList(), 3, &desc_set3);
-
       for (MeshRenderer& renderer : scene->components<MeshRenderer>())
       {
-        if (renderer.model())
+        if (renderer.material() && renderer.model())
         {
+          m_Renderer.bindMaterial(cmd_list, *renderer.material());
+          m_Renderer.bindObject(cmd_list, renderer.owner());
           renderer.model()->draw(m_Renderer.mainCommandList());
         }
+      }
+
+      for (Light& light : scene->components<Light>())
+      {
+        m_Renderer.addLight(light);
       }
     }
 
@@ -338,8 +288,14 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
       system->onFrameDraw(*this, render_alpha);
     }
 
-    m_Renderer.beginForwardSubpass();
+    m_Renderer.endPass();
 
+    // SSAO
+    m_Renderer.beginSSAOPass(Camera);
+    m_Renderer.endPass();
+
+    // Lighting
+    m_Renderer.beginLightingPass(Camera);
     m_Renderer.endPass();
 
     m_Renderer.beginScreenPass();

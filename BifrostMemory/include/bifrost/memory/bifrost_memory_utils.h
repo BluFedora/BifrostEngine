@@ -32,7 +32,7 @@ extern "C" {
  * @return size_t 
  *   The size of the object for the required alignment,
  */
-size_t alignedUpSize(size_t size, size_t required_alignment);
+size_t alignUpSize(size_t size, size_t required_alignment);
 #if __cplusplus
 }
 #endif

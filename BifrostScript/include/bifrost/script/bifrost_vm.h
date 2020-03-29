@@ -40,8 +40,7 @@ typedef struct BifrostVM_t BifrostVM;
 struct bfValueHandle_t;
 typedef struct bfValueHandle_t* bfValueHandle;
 
-typedef uint64_t  bfVMValue;   /*!< The Nan-Tagged value representation of this scripting language. */
-typedef bfFloat64 bfVMNumberT; /*!< Required to be a double from this Nan-Tagging Trick.            */
+typedef uint64_t bfVMValue; /*!< The Nan-Tagged value representation of this scripting language. */
 
 typedef void (*bfNativeFnT)(BifrostVM* vm, int32_t num_args);
 typedef void (*bfClassFinalizer)(BifrostVM* vm, void* instance);
@@ -285,12 +284,12 @@ BIFROST_VM_API void*              bfVM_closureGetExtraData(BifrostVM* self);
 BIFROST_VM_API BifrostVMError     bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind);
 BIFROST_VM_API void               bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value);
 BIFROST_VM_API void               bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len);
-BIFROST_VM_API void               bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value);
+BIFROST_VM_API void               bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfFloat64 value);
 BIFROST_VM_API void               bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
 BIFROST_VM_API void               bfVM_stackSetNil(BifrostVM* self, size_t idx);
 BIFROST_VM_API void*              bfVM_stackReadInstance(const BifrostVM* self, size_t idx);                  // Also works on null values, just returns NULL
 BIFROST_VM_API const char*        bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);  // 'out_size' can be NULL.
-BIFROST_VM_API bfVMNumberT        bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
+BIFROST_VM_API bfFloat64          bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
 BIFROST_VM_API bfBool32           bfVM_stackReadBool(const BifrostVM* self, size_t idx);
 BIFROST_VM_API BifrostVMType      bfVM_stackGetType(BifrostVM* self, size_t idx);
 BIFROST_VM_API int32_t            bfVM_stackGetArity(const BifrostVM* self, size_t idx);

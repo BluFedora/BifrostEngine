@@ -694,7 +694,7 @@ void bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size
   self->stack_top[idx] = FROM_POINTER(bfVM_createString(self, (bfStringRange){.bgn = value, .end = value + len}));
 }
 
-void bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfVMNumberT value)
+void bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfFloat64 value)
 {
   bfVM_assertStackIndex(self, idx);
   self->stack_top[idx] = FROM_NUMBER(value);
@@ -769,7 +769,7 @@ const char* bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_
   return str->value;
 }
 
-bfVMNumberT bfVM_stackReadNumber(const BifrostVM* self, size_t idx)
+bfFloat64 bfVM_stackReadNumber(const BifrostVM* self, size_t idx)
 {
   bfVM_assertStackIndex(self, idx);
   const bfVMValue value = self->stack_top[idx];
@@ -1086,9 +1086,9 @@ frame_start:;
   // TODO(SR): Only in Debug Builds
   if (stack_size < (frame->stack + frame->fn->needed_stack_space))
   {
-    #if _MSC_VER
+#if _MSC_VER
     __debugbreak();
-    #endif
+#endif
   }
 
   while (bfTrue)
@@ -1756,6 +1756,7 @@ static BifrostVMError bfVM_compileIntoModule(BifrostVM* self, BifrostObjModule* 
     .keywords     = s_Keywords,
     .num_keywords = bfCArraySize(s_Keywords),
     .vm           = self,
+    .do_comments  = bfTrue,
    };
 
   BifrostLexer lexer = bfLexer_make(&lex_params);

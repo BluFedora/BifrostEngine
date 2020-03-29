@@ -6,26 +6,26 @@ static void camera_update_vectors(Camera* cam)
 {
   const float cosf_pitch = cosf(cam->_pitch);
 
-  cam->front.x = sinf(cam->_yaw) * cosf_pitch;
-  cam->front.y = sinf(cam->_pitch);
-  cam->front.z = -cosf(cam->_yaw) * cosf_pitch;
-  cam->front.w = 0.0f;
+  cam->forward.x = sinf(cam->_yaw) * cosf_pitch;
+  cam->forward.y = sinf(cam->_pitch);
+  cam->forward.z = -cosf(cam->_yaw) * cosf_pitch;
+  cam->forward.w = 0.0f;
 
-  Vec3f_normalize(&cam->front);
+  Vec3f_normalize(&cam->forward);
 
-  Vec3f_cross(&cam->front, &cam->_worldUp, &cam->_right);
+  Vec3f_cross(&cam->forward, &cam->_worldUp, &cam->_right);
   Vec3f_normalize(&cam->_right);
 
-  Vec3f_cross(&cam->_right, &cam->front, &cam->up);
+  Vec3f_cross(&cam->_right, &cam->forward, &cam->up);
   Vec3f_normalize(&cam->up);
 
   cam->needs_update[1] = 1;
 }
 
-void Camera_init(Camera* cam, const Vec3f* const pos, const Vec3f* const world_up, float yaw, float pitch)
+void Camera_init(Camera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch)
 {
-  cam->position                    = (Vec3f){pos->x,       pos->y,       pos->z,       1.0f};
-  cam->_worldUp                    = (Vec3f){world_up->x,  world_up->y,  world_up->z,  0.0f};
+  cam->position                    = (Vec3f){pos->x, pos->y, pos->z, 1.0f};
+  cam->_worldUp                    = (Vec3f){world_up->x, world_up->y, world_up->z, 0.0f};
   cam->_yaw                        = yaw;
   cam->_pitch                      = pitch;
   cam->camera_mode.mode            = BIFROST_CAMERA_MODE_PRESPECTIVE;
@@ -35,98 +35,108 @@ void Camera_init(Camera* cam, const Vec3f* const pos, const Vec3f* const world_u
   cam->camera_mode.far_plane       = 1000.0f;
   Mat4x4_identity(&cam->proj_cache);
   Mat4x4_identity(&cam->view_cache);
-  cam->needs_update[0]             = 1;
-  cam->needs_update[1]             = 1;
+  cam->needs_update[0] = 1;
+  cam->needs_update[1] = 1;
 
   camera_update_vectors(cam);
 }
 
 void Camera_update(Camera* cam)
 {
+  int needed_update = 0;
+
   if (cam->needs_update[0])
   {
     switch (cam->camera_mode.mode)
     {
       case BIFROST_CAMERA_MODE_ORTHOGRAPHIC:
-        {
-          Mat4x4_ortho(&cam->proj_cache,
+      {
+        Mat4x4_orthoVk(&cam->proj_cache,
                        cam->camera_mode.orthographic_bounds.min[0],
                        cam->camera_mode.orthographic_bounds.max[0],
                        cam->camera_mode.orthographic_bounds.max[1],
                        cam->camera_mode.orthographic_bounds.min[1],
                        cam->camera_mode.near_plane,
                        cam->camera_mode.far_plane);
-          break;
-        }
+        break;
+      }
       case BIFROST_CAMERA_MODE_FRUSTRUM:
-        {
-          Mat4x4_frustum(&cam->proj_cache,
-                         cam->camera_mode.orthographic_bounds.min[0],
-                         cam->camera_mode.orthographic_bounds.max[0],
-                         cam->camera_mode.orthographic_bounds.max[1],
-                         cam->camera_mode.orthographic_bounds.min[1],
-                         cam->camera_mode.near_plane,
-                         cam->camera_mode.far_plane);
-          break;
-        }
+      {
+        Mat4x4_frustum(&cam->proj_cache,
+                       cam->camera_mode.orthographic_bounds.min[0],
+                       cam->camera_mode.orthographic_bounds.max[0],
+                       cam->camera_mode.orthographic_bounds.max[1],
+                       cam->camera_mode.orthographic_bounds.min[1],
+                       cam->camera_mode.near_plane,
+                       cam->camera_mode.far_plane);
+        break;
+      }
       case BIFROST_CAMERA_MODE_PRESPECTIVE:
       {
-        Mat4x4_perspective(&cam->proj_cache,
-                           cam->camera_mode.field_of_view_y,
-                           cam->camera_mode.aspect_ratio,
-                           cam->camera_mode.near_plane,
-                           cam->camera_mode.far_plane);
+        Mat4x4_perspectiveVk(&cam->proj_cache,
+                             cam->camera_mode.field_of_view_y,
+                             cam->camera_mode.aspect_ratio,
+                             cam->camera_mode.near_plane,
+                             cam->camera_mode.far_plane);
         break;
       }
       case BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY:
-        {
-          Mat4x4_perspectiveInfinity(&cam->proj_cache,
-                                     cam->camera_mode.field_of_view_y,
-                                     cam->camera_mode.aspect_ratio,
-                                     cam->camera_mode.near_plane);
-          break;
-        }
+      {
+        Mat4x4_perspectiveInfinity(&cam->proj_cache,
+                                   cam->camera_mode.field_of_view_y,
+                                   cam->camera_mode.aspect_ratio,
+                                   cam->camera_mode.near_plane);
+        break;
+      }
     }
 
     Mat4x4_inverse(&cam->proj_cache, &cam->inv_proj_cache);
     cam->needs_update[0] = 0;
+    needed_update        = 1;
   }
 
   if (cam->needs_update[1])
   {
     Vec3f target = cam->position;
-    Vec3f_add(&target, &cam->front);
+    Vec3f_add(&target, &cam->forward);
 
     Mat4x4_initLookAt(&cam->view_cache, &cam->position, &target, &cam->up);
 
     Mat4x4_inverse(&cam->view_cache, &cam->inv_view_cache);
     cam->needs_update[1] = 0;
+    needed_update        = 1;
+  }
+
+  if (needed_update)
+  {
+    Mat4x4_mult(&cam->proj_cache, &cam->view_cache, &cam->inv_view_proj_cache);
+    Mat4x4_inverse(&cam->inv_view_proj_cache, &cam->inv_view_proj_cache);
   }
 }
 
 void Camera_move(Camera* cam, const Vec3f* dir, float amt)
 {
   Vec3f_addScaled(&cam->position, dir, amt);
-  cam->needs_update[1] = 1;
+  Camera_setViewModified(cam);
 }
 
 void Camera_moveLeft(Camera* cam, float amt)
 {
   Vec3f right;
-  Vec3f_cross(&cam->front, &cam->up, &right);
+  Vec3f_cross(&cam->forward, &cam->up, &right);
   Camera_move(cam, &right, -amt);
 }
 
 void Camera_moveRight(Camera* cam, float amt)
 {
   Vec3f right;
-  Vec3f_cross(&cam->front, &cam->up, &right);
+  Vec3f_cross(&cam->forward, &cam->up, &right);
   Camera_move(cam, &right, amt);
 }
 
 void Camera_moveUp(Camera* cam, float amt)
 {
-   Camera_move(cam, &cam->up, amt);
+  Camera_move(cam, &cam->up, amt);
 }
 
 void Camera_moveDown(Camera* cam, float amt)
@@ -136,7 +146,7 @@ void Camera_moveDown(Camera* cam, float amt)
 
 void Camera_moveForward(Camera* cam, float amt)
 {
-  Vec3f fwd = cam->front;
+  Vec3f fwd = cam->forward;
   Vec3f_normalize(&fwd);
   Camera_move(cam, &fwd, amt);
 }
@@ -167,7 +177,7 @@ void Camera_mouse(Camera* cam, float offsetx, float offsety)
 
   if (constrain_pitch)
   {
-      // 1.55334rad = 89.0fdeg
+    // 1.55334rad = 89.0fdeg
     if (cam->_pitch > 1.55334f)
       cam->_pitch = 1.55334f;
     if (cam->_pitch < -1.55334f)
@@ -194,6 +204,11 @@ void Camera_setProjectionModified(Camera* cam)
   cam->needs_update[0] = 1;
 }
 
+void Camera_setViewModified(Camera* cam)
+{
+  cam->needs_update[1] = 1;
+}
+
 Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size)
 {
   Camera_update(cam);
@@ -208,9 +223,8 @@ Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size)
   const Vec3f ray_clip = {
    2.0f * (float)screen_space.x / (float)screen_size.x - 1.0f,
    1.0f - 2.0f * (float)screen_space.y / (float)screen_size.y,
-    -1.0f,
-    1.0f
-  };
+   -1.0f,
+   1.0f};
 
   Mat4x4_multVec(&cam->inv_proj_cache, &ray_clip, &ray_eye);
 

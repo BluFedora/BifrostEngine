@@ -22,7 +22,7 @@ namespace bifrost
 {
   class IBaseObject
   {
-  public:
+   public:
     virtual meta::BaseClassMetaInfo* type() = 0;
     virtual ~IBaseObject()                  = default;
   };
@@ -52,6 +52,8 @@ namespace bifrost
   class BaseObject : public BaseObjectT::Base<T...>
   {
    public:
+    using Base = BaseObject<T...>;
+
     static meta::BaseClassMetaInfo* staticType()
     {
       return meta::TypeInfo<typename detail::FirstT<T...>::Type>::get();

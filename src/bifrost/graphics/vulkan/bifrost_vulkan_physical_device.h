@@ -24,7 +24,7 @@ BIFROST_DEFINE_HANDLE(Texture)
   VkDeviceMemory     tex_memory;
   VkImageView        tex_view;
   VkSampler          tex_sampler;
-  VkImageLayout      tex_layout;
+  BifrostImageLayout tex_layout;
   VkFormat           tex_format;
   BifrostSampleFlags tex_samples;
 };
@@ -33,10 +33,7 @@ typedef struct VulkanQueueArray_t
 {
   VkQueueFamilyProperties* queues;
   uint32_t                 size;
-  uint32_t                 graphics_family_index;
-  uint32_t                 compute_family_index;
-  uint32_t                 transfer_family_index;
-  uint32_t                 present_family_index;
+  uint32_t                 family_index[BIFROST_GFX_QUEUE_MAX];
 
 } VulkanQueueArray;
 

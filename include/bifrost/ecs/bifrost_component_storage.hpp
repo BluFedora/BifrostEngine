@@ -17,10 +17,11 @@
 #include "bifrost/data_structures/bifrost_dense_map.hpp"       /* DenseMap<T>       */
 #include "bifrost_component_list.hpp"                          /* ComponentPack     */
 
- //
- // @EngineComponentRegister
- // The Array datatype needs to know the sizeof(T) in it's constructor.
- //
+//
+// @EngineComponentRegister
+// The Array datatype needs to know the sizeof(T) in it's constructor. (This required should be removed in later versions of this engine.)
+//
+#include "bifrost/ecs/bifrost_light.hpp"         /* Light        */
 #include "bifrost/ecs/bifrost_mesh_renderer.hpp" /* MeshRenderer */
 
 namespace bifrost

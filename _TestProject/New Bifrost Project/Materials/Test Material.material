@@ -1,8 +1,9 @@
 {
-    "m_ShaderProgram" : {
-        "uuid" : "07BC04AB-13CF-433B-BCFF-E6632BD3A103"
-    },
-    "m_DiffuseTexture" : {
+    "m_AlbedoTexture" : {
         "uuid" : "275F4930-A58F-45B1-BB8F-5869A7DEA809"
-    }
+    },
+    "m_MetallicTexture" : null,
+    "m_NormalTexture" : null,
+    "m_RoughnessTexture" : null,
+    "m_AmbientOcclusionTexture" : null
 }

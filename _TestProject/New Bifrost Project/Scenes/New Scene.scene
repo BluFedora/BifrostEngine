@@ -7,6 +7,118 @@
             ],
             "m_Transform" : {
                 "local_scale" : {
+                    "y" : 0.5,
+                    "w" : 0,
+                    "x" : 0.5,
+                    "z" : 0.5
+                },
+                "world_rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "local_transform" : {
+
+                },
+                "origin" : {
+                    "y" : 0.2,
+                    "w" : 0,
+                    "x" : 0,
+                    "z" : -0.7
+                },
+                "local_rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "world_transform" : {
+
+                },
+                "world_position" : {
+                    "y" : 0,
+                    "w" : 0,
+                    "x" : 2.85,
+                    "z" : 1.15
+                },
+                "local_position" : {
+                    "y" : 0,
+                    "w" : 0,
+                    "x" : 2.85,
+                    "z" : 1.15
+                },
+                "world_scale" : {
+                    "y" : 0.5,
+                    "w" : 0,
+                    "x" : 0.5,
+                    "z" : 0.5
+                }
+            }
+        },
+        {
+            "m_Name" : "Untitled765765765",
+            "m_Components" : [
+
+            ],
+            "m_Transform" : {
+                "local_scale" : {
+                    "y" : 0.2,
+                    "w" : 0,
+                    "x" : 0.2,
+                    "z" : 0.2
+                },
+                "world_rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "local_transform" : {
+
+                },
+                "origin" : {
+                    "y" : 0,
+                    "w" : 0,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "local_rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "world_transform" : {
+
+                },
+                "world_position" : {
+                    "y" : 3.15,
+                    "w" : 0,
+                    "x" : 3.05,
+                    "z" : 0
+                },
+                "local_position" : {
+                    "y" : 3.15,
+                    "w" : 0,
+                    "x" : 3.05,
+                    "z" : 0
+                },
+                "world_scale" : {
+                    "y" : 0.2,
+                    "w" : 0,
+                    "x" : 0.2,
+                    "z" : 0.2
+                }
+            }
+        },
+        {
+            "m_Name" : "Untitled",
+            "m_Components" : [
+
+            ],
+            "m_Transform" : {
+                "local_scale" : {
                     "y" : 1,
                     "w" : 0,
                     "x" : 1,
@@ -37,15 +149,15 @@
 
                 },
                 "world_position" : {
-                    "y" : 0,
+                    "y" : 2.65,
                     "w" : 0,
                     "x" : 0,
                     "z" : 0
                 },
                 "local_position" : {
-                    "y" : 453453,
+                    "y" : 2.65,
                     "w" : 0,
-                    "x" : 70,
+                    "x" : 0,
                     "z" : 0
                 },
                 "world_scale" : {

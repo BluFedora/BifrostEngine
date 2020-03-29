@@ -11,7 +11,7 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#include "bifrost_vm_lexer.h"
+#include "bifrost/script/bifrost_vm_lexer.h"
 
 #include <ctype.h>  /* isdigit, isalpha, isspace */
 #include <stdlib.h> /* strtof                    */
@@ -27,6 +27,7 @@ BifrostLexer bfLexer_make(const BifrostLexerParams* params)
   self.keywords     = params->keywords;
   self.num_keywords = params->num_keywords;
   self.vm           = params->vm;
+  self.do_comments  = params->do_comments;
   bfLexer_reset(&self);
   return self;
 }
@@ -37,14 +38,15 @@ void bfLexer_reset(BifrostLexer* self)
   self->current_line_no = 1;
   self->line_pos_bgn    = 0;
   self->line_pos_end    = 0;
+  bfLexer_advance(self, 0);
 }
 
-static inline bfStringRange bfLexer_currentLine(BifrostLexer* self)
+bfStringRange bfLexer_currentLine(BifrostLexer* self)
 {
   return (bfStringRange){
    .bgn = self->source_bgn + self->line_pos_bgn,
    .end = self->source_bgn + self->line_pos_end,
-   };
+  };
 }
 
 bfToken bfLexer_nextToken(BifrostLexer* self)
@@ -65,11 +67,11 @@ bfToken bfLexer_nextToken(BifrostLexer* self)
     {
       const char next_char = bfLexer_peek(self, 1);
 
-      if (next_char == BTS_COMMENT_CHARACTER)
+      if (next_char == BTS_COMMENT_CHARACTER && self->do_comments)
       {
         bfLexer_skipLineComment(self);
       }
-      else if (next_char == '*')
+      else if (next_char == '*' && self->do_comments)
       {
         bfLexer_skipBlockComment(self);
       }
@@ -200,13 +202,21 @@ bfToken bfLexer_nextToken(BifrostLexer* self)
 
         return BIFROST_TOKEN_MAKE_STR(CTRL_AND, "&");
       }
+      case '#':
+      {
+        return BIFROST_TOKEN_MAKE_STR(HASHTAG, "#");
+      }
+      case '@':
+      {
+        return BIFROST_TOKEN_MAKE_STR(BIFROST_TOKEN_AT_SIGN, "@");
+      }
       case '\0':
       {
         break;
       }
       default:
       {
-        bfErrorFn err_fn = self->vm->params.error_fn;
+        const bfErrorFn err_fn = self->vm ? self->vm->params.error_fn : NULL;
 
         if (err_fn)
         {
@@ -214,7 +224,7 @@ bfToken bfLexer_nextToken(BifrostLexer* self)
 
           char buffer[512];
 
-          int num_bytes = sprintf(
+          const int num_bytes = sprintf(
            buffer,
            "Invalid character ('%c') on line %u \"%.*s\"",
            current_char,
@@ -266,7 +276,7 @@ bfBool32 bfLexer_isNewline(char c)
 
 void bfLexer_skipWhile(BifrostLexer* self, bfBool32 (*condition)(char c))
 {
-  while (condition(bfLexer_peek(self, 0)))
+  while (condition(bfLexer_peek(self, 0)) && self->source_bgn + self->cursor < self->source_end)
   {
     bfLexer_advance(self, 1);
 
@@ -285,7 +295,7 @@ void bfLexer_skipWhitespace(BifrostLexer* self)
   bfLexer_skipWhile(self, &bfLexer_isWhitespace);
 }
 
-static inline bfBool32 bfLexer_isNotNewline(char c)
+static bfBool32 bfLexer_isNotNewline(char c)
 {
   return !bfLexer_isNewline(c);
 }
@@ -299,7 +309,7 @@ void bfLexer_skipLineComment(BifrostLexer* self)
 void bfLexer_skipBlockComment(BifrostLexer* self)
 {
   const size_t line_no = self->current_line_no;
-  bfLexer_advance(self, 2);  /* / * */
+  bfLexer_advance(self, 2); /* / * */
 
   while (bfLexer_peek(self, 0) != '*' || bfLexer_peek(self, 1) != '/')
   {
@@ -326,7 +336,7 @@ void bfLexer_skipBlockComment(BifrostLexer* self)
     bfLexer_advance(self, 1);
   }
 
-  bfLexer_advance(self, 2);  /* * / */
+  bfLexer_advance(self, 2); /* * / */
 }
 
 void bfLexer_advance(BifrostLexer* self, size_t amt)
@@ -339,36 +349,34 @@ void bfLexer_advance(BifrostLexer* self, size_t amt)
       to make sure the line count is correct.
   */
 
-  const char prev = bfLexer_peekStr(self, 0)[-1];
-  const char curr = bfLexer_peek(self, 0);
+  char curr = bfLexer_peek(self, 0);
 
-  if (
-   (prev == '\r' && curr == '\n') ||
-   (prev != '\r' && curr == '\n'))
+  if (curr == '\r')
   {
+    ++self->cursor;
+    curr = bfLexer_peek(self, 0);
+  }
+
+  if (bfLexer_isNewline(curr) || amt == 0)
+  {
+    const size_t source_length = self->source_end - self->source_bgn;
+
     ++self->current_line_no;
-    self->line_pos_bgn = self->cursor + 1;
-    self->line_pos_end = self->line_pos_bgn + 1;
+    self->line_pos_bgn = self->cursor + (curr == '\n');
+    self->line_pos_end = self->line_pos_bgn + (curr == '\n');
 
-    if ((int)self->line_pos_end > self->source_end - self->source_bgn)
-    {
-      self->line_pos_bgn = self->cursor;
-      self->line_pos_end = self->cursor;
-    }
-
-    while (!bfLexer_isNewline(self->source_bgn[self->line_pos_end]))
+    while (!bfLexer_isNewline(self->source_bgn[self->line_pos_end]) && self->line_pos_end < source_length)
     {
       ++self->line_pos_end;
-
-      if (self->source_bgn + self->line_pos_end >= self->source_end)
-      {
-        --self->line_pos_end;
-        break;
-      }
     }
 
-    //++self->line_pos_end;
+    self->line_pos_end = self->line_pos_end < source_length ? self->line_pos_end + 1 : source_length;
   }
+}
+
+BIFROST_VM_API void bfLexer_advanceLine(BifrostLexer* self)
+{
+  bfLexer_skipWhile(self, &bfLexer_isNotNewline);
 }
 
 bfBool32 bfLexer_isDigit(char c)
@@ -383,9 +391,9 @@ bfBool32 bfLexer_isFollowedByDigit(BifrostLexer* self, char c, char m)
 
 bfToken bfLexer_parseNumber(BifrostLexer* self)
 {
-  const char*       bgn   = bfLexer_peekStr(self, 0);
-  char*             end   = NULL;
-  const bfVMNumberT value = strtof(bgn, &end);
+  const char*     bgn   = bfLexer_peekStr(self, 0);
+  char*           end   = NULL;
+  const bfFloat64 value = strtof(bgn, &end);
   bfLexer_advance(self, end - bgn);
 
   const char current = bfLexer_peek(self, 0);
@@ -518,16 +526,19 @@ void printToken(const bfToken* token)
   const char* const type_str = tokentypeToString(token->type);
   const char* const value    = token->as.str;
 
+  printf("[%30s] => ", type_str);
   if (token->type == CONST_STR || token->type == IDENTIFIER)
   {
-    printf("[%14s] => [%.*s]\n", type_str, (int)bfStringRange_length(&token->as.str_range), value);
+    printf("[%.*s]", (int)bfStringRange_length(&token->as.str_range), value);
   }
   else if (token->type == CONST_REAL)
   {
-    printf("[%14s] => [%f]\n", type_str, token->as.num);
+    printf("[%g]", token->as.num);
   }
   else
   {
-    printf("[%14s] => [%s]\n", type_str, value);
+    printf("[%s]", value);
   }
+
+  printf("\n");
 }

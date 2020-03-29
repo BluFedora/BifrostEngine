@@ -31,15 +31,16 @@ extern "C" {
 #define BIFROST_GFX_BUFFERS_MAX_BINDING 16
 #define BIFROST_GFX_DESCRIPTOR_SET_MAX_WRITES 32
 #define BIFROST_GFX_GPU_MAX_FRAMES_AHEAD 4
+#define BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES 16
 
   /*
-    static const unsigned VULKAN_NUM_BINDINGS        = 16;
-    static const unsigned VULKAN_NUM_VERTEX_ATTRIBS  = 16;
-    static const unsigned VULKAN_NUM_VERTEX_BUFFERS  = 4;
-    static const unsigned VULKAN_PUSH_CONSTANT_SIZE  = 128;
-    static const unsigned VULKAN_UBO_SIZE            = 16 * 1024;
-    static const unsigned VULKAN_NUM_SPEC_CONSTANTS  = 8;
-    static const unsigned VULKAN_NUM_DYNAMIC_UNIFORM_BUFFEFERS  = 8;
+    [x] static const unsigned VULKAN_NUM_BINDINGS        = 16;
+    [x] static const unsigned VULKAN_NUM_VERTEX_ATTRIBS  = 16;
+    [ ] static const unsigned VULKAN_NUM_VERTEX_BUFFERS  = 4;
+    [ ] static const unsigned VULKAN_PUSH_CONSTANT_SIZE  = 128;
+    [ ] static const unsigned VULKAN_UBO_SIZE            = 16 * 1024;
+    [ ] static const unsigned VULKAN_NUM_SPEC_CONSTANTS  = 8;
+    [ ] static const unsigned VULKAN_NUM_DYNAMIC_UNIFORM_BUFFEFERS  = 8;
    */
 #if __cplusplus
 }

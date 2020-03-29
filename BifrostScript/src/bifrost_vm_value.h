@@ -6,6 +6,7 @@
  * @brief 
  *   Helpers for the value representation for the vm.
  *   Uses Nan-Tagging for compact storage of objects.
+ *   (Use of double is required for Nan Tagging)
  * 
  * @version 0.0.1
  * @date    2020-02-16
@@ -28,7 +29,7 @@ extern "C" {
 /* static  const uint64_t TAG_NAN = 0x0; */
 #define TAG_TRUE (uint64_t)0x1
 #define TAG_FALSE (uint64_t)0x2
-#define TAG_NULL (uint64_t)0x3                                    // 4-7 unused
+#define TAG_NULL (uint64_t)0x3                                      // 4-7 unused
 #define POINTER_MASK (((uint64_t)1 << 63) | 0x7FFC000000000000ULL)  // SIGN_BIT | QUIET_NAN;
 /* static  uint8_t TAG_GET(bfVMValue value) { return (uint8_t)(value & TAG_MASK); } */
 
@@ -40,9 +41,9 @@ static const uint64_t VAL_FALSE = TAG_DEF(TAG_FALSE);
 static const uint64_t VAL_NULL  = TAG_DEF(TAG_NULL);
 */
 
-#define VAL_TRUE  TAG_DEF(TAG_TRUE)
+#define VAL_TRUE TAG_DEF(TAG_TRUE)
 #define VAL_FALSE TAG_DEF(TAG_FALSE)
-#define VAL_NULL  TAG_DEF(TAG_NULL)
+#define VAL_NULL TAG_DEF(TAG_NULL)
 
 // Used By:
 // debug, value
@@ -103,12 +104,12 @@ static inline bfBool32 IS_NUMBER(bfVMValue v)
   return (v & QUIET_NAN) != QUIET_NAN;
 }
 
-static inline bfVMValue FROM_NUMBER(bfVMNumberT p)
+static inline bfVMValue FROM_NUMBER(bfFloat64 p)
 {
   union
   {
-    uint64_t    bits64;
-    bfVMNumberT num;
+    uint64_t  bits64;
+    bfFloat64 num;
   } c;
 
   c.num = p;
@@ -117,15 +118,15 @@ static inline bfVMValue FROM_NUMBER(bfVMNumberT p)
 }
 
 // TOOD(SR): Inline into the main interpreter loop.
-bfVMValue   bfVMValue_fromBool(bfBool32 v);
-bfVMNumberT bfVmValue_asNumber(bfVMValue self);
-bfVMValue   bfVMValue_mul(bfVMValue lhs, bfVMValue rhs);
-bfVMValue   bfVMValue_div(bfVMValue lhs, bfVMValue rhs);
-bfBool32    bfVMValue_isThuthy(bfVMValue self);
-bfBool32    bfVMValue_ee(bfVMValue lhs, bfVMValue rhs);
-bfBool32    bfVMValue_lt(bfVMValue lhs, bfVMValue rhs);
-bfBool32    bfVMValue_gt(bfVMValue lhs, bfVMValue rhs);
-bfBool32    bfVMValue_ge(bfVMValue lhs, bfVMValue rhs);
+bfVMValue bfVMValue_fromBool(bfBool32 v);
+bfFloat64 bfVmValue_asNumber(bfVMValue self);
+bfVMValue bfVMValue_mul(bfVMValue lhs, bfVMValue rhs);
+bfVMValue bfVMValue_div(bfVMValue lhs, bfVMValue rhs);
+bfBool32  bfVMValue_isThuthy(bfVMValue self);
+bfBool32  bfVMValue_ee(bfVMValue lhs, bfVMValue rhs);
+bfBool32  bfVMValue_lt(bfVMValue lhs, bfVMValue rhs);
+bfBool32  bfVMValue_gt(bfVMValue lhs, bfVMValue rhs);
+bfBool32  bfVMValue_ge(bfVMValue lhs, bfVMValue rhs);
 
 #if __cplusplus
 }

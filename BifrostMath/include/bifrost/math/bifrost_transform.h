@@ -5,8 +5,7 @@
  * @version 0.0.1
  * @date 2019-12-22
  *
- * @copyright Copyright (c) 2019
- *
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef transform_h
 #define transform_h
@@ -24,18 +23,18 @@ typedef struct Quaternionf_t
   {
     struct
     {
-      float x;  // i
-      float y;  // j
-      float z;  // k
-      float w;  // r
+      float x;
+      float y;
+      float z;
+      float w;
     };
 
     struct
     {
-      float i;  // i
-      float j;  // j
-      float k;  // k
-      float r;  // r
+      float i;
+      float j;
+      float k;
+      float r;
     };
   };
 
@@ -81,10 +80,12 @@ typedef struct BifrostTransform_t
   Vec3f                      world_scale;
   Mat4x4                     local_transform;
   Mat4x4                     world_transform;
+  Mat4x4                     normal_transform;
   struct BifrostTransform_t* parent;
   struct BifrostTransform_t* first_child;
   struct BifrostTransform_t* next_sibling;
   struct BifrostTransform_t* prev_sibling;
+  /*bfBool32 */ unsigned int needs_gpu_upload;
 
 } BifrostTransform;
 

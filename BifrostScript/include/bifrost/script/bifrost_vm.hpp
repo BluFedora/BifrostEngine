@@ -114,7 +114,7 @@ namespace bifrost
         }
         else if constexpr (std::is_arithmetic_v<RawT>)
         {
-          bfVM_stackSetNumber(self, slot, static_cast<bfVMNumberT>(value));
+          bfVM_stackSetNumber(self, slot, static_cast<bfFloat64>(value));
         }
         else if constexpr (std::is_same_v<RawT, bfValueHandle>)
         {
@@ -450,7 +450,7 @@ namespace bifrost
       bfVM_stackSetStringLen(self(), idx, value, len);
     }
 
-    void stackSet(size_t idx, bfVMNumberT value) noexcept
+    void stackSet(size_t idx, bfFloat64 value) noexcept
     {
       bfVM_stackSetNumber(self(), idx, value);
     }
@@ -478,7 +478,7 @@ namespace bifrost
       return bfMakeStringRangeLen(str, str_len);
     }
 
-    [[nodiscard]] bfVMNumberT stackReadNumber(size_t idx) const noexcept
+    [[nodiscard]] bfFloat64 stackReadNumber(size_t idx) const noexcept
     {
       return bfVM_stackReadNumber(self(), idx);
     }

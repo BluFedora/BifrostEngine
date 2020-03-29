@@ -189,6 +189,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
 
 // Context
 
+static void gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window);
+
 bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
 {
   const auto self            = new bfGfxContext();
@@ -213,7 +215,6 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
     gfxContextPrintExtensions();
   }
   {
-    // TODO(Shareef): Make an array of fn pointers to auto check.
     gfxContextSelectPhysicalDevice(self);
     gfxContextInitSurface(self);
     gfxContextFindSurfacePresent(self, self->main_window);
@@ -222,6 +223,7 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
     gfxContextInitCommandPool(self, 0);
     gfxContextInitSwapchainInfo(self, self->main_window);
     gfxContextInitSemaphores(self, self->main_window);
+    gfxRecreateSwapchain(self, self->main_window);
   }
 
   self->params = nullptr;
@@ -959,10 +961,10 @@ namespace
       }
     }
 
-    device->queue_list.graphics_family_index = UINT32_MAX;
-    device->queue_list.compute_family_index  = UINT32_MAX;
-    device->queue_list.transfer_family_index = UINT32_MAX;
-    device->queue_list.present_family_index  = UINT32_MAX;
+    device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] = UINT32_MAX;
+    device->queue_list.family_index[BIFROST_GFX_QUEUE_COMPUTE]  = UINT32_MAX;
+    device->queue_list.family_index[BIFROST_GFX_QUEUE_TRANSFER] = UINT32_MAX;
+    device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT]  = UINT32_MAX;
 
     for (uint32_t i = 0; i < queue_size; ++i)
     {
@@ -970,30 +972,30 @@ namespace
 
       if (queue->queueCount && queue->queueFlags & VK_QUEUE_GRAPHICS_BIT)
       {
-        if (device->queue_list.graphics_family_index == UINT32_MAX)
+        if (device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] == UINT32_MAX)
         {
-          device->queue_list.graphics_family_index = i;
+          device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] = i;
         }
 
         if (supports_present[i])
         {
-          device->queue_list.present_family_index = device->queue_list.graphics_family_index = i;
+          device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT] = device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] = i;
           break;
         }
       }
     }
 
-    device->queue_list.compute_family_index  = findQueueBasic(device, queue_size, VK_QUEUE_COMPUTE_BIT);
-    device->queue_list.transfer_family_index = findQueueBasic(device, queue_size, VK_QUEUE_TRANSFER_BIT);
+    device->queue_list.family_index[BIFROST_GFX_QUEUE_COMPUTE]  = findQueueBasic(device, queue_size, VK_QUEUE_COMPUTE_BIT);
+    device->queue_list.family_index[BIFROST_GFX_QUEUE_TRANSFER] = findQueueBasic(device, queue_size, VK_QUEUE_TRANSFER_BIT);
 
-    if (device->queue_list.present_family_index == UINT32_MAX)
+    if (device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT] == UINT32_MAX)
     {
       // If didn't find a queue that supports both graphics and present, then find a separate present queue.
       for (uint32_t i = 0; i < queue_size; ++i)
       {
         if (supports_present[i])
         {
-          device->queue_list.present_family_index = i;
+          device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT] = i;
           break;
         }
       }
@@ -1001,13 +1003,12 @@ namespace
 
     freeN(supports_present);
 
-    if (
-     device->queue_list.graphics_family_index == UINT32_MAX ||
-     device->queue_list.present_family_index == UINT32_MAX ||
-     device->queue_list.compute_family_index == UINT32_MAX ||
-     device->queue_list.transfer_family_index == UINT32_MAX)
+    for (uint32_t i = 0; i < bfCArraySize(device->queue_list.family_index); ++i)
     {
-      return "Could not find Queues for Present / Graphics / Compute / Transfer.";
+      if (device->queue_list.family_index[i] == UINT32_MAX)
+      {
+        return "Could not find Queues for Present / Graphics / Compute / Transfer.";
+      }
     }
 
     window.swapchain_needs_creation = true;
@@ -1038,7 +1039,7 @@ namespace
     static const float queue_priorities[] = {0.0f};
 
     VulkanPhysicalDevice*   device        = self->physical_device;
-    const uint32_t          gfx_queue_idx = device->queue_list.graphics_family_index;
+    const uint32_t          gfx_queue_idx = device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS];
     uint32_t                num_queues    = 0;
     VkDeviceQueueCreateInfo queue_create_infos[BIFROST_GFX_QUEUE_MAX];
 
@@ -1050,9 +1051,9 @@ namespace
     };
 
     queue_create_infos[num_queues++] = makeBasicQCreateInfo(gfx_queue_idx, 1, queue_priorities);
-    addQueue(device->queue_list.compute_family_index);
-    addQueue(device->queue_list.transfer_family_index);
-    addQueue(device->queue_list.present_family_index);
+    addQueue(device->queue_list.family_index[BIFROST_GFX_QUEUE_COMPUTE]);
+    addQueue(device->queue_list.family_index[BIFROST_GFX_QUEUE_TRANSFER]);
+    addQueue(device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT]);
 
     VkPhysicalDeviceFeatures deviceFeatures;  // I should be checking if the features exist for the device in the first place.
     memset(&deviceFeatures, 0x0, sizeof(deviceFeatures));
@@ -1092,20 +1093,11 @@ namespace
     self->logical_device->descriptor_pool  = MaterialPool_new(&create_material_pool);
     self->logical_device->cached_resources = nullptr;
 
-    // Matches order of 'BifrostGfxQueueType'.
-    const uint32_t queues_to_grab[] =
-     {
-      device->queue_list.graphics_family_index,  // BIFROST_GFX_QUEUE_GRAPHICS
-      device->queue_list.compute_family_index,   // BIFROST_GFX_QUEUE_COMPUTE
-      device->queue_list.transfer_family_index,  // BIFROST_GFX_QUEUE_TRANSFER
-      device->queue_list.present_family_index,   // BIFROST_GFX_QUEUE_PRESENT
-     };
-
-    for (uint32_t i = 0; i < bfCArraySize(queues_to_grab); ++i)
+    for (uint32_t i = 0; i < bfCArraySize(device->queue_list.family_index); ++i)
     {
       // The 0 means grab the first queue of the specified family.
       // the number must be less than "VkDeviceQueueCreateInfo::queueCount"
-      vkGetDeviceQueue(self->logical_device->handle, queues_to_grab[i], 0, &self->logical_device->queues[i]);
+      vkGetDeviceQueue(self->logical_device->handle, device->queue_list.family_index[i], 0, &self->logical_device->queues[i]);
     }
 
     return nullptr;
@@ -1130,7 +1122,7 @@ namespace
     cmd_pool_info.pNext = nullptr;
     cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |            // Since these are short lived buffers
                           VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;  // Since I Reuse the Buffer each frame
-    cmd_pool_info.queueFamilyIndex = phys_device->queue_list.graphics_family_index;
+    cmd_pool_info.queueFamilyIndex = phys_device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS];
 
     const VkResult error = vkCreateCommandPool(
      logical_device->handle,
@@ -1273,11 +1265,11 @@ namespace
 
     const uint32_t queue_family_indices[2] =
      {
-      physical_device->queue_list.graphics_family_index,
-      physical_device->queue_list.present_family_index,
+      physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS],
+      physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT],
      };
 
-    if (physical_device->queue_list.graphics_family_index != physical_device->queue_list.present_family_index)
+    if (physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] != physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT])
     {
       // If the graphics and present queues are from different queue families,
       // we either have to explicitly transfer ownership of images between
@@ -1326,7 +1318,7 @@ namespace
       image->tex_memory      = VK_NULL_HANDLE;
       image->tex_view        = bfCreateImageView2D(logical_device->handle, temp_images[i], swapchain->format.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
       image->tex_sampler     = VK_NULL_HANDLE;
-      image->tex_layout      = VK_IMAGE_LAYOUT_UNDEFINED;
+      image->tex_layout      = BIFROST_IMAGE_LAYOUT_UNDEFINED;
       image->tex_format      = swapchain->format.format;
       image->tex_samples     = BIFROST_SAMPLE_1;
     }
@@ -1648,6 +1640,11 @@ bfBufferSize bfBuffer_size(bfBufferHandle self)
   return self->real_size;
 }
 
+void* bfBuffer_mappedPtr(bfBufferHandle self)
+{
+  return self->alloc_info.mapped_ptr;
+}
+
 void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 {
   assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
@@ -1831,7 +1828,7 @@ void bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, 
   /* NO-OP */
 }
 
-void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages)
+void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages)
 {
   (void)name;  // NOTE(Shareef): Vulkan isn't lame like OpenGL thus doesn't use strings for names
 
@@ -1850,7 +1847,7 @@ void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* na
   ++desc_set->num_uniforms;
 }
 
-void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages)
+void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages)
 {
   (void)name;  // NOTE(Shareef): Vulkan isn't lame like OpenGL thus doesn't use strings for names
 
@@ -1974,7 +1971,7 @@ void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint
   {
     image_infos[i].sampler     = textures[i]->tex_sampler;
     image_infos[i].imageView   = textures[i]->tex_view;
-    image_infos[i].imageLayout = textures[i]->tex_layout;
+    image_infos[i].imageLayout = bfVkConvertImgLayout(textures[i]->tex_layout);
   }
 }
 
@@ -2024,7 +2021,7 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
   self->tex_memory      = VK_NULL_HANDLE;
   self->tex_view        = VK_NULL_HANDLE;
   self->tex_sampler     = VK_NULL_HANDLE;
-  self->tex_layout      = VK_IMAGE_LAYOUT_UNDEFINED;
+  self->tex_layout      = BIFROST_IMAGE_LAYOUT_UNDEFINED;
   self->tex_format      = bfVkConvertFormat(params->format);
   self->tex_samples     = BIFROST_SAMPLE_1;
 
@@ -2059,6 +2056,11 @@ uint32_t bfTexture_height(bfTextureHandle self)
 uint32_t bfTexture_depth(bfTextureHandle self)
 {
   return self->image_depth;
+}
+
+BifrostImageLayout bfTexture_layout(bfTextureHandle self)
+{
+  return self->tex_layout;
 }
 
 void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlags aspects, VkImageLayout old_layout, VkImageLayout new_layout, uint32_t mip_levels)
@@ -2182,10 +2184,10 @@ VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
   return aspects;
 }
 
-static void bfTexture__setLayout(bfTextureHandle self, VkImageLayout layout)
+static void bfTexture__setLayout(bfTextureHandle self, BifrostImageLayout layout)
 {
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
-  setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), self->tex_layout, layout, self->image_miplevels);
+  setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), bfVkConvertImgLayout(self->tex_layout), bfVkConvertImgLayout(layout), self->image_miplevels);
   gfxContextEndTransientCommandBuffer(transient_cmd);
   self->tex_layout = layout;
 }
@@ -2204,12 +2206,12 @@ static void bfTexture__createImage(bfTextureHandle self)
   create_image.mipLevels             = self->image_miplevels;
   create_image.arrayLayers           = 1;  // TODO:
   create_image.samples               = bfVkConvertSampleCount(self->tex_samples);
-  create_image.tiling                = VK_IMAGE_TILING_OPTIMAL;  // TODO
+  create_image.tiling                = self->flags & BIFROST_TEX_IS_LINEAR ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
   create_image.usage                 = 0x0;
   create_image.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
   create_image.queueFamilyIndexCount = 0;
   create_image.pQueueFamilyIndices   = nullptr;
-  create_image.initialLayout         = self->tex_layout;
+  create_image.initialLayout         = bfVkConvertImgLayout(self->tex_layout);
 
   if (self->flags & BIFROST_TEX_IS_MULTI_QUEUE)
   {
@@ -2300,7 +2302,7 @@ bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
 
 void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
 {
-  bfTexture__setLayout(self, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+  bfTexture__setLayout(self, BIFROST_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
   {
     VkBufferImageCopy region;
@@ -2438,11 +2440,11 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
     }
     gfxContextEndTransientCommandBuffer(copy_cmds);
 
-    self->tex_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    self->tex_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
   }
   else
   {
-    bfTexture__setLayout(self, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    bfTexture__setLayout(self, BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
   }
 }
 

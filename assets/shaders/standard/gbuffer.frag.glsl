@@ -1,8 +1,12 @@
 //
-// Author: Shareef Abdoul-Raheem
-// Standard Shader GBuffer
+// Author:          Shareef Abdoul-Raheem
+// Standard Shader: GBuffer Generation
 //
 #version 450
+
+layout(location = 0) in vec3 frag_WorldNormal;
+layout(location = 1) in vec3 frag_Color;
+layout(location = 2) in vec2 frag_UV;
 
 layout(set = 2, binding = 0) uniform sampler2D u_AlbedoTexture;
 layout(set = 2, binding = 1) uniform sampler2D u_NormalTexture;
@@ -10,29 +14,19 @@ layout(set = 2, binding = 2) uniform sampler2D u_MetallicTexture;
 layout(set = 2, binding = 3) uniform sampler2D u_RoughnessTexture;
 layout(set = 2, binding = 4) uniform sampler2D u_AmbientOcclusionTexture;
 
-layout(std140, set = 1, binding = 0) uniform u_Set1
-{
-  vec3 u_LightColor;
-  vec3 u_LightPosition;
-  vec3 u_LightDirection;
-};
-
-layout(location = 0) in vec4 frag_Position;
-layout(location = 1) in vec4 frag_Normal;
-layout(location = 2) in vec4 frag_Color;
-layout(location = 3) in vec2 frag_UV;
-
 layout(location = 0) out vec4 o_FragColor0;
 layout(location = 1) out vec4 o_FragColor1;
-layout(location = 2) out vec4 o_FragColor2;
+
+#include "assets/shaders/standard/normal_encode.glsl"
 
 void main()
 {
-  float metalic           = 0.5;
-  float ambient_occlusion = 1.0;
-  float roughness         = 1.0;
+  float metallic          = texture(u_MetallicTexture, frag_UV).r;
+  float roughness         = texture(u_RoughnessTexture, frag_UV).r;
+  float ambient_occlusion = texture(u_AmbientOcclusionTexture, frag_UV).r;
+  vec2  normal            = encodeNormal(normalize(frag_WorldNormal));  // TODO: Normal mapping
+  vec3  albedo            = texture(u_AlbedoTexture, frag_UV).rgb * frag_Color;
 
-  o_FragColor0 = vec4(frag_Position.xyz, roughness);
-  o_FragColor1 = vec4(frag_Normal.xyz, ambient_occlusion);
-  o_FragColor2 = vec4((texture(u_AlbedoTexture, frag_UV) * frag_Color).xyz, metalic);
+  o_FragColor0 = vec4(normal, roughness, metallic);
+  o_FragColor1 = vec4(albedo.xyz, ambient_occlusion);
 }

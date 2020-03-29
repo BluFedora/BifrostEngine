@@ -56,6 +56,8 @@ typedef enum bfBufferPropertyFlags_t
 
 } bfBufferPropertyFlags;
 
+typedef uint16_t bfBufferPropertyBits;
+
 typedef enum bfBufferUsageFlags_t
 {
   BIFROST_BUF_TRANSFER_SRC         = (1 << 0), /*!< Can be used to transfer data out of.             */
@@ -77,6 +79,8 @@ typedef enum bfBufferUsageFlags_t
   BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER = (1 << 9) /*!< NOTE(Shareef): Can be used for data that is streamed to the gpu */
 
 } bfBufferUsageFlags;
+
+typedef uint16_t bfBufferUsageBits;
 
 typedef enum BifrostShaderType_t
 {
@@ -105,6 +109,8 @@ typedef enum
                                   BIFROST_SHADER_STAGE_FRAGMENT,
 
 } BifrostShaderStageFlags;
+
+typedef uint8_t BifrostShaderStageBits;
 
 typedef enum BifrostTextureType_t
 {
@@ -170,15 +176,15 @@ typedef struct
 
 typedef struct bfAllocationCreateInfo_t
 {
-  bfBufferSize size;
-  uint16_t     properties;  // (bfBufferPropertyFlags)
+  bfBufferSize         size;
+  bfBufferPropertyBits properties;
 
 } bfAllocationCreateInfo;
 
 typedef struct bfBufferCreateParams_t
 {
   bfAllocationCreateInfo allocation;
-  uint16_t               usage;  // (bfBufferUsageFlags)
+  bfBufferUsageBits      usage;
 
 } bfBufferCreateParams;
 
@@ -204,6 +210,7 @@ typedef enum BifrostTexFeatureBits_t
   BIFROST_TEX_IS_TRANSIENT          = bfBit(7),
   BIFROST_TEX_IS_INPUT_ATTACHMENT   = bfBit(8),
   BIFROST_TEX_IS_MULTI_QUEUE        = bfBit(9),
+  BIFROST_TEX_IS_LINEAR             = bfBit(10),
 
 } BifrostTexFeatureBits;
 
@@ -260,7 +267,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 void                   bfGfxContext_endFrame(bfGfxContextHandle self);
 void                   bfGfxContext_delete(bfGfxContextHandle self);
 
-// TODO: This should not be in this Public API header.
+// TODO(SR): This should not be in this Public API header.
 // Needs to be made internal.
 typedef enum BifrostGfxObjectType_t
 {
@@ -309,6 +316,7 @@ void                  bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandl
 
 /* Buffer */
 bfBufferSize bfBuffer_size(bfBufferHandle self);
+void*        bfBuffer_mappedPtr(bfBufferHandle self);
 void*        bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size);
 void         bfBuffer_invalidateRanges(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges);
 void         bfBuffer_invalidateRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize size);
@@ -339,7 +347,7 @@ typedef struct bfSubpassDependency_t
   uint32_t                  subpasses[2];             // [src, dst]
   BifrostPipelineStageFlags pipeline_stage_flags[2];  // [src, dst]
   BifrostAccessFlags        access_flags[2];          // [src, dst]
-  bfBool32                  reads_same_pixel;         //
+  bfBool32                  reads_same_pixel;         // should be true in most cases (exception being bluring)
 
 } bfSubpassDependency;
 
@@ -399,8 +407,8 @@ bfBool32              bfShaderModule_loadFile(bfShaderModuleHandle self, const c
 bfBool32              bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length);
 void                  bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle module);
 void                  bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);  // glBindAttribLocation
-void                  bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
-void                  bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageFlags stages);
+void                  bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages);
+void                  bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages);
 void                  bfShaderProgram_compile(bfShaderProgramHandle self);
 bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle self, uint32_t index);
 
@@ -409,7 +417,9 @@ typedef enum bfDescriptorElementInfoType_t
 {
   BIFROST_DESCRIPTOR_ELEMENT_TEXTURE,
   BIFROST_DESCRIPTOR_ELEMENT_BUFFER,
+  BIFROST_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER,
   BIFROST_DESCRIPTOR_ELEMENT_BUFFER_VIEW,
+  BIFROST_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT,
 
 } bfDescriptorElementInfoType;
 
@@ -443,16 +453,63 @@ void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t bind
 void bfDescriptorSet_flushWrites(bfDescriptorSetHandle self);
 
 /* Texture */
-uint32_t bfTexture_width(bfTextureHandle self);
-uint32_t bfTexture_height(bfTextureHandle self);
-uint32_t bfTexture_depth(bfTextureHandle self);
-bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file);
-void     bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
-bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length);
-void     bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties);
+uint32_t           bfTexture_width(bfTextureHandle self);
+uint32_t           bfTexture_height(bfTextureHandle self);
+uint32_t           bfTexture_depth(bfTextureHandle self);
+BifrostImageLayout bfTexture_layout(bfTextureHandle self);
+bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
+void               bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
+bfBool32           bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length);
+void               bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties);
 
 /* CommandList */
+
+typedef enum bfPipelineBarrierType_t
+{
+  BIFROST_PIPELINE_BARRIER_MEMORY,
+  BIFROST_PIPELINE_BARRIER_BUFFER,
+  BIFROST_PIPELINE_BARRIER_IMAGE,
+
+} bfPipelineBarrierType;
+
+typedef struct bfPipelineBarrier_t
+{
+  bfPipelineBarrierType  type;
+  BifrostAccessFlagsBits access[2];         /*!< [src, dst]                             */
+  BifrostGfxQueueType    queue_transfer[2]; /*!< [old, new] For Buffer and Image types. */
+
+  union
+  {
+    struct
+    {
+      bfBufferHandle handle;
+      bfBufferSize   offset;
+      bfBufferSize   size;
+
+    } buffer;
+
+    struct
+    {
+      bfTextureHandle    handle;
+      BifrostImageLayout layout_transition[2]; /*!< [old, new] */
+      uint32_t           base_mip_level;
+      uint32_t           level_count;
+      uint32_t           base_array_layer;
+      uint32_t           layer_count;
+
+    } image;
+
+  } info;
+
+} bfPipelineBarrier;
+
+bfPipelineBarrier bfPipelineBarrier_memory(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access);
+bfPipelineBarrier bfPipelineBarrier_buffer(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size);
+bfPipelineBarrier bfPipelineBarrier_image(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfTextureHandle image, BifrostImageLayout new_layout);
+
 bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self);  // True if no error
+void     bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, bfBool32 reads_same_pixel);
+void     bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel);
 void     bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass);
 void     bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info);
 void     bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClearValue* clear_values);
@@ -519,7 +576,7 @@ void     bfGfxCmdList_end(bfGfxCommandListHandle self);
 void     bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
 void     bfGfxCmdList_submit(bfGfxCommandListHandle self);
 
-// This should not be in this file...
+// TODO: This should not be in this file...
 char* LoadFileIntoMemory(const char* filename, long* out_size);
 
 #if __cplusplus
