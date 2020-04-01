@@ -12,7 +12,7 @@ The main engine requires C++17 but there are submodules which are C99, C11, or C
 
 ## Engine Modules
 
-The engine is separated into moduels with explicit dependecies on each other.
+The engine is separated into modules with explicit dependencies on each other.
 
 ### Asset IO
 
