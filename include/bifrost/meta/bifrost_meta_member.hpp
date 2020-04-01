@@ -1,6 +1,7 @@
 #ifndef BIFROST_META_MEMBER_HPP
 #define BIFROST_META_MEMBER_HPP
 
+#include <cstdint>     /* uint64_t              */
 #include <tuple>       /* tuple                 */
 #include <type_traits> /* decay_t, is_pointer_v */
 
@@ -80,7 +81,7 @@ namespace bifrost::meta
   template<typename Class>
   class EnumElement final : public BaseMember
   {
-  public:
+   public:
     using type                        = Class;
     using type_base                   = type;
     using class_t                     = Class;
@@ -94,17 +95,17 @@ namespace bifrost::meta
     static constexpr bool is_pointer  = false;
     static constexpr bool is_enum     = true;
 
-  private:
+   private:
     std::size_t m_Value;
 
-  public:
+   public:
     explicit EnumElement(const char* name, std::size_t value) :
       BaseMember{name},
       m_Value{value}
     {
     }
 
-    std::size_t value() const { return m_Value; }
+    std::uint64_t value() const { return m_Value; }
 
     type get(const Class& obj) const
     {
@@ -135,12 +136,14 @@ namespace bifrost::meta
     static constexpr bool is_enum     = false;
   };
 
+  struct EnumWrapper { std::uint64_t value; };
+
   template<typename Class, typename PropertyT, typename CastToT, bool read_only>
   class RawMember final : public BaseMember
   {
    public:
-    using type                        = std::decay_t<PropertyT>;
-    using type_base                   = type;
+    using type                        = std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, std::decay_t<PropertyT>>;
+    using type_base                   = CastToT;
     using class_t                     = Class;
     using member_ptr                  = PropertyT class_t::*;
     using is_function                 = std::bool_constant<false>;
@@ -193,8 +196,8 @@ namespace bifrost::meta
   class RefMember final : public BaseMember
   {
    public:
-    using type                        = std::decay_t<PropertyT>;
-    using type_base                   = type;
+    using type_base                   = std::decay_t<PropertyT>;
+    using type                        = std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
     using class_t                     = Class;
     using getter_t                    = const type& (class_t::*)() const;
     using setter_t                    = void (class_t::*)(const type&);
@@ -237,11 +240,11 @@ namespace bifrost::meta
   class ValMember final : public BaseMember
   {
    public:
-    using type                        = std::decay_t<PropertyT>;
-    using type_base                   = type;
+    using type_base                   = std::decay_t<PropertyT>;
+    using type                        = std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
     using class_t                     = Class;
-    using getter_t                    = type (class_t::*)() const;
-    using setter_t                    = void (class_t::*)(type);
+    using getter_t                    = PropertyT (class_t::*)() const;
+    using setter_t                    = void (class_t::*)(PropertyT);
     static constexpr bool is_writable = true;
     using is_function                 = std::bool_constant<false>;
     static constexpr bool is_readable = true;
@@ -267,16 +270,16 @@ namespace bifrost::meta
 
     [[nodiscard]] bool isReadOnly() const { return m_Setter == nullptr; }
 
-    PropertyT get(const Class& obj) const
+    type get(const Class& obj) const
     {
-      return (obj.*m_Getter)();
+      return (type)(obj.*m_Getter)();
     }
 
-    void set(Class& obj, const type& value) const
+    void set(Class& obj, const type_base& value) const
     {
       if (m_Setter)
       {
-        (obj.*m_Setter)(value);
+        (obj.*m_Setter)((PropertyT)value);
       }
     }
   };

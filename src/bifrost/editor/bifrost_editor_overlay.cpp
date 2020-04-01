@@ -909,20 +909,11 @@ namespace bifrost::editor
       {
         if (ImGui::BeginMenuBar())
         {
-          if (ImGui::BeginMenu("GBuffer"))
+          if (ImGui::BeginMenu("Camera"))
           {
-            const char* const k_GBufferNames[k_GfxNumGBufferAttachments] =
-             {
-              "Normalxy.Roughness.Metallic",
-              "Albedo.AmbientOcclusio_t",
-             };
-
-            for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
+            if (ImGui::DragFloat3("Position", &engine.Camera.position.x))
             {
-              if (ImGui::MenuItem(k_GBufferNames[i], nullptr, m_SceneViewGBuffer == i, true))
-              {
-                m_SceneViewGBuffer = i;
-              }
+              Camera_setViewModified(&engine.Camera);
             }
 
             ImGui::EndMenu();
@@ -998,15 +989,8 @@ namespace bifrost::editor
     {
       const auto current_scene = engine.currentScene();
 
-      if (ImGui::DragFloat3("Cam Pos", &engine.Camera.position.x))
-      {
-        Camera_setViewModified(&engine.Camera);
-      }
-
       if (ImGui::Begin("Project View"))
       {
-        ImGui::Separator();
-
         if (imgui_ext::inspect("Project Name", m_OpenProject->name()))
         {
         }
@@ -1023,6 +1007,22 @@ namespace bifrost::editor
       {
         if (current_scene)
         {
+          static String s_EntitySearchQuery = "";
+
+          ImGui::Separator();
+
+          if (!s_EntitySearchQuery.isEmpty())
+          {
+            if (ImGui::Button("clear"))
+            {
+              s_EntitySearchQuery.clear();
+            }
+
+            ImGui::SameLine();
+          }
+
+          imgui_ext::inspect("Search", s_EntitySearchQuery, ImGuiInputTextFlags_CharsUppercase);
+
           if (ImGui::Button("Add Entity"))
           {
             current_scene->addEntity("Untitled");
@@ -1153,8 +1153,7 @@ namespace bifrost::editor
     m_FileSystem{allocator()},
     m_SceneViewViewport{},
     m_InspectorWindows{allocator()},
-    m_InspectorDefaultDockspaceID{},
-    m_SceneViewGBuffer{0}
+    m_InspectorDefaultDockspaceID{}
   {
   }
 
@@ -1361,7 +1360,7 @@ namespace bifrost::editor
     if (path::doesExist(path.cstr()))
     {
       FixedLinearAllocator<2048 * 8> allocator;
-      List<MetaAssetPath>        metas_to_check{allocator};
+      List<MetaAssetPath>            metas_to_check{allocator};
 
       m_FileSystem.clear("Assets", path);
       assetFindAssets(metas_to_check, path, "", m_FileSystem, m_FileSystem.root());
@@ -1796,43 +1795,8 @@ namespace bifrost::editor
           },
           [this, &current_scene, &engine](Entity* object) {
             m_Serializer.beginChangeCheck();
-            object->serialize(m_Serializer);
 
-            if (!object->has<MeshRenderer>())
-            {
-              if (ImGui::Button("Add Mesh Renderer"))
-              {
-                object->add<MeshRenderer>();
-              }
-            }
-            else
-            {
-              MeshRenderer* const renderer = object->get<MeshRenderer>();
-
-              m_Serializer.serialize("material", renderer->material());
-              m_Serializer.serialize("model", renderer->model());
-            }
-
-            if (!object->has<Light>())
-            {
-              if (ImGui::Button("Add Light"))
-              {
-                object->add<Light>();
-              }
-            }
-            else
-            {
-              Light* const light = object->get<Light>();
-
-              bfColor4f color  = light->colorIntensity();
-              float radius = light->radius();
-
-              m_Serializer.serialize("Color.I", color);
-              m_Serializer.serialize("m_Radius", radius);
-
-              light->setColor(color);
-              light->setRadius(radius);
-            }
+            imgui_ext::inspect(engine, *object, m_Serializer);
 
             bfTransform_flushChanges(&object->transform());
 

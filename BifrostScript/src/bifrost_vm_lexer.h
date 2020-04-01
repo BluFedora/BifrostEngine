@@ -14,15 +14,15 @@
 #ifndef BIFROST_VM_LEXER_H
 #define BIFROST_VM_LEXER_H
 
-#include "bifrost_vm.h"
-#include <stddef.h> /* size_t      */
+#include "bifrost/bifrost_std.h" /* bfBool32, bfFloat64 */
+#include <stddef.h>              /* size_t              */
 
 #if __cplusplus
 extern "C" {
 #endif
 /*!
  * @brief
- *    These are all of the token types that are used by the lexer.
+ *   These are all of the token types that are used by the lexer.
  */
 typedef enum
 {
@@ -36,7 +36,7 @@ typedef enum
   BIFROST_TOKEN_SEMI_COLON  = 8,  /*!< ;                                     */
   BIFROST_TOKEN_COMMA       = 9,  /*!< ,                                     */
   BIFROST_TOKEN_EQUALS      = 10, /*!< =                                     */
-  BIFROST_TOKEN_DOT         = 19, /*!< .                                     */
+  BIFROST_TOKEN_DOT         = 19, /*!< \.                                     */
   BIFROST_TOKEN_IDENTIFIER  = 20, /*!< abcdefghijklmnopqrstuvwxyz_0123456789 */
   BIFROST_TOKEN_VAR_DECL    = 21, /*!< var                                   */
   BIFROST_TOKEN_FUNC_DECL   = 23, /*!< func                                  */
@@ -49,7 +49,7 @@ typedef enum
   BIFROST_TOKEN_STATIC      = 47, /*!< static                                */
   BIFROST_TOKEN_AS          = 48, /*!< as                                    */
   BIFROST_TOKEN_SUPER       = 49, /*!< super                                 */
-  BIFROST_TOKEN_AT_SIGN     = 50, /*!< @                                 */
+  BIFROST_TOKEN_AT_SIGN     = 50, /*!< @                                     */
 
   // Deprecated names
   R_PAREN   = BIFROST_TOKEN_R_PAREN,
@@ -160,37 +160,39 @@ typedef struct BifrostLexer_t
 
 } BifrostLexer;
 
-BIFROST_VM_API BifrostLexer  bfLexer_make(const BifrostLexerParams* params);
-BIFROST_VM_API void          bfLexer_reset(BifrostLexer* self);
-BIFROST_VM_API bfStringRange bfLexer_currentLine(BifrostLexer* self);
-BIFROST_VM_API bfToken       bfLexer_nextToken(BifrostLexer* self);
-BIFROST_VM_API char          bfLexer_peek(const BifrostLexer* self, size_t amt);
-BIFROST_VM_API const char*   bfLexer_peekStr(const BifrostLexer* self, size_t amt);
-BIFROST_VM_API bfBool32      bfLexer_isWhitespace(char c);
-BIFROST_VM_API bfBool32      bfLexer_isNewline(char c);
-BIFROST_VM_API void          bfLexer_skipWhile(BifrostLexer* self, bfBool32 (*condition)(char c));
-BIFROST_VM_API void          bfLexer_skipWhitespace(BifrostLexer* self);
-BIFROST_VM_API void          bfLexer_skipLineComment(BifrostLexer* self);
-BIFROST_VM_API void          bfLexer_skipBlockComment(BifrostLexer* self);
-BIFROST_VM_API void          bfLexer_advance(BifrostLexer* self, size_t amt);
-BIFROST_VM_API void          bfLexer_advanceLine(BifrostLexer* self);
-BIFROST_VM_API bfBool32      bfLexer_isDigit(char c);
-BIFROST_VM_API bfBool32      bfLexer_isFollowedByDigit(BifrostLexer* self, char c, char m);
-BIFROST_VM_API bfToken       bfLexer_parseNumber(BifrostLexer* self);
-BIFROST_VM_API bfBool32      bfLexer_isID(char c);
-BIFROST_VM_API bfToken       bfLexer_parseID(BifrostLexer* self);
-BIFROST_VM_API bfToken       bfLexer_parseString(BifrostLexer* self);
+BifrostLexer  bfLexer_make(const BifrostLexerParams* params);
+void          bfLexer_reset(BifrostLexer* self);
+bfStringRange bfLexer_currentLine(BifrostLexer* self);
+bfToken       bfLexer_nextToken(BifrostLexer* self);
+char          bfLexer_peek(const BifrostLexer* self, size_t amt);
+const char*   bfLexer_peekStr(const BifrostLexer* self, size_t amt);
+bfBool32      bfLexer_isWhitespace(char c);
+bfBool32      bfLexer_isNewline(char c);
+void          bfLexer_skipWhile(BifrostLexer* self, bfBool32 (*condition)(char c));
+void          bfLexer_skipWhitespace(BifrostLexer* self);
+void          bfLexer_skipLineComment(BifrostLexer* self);
+void          bfLexer_skipBlockComment(BifrostLexer* self);
+void          bfLexer_advance(BifrostLexer* self, size_t amt);
+void          bfLexer_advanceLine(BifrostLexer* self);
+bfBool32      bfLexer_isDigit(char c);
+bfBool32      bfLexer_isFollowedByDigit(BifrostLexer* self, char c, char m);
+bfToken       bfLexer_parseNumber(BifrostLexer* self);
+bfBool32      bfLexer_isID(char c);
+bfToken       bfLexer_parseID(BifrostLexer* self);
+bfToken       bfLexer_parseString(BifrostLexer* self);
 
 #define BIFROST_TOKEN_MAKE_STR(t, s) \
   (bfToken)                          \
   {                                  \
     .type = t, .as = {.str = s }     \
   }
+
 #define BIFROST_TOKEN_MAKE_STR2(t, s, e)    \
   (bfToken)                                 \
   {                                         \
     .type = t, .as = {.str_range = {s, e} } \
   }
+
 #define BIFROST_TOKEN_MAKE_NUM(t, v) \
   (bfToken)                          \
   {                                  \
@@ -198,8 +200,8 @@ BIFROST_VM_API bfToken       bfLexer_parseString(BifrostLexer* self);
   }
 
 // TODO(SR): Move To Debug Header
-const char*         tokentypeToString(bfTokenType t);
-BIFROST_VM_API void printToken(const bfToken* token);
+const char* tokentypeToString(bfTokenType t);
+void        printToken(const bfToken* token);
 #if __cplusplus
 }
 #endif

@@ -3,11 +3,11 @@
 * @file   bifrost_stack_allocator.hpp
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
 * @brief
-*   > This allocator is a designed for use with stl containers.
-*   > This must only be used in C++11 and after.
-*   > This is because C++03 allowed all allocators of a certain type to be
-*     compatible but since this allocator scheme is stateful
-*     that is not be guaranteed.
+*   > This allocator is a designed for use with stl containers.            \n
+*   > This must only be used in C++11 and after.                           \n
+*   > This is because C++03 allowed all allocators of a certain type to be \n
+*     compatible but since this allocator scheme is stateful               \n
+*     that is not be guaranteed.                                           \n
 *
 *  References:
 *    [https://howardhinnant.github.io/allocator_boilerplate.html]
@@ -15,7 +15,7 @@
 * @version 0.0.1
 * @date    2019-12-26
 *
-* @copyright Copyright (c) 2019
+* @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
 #ifndef BIFROST_STL_ALLOCATOR_HPP
@@ -49,7 +49,7 @@ namespace bifrost
     template<class U>
     struct rebind
     {
-      typedef StlAllocator<U> other;
+      using other = StlAllocator<U>;
     };
 
    private:
@@ -67,28 +67,12 @@ namespace bifrost
     {
     }
 
-    pointer       address(reference x) const { return &x; }
-    const_pointer address(const_reference x) const { return &x; }
-
-    pointer allocate(size_type s, void const * /* hint */ = nullptr)
-    {
-      return allocate(s);
-    }
-
-    value_type &allocate(size_type s)
-    {
-      return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr;
-    }
-
-    void deallocate(pointer p, size_type)
-    {
-      m_MemoryBackend.deallocate(p);
-    }
-
-    static size_type max_size() noexcept
-    {
-      return std::numeric_limits<size_t>::max() / sizeof(value_type);
-    }
+    pointer          address(reference x) const { return &x; }
+    const_pointer    address(const_reference x) const { return &x; }
+    pointer          allocate(size_type s, void const * /* hint */ = nullptr) { return allocate(s); }
+    value_type &     allocate(size_type s) { return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr; }
+    void             deallocate(pointer p, size_type) { m_MemoryBackend.deallocate(p); }
+    static size_type max_size() noexcept { return std::numeric_limits<size_t>::max() / sizeof(value_type); }
 
     template<class U, class... Args>
     void construct(U *p, Args &&... args)

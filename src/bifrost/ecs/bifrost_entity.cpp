@@ -62,44 +62,58 @@ namespace bifrost
   {
     serializer.serialize("m_Name", m_Name);
     serializer.serializeT("m_Transform", &m_Transform);
-
-    std::size_t num_components = 0;
-
-    if (serializer.pushArray("m_Components", num_components))
+    /*
+    if (serializer.pushObject("m_Components"))
     {
       if (serializer.mode() != SerializerMode::LOADING)
       {
-        /*
-        forEachComp([&serializer](BaseObjectT* component) {
-          meta::BaseClassMetaInfo* const type_info = component->type();
-          const std::string_view         type_name = type_info->name();
+        ComponentStorage::forEachType([&serializer, this](auto t) {
+          using T = bfForEachTemplateT(t);
 
-          if (serializer.pushObject({type_name.data(), type_name.size()}))
+          const StringRange name = g_EngineComponentInfo[bfForEachTemplateIndex(t)].name;
+
+          T* const component = get<T>();
+
+          if (component)
           {
-            serializer.serialize(*component);
-            serializer.popObject();
+            serializer.serializeT(name, component);
           }
         });
-        */
       }
       else
       {
-        for (std::size_t i = 0; i < num_components; ++i)
-        {
-          if (serializer.pushObject(nullptr))
-          {
-            
-            serializer.popObject();
-          }
-        }
+        // omponentStorage::forEachType([&serializer, this](auto t) {
+        //  using T = bfForEachTemplateT(t);
+        //
+        //  const StringRange name = g_EngineComponentInfo[bfForEachTemplateIndex(t)].name;
+        //
+        //  T* const component = get<T>();
+        //
+        //  if (component)
+        //  {
+        //    serializer.serializeT(name, component);
+        //  }
+        //  else
+        //  {
+        //    String txt = name + String(" Component not found");
+        //
+        //    serializer.serialize("TODO", txt);
+        //  }
+        //  });
       }
 
-      serializer.popArray();
+      serializer.popObject();
     }
+    */
   }
 
   Entity::~Entity()
   {
+    for (Entity& child : m_Children)
+    {
+      m_OwningScene.destroyEntity(&child);
+    }
+
     if (m_Parent)
     {
       m_Parent->removeChild(this);

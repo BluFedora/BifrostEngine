@@ -9,7 +9,7 @@
 * @version 0.0.1
 * @date    2019-12-26
 *
-* @copyright Copyright (c) 2019
+* @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
 #ifndef BIFROST_PROXY_ALLOCATOR_HPP

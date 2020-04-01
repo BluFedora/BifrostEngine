@@ -277,10 +277,9 @@ void bfGCCollect(struct BifrostVM_t* self)
 
 #include <string.h>
 
-void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t new_size, size_t alignment)
+void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t new_size)
 {
   (void)user_data;
-  (void)alignment;
   (void)old_size;
 
   /*
@@ -317,7 +316,7 @@ void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t n
   return ptr;
 }
 
-void* bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size_t new_size, size_t alignment)
+void* bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size_t new_size)
 {
   if (new_size == 0u)
   {
@@ -333,7 +332,7 @@ void* bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size
     }
   }
 
-  return (self->params.memory_fn)(self->params.user_data, ptr, old_size, new_size, alignment);
+  return (self->params.memory_fn)(self->params.user_data, ptr, old_size, new_size);
 }
 
 void bfGCPushRoot(struct BifrostVM_t* self, struct BifrostObj_t* obj)

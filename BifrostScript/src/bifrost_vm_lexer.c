@@ -11,7 +11,7 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#include "bifrost/script/bifrost_vm_lexer.h"
+#include "bifrost_vm_lexer.h"
 
 #include <ctype.h>  /* isdigit, isalpha, isspace */
 #include <stdlib.h> /* strtof                    */
@@ -374,7 +374,7 @@ void bfLexer_advance(BifrostLexer* self, size_t amt)
   }
 }
 
-BIFROST_VM_API void bfLexer_advanceLine(BifrostLexer* self)
+void bfLexer_advanceLine(BifrostLexer* self)
 {
   bfLexer_skipWhile(self, &bfLexer_isNotNewline);
 }

@@ -17,6 +17,11 @@
 
 #include <imgui/imgui.h>
 
+namespace bifrost
+{
+  class Entity;
+}
+
 namespace bifrost::editor
 {
   typedef struct Vec2f_t Vec2f;
@@ -82,6 +87,7 @@ namespace bifrost::editor
     bool inspect(const char* label, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(const char* label, std::string& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(const char* label, Any& object, meta::BaseClassMetaInfo* info);
+    bool inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer);
   }  // namespace imgui_ext
 }  // namespace bifrost::editor
 

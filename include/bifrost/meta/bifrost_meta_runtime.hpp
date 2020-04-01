@@ -66,13 +66,15 @@ namespace bifrost::meta
   class BasePropertyMetaInfo : public BaseMetaInfo
   {
    private:
-    BaseClassMetaInfo* m_Type;
+    BaseClassMetaInfo* m_Type;        //!< Type info fpr this property.
+    bool               m_IsProperty;  //!< Since this base classes is shared by both Class::m_Members and Class::getter / Class::setter pairs it is useful to know which type it is.
 
    protected:
-    BasePropertyMetaInfo(std::string_view name, BaseClassMetaInfo* type);
+    BasePropertyMetaInfo(std::string_view name, BaseClassMetaInfo* type, bool is_property);
 
    public:
     [[nodiscard]] BaseClassMetaInfo* type() const { return m_Type; }
+    [[nodiscard]] bool               isProperty() const { return m_IsProperty; }
 
     virtual Any  get(const Any& instance)             = 0;
     virtual void set(Any& instance, const Any& value) = 0;
@@ -184,6 +186,7 @@ namespace bifrost::meta
     virtual Any                mapGetElementAt(Any& instance, Any& key) { return {}; }
     virtual bool               mapSetElementAt(Any& instance, Any& key, Any& value) { return false; }
     std::uint64_t              enumValueMask() const;
+    std::uint64_t              enumValueRead(std::uint64_t& enum_object) const;
     void                       enumValueWrite(std::uint64_t& enum_object, std::uint64_t new_value) const;
   };
 

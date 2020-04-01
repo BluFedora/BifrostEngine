@@ -29,7 +29,7 @@ void Camera_init(Camera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw
   cam->_yaw                        = yaw;
   cam->_pitch                      = pitch;
   cam->camera_mode.mode            = BIFROST_CAMERA_MODE_PRESPECTIVE;
-  cam->camera_mode.field_of_view_y = 45.0f;
+  cam->camera_mode.field_of_view_y = 60.0f;
   cam->camera_mode.aspect_ratio    = 16.0f / 9.0f;
   cam->camera_mode.near_plane      = 0.2f;
   cam->camera_mode.far_plane       = 1000.0f;
@@ -187,7 +187,7 @@ void Camera_mouse(Camera* cam, float offsetx, float offsety)
   camera_update_vectors(cam);
 }
 
-void Camera_setFovY(Camera* cam, const float value)
+void Camera_setFovY(Camera* cam, float value)
 {
   cam->camera_mode.field_of_view_y = value;
   Camera_setProjectionModified(cam);
@@ -211,28 +211,23 @@ void Camera_setViewModified(Camera* cam)
 
 Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size)
 {
+  // References:
+  //   [http://antongerdelan.net/opengl/raycasting.html]
+  const float ray_ndc_x = 2.0f * (float)screen_space.x / (float)screen_size.x - 1.0f;
+  const float ray_ndc_y = 1.0f - 2.0f * (float)screen_space.y / (float)screen_size.y;
+  const Vec3f ray_clip  = {ray_ndc_x, ray_ndc_y, -1.0f, 1.0f};
+  Vec3f       ray_eye;
+  Vec3f       ray_world;
+
   Camera_update(cam);
-
-  Vec3f ray_eye, result;
-
-  //const Vec2f ndc = {
-  //  ((2.0f * screen_space.x) / screen_size.x)  - 1.0f,
-  //  1.0f - ((2.0f * screen_space.y) / screen_size.y)
-  //};
-
-  const Vec3f ray_clip = {
-   2.0f * (float)screen_space.x / (float)screen_size.x - 1.0f,
-   1.0f - 2.0f * (float)screen_space.y / (float)screen_size.y,
-   -1.0f,
-   1.0f};
-
   Mat4x4_multVec(&cam->inv_proj_cache, &ray_clip, &ray_eye);
 
   ray_eye.z = -1.0f;
   ray_eye.w = 0.0f;
-  Mat4x4_multVec(&cam->inv_view_cache, &ray_eye, &result);
 
-  Vec3f_normalize(&result);
+  Mat4x4_multVec(&cam->inv_view_cache, &ray_eye, &ray_world);
 
-  return result;
+  Vec3f_normalize(&ray_world);
+
+  return ray_world;
 }

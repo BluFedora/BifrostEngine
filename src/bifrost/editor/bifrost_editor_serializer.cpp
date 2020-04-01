@@ -14,6 +14,8 @@
 
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/bifrost_math.h"
+#include "bifrost/core/bifrost_engine.hpp"
+#include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/math/bifrost_vec2.h"
 #include "bifrost/math/bifrost_vec3.h"
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
@@ -275,7 +277,7 @@ namespace bifrost::editor
     setNameBuffer(key);
 
     const std::uint64_t mask           = type_info->enumValueMask();
-    const std::uint64_t original_value = enum_value & mask;
+    const std::uint64_t original_value = type_info->enumValueRead(enum_value) & mask;
     std::uint64_t       new_value      = original_value;
     const char*         preview_name   = nullptr;
 
@@ -594,6 +596,79 @@ namespace bifrost::editor
     }
 
     return did_change;
+  }
+
+  bool imgui_ext::inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer)
+  {
+    ImGui::PushID(&entity);
+
+    entity.serialize(serializer);
+
+    bool has_missing_component = false;
+
+    ComponentStorage::forEachType([&has_missing_component, &engine, &entity, &serializer](auto t) {
+      using T = bfForEachTemplateT(t);
+
+      const StringRange& component_name = g_EngineComponentInfo[t.index].name;
+
+      if (entity.has<T>())
+      {
+        LinearAllocatorScope mem_scope{engine.tempMemory()};
+        char*                label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "[%.*s]", int(component_name.length()), component_name.begin());
+
+        ImGui::PushID(label);
+
+        ImGui::Separator();
+
+        if (ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_None))
+        {
+          ImGui::Indent();
+          serializer.serializeT(entity.get<T>());
+
+          if (ImGui::Button("Remove Component"))
+          {
+            entity.remove<T>();
+            has_missing_component = true;
+          }
+
+          ImGui::Unindent();
+        }
+
+        ImGui::PopID();
+      }
+      else
+      {
+        has_missing_component = true;
+      }
+    });
+    ImGui::PopID();
+
+    if (has_missing_component)
+    {
+      if (ImGui::BeginCombo("Add Component", "+ Component", ImGuiComboFlags_None))
+      {
+        ComponentStorage::forEachType([&entity, &engine](auto t) {
+          using T = bfForEachTemplateT(t);
+
+          const StringRange& component_name = g_EngineComponentInfo[t.index].name;
+
+          if (!entity.has<T>())
+          {
+            LinearAllocatorScope mem_scope{engine.tempMemory()};
+            char*                label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add %.*s", int(component_name.length()), component_name.begin());
+
+            if (ImGui::Selectable(label))
+            {
+              entity.add<T>();
+            }
+          }
+          });
+
+        ImGui::EndCombo();
+      }
+    }
+
+    return false;
   }
 
   static int ImGuiStringCallback(ImGuiInputTextCallbackData* data)

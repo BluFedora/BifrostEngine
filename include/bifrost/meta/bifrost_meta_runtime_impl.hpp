@@ -13,24 +13,29 @@ namespace bifrost::meta
   class InvalidMethodCall
   {};
 
-  template<typename Base, typename MemberConcept>
-  class PropertyMetaInfoCRTP : public Base
+  template<typename MemberConcept>
+  class PropertyMetaInfo : public BasePropertyMetaInfo
   {
-    using Class     = typename MemberConcept::class_t;
-    using PropertyT = typename MemberConcept::type;
+    using Class         = typename MemberConcept::class_t;
+    using PropertyT     = typename MemberConcept::type;
+    using PropertyBaseT = typename MemberConcept::type_base;
 
    private:
     const MemberConcept& m_Impl;
 
    public:
-    template<typename... Args>
-    PropertyMetaInfoCRTP(const MemberConcept& impl, Args&&... args);
+    PropertyMetaInfo(const MemberConcept& impl);
+
+    static constexpr bool isFieldImpl()
+    {
+      return std::is_lvalue_reference_v<std::invoke_result_t<decltype(&MemberConcept::get), const MemberConcept&, Class&>>;
+    }
 
     Any get(const Any& instance) override final
     {
       Class& instance_as_class = *instance.as<Class*>();
 
-      if constexpr (std::is_lvalue_reference<decltype(m_Impl.get(*instance.as<Class*>()))>::value)
+      if constexpr (isFieldImpl())
       {
         return &m_Impl.get(instance_as_class);
       }
@@ -46,26 +51,16 @@ namespace bifrost::meta
       {
         Class& instance_as_class = *instance.as<Class*>();
 
-        if constexpr (std::is_lvalue_reference<decltype(m_Impl.get(*instance.as<Class*>()))>::value)
+        if constexpr (isFieldImpl())
         {
-          m_Impl.set(instance_as_class, *value.as<PropertyT*>());
+          m_Impl.set(instance_as_class, *value.as<PropertyBaseT*>());
         }
         else
         {
-          m_Impl.set(instance_as_class, value.as<PropertyT>());
+          m_Impl.set(instance_as_class, value.as<PropertyBaseT>());
         }
       }
     }
-  };
-
-  template<typename MemberConcept>
-  class PropertyMetaInfo final : public PropertyMetaInfoCRTP<BasePropertyMetaInfo, MemberConcept>
-  {
-    using Class     = typename MemberConcept::class_t;
-    using PropertyT = typename MemberConcept::type;
-
-   public:
-    PropertyMetaInfo(const MemberConcept& impl);
   };
 
   template<typename FunctionConcept>
@@ -337,17 +332,10 @@ namespace bifrost::meta
     }
   };
 
-  template<typename Base, typename MemberConcept>
-  template<typename... Args>
-  PropertyMetaInfoCRTP<Base, MemberConcept>::PropertyMetaInfoCRTP(const MemberConcept& impl, Args&&... args) :
-    Base(impl.name(), TypeInfo<PropertyT>::get(), std::forward<Args>(args)...),
-    m_Impl{impl}
-  {
-  }
-
   template<typename MemberConcept>
   PropertyMetaInfo<MemberConcept>::PropertyMetaInfo(const MemberConcept& impl) :
-    PropertyMetaInfoCRTP<BasePropertyMetaInfo, MemberConcept>(impl)
+    BasePropertyMetaInfo(impl.name(), TypeInfo<PropertyBaseT>::get(), !isFieldImpl()),
+    m_Impl{impl}
   {
   }
 

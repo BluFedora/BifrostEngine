@@ -160,6 +160,13 @@ namespace bifrost
       serialize(key, obj, meta::TypeInfo<T>::get());
     }
 
+    template<typename T>
+    void serializeT(T* value)
+    {
+      Any obj = value;
+      serialize(obj, meta::TypeInfo<T>::get());
+    }
+
     virtual ~ISerializer() = default;
   };
 

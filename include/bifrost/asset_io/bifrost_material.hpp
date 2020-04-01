@@ -284,14 +284,6 @@ BIFROST_META_REGISTER(bifrost::AssetShaderProgramInfo){
    ctor<StringRange, BifrostUUID>())
    BIFROST_META_END()}
 
-/*
-AssetTextureHandle m_AlbedoTexture;
-AssetTextureHandle m_NormalTexture;
-AssetTextureHandle m_MetallicTexture;
-AssetTextureHandle m_RoughnessTexture;
-AssetTextureHandle m_AmbientOcclusionTexture;
-*/
-
 BIFROST_META_REGISTER(bifrost::Material){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(

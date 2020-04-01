@@ -66,6 +66,7 @@ namespace bifrost
 
    private:
     Entity* createEntity(const StringRange& name);
+    void    destroyEntity(Entity* entity) const;
   };
 
   class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>

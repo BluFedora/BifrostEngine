@@ -214,13 +214,11 @@ namespace bifrost
   template<auto mem_fn>
   BifrostMethodBind vmMakeMemberBinding(const char* name, uint32_t num_statics = 0, uint16_t extra_data = 0u)
   {
-    return {
-     name,
-     &vmNativeFnWrapper<mem_fn>,
-     meta::function_traits<decltype(mem_fn)>::arity,
-     num_statics,
-     extra_data,
-    };
+    return bfMethodBind_make(name,
+                             &vmNativeFnWrapper<mem_fn>,
+                             meta::function_traits<decltype(mem_fn)>::arity,
+                             num_statics,
+                             extra_data);
   }
 
   template<typename ClzT>
@@ -232,7 +230,7 @@ namespace bifrost
   template<typename ClzT, typename... Args>
   BifrostVMClassBind vmMakeClassBinding(const char* name, Args&&... methods)
   {
-    static BifrostMethodBind s_Methods[] = {methods..., {nullptr, nullptr, 0, 0, 0}};
+    static BifrostMethodBind s_Methods[] = {methods..., bfMethodBind_end()};
 
     BifrostVMClassBind clz_bind;
 
@@ -244,7 +242,7 @@ namespace bifrost
     return clz_bind;
   }
 
-  struct FunctionCallResult
+  struct FunctionCallResult final
   {
     std::size_t    return_slot;
     BifrostVMError error;

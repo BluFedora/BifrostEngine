@@ -19,7 +19,7 @@
 
 namespace bifrost
 {
-  static const int                        k_BaseResolution[]          = {1920 / 2, 1080 / 2};
+  static const int                        k_BaseResolution[]          = {1600, 900};
   static const int                        k_AssumedWindow             = -1;
   static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
@@ -57,6 +57,11 @@ namespace bifrost
 
       clear_values[i].color.float32[3] = 1.0f;
     }
+
+    // A Brighter ambient background color for editor "Scene View"
+    clear_values[1].color.float32[0] = 0.6f;
+    clear_values[1].color.float32[1] = 0.2f;
+    clear_values[1].color.float32[2] = 0.7f;
 
     clear_values[k_GfxNumGBufferAttachments].depthStencil.depth   = 1.0f;
     clear_values[k_GfxNumGBufferAttachments].depthStencil.stencil = 0;
@@ -317,7 +322,7 @@ namespace bifrost
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      k_BaseResolution[0],
      k_BaseResolution[1],
-      BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
      bfTrue,
      bfFalse);
 

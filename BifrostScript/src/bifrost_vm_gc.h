@@ -59,8 +59,8 @@ struct BifrostObj_t;
 void   bfGCMarkObjects(struct BifrostVM_t* self);
 size_t bfGCSweep(struct BifrostVM_t* self);
 void   bfGCCollect(struct BifrostVM_t* self);
-void*  bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t new_size, size_t alignment);
-void*  bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size_t new_size, size_t alignment);
+void*  bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t new_size);
+void*  bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size_t new_size);
 void   bfGCPushRoot(struct BifrostVM_t* self, struct BifrostObj_t* obj);
 void   bfGCPopRoot(struct BifrostVM_t* self);
 #if __cplusplus

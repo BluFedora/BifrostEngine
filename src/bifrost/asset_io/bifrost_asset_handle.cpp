@@ -118,6 +118,8 @@ namespace bifrost
      long double,
      Vec2f,
      Vec3f,
+     bfColor4f,
+     bfColor4u,
      String,
      BifrostUUID,
      BaseAssetHandle>([this, &key, &value, &is_primitive](auto t) {
@@ -154,8 +156,17 @@ namespace bifrost
     {
       if (type_info->isEnum())
       {
-        auto& v = *value.as<std::uint64_t*>();
-        serialize(key, v, type_info);
+        if (value.is<std::uint64_t>())
+        {
+          auto v = value.as<std::uint64_t>();
+          serialize(key, v, type_info);
+          value = v;
+        }
+        else
+        {
+          auto& v = *value.as<std::uint64_t*>();
+          serialize(key, v, type_info);
+        }
       }
       else
       {

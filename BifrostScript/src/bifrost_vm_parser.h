@@ -20,7 +20,7 @@
 #ifndef BIFROST_VM_PARSER_H
 #define BIFROST_VM_PARSER_H
 
-#include "bifrost/script/bifrost_vm_lexer.h"  // size_t, BifrostLexer, bfToken, bfBool32
+#include "bifrost_vm_lexer.h"  // size_t, BifrostLexer, bfToken, bfBool32
 
 #if __cplusplus
 extern "C" {

@@ -45,19 +45,15 @@ namespace bifrost
    MeshRenderer,
    Light>;
 
-  namespace component
-  {
-    //
-    // @EngineComponentRegister
-    // Some type information for components for editor and serialization.
-    //
-    static constexpr ComponentTypeInfo g_EngineComponentInfo[ComponentPack::size] =
-     {
-      {"MeshRenderer"},
-      {"Light"},
-    };
-  }  // namespace component
-
+  //
+  // @EngineComponentRegister
+  // Some type information for components for editor and serialization.
+  //
+  static constexpr ComponentTypeInfo g_EngineComponentInfo[ComponentPack::size] =
+   {
+    {"MeshRenderer"},
+    {"Light"},
+  };
 }  // namespace bifrost
 
 #endif /* BIFROST_COMPONENT_LIST_HPP */

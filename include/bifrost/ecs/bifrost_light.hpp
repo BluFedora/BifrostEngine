@@ -65,25 +65,47 @@ namespace bifrost
     }
 
     LightType        type() const { return m_Type; }
+    void             setType(LightType type) { m_Type = type; }
     const bfColor4f& colorIntensity() const { return m_ColorIntensity; }
-    const Vector3f&  direction() const { return m_Direction; }
-    float            radius() const { return m_Radius; }
-    float            innerAngleRad() const { return m_InnerAngleRad; }
-    float            outerAngleRad() const { return m_OuterAngleRad; }
-    float            innerAngleDeg() const { return m_InnerAngleRad * k_RadToDeg; }
-    float            outerAngleDeg() const { return m_OuterAngleRad * k_RadToDeg; }
+    void             setColor(const bfColor4f& value) { m_ColorIntensity = value; }
 
-    void setColor(const bfColor4f& value)
-    {
-      m_ColorIntensity = value;
-    }
+    const Vector3f& direction() const { return m_Direction; }
 
-    void setRadius(float value)
+    float radius() const { return m_Radius; }
+    void  setRadius(float value)
     {
       m_Radius            = value;
       m_GPUCache.is_dirty = true;
     }
+
+    float innerAngleRad() const { return m_InnerAngleRad; }
+    float outerAngleRad() const { return m_OuterAngleRad; }
+    float innerAngleDeg() const { return m_InnerAngleRad * k_RadToDeg; }
+    float outerAngleDeg() const { return m_OuterAngleRad * k_RadToDeg; }
   };
 }  // namespace bifrost
+
+template<>
+inline const auto& ::bifrost::meta::Meta::registerMembers<bifrost::LightType>()
+{
+  static const auto member_ptrs = members(
+   enum_info<LightType>("LightType"),
+   enum_element("DIRECTIONAL", LightType::DIRECTIONAL),
+   enum_element("POINT", LightType::POINT),
+   enum_element("SPOT", LightType::SPOT));
+  return member_ptrs;
+}
+
+BIFROST_META_REGISTER(bifrost::Light)
+{
+  BIFROST_META_BEGIN()
+    BIFROST_META_MEMBERS(
+     class_info<Light>("Light"),                                              //
+     property("m_Type", &Light::type, &Light::setType),                       //
+     property("m_ColorIntensity", &Light::colorIntensity, &Light::setColor),  //
+     property("m_Radius", &Light::radius, &Light::setRadius)                  //
+    )
+  BIFROST_META_END()
+}
 
 #endif /* BIFROST_LIGHT_HPP */

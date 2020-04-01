@@ -39,7 +39,7 @@ namespace bifrost
   void Scene::removeEntity(Entity* entity)
   {
     m_RootEntities.removeAt(m_RootEntities.find(entity));
-    m_Memory.deallocateT(entity);
+    destroyEntity(entity);
   }
 
   void Scene::serialize(ISerializer& serializer)
@@ -77,6 +77,11 @@ namespace bifrost
   Entity* Scene::createEntity(const StringRange& name)
   {
     return m_Memory.allocateT<Entity>(*this, name);
+  }
+
+  void Scene::destroyEntity(Entity* entity) const
+  {
+    m_Memory.deallocateT(entity);
   }
 
   bool AssetSceneInfo::load(Engine& engine)

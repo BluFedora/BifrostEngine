@@ -47,6 +47,24 @@ uint32_t              bfVM_getSymbol(BifrostVM* self, bfStringRange name);
 static BifrostVMError bfVM_runModule(BifrostVM* self, BifrostObjModule* module);
 static BifrostVMError bfVM_compileIntoModule(BifrostVM* self, BifrostObjModule* module, const char* source, size_t source_len);
 
+BifrostMethodBind bfMethodBind_make(const char* name, bfNativeFnT func, int32_t arity, uint32_t num_statics, uint16_t extra_data)
+{
+  BifrostMethodBind self;
+
+  self.name        = name;
+  self.fn          = func;
+  self.arity       = arity;
+  self.num_statics = num_statics;
+  self.extra_data  = extra_data;
+
+  return self;
+}
+
+BifrostMethodBind bfMethodBind_end(void)
+{
+  return bfMethodBind_make(NULL, NULL, 0, 0, 0);
+}
+
 void bfVMParams_init(BifrostVMParams* self)
 {
   self->error_fn           = NULL;                 /* errors will have to be check with return values and 'bfVM_errorString' */
@@ -71,7 +89,7 @@ static inline void bfVM_assertStackIndex(const BifrostVM* self, size_t idx)
 
 BifrostVM* bfVM_new(const BifrostVMParams* params)
 {
-  BifrostVM* self = params->memory_fn(params->user_data, NULL, 0u, sizeof(BifrostVM), sizeof(void*));
+  BifrostVM* self = params->memory_fn(params->user_data, NULL, 0u, sizeof(BifrostVM));
 
   if (self)
   {
@@ -307,22 +325,37 @@ bfVMValue bfVM_stackFindVariable(BifrostObjModule* module_obj, const char* varia
 
 static int bfVM__stackStoreVariable(BifrostVM* self, bfVMValue obj, bfStringRange field_symbol, bfVMValue value);
 
-void bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx)
+BifrostVMError bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx)
 {
   bfVM_assertStackIndex(self, clz_idx);
   bfVM_assertStackIndex(self, dst_idx);
 
   bfVMValue clz_value = self->stack_top[clz_idx];
 
-  // TODO(SR): Only in Debug Builds
-  assert(IS_POINTER(clz_value) && "The value being read is not an object.");
+  /* TODO(SR): Only in Debug Builds */
+  if (!IS_POINTER(clz_value))
+  {
+    return BIFROST_VM_ERROR_INVALID_OP_ON_TYPE;
+  }
 
   BifrostObj* obj = AS_POINTER(clz_value);
 
-  // TODO(SR): Only in Debug Builds
-  assert(obj->type == BIFROST_VM_OBJ_CLASS && "This object is not a class.");
+  /* TODO(SR): Only in Debug Builds */
+  if (!(obj->type == BIFROST_VM_OBJ_CLASS))
+  {
+    return BIFROST_VM_ERROR_INVALID_OP_ON_TYPE;
+  }
 
-  self->stack_top[dst_idx] = FROM_POINTER(bfVM_createInstance(self, (BifrostObjClass*)obj));
+  BifrostObjInstance* new_instance = bfVM_createInstance(self, (BifrostObjClass*)obj);
+
+  if (!new_instance)
+  {
+    return BIFROST_VM_ERROR_OUT_OF_MEMORY;
+  }
+
+  self->stack_top[dst_idx] = FROM_POINTER(new_instance);
+
+  return BIFROST_VM_ERROR_NONE;
 }
 
 void* bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t extra_data_size)
@@ -498,6 +531,8 @@ void bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_clas
   if (obj->type == BIFROST_VM_OBJ_CLASS)
   {
     BifrostObjClass* const clz = (BifrostObjClass*)obj;
+
+    /* TODO: Look through base classes? */
 
     if (symbol < Array_size(&clz->symbols))
     {
@@ -892,7 +927,7 @@ bfValueHandle bfVM_stackMakeHandle(BifrostVM* self, size_t idx)
   }
   else
   {
-    handle = bfGCAllocMemory(self, NULL, 0u, sizeof(struct bfValueHandle_t), sizeof(void*));
+    handle = bfGCAllocMemory(self, NULL, 0u, sizeof(struct bfValueHandle_t));
   }
 
   if (handle)
@@ -1546,11 +1581,19 @@ BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t
   {
     BifrostObjNativeFn* native_fn = (BifrostObjNativeFn*)obj;
 
-    // TODO(SR):
-    //   Add an API to be able to set errors from user defined functions.
-    BifrostVMStackFrame* frame = bfVM_pushCallFrame(self, NULL, base_stack + args_start);
-    native_fn->value(self, num_args);
-    bfVM_popCallFrame(self, frame);
+    if (native_fn->arity < 0 || native_fn->arity == num_args)
+    {
+      /* TODO(SR):
+         Add an API to be able to set errors from user defined functions.
+      */
+      BifrostVMStackFrame* frame = bfVM_pushCallFrame(self, NULL, base_stack + args_start);
+      native_fn->value(self, num_args);
+      bfVM_popCallFrame(self, frame);
+    }
+    else
+    {
+      err = BIFROST_VM_ERROR_FUNCTION_ARITY_MISMATCH;
+    }
   }
   else
   {
@@ -1650,7 +1693,7 @@ void bfVM_dtor(BifrostVM* self)
   while (self->free_handles)
   {
     const bfValueHandle next = self->free_handles->next;  // NOLINT(misc-misplaced-const)
-    bfGCAllocMemory(self, self->free_handles, sizeof(struct bfValueHandle_t), 0u, sizeof(void*));
+    bfGCAllocMemory(self, self->free_handles, sizeof(struct bfValueHandle_t), 0u);
     self->free_handles = next;
   }
 
@@ -1663,7 +1706,7 @@ void bfVM_dtor(BifrostVM* self)
 void bfVM_delete(BifrostVM* self)
 {
   bfVM_dtor(self);
-  bfGCAllocMemory(self, self, sizeof(BifrostVM), 0u, sizeof(void*));
+  bfGCAllocMemory(self, self, sizeof(BifrostVM), 0u);
 }
 
 BifrostObjModule* bfVM_findModule(BifrostVM* self, const char* name, size_t name_len)
@@ -1808,7 +1851,7 @@ BifrostObjModule* bfVM_importModule(BifrostVM* self, const char* from, const cha
 
         // m
         bfGCPopRoot(self);
-        bfGCAllocMemory(self, (void*)look_up.source, look_up.source_len, 0u, sizeof(void*));
+        bfGCAllocMemory(self, (void*)look_up.source, look_up.source_len, 0u);
       }
       else
       {

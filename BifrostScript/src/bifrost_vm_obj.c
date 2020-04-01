@@ -30,7 +30,7 @@ static void* allocObj(struct BifrostVM_t* self, size_t size, BifrostVMObjType ty
     bfVM_gc(self);
   }
 
-  BifrostObj* obj = bfGCAllocMemory(self, NULL, 0u, size, sizeof(void*));
+  BifrostObj* obj = bfGCAllocMemory(self, NULL, 0u, size);
   objSetup(obj, type, self->gc_object_list);
   self->gc_object_list = obj;
 
@@ -214,7 +214,7 @@ void bfVMObject_delete(struct BifrostVM_t* self, BifrostObj* obj)
   const size_t obj_size = bfGCObjectSize(obj);
 
   bfVMObject__delete(self, obj);
-  bfGCAllocMemory(self, obj, obj_size, 0u, sizeof(void*));
+  bfGCAllocMemory(self, obj, obj_size, 0u);
 }
 
 bfBool32 bfObjIsFunction(const BifrostObj* obj)

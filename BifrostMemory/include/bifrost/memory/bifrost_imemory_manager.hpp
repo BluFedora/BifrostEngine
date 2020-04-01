@@ -8,7 +8,7 @@
 * @version 0.0.1
 * @date    2019-12-26
 *
-* @copyright Copyright (c) 2019
+* @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
 #ifndef BIFROST_IMEMORY_MANAGER_HPP
@@ -471,6 +471,7 @@ namespace bifrost
         rhs.m_Size      = 0;
         // ^ All three fields don't need to be set to null.
         // Since if any are null this is an invalid buffer.
+        // But for clarity of debugging it will be beneficial?
       }
 
       return *this;

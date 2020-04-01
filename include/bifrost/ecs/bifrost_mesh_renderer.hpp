@@ -18,6 +18,8 @@ namespace bifrost
 {
   class MeshRenderer : public Component<MeshRenderer>
   {
+    BIFROST_META_FRIEND;
+
    private:
     AssetMaterialHandle m_Material;
     AssetModelHandle    m_Model;
@@ -34,5 +36,16 @@ namespace bifrost
     AssetModelHandle&    model() { return m_Model; }
   };
 }  // namespace bifrost
+
+BIFROST_META_REGISTER(bifrost::MeshRenderer)
+{
+  BIFROST_META_BEGIN()
+    BIFROST_META_MEMBERS(
+     class_info<MeshRenderer>("MeshRenderer"),                         //
+     field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
+     field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
+    )
+  BIFROST_META_END()
+}
 
 #endif /* BIFROST_MESH_RENDERER_HPP */

@@ -60,36 +60,41 @@ namespace bifrost::meta
     // C++20 comes with lambda templates so we wouldn't have to do this.
     // But alas we are stuck on C++17 for now.
     //
-    template<typename T>
+    template<typename T, std::size_t Index>
     struct type_holder
     {
-      using held_type = T;
+      using held_type                    = T;
+      static constexpr std::size_t index = Index;
 
       type_holder() = default;
     };
 
-    template<std::size_t, typename T, typename... Args>
+    template<std::size_t, std::size_t Index, typename T, typename... Args>
     class for_each_template_impl
     {
      public:
       template<typename F>
       static void impl(F&& func)
       {
-        func(type_holder<T>());
-        for_each_template_impl<sizeof...(Args), Args...>::impl(func);
+        func(type_holder<T, Index>());
+        for_each_template_impl<sizeof...(Args), Index + 1, Args...>::impl(func);
       }
     };
 
-    template<typename T>
-    class for_each_template_impl<1, T>
+    template<std::size_t Index, typename T>
+    class for_each_template_impl<1, Index, T>
     {
      public:
       template<typename F>
       static void impl(F&& func)
       {
-        func(type_holder<T>());
+        func(type_holder<T, Index>());
       }
     };
+
+    //
+    // TODO: Add constexpr index to this version for for each....
+    //
 
     template<std::size_t, typename T, typename... Args>
     class for_each_template_and_pointer_impl
@@ -98,9 +103,9 @@ namespace bifrost::meta
       template<typename F>
       static void impl(F&& func)
       {
-        func(type_holder<T>());
-        func(type_holder<T*>());
-        func(type_holder<const T*>());
+        func(type_holder<T, 0>());
+        func(type_holder<T*, 0>());
+        func(type_holder<const T*, 0>());
         for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
       }
     };
@@ -112,9 +117,9 @@ namespace bifrost::meta
       template<typename F>
       static void impl(F&& func)
       {
-        func(type_holder<T>());
-        func(type_holder<T*>());
-        func(type_holder<const T*>());
+        func(type_holder<T, 0>());
+        func(type_holder<T*, 0>());
+        func(type_holder<const T*, 0>());
       }
     };
 
@@ -132,11 +137,12 @@ namespace bifrost::meta
   }  // namespace detail
 
 #define bfForEachTemplateT(t) typename std::decay<decltype((t))>::type::held_type
+#define bfForEachTemplateIndex(t) std::decay<decltype((t))>::type::index
 
   template<typename... Args, typename F>
   void for_each_template(F&& func)
   {
-    detail::for_each_template_impl<sizeof...(Args), Args...>::impl(func);
+    detail::for_each_template_impl<sizeof...(Args), 0, Args...>::impl(func);
   }
 
   // Same as 'for_each_template' but adds the T* version.

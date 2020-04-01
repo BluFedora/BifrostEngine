@@ -91,7 +91,7 @@ BIFROST_MATH_API void  Camera_moveBackward(Camera* cam, float amt);
 BIFROST_MATH_API void  Camera_addPitch(Camera* cam, float amt);
 BIFROST_MATH_API void  Camera_addYaw(Camera* cam, float amt);
 BIFROST_MATH_API void  Camera_mouse(Camera* cam, float offsetx, float offsety);
-BIFROST_MATH_API void  Camera_setFovY(Camera* cam, const float value);
+BIFROST_MATH_API void  Camera_setFovY(Camera* cam, float value);
 BIFROST_MATH_API void  Camera_onResize(Camera* cam, uint width, uint height);
 BIFROST_MATH_API void  Camera_setProjectionModified(Camera* cam);
 BIFROST_MATH_API void  Camera_setViewModified(Camera* cam);

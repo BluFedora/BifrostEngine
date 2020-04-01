@@ -26,15 +26,11 @@ namespace bifrost::meta
     static auto member_ptrs = members(
      class_info<BifrostTransform>("Transform"),
      ctor<>(),
-     field("origin", &BifrostTransform::origin),
-     field("local_position", &BifrostTransform::local_position),
-     field("local_rotation", &BifrostTransform::local_rotation),
-     field("local_scale", &BifrostTransform::local_scale),
-     field("world_position", &BifrostTransform::world_position),
-     field("world_rotation", &BifrostTransform::world_rotation),
-     field("world_scale", &BifrostTransform::world_scale),
-     field("local_transform", &BifrostTransform::local_transform),
-     field("world_transform", &BifrostTransform::world_transform));
+     field("Origin", &BifrostTransform::origin),            //
+     field("Position", &BifrostTransform::local_position),  //
+     field("Rotation", &BifrostTransform::local_rotation),  //
+     field("Scale", &BifrostTransform::local_scale)         //
+    );
 
     return member_ptrs;
   }
@@ -80,14 +76,15 @@ namespace bifrost
         return *comp;
       }
 
-      m_ComponentHandles.get<T>() = getComponentList<T>().add(*this);;
+      m_ComponentHandles.get<T>() = getComponentList<T>().add(*this);
+      
       return *get<T>();
     }
 
     template<typename T>
     T* get() const
     {
-      const auto handle = m_ComponentHandles.get<T>();
+      const auto& handle = m_ComponentHandles.get<T>();
 
       if (handle.isValid())
       {
@@ -106,9 +103,12 @@ namespace bifrost
     template<typename T>
     void remove()
     {
-      if (has<T>())
+      auto& handle = m_ComponentHandles.get<T>();
+
+      if (handle.isValid())
       {
-        getComponentList<T>().remove(m_ComponentHandles.get<T>());
+        getComponentList<T>().remove(handle);
+        handle = {};
       }
     }
 

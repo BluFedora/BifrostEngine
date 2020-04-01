@@ -37,9 +37,10 @@ namespace bifrost::meta
   {
   }
 
-  BasePropertyMetaInfo::BasePropertyMetaInfo(const std::string_view name, BaseClassMetaInfo* type) :
+  BasePropertyMetaInfo::BasePropertyMetaInfo(std::string_view name, BaseClassMetaInfo* type, bool is_property) :
     BaseMetaInfo(name),
-    m_Type{type}
+    m_Type{type},
+    m_IsProperty{is_property}
   {
   }
 
@@ -97,44 +98,56 @@ namespace bifrost::meta
 
     switch (size())
     {
-    case 1:
-      mask = 0xFF;
-      break;
-    case 2:
-      mask = 0xFFFF;
-      break;
-    case 4:
-      mask = 0xFFFFFFFF;
-      break;
-    case 8:
-      mask = 0xFFFFFFFFFFFFFFFF;
-      break;
-    default:
-      mask = 0x0;
-      break;
+      case 1:
+        mask = 0xFF;
+        break;
+      case 2:
+        mask = 0xFFFF;
+        break;
+      case 4:
+        mask = 0xFFFFFFFF;
+        break;
+      case 8:
+        mask = 0xFFFFFFFFFFFFFFFF;
+        break;
+      default:
+        mask = 0x0;
+        break;
     }
 
     return mask;
+  }
+
+  std::uint64_t BaseClassMetaInfo::enumValueRead(std::uint64_t& enum_object) const
+  {
+    switch (size())
+    {
+      case 1: return *reinterpret_cast<std::uint8_t*>(&enum_object);
+      case 2: return *reinterpret_cast<std::uint16_t*>(&enum_object);
+      case 4: return *reinterpret_cast<std::uint32_t*>(&enum_object);
+      case 8: return *reinterpret_cast<std::uint64_t*>(&enum_object);
+      default: return 0;
+    }
   }
 
   void BaseClassMetaInfo::enumValueWrite(std::uint64_t& enum_object, std::uint64_t new_value) const
   {
     switch (size())
     {
-    case 1:
-      *reinterpret_cast<std::uint8_t*>(&enum_object) = std::uint8_t(new_value);
-      break;
-    case 2:
-      *reinterpret_cast<std::uint16_t*>(&enum_object) = std::uint16_t(new_value);
-      break;
-    case 4:
-      *reinterpret_cast<std::uint32_t*>(&enum_object) = std::uint32_t(new_value);
-      break;
-    case 8:
-      *reinterpret_cast<std::uint64_t*>(&enum_object) = std::uint64_t(new_value);
-      break;
-    default:
-      break;
+      case 1:
+        *reinterpret_cast<std::uint8_t*>(&enum_object) = std::uint8_t(new_value);
+        break;
+      case 2:
+        *reinterpret_cast<std::uint16_t*>(&enum_object) = std::uint16_t(new_value);
+        break;
+      case 4:
+        *reinterpret_cast<std::uint32_t*>(&enum_object) = std::uint32_t(new_value);
+        break;
+      case 8:
+        *reinterpret_cast<std::uint64_t*>(&enum_object) = std::uint64_t(new_value);
+        break;
+      default:
+        break;
     }
   }
 

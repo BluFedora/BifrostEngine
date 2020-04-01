@@ -57,10 +57,12 @@ namespace bifrost
   template<template<typename...> class TContainer, typename... Args>
   class ContainerTuple : private detail::unique_types<Args...>
   {
-    struct CtorEachTag final
-    {};
-    struct CtorCopyTag final
-    {};
+  public:
+    template<typename F>
+    static void forEachType(F&& f)
+    {
+      meta::for_each_template<Args...>(std::forward<F>(f));
+    }
 
    private:
     template<typename T>

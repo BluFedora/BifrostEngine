@@ -6,12 +6,12 @@
 *    Bifrost Scripting Language
 *
 * @brief
-*  Contains the macros for exporting symbols for the dll.
+*  Contains the macros for exporting symbols for the shared library.
 *
 * @version 0.0.1-beta
 * @date    2019-07-01
 *
-* @copyright Copyright (c) 2019 Shareef Abdoul-Raheem
+* @copyright Copyright (c) 2019-2020 Shareef Abdoul-Raheem
 */
 /******************************************************************************/
 #ifndef BIFROST_VM_EXPORT_H
