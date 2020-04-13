@@ -175,7 +175,11 @@ include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/inclu
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 # include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include/glslang/External/googletest/googletest/include)
 
-add_executable(BifrostEngine ${BIFROST_ENGINE_SOURCE_FILES})
+add_executable(
+  BifrostEngine 
+  ${BIFROST_ENGINE_SOURCE_FILES} 
+  "include/bifrost/ecs/bifrost_collision_system.hpp"
+ "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp")
 
 target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
 target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)
@@ -188,6 +192,11 @@ set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
   # NOTE(Shareef): Make the console not pop up.
 # set_target_properties(BifrostEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
+
+# Copy over the assets folder. TODO: Instead of a copy make a symlink?
+add_custom_command(TARGET BifrostEngine PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngine>/assets)
 
 ## Uncomment to inject these options into the command line when preforming a code analysis, it just works
 ## add_compile_definitions( "dummyDefine=0 /DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /GR /EHsc /std:c++17 /Zc:__cplusplus /DDummy2")

@@ -205,6 +205,8 @@ namespace bifrost::editor
   {
     setNameBuffer(key);
 
+    ImGui::PushID(&value);
+
     if (value)
     {
       if (ImGui::Button("clear"))
@@ -270,6 +272,8 @@ namespace bifrost::editor
         hasChangedTop() |= true;
       }
     }
+
+    ImGui::PopID();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
@@ -620,18 +624,20 @@ namespace bifrost::editor
 
         ImGui::Separator();
 
-        if (ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_None))
+        bool is_open = true;
+        if (ImGui::CollapsingHeader(label, &is_open, ImGuiTreeNodeFlags_None))
         {
           ImGui::Indent();
           serializer.serializeT(entity.get<T>());
-
-          if (ImGui::Button("Remove Component"))
-          {
-            entity.remove<T>();
-            has_missing_component = true;
-          }
-
           ImGui::Unindent();
+
+          ImGui::Separator();
+        }
+
+        if (!is_open)
+        {
+          entity.remove<T>();
+          has_missing_component = true;
         }
 
         ImGui::PopID();
@@ -662,7 +668,7 @@ namespace bifrost::editor
               entity.add<T>();
             }
           }
-          });
+        });
 
         ImGui::EndCombo();
       }

@@ -19,7 +19,6 @@
 
 namespace bifrost
 {
-  static const int                        k_BaseResolution[]          = {1600, 900};
   static const int                        k_AssumedWindow             = -1;
   static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
@@ -233,7 +232,7 @@ namespace bifrost
     }
   }
 
-  void BaseMultiFrameBuffer::create(bfGfxDeviceHandle device, bfBufferUsageBits usage, const bfGfxFrameInfo& info, size_t element_size, size_t element_alignment)
+  void BaseMultiBuffer::create(bfGfxDeviceHandle device, bfBufferUsageBits usage, const bfGfxFrameInfo& info, size_t element_size, size_t element_alignment)
   {
     element_aligned_size = alignUpSize(element_size, element_alignment);
     total_size           = element_aligned_size * info.num_frame_indices;
@@ -250,7 +249,7 @@ namespace bifrost
     handle = bfGfxDevice_newBuffer(device, &create_buffer);
   }
 
-  void BaseMultiFrameBuffer::destroy(bfGfxDeviceHandle device) const
+  void BaseMultiBuffer::destroy(bfGfxDeviceHandle device) const
   {
     bfGfxDevice_release(device, handle);
   }
@@ -297,7 +296,8 @@ namespace bifrost
     m_ViewProjection{},
     m_WhiteTexture{nullptr},
     m_DirectionalLightBuffer{},
-    m_PunctualLightBuffers{}
+    m_PunctualLightBuffers{},
+    m_GlobalTime{0.0f}
   {
   }
 
@@ -316,12 +316,12 @@ namespace bifrost
 
     m_EmptyVertexLayout = bfVertexLayout_new();
 
-    m_GBuffer.init(m_GfxDevice, k_BaseResolution[0], k_BaseResolution[1]);
-    m_SSAOBuffer.init(m_GfxDevice, k_BaseResolution[0], k_BaseResolution[1]);
+    m_GBuffer.init(m_GfxDevice, k_GfxBaseResolution[0], k_GfxBaseResolution[1]);
+    m_SSAOBuffer.init(m_GfxDevice, k_GfxBaseResolution[0], k_GfxBaseResolution[1]);
 
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
-     k_BaseResolution[0],
-     k_BaseResolution[1],
+     k_GfxBaseResolution[0],
+     k_GfxBaseResolution[1],
      BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
      bfTrue,
      bfFalse);
@@ -373,9 +373,14 @@ namespace bifrost
         {
           CameraUniformData* const buffer_data = m_CameraUniform.currentElement(m_FrameInfo);
 
+          Mat4x4 view_proj;
+          Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_proj);
+
           buffer_data->u_CameraProjection        = camera.proj_cache;
           buffer_data->u_CameraInvViewProjection = camera.inv_view_proj_cache;
-          buffer_data->u_CameraForward           = camera.forward;
+          buffer_data->u_CameraViewProjection    = view_proj;
+          buffer_data->u_CameraForwardAndTime    = camera.forward;
+          buffer_data->u_CameraForwardAndTime.w  = m_GlobalTime;
           buffer_data->u_CameraPosition          = camera.position;
 
           m_CameraUniform.flushCurrent(m_FrameInfo);
@@ -676,23 +681,25 @@ namespace bifrost
 
     endPass();
 
-    const bfPipelineBarrier barriers[] =
-     {
-      bfPipelineBarrier_image(
-       BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-       BIFROST_ACCESS_SHADER_READ_BIT,
-       m_SSAOBuffer.color_attachments[0],
-       BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
-     };
-    const std::uint32_t num_barriers = std::uint32_t(bfCArraySize(barriers));
+    {
+      const bfPipelineBarrier barriers[] =
+       {
+        bfPipelineBarrier_image(
+         BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+         BIFROST_ACCESS_SHADER_READ_BIT,
+         m_SSAOBuffer.color_attachments[0],
+         BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+       };
+      const std::uint32_t num_barriers = std::uint32_t(bfCArraySize(barriers));
 
-    bfGfxCmdList_pipelineBarriers(
-     m_MainCmdList,
-     BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-     BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-     barriers,
-     num_barriers,
-     bfFalse);
+      bfGfxCmdList_pipelineBarriers(
+       m_MainCmdList,
+       BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+       BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+       barriers,
+       num_barriers,
+       bfFalse);
+    }
 
     bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info1);
     bfGfxCmdList_setClearValues(m_MainCmdList, m_SSAOBuffer.clear_values + 1u);
@@ -871,8 +878,6 @@ namespace bifrost
 
   void StandardRenderer::deinit()
   {
-    bfGfxDevice_flush(m_GfxDevice);
-
     for (Renderable& renderable : m_RenderablePool)
     {
       renderable.destroy(m_GfxDevice);

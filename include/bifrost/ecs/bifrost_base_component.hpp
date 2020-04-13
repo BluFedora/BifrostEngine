@@ -9,7 +9,7 @@
  * @version 0.0.1
  * @date    2020-03-21
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef BIFROST_BASE_COMPONENT_HPP
 #define BIFROST_BASE_COMPONENT_HPP
@@ -20,7 +20,7 @@ class BifrostEngine;
 
 namespace bifrost
 {
-  using Engine = BifrostEngine;
+  using Engine = ::BifrostEngine;
 
   class Entity;
 

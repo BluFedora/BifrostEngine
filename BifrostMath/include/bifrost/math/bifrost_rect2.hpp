@@ -127,7 +127,7 @@ namespace bifrost
     }
 
     template<typename T>
-    bool operator-(const Vec3T<T>& lhs)
+    Vec3T<T> operator-(const Vec3T<T>& lhs)
     {
       return Vec3T<T>{-lhs.x, -lhs.y, -lhs.z};
     }
@@ -147,22 +147,22 @@ namespace bifrost
     template<>
     struct Vec3T<float> : public Vec3f
     {
-      Vec3T(float x, float y, float z, float w = 1.0f) :
+      constexpr Vec3T(float x, float y, float z, float w = 1.0f) :
         Vec3f{x, y, z, w}
       {
       }
 
-      Vec3T(float xyzw) :
+      constexpr Vec3T(float xyzw) :
         Vec3f{xyzw, xyzw, xyzw, xyzw}
       {
       }
 
-      Vec3T(const Vec3f& rhs) :
+      constexpr Vec3T(const Vec3f& rhs) :
         Vec3f{rhs}
       {
       }
 
-      Vec3T() = default;
+      constexpr Vec3T() = default;
 
       Vec3T& operator*=(float scalar)
       {
@@ -406,6 +406,41 @@ namespace bifrost
   {
     Rect2i aspectRatioDrawRegion(std::uint32_t aspect_w, std::uint32_t aspect_h, std::uint32_t window_w, std::uint32_t window_h);
   }
+
+  namespace vec
+  {
+    static Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
+    {
+      Vector3f result;
+      Vec3f_cross(&a, &b, &result);
+      result.w = w;
+
+      return result;
+    }
+
+    template<typename T>
+    detail::Vec3T<T> min(const detail::Vec3T<T>& a, const detail::Vec3T<T>& b, float w = 1.0f)
+    {
+      return {
+       std::min(a.x, b.x),
+       std::min(a.y, b.y),
+       std::min(a.z, b.z),
+       w,
+      };
+    }
+
+    template<typename T>
+    detail::Vec3T<T> max(const detail::Vec3T<T>& a, const detail::Vec3T<T>& b, float w = 1.0f)
+    {
+      return {
+       std::max(a.x, b.x),
+       std::max(a.y, b.y),
+       std::max(a.z, b.z),
+       w,
+      };
+    }
+  }  // namespace vec
+
 }  // namespace bifrost
 
 #endif /* BIFROST_RECT2_HPP */

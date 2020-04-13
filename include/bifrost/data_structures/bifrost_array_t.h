@@ -94,8 +94,8 @@ typedef int(__cdecl* bfArrayFindCompare)(const void*, const void*);
 // A 'BifrostArray' can be used anywhere a 'normal' C array can be used.
 // For all functions pass a pointer to the array.
 
-void*  bfArray_mallocator(void* user_data, void* ptr, size_t size);  // Default allocator uses C-Libs 'malloc' and 'free'.
-void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data); // if allocator == NULL then allocator = bfArray_mallocator;
+void*  bfArray_mallocator(void* user_data, void* ptr, size_t size);                                                         // Default allocator uses C-Libs 'malloc' and 'free'.
+void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data);  // if allocator == NULL then allocator = bfArray_mallocator;
 void*  bfArray_userData(void** self);
 void*  bfArray_begin(void** self);
 void*  bfArray_end(void** self);
@@ -117,13 +117,13 @@ void*  bfArray_binarySearch(void** self, const void* key, bfArrayFindCompare com
 /* If [compare] is NULL then the default impl uses a memcmp with the sizeof a single element. */
 /* [key] is always the first parameter for each comparison.                                   */
 /* Returns BIFROST_ARRAY_INVALID_INDEX on failure to find element.                            */
-size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key, ArrayFindCompare compare);
-size_t bfArray_find(void** self, const void* key, ArrayFindCompare compare);
+size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key, bfArrayFindCompare compare);
+size_t bfArray_find(void** self, const void* key, bfArrayFindCompare compare);
 void   bfArray_removeAt(void** self, size_t index);
 void   bfArray_swapAndPopAt(void** self, size_t index);
 void*  bfArray_pop(void** self);
-void   bfArray_sortRange(void** self, size_t bgn, size_t end, ArraySortCompare compare); /* [bgn, end) */
-void   bfArray_sort(void** self, ArraySortCompare compare);
+void   bfArray_sortRange(void** self, size_t bgn, size_t end, bfArraySortCompare compare); /* [bgn, end) */
+void   bfArray_sort(void** self, bfArraySortCompare compare);
 void   bfArray_delete(void** self);
 #if __cplusplus
 }

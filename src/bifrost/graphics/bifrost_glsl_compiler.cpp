@@ -287,6 +287,7 @@ namespace bifrost
       bfLogError("Info Log       : %s", shader.getInfoLog());
       bfLogError("Info Debug Log : %s", shader.getInfoDebugLog());
       bfLogPop();
+
       throw "Parse Error";
     }
 
@@ -299,6 +300,7 @@ namespace bifrost
       bfLogError("Info Log       : %s", shader.getInfoLog());
       bfLogError("Info Debug Log : %s", shader.getInfoDebugLog());
       bfLogPop();
+
       throw "Link Error";
     }
 

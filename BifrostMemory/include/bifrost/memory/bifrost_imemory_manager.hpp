@@ -192,7 +192,7 @@ namespace bifrost
      *   The number of the elements the array contains.
      *
      * @param array_alignment
-     *   What to align each the array to.
+     *   What to align the array address to.
      *   Must be a power of two.
      *
      * @return T*
@@ -237,7 +237,7 @@ namespace bifrost
      *   The number of the elements the array contains.
      *
      * @param array_alignment
-     *   What to align each the array to.
+     *   What to align the array address to.
      *   Must be a power of two.
      *
      * @return T*
@@ -249,11 +249,11 @@ namespace bifrost
     {
       if (num_elements)
       {
-        T* const array_data = allocateAligned(sizeof(ArrayHeader), sizeof(T) * num_elements, array_alignment);
+        T* const array_data = static_cast<T*>(allocateAligned(sizeof(ArrayHeader), sizeof(T) * num_elements, array_alignment));
 
         if (array_data)
         {
-          ArrayHeader* header = grabHeader(sizeof(ArrayHeader), array_data);
+          ArrayHeader* header = static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), array_data));
           header->size        = num_elements;
         }
 
@@ -281,7 +281,7 @@ namespace bifrost
      *   The number of elements the array has.
      */
     template<typename T>
-    std::size_t arraySize(const T* const ptr)
+    static std::size_t arraySize(const T* const ptr)
     {
       return static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), const_cast<T*>(ptr)))->size;
     }

@@ -103,54 +103,57 @@ namespace bifrost
   {
     bool is_primitive = false;
 
-    meta::for_each_template_and_pointer_and_const<
-     // std::byte,
-     std::int8_t,
-     std::uint8_t,
-     std::int16_t,
-     std::uint16_t,
-     std::int32_t,
-     std::uint32_t,
-     std::int64_t,
-     std::uint64_t,
-     float,
-     double,
-     long double,
-     Vec2f,
-     Vec3f,
-     bfColor4f,
-     bfColor4u,
-     String,
-     BifrostUUID,
-     BaseAssetHandle>([this, &key, &value, &is_primitive](auto t) {
-      using T = bfForEachTemplateT(t);
+    if (!type_info->isEnum())
+    {
+      meta::for_each_template_and_pointer_and_const<
+       // std::byte,
+       std::int8_t,
+       std::uint8_t,
+       std::int16_t,
+       std::uint16_t,
+       std::int32_t,
+       std::uint32_t,
+       std::int64_t,
+       std::uint64_t,
+       float,
+       double,
+       long double,
+       Vec2f,
+       Vec3f,
+       bfColor4f,
+       bfColor4u,
+       String,
+       BifrostUUID,
+       BaseAssetHandle>([this, &key, &value, &is_primitive](auto t) {
+        using T = bfForEachTemplateT(t);
 
-      if (!is_primitive && value.is<T>())
-      {
-        if constexpr (std::is_pointer_v<T>)
+        if (!is_primitive && value.is<T>())
         {
-          if constexpr (std::is_const_v<std::remove_pointer_t<T>>)
+          if constexpr (std::is_pointer_v<T>)
           {
-            auto& v = const_cast<std::remove_const_t<std::remove_pointer_t<T>>&>(*value.as<T>());
-            serialize(key, v);
+            if constexpr (std::is_const_v<std::remove_pointer_t<T>>)
+            {
+              auto& v = const_cast<std::remove_const_t<std::remove_pointer_t<T>>&>(*value.as<T>());
+              serialize(key, v);
+            }
+            else
+            {
+              auto& v = *value.as<T>();
+              serialize(key, v);
+            }
           }
           else
           {
-            auto& v = *value.as<T>();
-            serialize(key, v);
+            T value_copy = value.as<T>();
+
+            serialize(key, value_copy);
+            value.assign<T>(value_copy);
           }
-        }
-        else
-        {
-          T value_copy = value.as<T>();
 
-          serialize(key, value_copy);
-          value.assign<T>(value_copy);
+          is_primitive = true;
         }
-
-        is_primitive = true;
-      }
-    });
+      });
+    }
 
     if (!is_primitive)
     {

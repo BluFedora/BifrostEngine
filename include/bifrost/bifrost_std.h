@@ -25,6 +25,8 @@
 
 #if __cplusplus
 #undef bfCArraySize
+#undef bfBit
+
 template<typename T, size_t N>
 static constexpr size_t bfCArraySize(const T((&)[N]))
 {
@@ -32,6 +34,12 @@ static constexpr size_t bfCArraySize(const T((&)[N]))
 }
 
 #define bfSizeOfField(T, member) (sizeof(T::member))
+
+template<typename T>
+static constexpr T bfBit(T bit_idx)
+{
+  return T(1) << bit_idx;
+}
 
 #if 0
 template<typename T>
@@ -44,18 +52,22 @@ T bfClamp(T min_value, T value, T max_value)
 #else
 #define bfCArraySize(arr) ((sizeof(arr) / sizeof(0 [arr])) / ((size_t)(!(sizeof(arr) % sizeof(0 [arr])))))  //(sizeof((arr)) / sizeof((arr)[0]))
 #define bfSizeOfField(T, member) (sizeof(((T*)0)->member))
+#define bfBit(index) (1ULL << (index))
 #endif
 
 #if __cplusplus
 extern "C" {
 #endif
-#define bfBit(index) (1ULL << (index))
 typedef uint32_t bfBool32;
 typedef float    bfFloat32;
 typedef double   bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
 
+/**
+ * @brief
+ *   A non-owning reference to a string.
+*/
 typedef struct bfStringRange_t
 {
   const char* bgn;

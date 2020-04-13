@@ -45,6 +45,7 @@ namespace bifrost
   class Entity final : public BaseObject<Entity>
   {
     BIFROST_META_FRIEND;
+    friend class Scene;
 
    private:
     Scene&                  m_OwningScene;
@@ -54,6 +55,7 @@ namespace bifrost
     EntityList              m_Children;
     intrusive::Node<Entity> m_Hierarchy;
     ComponentHandleStorage  m_ComponentHandles;
+    BVHNodeOffset           m_BHVNode;
 
    public:
     Entity(Scene& scene, const StringRange& name);
@@ -62,6 +64,7 @@ namespace bifrost
     [[nodiscard]] const String&     name() const { return m_Name; }
     [[nodiscard]] BifrostTransform& transform() { return m_Transform; }
     [[nodiscard]] const EntityList& children() const { return m_Children; }
+    [[nodiscard]] BVHNodeOffset     bvhID() const { return m_BHVNode; }
 
     Entity* addChild(const StringRange& name);
     void    setParent(Entity* new_parent);

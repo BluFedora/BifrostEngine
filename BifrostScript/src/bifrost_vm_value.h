@@ -30,45 +30,37 @@ extern "C" {
 #define TAG_TRUE (uint64_t)0x1
 #define TAG_FALSE (uint64_t)0x2
 #define TAG_NULL (uint64_t)0x3                                      // 4-7 unused
-#define POINTER_MASK (((uint64_t)1 << 63) | 0x7FFC000000000000ULL)  // SIGN_BIT | QUIET_NAN;
+#define POINTER_MASK (SIGN_BIT | QUIET_NAN)
 /* static  uint8_t TAG_GET(bfVMValue value) { return (uint8_t)(value & TAG_MASK); } */
-
-#define TAG_DEF(t) (bfVMValue)((uint64_t)(QUIET_NAN | t))
-
-/*
-static const uint64_t VAL_TRUE  = TAG_DEF(TAG_TRUE);
-static const uint64_t VAL_FALSE = TAG_DEF(TAG_FALSE);
-static const uint64_t VAL_NULL  = TAG_DEF(TAG_NULL);
-*/
-
+#define TAG_DEF(t) (bfVMValue)((uint64_t)(QUIET_NAN | (t)))
 #define VAL_TRUE TAG_DEF(TAG_TRUE)
 #define VAL_FALSE TAG_DEF(TAG_FALSE)
 #define VAL_NULL TAG_DEF(TAG_NULL)
 
 // Used By:
 // debug, value
-static inline bfBool32 IS_NULL(bfVMValue v)
+static bfBool32 IS_NULL(bfVMValue v)
 {
   return v == VAL_NULL;
 }
 
 // Used By:
 // value
-static inline bfBool32 IS_TRUE(bfVMValue v)
+static bfBool32 IS_TRUE(bfVMValue v)
 {
   return v == VAL_TRUE;
 }
 
 // Used By:
 // value
-static inline bfBool32 IS_FALSE(bfVMValue v)
+static bfBool32 IS_FALSE(bfVMValue v)
 {
   return v == VAL_FALSE;
 }
 
 // Used By:
 // main, value, API, debug
-static inline bfBool32 IS_BOOL(bfVMValue v)
+static bfBool32 IS_BOOL(bfVMValue v)
 {
   return IS_TRUE(v) || IS_FALSE(v);
 }
@@ -82,14 +74,14 @@ static inline bfBool32 IS_POINTER(bfVMValue v)
 
 // Used By:
 // main, value, API, debug, gc, obj
-static inline void* AS_POINTER(bfVMValue v)
+static void* AS_POINTER(bfVMValue v)
 {
   return (void*)((uintptr_t)(v & ~POINTER_MASK));
 }
 
 // Used By:
 // API, gc, parser
-static inline bfVMValue FROM_POINTER(const void* p)
+static bfVMValue FROM_POINTER(const void* p)
 {
   if (p == NULL)
   {
@@ -99,12 +91,12 @@ static inline bfVMValue FROM_POINTER(const void* p)
   return (bfVMValue)(POINTER_MASK | (uint64_t)((uintptr_t)(p)));
 }
 
-static inline bfBool32 IS_NUMBER(bfVMValue v)
+static bfBool32 IS_NUMBER(bfVMValue v)
 {
   return (v & QUIET_NAN) != QUIET_NAN;
 }
 
-static inline bfVMValue FROM_NUMBER(bfFloat64 p)
+static bfVMValue FROM_NUMBER(bfFloat64 p)
 {
   union
   {

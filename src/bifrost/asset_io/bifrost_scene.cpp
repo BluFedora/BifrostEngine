@@ -15,6 +15,7 @@
 #include "bifrost/asset_io/bifrost_file.hpp"            /* File                 */
 #include "bifrost/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
 #include "bifrost/core/bifrost_engine.hpp"              /* Engine               */
+#include "bifrost/ecs/bifrost_collision_system.hpp"     /* DebugRenderer        */
 #include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
 #include "bifrost/utility/bifrost_json.hpp"             /* json::Value          */
 
@@ -25,7 +26,8 @@ namespace bifrost
     m_Memory{memory},
     m_RootEntities{memory},
     m_ActiveComponents{memory},
-    m_InactiveComponents{memory}
+    m_InactiveComponents{memory},
+    m_BVHTree{memory}
   {
   }
 
@@ -33,6 +35,7 @@ namespace bifrost
   {
     Entity* entity = createEntity(name);
     m_RootEntities.push(entity);
+
     return entity;
   }
 
@@ -40,6 +43,24 @@ namespace bifrost
   {
     m_RootEntities.removeAt(m_RootEntities.find(entity));
     destroyEntity(entity);
+  }
+
+  void Scene::update(LinearAllocator& temp, DebugRenderer& dbg_renderer)
+  {
+    for (Entity* entity : m_RootEntities)
+    {
+      m_BVHTree.markLeafDirty(entity->bvhID(), entity->transform());
+    }
+
+    m_BVHTree.endFrame(temp, true);
+
+    m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
+      dbg_renderer.addAABB(
+       (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
+       Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
+       bfColor4u_fromUint32(BIFROST_COLOR_CYAN)
+      );
+    });
   }
 
   void Scene::serialize(ISerializer& serializer)
@@ -76,7 +97,11 @@ namespace bifrost
 
   Entity* Scene::createEntity(const StringRange& name)
   {
-    return m_Memory.allocateT<Entity>(*this, name);
+    Entity* const entity = m_Memory.allocateT<Entity>(*this, name);
+
+    entity->m_BHVNode = m_BVHTree.insert(entity, entity->transform());
+
+    return entity;
   }
 
   void Scene::destroyEntity(Entity* entity) const

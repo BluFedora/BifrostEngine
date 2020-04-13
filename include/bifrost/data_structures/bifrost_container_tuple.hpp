@@ -3,7 +3,8 @@
 
 #include "bifrost/meta/bifrost_meta_utils.hpp" /* for_each_template */
 
-#include <tuple> /* size_t, tuple */
+#include <tuple>       /* size_t, tuple     */
+#include <type_traits> /* aligned_storage_t */
 
 namespace bifrost
 {
@@ -57,7 +58,7 @@ namespace bifrost
   template<template<typename...> class TContainer, typename... Args>
   class ContainerTuple : private detail::unique_types<Args...>
   {
-  public:
+   public:
     template<typename F>
     static void forEachType(F&& f)
     {
@@ -65,9 +66,7 @@ namespace bifrost
     }
 
    private:
-    template<typename T>
-    using TContainerStorage  = std::aligned_storage_t<sizeof(T), alignof(T)>;
-    using ContainerTupleImpl = std::tuple<TContainerStorage<TContainer<Args>>...>;
+    using ContainerTupleImpl = std::tuple<std::aligned_storage_t<sizeof(Args), alignof(Args)>...>;
 
    private:
     ContainerTupleImpl m_Impl;

@@ -23,9 +23,10 @@
 #include "bifrost/meta/bifrost_meta_utils.hpp"           /* for_each                 */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
 #include "bifrost_vm.h"                                  /* bfVM_*                   */
-#include <string>                                        /* string                   */
-#include <tuple>                                         /* tuple                    */
-#include <type_traits>                                   /* decay_t, is_arithmetic_v */
+
+#include <string>      /* string                   */
+#include <tuple>       /* tuple                    */
+#include <type_traits> /* decay_t, is_arithmetic_v */
 
 namespace bifrost
 {
@@ -96,7 +97,7 @@ namespace bifrost
         {
           bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
         }
-        else if constexpr (std::is_same_v<RawT, StringRange>)
+        else if constexpr (std::is_same_v<RawT, StringRange> || std::is_same_v<RawT, bfStringRange>)
         {
           bfVM_stackSetStringLen(self, slot, value.bgn, value.end - value.bgn);
         }
@@ -207,8 +208,11 @@ namespace bifrost
   template<typename ClzT, typename... Args>
   BifrostMethodBind vmMakeCtorBinding(const char* name = "ctor", uint32_t num_statics = 0, uint16_t extra_data = 0u)
   {
-    /* NOTE(Shareef): +1 for the self argument */
-    return {name, &vmNativeCtor<ClzT, Args...>, sizeof...(Args) + 1, num_statics, extra_data};
+    return bfMethodBind_make(name,
+                             &vmNativeCtor<ClzT, Args...>,
+                             sizeof...(Args) + 1, /* NOTE(Shareef): +1 for the self argument */
+                             num_statics,
+                             extra_data);
   }
 
   template<auto mem_fn>

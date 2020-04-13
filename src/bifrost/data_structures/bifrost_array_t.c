@@ -21,6 +21,14 @@
 #include <stdlib.h> /* qsort, bsearch */
 #include <string.h> /* memcpy         */
 
+typedef struct
+{
+  size_t      stride;
+  const void* key;
+
+} ArrayDefaultCompareData;
+
+#if 1
 #define PRISM_ASSERT(arg, msg) assert((arg) && (msg))
 #define SELF_CAST(s) ((BifrostArray*)(s))
 #define BIFROST_MALLOC(size, align) malloc((size))
@@ -174,13 +182,6 @@ void* Array_findSorted(const void* const self, const void* const key, ArrayFindC
   return Array_findFromSorted(self, key, 0, Array_size(self), compare);
 }
 
-typedef struct
-{
-  size_t      stride;
-  const void* key;
-
-} ArrayDefaultCompareData;
-
 static int Array_findDefaultCompare(const void* lhs, const void* rhs)
 {
   ArrayDefaultCompareData* data = (ArrayDefaultCompareData*)lhs;
@@ -224,10 +225,7 @@ void* Array_at(const void* const self, const size_t index)
   const size_t size         = Array_size(self);
   const int    is_in_bounds = index < size;
 
-  if (!is_in_bounds)
-  {
-    PRISM_ASSERT(is_in_bounds, "Array_at:: index array out of bounds error");
-  }
+  PRISM_ASSERT(is_in_bounds, "Array_at:: index array out of bounds error");
 #endif /* PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS */
 
   return *(char**)self + (Array_getHeader(*SELF_CAST(self))->stride * index);
@@ -270,8 +268,9 @@ void Array_delete(void* const self)
 
 #undef SELF_CAST
 #undef PRISM_ASSERT
+#endif
 
-///////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -534,7 +533,7 @@ void* bfArray_binarySearchRange(void** self, size_t bgn, size_t end, const void*
   bfAssert(end <= header->size, "bfArray_binarySearchRange:: end must be less than or equal to the size.");
   bfAssert(end > bgn, "bfArray_binarySearchRange:: end must be greater than bgn.");
 
-  return bsearch(key, bfCastByte(Array_begin(self)) + bgn * header->stride, end - bgn, header->stride, compare);
+  return bsearch(key, bfCastByte(bfArray_begin(self)) + bgn * header->stride, end - bgn, header->stride, compare);
 }
 
 void* bfArray_binarySearch(void** self, const void* key, bfArrayFindCompare compare)
@@ -548,7 +547,7 @@ static int bfArray__find(const void* lhs, const void* rhs)
   return memcmp(data->key, rhs, data->stride) == 0;
 }
 
-size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key, ArrayFindCompare compare)
+size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key, bfArrayFindCompare compare)
 {
   bfAssert(end > bgn, "bfArray_findInRange:: end must be greater than bgn.");
 
@@ -564,7 +563,7 @@ size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key,
 
   for (size_t i = bgn; i < end; ++i)
   {
-    if (compare(key, Array_at(self, i)))
+    if (compare(key, bfArray_at(self, i)))
     {
       return i;
     }
@@ -573,9 +572,9 @@ size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key,
   return BIFROST_ARRAY_INVALID_INDEX;
 }
 
-size_t bfArray_find(void** self, const void* key, ArrayFindCompare compare)
+size_t bfArray_find(void** self, const void* key, bfArrayFindCompare compare)
 {
-  return bfArray_findInRange(self, 0, Array_size(self), key, compare);
+  return bfArray_findInRange(self, 0, bfArray_size(self), key, compare);
 }
 
 void bfArray_removeAt(void** self, size_t index)
@@ -588,7 +587,7 @@ void bfArray_removeAt(void** self, size_t index)
 
   if (num_elemnts_to_move)
   {
-    memmove(Array_at(self, index), Array_at(self, index + 1), num_elemnts_to_move * header->stride);
+    memmove(bfArray_at(self, index), bfArray_at(self, index + 1), num_elemnts_to_move * header->stride);
   }
 
   --header->size;
@@ -602,7 +601,7 @@ void bfArray_swapAndPopAt(void** self, size_t index)
 
   if (header->size)
   {
-    memcpy(Array_at(self, index), Array_back(self), header->stride);
+    memcpy(bfArray_at(self, index), bfArray_back(self), header->stride);
   }
 
   --header->size;
@@ -614,12 +613,12 @@ void* bfArray_pop(void** self)
 
   bfAssert(header->size, "bfArray_pop:: attempt to pop empty array.");
 
-  void* last_element = Array_back(self);
+  void* last_element = bfArray_back(self);
   --header->size;
   return last_element;
 }
 
-void bfArray_sortRange(void** self, size_t bgn, size_t end, ArraySortCompare compare)
+void bfArray_sortRange(void** self, size_t bgn, size_t end, bfArraySortCompare compare)
 {
   ArrayHeader* const header = grabHeader(self);
 
@@ -635,7 +634,7 @@ void bfArray_sortRange(void** self, size_t bgn, size_t end, ArraySortCompare com
   }
 }
 
-void bfArray_sort(void** self, ArraySortCompare compare)
+void bfArray_sort(void** self, bfArraySortCompare compare)
 {
   bfArray_sortRange(self, 0, grabHeader(self)->size, compare);
 }

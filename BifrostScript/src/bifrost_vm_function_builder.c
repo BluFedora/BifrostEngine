@@ -232,6 +232,7 @@ void bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn
   out->line_to_code       = self->line_to_code;
   out->needed_stack_space = self->max_local_idx + arity + 1;
 
+  // Transfer of ownership of the constants to output function.
   self->constants = NULL;
 }
 

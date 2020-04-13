@@ -17,9 +17,11 @@
 #include "bifrost/core/bifrost_base_object.hpp"      /* BaseObject<T>     */
 #include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
 #include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
+#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH */
 
 namespace bifrost
 {
+  class DebugRenderer;
   class Entity;
 
   /*!
@@ -36,6 +38,7 @@ namespace bifrost
     Array<Entity*>   m_RootEntities;
     ComponentStorage m_ActiveComponents;
     ComponentStorage m_InactiveComponents;
+    BVH              m_BVHTree; 
 
    public:
     explicit Scene(IMemoryManager& memory);
@@ -43,8 +46,11 @@ namespace bifrost
     // Entity Management
 
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
-    Entity*               addEntity(const StringRange& name);
+    Entity*               addEntity(const StringRange& name = "Untitled");
     void                  removeEntity(Entity* entity);
+
+    // Temp Code
+    void update(LinearAllocator& temp, DebugRenderer& dbg_renderer);
 
     // Component
 

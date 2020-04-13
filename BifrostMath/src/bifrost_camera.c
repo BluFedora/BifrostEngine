@@ -24,6 +24,19 @@ static void camera_update_vectors(Camera* cam)
 
 void Camera_init(Camera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch)
 {
+  static const Vec3f k_DefaultPosition = {0.0f, 0.0f, 0.0f, 1.0f};
+  static const Vec3f k_DefaultWorldUp  = {0.0f, 1.0f, 0.0f, 0.0f};
+
+  if (!pos)
+  {
+    pos = &k_DefaultPosition;
+  }
+
+  if (!world_up)
+  {
+    world_up = &k_DefaultWorldUp;
+  }
+
   cam->position                    = (Vec3f){pos->x, pos->y, pos->z, 1.0f};
   cam->_worldUp                    = (Vec3f){world_up->x, world_up->y, world_up->z, 0.0f};
   cam->_yaw                        = yaw;

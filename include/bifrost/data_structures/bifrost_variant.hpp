@@ -447,6 +447,14 @@ namespace bifrost
   }
 
   template<typename FVisitor, typename... Ts>
+  static decltype(auto) visit_all(FVisitor&& visitor, const Variant<Ts...>& variant)
+  {
+    static_assert(detail::is_callable_by_type_list<FVisitor, Ts...>::value, "The visitor does not handle all types contained in the Variant.");
+
+    return detail::visit_helper<FVisitor, const Variant<Ts...>, Ts...>(std::forward<FVisitor>(visitor), variant);
+  }
+
+  template<typename FVisitor, typename... Ts>
   static decltype(auto) visit_all(FVisitor&& visitor, Variant<Ts...>& variant)
   {
     static_assert(detail::is_callable_by_type_list<FVisitor, Ts...>::value, "The visitor does not handle all types contained in the Variant.");

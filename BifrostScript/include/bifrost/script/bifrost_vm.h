@@ -257,7 +257,7 @@ struct BifrostVM_t
   struct BifrostObj_t*          temp_roots[8];                           /*!< Objects temporarily protected from the GC                                      */
   uint8_t                       temp_roots_top;                          /*!< BifrostVM_t::temp_roots size                                                   */
   bfBool32                      gc_is_running;                           /*!< This is so that when calling a finalizer the GC isn't run.                     */
-  size_t                        build_in_symbols[BIFROST_VM_SYMBOL_MAX]; /*!< Symbols that should be loaded at startup for a faster runtime.                 */
+  uint32_t                      build_in_symbols[BIFROST_VM_SYMBOL_MAX]; /*!< Symbols that should be loaded at startup for a faster runtime.                 */
   struct BifrostObjNativeFn_t*  current_native_fn;                       /*!< The currently executing native function for accessing of userdata and statics. */
 };
 

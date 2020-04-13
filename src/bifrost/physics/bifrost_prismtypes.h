@@ -275,22 +275,22 @@ namespace prism
     }
 
     /**
-             * Gets a vector representing one axis (i.e. one column) in the matrix.
-             *
-             * @param i The row to return. Row 3 corresponds to the position
-             * of the transform matrix.
-             *
-             * @return The vector.
-             */
+     * Gets a vector representing one axis (i.e. one column) in the matrix.
+     *
+     * @param i The row to return. Row 3 corresponds to the position
+     * of the transform matrix.
+     *
+     * @return The vector.
+     */
     Vec3 getAxisVector(int i) const
     {
       return Vec3(data[i], data[i + 4], data[i + 8]);
     }
 
     /**
-             * Sets this matrix to be the rotation matrix corresponding to
-             * the given quaternion.
-             */
+     * Sets this matrix to be the rotation matrix corresponding to
+     * the given quaternion.
+     */
     void setOrientationAndPos(const Quaternionf &q, const Vec3 &pos)
     {
       data[0] = 1 - (2 * q.j * q.j + 2 * q.k * q.k);

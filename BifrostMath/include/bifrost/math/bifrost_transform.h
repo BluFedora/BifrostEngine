@@ -71,21 +71,21 @@ BIFROST_MATH_API Vec3f       bfQuaternionf_backwardVec(const Quaternionf* self);
 */
 typedef struct BifrostTransform_t
 {
-  Vec3f                      origin;
-  Vec3f                      local_position;
-  Quaternionf                local_rotation;
-  Vec3f                      local_scale;
-  Vec3f                      world_position;
-  Quaternionf                world_rotation;
-  Vec3f                      world_scale;
-  Mat4x4                     local_transform;
-  Mat4x4                     world_transform;
-  Mat4x4                     normal_transform;
-  struct BifrostTransform_t* parent;
-  struct BifrostTransform_t* first_child;
-  struct BifrostTransform_t* next_sibling;
-  struct BifrostTransform_t* prev_sibling;
-  /*bfBool32 */ unsigned int needs_gpu_upload;
+  Vec3f                       origin;
+  Vec3f                       local_position;
+  Quaternionf                 local_rotation;
+  Vec3f                       local_scale;
+  Vec3f                       world_position;
+  Quaternionf                 world_rotation;
+  Vec3f                       world_scale;
+  Mat4x4                      local_transform;
+  Mat4x4                      world_transform;
+  Mat4x4                      normal_transform;
+  struct BifrostTransform_t*  parent;
+  struct BifrostTransform_t*  first_child;
+  struct BifrostTransform_t*  next_sibling;
+  struct BifrostTransform_t*  prev_sibling;
+  /* bfBool32 */ unsigned int needs_gpu_upload;
 
 } BifrostTransform;
 

@@ -5,7 +5,7 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef BIFROST_DBG_LOGGER_H
 #define BIFROST_DBG_LOGGER_H

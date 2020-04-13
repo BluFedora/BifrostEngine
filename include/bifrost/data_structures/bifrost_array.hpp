@@ -103,6 +103,7 @@ namespace bifrost
     [[nodiscard]] std::size_t capacity() const { return ::bfArray_capacity(rawData()); }
     [[nodiscard]] T*          data() { return begin(); }
     [[nodiscard]] const T*    data() const { return begin(); }
+    [[nodiscard]] bool        isEmpty() const { return size() == 0u; }
 
     /*
     void copy(Array<T>& src, std::size_t num_elements)
@@ -200,12 +201,14 @@ namespace bifrost
 
     T& operator[](std::size_t index)
     {
-      return at(index); // return m_Data[index];
+      // TODO: Only use Array::at in debug mode.
+      return at(index);  // return m_Data[index];
     }
 
     const T& operator[](std::size_t index) const
     {
-      return at(index); // return m_Data[index];
+      // TODO: Only use Array::at in debug mode.
+      return at(index);  // return m_Data[index];
     }
 
     T* binarySearchRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare = nullptr)

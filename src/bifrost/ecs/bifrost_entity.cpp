@@ -23,7 +23,8 @@ namespace bifrost
     m_Transform{},
     m_Parent{nullptr},
     m_Children{&Entity::m_Hierarchy},
-    m_ComponentHandles{}
+    m_ComponentHandles{},
+    m_BHVNode{k_BVHNodeInvalidOffset}
   {
     bfTransform_ctor(&m_Transform);
   }

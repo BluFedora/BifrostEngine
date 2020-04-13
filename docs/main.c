@@ -51,17 +51,7 @@ extern void basicDrawing(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE);
   argc    = 2;
   argv[1] = "test_script.bts";
 
-  const ShaderProgramCreateParams shader_params =
-   {
-    .parent = NULL,
-   };
-
-  bfShaderProgram shader = BifrostShaderProgram_new(&shader_params);
-  BifrostShaderProgram_loadFile(shader, BST_VERTEX, "assets/shaders/gles3/basic.vs.glsl");
-  BifrostShaderProgram_loadFile(shader, BST_FRAGMENT, "assets/shaders/gles3/basic.fs.glsl");
-  BifrostShaderprogram_compile(shader);
   // const int positionAttributeLocation = glGetAttribLocation(shader);
 
-  BifrostShaderProgram_delete(shader);
   //EM_ASM(alert("Inline Javascript from C++!"););
 #endif

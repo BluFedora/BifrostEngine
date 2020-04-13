@@ -91,7 +91,7 @@ namespace bifrost
 
   static void load_vec3f(Array<Vector3f> &arr, const char *obj_file_data, std::size_t *file_pointer, std::size_t obj_file_data_length, float default_w)
   {
-    Vec3f &position = arr.emplace();
+    Vector3f &position = arr.emplace();
 
     skip_until_whitespace(obj_file_data, file_pointer);
     skip_whitespace(obj_file_data, file_pointer);
@@ -104,6 +104,16 @@ namespace bifrost
     position.z = (float)atof(obj_file_data + *file_pointer);
     skip_line(obj_file_data, file_pointer, obj_file_data_length);
     position.w = default_w;
+  }
+
+  static void load_position(Array<Vector3f> &arr, const char *obj_file_data, std::size_t *file_pointer, std::size_t obj_file_data_length, Vector3f &pos_min, Vector3f &pos_max)
+  {
+    load_vec3f(arr, obj_file_data, file_pointer, obj_file_data_length, 1.0f);
+
+    Vector3f &position = arr.back();
+
+    pos_min = vec::min(pos_min, position);
+    pos_max = vec::max(pos_max, position);
   }
 
   void loadObj(IMemoryManager &temp_allocator, Array<StandardVertex> &out, const char *obj_file_data, std::size_t obj_file_data_length)
@@ -128,6 +138,8 @@ namespace bifrost
     Array<Face>        faces{temp_allocator};
     Array<FaceElement> face_elements{temp_allocator};
     std::size_t        file_pointer{0};
+    Vector3f           min_bounds = {FLT_MAX};
+    Vector3f           max_bounds = {FLT_MIN};
 
     while (file_pointer < obj_file_data_length)
     {
@@ -146,7 +158,7 @@ namespace bifrost
           {
             case ' ':
             {
-              load_vec3f(positions, obj_file_data, &file_pointer, obj_file_data_length, 1.0f);
+              load_position(positions, obj_file_data, &file_pointer, obj_file_data_length, min_bounds, max_bounds);
               break;
             }
             case 't':
@@ -227,6 +239,11 @@ namespace bifrost
 
     out.reserve(faces.size() * 3);
 
+    const Vector3f scale         = max_bounds - min_bounds;
+    const Vector3f center        = (max_bounds + min_bounds) * 0.5f;
+    const float    max_scale     = std::max(scale.x, std::max(scale.y, scale.z));
+    const float    inv_max_scale = 1.0f / std::max(max_scale, k_Epsilon);
+
     for (std::size_t i = 0; i < faces.size(); ++i)
     {
       const Face *face = faces.data() + i;
@@ -285,7 +302,7 @@ namespace bifrost
 
         if (pos)
         {
-          vertex->pos = *pos;
+          vertex->pos = (*pos - center) * inv_max_scale;
         }
 
         vertex->normal  = normal ? *normal : face_normal;

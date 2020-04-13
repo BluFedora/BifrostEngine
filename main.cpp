@@ -7,6 +7,7 @@
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
 #include <bifrost/platform/bifrost_window_glfw.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
+#include "bifrost/ecs/bifrost_collision_system.hpp"
 
 #include <chrono>
 #include <functional>
@@ -19,9 +20,8 @@
 #include <glfw/glfw3native.h>
 #undef GLFW_EXPOSE_NATIVE_WIN32
 
-class TestClass
+struct TestClass final
 {
- public:
   int         x;
   std::string y;
 
@@ -249,6 +249,8 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   {
     WindowGLFW    window{};
     BifrostEngine engine{main_memory, main_memory_size, argc, argv};
+
+    engine.addECSSystem<CollisionSystem>();
 
     if (!window.open("Mjolnir Editor"))
     {

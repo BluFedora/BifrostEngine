@@ -991,6 +991,20 @@ namespace bifrost::editor
 
       if (ImGui::Begin("Project View"))
       {
+        if (ImGui::Button("Debug Draw 0"))
+        {
+          const float rand_x = (float(std::rand()) / float(RAND_MAX)) * 2.0f - 1.0f;
+          const float rand_y = (float(std::rand()) / float(RAND_MAX)) * 2.0f - 1.0f;
+          const float rand_z = (float(std::rand()) / float(RAND_MAX)) * 2.0f - 1.0f;
+
+          engine.debugDraw().addAABB(
+           Vector3f{rand_x, rand_y, rand_z, 1.0f},
+           Vector3f{1.0f, 1.0f, 1.0f, 0.0f},
+           bfColor4u_fromUint32(BIFROST_COLOR_RED),
+           5.0f,
+           false);
+        }
+
         if (imgui_ext::inspect("Project Name", m_OpenProject->name()))
         {
         }
@@ -1025,7 +1039,7 @@ namespace bifrost::editor
 
           if (ImGui::Button("Add Entity"))
           {
-            current_scene->addEntity("Untitled");
+            current_scene->addEntity();
 
             engine.assets().markDirty(current_scene);
           }
@@ -1034,10 +1048,20 @@ namespace bifrost::editor
 
           for (Entity* const root_entity : current_scene->rootEntities())
           {
+            ImGui::PushID(root_entity);
             if (ImGui::Selectable(root_entity->name().cstr()))
             {
               select(root_entity);
             }
+
+            bfTransform_flushChanges(&root_entity->transform());
+
+            engine.debugDraw().addAABB(
+             root_entity->transform().world_position,
+             root_entity->transform().world_scale,
+             bfColor4u_fromUint32(BIFROST_COLOR_SALMON));
+
+            ImGui::PopID();
           }
         }
         else
@@ -1359,7 +1383,7 @@ namespace bifrost::editor
 
     if (path::doesExist(path.cstr()))
     {
-      FixedLinearAllocator<2048 * 8> allocator;
+      FixedLinearAllocator<2048 * 4> allocator;
       List<MetaAssetPath>            metas_to_check{allocator};
 
       m_FileSystem.clear("Assets", path);
@@ -1797,8 +1821,6 @@ namespace bifrost::editor
             m_Serializer.beginChangeCheck();
 
             imgui_ext::inspect(engine, *object, m_Serializer);
-
-            bfTransform_flushChanges(&object->transform());
 
             if (m_Serializer.endChangedCheck())
             {

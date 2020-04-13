@@ -4,8 +4,9 @@
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
 #include "bifrost/debug/bifrost_dbg_logger.h"
-#include "bifrost/ecs/bifrost_iecs_system.hpp"  // IECSSystem
+#include "bifrost/ecs/bifrost_iecs_system.hpp"
 #include "bifrost/event/bifrost_window_event.hpp"
+#include "bifrost/graphics/bifrost_debug_renderer.hpp"
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
@@ -41,9 +42,6 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
     std::printf("%s", message);
   }
 }
-
-// const auto limits = bfGfxDevice_limits(m_GfxDevice);
-// m_AlignedUBOSize  = alignedUpSize(sizeof(m_ModelView), (size_t)limits.uniform_buffer_offset_alignment);
 
 class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 {
@@ -94,6 +92,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   GameStateMachine             m_StateMachine;
   VM                           m_Scripting;
   StandardRenderer             m_Renderer;
+  DebugRenderer                m_DebugRenderer;
   Array<AssetSceneHandle>      m_SceneStack;
   Assets                       m_Assets;
   Array<IECSSystem*>           m_Systems;
@@ -108,14 +107,14 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
     m_Renderer{m_MainMemory},
+    m_DebugRenderer{m_MainMemory},
     m_SceneStack{m_MainMemory},
     m_Assets{*this, m_MainMemory},
     m_Systems{m_MainMemory}
   {
     // TEMP CODE BGN
-    Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
-    Vec3f cam_up  = {0.0f, 1.0f, 0.0f, 0.0f};
-    Camera_init(&Camera, &cam_pos, &cam_up, 0.0f, 0.0f);
+    const Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
+    Camera_init(&Camera, &cam_pos, nullptr, 0.0f, 0.0f);
     // TEMP CODE END
   }
 
@@ -125,6 +124,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   GameStateMachine&  stateMachine() { return m_StateMachine; }
   VM&                scripting() { return m_Scripting; }
   StandardRenderer&  renderer() { return m_Renderer; }
+  DebugRenderer&     debugDraw() { return m_DebugRenderer; }
   Assets&            assets() { return m_Assets; }
 
   AssetSceneHandle currentScene() const
@@ -141,6 +141,12 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   {
     m_SceneStack.clear();  // TODO: Scene Stacking.
     m_SceneStack.push(scene);
+  }
+
+  template<typename T>
+  void addECSSystem()
+  {
+    m_Systems.push(m_MainMemory.allocateT<T>());
   }
 
   void init(const BifrostEngineCreateParams& params)
@@ -171,6 +177,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     bfLogPush("Engine Init of App: %s", params.app_name);
 
     m_Renderer.init(params);
+    m_DebugRenderer.init(m_Renderer);
 
     VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
@@ -216,6 +223,9 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
   void update(float delta_time)
   {
+    m_DebugRenderer.update(delta_time);
+    m_Renderer.m_GlobalTime += delta_time;
+
     for (auto& system : m_Systems)
     {
       if (!system->isEnabled())
@@ -229,6 +239,13 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     for (auto& state : m_StateMachine)
     {
       state.onUpdate(*this, delta_time);
+    }
+
+    auto scene = currentScene();
+
+    if (scene)
+    {
+      scene->update(tempMemory(), debugDraw());
     }
 
     for (auto& system : m_Systems)
@@ -268,7 +285,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
         {
           m_Renderer.bindMaterial(cmd_list, *renderer.material());
           m_Renderer.bindObject(cmd_list, renderer.owner());
-          renderer.model()->draw(m_Renderer.mainCommandList());
+          renderer.model()->draw(cmd_list);
         }
       }
 
@@ -288,6 +305,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
       system->onFrameDraw(*this, render_alpha);
     }
 
+    m_DebugRenderer.draw(cmd_list, Camera, m_Renderer.m_FrameInfo, false);
     m_Renderer.endPass();
 
     // SSAO
@@ -296,6 +314,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     // Lighting
     m_Renderer.beginLightingPass(Camera);
+    m_DebugRenderer.draw(cmd_list, Camera, m_Renderer.m_FrameInfo, true);
     m_Renderer.endPass();
 
     m_Renderer.beginScreenPass();
@@ -310,15 +329,19 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
   void deinit()
   {
+    bfGfxDevice_flush(m_Renderer.device());
+
     m_StateMachine.removeAll();
     m_Scripting.destroy();
     m_SceneStack.clear();
     m_Assets.saveAssets();
     m_Assets.setRootPath(nullptr);
+    m_DebugRenderer.deinit();
     m_Renderer.deinit();
 
     for (auto& system : m_Systems)
     {
+      // system->onFrameEnd();
       m_MainMemory.deallocateT(system);
     }
 

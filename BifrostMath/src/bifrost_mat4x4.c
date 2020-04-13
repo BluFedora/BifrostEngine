@@ -663,9 +663,9 @@ void Mat4x4_multVec(const Mat4x4* self, const Vec3f* vec, Vec3f* outVec)
   const float vz = vec->z;
   const float vw = vec->w;
 
-  outVec->x = (Mat4x4_at(self, 0, 0) * vx) + (Mat4x4_at(self, 1, 0) * vy) + (Mat4x4_at(self, 2, 0) * vz) + (Mat4x4_at(self, 3, 0) * vw);
-  outVec->y = (Mat4x4_at(self, 0, 1) * vx) + (Mat4x4_at(self, 1, 1) * vy) + (Mat4x4_at(self, 2, 1) * vz) + (Mat4x4_at(self, 3, 1) * vw);
-  outVec->z = (Mat4x4_at(self, 0, 2) * vx) + (Mat4x4_at(self, 1, 2) * vy) + (Mat4x4_at(self, 2, 2) * vz) + (Mat4x4_at(self, 3, 2) * vw);
-  outVec->w = (Mat4x4_at(self, 0, 3) * vx) + (Mat4x4_at(self, 1, 3) * vy) + (Mat4x4_at(self, 2, 3) * vz) + (Mat4x4_at(self, 3, 3) * vw);
+  outVec->x = Mat4x4_at(self, 0, 0) * vx + Mat4x4_at(self, 1, 0) * vy + Mat4x4_at(self, 2, 0) * vz + Mat4x4_at(self, 3, 0) * vw;
+  outVec->y = Mat4x4_at(self, 0, 1) * vx + Mat4x4_at(self, 1, 1) * vy + Mat4x4_at(self, 2, 1) * vz + Mat4x4_at(self, 3, 1) * vw;
+  outVec->z = Mat4x4_at(self, 0, 2) * vx + Mat4x4_at(self, 1, 2) * vy + Mat4x4_at(self, 2, 2) * vz + Mat4x4_at(self, 3, 2) * vw;
+  outVec->w = Mat4x4_at(self, 0, 3) * vx + Mat4x4_at(self, 1, 3) * vy + Mat4x4_at(self, 2, 3) * vz + Mat4x4_at(self, 3, 3) * vw;
 #endif
 }

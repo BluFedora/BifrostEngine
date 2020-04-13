@@ -64,18 +64,16 @@ typedef struct Camera_t
   Vec3f            up;
   Vec3f            _worldUp;
   Vec3f            _right;
-  float            _yaw;    // NOTE(Shareef): Radians
-  float            _pitch;  // NOTE(Shareef): Radians
+  float            _yaw;    // Radians
+  float            _pitch;  // Radians
   CameraModeParams camera_mode;
   Mat4x4           proj_cache;
   Mat4x4           view_cache;
-  Mat4x4           inv_proj_cache;       // NOTE(Shareef): The inverse cached for 3D picking.
-  Mat4x4           inv_view_cache;       // NOTE(Shareef): The inverse cached for 3D picking.
+  Mat4x4           inv_proj_cache;       // The inverse cached for 3D picking.
+  Mat4x4           inv_view_cache;       // The inverse cached for 3D picking.
   Mat4x4           inv_view_proj_cache;  //
-                                         // NOTE(Shareef):
-                                         //   [0] - for proj_cache.
+  int              needs_update[2];      //   [0] - for proj_cache.
                                          //   [1] - for view_cache.
-  int needs_update[2];
 
 } Camera;
 

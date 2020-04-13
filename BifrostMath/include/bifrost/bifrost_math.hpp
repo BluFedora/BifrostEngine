@@ -1,6 +1,10 @@
 //
 // C++ Math Utilities
 //
+// References:
+//   "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
+//      [https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html]
+//
 #ifndef BIFROST_MATH_HPP
 #define BIFROST_MATH_HPP
 
@@ -9,8 +13,32 @@
 
 #include <cmath> /* std::fma */
 
+namespace bifrost
+{
+  static constexpr float    k_PI       = 3.14159265359f;
+  static constexpr float    k_RadToDeg = 57.2957795131f;
+  static constexpr float    k_DegToRad = 0.01745329251f;
+  static constexpr float    k_Epsilon  = 1.0e-4f;
+  static constexpr Vector3f k_XAxis3f  = {1.0f, 0.0f, 0.0f, 0.0f};
+  static constexpr Vector3f k_YAxis3f  = {0.0f, 1.0f, 0.0f, 0.0f};
+  static constexpr Vector3f k_ZAxis3f  = {0.0f, 0.0f, 1.0f, 0.0f};
+}  // namespace bifrost
+
 namespace bifrost::math
 {
+  // NOTE(Shareef):
+  //   For safe floating point comparisons.
+  template<class T>
+  typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type isAlmostEqual(T x, T y, int unit_of_least_precision = 3)
+  {
+    // the machine epsilon has to be scaled to the magnitude of the values used
+    // and multiplied by the desired precision in ULPs (units in the last place)
+    // unless the result is subnormal
+    const auto diff = std::abs(x - y);
+
+    return diff <= std::numeric_limits<T>::epsilon() * std::abs(x + y) * unit_of_least_precision || diff < std::numeric_limits<T>::min();
+  }
+
   // The classic lerp function.
   template<typename T, typename F>
   T lerp(const T& a, F t, const T& b)

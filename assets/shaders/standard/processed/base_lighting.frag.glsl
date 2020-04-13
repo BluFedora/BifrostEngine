@@ -13,10 +13,12 @@ layout(location = 1) in vec2 frag_UV;
 //
 layout(std140, set = 0, binding = 0) uniform u_Set0
 {
-  mat4 u_CameraProjection;
-  mat4 u_CameraInvViewProjection;
-  vec3 u_CameraForward;
-  vec3 u_CameraPosition;
+  mat4  u_CameraProjection;
+  mat4  u_CameraInvViewProjection;
+  mat4  u_CameraViewProjection;
+  vec3  u_CameraForward;
+  float u_Time;
+  vec3  u_CameraPosition;
 };
 
 layout(set = 2, binding = 0) uniform sampler2D u_GBufferRT0;
@@ -287,10 +289,13 @@ vec3 ambientLighting(vec3 albedo, float ao)
   return vec3(0.03) * albedo * ao;
 }
 
+// reinhard
 vec3 tonemapping(vec3 color)
 {
   return color / (color + vec3(1.0));
 }
+
+// TODO: Exposure tone mapping "vec3(1.0) - exp(-color * u_Exposure)"
 
 vec3 gammaCorrection(vec3 color)
 {

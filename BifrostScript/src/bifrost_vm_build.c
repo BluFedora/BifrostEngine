@@ -9,6 +9,7 @@
  * 
  * @copyright Copyright (c) 2020
  */
+
 #include "bifrost_vm_parser.c"
 #include "bifrost_vm_api.c"
 #include "bifrost_vm_function_builder.c"

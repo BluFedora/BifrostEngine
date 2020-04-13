@@ -11,17 +11,12 @@
 #ifndef BIFROST_LIGHT_HPP
 #define BIFROST_LIGHT_HPP
 
-#include "bifrost/bifrost_math.h"         /* bfColor4f */
+#include "bifrost/bifrost_math.hpp"       /* bfColor4f */
 #include "bifrost/math/bifrost_rect2.hpp" /* Vector3f */
 #include "bifrost_base_component.hpp"     /* BaseComponent       */
 
 namespace bifrost
 {
-  static constexpr float k_PI       = 3.14159265359f;
-  static constexpr float k_RadToDeg = 57.2957795131f;
-  static constexpr float k_DegToRad = 0.01745329251f;
-  static constexpr float k_Epsilon  = 1.0e-4f;
-
   enum class LightType
   {
     DIRECTIONAL,

@@ -47,8 +47,8 @@
 /******************************************************************************/
 #include "bifrost_vm_gc.h"
 
-#include "bifrost/script/bifrost_vm.h"                               // BifrostVM_t
 #include "bifrost/data_structures/bifrost_array_t.h"  // Array_size
+#include "bifrost/script/bifrost_vm.h"                // BifrostVM_t
 #include "bifrost_vm_function_builder.h"              // BifrostVMFunctionBuilder
 #include "bifrost_vm_obj.h"                           // BifrostObj
 #include "bifrost_vm_parser.h"                        // BifrostParser
@@ -189,7 +189,7 @@ size_t bfGCSweep(struct BifrostVM_t* self)
 
   //
   // TODO(Shareef): Make this code nicer...
-  //   Need to find a better more consistent want to handle finalizers.
+  //   Need to find a better more consistent way to handle finalizers.
 
   while (g_cursor)
   {
@@ -536,13 +536,13 @@ size_t bfGCObjectSize(BifrostObj* obj)
 
 static void bfGCFinalize(BifrostVM* self)
 {
-  const uint32_t      symbol = bfVM_getSymbol(self, bfMakeStringRangeC("dtor"));
-  BifrostObjInstance* cursor = (BifrostObjInstance*)self->finalized;
+  const uint32_t      dtor_symbol = self->build_in_symbols[BIFROST_VM_SYMBOL_DTOR];
+  BifrostObjInstance* cursor      = (BifrostObjInstance*)self->finalized;
 
   while (cursor)
   {
     BifrostObjClass* const clz   = cursor->clz;
-    const bfVMValue        value = clz->symbols[symbol].value;
+    const bfVMValue        value = clz->symbols[dtor_symbol].value;
 
     // TODO(SR):
     //   Investigate if this breaks some reentrycy model rules.

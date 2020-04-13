@@ -628,10 +628,12 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t bindin
   assert(num_buffers < BIFROST_GFX_BUFFERS_MAX_BINDING);
 
   VkBuffer binded_buffers[BIFROST_GFX_BUFFERS_MAX_BINDING];
+  uint64_t binded_offsets[BIFROST_GFX_BUFFERS_MAX_BINDING];
 
   for (uint32_t i = 0; i < num_buffers; ++i)
   {
     binded_buffers[i] = buffers[i]->handle;
+    binded_offsets[i] = offsets[i] + buffers[i]->alloc_info.offset;
   }
 
   vkCmdBindVertexBuffers(
@@ -639,7 +641,7 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t bindin
    binding,
    num_buffers,
    binded_buffers,
-   offsets);
+   binded_offsets);
 }
 
 void bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type)
