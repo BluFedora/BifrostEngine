@@ -158,6 +158,9 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost_imgui_glfw.cpp"
   "src/bifrost/platform/bifrost_window_glfw.cpp"
 
+  # Physics
+  "src/bifrost/physics/bifrost_particle.cpp"
+
   "main.cpp"
  )
 

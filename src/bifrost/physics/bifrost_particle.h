@@ -1,41 +1,33 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#include "../math/vector3.h"
+#include "bifrost/bifrost_math.hpp" /* Vector3f */
+#include "bifrost_prismtypes.h"     /* Scalar   */
 
-namespace prism
+using namespace prism;
+
+namespace bifrost
 {
-  class Particle  // TODO(BluFedora):: Make "m_Position", "m_Velocity", and "m_Acceleration" private
+  class Particle final
   {
-   public:
-    Vec3 m_Position     = Vec3{0.0, 0.0, 0.0};
-    Vec3 m_Velocity     = Vec3{0.0, 0.0, 0.0};
-    Vec3 m_Acceleration = Vec3{0.0, 0.0, 0.0};
-
-   private:
-    real m_Damping    = 0.0;
-    real m_InvMass    = 1.0;
-    Vec3 m_TotalForce = Vec3{0.0, 0.0, 0.0};
+   public:  // TODO(SR): Rename these to reflect their public nature.
+    Vector3f m_Position     = {0.0, 0.0, 0.0};
+    Vector3f m_Velocity     = {0.0, 0.0, 0.0};
+    Vector3f m_Acceleration = {0.0, 0.0, 0.0};
+    Scalar   m_Damping      = Scalar(0.0);
+    Scalar   m_InvMass      = Scalar(1.0);
+    Vector3f m_TotalForce   = {0.0, 0.0, 0.0};
 
    public:
     Particle() = default;
 
-    const Vec3 &getPosition() const;
-    void        setPosition(const Vec3 &pos);
-
-    Vec3 getVelocity() const;
-    void setVelocity(const Vec3 &vel);
-
-    const Vec3 &acceleration() const;
-
-    bool hasFiniteMass() const;
-    real mass() const;
-    real inverseMass() const;
-
-    void addForce(const Vec3 &force);
-    void clearAccumlulator();
-    void integrate(const real duration);
+    bool   hasFiniteMass() const;
+    Scalar mass() const;
+    Scalar inverseMass() const;
+    void   addForce(const Vector3f &force);
+    void   clearAccumulator();
+    void   integrate(const Scalar duration);
   };
-}  // namespace prism
+}  // namespace bifrost
 
 #endif  // PARTICLE_H

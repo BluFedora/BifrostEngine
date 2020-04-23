@@ -107,11 +107,13 @@ class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<Bl
       if (cursor->memory_backing >= ptr && ptr < (cursor->memory_backing + Size))
       {
         cursor->allocator.deallocate(ptr);
-        break;
+        return;
       }
 
       cursor = cursor->next;
     }
+
+    assert(!"BlockAllocator::deallocate invalid pointer passed in.");
   }
 
   virtual ~BlockAllocator()

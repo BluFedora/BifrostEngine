@@ -103,6 +103,12 @@ namespace bifrost
     };
 
     template<typename T>
+    Vec3T<T> operator*(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
+    {
+      return Vec3T<T>{lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z};
+    }
+
+    template<typename T>
     Vec3T<T> operator*(const Vec3T<T>& lhs, T rhs)
     {
       return Vec3T<T>{lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
@@ -162,11 +168,33 @@ namespace bifrost
       {
       }
 
-      constexpr Vec3T() = default;
+      // This leaves the base 'Vec3f' uninitialized for performance reasons.
+      // thus it cannot be constexpr.
+      Vec3T() = default;
 
       Vec3T& operator*=(float scalar)
       {
         *this = *this * scalar;
+        return *this;
+      }
+
+      Vec3T& operator+=(const Vec3T& rhs)
+      {
+        this->x += rhs.x;
+        this->y += rhs.y;
+        this->z += rhs.z;
+        this->w += rhs.w;
+
+        return *this;
+      }
+
+      Vec3T& operator-=(const Vec3T& rhs)
+      {
+        this->x -= rhs.x;
+        this->y -= rhs.y;
+        this->z -= rhs.z;
+        this->w -= rhs.w;
+
         return *this;
       }
     };

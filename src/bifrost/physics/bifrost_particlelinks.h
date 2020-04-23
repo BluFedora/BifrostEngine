@@ -4,8 +4,6 @@
 #include "particle.h"
 #include "particlecontacts.h"
 
-PRISM_PHYSICS_NAMESPACE_BEGIN
-
 class ParticleLink
 {
  public:
@@ -95,7 +93,5 @@ class ParticleRod : public ParticleLink
     return 1;
   }
 };
-
-PRISM_PHYSICS_NAMESPACE_END
 
 #endif  // PARTICLELINKS_H

@@ -25,8 +25,7 @@ namespace bifrost
   class Entity;
 
   /*
-    Planned Component Types;
-
+    Planned Component Types:
       * AudioSource
       * ParticleEmitter
       * AIAgent

@@ -2,12 +2,12 @@
 /*!
  * @file   vm_command_line.cpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
- * @brief 
+ * @brief
  *   Command Line Interface for the Virtual Machine.
- * 
+ *
  * @version 0.0.1
  * @date    2020-02-17
- * 
+ *
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
@@ -25,6 +25,7 @@ int main(int argc, const char* argv[])
 {
   if (argc != 2)
   {
+    std::printf("There is an example script loaded at 'assets/scripts/test_script.bscript'\n");
     std::printf("usage %s <file-name>\n", argv[0]);
     waitForInput();
     return 0;

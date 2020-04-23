@@ -1,18 +1,22 @@
 #ifndef PARTICLEWORLD_H
 #define PARTICLEWORLD_H
 
-#include "particle.h"
-#include "particlecontacts.h"
-#include "particleforcegenerators.h"
+#include "bifrost_particle.h"
+#include "bifrost_particlecontacts.h"
+#include "bifrost_particleforcegenerators.h"
+#include "bifrost_prismtypes.h" /* Scalar */
 
 namespace prism
 {
+  class ParticleContact;
+  using IParticleContactGenerator = int (*)(ParticleContact* contact, int limit);
+  /*
   class IParticleContactGenerator
   {
    public:
     virtual uint addContact(ParticleContact* contact, uint limit) = 0;
   };
-
+  */
   class ParticleWorld
   {
    private:
@@ -38,7 +42,7 @@ namespace prism
     uint                    maxContacts;
 
    public:
-    ParticleWorld(uint maxContacts, uint iterations = 0) :
+    explicit ParticleWorld(uint maxContacts, uint iterations = 0) :
       prRoot(nullptr),
       registry(nullptr),
       resolver(iterations),
@@ -56,7 +60,7 @@ namespace prism
 
       while (reg)
       {
-        auto used = reg->gen->addContact(nextContact, limit);
+        auto used = (*reg->gen)(nextContact, limit);
         limit -= used;
         nextContact += used;
 
@@ -79,7 +83,7 @@ namespace prism
       }
     }
 
-    void integrate(real duration)
+    void integrate(Scalar duration)
     {
       auto reg = this->prRoot;
 
@@ -90,7 +94,7 @@ namespace prism
       }
     }
 
-    void runPhysics(real duration)
+    void runPhysics(Scalar duration)
     {
       static const bool calculateIterations = true;
 

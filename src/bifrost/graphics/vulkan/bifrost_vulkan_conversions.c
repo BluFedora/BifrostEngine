@@ -223,15 +223,14 @@ VkFormat bfVkConvertVertexFormatAttrib(BifrostVertexFormatAttribute vertex_forma
     case BIFROST_VFA_SCHAR8_2: return VK_FORMAT_R8G8_SINT;
     case BIFROST_VFA_SCHAR8_1: return VK_FORMAT_R8_SINT;
     case BIFROST_VFA_UCHAR8_4_UNORM: return VK_FORMAT_R8G8B8A8_UNORM;
+      bfInvalidDefaultCase();
+      return VK_FORMAT_R32G32B32A32_SFLOAT;
   }
-
-  assert(0);
-  return VK_FORMAT_R32G32B32A32_SFLOAT;
 }
 
 VkFlags bfVkConvertBufferUsageFlags(uint16_t flags)
 {
-  VkFlags result = flags & ~BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER;
+  const VkFlags result = flags & ~BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER;
 
   return result;
 }

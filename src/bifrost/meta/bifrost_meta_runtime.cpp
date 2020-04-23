@@ -4,7 +4,7 @@
 
 namespace
 {
-  char s_Storage[16384 * 2];
+  char s_Storage[32768];
 }  // namespace
 
 namespace bifrost::meta

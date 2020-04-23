@@ -27,8 +27,8 @@ namespace bifrost::json
 
   using Pair    = std::pair<String, Value>;
   using Object  = HashTable<String, Value, 16>;
-  using Array   = bifrost::Array<Value>;
-  using String  = bifrost::String;
+  using Array   = ::bifrost::Array<Value>;
+  using String  = ::bifrost::String;
   using Number  = double;
   using Boolean = bool;
 

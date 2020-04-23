@@ -3,49 +3,35 @@
 
 #include "bifrost_prismtypes.h"
 
-namespace prism
+#include "bifrost/bifrost_math.hpp"
+
+using namespace prism;
+
+namespace bifrost
 {
   class RigidBody
   {
-   protected:
-    Vec3   position;
-    Vec3   velocity;
-    Vec3   acceleration;
-    Quat   orientation;
-    Vec3   rotation;  // Angular Acceleration
-    Vec3   forceAccum;
-    Vec3   torqueAccum;
-    Mat3x3 inverseInertiaTensor;
-    real   inverseMass;
-    real   linearDamping;
-    real   angularDamping;
-    real   motion;  // Holds the amount of motion of the body. This is a recency weighted mean that can be used to put a body to sleap.
-    bool   isAwake;
-    bool   canSleep;
-    Mat4x3 transformMatrix;
-    Mat3x3 inverseInertiaTensorWorld;
-    Vec3   lastFrameAcceleration;
+   public:
+    Vector3f    position;
+    Vector3f    velocity;
+    Vector3f    acceleration;
+    Quaternionf orientation;  // Keep this field normalized.
+    Vector3f    rotation;     // Angular Acceleration
+    Vector3f    forceAccum;
+    Vector3f    torqueAccum;
+    Mat3x3      inverseInertiaTensor;
+    real        inverseMass;
+    real        linearDamping;
+    real        angularDamping;
+    real        motion;    // Holds the amount of motion of the body. This is a recency weighted mean that can be used to put a body to sleap.
+    bool        isAwake;   // TODO(SR): This should be a bitset.
+    bool        canSleep;  // TODO(SR): This should be a bitset.
+    Mat4x3      transformMatrix;
+    Mat3x3      inverseInertiaTensorWorld;
+    Vector3f    lastFrameAcceleration;
 
    public:
     RigidBody();
-
-    Vec3 getPosition() const;
-    void addPosition(const Vec3 &deltaPos);
-    void setPosition(const Vec3 &pos);
-
-    Vec3 getVelocity() const;
-    void addVelocity(const Vec3 &deltaVel);
-    void setVelocity(const Vec3 &vel);
-
-    Vec3 getAcceleration() const;
-    void setAcceleration(const Vec3 &accel);
-
-    Quat getOrientation() const;
-    void setOrientation(const Quat &orientiation);
-
-    Vec3 getRotation() const;
-    void addRotation(const Vec3 &deltaRot);
-    void setRotation(const Vec3 &rot);
 
     real getMass() const;
     void setMass(const real mass);
@@ -87,6 +73,6 @@ namespace prism
     Vec3 getPointInLocalSpace(const Vec3 &point);
     Vec3 getPointInWorldSpace(const Vec3 &point);
   };
-}  // namespace prism
+}  // namespace bifrost
 
 #endif  // RIGIDBODY_H

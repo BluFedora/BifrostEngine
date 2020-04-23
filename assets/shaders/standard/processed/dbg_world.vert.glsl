@@ -1,6 +1,10 @@
 //
 // Author: Shareef Abdoul-Raheem
-// Debug Shader GBuffer
+// Debug Shader Screen Space Lines
+//
+// References:
+//   [https://mattdesl.svbtle.com/drawing-lines-is-hard]
+//   [https://github.com/mattdesl/three-line-2d/blob/master/test/shader-dash.js]
 //
 #version 450
 
@@ -73,5 +77,5 @@ void main()
 
   frag_Color = in_Color.rgb;
 
-  gl_Position = clip_curr + vec4(normal * in_Direction, 0.0f, 1.0f);
+  gl_Position = clip_curr + vec4(normal * in_Direction, 0.0f, 0.0f);
 }

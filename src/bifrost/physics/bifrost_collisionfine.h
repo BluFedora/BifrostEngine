@@ -101,15 +101,6 @@ namespace prism
     static bool boxAndHalfSpace(const Box &box, const Plane &plane);
   };
 
-  // TODO(BluFedora):: Move to Components
-  enum class ColliderType
-  {
-    COLLIDER_SPHERE,
-    COLLIDER_BOX,
-    COLLIDER_PLANE,
-    COLLIDER_POINT
-  };
-
   class CollisionDetector
   {
    public:

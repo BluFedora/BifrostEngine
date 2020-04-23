@@ -1,13 +1,12 @@
-
 #define NOMINMAX
 
+#include "bifrost/ecs/bifrost_collision_system.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
 #include <bifrost/platform/bifrost_window_glfw.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
-#include "bifrost/ecs/bifrost_collision_system.hpp"
 
 #include <chrono>
 #include <functional>
@@ -169,7 +168,6 @@ namespace bifrost
    public:
     void update(float dt)
     {
-      // std::printf("Camera::update(@ %f) with %f as dt.\n", m_ElapsedTime, dt);
       m_ElapsedTime += dt;
     }
   };

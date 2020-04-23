@@ -4,7 +4,7 @@
             "m_Name" : "Test Entity",
             "m_Transform" : {
                 "Position" : {
-                    "y" : 0,
+                    "y" : -0.75,
                     "w" : 0,
                     "x" : 0,
                     "z" : 6.9

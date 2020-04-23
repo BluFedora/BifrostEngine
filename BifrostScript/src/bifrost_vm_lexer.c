@@ -349,13 +349,7 @@ void bfLexer_advance(BifrostLexer* self, size_t amt)
       to make sure the line count is correct.
   */
 
-  char curr = bfLexer_peek(self, 0);
-
-  if (curr == '\r')
-  {
-    ++self->cursor;
-    curr = bfLexer_peek(self, 0);
-  }
+  const char curr = bfLexer_peek(self, 0);
 
   if (bfLexer_isNewline(curr) || amt == 0)
   {

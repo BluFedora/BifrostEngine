@@ -5,12 +5,17 @@
 #include "../utils.h"
 #include "particle.h"
 
+namespace bifrost
+{
+  class Particle;
+}
+
 namespace prism
 {
   class IParticleForceGenerator
   {
    public:
-    virtual void updateForce(Particle *particle, real duration);
+    virtual void updateForce(bifrost::Particle *particle, real duration);
 
     virtual ~IParticleForceGenerator() {}
   };
@@ -35,10 +40,6 @@ namespace prism
       {
         particle->addForce(this->m_Gravity * particle->mass());
       }
-    }
-
-    ~FGParticleGravity()
-    {
     }
   };
 

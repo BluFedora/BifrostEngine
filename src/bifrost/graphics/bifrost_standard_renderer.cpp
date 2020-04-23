@@ -155,7 +155,7 @@ namespace bifrost
       // TODO: Since (maybe we would want to change SSAOKernelUnifromData::u_SampleRadius) this never changes then this should use staging buffer instead.
 
       const auto limits = bfGfxDevice_limits(device);
-      const auto size   = alignUpSize(sizeof(SSAOKernelUnifromData), limits.uniform_buffer_offset_alignment);
+      const auto size   = bfAlignUpSize(sizeof(SSAOKernelUnifromData), limits.uniform_buffer_offset_alignment);
 
       const bfBufferCreateParams create_camera_buffer =
        {
@@ -234,7 +234,7 @@ namespace bifrost
 
   void BaseMultiBuffer::create(bfGfxDeviceHandle device, bfBufferUsageBits usage, const bfGfxFrameInfo& info, size_t element_size, size_t element_alignment)
   {
-    element_aligned_size = alignUpSize(element_size, element_alignment);
+    element_aligned_size = bfAlignUpSize(element_size, element_alignment);
     total_size           = element_aligned_size * info.num_frame_indices;
 
     const bfBufferCreateParams create_buffer =
@@ -506,24 +506,14 @@ namespace bifrost
         break;
       }
       case LightType::POINT:
-      {
-        PunctualLightUniformData* point_light_buffer = m_PunctualLightBuffers[0].currentElement(m_FrameInfo);
-
-        if (point_light_buffer->u_NumLights < int(bfCArraySize(point_light_buffer->u_Lights)))
-        {
-          gpu_light = point_light_buffer->u_Lights + point_light_buffer->u_NumLights;
-          ++point_light_buffer->u_NumLights;
-        }
-        break;
-      }
       case LightType::SPOT:
       {
-        PunctualLightUniformData* spot_light_buffer = m_PunctualLightBuffers[1].currentElement(m_FrameInfo);
+        PunctualLightUniformData* light_buffer = m_PunctualLightBuffers[light.type() == LightType::SPOT].currentElement(m_FrameInfo);
 
-        if (spot_light_buffer->u_NumLights < int(bfCArraySize(spot_light_buffer->u_Lights)))
+        if (light_buffer->u_NumLights < int(bfCArraySize(light_buffer->u_Lights)))
         {
-          gpu_light = spot_light_buffer->u_Lights + spot_light_buffer->u_NumLights;
-          ++spot_light_buffer->u_NumLights;
+          gpu_light = light_buffer->u_Lights + light_buffer->u_NumLights;
+          ++light_buffer->u_NumLights;
         }
         break;
       }
@@ -551,6 +541,7 @@ namespace bifrost
         gpu_cache.is_dirty = false;
       }
 
+      // TODO: Direction should adopt transform.
       gpu_light->color                           = light.colorIntensity();
       gpu_light->direction_and_inv_radius_pow2   = light.direction();
       gpu_light->direction_and_inv_radius_pow2.w = gpu_cache.inv_light_radius_pow2;

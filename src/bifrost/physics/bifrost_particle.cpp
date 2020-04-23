@@ -1,72 +1,47 @@
-#include "particle.h"
+#include "bifrost_particle.h"
 
-#include "prismtypes.h"
+#include <cassert> /* assert */
 
-namespace prism
+namespace bifrost
 {
-    const Vec3 &Particle::getPosition() const
-    {
-        return this->m_Position;
-    }
+  bool Particle::hasFiniteMass() const
+  {
+    return (this->m_InvMass != k_ScalarZero);
+  }
 
-    void Particle::setPosition(const Vec3 &pos)
-    {
-        this->m_Position.set(pos);
-    }
+  Scalar Particle::mass() const
+  {
+    return hasFiniteMass() ? k_ScalarOne / this->m_InvMass : k_ScalarZero;
+  }
 
-    Vec3 Particle::getVelocity() const
-    {
-        return this->m_Velocity;
-    }
+  Scalar Particle::inverseMass() const
+  {
+    return this->m_InvMass;
+  }
 
-    void Particle::setVelocity(const Vec3 &vel)
-    {
-        this->m_Velocity.set(vel);
-    }
+  void Particle::addForce(const Vector3f &force)
+  {
+    this->m_TotalForce += force;
+  }
 
-    const Vec3 &Particle::acceleration() const
-    {
-        return this->m_Acceleration;
-    }
+  void Particle::clearAccumulator()
+  {
+    this->m_TotalForce = {0.0f};
+  }
 
-    bool Particle::hasFiniteMass() const
-    {
-        return (this->m_InvMass != 0.0);
-    }
+  void Particle::integrate(const Scalar duration)
+  {
+    assert(duration > 0.0f && !"Particle::integrate parameter 'duration' is less than 0.0");
 
-    real Particle::mass() const
-    {
-        return (this->m_InvMass == 0.0) ? 0.0 : (1.0 / this->m_InvMass);
-    }
+    Vec3f_addScaled(&m_Position, &m_Velocity, duration);
 
-    real Particle::inverseMass() const
-    {
-        return this->m_InvMass;
-    }
+    Vector3f resulting_acc = m_Acceleration;
 
-    void Particle::addForce(const Vec3 &force)
-    {
-        this->m_TotalForce += force;
-    }
+    Vec3f_addScaled(&resulting_acc, &m_TotalForce, m_InvMass);
+    Vec3f_addScaled(&m_Velocity, &resulting_acc, duration);
 
-    void Particle::clearAccumlulator()
-    {
-        this->m_TotalForce.set();
-    }
+    m_Velocity *= pow_real(m_Damping, m_Damping);
 
-    void Particle::integrate(const real duration)
-    {
-        PRISM_ASSERT(duration > 0.0f, "Particle::integrate parameter 'duration' is less than 0.0");
-
-        this->m_Position.addScaledVector(this->m_Velocity, duration);
-
-        auto resultingAcc(this->m_Acceleration);
-        resultingAcc.addScaledVector(this->m_TotalForce, this->m_InvMass);
-
-        this->m_Velocity.addScaledVector(resultingAcc, duration);
-
-        this->m_Velocity *= pow_real(this->m_Damping, this->m_Damping);
-
-        this->clearAccumlulator();
-    }
-}
+    clearAccumulator();
+  }
+}  // namespace bifrost

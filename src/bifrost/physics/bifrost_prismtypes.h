@@ -3,17 +3,26 @@
 
 #include "bifrost/bifrost_math.h"
 
+#include "bifrost/bifrost_std.h" /* bfFloat32 */
+
 #include <cmath>
 #include <float.h>
+
+#include "bifrost/math/bifrost_rect2.hpp"
 
 #define PRISM_PHYSICS_DBL 0
 #define PRISM_PHYSICS_FLT 1
 
+namespace bifrost
+{
 #ifdef PRISM_USE_DOUBLE
 #define PRISM_PHYSICS_PRECISION PRISM_PHYSICS_DBL
+  using Scalar = bfFloat64;
 #else
 #define PRISM_PHYSICS_PRECISION PRISM_PHYSICS_FLT
+  using Scalar = bfFloat32;
 #endif
+}  // namespace bifrost
 
 #if PRISM_PHYSICS_PRECISION == PRISM_PHYSICS_DBL
 #define max_real DBL_MAX
@@ -29,11 +38,14 @@
 #define epsilon_real FLT_EPSILON
 #endif
 
-using real = float;
+using namespace bifrost;
 
 namespace prism
 {
-  using Vec3 = Vec3f;
+  static constexpr Scalar k_ScalarZero = Scalar(0.0);
+  static constexpr Scalar k_ScalarOne  = Scalar(1.0);
+
+  using Vec3 = Vector3f;
 
   class BoundingSphere;
   class PotentialContact;
@@ -50,7 +62,7 @@ namespace prism
     /**
              * Holds the transform matrix data in array form.
              */
-    real data[12];
+    Scalar data[12];
 
     /**
              * Creates an identity matrix.
@@ -63,7 +75,7 @@ namespace prism
     /**
              * Sets the matrix to be a diagonal matrix with the given coefficients.
              */
-    void setDiagonal(real a, real b, real c)
+    void setDiagonal(Scalar a, Scalar b, Scalar c)
     {
       data[0]  = a;
       data[5]  = b;
@@ -130,7 +142,7 @@ namespace prism
     /**
              * Returns the determinant of the matrix.
              */
-    real getDeterminant() const
+    Scalar getDeterminant() const
     {
       return -data[8] * data[5] * data[2] +
              data[4] * data[9] * data[2] +
@@ -148,9 +160,9 @@ namespace prism
     void setInverse(const Mat4x3 &m)
     {
       // Make sure the determinant is non-zero.
-      real det = getDeterminant();
+      Scalar det = getDeterminant();
       if (det == 0) return;
-      det = 1.0 / det;
+      det = k_ScalarOne / det;
 
       data[0] = (-m.data[9] * m.data[6] + m.data[5] * m.data[10]) * det;
       data[4] = (m.data[8] * m.data[6] - m.data[4] * m.data[10]) * det;
@@ -342,7 +354,7 @@ namespace prism
   /**
          * Holds an inertia tensor, consisting of a 3x3 row-major matrix.
          * This matrix is not padding to produce an aligned structure, since
-         * it is most commonly used with a mass (single real) and two
+         * it is most commonly used with a mass (single Scalar) and two
          * damping coefficients to make the 12-element characteristics array
          * of a rigid body.
          */
@@ -352,7 +364,7 @@ namespace prism
     /**
              * Holds the tensor matrix data in array form.
              */
-    real data[9];
+    Scalar data[9];
 
     // ... Other Matrix3 code as before ...
 
@@ -377,7 +389,7 @@ namespace prism
     /**
              * Creates a new matrix with explicit coefficients.
              */
-    Mat3x3(real c0, real c1, real c2, real c3, real c4, real c5, real c6, real c7, real c8)
+    Mat3x3(Scalar c0, Scalar c1, Scalar c2, Scalar c3, Scalar c4, Scalar c5, Scalar c6, Scalar c7, Scalar c8)
     {
       data[0] = c0;
       data[1] = c1;
@@ -394,7 +406,7 @@ namespace prism
              * Sets the matrix to be a diagonal matrix with the given
              * values along the leading diagonal.
              */
-    void setDiagonal(real a, real b, real c)
+    void setDiagonal(Scalar a, Scalar b, Scalar c)
     {
       setInertiaTensorCoeffs(a, b, c);
     }
@@ -402,7 +414,7 @@ namespace prism
     /**
              * Sets the value of the matrix from inertia tensor values.
              */
-    void setInertiaTensorCoeffs(real ix, real iy, real iz, real ixy = 0, real ixz = 0, real iyz = 0)
+    void setInertiaTensorCoeffs(Scalar ix, Scalar iy, Scalar iz, Scalar ixy = 0, Scalar ixz = 0, Scalar iyz = 0)
     {
       data[0] = ix;
       data[1] = data[3] = -ixy;
@@ -417,9 +429,10 @@ namespace prism
              * a rectangular block aligned with the body's coordinate
              * system with the given axis half-sizes and mass.
              */
-    void setBlockInertiaTensor(const Vec3 &halfSizes, real mass)
+    void setBlockInertiaTensor(const Vec3 &halfSizes, Scalar mass)
     {
-      Vec3 squares = halfSizes * halfSizes;
+      const Vec3 squares = halfSizes * halfSizes;
+
       setInertiaTensorCoeffs(0.3f * mass * (squares.y + squares.z),
                              0.3f * mass * (squares.x + squares.z),
                              0.3f * mass * (squares.x + squares.y));
@@ -524,20 +537,20 @@ namespace prism
              */
     void setInverse(const Mat3x3 &m)
     {
-      real t4  = m.data[0] * m.data[4];
-      real t6  = m.data[0] * m.data[5];
-      real t8  = m.data[1] * m.data[3];
-      real t10 = m.data[2] * m.data[3];
-      real t12 = m.data[1] * m.data[6];
-      real t14 = m.data[2] * m.data[6];
+      Scalar t4  = m.data[0] * m.data[4];
+      Scalar t6  = m.data[0] * m.data[5];
+      Scalar t8  = m.data[1] * m.data[3];
+      Scalar t10 = m.data[2] * m.data[3];
+      Scalar t12 = m.data[1] * m.data[6];
+      Scalar t14 = m.data[2] * m.data[6];
 
       // Calculate the determinant
-      real t16 = (t4 * m.data[8] - t6 * m.data[7] - t8 * m.data[8] +
-                  t10 * m.data[7] + t12 * m.data[5] - t14 * m.data[4]);
+      Scalar t16 = (t4 * m.data[8] - t6 * m.data[7] - t8 * m.data[8] +
+                    t10 * m.data[7] + t12 * m.data[5] - t14 * m.data[4]);
 
       // Make sure the determinant is non-zero.
-      if (t16 == (real)0.0f) return;
-      real t17 = 1 / t16;
+      if (t16 == (Scalar)0.0f) return;
+      Scalar t17 = 1 / t16;
 
       data[0] = (m.data[4] * m.data[8] - m.data[5] * m.data[7]) * t17;
       data[1] = -(m.data[1] * m.data[8] - m.data[2] * m.data[7]) * t17;
@@ -617,9 +630,9 @@ namespace prism
              */
     void operator*=(const Mat3x3 &o)
     {
-      real t1;
-      real t2;
-      real t3;
+      Scalar t1;
+      Scalar t2;
+      Scalar t3;
 
       t1      = data[0] * o.data[0] + data[1] * o.data[3] + data[2] * o.data[6];
       t2      = data[0] * o.data[1] + data[1] * o.data[4] + data[2] * o.data[7];
@@ -646,7 +659,7 @@ namespace prism
     /**
              * Multiplies this matrix in place by the given scalar.
              */
-    void operator*=(const real scalar)
+    void operator*=(const Scalar scalar)
     {
       data[0] *= scalar;
       data[1] *= scalar;
@@ -696,7 +709,7 @@ namespace prism
     /**
              * Interpolates a couple of matrices.
              */
-    static Mat3x3 linearInterpolate(const Mat3x3 &a, const Mat3x3 &b, real prop)
+    static Mat3x3 linearInterpolate(const Mat3x3 &a, const Mat3x3 &b, Scalar prop)
     {
       Mat3x3 result;
       for (unsigned i = 0; i < 9; i++)

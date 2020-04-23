@@ -11,9 +11,9 @@
 #ifndef BIFROST_LIGHT_HPP
 #define BIFROST_LIGHT_HPP
 
-#include "bifrost/bifrost_math.hpp"       /* bfColor4f */
-#include "bifrost/math/bifrost_rect2.hpp" /* Vector3f */
-#include "bifrost_base_component.hpp"     /* BaseComponent       */
+#include "bifrost/bifrost_math.hpp"       /* bfColor4f     */
+#include "bifrost/math/bifrost_rect2.hpp" /* Vector3f      */
+#include "bifrost_base_component.hpp"     /* BaseComponent */
 
 namespace bifrost
 {
