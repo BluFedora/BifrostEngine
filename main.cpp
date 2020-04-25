@@ -492,3 +492,5 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     }
   });
 #endif
+
+GLFWwindow* g_Window;

@@ -1194,9 +1194,8 @@ namespace
     VulkanPhysicalDevice* const physical_device = self->physical_device;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device->handle, window.surface, &swapchain_info.capabilities);
 
-    const VkPresentModeKHR surface_present_mode = gfxFindSurfacePresentMode(
-     swapchain_info.present_modes, swapchain_info.num_present_modes);
-    const VkExtent2D surface_extents = gfxFindSurfaceExtents(swapchain_info.capabilities, 0, 0);
+    const VkPresentModeKHR surface_present_mode = gfxFindSurfacePresentMode(swapchain_info.present_modes, swapchain_info.num_present_modes);
+    const VkExtent2D       surface_extents      = gfxFindSurfaceExtents(swapchain_info.capabilities, 0, 0);
 
     uint32_t                      image_count   = swapchain_info.capabilities.minImageCount + 1;
     VkSurfaceTransformFlagBitsKHR pre_transform = swapchain_info.capabilities.currentTransform;
@@ -2285,7 +2284,7 @@ static void bfTexture__allocMemory(bfTextureHandle self)
 
 bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
 {
-  static constexpr int     k_NumReqComps = 4;
+  static constexpr int k_NumReqComps = 4;
   // static constexpr stbi_uc k_PadValue    = 0x00;
 
   int      num_components = 0;

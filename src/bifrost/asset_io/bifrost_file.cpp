@@ -431,6 +431,7 @@ namespace bifrost
   {
     std::size_t buffer_size;
     char*       buffer = readAll(allocator, buffer_size);
+
     return {allocator, buffer, buffer_size};
   }
 }  // namespace bifrost

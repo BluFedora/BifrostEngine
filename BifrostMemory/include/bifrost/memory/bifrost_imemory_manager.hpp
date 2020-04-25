@@ -434,6 +434,7 @@ namespace bifrost
     std::size_t     m_Size;
 
    public:
+    // Make sure the passed in 'buffer' was allocated from 'allocator'.
     TempBuffer(IMemoryManager& allocator, char* buffer, std::size_t size) :
       m_Allocator{&allocator},
       m_Buffer{buffer},
@@ -453,8 +454,7 @@ namespace bifrost
       m_Buffer{rhs.m_Buffer},
       m_Size{rhs.m_Size}
     {
-      rhs.m_Buffer = nullptr;
-      rhs.m_Size   = 0;
+      rhs.clearOutMembers();
     }
 
     TempBuffer& operator=(const TempBuffer& rhs) = delete;
@@ -466,20 +466,16 @@ namespace bifrost
         m_Allocator     = rhs.m_Allocator;
         m_Buffer        = rhs.m_Buffer;
         m_Size          = rhs.m_Size;
-        rhs.m_Allocator = nullptr;
-        rhs.m_Buffer    = nullptr;
-        rhs.m_Size      = 0;
-        // ^ All three fields don't need to be set to null.
-        // Since if any are null this is an invalid buffer.
-        // But for clarity of debugging it will be beneficial?
+
+        rhs.clearOutMembers();
       }
 
       return *this;
     }
 
-    IMemoryManager& allocator() const { return *m_Allocator; }
-    char*           buffer() const { return m_Buffer; }
-    std::size_t     size() const { return m_Size; }
+    [[nodiscard]] IMemoryManager& allocator() const { return *m_Allocator; }
+    [[nodiscard]] char*           buffer() const { return m_Buffer; }
+    [[nodiscard]] std::size_t     size() const { return m_Size; }
 
     ~TempBuffer()
     {
@@ -487,6 +483,17 @@ namespace bifrost
       {
         m_Allocator->deallocate(m_Buffer);
       }
+    }
+
+   private:
+    void clearOutMembers()
+    {
+      m_Allocator = nullptr;
+      m_Buffer    = nullptr;
+      m_Size      = 0;
+      // ^ All three fields don't need to be set to null.
+      // Since if any are null this is an invalid buffer.
+      // But for clarity of debugging it will be beneficial?
     }
   };
 }  // namespace bifrost

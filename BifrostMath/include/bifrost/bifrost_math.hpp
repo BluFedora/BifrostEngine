@@ -75,6 +75,11 @@ namespace bifrost::math
   {
     return ((value - min) / (max - min));
   }
+
+  inline float alignf(float value, float size)
+  {
+    return bfMathAlignf(value, size);
+  }
 }  // namespace bifrost::math
 
 #endif /* BIFROST_MATH_HPP */

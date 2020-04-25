@@ -88,7 +88,8 @@ namespace bifrost
 
       [[nodiscard]] bool isWritable() const
       {
-        return m_State == NodeState::DELETED || this->m_State == NodeState::UNUSED;
+        // return m_State == NodeState::DELETED || this->m_State == NodeState::UNUSED;
+        return m_State != NodeState::OCCUPIED;
       }
 
       [[nodiscard]] bool isFilled() const
@@ -116,7 +117,7 @@ namespace bifrost
       HashNode& operator=(HashNode&& rhs) = delete;
       HashNode(const HashNode& rhs)       = delete;
 
-       // TODO(Shareef): Add an operator for RValues.
+      // TODO(Shareef): Add an operator for RValues.
       HashNode& operator=(const HashNode& rhs)
       {
         if (this != &rhs)
@@ -156,7 +157,7 @@ namespace bifrost
            typename TValue,
            std::size_t initial_size = 128,
            typename Hasher          = std::hash<TKey>,
-           typename TEqual          = std::equal_to<>> // std::equal_to<TKey>
+           typename TEqual          = std::equal_to<>>  // std::equal_to<TKey>
   class HashTable
   {
    private:
@@ -223,8 +224,8 @@ namespace bifrost
     iterator begin() const;
     iterator end() const;
 
-    void         insert(const TKey& key, const TValue& value);
-    void         insert(const TKey& key, TValue&& value);
+    iterator     insert(const TKey& key, const TValue& value);
+    iterator     insert(const TKey& key, TValue&& value);
     unsigned int count(const TKey& key) const;
     bool         has(const TKey& key) const;
 
@@ -461,7 +462,7 @@ namespace bifrost
   }
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
-  void HashTable<TKey, TValue, initial_size, Hasher, TEqual>::insert(const TKey& key, const TValue& value)
+  typename HashTable<TKey, TValue, initial_size, Hasher, TEqual>::iterator HashTable<TKey, TValue, initial_size, Hasher, TEqual>::insert(const TKey& key, const TValue& value)
   {
     auto hashCode = this->index(key);
 
@@ -474,7 +475,7 @@ namespace bifrost
       if (node->isWritable())
       {
         node->set(key, value);
-        return;
+        return iterator(node, this->m_Table + this->m_Capacity);
       }
 
       ++hashCode;
@@ -483,12 +484,13 @@ namespace bifrost
     if (hashCode >= m_Capacity)
     {
       this->rehash();
-      this->insert(key, value);
     }
+
+    return insert(key, value);
   }
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
-  void HashTable<TKey, TValue, initial_size, Hasher, TEqual>::insert(const TKey& key, TValue&& value)
+  typename HashTable<TKey, TValue, initial_size, Hasher, TEqual>::iterator HashTable<TKey, TValue, initial_size, Hasher, TEqual>::insert(const TKey& key, TValue&& value)
   {
     auto hashCode = this->index(key);
 
@@ -501,7 +503,7 @@ namespace bifrost
       if (node->isWritable())
       {
         node->emplace(key, std::forward<TValue&&>(value));
-        return;
+        return iterator(node, this->m_Table + this->m_Capacity);
       }
 
       ++hashCode;
@@ -510,8 +512,9 @@ namespace bifrost
     if (hashCode >= m_Capacity)
     {
       this->rehash();
-      this->insert(key, std::forward<TValue&&>(value));
     }
+
+    return insert(key, std::forward<TValue&&>(value));
   }
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>

@@ -49,6 +49,11 @@ static bfColor4u bfColor4u_fromUint32(uint32_t color)
   return ret;
 }
 
+static float bfMathAlignf(float value, float size)
+{
+  return floorf(value / size) * size;
+}
+
 #if __cplusplus
 }
 #endif

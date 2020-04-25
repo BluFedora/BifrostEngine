@@ -74,6 +74,13 @@ namespace bifrost::json
     using Base_t::as;
     using Base_t::is;
     using Base_t::type;
+    bool isObject() const { return Base_t::is<Object>(); }
+    bool isArray() const { return Base_t::is<Array>(); }
+    bool isString() const { return Base_t::is<String>(); }
+    bool isNumber() const { return Base_t::is<double>(); }
+    bool isBoolean() const { return Base_t::is<bool>(); }
+
+    // Cast API
 
     template<typename T>
     const T& asOr(const T& default_value) const
@@ -96,12 +103,6 @@ namespace bifrost::json
 
       return Base_t::as<T>();
     }
-
-    bool isObject() const { return Base_t::is<Object>(); }
-    bool isArray() const { return Base_t::is<Array>(); }
-    bool isString() const { return Base_t::is<String>(); }
-    bool isNumber() const { return Base_t::is<double>(); }
-    bool isBoolean() const { return Base_t::is<bool>(); }
 
     // Object API
 
@@ -136,7 +137,7 @@ namespace bifrost::json
 
     //
     // If isObject() then adds add it as a field
-    // If isArray then it is pushed.
+    // If isArray    then it is pushed.
     // Else this object is assigned to value.
     //
     void add(StringRange key, const Value& value);

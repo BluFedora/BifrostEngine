@@ -24,6 +24,8 @@ namespace bifrost::editor
 {
   class EditorOverlay;
 
+  // Memory
+
   IMemoryManager& allocator();
 
   template<typename T>
@@ -31,6 +33,131 @@ namespace bifrost::editor
   {
     allocator().deallocateT(ptr);
   }
+
+  template<typename T>
+  using UniquePtr = std::unique_ptr<T, meta::function_caller<&deallocateT<T>>>;
+
+  // StringPool
+
+  class StringPool;
+
+  struct StringPoolRef final
+  {
+    StringPool* pool;
+    std::size_t entry_idx;
+
+    StringPoolRef() :
+      pool{nullptr},
+      entry_idx{k_StringNPos}
+    {
+    }
+
+    StringPoolRef(const StringPoolRef& rhs) noexcept;
+    StringPoolRef(StringPoolRef&& rhs) noexcept;
+
+    StringPoolRef& operator=(const StringPoolRef& rhs) noexcept;
+    StringPoolRef& operator=(StringPoolRef&& rhs) noexcept;
+
+    const char* string() const noexcept;
+    std::size_t length() const noexcept;
+
+    void clear() noexcept;
+
+    ~StringPoolRef() noexcept;
+
+   private:
+    friend class StringPool;
+
+    StringPoolRef(StringPool* pool, std::size_t entry) :
+      pool{pool},
+      entry_idx{entry}
+    {
+    }
+  };
+
+  class StringPool final
+  {
+    friend struct StringPoolRef;
+
+   private:
+    struct StringPoolEntry final
+    {
+      union
+      {
+        struct
+        {
+          StringRange  data;  // Really a nul terminated string, I just want to keep track of the size.
+          unsigned int ref_count;
+        };
+
+        std::size_t free_list_next;
+      };
+
+      // clang-format off
+      // ReSharper disable CppNonExplicitConvertingConstructor
+      StringPoolEntry(StringRange data) : // NOLINT(hicpp-member-init)
+        data{data},
+        ref_count{1}
+      {
+      }
+      // ReSharper restore CppNonExplicitConvertingConstructor
+      // clang-format on
+    };
+
+   private:
+    Array<StringPoolEntry>                   m_EntryStorage;
+    HashTable<StringRange, StringPoolEntry*> m_Table;
+    std::size_t                              m_EntryStorageFreeList;
+
+   public:
+    explicit StringPool(IMemoryManager& memory) :
+      m_EntryStorage{memory},
+      m_Table{},
+      m_EntryStorageFreeList{k_StringNPos}
+    {
+    }
+
+    StringPoolRef intern(const StringRange& string)
+    {
+      auto it = m_Table.find(string);
+
+      if (it == m_Table.end())
+      {
+        StringPoolEntry* const new_entry = grabNewEntry(string);
+
+        it = m_Table.insert(new_entry->data, new_entry);
+      }
+      else
+      {
+        ++it->value()->ref_count;
+      }
+
+      return StringPoolRef{this, m_EntryStorage.indexOf(it->value())};
+    }
+
+   private:
+    StringPoolEntry* grabNewEntry(const StringRange& string)
+    {
+      StringRange      cloned_data = string_utils::clone(m_EntryStorage.memory(), string);
+      StringPoolEntry* result;
+
+      if (m_EntryStorageFreeList != k_StringNPos)
+      {
+        result = &m_EntryStorage[m_EntryStorageFreeList];
+
+        result->data      = cloned_data;
+        result->ref_count = 1;
+
+        m_EntryStorageFreeList = m_EntryStorage[m_EntryStorageFreeList].free_list_next;
+      }
+      else
+      {
+        result = &m_EntryStorage.emplace(cloned_data);
+      }
+
+      return result;
+    }
+  };
 
   struct ActionContext final
   {
@@ -83,10 +210,10 @@ namespace bifrost::editor
     class BaseMenuItem
     {
      private:
-      const char* m_Name;
+      StringPoolRef m_Name;
 
      protected:
-      explicit BaseMenuItem(const char* name) :
+      explicit BaseMenuItem(const StringPoolRef& name) :
         m_Name{name}
       {
       }
@@ -97,7 +224,7 @@ namespace bifrost::editor
       virtual void endItem()                           = 0;
 
       virtual ~BaseMenuItem() = default;
-      [[nodiscard]] const char* name() const { return m_Name; }
+      [[nodiscard]] const StringPoolRef& name() const { return m_Name; }
     };
 
     class MenuDropdown : public BaseMenuItem
@@ -110,8 +237,21 @@ namespace bifrost::editor
       void doAction(const ActionContext& ctx) override;
       void endItem() override;
 
+      MenuDropdown* findDropdown(const StringRange& name)
+      {
+        for (BaseMenuItem* item : m_SubItems)
+        {
+          if (name == item->name().string())
+          {
+            return static_cast<MenuDropdown*>(item);
+          }
+        }
+
+        return nullptr;
+      }
+
      public:
-      MenuDropdown(const char* name, IMemoryManager& memory) :
+      MenuDropdown(const StringPoolRef& name, IMemoryManager& memory) :
         BaseMenuItem{name},
         m_SubItems{memory}
       {
@@ -128,7 +268,7 @@ namespace bifrost::editor
       bool beginItem(const ActionContext& ctx) override;
       void endItem() override;
 
-      MainMenu(const char* name, IMemoryManager& memory) :
+      MainMenu(const StringPoolRef& name, IMemoryManager& memory) :
         MenuDropdown{name, memory}
       {
       }
@@ -145,7 +285,7 @@ namespace bifrost::editor
       Action* m_Action;
 
      public:
-      MenuAction(const char* name, Action* action) :
+      MenuAction(const StringPoolRef& name, Action* action) :
         BaseMenuItem{name},
         m_Action{action}
       {
@@ -155,9 +295,6 @@ namespace bifrost::editor
     };
 
   }  // namespace ui
-
-  template<typename T>
-  using UniquePtr = std::unique_ptr<T, meta::function_caller<&deallocateT<T>>>;
 
   class Project final
   {
@@ -182,12 +319,14 @@ namespace bifrost::editor
     const String& metaPath() const { return m_MetaPath; }
   };
 
-  using ActionPtr  = UniquePtr<Action>;
-  using ProjectPtr = UniquePtr<Project>;
+  using ActionPtr           = UniquePtr<Action>;
+  using ProjectPtr          = UniquePtr<Project>;
+  using BaseEditorWindowPtr = UniquePtr<BaseEditorWindow>;
 
   class ARefreshAsset;
 
-  using ActionMap = HashTable<String, ActionPtr>;
+  using ActionMap  = HashTable<String, ActionPtr>;
+  using WindowList = Array<BaseEditorWindowPtr>;
 
   class EditorOverlay final : public IGameStateLayer
   {
@@ -197,6 +336,8 @@ namespace bifrost::editor
     ui::Dialog*        m_CurrentDialog;
     bool               m_OpenNewDialog;
     ActionMap          m_Actions;
+    StringPool         m_MenuNameStringPool;
+    ui::MainMenu       m_MainMenu;
     Engine*            m_Engine;
     ProjectPtr         m_OpenProject;
     float              m_FpsTimer;
@@ -204,8 +345,9 @@ namespace bifrost::editor
     AssetTextureHandle m_TestTexture;
     FileSystem         m_FileSystem;
     Rect2i             m_SceneViewViewport;  // Global Window Coordinates
-    Array<Inspector>   m_InspectorWindows;
     ImGuiID            m_InspectorDefaultDockspaceID;
+    Vec2f              m_MousePosition;  // TODO(SR): This should be stored in a shared Engine Input Module.
+    WindowList         m_OpenWindows;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -233,12 +375,38 @@ namespace bifrost::editor
     void    viewAddInspector();
     bool    isPointOverSceneView(const Vector2i& point) const;
 
+    template<typename T, typename... Args>
+    T& getWindow(Args&&... args)
+    {
+      const EditorWindowID type_id = T::typeID();
+
+      for (BaseEditorWindowPtr& window : m_OpenWindows)
+      {
+        if (type_id == window->windowID())
+        {
+          return *reinterpret_cast<T*>(window.get());
+        }
+      }
+
+      return addWindow<T>(std::forward<decltype(args)>(args)...);
+    }
+
+    template<typename T, typename... Args>
+    T& addWindow(Args&&... args)
+    {
+      T* window = allocator().allocateT<T>(std::forward<decltype(args)>(args)...);
+
+      m_OpenWindows.emplace(window);
+
+      return *window;
+    }
+
     template<typename T>
     void select(T&& selectable)
     {
-      for (Inspector& inspector : m_InspectorWindows)
+      for (BaseEditorWindowPtr& window : m_OpenWindows)
       {
-        inspector.select(selectable);
+        window->selectionChange(selectable);
       }
     }
 
@@ -247,6 +415,9 @@ namespace bifrost::editor
     void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label, const ImVec2& size = ImVec2(0.0f, 0.0f)) const;
     void selectableAction(const ActionContext& ctx, const char* action_name) const;
     void selectableAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
+
+    // The 'menu_path' parameter must have a lifetime the same or longer than the editor. (namely constexpr strings)
+    void addMenuItem(const StringRange& menu_path, const char* action_name);
   };
 }  // namespace bifrost::editor
 

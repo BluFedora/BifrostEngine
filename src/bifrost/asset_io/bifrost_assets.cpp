@@ -17,7 +17,6 @@
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
 #include "bifrost/asset_io/bifrost_file.hpp"             // File
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
-#include "bifrost/asset_io/bifrost_json_value.hpp"       // JsonValue
 
 #include "bifrost/memory/bifrost_linear_allocator.hpp" /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"       //
@@ -32,7 +31,7 @@
 #include <dirent.h>
 #endif
 
-#include "bifrost/core/bifrost_engine.hpp"  // THIS HAS AN GLFW HEADER WHICH FUCKS WITH WINDOWS.h
+#include "bifrost/core/bifrost_engine.hpp"  // THIS HAS A GLFW HEADER WHICH FUCKS WITH WINDOWS.h
 
 namespace bifrost
 {

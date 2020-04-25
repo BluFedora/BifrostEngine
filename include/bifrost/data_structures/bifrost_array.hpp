@@ -11,6 +11,7 @@
 
 #include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
 #include "bifrost_array_t.h"                          /* bfArray_*            */
+#include <cassert>                                    /* assert               */
 
 namespace bifrost
 {
@@ -265,6 +266,13 @@ namespace bifrost
     {
       // TODO(SR): This only works if T is "trivially relocatable".
       ::bfArray_sort(rawData(), compare);
+    }
+
+    std::size_t indexOf(const T* element)
+    {
+      assert(begin() <= element && element < end() && "'element' must be within this Array");
+
+      return element - begin();
     }
 
     ~Array()

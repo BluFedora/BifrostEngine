@@ -22,6 +22,16 @@
 
 namespace bifrost
 {
+  namespace math
+  {
+    // Inclusive [min, max]
+    template<typename T1, typename T2, typename T3>
+    inline bool isInbetween(const T1& min, const T2& value, const T3& max)
+    {
+      return min <= value && value <= max;
+    }
+  }  // namespace math
+
   namespace detail
   {
     template<typename T>
@@ -168,8 +178,8 @@ namespace bifrost
       {
       }
 
-      // This leaves the base 'Vec3f' uninitialized for performance reasons.
-      // thus it cannot be constexpr.
+      // NOTE(SR):
+      //   This leaves the base 'Vec3f' uninitialized for performance reasons (cannot be constexpr).
       Vec3T() = default;
 
       Vec3T& operator*=(float scalar)
@@ -209,9 +219,13 @@ namespace bifrost
       VectorT m_Max;
 
      public:
+      // TODO(SR):
+      //   I don't like how this constrcutor defaults to all zeros.
+      //   By design you should have to be explicit or allow uninitialized for cheaper constuction (Similar to Vector).
+      //   This constructor allows for Rect2{0.0f} which looks ambiguous to all hell.
       Rect2T(T x = T(0), T y = T(0), T width = T(0), T height = T(0)) :
-        m_Min{x, y},
-        m_Max{x + width, y + height}
+        m_Min{{x, y}},
+        m_Max{{x + width, y + height}}
       {
       }
 
@@ -228,25 +242,28 @@ namespace bifrost
       {
       }
 
-      [[nodiscard]] VectorT topLeft() const { return m_Min; }
-      [[nodiscard]] VectorT topRight() const { return VectorT{m_Max.x, m_Min.y}; }
-      [[nodiscard]] VectorT bottomRight() const { return m_Max; }
-      [[nodiscard]] VectorT bottomLeft() const { return VectorT{m_Min.x, m_Max.y}; }
-      [[nodiscard]] VectorT center() const { return VectorT{centerX(), centerY()}; }
-      [[nodiscard]] T       left() const { return m_Min.x; }
-      [[nodiscard]] T       right() const { return m_Max.x; }
-      [[nodiscard]] T       top() const { return m_Min.y; }
-      [[nodiscard]] T       bottom() const { return m_Max.y; }
-      [[nodiscard]] T       width() const { return right() - left(); }
-      [[nodiscard]] T       height() const { return bottom() - top(); }
-      [[nodiscard]] T       centerX() const { return left() + width() / T(2.0); }
-      [[nodiscard]] T       centerY() const { return top() + height() / T(2.0); }
-      void                  setLeft(T value) { m_Min.x = value; }
-      void                  setRight(T value) { m_Max.x = value; }
-      void                  setTop(T value) { m_Min.y = value; }
-      void                  setBottom(T value) { m_Max.y = value; }
-      void                  setWidth(T value) { m_Max.x = m_Min.x + value; }
-      void                  setHeight(T value) { m_Max.y = m_Min.y + value; }
+      [[nodiscard]] const VectorT& min() const { return m_Min; }
+      [[nodiscard]] const VectorT& max() const { return m_Max; }
+      [[nodiscard]] const VectorT& topLeft() const { return m_Min; }
+      [[nodiscard]] VectorT        topRight() const { return VectorT{m_Max.x, m_Min.y}; }
+      [[nodiscard]] const VectorT& bottomRight() const { return m_Max; }
+      [[nodiscard]] VectorT        bottomLeft() const { return VectorT{m_Min.x, m_Max.y}; }
+      [[nodiscard]] VectorT        center() const { return VectorT{centerX(), centerY()}; }
+      [[nodiscard]] T              left() const { return m_Min.x; }
+      [[nodiscard]] T              right() const { return m_Max.x; }
+      [[nodiscard]] T              top() const { return m_Min.y; }
+      [[nodiscard]] T              bottom() const { return m_Max.y; }
+      [[nodiscard]] T              width() const { return right() - left(); }
+      [[nodiscard]] T              height() const { return bottom() - top(); }
+      [[nodiscard]] T              centerX() const { return left() + width() / T(2.0); }
+      [[nodiscard]] T              centerY() const { return top() + height() / T(2.0); }
+      [[nodiscard]] T              area() const { return width() * height(); }
+      void                         setLeft(T value) { m_Min.x = value; }
+      void                         setRight(T value) { m_Max.x = value; }
+      void                         setTop(T value) { m_Min.y = value; }
+      void                         setBottom(T value) { m_Max.y = value; }
+      void                         setWidth(T value) { m_Max.x = m_Min.x + value; }
+      void                         setHeight(T value) { m_Max.y = m_Min.y + value; }
 
       void setX(T value)
       {
@@ -277,7 +294,7 @@ namespace bifrost
       }
 
       template<typename F>
-      Rect2T<T> merge(const Rect2T<F>& rhs) const
+      [[nodiscard]] Rect2T<T> merge(const Rect2T<F>& rhs) const
       {
         const T l = std::min(left(), static_cast<T>(rhs.left()));
         const T r = std::max(right(), static_cast<T>(rhs.right()));
@@ -289,7 +306,7 @@ namespace bifrost
 
       // Merges two rectangles with an AND operation
       template<typename F>
-      Rect2T<T> mergeAND(const Rect2T<F>& rhs) const
+      [[nodiscard]] Rect2T<T> mergeAND(const Rect2T<F>& rhs) const
       {
         const T l = std::max(left(), static_cast<T>(rhs.left()));
         const T r = std::min(right(), static_cast<T>(rhs.right()));
@@ -310,20 +327,22 @@ namespace bifrost
         setLeft(std::min(left(), rhs.x));
       }
 
+      // TODO(SR): Rename these functions. These names are inconsistent...
+
       template<typename F>
-      bool intersectsRect(const Rect2T<F>& rhs) const
+      [[nodiscard]] bool intersectsRect(const Rect2T<F>& rhs) const
       {
         return !(rhs.right() < left() || rhs.bottom() < top() || rhs.left() > right() || rhs.top() > bottom());
       }
 
       template<typename F>
-      bool contains(const Rect2T<F>& rhs) const
+      [[nodiscard]] bool contains(const Rect2T<F>& rhs) const
       {
         return (left() <= rhs.left() && right() >= rhs.right() && top() <= rhs.top() && bottom() >= rhs.bottom());
       }
 
       template<typename F>
-      bool canContain(const Rect2T<F>& rhs) const
+      [[nodiscard]] bool canContain(const Rect2T<F>& rhs) const
       {
         return width() >= rhs.width() && height() >= rhs.height();
       }
@@ -331,49 +350,47 @@ namespace bifrost
       // NOTE(Shareef):
       //   Unlike 'contains' this returns false if the two rectangles are exactly alike
       template<typename F>
-      bool encompasses(const Rect2T<F>& rhs) const
+      [[nodiscard]] bool encompasses(const Rect2T<F>& rhs) const
       {
         return (left() <= rhs.left() && right() >= rhs.right() && top() <= rhs.top() && bottom() >= rhs.bottom());
       }
 
       template<typename F>
-      bool operator==(const Rect2T<F>& rhs) const
+      [[nodiscard]] bool operator==(const Rect2T<F>& rhs) const
       {
         return m_Min == rhs.m_Min && m_Max == rhs.m_Max;
       }
 
       template<typename F>
-      bool operator!=(const Rect2T<F>& rhs) const
+      [[nodiscard]] bool operator!=(const Rect2T<F>& rhs) const
       {
         return !(*this == rhs);
       }
 
       template<typename F>
-      Rect2T<F> operator+(const Vec2T<F>& vector) const
+      [[nodiscard]] Rect2T<F> operator+(const Vec2T<F>& vector) const
       {
         return Rect2T<F>(m_Min + vector, m_Max + vector);
       }
 
       template<typename F>
-      Rect2T<F> operator-(const Vec2T<F>& vector) const
+      [[nodiscard]] Rect2T<F> operator-(const Vec2T<F>& vector) const
       {
         return Rect2T<F>(m_Min - vector, m_Max - vector);
       }
 
-      Rect2T operator-() const
+      [[nodiscard]] Rect2T operator-() const
       {
         return Rect2T{-m_Min, -m_Max};
       }
 
       template<typename F>
-      bool intersects(const Vec2T<F>& point) const
+      [[nodiscard]] bool intersects(const Vec2T<F>& point) const
       {
-        return (left() <= point.x && point.x <= right()) && (top() <= point.y && point.y <= bottom());
-      }
+        using namespace bifrost::math;
 
-      [[nodiscard]] T area() const
-      {
-        return width() * height();
+        return isInbetween(left(), point.x, right()) && isInbetween(top(), point.y, bottom());
+        // return (left() <= point.x && point.x <= right()) && (top() <= point.y && point.y <= bottom());
       }
 
       template<typename F>
@@ -432,6 +449,7 @@ namespace bifrost
   //   This namespace contains some utilities for manipulating rectangles.
   namespace rect
   {
+    // Returns a zero area Rect2i if any of the parameters are 0.
     Rect2i aspectRatioDrawRegion(std::uint32_t aspect_w, std::uint32_t aspect_h, std::uint32_t window_w, std::uint32_t window_h);
   }
 

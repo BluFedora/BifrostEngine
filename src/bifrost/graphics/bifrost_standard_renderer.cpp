@@ -1053,9 +1053,7 @@ namespace bifrost
 
     bfShaderProgramHandle createShaderProgram(bfGfxDeviceHandle device, std::uint32_t num_desc_sets, bfShaderModuleHandle vertex_module, bfShaderModuleHandle fragment_module, const char* debug_name)
     {
-      bfShaderProgramCreateParams create_shader;
-      create_shader.debug_name    = debug_name;
-      create_shader.num_desc_sets = num_desc_sets;
+      bfShaderProgramCreateParams create_shader{debug_name, num_desc_sets};
 
       const bfShaderProgramHandle shader = bfGfxDevice_newShaderProgram(device, &create_shader);
 

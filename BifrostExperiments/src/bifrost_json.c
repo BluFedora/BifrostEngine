@@ -629,7 +629,7 @@ static void bfJsonNextToken(bfJsonParserContext* ctx)
 
       /*
         @JsonSpecExtention
-          Added support for inf, infinity, and nan (case insensitive).
+          Added support for "inf", "infinity", and "nan" (case insensitive).
       */
       if (token_end - token_bgn >= 3 && (bfJsonIsSameStringI(token_bgn, "INF", 3) || bfJsonIsSameStringI(token_bgn, "NAN", 3)))
       {

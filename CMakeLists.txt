@@ -61,7 +61,7 @@ endif()
   #   "-std=c++17"                = "/std:c++17"
   #   "-fno-rtti"                 = "/GR-"
   #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "-Wno-error=deprecated-declarations -std=c++17 -lstdc++fs -fno-rtti -Wall -g")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # using Intel C++
@@ -124,8 +124,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
-  "src/bifrost/editor/bifrost_editor_overlay.cpp"
-  "src/bifrost/editor/bifrost_editor_serializer.cpp"
+  "src/bifrost/editor/bifrost_editor_build.cpp"
 
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_gfx_common.c"
@@ -179,8 +178,8 @@ include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
 # include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include/glslang/External/googletest/googletest/include)
 
 add_executable(
-  BifrostEngine 
-  ${BIFROST_ENGINE_SOURCE_FILES} 
+  BifrostEngine
+  ${BIFROST_ENGINE_SOURCE_FILES}
   "include/bifrost/ecs/bifrost_collision_system.hpp"
  "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp")
 
@@ -206,7 +205,7 @@ add_custom_command(TARGET BifrostEngine PRE_BUILD
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
-  
+
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
     set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
@@ -216,7 +215,7 @@ if (WIN32)
     # set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
   endif()
   set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
-  
+
 elseif (APPLE)
   set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
   set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")

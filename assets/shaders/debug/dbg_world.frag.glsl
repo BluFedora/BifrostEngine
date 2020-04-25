@@ -13,7 +13,7 @@ void main()
 {
   float metallic          = 0.0f;
   float roughness         = 0.0f;
-  float ambient_occlusion = 2.0f;
+  float ambient_occlusion = 5.0f;
   vec2  normal            = vec2(0.707f, 0.707f); // {0.5f, 0.5f} direction.
   vec3  albedo            = frag_Color;
 

@@ -5,6 +5,28 @@
 #include <cstdarg>  // va_list
 #include <cstdio>   // vsnprintf
 
+namespace bifrost
+{
+  StringLink::StringLink(StringRange data, StringLink*& head, StringLink*& tail) :
+    string{data},
+    next{nullptr}
+  {
+    {
+      if (!head)
+      {
+        head = this;
+      }
+
+      if (tail)
+      {
+        tail->next = this;
+      }
+
+      tail = this;
+    }
+  }
+}  // namespace bifrost
+
 namespace bifrost::string_utils
 {
   char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...)
@@ -60,5 +82,41 @@ namespace bifrost::string_utils
     }
 
     return 0 <= string_len && string_len < int(buffer_size);
+  }
+
+  TokenizeResult tokenizeAlloc(IMemoryManager& allocator, const StringRange& string, char delimiter)
+  {
+    TokenizeResult result{nullptr, nullptr, 0u};
+
+    tokenize(string, delimiter, [&result, &allocator](const StringRange& token) {
+      allocator.allocateT<StringLink>(token, result.head, result.tail);
+      ++result.size;
+    });
+
+    return result;
+  }
+
+  void tokenizeFree(IMemoryManager& allocator, const TokenizeResult& tokenized_list)
+  {
+    StringLink* link_head = tokenized_list.head;
+
+    while (link_head)
+    {
+      StringLink* const next = link_head->next;
+
+      allocator.deallocate(link_head);
+      link_head = next;
+    }
+  }
+
+  StringRange clone(IMemoryManager& allocator, const StringRange& string)
+  {
+    const std::size_t length = string.length();
+    char*             buffer = static_cast<char*>(allocator.allocate(length + 1));
+
+    std::strncpy(buffer, string.begin(), length);
+    buffer[length] = '\0';
+
+    return {buffer, length};
   }
 }  // namespace bifrost::string_utils

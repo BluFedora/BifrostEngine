@@ -72,10 +72,9 @@ namespace bifrost
     BufferLink*             m_LineBufferPool;
     List<DrawCommand>       m_DepthDrawCommands;
     List<DrawCommand>       m_OverlayDrawCommands;
-    Array<BufferLink*>      m_LineBuffers[2];  // world, overlay
-    bfShaderModuleHandle    m_DbgOverlay[2];   // vertex, fragment
-    bfShaderModuleHandle    m_DbgWorld[2];     // vertex, fragment
-    bfShaderProgramHandle   m_Shaders[2];      // world, overlay
+    Array<BufferLink*>      m_LineBuffers[2];    // world, overlay
+    bfShaderModuleHandle    m_ShaderModules[3];  // vertex, world-fragment, overlay-fragment
+    bfShaderProgramHandle   m_Shaders[2];        // world, overlay
     bfVertexLayoutSetHandle m_DbgVertexLayout;
 
    public:

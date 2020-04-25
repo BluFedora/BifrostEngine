@@ -21,6 +21,8 @@
 
 namespace bifrost
 {
+  static constexpr std::size_t k_StringNPos = std::numeric_limits<std::size_t>::max();
+
   class IMemoryManager;
 
   struct StringRange : public bfStringRange
@@ -69,9 +71,10 @@ namespace bifrost
       return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
     }
 
+     // Assumes a nul terminated string. If you only want to compare with a piece then use StringRange.
     [[nodiscard]] bool operator==(const char* rhs) const
     {
-      return std::strncmp(bgn, rhs, length()) == 0;
+      return std::strncmp(bgn, rhs, length()) == 0 && rhs[length()] == '\0';
     }
 
     [[nodiscard]] bool operator!=(const StringRange& rhs) const
@@ -87,6 +90,21 @@ namespace bifrost
     const char* end() const
     {
       return bfStringRange::end;
+    }
+
+    std::size_t find(char character, std::size_t pos = 0) const
+    {
+      const std::size_t len = length();
+
+      for (std::size_t i = pos; i < len; ++i)
+      {
+        if (bgn[i] == character)
+        {
+          return i;
+        }
+      }
+
+      return k_StringNPos;
     }
   };
 
@@ -325,6 +343,7 @@ namespace bifrost
       }
     }
 
+    // This is non-const by design.
     void unescape()  // const
     {
       String_unescape(m_Handle);
@@ -332,6 +351,7 @@ namespace bifrost
 
     [[nodiscard]] std::size_t hash() const
     {
+      // ReSharper disable CppUnreachableCode
       if constexpr (sizeof(std::size_t) == 4)
       {
         return bfString_hash(cstr());
@@ -340,6 +360,7 @@ namespace bifrost
       {
         return bfString_hash64(cstr());
       }
+      // ReSharper restore CppUnreachableCode
     }
 
     void clear()
@@ -378,6 +399,21 @@ namespace bifrost
     result.append(rhs);
     return result;
   }
+
+  struct StringLink final
+  {
+    StringRange string;
+    StringLink* next;
+
+    explicit StringLink(StringRange data, StringLink*& head, StringLink*& tail);
+  };
+
+  struct TokenizeResult final
+  {
+    StringLink* head;
+    StringLink* tail;
+    std::size_t size;
+  };
 }  // namespace bifrost
 
 namespace std
@@ -390,10 +426,30 @@ namespace std
       return s.hash();
     }
   };
+
+  template<>
+  struct hash<bifrost::StringRange>
+  {
+    std::size_t operator()(bifrost::StringRange const& s) const noexcept
+    {
+      // ReSharper disable CppUnreachableCode
+      if constexpr (sizeof(std::size_t) == 4)
+      {
+        return bfString_hashN(s.begin(), s.length());
+      }
+      else
+      {
+        return bfString_hashN64(s.begin(), s.length());
+      }
+      // ReSharper restore CppUnreachableCode
+    }
+  };
 }  // namespace std
 
 namespace bifrost::string_utils
 {
+  // Helper Structs //
+
   struct StringHasher final
   {
     std::size_t operator()(const ConstBifrostString input) const
@@ -418,8 +474,51 @@ namespace bifrost::string_utils
   // Deallocates memory from 'fmtAlloc'
   void fmtFree(IMemoryManager& allocator, char* ptr);
   // Uses the passed in buffer for the formatting.
-  // Returns if the buffer was big enough.
+  // Returns true if the buffer was big enough.
   bool fmtBuffer(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, ...);
+
+  // String Tokenizing //
+
+  //
+  // If the strig ends in the delimter then you will get an empty string as the last element.
+  //
+
+  // Callers job to either free each 'StringLink' themselves or call 'tokenizeFree' with the same allocator.
+  TokenizeResult tokenizeAlloc(IMemoryManager& allocator, const StringRange& string, char delimiter = '/');
+  // Deallocates memory from 'tokenizeAlloc'
+  void tokenizeFree(IMemoryManager& allocator, const TokenizeResult& tokenized_list);
+
+  //
+  // The callback is passed in a 'StringRange' for each tokenized element.
+  // The StringRange does not include the delimiter character.
+  // Except for the first call you can assume the StringRange is preceeded by the delimiter.
+  //
+  template<typename F>
+  void tokenize(const StringRange& string, const char delimiter, F&& callback)
+  {
+    std::size_t last_pos = 0u;
+
+    while (true)
+    {
+      const std::size_t slash_pos = string.find(delimiter, last_pos);
+      const char* const bgn       = string.begin() + last_pos;
+
+      if (slash_pos == k_StringNPos)
+      {
+        callback(StringRange{bgn, string.length() - last_pos});
+        break;
+      }
+
+      callback(StringRange{bgn, slash_pos - last_pos});
+
+      last_pos = slash_pos + 1;  // NOTE(Shareef): The + 1 accounts for the delimiting character.
+    }
+  }
+
+  // Misc //
+
+  // Caller is responsible for freeing memory from this.
+  StringRange clone(IMemoryManager& allocator, const StringRange& string);
 }  // namespace bifrost::string_utils
 
 #endif /* BIFROST_STRING_HPP */

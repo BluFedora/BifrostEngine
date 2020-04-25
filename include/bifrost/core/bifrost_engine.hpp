@@ -27,7 +27,7 @@ struct BifrostEngineCreateParams : public bfGfxContextCreateParams
   std::uint32_t height;
 };
 
-static GLFWwindow* g_Window = nullptr;
+extern GLFWwindow* g_Window;
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {

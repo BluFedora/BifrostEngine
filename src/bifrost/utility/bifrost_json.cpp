@@ -18,7 +18,7 @@
 
 namespace bifrost::json
 {
-  static CAllocator s_ArrayAllocator = {};
+  static CAllocator s_ArrayAllocator = {}; // TODO(SR): Think about this allocation scheme a bit more??
 
   static Value** readStorage(bfJsonParserContext* ctx)
   {

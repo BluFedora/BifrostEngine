@@ -10,8 +10,6 @@
 
 namespace bifrost
 {
-  using StringSizeT = uint32_t;
-
   namespace file
   {
     enum FileMode
@@ -131,7 +129,7 @@ namespace bifrost
     char* readAll(IMemoryManager& allocator, std::size_t& out_size);
 
     // Same as the above overload except destructors handle freeing.
-    TempBuffer readAll(IMemoryManager& allocator);
+    [[nodiscard]] TempBuffer readAll(IMemoryManager& allocator);
 
     template<typename T>
     File& operator<<(const T& data)

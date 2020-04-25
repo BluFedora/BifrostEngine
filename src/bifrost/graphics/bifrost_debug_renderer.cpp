@@ -9,8 +9,7 @@ namespace bifrost
     m_DepthDrawCommands{memory},
     m_OverlayDrawCommands{memory},
     m_LineBuffers{Array<BufferLink*>{memory}, Array<BufferLink*>{memory}},
-    m_DbgOverlay{nullptr, nullptr},
-    m_DbgWorld{nullptr, nullptr},
+    m_ShaderModules{nullptr, nullptr, nullptr},
     m_Shaders{nullptr, nullptr},
     m_DbgVertexLayout{nullptr}
   {
@@ -20,14 +19,13 @@ namespace bifrost
   {
     const auto device = renderer.device();
 
-    m_Gfx             = &renderer;
-    m_DbgOverlay[0]   = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_overlay.vert.glsl");
-    m_DbgOverlay[1]   = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_overlay.frag.glsl");
-    m_DbgWorld[0]     = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_world.vert.glsl");
-    m_DbgWorld[1]     = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_world.frag.glsl");
-    m_Shaders[0]      = gfx::createShaderProgram(device, 1, m_DbgWorld[0], m_DbgWorld[1], "Debug.World");
-    m_Shaders[1]      = gfx::createShaderProgram(device, 1, m_DbgOverlay[0], m_DbgOverlay[1], "Debug.Overlay");
-    m_DbgVertexLayout = bfVertexLayout_new();
+    m_Gfx              = &renderer;
+    m_ShaderModules[0] = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_lines.vert.glsl");
+    m_ShaderModules[1] = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_world.frag.glsl");
+    m_ShaderModules[2] = renderer.glslCompiler().createModule(device, "assets/shaders/debug/dbg_overlay.frag.glsl");
+    m_Shaders[0]       = gfx::createShaderProgram(device, 1, m_ShaderModules[0], m_ShaderModules[1], "Debug.World");
+    m_Shaders[1]       = gfx::createShaderProgram(device, 1, m_ShaderModules[0], m_ShaderModules[2], "Debug.Overlay");
+    m_DbgVertexLayout  = bfVertexLayout_new();
 
     bfVertexLayout_addVertexBinding(m_DbgVertexLayout, 0, sizeof(VertexDebugLine));
     bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(VertexDebugLine, curr_pos));
@@ -140,11 +138,14 @@ namespace bifrost
   {
     bfVertexLayout_delete(m_DbgVertexLayout);
 
-    for (int i = 0; i < 2; ++i)
+    for (const auto& shader_module : m_ShaderModules)
     {
-      bfGfxDevice_release(m_Gfx->device(), m_DbgOverlay[i]);
-      bfGfxDevice_release(m_Gfx->device(), m_DbgWorld[i]);
-      bfGfxDevice_release(m_Gfx->device(), m_Shaders[i]);
+      bfGfxDevice_release(m_Gfx->device(), shader_module);
+    }
+
+    for (const auto& shader : m_Shaders)
+    {
+      bfGfxDevice_release(m_Gfx->device(), shader);
     }
 
     for (auto& m_LineBuffer : m_LineBuffers)

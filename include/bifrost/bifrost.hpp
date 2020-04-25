@@ -16,8 +16,6 @@
 #include "asset_io/bifrost_asset_handle.hpp"
 #include "asset_io/bifrost_assets.hpp"
 #include "asset_io/bifrost_file.hpp"
-#include "asset_io/bifrost_json_parser.hpp"
-#include "asset_io/bifrost_json_value.hpp"
 #include "asset_io/bifrost_scene.hpp"
 
 // Core
