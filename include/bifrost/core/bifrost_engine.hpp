@@ -43,17 +43,29 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
   }
 }
 
+namespace bifrost
+{
+  class CoreEngineGameStateLayer : public IGameStateLayer
+  {
+   protected:
+    void onEvent(BifrostEngine& engine, Event& event) override;
+
+   public:
+    const char* name() override { return "__CoreEngineLayer__"; }
+  };
+}  // namespace bifrost
+
 class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 {
   // TEMP CODE START
  public:
-  struct Camera_t Camera;
+  BifrostCamera Camera;
 
   void cameraControls()
   {
     const auto camera_move_speed = 0.05f;
 
-    const std::tuple<int, void (*)(::Camera*, float), float> CameraControls[] =
+    const std::tuple<int, void (*)(::BifrostCamera*, float), float> CameraControls[] =
      {
       {GLFW_KEY_W, &Camera_moveForward, camera_move_speed},
       {GLFW_KEY_A, &Camera_moveLeft, camera_move_speed},
@@ -75,10 +87,6 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
       }
     }
 
-    int width, height;
-    glfwGetWindowSize(g_Window, &width, &height);
-
-    Camera_onResize(&Camera, width, height);
     Camera_update(&Camera);
   }
 
@@ -96,9 +104,10 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   Array<AssetSceneHandle>      m_SceneStack;
   Assets                       m_Assets;
   Array<IECSSystem*>           m_Systems;
+  IBaseWindow&                 m_Window;
 
  public:
-  BifrostEngine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
+  explicit BifrostEngine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
     Camera{},
     m_CmdlineArgs{argc, argv},
     m_MainMemory{main_memory, main_memory_size},
@@ -110,7 +119,8 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     m_DebugRenderer{m_MainMemory},
     m_SceneStack{m_MainMemory},
     m_Assets{*this, m_MainMemory},
-    m_Systems{m_MainMemory}
+    m_Systems{m_MainMemory},
+    m_Window{window}
   {
     // TEMP CODE BGN
     const Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
@@ -126,15 +136,11 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   StandardRenderer&  renderer() { return m_Renderer; }
   DebugRenderer&     debugDraw() { return m_DebugRenderer; }
   Assets&            assets() { return m_Assets; }
+  IBaseWindow&       window() const { return m_Window; }
 
   AssetSceneHandle currentScene() const
   {
-    if (m_SceneStack.size())
-    {
-      return m_SceneStack.back();
-    }
-
-    return {};
+    return m_SceneStack.isEmpty() ? AssetSceneHandle{} : m_SceneStack.back();
   }
 
   void openScene(const AssetSceneHandle& scene)
@@ -191,8 +197,11 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     vm_params.min_heap_size      = 20;
     vm_params.heap_size          = 200;
     vm_params.heap_growth_factor = 0.1f;
+    vm_params.user_data          = this;
 
     m_Scripting.create(vm_params);
+
+    m_StateMachine.push<CoreEngineGameStateLayer>();
 
     bfLogPop();
   }
@@ -349,5 +358,25 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     bfLogger_deinit();
   }
 };
+
+namespace bifrost
+{
+  inline void CoreEngineGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
+  {
+    if (event.type == EventType::ON_WINDOW_RESIZE)
+    {
+      const int window_width  = event.window.width;
+      const int window_height = event.window.height;
+
+      bfLogPrint("Window Resized To: (%i, %i)", window_width, window_height);
+
+      engine.renderer().resize(window_width, window_height);
+      Camera_onResize(&engine.Camera, window_width, window_height);
+    }
+
+    // This is the bottom most layer so why not just accept the event.
+    event.accept();
+  }
+}  // namespace bifrost
 
 #endif /* BIFROST_ENGINE_HPP */

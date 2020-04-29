@@ -2,7 +2,10 @@
 
 #include <math.h> /* cosf, sinf */
 
-static void camera_update_vectors(Camera* cam)
+static const Vec3f k_DefaultPosition = {0.0f, 0.0f, 0.0f, 1.0f};
+static const Vec3f k_DefaultWorldUp  = {0.0f, 1.0f, 0.0f, 0.0f};
+
+static void camera_update_vectors(BifrostCamera* cam)
 {
   const float cosf_pitch = cosf(cam->_pitch);
 
@@ -22,11 +25,8 @@ static void camera_update_vectors(Camera* cam)
   cam->needs_update[1] = 1;
 }
 
-void Camera_init(Camera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch)
+void Camera_init(BifrostCamera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch)
 {
-  static const Vec3f k_DefaultPosition = {0.0f, 0.0f, 0.0f, 1.0f};
-  static const Vec3f k_DefaultWorldUp  = {0.0f, 1.0f, 0.0f, 0.0f};
-
   if (!pos)
   {
     pos = &k_DefaultPosition;
@@ -54,7 +54,7 @@ void Camera_init(Camera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw
   camera_update_vectors(cam);
 }
 
-void Camera_update(Camera* cam)
+void Camera_update(BifrostCamera* cam)
 {
   int needed_update = 0;
 
@@ -127,61 +127,61 @@ void Camera_update(Camera* cam)
   }
 }
 
-void Camera_move(Camera* cam, const Vec3f* dir, float amt)
+void Camera_move(BifrostCamera* cam, const Vec3f* dir, float amt)
 {
   Vec3f_addScaled(&cam->position, dir, amt);
   Camera_setViewModified(cam);
 }
 
-void Camera_moveLeft(Camera* cam, float amt)
+void Camera_moveLeft(BifrostCamera* cam, float amt)
 {
   Vec3f right;
   Vec3f_cross(&cam->forward, &cam->up, &right);
   Camera_move(cam, &right, -amt);
 }
 
-void Camera_moveRight(Camera* cam, float amt)
+void Camera_moveRight(BifrostCamera* cam, float amt)
 {
   Vec3f right;
   Vec3f_cross(&cam->forward, &cam->up, &right);
   Camera_move(cam, &right, amt);
 }
 
-void Camera_moveUp(Camera* cam, float amt)
+void Camera_moveUp(BifrostCamera* cam, float amt)
 {
   Camera_move(cam, &cam->up, amt);
 }
 
-void Camera_moveDown(Camera* cam, float amt)
+void Camera_moveDown(BifrostCamera* cam, float amt)
 {
   Camera_move(cam, &cam->up, -amt);
 }
 
-void Camera_moveForward(Camera* cam, float amt)
+void Camera_moveForward(BifrostCamera* cam, float amt)
 {
   Vec3f fwd = cam->forward;
   Vec3f_normalize(&fwd);
   Camera_move(cam, &fwd, amt);
 }
 
-void Camera_moveBackward(Camera* cam, float amt)
+void Camera_moveBackward(BifrostCamera* cam, float amt)
 {
   Camera_moveForward(cam, -amt);
 }
 
-void Camera_addPitch(Camera* cam, float amt)
+void Camera_addPitch(BifrostCamera* cam, float amt)
 {
   cam->_pitch += amt;
   camera_update_vectors(cam);
 }
 
-void Camera_addYaw(Camera* cam, float amt)
+void Camera_addYaw(BifrostCamera* cam, float amt)
 {
   cam->_yaw += amt;
   camera_update_vectors(cam);
 }
 
-void Camera_mouse(Camera* cam, float offsetx, float offsety)
+void Camera_mouse(BifrostCamera* cam, float offsetx, float offsety)
 {
   static const int constrain_pitch = 1;
 
@@ -200,29 +200,29 @@ void Camera_mouse(Camera* cam, float offsetx, float offsety)
   camera_update_vectors(cam);
 }
 
-void Camera_setFovY(Camera* cam, float value)
+void Camera_setFovY(BifrostCamera* cam, float value)
 {
   cam->camera_mode.field_of_view_y = value;
   Camera_setProjectionModified(cam);
 }
 
-void Camera_onResize(Camera* cam, uint width, uint height)
+void Camera_onResize(BifrostCamera* cam, uint width, uint height)
 {
   cam->camera_mode.aspect_ratio = (float)width / (float)height;
   Camera_setProjectionModified(cam);
 }
 
-void Camera_setProjectionModified(Camera* cam)
+void Camera_setProjectionModified(BifrostCamera* cam)
 {
   cam->needs_update[0] = 1;
 }
 
-void Camera_setViewModified(Camera* cam)
+void Camera_setViewModified(BifrostCamera* cam)
 {
   cam->needs_update[1] = 1;
 }
 
-Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size)
+Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size)
 {
   // References:
   //   [http://antongerdelan.net/opengl/raycasting.html]

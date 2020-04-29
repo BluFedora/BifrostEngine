@@ -8,7 +8,7 @@
 * @version 0.0.1
 * @date    2019-12-22
 *
-* @copyright Copyright (c) 2019
+* @copyright Copyright (c) 2019-2020
 */
 #include "bifrost/ecs/bifrost_entity.hpp"
 
@@ -20,13 +20,19 @@ namespace bifrost
   Entity::Entity(Scene& scene, const StringRange& name) :
     m_OwningScene{scene},
     m_Name{name},
-    m_Transform{},
+    m_Transform{scene.m_TransformSystem.createTransform()},
     m_Parent{nullptr},
     m_Children{&Entity::m_Hierarchy},
     m_ComponentHandles{},
     m_BHVNode{k_BVHNodeInvalidOffset}
   {
-    bfTransform_ctor(&m_Transform);
+  }
+
+  BifrostTransform& Entity::transform() const
+  {
+    auto& transform_system = scene().m_TransformSystem;
+
+    return *transform_system.transformFromID(&transform_system, m_Transform);
   }
 
   Entity* Entity::addChild(const StringRange& name)
@@ -61,51 +67,38 @@ namespace bifrost
 
   void Entity::serialize(ISerializer& serializer)
   {
-    serializer.serialize("m_Name", m_Name);
-    serializer.serializeT("m_Transform", &m_Transform);
-    /*
-    if (serializer.pushObject("m_Components"))
+    serializer.serializeT(this);
+
+    if (serializer.mode() != SerializerMode::INSPECTING)
     {
-      if (serializer.mode() != SerializerMode::LOADING)
+      if (serializer.pushObject("m_Components"))
       {
         ComponentStorage::forEachType([&serializer, this](auto t) {
           using T = bfForEachTemplateT(t);
 
           const StringRange name = g_EngineComponentInfo[bfForEachTemplateIndex(t)].name;
 
-          T* const component = get<T>();
+          T* component;
 
-          if (component)
+          if (serializer.mode() == SerializerMode::LOADING && serializer.hasKey(name))
           {
-            serializer.serializeT(name, component);
+            component = &add<T>();
+          }
+          else
+          {
+            component = get<T>();
+          }
+
+          if (component && serializer.pushObject(name))
+          {
+            serializer.serializeT(component);
+            serializer.popObject();
           }
         });
-      }
-      else
-      {
-        // omponentStorage::forEachType([&serializer, this](auto t) {
-        //  using T = bfForEachTemplateT(t);
-        //
-        //  const StringRange name = g_EngineComponentInfo[bfForEachTemplateIndex(t)].name;
-        //
-        //  T* const component = get<T>();
-        //
-        //  if (component)
-        //  {
-        //    serializer.serializeT(name, component);
-        //  }
-        //  else
-        //  {
-        //    String txt = name + String(" Component not found");
-        //
-        //    serializer.serialize("TODO", txt);
-        //  }
-        //  });
-      }
 
-      serializer.popObject();
+        serializer.popObject();
+      }
     }
-    */
   }
 
   Entity::~Entity()
@@ -115,12 +108,12 @@ namespace bifrost
       m_OwningScene.destroyEntity(&child);
     }
 
+    scene().m_TransformSystem.destroyTransform(m_Transform);
+
     if (m_Parent)
     {
       m_Parent->removeChild(this);
     }
-
-    bfTransform_dtor(&m_Transform);
   }
 
   void Entity::removeChild(Entity* child)

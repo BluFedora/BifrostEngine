@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef BIFROST_ENTITY_HPP
 #define BIFROST_ENTITY_HPP
@@ -50,7 +50,7 @@ namespace bifrost
    private:
     Scene&                  m_OwningScene;
     String                  m_Name;
-    BifrostTransform        m_Transform;
+    BifrostTransformID      m_Transform;
     Entity*                 m_Parent;
     EntityList              m_Children;
     intrusive::Node<Entity> m_Hierarchy;
@@ -62,7 +62,7 @@ namespace bifrost
 
     [[nodiscard]] Scene&            scene() const { return m_OwningScene; }
     [[nodiscard]] const String&     name() const { return m_Name; }
-    [[nodiscard]] BifrostTransform& transform() { return m_Transform; }
+    [[nodiscard]] BifrostTransform& transform() const;
     [[nodiscard]] const EntityList& children() const { return m_Children; }
     [[nodiscard]] BVHNodeOffset     bvhID() const { return m_BHVNode; }
 
@@ -80,7 +80,7 @@ namespace bifrost
       }
 
       m_ComponentHandles.get<T>() = getComponentList<T>().add(*this);
-      
+
       return *get<T>();
     }
 
@@ -120,6 +120,12 @@ namespace bifrost
     ~Entity();
 
    private:
+    const BifrostTransform& metaGetTransform() const { return transform(); }
+    void                    metaSetTransform(const BifrostTransform& value)
+    {
+      bfTransform_copyFrom(&transform(), &value);
+    }
+
     template<typename T>
     DenseMap<T>& getComponentList() const
     {
@@ -134,10 +140,10 @@ BIFROST_META_REGISTER(bifrost::Entity)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<Entity>("Entity"),               //
-     ctor<Scene&, const StringRange&>(),         //
-     field("m_Name", &Entity::m_Name),           //
-     field("m_Transform", &Entity::m_Transform)  //
+     class_info<Entity>("Entity"),                                                  //
+     ctor<Scene&, const StringRange&>(),                                            //
+     field("m_Name", &Entity::m_Name),                                              //
+     property("m_Transform", &Entity::metaGetTransform, &Entity::metaSetTransform)  //
     )
   BIFROST_META_END()
 }

@@ -28,6 +28,7 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
   const VkResult error = vkBeginCommandBuffer(self->handle, &begin_info);
 
   self->dynamic_state_dirty = 0xFFFF;
+
   return error == VK_SUCCESS;
 }
 
@@ -178,12 +179,12 @@ void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderp
 {
   const uint64_t hash_code = bifrost::vk::hash(0x0, renderpass_info);
 
-  bfRenderpassHandle rp = self->parent->cache_renderpass.find(hash_code);
+  bfRenderpassHandle rp = self->parent->cache_renderpass.find(hash_code, *renderpass_info);
 
   if (!rp)
   {
     rp = bfGfxDevice_newRenderpass(self->parent, renderpass_info);
-    self->parent->cache_renderpass.insert(hash_code, rp);
+    self->parent->cache_renderpass.insert(hash_code, rp, *renderpass_info);
     AddCachedResource(self->parent, &rp->super, hash_code);
   }
 
@@ -211,7 +212,15 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
   // const uint64_t hash_code       = bifrost::vk::hash(0x0, &self->pipeline_state.renderpass->info);
   const uint64_t hash_code = bifrost::vk::hash(0x0, attachments, num_attachments);
 
-  bfFramebufferHandle fb = self->parent->cache_framebuffer.find(hash_code);
+  bfFramebufferState fb_state;
+  fb_state.num_attachments = num_attachments;
+
+  for (uint32_t i = 0; i < num_attachments; ++i)
+  {
+    fb_state.attachments[i] = attachments[i];
+  }
+
+  bfFramebufferHandle fb = self->parent->cache_framebuffer.find(hash_code, fb_state);
 
   if (!fb)
   {
@@ -241,7 +250,7 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
     const VkResult err = vkCreateFramebuffer(self->parent->handle, &frame_buffer_create_params, nullptr, &fb->handle);
     assert(err == VK_SUCCESS);
 
-    self->parent->cache_framebuffer.insert(hash_code, fb);
+    self->parent->cache_framebuffer.insert(hash_code, fb, fb_state);
     AddCachedResource(self->parent, &fb->super, hash_code);
   }
 
@@ -529,10 +538,11 @@ void bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic
 
 void bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, float width, float height, const float depth[2])
 {
+  static constexpr float k_DefaultDepth[2] = {0.0f, 1.0f};
+
   if (depth == nullptr)
   {
-    static float default_depth[2] = {0.0f, 1.0f};
-    depth                         = default_depth;
+    depth = k_DefaultDepth;
   }
 
   auto& vp     = self->pipeline_state.viewport;
@@ -689,8 +699,8 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
   assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
 
-  const uint64_t        hash_code = bifrost::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
-  bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code);
+  const std::uint64_t   hash_code = bifrost::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
+  bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code, *desc_set_info);
 
   if (!desc_set)
   {
@@ -721,6 +731,9 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            binding_info->num_handles);
           break;
         case BIFROST_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
+        case BIFROST_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER:
+        case BIFROST_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT:
+        default:
           assert(!"Not supported yet.");
           break;
       }
@@ -728,14 +741,14 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
     bfDescriptorSet_flushWrites(desc_set);
 
-    self->parent->cache_descriptor_set.insert(hash_code, desc_set);
+    self->parent->cache_descriptor_set.insert(hash_code, desc_set, *desc_set_info);
     AddCachedResource(self->parent, &desc_set->super, hash_code);
   }
 
   vkCmdBindDescriptorSets(
    self->handle,
    bind_point,
-    program->layout,
+   program->layout,
    set_index,
    1,
    &desc_set->handle,
@@ -749,7 +762,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
 {
   const uint64_t hash_code = bifrost::vk::hash(0x0, &self->pipeline_state);
 
-  bfPipelineHandle pl = self->parent->cache_pipeline.find(hash_code);
+  bfPipelineHandle pl = self->parent->cache_pipeline.find(hash_code, self->pipeline_state);
 
   if (!pl)
   {
@@ -988,7 +1001,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
      &pl->handle);
     assert(err == VK_SUCCESS);
 
-    self->parent->cache_pipeline.insert(hash_code, pl);
+    self->parent->cache_pipeline.insert(hash_code, pl, self->pipeline_state);
     AddCachedResource(self->parent, &pl->super, hash_code);
   }
 
@@ -1275,24 +1288,31 @@ namespace bifrost::vk
 
   static void hash(std::uint64_t& self, const bfFramebufferBlending& fb_blending)
   {
-    self = hash::addU32(self, *(uint32_t*)&fb_blending);
+    uint32_t blend_state_bits;
+
+    static_assert(sizeof(bfFramebufferBlending) == sizeof(blend_state_bits), "Required size.");
+
+    std::memcpy(&blend_state_bits, &fb_blending, sizeof(blend_state_bits));
+
+    self = hash::addU32(self, blend_state_bits);
   }
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {
-    // TODO DO NOT HASH THESE FIELDS IF THESE BITS ARE SET
-    //  uint64_t dynamic_stencil_cmp_mask : 1;
-    //  uint64_t dynamic_stencil_write_mask : 1;
-    //  uint64_t dynamic_stencil_reference : 1;
+    const auto    num_attachments = pipeline->renderpass->info.subpasses[pipeline->subpass_index].num_out_attachment_refs;
+    std::uint64_t state_bits[2];
 
-    const auto* state = reinterpret_cast<const std::uint64_t*>(&pipeline->state);
+    static_assert(sizeof(state_bits) == sizeof(pipeline->state), "Needs to be same size.");
 
-    const auto num_attachments = pipeline->renderpass->info.subpasses[pipeline->subpass_index].num_out_attachment_refs;
+    std::memcpy(state_bits, &pipeline->state, sizeof(state_bits));
 
-    self = hash::addU64(self, state[0]);
-    self = hash::addU64(self, state[1]);
-    self = hash::addU64(self, state[2]);
-    self = hash::addU64(self, state[4]);
+    state_bits[0] &= bfPipelineCache_state0Mask(&pipeline->state);
+    state_bits[1] &= bfPipelineCache_state1Mask(&pipeline->state);
+
+    for (std::uint64_t state_bit : state_bits)
+    {
+      self = hash::addU64(self, state_bit);
+    }
 
     if (!pipeline->state.dynamic_viewport)
     {
@@ -1416,7 +1436,7 @@ namespace bifrost::vk
 
   std::uint64_t hash(const bfDescriptorSetLayoutInfo& parent, const bfDescriptorSetInfo* desc_set_info)
   {
-    std::uint64_t self = hash::addU32(0x0, desc_set_info->num_bindings);
+    std::uint64_t self = std::hash<std::uint32_t>{}(desc_set_info->num_bindings);
 
     for (uint32_t i = 0; i < desc_set_info->num_bindings; ++i)
     {
@@ -1442,3 +1462,54 @@ namespace bifrost::vk
     return self;
   }
 }  // namespace bifrost::vk
+
+static constexpr std::uint64_t k_FrontStencilCmpStateMask       = 0b0000000000000000011111111000000000000000000000000000000000000000;
+static constexpr std::uint64_t k_FrontStencilWriteStateMask     = 0b0000000001111111100000000000000000000000000000000000000000000000;
+static constexpr std::uint64_t k_FrontStencilReferenceStateMask = 0b0111111110000000000000000000000000000000000000000000000000000000;
+static constexpr std::uint64_t k_BackStencilCmpStateMask        = 0b0000000000000000000000000000000000000000000000111111110000000000;
+static constexpr std::uint64_t k_BackStencilWriteStateMask      = 0b0000000000000000000000000000000000000011111111000000000000000000;
+static constexpr std::uint64_t k_BackStencilReferenceStateMask  = 0b0000000000000000000000000000001111111100000000000000000000000000;
+
+uint64_t bfPipelineCache_state0Mask(const bfPipelineState* self)
+{
+  uint64_t result = 0xFFFFFFFFFFFFFFFF;
+
+  if (self->dynamic_stencil_cmp_mask)
+  {
+    result &= ~k_FrontStencilCmpStateMask;
+  }
+
+  if (self->dynamic_stencil_write_mask)
+  {
+    result &= ~k_FrontStencilWriteStateMask;
+  }
+
+  if (self->dynamic_stencil_reference)
+  {
+    result &= ~k_FrontStencilReferenceStateMask;
+  }
+
+  return result;
+}
+
+uint64_t bfPipelineCache_state1Mask(const bfPipelineState* self)
+{
+  uint64_t result = 0xFFFFFFFFFFFFFFFF;
+
+  if (self->dynamic_stencil_cmp_mask)
+  {
+    result &= ~k_BackStencilCmpStateMask;
+  }
+
+  if (self->dynamic_stencil_write_mask)
+  {
+    result &= ~k_BackStencilWriteStateMask;
+  }
+
+  if (self->dynamic_stencil_reference)
+  {
+    result &= ~k_BackStencilReferenceStateMask;
+  }
+
+  return result;
+}

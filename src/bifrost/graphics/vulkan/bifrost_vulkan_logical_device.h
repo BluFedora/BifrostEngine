@@ -7,18 +7,94 @@
 #include "bifrost_vulkan_mem_allocator.h"
 #include "bifrost_vulkan_physical_device.h"
 
+typedef struct
+{
+  bfTextureHandle attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  uint32_t        num_attachments;
+
+} bfFramebufferState;
+
+struct ComparebfDescriptorSetInfo
+{
+  bool operator()(const bfDescriptorSetInfo& a, const bfDescriptorSetInfo& b) const
+  {
+    if (a.num_bindings != b.num_bindings)
+    {
+      return false;
+    }
+
+    for (uint32_t i = 0; i < a.num_bindings; ++i)
+    {
+      const bfDescriptorElementInfo* const binding_a = &a.bindings[i];
+      const bfDescriptorElementInfo* const binding_b = &b.bindings[i];
+
+      if (binding_a->type != binding_b->type)
+      {
+        return false;
+      }
+
+      if (binding_a->binding != binding_b->binding)
+      {
+        return false;
+      }
+
+      if (binding_a->array_element_start != binding_b->array_element_start)
+      {
+        return false;
+      }
+
+      if (binding_a->num_handles != binding_b->num_handles)
+      {
+        return false;
+      }
+
+      // self = hash::addU32(self, parent.layout_bindings[i].stageFlags);
+
+      for (uint32_t j = 0; j < binding_a->num_handles; ++j)
+      {
+        if (binding_a->handles[j] != binding_b->handles[j])
+        {
+          return false;
+        }
+
+        if (binding_a->type == BIFROST_DESCRIPTOR_ELEMENT_BUFFER)
+        {
+          if (binding_a->offsets[j] != binding_b->offsets[j])
+          {
+            return false;
+          }
+
+          if (binding_a->sizes[j] != binding_b->sizes[j])
+          {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+};
+
+struct ComparebfPipelineCache
+{
+  bool operator()(const bfPipelineCache& a, const bfPipelineCache& b) const;
+};
+
+using VulkanDescSetCache = bifrost::vk::ObjectHashCache<bfDescriptorSet, bfDescriptorSetInfo, ComparebfDescriptorSetInfo>;
+
 BIFROST_DEFINE_HANDLE(GfxDevice)
 {
-  VulkanPhysicalDevice*                         parent;
-  VkDevice                                      handle;
-  PoolAllocator                                 device_memory_allocator;
-  VulkanDescriptorPool*                         descriptor_pool;
-  VkQueue                                       queues[BIFROST_GFX_QUEUE_MAX];
-  bifrost::vk::ObjectHashCache<bfRenderpass>    cache_renderpass;
-  bifrost::vk::ObjectHashCache<bfPipeline>      cache_pipeline;
-  bifrost::vk::ObjectHashCache<bfFramebuffer>   cache_framebuffer;
-  bifrost::vk::ObjectHashCache<bfDescriptorSet> cache_descriptor_set;
-  BifrostGfxObjectBase*                         cached_resources; /* Linked List */
+  VulkanPhysicalDevice*                                                             parent;
+  VkDevice                                                                          handle;
+  PoolAllocator                                                                     device_memory_allocator;
+  VulkanDescriptorPool*                                                             descriptor_pool;
+  VkQueue                                                                           queues[BIFROST_GFX_QUEUE_MAX];
+  bifrost::vk::ObjectHashCache<bfRenderpass, bfRenderpassInfo>                      cache_renderpass;
+  bifrost::vk::ObjectHashCache<bfPipeline, bfPipelineCache, ComparebfPipelineCache> cache_pipeline;
+  bifrost::vk::ObjectHashCache<bfFramebuffer, bfFramebufferState>                   cache_framebuffer;
+  VulkanDescSetCache                                                                cache_descriptor_set;
+  BifrostGfxObjectBase*                                                             cached_resources; /* Linked List */
 };
 
 #if __cplusplus
@@ -147,5 +223,146 @@ BIFROST_DEFINE_HANDLE(VertexLayoutSet)
 #if __cplusplus
 }
 #endif
+
+inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const bfPipelineCache& b) const
+{
+  if (a.program != b.program)
+  {
+    return false;
+  }
+
+  // TODO: Check if this is strictly required.
+  if (a.renderpass != b.renderpass)
+  {
+    return false;
+  }
+
+  if (a.vertex_set_layout != b.vertex_set_layout)
+  {
+    return false;
+  }
+
+  std::uint64_t state_bits[4];
+
+  std::memcpy(state_bits + 0, &a.state, sizeof(a.state));
+  std::memcpy(state_bits + 2, &b.state, sizeof(b.state));
+
+  state_bits[0] &= bfPipelineCache_state0Mask(&a.state);
+  state_bits[1] &= bfPipelineCache_state1Mask(&a.state);
+  state_bits[2] &= bfPipelineCache_state0Mask(&b.state);
+  state_bits[3] &= bfPipelineCache_state1Mask(&b.state);
+
+  if (std::memcmp(state_bits + 0, state_bits + 2, sizeof(a.state)) != 0)
+  {
+    return false;
+  }
+
+  if (!a.state.dynamic_viewport)
+  {
+    if (std::memcmp(&a.viewport, &b.viewport, sizeof(a.viewport)) != 0)
+    {
+      return false;
+    }
+  }
+
+  if (!a.state.dynamic_scissor)
+  {
+    if (std::memcmp(&a.scissor_rect, &b.scissor_rect, sizeof(a.scissor_rect)) != 0)
+    {
+      return false;
+    }
+  }
+
+  if (!a.state.dynamic_blend_constants)
+  {
+    if (std::memcmp(a.blend_constants, b.blend_constants, sizeof(a.blend_constants)) != 0)
+    {
+      return false;
+    }
+  }
+
+  if (!a.state.dynamic_line_width)
+  {
+    if (std::memcmp(&a.line_width, &b.line_width, sizeof(a.line_width)) != 0)
+    {
+      return false;
+    }
+  }
+
+  if (!a.state.dynamic_depth_bias)
+  {
+    if (a.depth.bias_constant_factor != b.depth.bias_constant_factor)
+    {
+      return false;
+    }
+
+    if (a.depth.bias_clamp != b.depth.bias_clamp)
+    {
+      return false;
+    }
+
+    if (a.depth.bias_slope_factor != b.depth.bias_slope_factor)
+    {
+      return false;
+    }
+  }
+
+  if (!a.state.dynamic_depth_bounds)
+  {
+    if (a.depth.min_bound != b.depth.min_bound)
+    {
+      return false;
+    }
+
+    if (a.depth.max_bound != b.depth.max_bound)
+    {
+      return false;
+    }
+  }
+
+  if (a.min_sample_shading != b.min_sample_shading)
+  {
+    return false;
+  }
+
+  if (a.sample_mask != b.sample_mask)
+  {
+    return false;
+  }
+
+  if (a.subpass_index != b.subpass_index)
+  {
+    return false;
+  }
+
+  if (a.subpass_index != b.subpass_index)
+  {
+    return false;
+  }
+
+  const auto num_attachments_a = a.renderpass->info.subpasses[a.subpass_index].num_out_attachment_refs;
+  const auto num_attachments_b = b.renderpass->info.subpasses[b.subpass_index].num_out_attachment_refs;
+
+  if (num_attachments_a != num_attachments_b)
+  {
+    return false;
+  }
+
+  for (std::uint32_t i = 0; i < num_attachments_a; ++i)
+  {
+    uint32_t blend_state_bits_a;
+    uint32_t blend_state_bits_b;
+
+    std::memcpy(&blend_state_bits_a, &a.blending[i], sizeof(uint32_t));
+    std::memcpy(&blend_state_bits_b, &b.blending[i], sizeof(uint32_t));
+
+    if (blend_state_bits_a != blend_state_bits_b)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 #endif /* BIFROST_VULKAN_LOGICAL_DEVICE_H */

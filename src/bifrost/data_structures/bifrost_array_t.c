@@ -518,7 +518,7 @@ void* bfArray_emplaceN(void** self, size_t num_elements)
 
 void* bfArray_at(void** self, size_t index)
 {
-  ArrayHeader* header = grabHeader(self);
+  ArrayHeader* const header = grabHeader(self);
 
   bfAssert(index < header->size, "bfArray_at:: index must be less than the size.");
 

@@ -25,12 +25,29 @@ namespace bifrost::editor
   static constexpr int   s_MaxDigitsUInt64 = 20;
   static constexpr float s_DragSpeed       = 0.05f;
 
+  namespace InspectorRegistry
+  {
+    struct RegistryValue final
+    {
+      Callback callback;
+      void*    user_data;
+    };
+
+    static HashTable<meta::BaseClassMetaInfo*, RegistryValue> s_Registry;
+
+    void overrideInspectorImpl(meta::BaseClassMetaInfo* type_info, Callback callback, void* user_data)
+    {
+      s_Registry[type_info] = {callback, user_data};
+    }
+  }  // namespace InspectorRegistry
+
   ImGuiSerializer::ImGuiSerializer(IMemoryManager& memory) :
     ISerializer(SerializerMode::INSPECTING),
     m_IsOpenStack{memory},
     m_HasChangedStack{memory},
     m_NameBuffer{'\0'},
-    m_Assets{nullptr}
+    m_Assets{nullptr},
+    m_IsInCustomCallback{false}
   {
   }
 
@@ -364,6 +381,30 @@ namespace bifrost::editor
     else
     {
       string_utils::fmtBuffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%.*s", int(key.length()), key.begin());
+    }
+  }
+
+  void ImGuiSerializer::serialize(Any& value, meta::BaseClassMetaInfo* type_info)
+  {
+    // If the user calls this function from the custom
+    // callback then perform default inspection.
+    if (m_IsInCustomCallback)
+    {
+      ISerializer::serialize(value, type_info);
+      return;
+    }
+
+    auto* const custom_entry = InspectorRegistry::s_Registry.at(type_info);
+
+    if (custom_entry)
+    {
+      m_IsInCustomCallback = true;
+      custom_entry->callback(*this, value.as<void*>(), type_info, custom_entry->user_data);
+      m_IsInCustomCallback = false;
+    }
+    else
+    {
+      ISerializer::serialize(value, type_info);
     }
   }
 

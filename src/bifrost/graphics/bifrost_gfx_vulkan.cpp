@@ -167,7 +167,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
  void*                      userData)
 {
   bfLogError("validation layer: %s", msg);
-  assert(!msg);
+  __debugbreak();
+  // assert(!msg);
   return VK_FALSE;
 }
 
@@ -348,7 +349,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
   BifrostGfxObjectBase* prev         = nullptr;
   BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
   BifrostGfxObjectBase* release_list = nullptr;
-
+  
   while (curr)
   {
     BifrostGfxObjectBase* next = curr->next;
@@ -378,7 +379,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
     prev = curr;
     curr = next;
   }
-
+  
   if (release_list)
   {
     // bfGfxDevice_flush(self->logical_device);
@@ -404,7 +405,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
       }
       else
       {
-        assert(!"Need to updated this check.");
+        assert(!"Need to update this check.");
       }
 
       bfGfxDevice_release(self->logical_device, release_list);
@@ -462,7 +463,9 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 
 void bfGfxDevice_flush(bfGfxDeviceHandle self)
 {
-  vkDeviceWaitIdle(self->handle);
+  const auto result = vkDeviceWaitIdle(self->handle);
+  assert(result == VK_SUCCESS);
+  (void)result;
 }
 
 bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, const bfGfxCommandListCreateParams* params)
@@ -491,6 +494,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
     list->pipeline_state = {};
     list->has_command    = bfFalse;
     std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
+    std::memset(&list->pipeline_state, 0x0, sizeof(list->pipeline_state)); // Constent hashing behavior + Memcmp is used for the cache system.
 
     vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 

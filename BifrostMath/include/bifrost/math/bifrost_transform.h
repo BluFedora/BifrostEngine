@@ -3,7 +3,7 @@
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  * @version 0.0.1
- * @date 2019-12-22
+ * @date    2019-12-22
  *
  * @copyright Copyright (c) 2019-2020
  */
@@ -12,6 +12,8 @@
 
 #include "bifrost_mat4x4.h"
 #include "bifrost_vec3.h"
+
+#include <stdint.h> /* uint8_t */
 
 #if __cplusplus
 extern "C" {
@@ -64,6 +66,36 @@ BIFROST_MATH_API Vec3f       bfQuaternionf_rightVec(const Quaternionf* self);
 BIFROST_MATH_API Vec3f       bfQuaternionf_forwardVec(const Quaternionf* self);
 BIFROST_MATH_API Vec3f       bfQuaternionf_backwardVec(const Quaternionf* self);
 
+enum
+{
+  k_TransformInvalidID     = 0,
+  k_TransformQueueStackMax = 128,
+};
+
+struct IBifrostTransformSystem_t;
+
+typedef uint32_t BifrostTransformID;
+
+typedef enum BifrostTransformFlags_t
+{
+  BIFROST_TRANSFORM_ORIGIN_DIRTY     = (1 << 0),
+  BIFROST_TRANSFORM_POSITION_DIRTY   = (1 << 1),
+  BIFROST_TRANSFORM_ROTATION_DIRTY   = (1 << 2),
+  BIFROST_TRANSFORM_SCALE_DIRTY      = (1 << 3),
+  BIFROST_TRANSFORM_PARENT_DIRTY     = (1 << 4),
+  BIFROST_TRANSFORM_CHILD_DIRTY      = (1 << 5),
+  BIFROST_TRANSFORM_NEEDS_GPU_UPLOAD = (1 << 6),
+
+  /* Helper Flags */
+  BIFROST_TRANSFORM_NONE        = 0x0,
+  BIFROST_TRANSFORM_DIRTY       = 0xFF,
+  BIFROST_TRANSFORM_LOCAL_DIRTY = BIFROST_TRANSFORM_ORIGIN_DIRTY |
+                                  BIFROST_TRANSFORM_POSITION_DIRTY |
+                                  BIFROST_TRANSFORM_ROTATION_DIRTY |
+                                  BIFROST_TRANSFORM_SCALE_DIRTY,
+
+} BifrostTransformFlags;
+
 /*!
   All of these fields are 'read-only' unless you
   manully flush the changes to the Transform after maniplulating it.
@@ -71,32 +103,44 @@ BIFROST_MATH_API Vec3f       bfQuaternionf_backwardVec(const Quaternionf* self);
 */
 typedef struct BifrostTransform_t
 {
-  Vec3f                       origin;
-  Vec3f                       local_position;
-  Quaternionf                 local_rotation;
-  Vec3f                       local_scale;
-  Vec3f                       world_position;
-  Quaternionf                 world_rotation;
-  Vec3f                       world_scale;
-  Mat4x4                      local_transform;
-  Mat4x4                      world_transform;
-  Mat4x4                      normal_transform;
-  struct BifrostTransform_t*  parent;
-  struct BifrostTransform_t*  first_child;
-  struct BifrostTransform_t*  next_sibling;
-  struct BifrostTransform_t*  prev_sibling;
-  /* bfBool32 */ unsigned int needs_gpu_upload;
+  Vec3f                               origin;
+  Vec3f                               local_position;
+  Quaternionf                         local_rotation;
+  Vec3f                               local_scale;
+  Vec3f                               world_position;
+  Quaternionf                         world_rotation;
+  Vec3f                               world_scale;
+  Mat4x4                              local_transform;
+  Mat4x4                              world_transform;
+  Mat4x4                              normal_transform;
+  BifrostTransformID                  parent;
+  BifrostTransformID                  first_child;
+  BifrostTransformID                  next_sibling;
+  BifrostTransformID                  prev_sibling;
+  struct IBifrostTransformSystem_t*   system;
+  struct BifrostTransform_t*          dirty_list_next;
+  /* BifrostTransformFlags */ uint8_t flags;
 
 } BifrostTransform;
 
-BIFROST_MATH_API void bfTransform_ctor(BifrostTransform* self);
+BIFROST_MATH_API void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* system);
 BIFROST_MATH_API void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value);
 BIFROST_MATH_API void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value);
 BIFROST_MATH_API void bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value);
 BIFROST_MATH_API void bfTransform_setScale(BifrostTransform* self, const Vec3f* value);
 BIFROST_MATH_API void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value);
+BIFROST_MATH_API void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value); /* Copies over the local values, parent relationships are unchanged. */
 BIFROST_MATH_API void bfTransform_flushChanges(BifrostTransform* self);
 BIFROST_MATH_API void bfTransform_dtor(BifrostTransform* self);
+
+typedef struct IBifrostTransformSystem_t
+{
+  BifrostTransform* dirty_list;
+  BifrostTransform* (*transformFromID)(struct IBifrostTransformSystem_t* self, BifrostTransformID id);
+  BifrostTransformID (*transformToID)(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+  void (*addToDirtyList)(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+
+} IBifrostTransformSystem;
 
 #if __cplusplus
 }

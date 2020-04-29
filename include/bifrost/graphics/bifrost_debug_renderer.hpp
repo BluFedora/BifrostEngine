@@ -91,7 +91,7 @@ namespace bifrost
     void addLine(const Vector3f& a, const Vector3f& b, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
     void addAABB(const Vector3f& center, const Vector3f& extents, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
 
-    void draw(bfGfxCommandListHandle command_list, Camera& camera, const bfGfxFrameInfo& frame_info, bool overlay);
+    void draw(bfGfxCommandListHandle command_list, BifrostCamera& camera, const bfGfxFrameInfo& frame_info, bool overlay);
 
     void deinit();
 

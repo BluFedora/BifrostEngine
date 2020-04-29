@@ -8,21 +8,45 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
 #include "bifrost/bifrost_math.h"                    /* Vec3f, Mat4x4     */
 #include "bifrost/core/bifrost_base_object.hpp"      /* BaseObject<T>     */
+#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH */
 #include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
 #include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
-#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH */
 
 namespace bifrost
 {
   class DebugRenderer;
   class Entity;
+
+  class SceneTransformSystem : public IBifrostTransformSystem
+  {
+   private:
+    struct TransformNode final : public BifrostTransform
+    {
+      BifrostTransformID freelist_next;  // TODO(SR): To save space this could probably be unioned with the BifrostTransform.
+    };
+
+   private:
+    static BifrostTransform*  transformFromIDImpl(struct IBifrostTransformSystem_t* self, BifrostTransformID id);
+    static BifrostTransformID transformToIDImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+    static void               addToDirtyListImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+
+   private:
+    Array<TransformNode> m_Transforms;
+    BifrostTransformID   m_FreeList;
+
+   public:
+    explicit SceneTransformSystem(IMemoryManager& memory);
+
+    BifrostTransformID createTransform();
+    void               destroyTransform(BifrostTransformID transform);
+  };
 
   /*!
    * @brief
@@ -34,11 +58,12 @@ namespace bifrost
     friend class Entity;
 
    private:
-    IMemoryManager&  m_Memory;
-    Array<Entity*>   m_RootEntities;
-    ComponentStorage m_ActiveComponents;
-    ComponentStorage m_InactiveComponents;
-    BVH              m_BVHTree; 
+    IMemoryManager&      m_Memory;
+    Array<Entity*>       m_RootEntities;
+    ComponentStorage     m_ActiveComponents;
+    ComponentStorage     m_InactiveComponents;
+    BVH                  m_BVHTree;
+    SceneTransformSystem m_TransformSystem;
 
    public:
     explicit Scene(IMemoryManager& memory);

@@ -75,11 +75,11 @@ typedef enum
 
 typedef enum
 {
-  BIFROST_VM_STD_MODULE_IO          = (1 << 0),   /*!< "std:io"          */
-  BIFROST_VM_STD_MODULE_MEMORY      = (1 << 1),   /*!< "std:memory"      */
-  BIFROST_VM_STD_MODULE_FUNCTIONAL  = (1 << 2),   /*!< "std:functional"  */
-  BIFROST_VM_STD_MODULE_COLLECTIONS = (1 << 3),   /*!< "std:collections" */
-  BIFROST_VM_STD_MODULE_ALL         = 0xFFFFFFFF, /*!< "std:*"           */
+  BIFROST_VM_STD_MODULE_IO          = (1 << 0), /*!< "std:io"          */
+  BIFROST_VM_STD_MODULE_MEMORY      = (1 << 1), /*!< "std:memory"      */
+  BIFROST_VM_STD_MODULE_FUNCTIONAL  = (1 << 2), /*!< "std:functional"  */
+  BIFROST_VM_STD_MODULE_COLLECTIONS = (1 << 3), /*!< "std:collections" */
+#define BIFROST_VM_STD_MODULE_ALL 0xFFFFFFFF    /*!< "std:*"           */
 
 } BifrostVMStandardModule;
 
@@ -287,6 +287,17 @@ BIFROST_VM_API BifrostVM* bfVM_new(const BifrostVMParams* params);
  *   The customization points for the virtual machine.
  */
 BIFROST_VM_API void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
+
+/*!
+ * @brief
+ *   Returns the user data 
+ * @param self
+ *   The vm from which you want the user data from.
+ *
+ * @return void*
+ *   The user data pointer. 
+*/
+BIFROST_VM_API void* bfVM_userData(const BifrostVM* self);
 
 /*!
  * @brief

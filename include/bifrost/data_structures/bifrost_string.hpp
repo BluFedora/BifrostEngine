@@ -71,7 +71,7 @@ namespace bifrost
       return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
     }
 
-     // Assumes a nul terminated string. If you only want to compare with a piece then use StringRange.
+    // Assumes a nul terminated string. If you only want to compare with a piece then use StringRange.
     [[nodiscard]] bool operator==(const char* rhs) const
     {
       return std::strncmp(bgn, rhs, length()) == 0 && rhs[length()] == '\0';
@@ -261,7 +261,7 @@ namespace bifrost
 
     [[nodiscard]] std::size_t capacity() const
     {
-      return ::String_capacity(m_Handle);
+      return m_Handle ? ::String_capacity(m_Handle) : 0u;
     }
 
     [[nodiscard]] const char* cstr() const

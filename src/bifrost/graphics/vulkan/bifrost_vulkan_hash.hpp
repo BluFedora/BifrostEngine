@@ -14,16 +14,29 @@ typedef struct bfDescriptorSetLayoutInfo_t bfDescriptorSetLayoutInfo;
 
 namespace bifrost::vk
 {
+  template<typename T>
+  struct MemCompare
+  {
+    bool operator()(const T& a, const T& b) const
+    {
+      return std::memcmp(&a, &b, sizeof(T)) == 0;
+    }
+  };
+
+  // clang-format off
+
   //
   // Non owning data structure. Just used for managing a hash-based cache of objects.
   //
-  template<typename T>
-  class ObjectHashCache final : private bfNonCopyMoveable<ObjectHashCache<T>>
+  template<typename T, typename TConfig, typename Compare = MemCompare<TConfig>>
+  class ObjectHashCache final : private bfNonCopyMoveable<ObjectHashCache<T, TConfig, Compare>>, private Compare
+  // clang-format on
   {
     struct Node final
     {
       T*            value     = nullptr;
       std::uint64_t hash_code = 0x0;
+      TConfig       config_data;
     };
 
    private:
@@ -35,7 +48,7 @@ namespace bifrost::vk
     explicit ObjectHashCache(std::size_t initial_size = 32) :
       m_Nodes{new Node[initial_size]},
       m_NodesCapacity{initial_size},
-      m_MaxLoad{3}
+      m_MaxLoad{5}
     {
       assert(initial_size && !(initial_size & initial_size - 1) && "Initial size of a ObjectHashCache must be a non 0 power of two.");
       clear();
@@ -43,16 +56,16 @@ namespace bifrost::vk
 
     // This method will update an old slot
     // with the new value if a collision occurs.
-    void insert(std::uint64_t key, T* value)
+    void insert(std::uint64_t key, T* value, const TConfig& config_data)
     {
-      if (!internalInsert(key, value))
+      if (!internalInsert(key, value, config_data))
       {
         grow();
-        insert(key, value);
+        insert(key, value, config_data);
       }
     }
 
-    [[nodiscard]] T* find(std::uint64_t key) const
+    [[nodiscard]] T* find(std::uint64_t key, const TConfig& config_data) const
     {
       const std::size_t hash_mask = m_NodesCapacity - 1;
       std::size_t       idx       = key & hash_mask;
@@ -63,7 +76,15 @@ namespace bifrost::vk
 
         if (node.hash_code == key)
         {
-          return node.value;
+          if (Compare::operator()(node.config_data, config_data))
+          {
+            return node.value;
+          }
+          else
+          {
+            // __debugbreak();
+            // Compare::operator()(node.config_data, config_data);
+          }
         }
 
         idx = idx + 1 & hash_mask;
@@ -109,8 +130,20 @@ namespace bifrost::vk
       delete[] m_Nodes;
     }
 
+    template<typename F>
+    void forEach(F&& callback)
+    {
+      for (std::size_t i = 0; i < m_NodesCapacity; ++i)
+      {
+        if (m_Nodes[i].value)
+        {
+          callback(m_Nodes[i].value, m_Nodes[i].config_data);
+        }
+      }
+    }
+
    private:
-    bool internalInsert(std::uint64_t key, T* value)
+    bool internalInsert(std::uint64_t key, T* value, const TConfig& config_data)
     {
       assert(value && "nullptr is used as an indicator of an empty slot.");
 
@@ -121,10 +154,11 @@ namespace bifrost::vk
       {
         auto& node = m_Nodes[idx];
 
-        if (!node.value || node.hash_code == key)
+        if (!node.value /*|| node.hash_code == key*/)
         {
-          node.value     = value;
-          node.hash_code = key;
+          node.value       = value;
+          node.hash_code   = key;
+          node.config_data = config_data;
           return true;
         }
 
@@ -153,7 +187,7 @@ namespace bifrost::vk
         {
           const Node& old_node = old_nodes[i];
 
-          if (old_node.value && !internalInsert(old_node.hash_code, old_node.value))
+          if (old_node.value && !internalInsert(old_node.hash_code, old_node.value, old_node.config_data))
           {
             was_success = false;
             break;

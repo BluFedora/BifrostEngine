@@ -216,6 +216,13 @@ namespace bifrost
     return is_valid;
   }
 
+  bool JsonSerializerReader::hasKey(StringRange key)
+  {
+    auto& current_obj = currentObject();
+
+    return current_obj.isObject() && current_obj.at(key) != nullptr;
+  }
+
   bool JsonSerializerReader::pushObject(StringRange key)
   {
     json::Value& current_obj = currentObject();

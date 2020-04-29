@@ -4,9 +4,18 @@ namespace bifrost::editor
 {
   EditorWindowID BaseEditorWindow::s_TypeIDCounter = 0;
 
+  static int s_IDCounter = 1;
+
+  BaseEditorWindow::BaseEditorWindow():
+    m_IsOpen{true},
+    m_DockID{0},
+    m_InstanceID{s_IDCounter++}
+  {
+  }
+
   const char* BaseEditorWindow::fullImGuiTitle(IMemoryManager& memory) const
   {
-    return string_utils::fmtAlloc(memory, nullptr, "%s###%p", title(), static_cast<const void*>(this));
+    return string_utils::fmtAlloc(memory, nullptr, "%s###%p%i", title(), static_cast<const void*>(this), m_InstanceID);
   }
 
   void BaseEditorWindow::uiShow(EditorOverlay& editor)
@@ -15,7 +24,10 @@ namespace bifrost::editor
     LinearAllocatorScope mem_scope      = {temp_allocator};
     const char*          title_id       = fullImGuiTitle(temp_allocator);
 
-    ImGui::SetNextWindowDockID(m_DockID, ImGuiCond_Once);
+    if (m_DockID)
+    {
+      ImGui::SetNextWindowDockID(m_DockID, ImGuiCond_Once);
+    }
 
     if (ImGui::Begin(title_id, &m_IsOpen, ImGuiWindowFlags_MenuBar))
     {

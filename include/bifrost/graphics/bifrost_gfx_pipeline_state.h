@@ -202,70 +202,72 @@ typedef enum BifrostColorMask_t
 typedef struct
 {
   // 30 Bits
-  uint64_t color_write_mask : 4;
+  uint32_t color_write_mask : 4;
   uint32_t color_blend_op : 3;
   uint32_t color_blend_src : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
   uint32_t color_blend_dst : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
   uint32_t alpha_blend_op : 3;
   uint32_t alpha_blend_src : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
   uint32_t alpha_blend_dst : BIFROST_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
+  uint32_t _pad : 2;
 
 } bfFramebufferBlending;
 
 typedef struct
 {
-  uint64_t draw_mode : BIFROST_PIPELINE_STATE_DRAW_MODE_BITS;           // 3
-  uint64_t front_face : BIFROST_PIPELINE_STATE_FRONT_FACE_BITS;         // 1
-  uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;           // 2
-  uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;      // 1
-  uint64_t do_depth_clamp : 1;                                          // 1
-  uint64_t do_depth_bounds_test : 1;                                    // 1
-  uint64_t depth_write : BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS;       // 1
-  uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;        // 3 (BifrostCompareOp)
-  uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS;  // 1
-  uint64_t primitive_restart : 1;
-  uint64_t rasterizer_discard : 1;
-  uint64_t do_depth_bias : 1;
-  uint64_t do_sample_shading : 1;
-  uint64_t alpha_to_coverage : 1;
-  uint64_t alpha_to_one : 1;
-  uint64_t do_logic_op : 1;
-  uint64_t logic_op : 4;
-  uint64_t fill_mode : 2;
+  /*
+    NOTES:
+      * Each stencil state needs 36 bits of data (72 total for front and back).
+      * '_pad' must be zeroed out for consistent hashing / comparing behavior.
+  */
 
-  // 36bits
-  uint64_t stencil_face_front_fail_op : 3;        // BifrostStencilOp
-  uint64_t stencil_face_front_pass_op : 3;        // BifrostStencilOp
-  uint64_t stencil_face_front_depth_fail_op : 3;  // BifrostStencilOp
-  uint64_t stencil_face_front_compare_op : 3;     // BifrostCompareOp
-  uint64_t stencil_face_front_compare_mask : 8;
-  uint64_t stencil_face_front_write_mask : 8;
-  uint64_t stencil_face_front_reference : 8;
+  /********************************************************************************************************/
+  /* BITS:                                                             || Size                   | Offset */
+  uint64_t draw_mode : BIFROST_PIPELINE_STATE_DRAW_MODE_BITS;          /* 3                      |   0    */
+  uint64_t front_face : BIFROST_PIPELINE_STATE_FRONT_FACE_BITS;        /* 1                      |   3    */
+  uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;          /* 2                      |   4    */
+  uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;     /* 1                      |   6    */
+  uint64_t do_depth_clamp : 1;                                         /* 1                      |   7    */
+  uint64_t do_depth_bounds_test : 1;                                   /* 1                      |   8    */
+  uint64_t depth_write : BIFROST_PIPELINE_STATE_DEPTH_WRITE_BITS;      /* 1                      |   9    */
+  uint64_t depth_test_op : BIFROST_PIPELINE_STATE_DEPTH_OP_BITS;       /* 3 (BifrostCompareOp)   |   10   */
+  uint64_t do_stencil_test : BIFROST_PIPELINE_STATE_STENCIL_TEST_BITS; /* 1                      |   13   */
+  uint64_t primitive_restart : 1;                                      /* 1                      |   14   */
+  uint64_t rasterizer_discard : 1;                                     /* 1                      |   15   */
+  uint64_t do_depth_bias : 1;                                          /* 1                      |   16   */
+  uint64_t do_sample_shading : 1;                                      /* 1                      |   17   */
+  uint64_t alpha_to_coverage : 1;                                      /* 1                      |   18   */
+  uint64_t alpha_to_one : 1;                                           /* 1                      |   19   */
+  uint64_t do_logic_op : 1;                                            /* 1                      |   20   */
+  uint64_t logic_op : 4;                                               /* 4                      |   21   */
+  uint64_t fill_mode : 2;                                              /* 2                      |   25   */
+  uint64_t stencil_face_front_fail_op : 3;                             /* 3 (BifrostStencilOp)   |   27   */
+  uint64_t stencil_face_front_pass_op : 3;                             /* 3 (BifrostStencilOp)   |   30   */
+  uint64_t stencil_face_front_depth_fail_op : 3;                       /* 3 (BifrostStencilOp)   |   33   */
+  uint64_t stencil_face_front_compare_op : 3;                          /* 3 (BifrostCompareOp)   |   36   */
+  uint64_t stencil_face_front_compare_mask : 8;                        /* 8 (uint8_t)            |   39   */
+  uint64_t stencil_face_front_write_mask : 8;                          /* 8 (uint8_t)            |   47   */
+  uint64_t stencil_face_front_reference : 8;                           /* 8 (uint8_t)            |   55   */
+  uint64_t stencil_face_back_fail_op : 3;                              /* 3 (BifrostStencilOp)   |   63   */
+  uint64_t stencil_face_back_pass_op : 3;                              /* 3 (BifrostStencilOp)   |   66   */
+  uint64_t stencil_face_back_depth_fail_op : 3;                        /* 3 (BifrostStencilOp)   |   69   */
+  uint64_t stencil_face_back_compare_op : 3;                           /* 3 (BifrostCompareOp)   |   72   */
+  uint64_t stencil_face_back_compare_mask : 8;                         /* 8 (uint8_t)            |   75   */
+  uint64_t stencil_face_back_write_mask : 8;                           /* 8 (uint8_t)            |   83   */
+  uint64_t stencil_face_back_reference : 8;                            /* 8 (uint8_t)            |   91   */
+  uint64_t dynamic_viewport : 1;                                       /* 1 (bool)               |   99   */
+  uint64_t dynamic_scissor : 1;                                        /* 1 (bool)               |   100  */
+  uint64_t dynamic_line_width : 1;                                     /* 1 (bool)               |   101  */
+  uint64_t dynamic_depth_bias : 1;                                     /* 1 (bool)               |   102  */
+  uint64_t dynamic_blend_constants : 1;                                /* 1 (bool)               |   103  */
+  uint64_t dynamic_depth_bounds : 1;                                   /* 1 (bool)               |   104  */
+  uint64_t dynamic_stencil_cmp_mask : 1;                               /* 1 (bool)               |   105  */
+  uint64_t dynamic_stencil_write_mask : 1;                             /* 1 (bool)               |   106  */
+  uint64_t dynamic_stencil_reference : 1;                              /* 1 (bool)               |   107  */
+  uint64_t _pad : 19;                                                  /* 19 (zeroed-out)        |   108  */
+  /********************************************************************************************************/
 
-  // 36bits
-  uint64_t stencil_face_back_fail_op : 3;        // BifrostStencilOp
-  uint64_t stencil_face_back_pass_op : 3;        // BifrostStencilOp
-  uint64_t stencil_face_back_depth_fail_op : 3;  // BifrostStencilOp
-  uint64_t stencil_face_back_compare_op : 3;     // BifrostCompareOp
-  uint64_t stencil_face_back_compare_mask : 8;
-  uint64_t stencil_face_back_write_mask : 8;
-  uint64_t stencil_face_back_reference : 8;
-
-  uint64_t dynamic_viewport : 1;
-  uint64_t dynamic_scissor : 1;
-  uint64_t dynamic_line_width : 1;
-  uint64_t dynamic_depth_bias : 1;
-  uint64_t dynamic_blend_constants : 1;
-  uint64_t dynamic_depth_bounds : 1;
-  uint64_t dynamic_stencil_cmp_mask : 1;
-  uint64_t dynamic_stencil_write_mask : 1;
-  uint64_t dynamic_stencil_reference : 1;
-
-  uint64_t pad : 19;  // Padding may be important for consistent hashing behavior.
-
-} bfPipelineState;  // 107 bits (21 extra bits)
-
-// constexpr auto i = sizeof(bfPipelineState);
+} bfPipelineState; /* 107 used bits (19 extra bits) */
 
 typedef struct BifrostViewport_t
 {
@@ -329,6 +331,9 @@ typedef struct bfPipelineCache_t
   bfVertexLayoutSetHandle  vertex_set_layout;
 
 } bfPipelineCache;
+
+uint64_t bfPipelineCache_state0Mask(const bfPipelineState* self);
+uint64_t bfPipelineCache_state1Mask(const bfPipelineState* self);
 
 #if __cplusplus
 }

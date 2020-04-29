@@ -153,7 +153,7 @@ namespace bifrost
         bfInvalidDefaultCase();
     }
 
-    std::uint8_t target_button;
+    MouseEvent::flags_t target_button;
 
     switch (button)
     {

@@ -11,7 +11,8 @@
 
 #include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
 #include "bifrost_array_t.h"                          /* bfArray_*            */
-#include <cassert>                                    /* assert               */
+
+#include <cassert> /* assert */
 
 namespace bifrost
 {

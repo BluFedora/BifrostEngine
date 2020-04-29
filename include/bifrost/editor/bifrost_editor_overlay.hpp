@@ -342,10 +342,11 @@ namespace bifrost::editor
     ProjectPtr         m_OpenProject;
     float              m_FpsTimer;
     int                m_CurrentFps;
+    int                m_CurrentMs;
     AssetTextureHandle m_TestTexture;
     FileSystem         m_FileSystem;
     Rect2i             m_SceneViewViewport;  // Global Window Coordinates
-    ImGuiID            m_InspectorDefaultDockspaceID;
+    bool               m_IsSceneViewHovered;
     Vec2f              m_MousePosition;  // TODO(SR): This should be stored in a shared Engine Input Module.
     WindowList         m_OpenWindows;
 
@@ -415,8 +416,6 @@ namespace bifrost::editor
     void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label, const ImVec2& size = ImVec2(0.0f, 0.0f)) const;
     void selectableAction(const ActionContext& ctx, const char* action_name) const;
     void selectableAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
-
-    // The 'menu_path' parameter must have a lifetime the same or longer than the editor. (namely constexpr strings)
     void addMenuItem(const StringRange& menu_path, const char* action_name);
   };
 }  // namespace bifrost::editor

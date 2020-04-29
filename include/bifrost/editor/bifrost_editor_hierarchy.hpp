@@ -1,0 +1,22 @@
+#ifndef BIFROST_EDITOR_HIERARCHY_HPP
+#define BIFROST_EDITOR_HIERARCHY_HPP
+
+#include "bifrost_editor_window.hpp"  // EditorWindow
+
+namespace bifrost::editor
+{
+  class HierarchyView final : public EditorWindow<HierarchyView>
+  {
+   private:
+    String m_SearchQuery;
+
+   public:
+    explicit HierarchyView();
+
+   protected:
+    const char* title() const override { return "Hierarchy View"; }
+    void        onDrawGUI(EditorOverlay& editor) override;
+  };
+}  // namespace bifrost::editor
+
+#endif /* BIFROST_EDITOR_HIERARCHY_HPP */

@@ -20,12 +20,28 @@
 namespace bifrost
 {
   class Entity;
+  class Assets;
 }
 
 namespace bifrost::editor
 {
-  typedef struct Vec2f_t Vec2f;
-  typedef struct Vec3f_t Vec3f;
+  class ImGuiSerializer;
+
+  //
+  // For adding custom callbacks for certain types.
+  //
+  namespace InspectorRegistry
+  {
+    using Callback = void (*)(ImGuiSerializer& serializer, void* object, meta::BaseClassMetaInfo* type_info, void* user_data);
+
+    void overrideInspectorImpl(meta::BaseClassMetaInfo* type_info, Callback callback, void* user_data);
+
+    template<typename T>
+    void overrideInspector(Callback callback, void* user_data = nullptr)
+    {
+      overrideInspectorImpl(meta::TypeInfo<T>::get(), callback, user_data);
+    }
+  }  // namespace InspectorRegistry
 
   class ImGuiSerializer final : public ISerializer
   {
@@ -40,6 +56,7 @@ namespace bifrost::editor
     Array<bool>            m_HasChangedStack;
     char                   m_NameBuffer[256];
     Assets*                m_Assets;
+    bool                   m_IsInCustomCallback;
 
    public:
     explicit ImGuiSerializer(IMemoryManager& memory);
@@ -68,6 +85,7 @@ namespace bifrost::editor
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
+    void serialize(Any& value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;

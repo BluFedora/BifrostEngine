@@ -428,7 +428,7 @@ typedef struct bfDescriptorElementInfo_t
   bfDescriptorElementInfoType type;
   uint32_t                    binding;
   uint32_t                    array_element_start;
-  uint32_t                    num_handles; /* also size of bfDescriptorElementInfo::offsets and bfDescriptorElementInfo::sizes */
+  uint32_t                    num_handles; /* also length of bfDescriptorElementInfo::offsets and bfDescriptorElementInfo::sizes */
   bfGfxBaseHandle             handles[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
   uint64_t                    offsets[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];
   uint64_t                    sizes[BIFROST_GFX_DESCRIPTOR_SET_LAYOUT_MAX_BINDINGS];

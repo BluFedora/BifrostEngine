@@ -36,20 +36,26 @@ namespace bifrost
 
   void ISerializer::serialize(StringRange key, Vec2f& value)
   {
-    pushObject(key);
-    serialize("x", value.x);
-    serialize("y", value.y);
-    popObject();
+    if (pushObject(key))
+    {
+      serialize("x", value.x);
+      serialize("y", value.y);
+
+      popObject();
+    }
   }
 
   void ISerializer::serialize(StringRange key, Vec3f& value)
   {
-    pushObject(key);
-    serialize("x", value.x);
-    serialize("y", value.y);
-    serialize("z", value.z);
-    serialize("w", value.w);
-    popObject();
+    if (pushObject(key))
+    {
+      serialize("x", value.x);
+      serialize("y", value.y);
+      serialize("z", value.z);
+      serialize("w", value.w);
+
+      popObject();
+    }
   }
 
   void ISerializer::serialize(StringRange key, bfColor4f& value)
@@ -91,12 +97,8 @@ namespace bifrost
   {
     meta::BaseClassMetaInfo* const type_info = value.type();
 
-    // TODO: This should never be null but ok.
-    if (type_info)
-    {
-      Any object = &value;
-      serialize(object, type_info);
-    }
+    Any object = &value;
+    serialize(object, type_info);
   }
 
   void ISerializer::serialize(StringRange key, Any& value, meta::BaseClassMetaInfo* type_info)

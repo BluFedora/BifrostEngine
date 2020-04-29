@@ -18,7 +18,7 @@ namespace bifrost
   {
     // TODO: The rest of the keys...
     static constexpr int ESCAPE = 256;
-  }
+  }  // namespace KeyCode
 
   struct KeyboardEvent final
   {
@@ -69,10 +69,10 @@ namespace bifrost
 
     int          x;
     int          y;
-    std::uint8_t target_button;
+    flags_t      target_button;
     std::uint8_t button_state;  // flags_t
 
-    MouseEvent(int x, int y, std::uint8_t target_button, std::uint8_t button_state) :
+    MouseEvent(int x, int y, flags_t target_button, std::uint8_t button_state) :
       x{x},
       y{y},
       target_button{target_button},
@@ -216,6 +216,11 @@ namespace bifrost
     bool isAccepted() const
     {
       return flags & FLAGS_IS_ACCEPTED;
+    }
+
+    bool isFalsified() const
+    {
+      return flags & FLAGS_IS_FALSIFIED;
     }
 
     void accept()

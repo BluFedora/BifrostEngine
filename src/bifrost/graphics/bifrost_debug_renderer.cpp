@@ -52,10 +52,10 @@ namespace bifrost
     grabCommandList(is_overlay).emplaceBack().init(duration, DrawAABB{center, extents, color});
   }
 
-  void DebugRenderer::draw(bfGfxCommandListHandle command_list, Camera& camera, const bfGfxFrameInfo& frame_info, bool overlay)
+  void DebugRenderer::draw(bfGfxCommandListHandle command_list, BifrostCamera& camera, const bfGfxFrameInfo& frame_info, bool overlay)
   {
     auto&                          line_buffer = m_LineBuffers[overlay ? 1 : 0];
-    /* const */ List<DrawCommand>& list        = grabCommandList(overlay);  // TODO: bifrost::List / ListView needs some const iterators.
+    /* const */ List<DrawCommand>& list        = grabCommandList(overlay);  // TODO: bifrost::List / bifrost::ListView needs some const iterators.
 
     if (list.isEmpty())
     {

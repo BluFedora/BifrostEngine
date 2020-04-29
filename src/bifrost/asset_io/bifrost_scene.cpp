@@ -21,13 +21,84 @@
 
 namespace bifrost
 {
+#define ID_TO_INDEX(id) ((id) - 1)
+
+  BifrostTransform* SceneTransformSystem::transformFromIDImpl(IBifrostTransformSystem_t* self, BifrostTransformID id)
+  {
+    SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
+
+    return id == k_TransformInvalidID  ? nullptr : & system->m_Transforms[ID_TO_INDEX(id)];
+  }
+
+  BifrostTransformID SceneTransformSystem::transformToIDImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
+  {
+    SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
+
+    if (transform == nullptr)
+    {
+      return k_TransformInvalidID;
+    }
+
+    return BifrostTransformID(system->m_Transforms.indexOf(static_cast<TransformNode*>(transform))) + 1;
+  }
+
+  void SceneTransformSystem::addToDirtyListImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
+  {
+    SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
+
+    if (system->dirty_list)
+    {
+      system->dirty_list->dirty_list_next = transform;
+    }
+
+    system->dirty_list = transform;
+  }
+
+  SceneTransformSystem::SceneTransformSystem(IMemoryManager& memory) :
+    IBifrostTransformSystem{nullptr, &transformFromIDImpl, &transformToIDImpl, &addToDirtyListImpl},
+    m_Transforms{memory},
+    m_FreeList{k_TransformInvalidID}
+  {
+  }
+
+  BifrostTransformID SceneTransformSystem::createTransform()
+  {
+    BifrostTransformID id;
+
+    if (m_FreeList)
+    {
+      id         = m_FreeList;
+      m_FreeList = m_Transforms[id].freelist_next;
+    }
+    else
+    {
+      m_Transforms.emplace();
+      id                                          = BifrostTransformID(m_Transforms.size());
+      m_Transforms[ID_TO_INDEX(id)].freelist_next = k_TransformInvalidID;
+    }
+
+    bfTransform_ctor(&m_Transforms[ID_TO_INDEX(id)], this);
+    return id;
+  }
+
+  void SceneTransformSystem::destroyTransform(BifrostTransformID transform)
+  {
+    bfTransform_dtor(&m_Transforms[transform]);
+
+    m_Transforms[ID_TO_INDEX(transform)].freelist_next = m_FreeList;
+    m_FreeList                                         = transform;
+  }
+
+#undef ID_TO_INDEX
+
   Scene::Scene(IMemoryManager& memory) :
     BaseObject<Scene>{},
     m_Memory{memory},
     m_RootEntities{memory},
     m_ActiveComponents{memory},
     m_InactiveComponents{memory},
-    m_BVHTree{memory}
+    m_BVHTree{memory},
+    m_TransformSystem{memory}
   {
   }
 
@@ -58,8 +129,7 @@ namespace bifrost
       dbg_renderer.addAABB(
        (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
        Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
-       bfColor4u_fromUint32(BIFROST_COLOR_CYAN)
-      );
+       bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
     });
   }
 

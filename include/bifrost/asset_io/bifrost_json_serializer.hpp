@@ -82,6 +82,7 @@ namespace bifrost
     explicit JsonSerializerReader(Assets& assets, IMemoryManager& memory, json::Value& document);
 
     bool beginDocument(bool is_array) override;
+    bool hasKey(StringRange key) override;
     bool pushObject(StringRange key) override;
     bool pushArray(StringRange key, std::size_t& size) override;
     void serialize(StringRange key, std::int8_t& value) override;

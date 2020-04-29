@@ -1,5 +1,8 @@
 #include "bifrost/utility/bifrost_hash.hpp"
 
+#include <cstring>     // memcpy
+#include <functional>  // hash
+
 namespace
 {
   // This is a very simple hash (same one that Java uses for String.hashCode())
@@ -80,17 +83,16 @@ namespace bifrost::hash
   {
     if constexpr (sizeof(Hash_t) == 4)
     {
+      // TODO: Fix Me
       return (self * 0x100000001B3ull) ^ u32;
     }
 
     if constexpr (sizeof(Hash_t) == 8)
     {
-      return combine(self, u32);
+      return combine(self, std::hash<std::uint32_t>()(u32));
     }
 
-    static_assert(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8, "Unsupported pointer size.");
-
-    return self;
+    // return self;
   }
 
   Hash_t addS32(Hash_t self, std::int32_t s32)
@@ -100,7 +102,7 @@ namespace bifrost::hash
 
   Hash_t addU64(Hash_t self, std::uint64_t u64)
   {
-    return addU32(addU32(self, std::uint32_t(u64 & 0xFFFFFFFF)), std::uint32_t((u64 >> 32) & 0xFFFFFFFF));
+    return combine(self, std::hash<std::uint64_t>()(u64));
   }
 
   Hash_t addS64(Hash_t self, std::int64_t s64)
@@ -110,28 +112,28 @@ namespace bifrost::hash
 
   Hash_t addF32(Hash_t self, float f32)
   {
-    union
-    {
-      float         f32;
-      std::uint32_t u32;
-    } u;
+    static_assert(sizeof(float) == sizeof(std::uint32_t), "The sizes should match.");
 
-    u.f32 = f32;
+    std::uint32_t u32;
+    std::memcpy(&u32, &f32, sizeof(float));
 
-    return addU32(self, u.u32);
+    return addU32(self, u32);
   }
 
   Hash_t addPointer(Hash_t self, const void* ptr)
   {
+    static constexpr std::hash<const void*> s_Hasher;
+
     if constexpr (sizeof(uintptr_t) == 4)
     {
       // NOTE: the cast is to appease the warning gods on 64bit compiles.
+      // TODO: Fix Me
       return addU32(self, std::uint32_t(reinterpret_cast<uintptr_t>(ptr)));
     }
 
     if constexpr (sizeof(uintptr_t) == 8)
     {
-      return addU64(self, reinterpret_cast<uintptr_t>(ptr));
+      return combine(self, s_Hasher(ptr));
     }
 
     static_assert(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8, "Unsupported pointer size.");

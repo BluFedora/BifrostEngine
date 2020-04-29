@@ -59,6 +59,7 @@ void main()
   vec3 ambient   = ambientLighting(albedo, ao);
   vec3 lit_color = ambient + light_out;
 
-  o_FragColor0 = vec4(gammaCorrection(tonemapping(lit_color)), 1.0f);
+  // o_FragColor0 = vec4(gammaCorrection(tonemapping(lit_color)), 1.0f);
+  o_FragColor0 = vec4(gammaCorrection(lit_color), 1.0f);
   // o_FragColor0 = vec4(world_normal * 0.5 + 0.5, 1.0f);
 }

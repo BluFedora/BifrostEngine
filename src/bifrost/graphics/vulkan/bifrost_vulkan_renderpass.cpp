@@ -152,6 +152,23 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
         vkDestroyBuffer(self->handle, buffer->handle, CUSTOM_ALLOC);
         VkPoolAllocator_free(buffer->alloc_pool, &buffer->alloc_info);
+
+        self->cache_descriptor_set.forEach([buffer](bfDescriptorSetHandle desc_set, bfDescriptorSetInfo& config_data) {
+          (void)desc_set;
+
+          for (uint32_t i = 0; i < config_data.num_bindings; ++i)
+          {
+            bfDescriptorElementInfo* const binding_a = &config_data.bindings[i];
+
+            for (uint32_t j = 0; j < binding_a->num_handles; ++j)
+            {
+              if (binding_a->handles[j] == buffer)
+              {
+                binding_a->handles[j] = nullptr;
+              }
+            }
+          }
+        });
         break;
       }
       case BIFROST_GFX_OBJECT_RENDERPASS:
@@ -218,6 +235,35 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         {
           vkDestroyImage(texture->parent->handle, texture->tex_image, CUSTOM_ALLOC);
         }
+
+        self->cache_descriptor_set.forEach([texture](bfDescriptorSetHandle desc_set, bfDescriptorSetInfo& config_data) {
+          (void)desc_set;
+
+          for (uint32_t i = 0; i < config_data.num_bindings; ++i)
+          {
+            bfDescriptorElementInfo* const binding_a = &config_data.bindings[i];
+
+            for (uint32_t j = 0; j < binding_a->num_handles; ++j)
+            {
+              if (binding_a->handles[j] == texture)
+              {
+                binding_a->handles[j] = nullptr;
+              }
+            }
+          }
+        });
+
+        self->cache_framebuffer.forEach([texture](bfFramebufferHandle fb, bfFramebufferState& config_data) {
+          (void)fb;
+
+          for (uint32_t i = 0; i < config_data.num_attachments; ++i)
+          {
+            if (config_data.attachments[i] == texture)
+            {
+              config_data.attachments[i] = nullptr;
+            }
+          }
+        });
         break;
       }
       case BIFROST_GFX_OBJECT_FRAMEBUFFER:

@@ -21,6 +21,7 @@ typedef enum CameraMode_t
 typedef struct CameraModeParams_t
 {
   CameraMode mode;
+
   union
   {
     // NOTE(Shareef):
@@ -34,21 +35,22 @@ typedef struct CameraModeParams_t
     {
       // NOTE(Shareef):
       //   Used by:
-      //   BIFROST_CAMERA_MODE_PRESPECTIVE
-      //   BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
+      //     BIFROST_CAMERA_MODE_PRESPECTIVE
+      //     BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
       //   Units = Degrees
       float field_of_view_y;
 
       // NOTE(Shareef):
       //   Used by:
-      //   BIFROST_CAMERA_MODE_PRESPECTIVE
-      //   BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
+      //     BIFROST_CAMERA_MODE_PRESPECTIVE
+      //     BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
       //   Units = Its just a ratio of width / height
       float aspect_ratio;
     };
   };
 
-  // NOTE(Shareef): Units = Arbitrary World Space Units
+  // NOTE(Shareef):
+  //   Units = Arbitrary World Space Units
   float near_plane;
   // NOTE(Shareef):
   //   Ignored by:
@@ -57,7 +59,7 @@ typedef struct CameraModeParams_t
 
 } CameraModeParams;
 
-typedef struct Camera_t
+typedef struct BifrostCamera_t
 {
   Vec3f            position;
   Vec3f            forward;
@@ -75,25 +77,25 @@ typedef struct Camera_t
   int              needs_update[2];      //   [0] - for proj_cache.
                                          //   [1] - for view_cache.
 
-} Camera;
+} BifrostCamera;
 
-BIFROST_MATH_API void  Camera_init(Camera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch);
-BIFROST_MATH_API void  Camera_update(Camera* cam);
-BIFROST_MATH_API void  Camera_move(Camera* cam, const Vec3f* dir, float amt);
-BIFROST_MATH_API void  Camera_moveLeft(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_moveRight(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_moveUp(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_moveDown(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_moveForward(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_moveBackward(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_addPitch(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_addYaw(Camera* cam, float amt);
-BIFROST_MATH_API void  Camera_mouse(Camera* cam, float offsetx, float offsety);
-BIFROST_MATH_API void  Camera_setFovY(Camera* cam, float value);
-BIFROST_MATH_API void  Camera_onResize(Camera* cam, uint width, uint height);
-BIFROST_MATH_API void  Camera_setProjectionModified(Camera* cam);
-BIFROST_MATH_API void  Camera_setViewModified(Camera* cam);
-BIFROST_MATH_API Vec3f Camera_castRay(Camera* cam, Vec2i screen_space, Vec2i screen_size);
+BIFROST_MATH_API void  Camera_init(BifrostCamera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch);
+BIFROST_MATH_API void  Camera_update(BifrostCamera* cam);
+BIFROST_MATH_API void  Camera_move(BifrostCamera* cam, const Vec3f* dir, float amt);
+BIFROST_MATH_API void  Camera_moveLeft(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveRight(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveUp(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveDown(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveForward(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_moveBackward(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_addPitch(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_addYaw(BifrostCamera* cam, float amt);
+BIFROST_MATH_API void  Camera_mouse(BifrostCamera* cam, float offsetx, float offsety);
+BIFROST_MATH_API void  Camera_setFovY(BifrostCamera* cam, float value);
+BIFROST_MATH_API void  Camera_onResize(BifrostCamera* cam, uint width, uint height);
+BIFROST_MATH_API void  Camera_setProjectionModified(BifrostCamera* cam);
+BIFROST_MATH_API void  Camera_setViewModified(BifrostCamera* cam);
+BIFROST_MATH_API Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size);
 
 #ifdef __cplusplus
 }

@@ -149,6 +149,11 @@ void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params)
   self->build_in_symbols[BIFROST_VM_SYMBOL_CALL] = bfVM_getSymbol(self, bfMakeStringRangeC("call"));
 }
 
+void* bfVM_userData(const BifrostVM* self)
+{
+  return self->params.user_data;
+}
+
 static inline BifrostVMError bfVM__moduleMake(BifrostVM* self, const char* module, BifrostObjModule** out)
 {
   static const char* ANON_MODULE_NAME = "__anon_module__";

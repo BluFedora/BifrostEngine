@@ -123,7 +123,12 @@ namespace bifrost
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    virtual bool beginDocument(bool is_array = false)             = 0;
+    virtual bool beginDocument(bool is_array = false) = 0;
+    virtual bool hasKey(StringRange key)
+    {
+      (void)key;
+      return false;
+    }
     virtual bool pushObject(StringRange key)                      = 0;
     virtual bool pushArray(StringRange key, std::size_t& size)    = 0;
     virtual void serialize(StringRange key, std::int8_t& value)   = 0;

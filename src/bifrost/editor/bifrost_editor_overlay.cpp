@@ -6,12 +6,14 @@
 #include "bifrost/bifrost.hpp"
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
+#include "bifrost/editor/bifrost_editor_inspector.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
+#include <utility>
 
-#include "..\..\..\include\bifrost\editor\bifrost_editor_inspector.hpp"
+#include "bifrost/platform/bifrost_ibase_window.hpp"
 #include "imgui/imgui_internal.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -445,9 +447,9 @@ namespace bifrost::editor
     char   m_FolderName[120];  // 120 is the max folder name length on windows.
 
    public:
-    explicit NewFolderDialog(const String& base_path) :
+    explicit NewFolderDialog(String base_path) :
       Dialog("New Folder"),
-      m_BasePath{base_path},
+      m_BasePath{std::move(base_path)},
       m_FolderName{"FolderName"}
     {
     }
@@ -795,6 +797,7 @@ namespace bifrost::editor
     m_Actions.emplace("Project.Close", ActionPtr(make<ACloseProject>()));
     m_Actions.emplace("Asset.Refresh", ActionPtr(make<ARefreshAsset>()));
     m_Actions.emplace("View.AddInspector", ActionPtr(make<MemberAction<void>>(&EditorOverlay::viewAddInspector)));
+    m_Actions.emplace("View.HierarchyView", ActionPtr(make<MemberAction<HierarchyView&>>(&EditorOverlay::getWindow<HierarchyView>)));
 
     addMenuItem("File/New/Project", "File.New.Project");
     addMenuItem("File/Open/Project", "File.Open.Project");
@@ -802,12 +805,20 @@ namespace bifrost::editor
     addMenuItem("File/Close Project", "Project.Close");
 
     addMenuItem("Assets/Refresh", "Asset.Refresh");
-    addMenuItem("Window/Add Inspector", "View.AddInspector");
+    addMenuItem("Window/Inspector View", "View.AddInspector");
+    addMenuItem("Window/Hierarchy View", "View.HierarchyView");
 
-    // addMainMenuItem("File", file_menu_items);
+    /*
+    InspectorRegistry::overrideInspector<MeshRenderer>(
+     [](ImGuiSerializer& serializer, void* object, meta::BaseClassMetaInfo* type_info, void* user_data) {
+       MeshRenderer* mesh_renderer = (MeshRenderer*)object;
+
+       ImGui::Text("This is a custom Mesh Renderer Callback");
+     });
+     */
+
     // addMainMenuItem("Asset", asset_menu_items);
     // addMainMenuItem("Edit", edit_menu_items);
-    // addMainMenuItem("View", view_menu_items);
     // addMainMenuItem("Entity", entity_menu_items);
     // addMainMenuItem("Component", component_menu_items);
     // addMainMenuItem("Help", help_menu_items);
@@ -825,6 +836,11 @@ namespace bifrost::editor
 
   void EditorOverlay::onEvent(Engine& engine, Event& event)
   {
+    if (event.isFalsified())
+    {
+      return;
+    }
+
     auto& mouse_evt = event.mouse;
 
     if (event.type == EventType::ON_MOUSE_DOWN || event.type == EventType::ON_MOUSE_UP)
@@ -889,6 +905,11 @@ namespace bifrost::editor
       }
     }
 
+    if (event.type == EventType::ON_WINDOW_RESIZE)
+    {
+      event.accept();
+    }
+
     event.accept();
   }
 
@@ -900,6 +921,8 @@ namespace bifrost::editor
 
     if (m_MainMenu.beginItem(action_ctx))
     {
+      static bool s_ShowFPS = true;
+
       // menu_bar_height = ImGui::GetWindowSize().y;
 
       m_MainMenu.doAction(action_ctx);
@@ -909,10 +932,44 @@ namespace bifrost::editor
       if (m_FpsTimer <= 0.0f)
       {
         m_CurrentFps = int(1.0f / delta_time);
+        m_CurrentMs  = int(delta_time * 1000.0f);
         m_FpsTimer   = 1.0f;
       }
 
-      ImGui::Text("| %ifps | Memory (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
+      //*
+      if (ImGui::Button("Play"))
+      {
+      }
+      //*/
+
+      {
+        LinearAllocatorScope mem_scope{engine.tempMemory()};
+        if (s_ShowFPS)
+        {
+          char* buffer = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "| %ifps | Memory (bytes) (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
+
+          if (ImGui::Selectable(buffer, &s_ShowFPS, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(buffer).x, 0.0f)))
+          {
+          }
+
+          // ImGui::Text("| %ifps | Memory (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
+        }
+        else
+        {
+          char* buffer = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "| %ims | Memory (%i / %i) |", m_CurrentMs, s_EditorMemory.usedMemory(), s_EditorMemory.size());
+
+          if (ImGui::Selectable(buffer, &s_ShowFPS, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(buffer).x, 0.0f)))
+          {
+          }
+        }
+      }
+
+      static bool is_selected = false;
+
+      if (ImGui::Selectable("Paused", &is_selected, ImGuiSelectableFlags_None))
+      {
+      }
+
       m_MainMenu.endItem();
     }
 
@@ -943,21 +1000,22 @@ namespace bifrost::editor
       // Initial layout
       if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr)
       {
+        LinearAllocatorScope mem_scope{engine.tempMemory()};
+
         ImGui::DockBuilderRemoveNode(dockspace_id);                             // Clear out existing layout
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);  // Add empty node
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
-        ImGuiID       dock_main_id        = dockspace_id;
-        ImGuiID       dock_id_left_top    = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
-        const ImGuiID dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left_top, ImGuiDir_Down, 0.5f, nullptr, &dock_id_left_top);
-        const ImGuiID dock_id_right       = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+        ImGuiID        dock_main_id        = dockspace_id;
+        ImGuiID        dock_id_left_top    = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+        const ImGuiID  dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left_top, ImGuiDir_Down, 0.5f, nullptr, &dock_id_left_top);
+        const ImGuiID  dock_id_right       = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+        HierarchyView& hierarchy_window    = getWindow<HierarchyView>();
+        Inspector&     inspector_window    = getWindow<Inspector>(allocator());
 
         ImGui::DockBuilderDockWindow("Project View", dock_id_left_top);
-        ImGui::DockBuilderDockWindow("Hierarchy View", dock_id_left_bottom);
-        // ImGui::DockBuilderDockWindow("Inspector View", dock_id_right);
-        m_InspectorDefaultDockspaceID = dock_id_right;
-
-        viewAddInspector();
+        ImGui::DockBuilderDockWindow(hierarchy_window.fullImGuiTitle(engine.tempMemory()), dock_id_left_bottom);
+        ImGui::DockBuilderDockWindow(inspector_window.fullImGuiTitle(engine.tempMemory()), dock_id_right);
 
         ImGui::DockBuilderFinish(dockspace_id);
       }
@@ -995,6 +1053,8 @@ namespace bifrost::editor
           ImGui::EndMenuBar();
         }
 
+        static ImVec2 s_OldWindowSize = {0.0f, 0.0f};
+
         const auto   color_buffer        = engine.renderer().compositeScene();
         const auto   color_buffer_width  = bfTexture_width(color_buffer);
         const auto   color_buffer_height = bfTexture_height(color_buffer);
@@ -1006,17 +1066,21 @@ namespace bifrost::editor
         const ImVec2 full_offset         = window_pos + cursor_offset;
         const ImVec2 position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
         const ImVec2 position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
+        const auto   old_scene_size      = m_SceneViewViewport;
 
-        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None))
+        m_IsSceneViewHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
+
+        m_SceneViewViewport.setLeft(int(position_min.x));
+        m_SceneViewViewport.setTop(int(position_min.y));
+        m_SceneViewViewport.setRight(int(position_max.x));
+        m_SceneViewViewport.setBottom(int(position_max.y));
+
+        if (s_OldWindowSize.x != content_area.x || s_OldWindowSize.y != content_area.y)
         {
-          m_SceneViewViewport.setLeft(int(position_min.x));
-          m_SceneViewViewport.setTop(int(position_min.y));
-          m_SceneViewViewport.setRight(int(position_max.x));
-          m_SceneViewViewport.setBottom(int(position_max.y));
-        }
-        else
-        {
-          m_SceneViewViewport = {};
+          auto& window = engine.window();
+
+          window.pushEvent(EventType::ON_WINDOW_RESIZE, WindowEvent(int(content_area.x), int(content_area.y), WindowEvent::FLAGS_DEFAULT), Event::FLAGS_IS_FALSIFIED);
+          s_OldWindowSize = content_area;
         }
 
         window_draw->AddImageRounded(
@@ -1087,71 +1151,6 @@ namespace bifrost::editor
         m_FileSystem.uiShow(*this);
 
         ImGui::Separator();
-      }
-      ImGui::End();
-
-      if (ImGui::Begin("Hierarchy View"))
-      {
-        if (current_scene)
-        {
-          static String s_EntitySearchQuery = "";
-
-          ImGui::Separator();
-
-          if (!s_EntitySearchQuery.isEmpty())
-          {
-            if (ImGui::Button("clear"))
-            {
-              s_EntitySearchQuery.clear();
-            }
-
-            ImGui::SameLine();
-          }
-
-          imgui_ext::inspect("Search", s_EntitySearchQuery, ImGuiInputTextFlags_CharsUppercase);
-
-          if (ImGui::Button("Add Entity"))
-          {
-            current_scene->addEntity();
-
-            engine.assets().markDirty(current_scene);
-          }
-
-          ImGui::Separator();
-
-          static bool is_overlay = false;
-
-          ImGui::Checkbox("Is Overlay", &is_overlay);
-
-          for (Entity* const root_entity : current_scene->rootEntities())
-          {
-            ImGui::PushID(root_entity);
-            if (ImGui::Selectable(root_entity->name().cstr()))
-            {
-              select(root_entity);
-            }
-
-            bfTransform_flushChanges(&root_entity->transform());
-
-            engine.debugDraw().addAABB(
-             root_entity->transform().world_position,
-             root_entity->transform().world_scale,
-             bfColor4u_fromUint32(BIFROST_COLOR_SALMON),
-             0.0f,
-             is_overlay);
-
-            ImGui::PopID();
-          }
-        }
-        else
-        {
-          ImGui::TextUnformatted("(No Scene Open)");
-
-          if (ImGui::IsItemHovered())
-          {
-            ImGui::SetTooltip("Create a new Scene by right clicking a folder 'Create->Scene'\nThen double click the newly created Scene asset.");
-          }
-        }
       }
       ImGui::End();
 
@@ -1361,10 +1360,11 @@ namespace bifrost::editor
     m_OpenProject{nullptr},
     m_FpsTimer{0.0f},
     m_CurrentFps{0},
+    m_CurrentMs{0},
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
     m_SceneViewViewport{},
-    m_InspectorDefaultDockspaceID{},
+    m_IsSceneViewHovered{false},
     m_MousePosition{},
     m_OpenWindows{allocator()}
   {
@@ -1511,6 +1511,8 @@ namespace bifrost::editor
 
   void EditorOverlay::closeProject()
   {
+    select(nullptr);
+    m_Engine->openScene(nullptr);
     m_OpenProject.reset(nullptr);
   }
 
@@ -1611,14 +1613,11 @@ namespace bifrost::editor
   void EditorOverlay::viewAddInspector()
   {
     getWindow<Inspector>(allocator());
-    // Inspector& inspector = m_InspectorWindows.emplace(allocator());
-
-    // ImGui::DockBuilderDockWindow(inspector.windowID(), m_InspectorDefaultDockspaceID);
   }
 
   bool EditorOverlay::isPointOverSceneView(const Vector2i& point) const
   {
-    return m_SceneViewViewport.intersects(point);
+    return m_IsSceneViewHovered && m_SceneViewViewport.intersects(point);
   }
 
   void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name) const
@@ -2003,7 +2002,7 @@ namespace bifrost::editor
     m_AllNodes.clear();
   }
 
-  Inspector::Inspector(IMemoryManager& memory):
+  Inspector::Inspector(IMemoryManager& memory) :
     m_SelectedObject{},
     m_Serializer{memory},
     m_IsLocked{false}

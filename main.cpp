@@ -2,6 +2,7 @@
 
 #include "bifrost/ecs/bifrost_collision_system.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
+
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
@@ -216,8 +217,59 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif  //  _WIN32
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/transform.hpp>
+
+void Test2DTransform()
+{
+  //
+  // This is a test showing you can
+  // replace a matrix multiplication with an add of axis vectors for
+  // 2D sprite like objects.
+  //
+
+  const glm::vec3 translation = glm::vec3{30.0f, 20.0f, 10.0f};
+  const glm::mat4 transform =
+   glm::translate(translation) *
+   glm::eulerAngleXYZ(glm::radians(65.0f), glm::radians(20.0f), glm::radians(20.0f)) *
+   glm::scale(glm::identity<glm::mat4>(), glm::vec3{1.5f, 3.4f, 9.1f});
+
+  const glm::vec4 points0[] =
+   {
+    transform * glm::vec4{0.0f, 0.0f, 0.0f, 1.0},
+    transform * glm::vec4{1.0f, 0.0f, 0.0f, 1.0},
+    transform * glm::vec4{0.0f, 1.0f, 0.0f, 1.0},
+    transform * glm::vec4{1.0f, 1.0f, 0.0f, 1.0},
+   };
+
+  const glm::vec4 x_axis = transform * glm::vec4{1.0f, 0.0, 0.0, 0.0};
+  const glm::vec4 y_axis = transform * glm::vec4{0.0f, 1.0, 0.0, 0.0};
+
+  const glm::vec4 points1[] =
+   {
+    glm::vec4{translation, 1.0f},
+    glm::vec4{translation, 1.0f} + x_axis,
+    glm::vec4{translation, 1.0f} + y_axis,
+    glm::vec4{translation, 1.0f} + x_axis + y_axis,
+   };
+
+  for (int i = 0; i < 4; ++i)
+  {
+    if (points0[i] != points1[i])
+    {
+      // This test failed.
+      __debugbreak();
+    }
+  }
+}
+
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
+  Test2DTransform();
+
   namespace bfmeta = meta;
   namespace bf     = bifrost;
 
@@ -246,7 +298,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   {
     WindowGLFW    window{};
-    BifrostEngine engine{main_memory, main_memory_size, argc, argv};
+    BifrostEngine engine{window, main_memory, main_memory_size, argc, argv};
 
     engine.addECSSystem<CollisionSystem>();
 
@@ -384,6 +436,8 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
       if (engine.beginFrame())
       {
+        StandardRenderer& renderer = engine.renderer();
+
         if (update_fn)
         {
           vm.stackResize(1);
@@ -396,7 +450,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
         }
 
         imgui::beginFrame(
-         engine.renderer().surface(),
+         renderer.surface(),
          float(window_width),
          float(window_height),
          new_time);
@@ -412,7 +466,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
         const float render_alpha = time_accumulator / time_step_ms;  // current_state * alpha + previous_state * (1.0f - alpha)
 
         engine.drawBegin(render_alpha);
-        imgui::endFrame(engine.renderer().mainCommandList());
+        imgui::endFrame(renderer.mainCommandList());
         engine.drawEnd();
       }
     }

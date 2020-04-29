@@ -194,7 +194,7 @@ namespace bifrost
 
     void init(bfGfxDeviceHandle device, int width, int height);
     void setupAttachments(bfRenderpassInfo& renderpass_info, uint16_t subpass_index = 0);
-    void deinit(bfGfxDeviceHandle device) const;
+    void deinit(bfGfxDeviceHandle device);
 
     bfTextureHandle* attachments() { return color_attachments; }
   };
@@ -208,7 +208,7 @@ namespace bifrost
 
     void init(bfGfxDeviceHandle device, int width, int height);
     void setupAttachments(bfRenderpassInfo& renderpass_info, uint16_t ao_subpass_index, int color_attachment_idx);
-    void deinit(bfGfxDeviceHandle device) const;
+    void deinit(bfGfxDeviceHandle device);
   };
 
   struct BaseMultiBuffer
@@ -294,14 +294,14 @@ namespace bifrost
     bfVertexLayoutSetHandle                  m_EmptyVertexLayout;
     bfGfxCommandListHandle                   m_MainCmdList;
     bfTextureHandle                          m_MainSurface;
-    GBuffer                                  m_GBuffer;
-    SSAOBuffer                               m_SSAOBuffer;
-    bfTextureHandle                          m_DeferredComposite;
+    GBuffer                                  m_GBuffer;            // TODO(SR): Per camera
+    SSAOBuffer                               m_SSAOBuffer;         // TODO(SR): Per camera
+    bfTextureHandle                          m_DeferredComposite;  // TODO(SR): Per camera
     bfShaderProgramHandle                    m_GBufferShader;
     bfShaderProgramHandle                    m_SSAOBufferShader;
     bfShaderProgramHandle                    m_SSAOBlurShader;
     bfShaderProgramHandle                    m_LightShaders[LightShaders::MAX];
-    MultiBuffer<CameraUniformData>           m_CameraUniform;
+    MultiBuffer<CameraUniformData>           m_CameraUniform;  // TODO(SR): Per camera
     List<Renderable>                         m_RenderablePool;
     HashTable<Entity*, Renderable*>          m_RenderableMapping;  // TODO: Make this per Scene.
     Array<bfGfxBaseHandle>                   m_AutoRelease;
@@ -324,18 +324,20 @@ namespace bifrost
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
 
     void               init(const bfGfxContextCreateParams& gfx_create_params);
-    [[nodiscard]] bool frameBegin(Camera& camera);
+    [[nodiscard]] bool frameBegin(BifrostCamera& camera);
     void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
     void               bindObject(bfGfxCommandListHandle command_list, Entity& entity);
-    void               bindCamera(bfGfxCommandListHandle command_list, const Camera& camera);
+    void               bindCamera(bfGfxCommandListHandle command_list, const BifrostCamera& camera);
     void               addLight(Light& light);
     void               beginGBufferPass();
-    void               beginSSAOPass(const Camera& camera);
-    void               beginLightingPass(const Camera& camera);
+    void               beginSSAOPass(const BifrostCamera& camera);
+    void               beginLightingPass(const BifrostCamera& camera);
     void               beginScreenPass() const;
     void               endPass() const;
     void               frameEnd() const;
     void               deinit();
+
+    void resize(int width, int height);
 
    private:
     void initShaders();
