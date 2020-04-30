@@ -342,6 +342,12 @@ bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, int window_idx
   return {0, 0, 0};
 }
 
+template<typename T, typename TCache>
+static void bfGfxContext_removeFromCache(TCache& cache, BifrostGfxObjectBase* object)
+{
+  cache.remove(object->hash_code, (T)object);
+}
+
 void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
   // TODO: This whole set of garbage collection should maybe get called not every frame??
@@ -349,7 +355,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
   BifrostGfxObjectBase* prev         = nullptr;
   BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
   BifrostGfxObjectBase* release_list = nullptr;
-  
+
   while (curr)
   {
     BifrostGfxObjectBase* next = curr->next;
@@ -379,33 +385,36 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
     prev = curr;
     curr = next;
   }
-  
+
   if (release_list)
   {
-    // bfGfxDevice_flush(self->logical_device);
     while (release_list)
     {
       BifrostGfxObjectBase* next = release_list->next;
 
-      if (release_list->type == BIFROST_GFX_OBJECT_RENDERPASS)
+      switch (release_list->type)
       {
-        self->logical_device->cache_renderpass.remove(release_list->hash_code);
-      }
-      else if (release_list->type == BIFROST_GFX_OBJECT_PIPELINE)
-      {
-        self->logical_device->cache_pipeline.remove(release_list->hash_code);
-      }
-      else if (release_list->type == BIFROST_GFX_OBJECT_FRAMEBUFFER)
-      {
-        self->logical_device->cache_framebuffer.remove(release_list->hash_code);
-      }
-      else if (release_list->type == BIFROST_GFX_OBJECT_DESCRIPTOR_SET)
-      {
-        self->logical_device->cache_descriptor_set.remove(release_list->hash_code);
-      }
-      else
-      {
-        assert(!"Need to update this check.");
+        case BIFROST_GFX_OBJECT_RENDERPASS:
+        {
+          bfGfxContext_removeFromCache<bfRenderpassHandle>(self->logical_device->cache_renderpass, release_list);
+          break;
+        }
+        case BIFROST_GFX_OBJECT_PIPELINE:
+        {
+          bfGfxContext_removeFromCache<bfPipelineHandle>(self->logical_device->cache_pipeline, release_list);
+          break;
+        }
+        case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+        {
+          bfGfxContext_removeFromCache<bfFramebufferHandle>(self->logical_device->cache_framebuffer, release_list);
+          break;
+        }
+        case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
+        {
+          bfGfxContext_removeFromCache<bfDescriptorSetHandle>(self->logical_device->cache_descriptor_set, release_list);
+          break;
+        }
+          bfInvalidDefaultCase();
       }
 
       bfGfxDevice_release(self->logical_device, release_list);
@@ -494,7 +503,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
     list->pipeline_state = {};
     list->has_command    = bfFalse;
     std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
-    std::memset(&list->pipeline_state, 0x0, sizeof(list->pipeline_state)); // Constent hashing behavior + Memcmp is used for the cache system.
+    std::memset(&list->pipeline_state, 0x0, sizeof(list->pipeline_state));  // Constent hashing behavior + Memcmp is used for the cache system.
 
     vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 

@@ -1066,7 +1066,6 @@ namespace bifrost::editor
         const ImVec2 full_offset         = window_pos + cursor_offset;
         const ImVec2 position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
         const ImVec2 position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
-        const auto   old_scene_size      = m_SceneViewViewport;
 
         m_IsSceneViewHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
 
@@ -1079,7 +1078,10 @@ namespace bifrost::editor
         {
           auto& window = engine.window();
 
-          window.pushEvent(EventType::ON_WINDOW_RESIZE, WindowEvent(int(content_area.x), int(content_area.y), WindowEvent::FLAGS_DEFAULT), Event::FLAGS_IS_FALSIFIED);
+          window.pushEvent(
+           EventType::ON_WINDOW_RESIZE,
+           WindowEvent(std::max(int(content_area.x), 1), std::max(int(content_area.y), 1), WindowEvent::FLAGS_DEFAULT),
+           Event::FLAGS_IS_FALSIFIED);
           s_OldWindowSize = content_area;
         }
 

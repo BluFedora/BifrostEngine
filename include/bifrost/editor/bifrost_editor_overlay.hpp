@@ -18,7 +18,6 @@
 #include "bifrost/math/bifrost_rect2.hpp"
 #include "bifrost_editor_filesystem.hpp"
 #include "bifrost_editor_inspector.hpp"
-#include "bifrost_editor_serializer.hpp"
 
 namespace bifrost::editor
 {

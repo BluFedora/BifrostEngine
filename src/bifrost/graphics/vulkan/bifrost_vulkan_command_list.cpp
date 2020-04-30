@@ -209,8 +209,7 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClear
 void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments)
 {
   const uint32_t num_attachments = self->pipeline_state.renderpass->info.num_attachments;
-  // const uint64_t hash_code       = bifrost::vk::hash(0x0, &self->pipeline_state.renderpass->info);
-  const uint64_t hash_code = bifrost::vk::hash(0x0, attachments, num_attachments);
+  const uint64_t hash_code       = bifrost::vk::hash(0x0, attachments, num_attachments);
 
   bfFramebufferState fb_state;
   fb_state.num_attachments = num_attachments;

@@ -81,20 +81,43 @@ struct ComparebfPipelineCache
   bool operator()(const bfPipelineCache& a, const bfPipelineCache& b) const;
 };
 
-using VulkanDescSetCache = bifrost::vk::ObjectHashCache<bfDescriptorSet, bfDescriptorSetInfo, ComparebfDescriptorSetInfo>;
+struct ComparebfFramebufferState
+{
+  bool operator()(const bfFramebufferState& a, const bfFramebufferState& b) const
+  {
+    if (a.num_attachments != b.num_attachments)
+    {
+      return false;
+    }
+
+    for (std::uint32_t i = 0; i < a.num_attachments; ++i)
+    {
+      if (a.attachments[i] != b.attachments[i])
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
+
+using VulkanDescSetCache     = bifrost::vk::ObjectHashCache<bfDescriptorSet, bfDescriptorSetInfo, ComparebfDescriptorSetInfo>;
+using VulkanPipelineCache    = bifrost::vk::ObjectHashCache<bfPipeline, bfPipelineCache, ComparebfPipelineCache>;
+using VulkanFramebufferCache = bifrost::vk::ObjectHashCache<bfFramebuffer, bfFramebufferState, ComparebfFramebufferState>;
 
 BIFROST_DEFINE_HANDLE(GfxDevice)
 {
-  VulkanPhysicalDevice*                                                             parent;
-  VkDevice                                                                          handle;
-  PoolAllocator                                                                     device_memory_allocator;
-  VulkanDescriptorPool*                                                             descriptor_pool;
-  VkQueue                                                                           queues[BIFROST_GFX_QUEUE_MAX];
-  bifrost::vk::ObjectHashCache<bfRenderpass, bfRenderpassInfo>                      cache_renderpass;
-  bifrost::vk::ObjectHashCache<bfPipeline, bfPipelineCache, ComparebfPipelineCache> cache_pipeline;
-  bifrost::vk::ObjectHashCache<bfFramebuffer, bfFramebufferState>                   cache_framebuffer;
-  VulkanDescSetCache                                                                cache_descriptor_set;
-  BifrostGfxObjectBase*                                                             cached_resources; /* Linked List */
+  VulkanPhysicalDevice*                                        parent;
+  VkDevice                                                     handle;
+  PoolAllocator                                                device_memory_allocator;
+  VulkanDescriptorPool*                                        descriptor_pool;
+  VkQueue                                                      queues[BIFROST_GFX_QUEUE_MAX];
+  bifrost::vk::ObjectHashCache<bfRenderpass, bfRenderpassInfo> cache_renderpass;
+  VulkanPipelineCache                                          cache_pipeline;
+  VulkanFramebufferCache                                       cache_framebuffer;
+  VulkanDescSetCache                                           cache_descriptor_set;
+  BifrostGfxObjectBase*                                        cached_resources; /* Linked List */
 };
 
 #if __cplusplus

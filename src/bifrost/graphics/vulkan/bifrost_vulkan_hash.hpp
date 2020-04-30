@@ -93,7 +93,7 @@ namespace bifrost::vk
       return nullptr;
     }
 
-    bool remove(std::uint64_t key)
+    bool remove(std::uint64_t key, T* value)
     {
       const std::size_t hash_mask = m_NodesCapacity - 1;
       std::size_t       idx       = key & hash_mask;
@@ -102,10 +102,11 @@ namespace bifrost::vk
       {
         auto& node = m_Nodes[idx];
 
-        if (node.value && node.hash_code == key)
+        if (node.value == value && node.hash_code == key)
         {
           node.value     = nullptr;
           node.hash_code = key;
+          
           return true;
         }
 
