@@ -27,6 +27,12 @@ namespace bifrost::editor
 
   IMemoryManager& allocator();
 
+  template<typename T, typename... Args>
+  T* make(Args&&... args)
+  {
+    return allocator().allocateT<T>(std::forward<Args&&>(args)...);
+  }
+
   template<typename T>
   void deallocateT(T* ptr)
   {

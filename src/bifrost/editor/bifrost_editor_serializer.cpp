@@ -55,6 +55,7 @@ namespace bifrost::editor
   {
     auto& obj    = m_IsOpenStack.emplace();
     obj.is_array = is_array;
+    string_utils::fmtBuffer(obj.name, k_FieldNameBufferSize, nullptr, "__DOCUMENT");
 
     beginChangeCheck();
     return true;
@@ -69,6 +70,11 @@ namespace bifrost::editor
     {
       auto& obj    = m_IsOpenStack.emplace();
       obj.is_array = false;
+
+      if (!string_utils::fmtBuffer(obj.name, k_FieldNameBufferSize, nullptr, "%.*s", int(key.length()), key.begin()))
+      {
+        bfLogWarn("Failed to format name string in ImGuiSerializer::pushObject.");
+      }
     }
 
     return is_open;
@@ -84,6 +90,11 @@ namespace bifrost::editor
       auto& obj       = m_IsOpenStack.emplace();
       obj.is_array    = true;
       obj.array_index = 0;
+
+      if (!string_utils::fmtBuffer(obj.name, k_FieldNameBufferSize, nullptr, "%.*s", int(key.length()), key.begin()))
+      {
+        bfLogWarn("Failed to format name string in ImGuiSerializer::pushObject.");
+      }
     }
 
     size = 0;
@@ -168,7 +179,42 @@ namespace bifrost::editor
   void ImGuiSerializer::serialize(StringRange key, Vec3f& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
+
+    const bool did_change = ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
+
+    hasChangedTop() |= did_change;
+
+    if (did_change)
+    {
+      bfLogPrint("Editing: %s", m_NameBuffer);
+    }
+
+    if (ImGui::IsItemDeactivatedAfterEdit())
+    {
+      bfLogPush("Finished Editing:");
+      for (const auto& obj : m_IsOpenStack)
+      {
+        bfLogPrint("%s->", obj.name);
+      }
+      bfLogPrint("%s", m_NameBuffer);
+      bfLogPop();
+    }
+  }
+
+  void ImGuiSerializer::serialize(StringRange key, Quaternionf& value)
+  {
+    Vector3f euler_deg;
+
+    bfQuaternionf_toEulerDeg(&value, &euler_deg);
+
+    beginChangeCheck();
+
+    serialize(key, euler_deg);
+
+    if (endChangedCheck())
+    {
+      value = bfQuaternionf_fromEulerDeg(euler_deg.x, euler_deg.y, euler_deg.z);
+    }
   }
 
   void ImGuiSerializer::serialize(StringRange key, bfColor4f& value)
@@ -340,6 +386,30 @@ namespace bifrost::editor
     }
   }
 
+  void ImGuiSerializer::serialize(Any& value, meta::BaseClassMetaInfo* type_info)
+  {
+    // If the user calls this function from the custom
+    // callback then perform default inspection.
+    if (m_IsInCustomCallback)
+    {
+      ISerializer::serialize(value, type_info);
+      return;
+    }
+
+    auto* const custom_entry = InspectorRegistry::s_Registry.at(type_info);
+
+    if (custom_entry)
+    {
+      m_IsInCustomCallback = true;
+      custom_entry->callback(*this, value.as<void*>(), type_info, custom_entry->user_data);
+      m_IsInCustomCallback = false;
+    }
+    else
+    {
+      ISerializer::serialize(value, type_info);
+    }
+  }
+
   void ImGuiSerializer::popObject()
   {
     ImGui::TreePop();
@@ -371,40 +441,28 @@ namespace bifrost::editor
 
   void ImGuiSerializer::setNameBuffer(StringRange key)
   {
+    static_assert(sizeof(m_NameBuffer) == k_FieldNameBufferSize, "Sanity check to make sure I didn't upgrade 'm_NameBuffer' to a String or something.");
+
+    bool  name_is_valid;
     auto& obj = top();
 
     if (obj.is_array)
     {
-      string_utils::fmtBuffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%i", obj.array_index);
+      name_is_valid = string_utils::fmtBuffer(m_NameBuffer, k_FieldNameBufferSize, nullptr, "%i", obj.array_index);
       ++obj.array_index;
     }
     else
     {
-      string_utils::fmtBuffer(m_NameBuffer, sizeof(m_NameBuffer), nullptr, "%.*s", int(key.length()), key.begin());
-    }
-  }
-
-  void ImGuiSerializer::serialize(Any& value, meta::BaseClassMetaInfo* type_info)
-  {
-    // If the user calls this function from the custom
-    // callback then perform default inspection.
-    if (m_IsInCustomCallback)
-    {
-      ISerializer::serialize(value, type_info);
-      return;
+      name_is_valid = string_utils::fmtBuffer(m_NameBuffer, k_FieldNameBufferSize, nullptr, "%.*s", int(key.length()), key.begin());
     }
 
-    auto* const custom_entry = InspectorRegistry::s_Registry.at(type_info);
-
-    if (custom_entry)
+    //
+    // The 'fmtBuffer' functions is safe from buffer overflow,
+    // but it is still nice to know if we encountered a cut off name!
+    //
+    if (!name_is_valid)
     {
-      m_IsInCustomCallback = true;
-      custom_entry->callback(*this, value.as<void*>(), type_info, custom_entry->user_data);
-      m_IsInCustomCallback = false;
-    }
-    else
-    {
-      ISerializer::serialize(value, type_info);
+      bfLogWarn("Field name Too Long (len > %i): %.*s", k_FieldNameBufferSize, int(key.length()), key.begin());
     }
   }
 
@@ -669,6 +727,14 @@ namespace bifrost::editor
         if (ImGui::CollapsingHeader(label, &is_open, ImGuiTreeNodeFlags_None))
         {
           ImGui::Indent();
+
+          bool is_active = entity.isComponentActive<T>();
+
+          if (ImGui::Checkbox("Is Active", &is_active))
+          {
+            entity.setComponentActive<T>(is_active);
+          }
+
           serializer.serializeT(entity.get<T>());
           ImGui::Unindent();
 

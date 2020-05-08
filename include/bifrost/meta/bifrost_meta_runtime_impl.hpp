@@ -236,7 +236,7 @@ namespace bifrost::meta
       //
       // NOTE(Shareef):
       //   Since this is a static variable for a templated function:
-      //   Pointer Comparisons still work for type checking since each insatciation of this
+      //   Pointer Comparisons still work for type checking since each instanciation of this
       //   function gives a different address.
       //   Also the name "___NoTypeInfo___" is not registered to the global map
       //   since this uses the base class's constructor.
@@ -285,15 +285,15 @@ namespace bifrost::meta
     }
   };
 
-#define TYPE_INFO_SPEC(T)                                                               \
-  template<>                                                                            \
-  struct TypeInfo<T>                                                                    \
-  {                                                                                     \
-    static BaseClassMetaInfo*& get()                                                    \
-    {                                                                                   \
-      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ClassMetaInfo<T>>(#T); \
-      return s_Info;                                                                    \
-    }                                                                                   \
+#define TYPE_INFO_SPEC(T)                                                                                                        \
+  template<>                                                                                                                     \
+  struct TypeInfo<T>                                                                                                             \
+  {                                                                                                                              \
+    static BaseClassMetaInfo*& get()                                                                                             \
+    {                                                                                                                            \
+      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ClassMetaInfo<T>>(#T); /* NOLINT(bugprone-macro-parentheses) */ \
+      return s_Info;                                                                                                             \
+    }                                                                                                                            \
   }
 
   TYPE_INFO_SPEC(std::byte);
@@ -311,15 +311,34 @@ namespace bifrost::meta
   TYPE_INFO_SPEC(long double);
   TYPE_INFO_SPEC(void*);
 
-#undef TYPE_INFO_SPEC
+  template<typename T>
+  struct TypeInfo<const T> : public TypeInfo<std::decay_t<T>>
+  {
+  };
 
   template<typename T>
-  struct TypeInfo<T*>
+  struct TypeInfo<volatile T> : public TypeInfo<std::decay_t<T>>
   {
-    static BaseClassMetaInfo* get()
-    {
-      return TypeInfo<std::decay_t<T>>::get();
-    }
+  };
+
+  template<typename T>
+  struct TypeInfo<const volatile T> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<T*> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const T*> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const volatile T*> : public TypeInfo<std::decay_t<T>>
+  {
   };
 
   template<typename T>
@@ -331,6 +350,8 @@ namespace bifrost::meta
       return s_Info;
     }
   };
+
+#undef TYPE_INFO_SPEC
 
   template<typename MemberConcept>
   PropertyMetaInfo<MemberConcept>::PropertyMetaInfo(const MemberConcept& impl) :

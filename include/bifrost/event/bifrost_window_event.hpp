@@ -5,7 +5,7 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef BIFROST_WINDOW_EVENT_HPP
 #define BIFROST_WINDOW_EVENT_HPP
@@ -45,7 +45,7 @@ namespace bifrost
     {
     }
 
-    KeyboardEvent(unsigned codepoint) :
+    explicit KeyboardEvent(unsigned codepoint) :
       codepoint{codepoint},
       modifiers{0x0}
     {

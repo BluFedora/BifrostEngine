@@ -46,6 +46,19 @@ namespace bifrost
 
     BifrostTransformID createTransform();
     void               destroyTransform(BifrostTransformID transform);
+
+    template<typename F>
+    void forEachDirty(F&& callback)
+    {
+      while (dirty_list)
+      {
+        BifrostTransform* const next = dirty_list->dirty_list_next;
+
+        callback(*dirty_list);
+
+        dirty_list = next;
+      }
+    }
   };
 
   /*!
@@ -74,8 +87,9 @@ namespace bifrost
     Entity*               addEntity(const StringRange& name = "Untitled");
     void                  removeEntity(Entity* entity);
 
-    // Temp Code
+    // Temp Code Begin
     void update(LinearAllocator& temp, DebugRenderer& dbg_renderer);
+    // Temp Code End
 
     // Component
 

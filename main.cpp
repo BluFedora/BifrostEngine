@@ -223,7 +223,9 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/transform.hpp>
 
-void Test2DTransform()
+using TestCaseFn = void (*)();
+
+static void Test2DTransform()
 {
   //
   // This is a test showing you can
@@ -266,9 +268,33 @@ void Test2DTransform()
   }
 }
 
+// -2.1238898, y: 1.1061869, z: -0.0884841
+
+static void TestQuaternions()
+{
+  Quaternionf rotation_quat = bfQuaternionf_init(0.7536897f, -0.2228076f, 0.4766513f, -0.3938427f);
+  Vector3f    rotation_euler;
+  bfQuaternionf_toEulerRad(&rotation_quat, &rotation_euler);
+
+  std::printf("To:   Quaternion(%f, %f, %f, %f)\n", rotation_quat.x, rotation_quat.y, rotation_quat.z, rotation_quat.w);
+  std::printf("To:   EulerAngles(%f, %f, %f    )\n", rotation_euler.x, rotation_euler.y, rotation_euler.z);
+
+  rotation_quat = bfQuaternionf_fromEulerRad(rotation_euler.x, rotation_euler.y, rotation_euler.z);
+
+  bfQuaternionf_toEulerRad(&rotation_quat, &rotation_euler);
+
+  std::printf("From: Quaternion(%f, %f, %f, %f)\n", rotation_quat.x, rotation_quat.y, rotation_quat.z, rotation_quat.w);
+  std::printf("From: EulerAngles(%f, %f, %f    )\n", rotation_euler.x, rotation_euler.y, rotation_euler.z);
+}
+
+static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions};
+
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
-  Test2DTransform();
+  for (const auto& test_fn : s_Test)
+  {
+    test_fn();
+  }
 
   namespace bfmeta = meta;
   namespace bf     = bifrost;
@@ -302,7 +328,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     engine.addECSSystem<CollisionSystem>();
 
-    if (!window.open("Mjolnir Editor"))
+    if (!window.open("Mjolnir Editor 2020"))
     {
       return -1;
     }

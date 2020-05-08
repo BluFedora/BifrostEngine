@@ -47,7 +47,8 @@ BIFROST_MATH_API Quaternionf bfQuaternionf_identity();
 BIFROST_MATH_API Quaternionf bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle);
 BIFROST_MATH_API Quaternionf bfQuaternionf_fromAxisAngleDeg(const Vec3f* axis, float angle);
 BIFROST_MATH_API Quaternionf bfQuaternionf_fromMatrix(const Mat4x4* rot_mat);
-BIFROST_MATH_API Quaternionf bfQuaternionf_fromEuler(float roll, float pitch, float yaw);  // X, Y, Z
+BIFROST_MATH_API Quaternionf bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
+BIFROST_MATH_API Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
 BIFROST_MATH_API void        bfQuaternionf_multQ(Quaternionf* self, const Quaternionf* rhs);
 BIFROST_MATH_API void        bfQuaternionf_multV(Quaternionf* self, const Vec3f* rhs);
 BIFROST_MATH_API void        bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier);
@@ -57,7 +58,7 @@ BIFROST_MATH_API float       bfQuaternionf_length(const Quaternionf* self);
 BIFROST_MATH_API float       bfQuaternionf_lengthSq(const Quaternionf* self);
 BIFROST_MATH_API void        bfQuaternionf_normalize(Quaternionf* self);
 BIFROST_MATH_API void        bfQuaternionf_toMatrix(Quaternionf* self, Mat4x4* out_rot_mat);
-BIFROST_MATH_API void        bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler);
+BIFROST_MATH_API void        bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
 BIFROST_MATH_API void        bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler);
 BIFROST_MATH_API Vec3f       bfQuaternionf_upVec(const Quaternionf* self);
 BIFROST_MATH_API Vec3f       bfQuaternionf_downVec(const Quaternionf* self);

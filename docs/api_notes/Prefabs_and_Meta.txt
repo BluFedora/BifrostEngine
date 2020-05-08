@@ -1,6 +1,6 @@
 One major problem with the old prefab system is the inability to be able to override specific properties.
 This is because from the editor's POV it has no context on what is being edited. To give the editor more
-context the API for inspecting variables need to reflect (kinda a joke here) the file structure.
+context the API for inspecting variables need to reflect (kind of a joke here) the file structure.
 
 If this is automatic as it 'should' be then how would custom controls work?
 
@@ -59,7 +59,7 @@ Meta system Should have been more specialized:
 
   };
 
-  // Shoudl be all fundamental types...
+  // Should be all fundamental types...
   using BasicType = Variant<void*, int, String, float, etc...>;
 
   meta::begin<T>();

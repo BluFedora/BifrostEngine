@@ -37,6 +37,7 @@ namespace bifrost
 
     AABB(const BifrostTransform& transform)
     {
+      // TODO: This isn't correct for rotation.
       const Vector3f half_extent = Vector3f(transform.world_scale) * 0.5f;
       const Vector3f min_v       = Vector3f(transform.world_position) - half_extent;
       const Vector3f max_v       = Vector3f(transform.world_position) + half_extent;

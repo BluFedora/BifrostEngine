@@ -1,12 +1,23 @@
+/*!
+ * @file   bifrost_transform.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019-2020
+ */
 #include "bifrost/math/bifrost_transform.h"
 
 #include <assert.h>  // assert
 #include <math.h>    // quat::sqrt
-// #include <stddef.h>  // NULL
+#include <stddef.h>  // NULL
 
-#define EPSILONf 0.00001f
-#define DEG_TO_RADf 0.01745329251f
-#define RAD_TO_DEGf 57.2958f
+#define k_PI (3.14159265359f)
+#define k_HalfPI (k_PI * 0.5f)
+#define k_RadToDegf (57.2958f)
+#define k_DegToRadf (0.01745329251f)
+#define k_Epsilonf 0.00001f
 
 // Quaternion
 
@@ -38,7 +49,7 @@ Quaternionf bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle)
 
 Quaternionf bfQuaternionf_fromAxisAngleDeg(const Vec3f* axis, float angle)
 {
-  return bfQuaternionf_fromAxisAngleRad(axis, angle * DEG_TO_RADf);
+  return bfQuaternionf_fromAxisAngleRad(axis, angle * k_DegToRadf);
 }
 
 Quaternionf bfQuaternionf_fromMatrix(const Mat4x4* rot_mat)
@@ -94,23 +105,28 @@ Quaternionf bfQuaternionf_fromMatrix(const Mat4x4* rot_mat)
   return self;
 }
 
-Quaternionf bfQuaternionf_fromEuler(float roll, float pitch, float yaw)
+Quaternionf bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll)
 {
-  const float half_yaw   = yaw * 0.5f;
-  const float half_pitch = pitch * 0.5f;
+  return bfQuaternionf_fromEulerRad(pitch * k_DegToRadf, yaw * k_DegToRadf, roll * k_DegToRadf);
+}
+
+Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll)
+{
   const float half_roll  = roll * 0.5f;
-  const float cy         = cosf(half_yaw);
-  const float sy         = sinf(half_yaw);
-  const float cp         = cosf(half_pitch);
-  const float sp         = sinf(half_pitch);
-  const float cr         = cosf(half_roll);
-  const float sr         = sinf(half_roll);
+  const float half_pitch = pitch * 0.5f;
+  const float half_yaw   = yaw * 0.5f;
+  const float cos_yaw    = cosf(half_yaw);
+  const float cos_pitch  = cosf(half_pitch);
+  const float cos_roll   = cosf(half_roll);
+  const float sin_yaw    = sinf(half_yaw);
+  const float sin_pitch  = sinf(half_pitch);
+  const float sin_roll   = sinf(half_roll);
 
   return bfQuaternionf_init(
-   cy * cp * cr + sy * sp * sr,
-   cy * cp * sr - sy * sp * cr,
-   sy * cp * sr + cy * sp * cr,
-   sy * cp * cr - cy * sp * sr);
+   cos_yaw * cos_pitch * sin_roll - sin_yaw * sin_pitch * cos_roll,
+   cos_yaw * sin_pitch * cos_roll + sin_yaw * cos_pitch * sin_roll,
+   sin_yaw * cos_pitch * cos_roll - cos_yaw * sin_pitch * sin_roll,
+   cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll);
 }
 
 void bfQuaternionf_multQ(Quaternionf* self, const Quaternionf* rhs)
@@ -183,7 +199,7 @@ void bfQuaternionf_normalize(Quaternionf* self)
 {
   float length = bfQuaternionf_lengthSq(self);
 
-  if (length > EPSILONf)
+  if (length > k_Epsilonf)
   {
     length = 1.0f / sqrtf(length);
 
@@ -194,8 +210,7 @@ void bfQuaternionf_normalize(Quaternionf* self)
   }
   else
   {
-    // Identity
-    self->w = 1.0f;
+    *self = bfQuaternionf_identity();
   }
 }
 
@@ -232,17 +247,38 @@ void bfQuaternionf_toMatrix(Quaternionf* self, Mat4x4* out_rot_mat)
 
 void bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler)
 {
-  out_rot_euler->x = atan2f(2.0f * (self->y * self->z + self->w * self->x), self->w * self->w - self->x * self->x - self->y * self->y + self->z * self->z);  // X
-  out_rot_euler->y = asinf(-2.0f * (self->x * self->z - self->w * self->y));                                                                                 // Y
-  out_rot_euler->z = atan2f(2.0f * (self->x * self->y + self->w * self->z), self->w * self->w + self->x * self->x - self->y * self->y - self->z * self->z);  // Z
+  /* pitch */
+
+  const float sin_pitch = 2.0f * (self->w * self->y - self->z * self->x);
+  const float y_sq      = self->y * self->y;
+
+  if (fabsf(sin_pitch) >= 1.0f)
+  {
+    /* If Out of Range use 90 deg. */
+    out_rot_euler->x = copysignf(k_HalfPI, sin_pitch);
+  }
+  else
+  {
+    out_rot_euler->x = asinf(sin_pitch);
+  }
+
+  /* yaw */
+
+  out_rot_euler->y = atan2f(2.0f * (self->w * self->z + self->x * self->y), 1.0f - 2.0f * (y_sq + self->z * self->z));
+
+  /* roll */
+
+  out_rot_euler->z = atan2f(
+   2.0f * (self->x * self->w + self->y * self->z),
+   1.0f - 2.0f * (self->x * self->x + y_sq));
 }
 
 void bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler)
 {
   bfQuaternionf_toEulerRad(self, out_rot_euler);
-  out_rot_euler->x *= RAD_TO_DEGf;
-  out_rot_euler->y *= RAD_TO_DEGf;
-  out_rot_euler->z *= RAD_TO_DEGf;
+  out_rot_euler->x *= k_RadToDegf;
+  out_rot_euler->y *= k_RadToDegf;
+  out_rot_euler->z *= k_RadToDegf;
 }
 
 Vec3f bfQuaternionf_upVec(const Quaternionf* self)
@@ -412,6 +448,8 @@ BIFROST_MATH_API void bfTransform_copyFrom(BifrostTransform* self, const Bifrost
     self->local_position = value->local_position;
     self->local_rotation = value->local_rotation;
     self->local_scale    = value->local_scale;
+
+    self->flags |= BIFROST_TRANSFORM_LOCAL_DIRTY;
 
     bfTransform_flushChanges(self);
   }

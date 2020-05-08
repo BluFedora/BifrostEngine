@@ -7,14 +7,14 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 #include "bifrost/editor/bifrost_editor_inspector.hpp"
+#include "bifrost/platform/bifrost_ibase_window.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
 #include <utility>
 
-#include "bifrost/platform/bifrost_ibase_window.hpp"
-#include "imgui/imgui_internal.h"
+#include <imgui/imgui_internal.h> // Must appear after '<imgui/imgui.h>'
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -251,18 +251,12 @@ namespace bifrost::editor
 {
   using namespace intrusive;
 
-  static char              s_EditorMemoryBacking[4096 * 4];
+  static char              s_EditorMemoryBacking[16384];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
 
   IMemoryManager& allocator()
   {
     return s_EditorMemory;
-  }
-
-  template<typename T, typename... Args>
-  T* make(Args&&... args)
-  {
-    return allocator().allocateT<T>(std::forward<Args&&>(args)...);
   }
 
   bool ActionContext::actionButton(const char* name) const
@@ -444,7 +438,7 @@ namespace bifrost::editor
   {
    private:
     String m_BasePath;
-    char   m_FolderName[120];  // 120 is the max folder name length on windows.
+    char   m_FolderName[120];  //!< 120 is the max folder name length on windows.
 
    public:
     explicit NewFolderDialog(String base_path) :
@@ -815,7 +809,7 @@ namespace bifrost::editor
 
        ImGui::Text("This is a custom Mesh Renderer Callback");
      });
-     */
+    //*/
 
     // addMainMenuItem("Asset", asset_menu_items);
     // addMainMenuItem("Edit", edit_menu_items);
@@ -841,75 +835,73 @@ namespace bifrost::editor
       return;
     }
 
-    auto& mouse_evt = event.mouse;
+    ImGuiIO&   io                = ImGui::GetIO();
+    auto&      mouse_evt         = event.mouse;
+    const bool imgui_wants_input = io.WantCaptureKeyboard || io.WantCaptureMouse;
 
-    if (event.type == EventType::ON_MOUSE_DOWN || event.type == EventType::ON_MOUSE_UP)
+    // if (!imgui_wants_input)
     {
-      oldx = invalid_mouse_postion;
-      oldy = invalid_mouse_postion;
-
-      if (event.type == EventType::ON_MOUSE_DOWN)
+      if (event.type == EventType::ON_MOUSE_DOWN || event.type == EventType::ON_MOUSE_UP)
       {
-        if (isPointOverSceneView({{mouse_evt.x, mouse_evt.y}}))
+        oldx = invalid_mouse_postion;
+        oldy = invalid_mouse_postion;
+
+        if (event.type == EventType::ON_MOUSE_DOWN)
         {
-          is_dragging_mouse = true;
+          if (isPointOverSceneView({{mouse_evt.x, mouse_evt.y}}))
+          {
+            is_dragging_mouse = true;
+          }
+        }
+        else
+        {
+          is_dragging_mouse = false;
+          event.accept();
         }
       }
-      else
+      else if (event.type == EventType::ON_MOUSE_MOVE)
       {
-        is_dragging_mouse = false;
-      }
-    }
-    else if (event.type == EventType::ON_MOUSE_MOVE)
-    {
-      m_MousePosition = {float(mouse_evt.x), float(mouse_evt.y)};
+        m_MousePosition = {float(mouse_evt.x), float(mouse_evt.y)};
 
-      if (is_dragging_mouse && mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
-      {
-        const float newx = float(mouse_evt.x);
-        const float newy = float(mouse_evt.y);
-
-        if (oldx == invalid_mouse_postion)
+        if (is_dragging_mouse && mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
         {
+          const float newx = float(mouse_evt.x);
+          const float newy = float(mouse_evt.y);
+
+          if (oldx == invalid_mouse_postion)
+          {
+            oldx = newx;
+          }
+
+          if (oldy == invalid_mouse_postion)
+          {
+            oldy = newy;
+          }
+
+          Camera_mouse(&engine.Camera, (newx - oldx) * mouse_speed, (newy - oldy) * -mouse_speed);
+
           oldx = newx;
-        }
-
-        if (oldy == invalid_mouse_postion)
-        {
           oldy = newy;
         }
-
-        Camera_mouse(&engine.Camera, (newx - oldx) * mouse_speed, (newy - oldy) * -mouse_speed);
-
-        oldx = newx;
-        oldy = newy;
       }
-    }
-    else if (event.type == EventType::ON_KEY_DOWN)
-    {
-      if (event.keyboard.key == KeyCode::ESCAPE)
+      else if (event.type == EventType::ON_KEY_DOWN)
       {
-        if (m_CurrentDialog)
+        if (event.keyboard.key == KeyCode::ESCAPE)
         {
-          m_CurrentDialog->close();
+          if (m_CurrentDialog)
+          {
+            m_CurrentDialog->close();
+          }
         }
       }
     }
 
-    {
-      ImGuiIO& io = ImGui::GetIO();
-
-      if (io.WantCaptureKeyboard || io.WantCaptureMouse || is_dragging_mouse)
-      {
-        event.accept();
-      }
-    }
-
-    if (event.type == EventType::ON_WINDOW_RESIZE)
+    if (event.type == EventType::ON_WINDOW_RESIZE || is_dragging_mouse || imgui_wants_input)
     {
       event.accept();
     }
 
+    // TODO(SR): WHAT IS THIS HERE ABOUT?
     event.accept();
   }
 
@@ -1029,7 +1021,9 @@ namespace bifrost::editor
       ImGui::DockBuilderDockWindow("Scene View", dockspace_id);
     }
 
-    static const float k_SceneViewPadding = 2.0f;
+    static const float k_SceneViewPadding = 1.0f;
+
+    static float Rounding = 5.0f;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
@@ -1042,6 +1036,8 @@ namespace bifrost::editor
         {
           if (ImGui::BeginMenu("Camera"))
           {
+            ImGui::DragFloat("Rounding", &Rounding, 1.0f, k_Epsilon, 100.0f);
+
             if (ImGui::DragFloat3("Position", &engine.Camera.position.x))
             {
               Camera_setViewModified(&engine.Camera);
@@ -1092,11 +1088,8 @@ namespace bifrost::editor
          ImVec2(0.0f, 0.0f),
          ImVec2(1.0f, 1.0f),
          0xFFFFFFFF,
-         5.0f,
+         Rounding,
          ImDrawCornerFlags_All);
-
-        // ImGui::SetCursorPos(ImVec2(float(draw_region.left()) + s_SceneViewPadding, float(draw_region.top()) + s_SceneViewPadding));
-        // ImGui::Image(engine.renderer().colorBuffer(), ImVec2(float(draw_region.width()), float(draw_region.height())));
       }
       else
       {

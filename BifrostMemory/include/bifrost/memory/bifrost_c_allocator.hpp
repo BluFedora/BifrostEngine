@@ -5,6 +5,7 @@
 * @brief
 *  This allocator is a wrapper around the built in memory allocator.
 *  Implemented using "malloc / calloc" and "free".
+*  TODO Look Into Alignment: [https://johanmabille.github.io/blog/2014/12/06/aligned-memory-allocator/]
 *
 * @version 0.0.1
 * @date    2019-12-26

@@ -15,16 +15,18 @@
 
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"  // ISerializer
 
-#include <imgui/imgui.h>
+#include <imgui/imgui.h>  // ImGui::*
 
 namespace bifrost
 {
   class Entity;
   class Assets;
-}
+}  // namespace bifrost
 
 namespace bifrost::editor
 {
+  static constexpr int k_FieldNameBufferSize = 256;  //!< You shouldn't have a field with a name bigger than this right?
+
   class ImGuiSerializer;
 
   //
@@ -47,6 +49,7 @@ namespace bifrost::editor
   {
     struct ObjectStackInfo
     {
+      char name[k_FieldNameBufferSize];
       bool is_array;
       int  array_index;
     };
@@ -54,7 +57,7 @@ namespace bifrost::editor
    private:
     Array<ObjectStackInfo> m_IsOpenStack;
     Array<bool>            m_HasChangedStack;
-    char                   m_NameBuffer[256];
+    char                   m_NameBuffer[k_FieldNameBufferSize];
     Assets*                m_Assets;
     bool                   m_IsInCustomCallback;
 
@@ -79,6 +82,7 @@ namespace bifrost::editor
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, Vec2f& value) override;
     void serialize(StringRange key, Vec3f& value) override;
+    void serialize(StringRange key, Quaternionf& value) override;
     void serialize(StringRange key, bfColor4f& value) override;
     void serialize(StringRange key, bfColor4u& value) override;
     void serialize(StringRange key, String& value) override;

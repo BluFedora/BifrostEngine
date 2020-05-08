@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #ifndef BIFROST_COMPONENT_STORAGE_HPP
 #define BIFROST_COMPONENT_STORAGE_HPP
@@ -19,7 +19,7 @@
 
 //
 // @EngineComponentRegister
-// The Array datatype needs to know the sizeof(T) in it's constructor. (This required should be removed in later versions of this engine.)
+// The Array datatype needs to know the sizeof(T) in it's constructor. (This requirement should be removed in later versions of this engine.)
 //
 #include "bifrost/ecs/bifrost_light.hpp"         /* Light        */
 #include "bifrost/ecs/bifrost_mesh_renderer.hpp" /* MeshRenderer */
@@ -30,8 +30,15 @@ namespace bifrost
   using DenseMapTuple    = ContainerTuple<DenseMap, Args...>;
   using ComponentStorage = ComponentPack::apply<DenseMapTuple>;
 
+  template<typename T>
+  struct ComponentHandle  // NOLINT(hicpp-member-init)
+  {
+    DenseMapHandle<T> handle;
+    bool              is_active;
+  };
+
   template<typename... Args>
-  using DenseMapHandleTuple    = ContainerTuple<DenseMapHandle, Args...>;
+  using DenseMapHandleTuple    = ContainerTuple<ComponentHandle, Args...>;
   using ComponentHandleStorage = ComponentPack::apply<DenseMapHandleTuple>;
 }  // namespace bifrost
 

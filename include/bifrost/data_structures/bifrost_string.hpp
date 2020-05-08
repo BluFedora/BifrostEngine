@@ -518,6 +518,7 @@ namespace bifrost::string_utils
   // Misc //
 
   // Caller is responsible for freeing memory from this.
+  // TODO(SR) FIX-ME: This is a bad abstraction since it returns a const view into a string that is OWNED by that view.
   StringRange clone(IMemoryManager& allocator, const StringRange& string);
 }  // namespace bifrost::string_utils
 

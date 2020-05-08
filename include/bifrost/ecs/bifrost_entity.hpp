@@ -60,26 +60,36 @@ namespace bifrost
    public:
     Entity(Scene& scene, const StringRange& name);
 
+    // Getters
+
     [[nodiscard]] Scene&            scene() const { return m_OwningScene; }
     [[nodiscard]] const String&     name() const { return m_Name; }
     [[nodiscard]] BifrostTransform& transform() const;
     [[nodiscard]] const EntityList& children() const { return m_Children; }
     [[nodiscard]] BVHNodeOffset     bvhID() const { return m_BHVNode; }
 
+    // Child API
+    //
+    // This API needs to make it nearly impossible to leak children.
+    // This is why there is no "removeChild" function publically available.
+    // To removed a child you must destroy the object itself which
+    // will enforce that it does not dangle outside of the hierarchy ;)
+
     Entity* addChild(const StringRange& name);
     void    setParent(Entity* new_parent);
+
+    // Component API
 
     template<typename T>
     T& add()
     {
-      T* const comp = get<T>();
-
-      if (comp)
+      if (!has<T>())
       {
-        return *comp;
-      }
+        auto& handle = componentHandle<T>();
 
-      m_ComponentHandles.get<T>() = getComponentList<T>().add(*this);
+        handle.handle    = getComponentList<T>(true).add(*this);
+        handle.is_active = true;
+      }
 
       return *get<T>();
     }
@@ -87,11 +97,11 @@ namespace bifrost
     template<typename T>
     T* get() const
     {
-      const auto& handle = m_ComponentHandles.get<T>();
+      const auto& handle = componentHandle<T>();
 
-      if (handle.isValid())
+      if (handle.handle.isValid())
       {
-        return &getComponentList<T>().find(handle);
+        return &getComponentList<T>(handle.is_active).find(handle.handle);
       }
 
       return nullptr;
@@ -104,16 +114,58 @@ namespace bifrost
     }
 
     template<typename T>
+    bool isComponentActive()
+    {
+      const auto& handle = componentHandle<T>();
+
+      return handle.handle.isValid() && handle.is_active;
+    }
+
+    template<typename T>
+    void setComponentActive(bool value)
+    {
+      if (has<T>())
+      {
+        if (value != isComponentActive<T>())
+        {
+          auto& handle     = componentHandle<T>();
+          T&    old_data   = *get<T>();
+          auto& new_list   = getComponentList<T>(value);
+          auto  new_handle = new_list.add(*this);
+          T&    new_data   = new_list.find(new_handle);
+
+          new_data = std::move(old_data);
+
+          remove<T>();
+
+          handle.handle    = new_handle;
+          handle.is_active = value;
+        }
+      }
+      else
+      {
+        // TODO(SR): Error?
+      }
+    }
+
+    template<typename T>
     void remove()
     {
       auto& handle = m_ComponentHandles.get<T>();
 
-      if (handle.isValid())
+      if (handle.handle.isValid())
       {
-        getComponentList<T>().remove(handle);
-        handle = {};
+        getComponentList<T>(handle.is_active).remove(handle.handle);
+        handle.handle    = {};
+        handle.is_active = false;
+      }
+      else
+      {
+        // TODO(SR): Error?
       }
     }
+
+    // Meta
 
     void serialize(ISerializer& serializer);
 
@@ -121,15 +173,28 @@ namespace bifrost
 
    private:
     const BifrostTransform& metaGetTransform() const { return transform(); }
-    void                    metaSetTransform(const BifrostTransform& value)
+    // ReSharper disable once CppMemberFunctionMayBeConst
+    void metaSetTransform(const BifrostTransform& value)
     {
       bfTransform_copyFrom(&transform(), &value);
     }
 
     template<typename T>
-    DenseMap<T>& getComponentList() const
+    DenseMap<T>& getComponentList(bool is_active) const
     {
-      return m_OwningScene.m_ActiveComponents.get<T>();
+      return is_active ? m_OwningScene.m_ActiveComponents.get<T>() : m_OwningScene.m_InactiveComponents.get<T>();
+    }
+
+    template<typename T>
+    ComponentHandle<T>& componentHandle()
+    {
+      return m_ComponentHandles.get<T>();
+    }
+
+    template<typename T>
+    const ComponentHandle<T>& componentHandle() const
+    {
+      return m_ComponentHandles.get<T>();
     }
 
     void removeChild(Entity* child);

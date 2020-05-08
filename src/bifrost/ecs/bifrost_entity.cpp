@@ -30,7 +30,7 @@ namespace bifrost
 
   BifrostTransform& Entity::transform() const
   {
-    auto& transform_system = scene().m_TransformSystem;
+    IBifrostTransformSystem& transform_system = scene().m_TransformSystem;
 
     return *transform_system.transformFromID(&transform_system, m_Transform);
   }

@@ -15,6 +15,16 @@
 #if __cplusplus
 extern "C" {
 #endif
+
+#if _MSC_VER
+  //
+  // Macro for having the compiler check for correct printf formatting.
+  //
+#define bfFormatString(t) __format_string t
+#else
+#define bfFormatString(t) t
+#endif
+
 typedef enum BifrostLoggerLevel_t
 {
   BIFROST_LOGGER_LVL_VERBOSE,  // Normal logging
@@ -65,8 +75,8 @@ typedef struct IBifrostDbgLogger_t
 
 // Main API
 void bfLogger_init(const IBifrostDbgLogger* logger);
-void bfLogPush_(const char* file, const char* func, int line, const char* format, ...);
-void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, /*__format_string*/ const char* format, ...);
+void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...);
+void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, bfFormatString(const char*) format, ...);
 #if __cplusplus
 void bfLogPop_(const char* file, const char* func, int line, unsigned amount = 1);
 #else

@@ -58,6 +58,19 @@ namespace bifrost
     }
   }
 
+  void ISerializer::serialize(StringRange key, Quaternionf& value)
+  {
+    if (pushObject(key))
+    {
+      serialize("x", value.x);
+      serialize("y", value.y);
+      serialize("z", value.z);
+      serialize("w", value.w);
+
+      popObject();
+    }
+  }
+
   void ISerializer::serialize(StringRange key, bfColor4f& value)
   {
     if (pushObject(key))
@@ -122,6 +135,7 @@ namespace bifrost
        long double,
        Vec2f,
        Vec3f,
+       Quaternionf,
        bfColor4f,
        bfColor4u,
        String,

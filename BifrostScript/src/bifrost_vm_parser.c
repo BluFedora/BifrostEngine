@@ -22,10 +22,12 @@
 #include "bifrost_vm_function_builder.h"
 #include "bifrost_vm_gc.h"
 #include "bifrost_vm_obj.h"
-#include <assert.h>
+
 #include <bifrost/data_structures/bifrost_array_t.h>
 #include <bifrost/data_structures/bifrost_dynamic_string.h>
 #include <bifrost/script/bifrost_vm.h>
+
+#include <assert.h>
 #include <stdarg.h> /* va_list, va_start, va_copy, va_end */
 #include <stdio.h>
 

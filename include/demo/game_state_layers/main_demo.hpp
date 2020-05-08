@@ -6,10 +6,7 @@
 class MainDemoLayer final : public bifrost::IGameStateLayer
 {
  public:
-  const char* name() override
-  {
-    return "Main Demo";
-  }
+  const char* name() override { return "Main Demo"; }
 
  public:
   ~MainDemoLayer() override = default;

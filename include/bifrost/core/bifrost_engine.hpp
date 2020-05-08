@@ -363,6 +363,12 @@ namespace bifrost
 {
   inline void CoreEngineGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
   {
+    // TEMP CODE BEGIN
+
+
+
+    // TEMP CODE END
+
     if (event.type == EventType::ON_WINDOW_RESIZE)
     {
       const int window_width  = event.window.width;

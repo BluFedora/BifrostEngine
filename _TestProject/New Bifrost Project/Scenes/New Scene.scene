@@ -1,7 +1,7 @@
 {
     "m_Entities" : [
         {
-            "m_Name" : "Test Entity",
+            "m_Name" : "Rhino",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
@@ -39,16 +39,16 @@
                     "z" : 0
                 },
                 "Scale" : {
-                    "y" : 1,
+                    "y" : 2.5,
                     "w" : 0,
-                    "x" : 2.3,
+                    "x" : 2,
                     "z" : 1
                 },
                 "Rotation" : {
-                    "y" : 0,
-                    "w" : 1,
-                    "x" : 0,
-                    "z" : 0
+                    "y" : -0.0345144,
+                    "w" : 0.504305,
+                    "x" : 0.706284,
+                    "z" : 0.495629
                 }
             }
         },
