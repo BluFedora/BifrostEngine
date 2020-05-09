@@ -19,6 +19,8 @@
 
 namespace bifrost
 {
+  class Assets;
+
   class JsonSerializerWriter final : public ISerializer
   {
    private:

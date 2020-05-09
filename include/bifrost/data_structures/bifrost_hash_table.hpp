@@ -48,12 +48,14 @@ namespace bifrost
       template<typename TK, typename TV, std::size_t initial_size, typename Hasher, typename TEqual>
       friend class HashTable;
 
-     private:
+      public: // TODO: Why does this need to be public?
+     // private:
       KeyT      m_Key;
       DataT     m_Value;
       NodeState m_State;
 
-     private:
+
+     // private:
       HashNode() :
         m_Key(),
         m_Value(),

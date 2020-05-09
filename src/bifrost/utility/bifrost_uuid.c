@@ -20,7 +20,7 @@
 
 #if BIFROST_PLATFORM_WINDOWS
 #include <Objbase.h> /* GUID, CoCreateGuid, IIDFromString */
-#elif BIFROST_PLATFORM_LINUX
+#elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
 #include <uuid/uuid.h> /* uuid_generate_random, uuid_unparse, uuid_parse */
 #else
 #error "Unsupported platform for generating guids."
@@ -65,7 +65,7 @@ BifrostUUID bfUUID_generate(void)
   }
 
   return bfUUID_makeEmpty();
-#elif BIFROST_PLATFORM_LINUX
+#elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
   BifrostUUID self;
 
   uuid_t out;
@@ -105,10 +105,10 @@ BifrostUUID bfUUID_fromString(const char source[37])
   }
 
   return bfUUID_makeEmpty();
-#elif BIFROST_PLATFORM_LINUX
+#elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
   uuid_t out;
 
-  if (uuid_parse((char*)source, &out) != -1)
+  if (uuid_parse((char*)source, out) != -1)
   {
     BifrostUUID self;
     memcpy(self.as_number, out, sizeof(self.as_number));

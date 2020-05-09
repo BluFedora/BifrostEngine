@@ -69,7 +69,7 @@ typedef struct BifrostDbgLogInfo_t
 typedef struct IBifrostDbgLogger_t
 {
   void* data;
-  void (*callback)(void* data, const BifrostDbgLogInfo* info);
+  void (*callback)(void* data, BifrostDbgLogInfo* info);
 
 } IBifrostDbgLogger;
 
@@ -86,12 +86,12 @@ void bfLogger_deinit(void);
 
 // clang-format off
 #ifndef bfLogPush
-#define bfLogPush(format, ...)  bfLogPush_(__FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogPrint(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_VERBOSE, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogWarn(format, ...)  bfLogPrint_(BIFROST_LOGGER_LVL_WARNING, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogError(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_ERROR,   __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogFatal(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_FATAL,   __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define bfLogPop(...)           bfLogPop_(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define bfLogPush(format, ...)  bfLogPush_(__FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+#define bfLogPrint(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_VERBOSE, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+#define bfLogWarn(format, ...)  bfLogPrint_(BIFROST_LOGGER_LVL_WARNING, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+#define bfLogError(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_ERROR, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+#define bfLogFatal(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_FATAL, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+#define bfLogPop(...)           bfLogPop_(__FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif /* bfLogPush */
 // clang-format on
 

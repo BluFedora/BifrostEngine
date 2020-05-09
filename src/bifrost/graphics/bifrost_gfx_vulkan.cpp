@@ -8,7 +8,10 @@
 #include "vulkan/bifrost_vulkan_material_pool.h"
 #include "vulkan/bifrost_vulkan_mem_allocator.h"
 
+#include <glfw/glfw3.h>
+
 #include "vulkan/bifrost_vulkan_conversions.h"
+
 #include <algorithm> /* clamp */
 #include <cassert>   /* assert   */
 #include <cmath>
@@ -167,8 +170,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
  void*                      userData)
 {
   bfLogError("validation layer: %s", msg);
-  __debugbreak();
-  // assert(!msg);
+  // __debugbreak();
+  assert(!msg);
   return VK_FALSE;
 }
 
@@ -303,7 +306,7 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
       if (err == VK_ERROR_OUT_OF_DATE_KHR)
       {
         bfGfxContext_onResize(self);
-        std::printf("Surface out of date.... recreating swap chain\n");
+        // std::printf("Surface out of date.... recreating swap chain\n");
       }
 
       return bfFalse;
@@ -313,7 +316,7 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
 
     if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
     {
-      std::printf("Waiting for fence takes too long!");
+      // std::printf("Waiting for fence takes too long!");
       return bfFalse;
     }
 
@@ -597,8 +600,10 @@ namespace
       VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+      VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
 #else
-#error "Invalid platform selected for the Vulkan Rendering Backend."
+ #error "Invalid platform selected for the Vulkan Rendering Backend."
 #endif
 
 #if BIFROST_USE_DEBUG_CALLBACK
@@ -929,6 +934,10 @@ namespace
     return nullptr;
   }
 
+#ifndef CUSTOM_ALLOCATOR
+#define CUSTOM_ALLOCATOR nullptr
+#endif
+
   const char* gfxContextInitSurface(bfGfxContextHandle self)
   {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -948,7 +957,17 @@ namespace
      .dpy = self->params->platform_module,
      .window = self->params->platform_window};
 
-    VkResult err = vkCreateXlibSurfaceKHR(instance, &create_info, CUSTOM_ALLOCATOR, surface);
+    VkResult err = vkCreateXlibSurfaceKHR(self->instance, &create_info, CUSTOM_ALLOCATOR, &self->main_window.surface);
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+    // VkMacOSSurfaceCreateInfoMVK create_info;
+    // create_info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
+    // create_info.pNext = NULL;
+    // create_info.flags = 0x0;
+    // create_info.pView = (void*)self->params->platform_window;
+
+    // VkResult err = vkCreateMacOSSurfaceMVK(self->instance, &create_info, CUSTOM_ALLOCATOR, &self->main_window.surface);
+
+    VkResult err = glfwCreateWindowSurface(self->instance, (GLFWwindow*)self->params->platform_window, CUSTOM_ALLOCATOR, &self->main_window.surface);
 #else  // TODO: Other Platforms
 #error "unsupported platform for Vulkan"
 #endif
@@ -1300,7 +1319,7 @@ namespace
 
     if (err)
     {
-      std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
+      // std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
     }
 
     return true;
@@ -1770,18 +1789,18 @@ BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self)
 
 char* LoadFileIntoMemory(const char* const filename, long* out_size)
 {
-  FILE* f      = std::fopen(filename, "rb");  // NOLINT(android-cloexec-fopen)
+  FILE* f      = fopen(filename, "rb");  // NOLINT(android-cloexec-fopen)
   char* buffer = nullptr;
 
   if (f)
   {
-    std::fseek(f, 0, SEEK_END);
-    long file_size = std::ftell(f);
-    std::fseek(f, 0, SEEK_SET);  //same as rewind(f);
+    fseek(f, 0, SEEK_END);
+    long file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);  //same as rewind(f);
     buffer = static_cast<char*>(std::malloc(file_size + 1));
     if (buffer)
     {
-      std::fread(buffer, sizeof(char), file_size, f);
+      fread(buffer, sizeof(char), file_size, f);
       buffer[file_size] = '\0';
     }
     else
@@ -1790,7 +1809,7 @@ char* LoadFileIntoMemory(const char* const filename, long* out_size)
     }
 
     *out_size = file_size;
-    std::fclose(f);
+    fclose(f);
   }
 
   return buffer;

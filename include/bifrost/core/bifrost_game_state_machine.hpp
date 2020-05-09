@@ -180,7 +180,8 @@ namespace bifrost
 
     ~GameStateMachine();
 
-   private:
+   // TODO: private:
+  public:
     void purgeStates();
     void pushImpl(IGameStateLayer* state);
     void pushAfterImpl(IGameStateLayer& after, IGameStateLayer* state);

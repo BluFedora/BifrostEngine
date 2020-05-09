@@ -71,7 +71,7 @@ namespace bifrost
 
   namespace math
   {
-    static float min(const float a, const float b)
+    static inline float min(const float a, const float b)
     {
       return a < b ? a : b;
     }

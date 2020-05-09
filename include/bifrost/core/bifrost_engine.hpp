@@ -159,7 +159,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   {
     IBifrostDbgLogger logger_config{
      nullptr,
-     [](void* data, const BifrostDbgLogInfo* info) {
+     [](void* data, BifrostDbgLogInfo* info) {
        (void)data;
 
        if (info->level != BIFROST_LOGGER_LVL_POP)

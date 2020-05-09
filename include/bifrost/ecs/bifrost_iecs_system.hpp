@@ -32,6 +32,7 @@ namespace bifrost
    protected:
     IECSSystem();
 
+  public: // TODO: This isn't rigfht...
     // clang-format off
     virtual void onFrameBegin(Engine& engine, float dt)   { (void)engine; (void)dt;    }
     virtual void onFrameUpdate(Engine& engine, float dt)  { (void)engine; (void)dt;    }

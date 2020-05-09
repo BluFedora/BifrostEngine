@@ -96,7 +96,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/imgui/imgui_draw.cpp"
   "lib/include/imgui/imgui_demo.cpp"
   "lib/include/nativefiledialog/nfd_common.c"
-  "lib/include/nativefiledialog/nfd_win.cpp"
 
   # Experiments
   "BifrostExperiments/src/*.cpp"
@@ -163,6 +162,13 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "main.cpp"
  )
 
+if (WIN32)
+  set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "lib/include/nativefiledialog/nfd_win.cpp")
+elseif (APPLE)
+  set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "lib/include/nativefiledialog/nfd_cocoa.m")
+endif()
+
+
 # NOTE(Shareef): Add the libraries we are linking against to the target.
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -217,6 +223,8 @@ if (WIN32)
   set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
 
 elseif (APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK")
+
   set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
   set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
 endif()

@@ -228,7 +228,77 @@ namespace bifrost::meta
     }
   };
 
+template<typename T>
+struct TypeInfo;
+
+#define TYPE_INFO_SPEC(T)                                                                                                        \
+  template<>                                                                                                                     \
+  struct TypeInfo<T>                                                                                                             \
+  {                                                                                                                              \
+    static BaseClassMetaInfo*& get()                                                                                             \
+    {                                                                                                                            \
+      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ClassMetaInfo<T>>(#T); /* NOLINT(bugprone-macro-parentheses) */ \
+      return s_Info;                                                                                                             \
+    }                                                                                                                            \
+  }
+
+  TYPE_INFO_SPEC(std::byte);
+  TYPE_INFO_SPEC(char);
+  TYPE_INFO_SPEC(std::int8_t);
+  TYPE_INFO_SPEC(std::uint8_t);
+  TYPE_INFO_SPEC(std::int16_t);
+  TYPE_INFO_SPEC(std::uint16_t);
+  TYPE_INFO_SPEC(std::int32_t);
+  TYPE_INFO_SPEC(std::uint32_t);
+  TYPE_INFO_SPEC(std::int64_t);
+  TYPE_INFO_SPEC(std::uint64_t);
+  TYPE_INFO_SPEC(float);
+  TYPE_INFO_SPEC(double);
+  TYPE_INFO_SPEC(long double);
+  TYPE_INFO_SPEC(void*);
+#undef TYPE_INFO_SPEC
+
   template<typename T>
+  struct TypeInfo<const T> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<volatile T> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const volatile T> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<T*> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const T*> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const volatile T*> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<Array<T>>
+  {
+    static BaseClassMetaInfo* get()
+    {
+      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ArrayClassMetaInfo<T>>();
+      return s_Info;
+    }
+  };
+
+template<typename T>
   struct TypeInfo
   {
     static BaseClassMetaInfo*& get()
@@ -284,74 +354,6 @@ namespace bifrost::meta
       return s_Info;
     }
   };
-
-#define TYPE_INFO_SPEC(T)                                                                                                        \
-  template<>                                                                                                                     \
-  struct TypeInfo<T>                                                                                                             \
-  {                                                                                                                              \
-    static BaseClassMetaInfo*& get()                                                                                             \
-    {                                                                                                                            \
-      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ClassMetaInfo<T>>(#T); /* NOLINT(bugprone-macro-parentheses) */ \
-      return s_Info;                                                                                                             \
-    }                                                                                                                            \
-  }
-
-  TYPE_INFO_SPEC(std::byte);
-  TYPE_INFO_SPEC(char);
-  TYPE_INFO_SPEC(std::int8_t);
-  TYPE_INFO_SPEC(std::uint8_t);
-  TYPE_INFO_SPEC(std::int16_t);
-  TYPE_INFO_SPEC(std::uint16_t);
-  TYPE_INFO_SPEC(std::int32_t);
-  TYPE_INFO_SPEC(std::uint32_t);
-  TYPE_INFO_SPEC(std::int64_t);
-  TYPE_INFO_SPEC(std::uint64_t);
-  TYPE_INFO_SPEC(float);
-  TYPE_INFO_SPEC(double);
-  TYPE_INFO_SPEC(long double);
-  TYPE_INFO_SPEC(void*);
-
-  template<typename T>
-  struct TypeInfo<const T> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<volatile T> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const volatile T> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<T*> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const T*> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const volatile T*> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<Array<T>>
-  {
-    static BaseClassMetaInfo* get()
-    {
-      static BaseClassMetaInfo* s_Info = gRttiMemory().allocateT<ArrayClassMetaInfo<T>>();
-      return s_Info;
-    }
-  };
-
-#undef TYPE_INFO_SPEC
 
   template<typename MemberConcept>
   PropertyMetaInfo<MemberConcept>::PropertyMetaInfo(const MemberConcept& impl) :

@@ -95,8 +95,8 @@ namespace bifrost
 
     DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path)
     {
-      char        null_terminated_path[MAX_PATH] = {'\0'};
-      std::size_t null_terminated_path_length    = std::min(path.length(), bfCArraySize(null_terminated_path));
+      char        null_terminated_path[MAX_LENGTH] = {'\0'};
+      std::size_t null_terminated_path_length      = std::min(path.length(), bfCArraySize(null_terminated_path));
 
       std::strncpy(null_terminated_path, path.bgn, null_terminated_path_length);
       null_terminated_path[null_terminated_path_length++] = '\\';
@@ -112,15 +112,21 @@ namespace bifrost
         return nullptr;
       }
 #else
-      DIR* const     file_handle = opendir(null_terminated_path);
+      DIR* const file_handle = opendir(null_terminated_path);
 
       if (!file_handle)
       {
         return nullptr;
       }
 
-      struct dirent* const = readdir(file_handle);
+      struct dirent* const out_data = readdir(file_handle);
 
+      // Empty Directory.
+      if (!out_data)
+      {
+        closedir(file_handle);
+        return nullptr;
+      }
 #endif
 
       DirectoryEntry* const entry = memory.allocateT<DirectoryEntry>();
@@ -134,7 +140,11 @@ namespace bifrost
 
     bool isDirectory(const DirectoryEntry* entry)
     {
+#if BIFROST_PLATFORM_WINDOWS
       return entry->out_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+#else
+      return entry->out_data->d_type == DT_DIR;
+#endif
     }
 
     bool isFile(const DirectoryEntry* entry)
@@ -144,17 +154,31 @@ namespace bifrost
 
     const char* entryFilename(const DirectoryEntry* entry)
     {
+#if BIFROST_PLATFORM_WINDOWS
       return entry->out_data.cFileName;
+#else
+      return entry->out_data->d_name;
+#endif
     }
 
     bool readNextEntry(DirectoryEntry* entry)
     {
+#if BIFROST_PLATFORM_WINDOWS
       return ::FindNextFileA(entry->file_handle, &entry->out_data) != 0;
+#else
+      entry->out_data = readdir(entry->file_handle);
+      return entry->out_data != nullptr;
+#endif
     }
 
     void closeDirectory(DirectoryEntry* entry)
     {
+#if BIFROST_PLATFORM_WINDOWS
       ::FindClose(entry->file_handle);
+#else
+      closedir(entry->file_handle);
+#endif
+
       entry->memory->deallocateT(entry);
     }
   }  // namespace path

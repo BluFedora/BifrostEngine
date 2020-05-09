@@ -16,9 +16,16 @@
 #include <iostream>
 #include <utility>
 
+#if BIFROST_PLATFORM_WINDOWS
 #define GLFW_EXPOSE_NATIVE_WIN32
+#elif BIFROST_PLATFORM_MACOS
+// #define GLFW_EXPOSE_NATIVE_COCOA
+#endif
+
 #include <glfw/glfw3native.h>
+
 #undef GLFW_EXPOSE_NATIVE_WIN32
+#undef GLFW_EXPOSE_NATIVE_COCOA
 
 struct TestClass final
 {
@@ -262,8 +269,10 @@ static void Test2DTransform()
   {
     if (points0[i] != points1[i])
     {
+#if BIFROST_PLATFORM_WINDOWS
       // This test failed.
       __debugbreak();
+#endif
     }
   }
 }
@@ -342,8 +351,13 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       {
        argv[0],
        0,
+#if BIFROST_PLATFORM_WINDOWS
        GetModuleHandle(nullptr),
        glfwGetWin32Window(window.handle()),
+#elif BIFROST_PLATFORM_MACOS
+      nullptr,
+      window.handle(),
+#endif
       },
       INITIAL_WINDOW_SIZE[0],
       INITIAL_WINDOW_SIZE[1],

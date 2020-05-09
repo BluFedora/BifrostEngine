@@ -97,8 +97,7 @@ constexpr
 #if __cplusplus
 constexpr
 #endif
- static bfStringRange
- bfMakeStringRangeC(const char* str)
+ static inline bfStringRange bfMakeStringRangeC(const char* str)
 {
   const char* end = str;
 

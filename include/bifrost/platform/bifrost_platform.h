@@ -1,6 +1,8 @@
 #ifndef BIFORST_PLATFORM_H
 #define BIFORST_PLATFORM_H
 
+// https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
+
 /* clang-format off */
 #ifndef PLATFORM_WIN32
 #define BIFROST_PLATFORM_WIN32         0
@@ -17,7 +19,7 @@
 
   #undef BIFROST_PLATFORM_WINDOWS
   #define BIFROST_PLATFORM_WINDOWS 1
-  
+
   #undef BIFROST_PLATFORM_WIN32
   #define BIFROST_PLATFORM_WIN32 1
 

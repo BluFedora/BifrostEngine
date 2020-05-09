@@ -1435,7 +1435,7 @@ namespace bifrost::vk
 
   std::uint64_t hash(const bfDescriptorSetLayoutInfo& parent, const bfDescriptorSetInfo* desc_set_info)
   {
-    std::uint64_t self = std::hash<std::uint32_t>{}(desc_set_info->num_bindings);
+    std::uint64_t self = desc_set_info->num_bindings;
 
     for (uint32_t i = 0; i < desc_set_info->num_bindings; ++i)
     {

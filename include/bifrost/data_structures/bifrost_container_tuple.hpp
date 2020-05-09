@@ -86,9 +86,10 @@ namespace bifrost
     ~ContainerTuple()
     {
       meta::for_each_template<Args...>([this](auto t) {
-        using T = bfForEachTemplateT(t);
+        using T             = bfForEachTemplateT(t);
+        using ContainerType = TContainer<T>;
 
-        this->get<T>().~TContainer<T>();
+        this->get<T>().~ContainerType();
       });
     }
 

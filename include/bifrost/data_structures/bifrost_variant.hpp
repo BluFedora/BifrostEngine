@@ -419,7 +419,7 @@ namespace bifrost
     template<typename FVisitor, typename TVariant, typename T, typename... Ts>
     static auto visit_helper(FVisitor&& visitor, TVariant& variant) -> decltype(visitor(variant.template as<T>()))
     {
-      using ReturnType = decltype(visitor(variant.template as<T>()));
+      // using ReturnType = decltype(visitor(variant.template as<T>()));
 
       if constexpr (std::is_invocable_v<FVisitor, T>)
       {

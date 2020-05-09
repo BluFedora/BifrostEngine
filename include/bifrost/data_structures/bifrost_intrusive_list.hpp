@@ -206,9 +206,10 @@ namespace bifrost
   template<typename T>
   class List : private bfNonCopyMoveable<List<T>>
   {
-   public:
+  private:
     struct Node;
 
+  public:
     class iterator final
     {
       friend class List<T>;

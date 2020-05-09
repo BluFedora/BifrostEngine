@@ -125,8 +125,8 @@ namespace bifrost
     }
 
     // TODO(Shareef): Should probably add a Random Module to Bifrost.
-    std::default_random_engine                  rand_engine{unsigned(std::chrono::system_clock::now().time_since_epoch().count())};
-    const std::uniform_real_distribution<float> rand_distribution{0.0f, 1.0f};
+    std::default_random_engine            rand_engine{unsigned(std::chrono::system_clock::now().time_since_epoch().count())};
+    std::uniform_real_distribution<float> rand_distribution{0.0f, 1.0f};
 
     // kernel data init.
     {

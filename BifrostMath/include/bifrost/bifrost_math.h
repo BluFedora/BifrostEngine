@@ -32,12 +32,12 @@ typedef struct bfColor4u_t
 
 } bfColor4u;
 
-static uint32_t bfColor4u_toUint32(bfColor4u color)
+static inline uint32_t bfColor4u_toUint32(bfColor4u color)
 {
   return (color.r << 0) | (color.g << 8) | (color.b << 16) | (color.a << 24);
 }
 
-static bfColor4u bfColor4u_fromUint32(uint32_t color)
+static inline bfColor4u bfColor4u_fromUint32(uint32_t color)
 {
   bfColor4u ret;
 

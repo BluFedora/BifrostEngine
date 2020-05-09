@@ -57,6 +57,12 @@ namespace bifrost::json
     {
     }
 
+    template<std::size_t N>
+    Value(const char (&data_in)[N]) noexcept :
+      Base_t(String(data_in))
+    {
+    }
+
     Value(detail::ObjectInitializer&& values);
     Value(detail::ArrayInitializer&& values);
     Value(const char* value);

@@ -34,6 +34,7 @@ namespace bifrost
    protected:
     IGameStateLayer();
 
+  public:// TODO THis isn't right.
     virtual void onCreate(BifrostEngine& engine);
     virtual void onLoad(BifrostEngine& engine);
     virtual void onEvent(BifrostEngine& engine, Event& event);

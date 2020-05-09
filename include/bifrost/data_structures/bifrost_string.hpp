@@ -18,6 +18,7 @@
 #include <cstddef>   /* size_t        */
 #include <cstring>   /* strncmp       */
 #include <stdexcept> /* runtime_error */
+#include <limits> // numeric_limits
 
 namespace bifrost
 {

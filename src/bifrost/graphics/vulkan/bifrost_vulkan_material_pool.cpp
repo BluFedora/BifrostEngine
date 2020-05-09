@@ -64,6 +64,11 @@ BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* const pa
   return self;
 }
 
+static inline uint32_t bfMax(uint32_t a, uint32_t b)
+{
+  return a < b ? b : a;
+}
+
 void MaterialPool_alloc(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set)
 {
   bfShaderProgramHandle      shader = desc_set->shader_program;
@@ -85,8 +90,8 @@ void MaterialPool_alloc(BifrostDescriptorPool* const self, bfDescriptorSetHandle
   {
     MaterialPoolCreateParams params;
     params.logical_device        = self->super.logical_device;
-    params.num_textures_per_link = max(info->num_image_samplers, self->super.num_textures_per_link);
-    params.num_uniforms_per_link = max(info->num_uniforms, self->super.num_uniforms_per_link);
+    params.num_textures_per_link = bfMax(info->num_image_samplers, self->super.num_textures_per_link);
+    params.num_uniforms_per_link = bfMax(info->num_uniforms, self->super.num_uniforms_per_link);
     params.num_descsets_per_link = self->super.num_descsets_per_link;
 
     self->head = link = create_link(&params, link);

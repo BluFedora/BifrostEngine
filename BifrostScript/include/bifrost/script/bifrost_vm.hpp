@@ -162,8 +162,7 @@ namespace bifrost
     template<typename F>
     void vmCallImpl(BifrostVM* vm, F&& fn)
     {
-      using fn_traits   = meta::function_traits<decltype(fn)>;
-      using return_type = typename fn_traits::return_type;
+      using fn_traits = meta::function_traits<decltype(fn)>;
 
       typename fn_traits::tuple_type arguments;
       generateArgs(arguments, vm);

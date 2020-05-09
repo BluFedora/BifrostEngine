@@ -455,7 +455,7 @@ namespace bifrost
 
   namespace vec
   {
-    static Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
+    static inline Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
     {
       Vector3f result;
       Vec3f_cross(&a, &b, &result);

@@ -18,6 +18,7 @@
 #include <cstring>     /* memcpy                       */
 #include <type_traits> /* is_convertible, enable_if_t  */
 #include <utility>     /* forward, move                */
+#include <new>         /* to use placement new         */
 
 #ifndef BIFROST_MEMORY_DEBUG_WIPE_MEMORY
 // NOTE(Shareef):
@@ -151,7 +152,12 @@ namespace bifrost
     {
       void* const mem_block = allocate(sizeof(T));
 
-      return mem_block ? new (mem_block) T(std::forward<decltype(args)>(args)...) : nullptr;
+      if (mem_block)
+      {
+        return new(mem_block) T(std::forward<decltype(args)>(args)...);
+      }
+
+      return nullptr;
     }
 
     /*!
