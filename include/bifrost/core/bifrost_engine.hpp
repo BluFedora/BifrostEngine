@@ -159,7 +159,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   {
     IBifrostDbgLogger logger_config{
      nullptr,
-     [](void* data, BifrostDbgLogInfo* info) {
+     [](void* data, BifrostDbgLogInfo* info, va_list args) {
        (void)data;
 
        if (info->level != BIFROST_LOGGER_LVL_POP)
@@ -173,7 +173,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
          std::printf("%*c", TAB_SIZE * info->indent_level, ' ');
 
 #endif
-         std::vprintf(info->format, info->args);
+         std::vprintf(info->format, args);
          std::printf("\n");
        }
      }};

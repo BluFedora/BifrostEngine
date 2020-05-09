@@ -62,14 +62,13 @@ typedef struct BifrostDbgLogInfo_t
   int                line;
   unsigned           indent_level;
   const char*        format;
-  va_list            args;
 
 } BifrostDbgLogInfo;
 
 typedef struct IBifrostDbgLogger_t
 {
   void* data;
-  void (*callback)(void* data, BifrostDbgLogInfo* info);
+  void (*callback)(void* data, BifrostDbgLogInfo* info, va_list args);
 
 } IBifrostDbgLogger;
 

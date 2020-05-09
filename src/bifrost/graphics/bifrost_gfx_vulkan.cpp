@@ -26,10 +26,18 @@
 #undef STB_IMAGE_IMPLEMENTATION
 
 #define BIFROST_USE_DEBUG_CALLBACK 1
+
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
+#define BIFROST_USE_VALIDATION_LAYERS 0
+#else
 #define BIFROST_USE_VALIDATION_LAYERS 1
+#endif
+
 #define BIFROST_ENGINE_NAME "Bifrost Engine"
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
+
+
 
 // Memory Functions (To Be Replaced)
 

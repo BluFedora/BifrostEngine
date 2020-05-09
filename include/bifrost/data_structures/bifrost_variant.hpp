@@ -421,7 +421,7 @@ namespace bifrost
     {
       // using ReturnType = decltype(visitor(variant.template as<T>()));
 
-      if constexpr (std::is_invocable_v<FVisitor, T>)
+      if constexpr (std::is_invocable_v<FVisitor, T> || std::is_invocable_v<FVisitor, T&> || std::is_invocable_v<FVisitor, const T&>)
       {
         if (variant.template is<T>())
         {

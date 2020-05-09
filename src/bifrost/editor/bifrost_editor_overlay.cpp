@@ -1381,7 +1381,8 @@ namespace bifrost::editor
 
   bool EditorOverlay::openProjectDialog()
   {
-    const nfdchar_t* filter = "project.json";
+    // const nfdchar_t* filter = "project.json";
+    const nfdchar_t* filter = nullptr;
 
     nfdchar_t*        out_path = nullptr;
     const nfdresult_t result   = NFD_OpenDialog(filter, nullptr, &out_path);

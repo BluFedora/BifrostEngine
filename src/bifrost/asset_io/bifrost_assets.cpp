@@ -99,8 +99,12 @@ namespace bifrost
       std::size_t null_terminated_path_length      = std::min(path.length(), bfCArraySize(null_terminated_path));
 
       std::strncpy(null_terminated_path, path.bgn, null_terminated_path_length);
+
+#if BIFROST_PLATFORM_WINDOWS
       null_terminated_path[null_terminated_path_length++] = '\\';
       null_terminated_path[null_terminated_path_length++] = '*';
+#endif
+      
       null_terminated_path[null_terminated_path_length]   = '\0';
 
 #if BIFROST_PLATFORM_WINDOWS

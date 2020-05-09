@@ -39,7 +39,8 @@ namespace bifrost
 
   const String& GLSLCompiler::load(const String& filename)
   {
-    const static std::regex           k_IncludeRegex(R"(^(#include)(?:.|)+("|'|<)(\S+)(>|"|');?)", std::regex_constants::icase | std::regex_constants::optimize);
+    const static std::regex           k_IncludeRegex(R"(^(#include)(?:.|)+("|'|<)(\S+)(>|"|');?((.|\n|\r)*)?)",
+                                                     std::regex::ECMAScript | std::regex_constants::icase | std::regex_constants::optimize);
     const static std::sregex_iterator k_IncludeRegexSentinel;
 
     for (const String* const file : m_CurrentlyCompiling)
@@ -69,7 +70,9 @@ namespace bifrost
 
       while (std::getline(file, line))
       {
-        if (line.length() > 0 && line[0] == '#' && std::regex_match(line, k_IncludeRegex))
+        const bool is_potential_include = line.length() > 0 && line[0] == '#';
+
+        if (is_potential_include && std::regex_match(line, k_IncludeRegex))
         {
           for (std::sregex_iterator next(line.begin(), line.end(), k_IncludeRegex); next != k_IncludeRegexSentinel; ++next)
           {

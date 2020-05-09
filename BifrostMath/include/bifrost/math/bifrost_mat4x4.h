@@ -13,7 +13,8 @@
 #define MATRIX_COL_MAJOR !MATRIX_ROW_MAJOR
 
 #if defined(__SSE__)
-#define MATRIX_SSE 1
+// TODO: #define MATRIX_SSE 1
+#define MATRIX_SSE 0
 #else
 #define MATRIX_SSE 0
 #endif

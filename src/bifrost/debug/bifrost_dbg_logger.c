@@ -159,8 +159,6 @@ static void callCallback(BifrostLoggerLevel level, const char* file, const char*
   log_info.line         = line;
   log_info.indent_level = s_IndentLevel;
   log_info.format       = format;
-  // log_info.args         = args;
-  memcpy(&log_info.args, &args, sizeof(va_list));
 
-  s_ILogger.callback(s_ILogger.data, &log_info);
+  s_ILogger.callback(s_ILogger.data, &log_info, args);
 }

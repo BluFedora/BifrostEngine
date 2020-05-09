@@ -176,7 +176,7 @@ namespace bifrost
 
     // Noise Texture Init
     {
-      float             noise_texture_data[k_GfxSSAONoiseTextureNumElements * 3];
+      float             noise_texture_data[k_GfxSSAONoiseTextureNumElements * 4];
       const std::size_t noise_texture_data_size = bfCArraySize(noise_texture_data);
       std::size_t       i                       = 0;
 
@@ -185,9 +185,10 @@ namespace bifrost
         noise_texture_data[i++] = rand_distribution(rand_engine) * 2.0f - 1.0f;  // [-1.0f, +1.0f]
         noise_texture_data[i++] = rand_distribution(rand_engine) * 2.0f - 1.0f;  // [-1.0f, +1.0f]
         noise_texture_data[i++] = 0.0f;
+        noise_texture_data[i++] = 0.0f;
       }
 
-      auto noise_tex_params = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R32G32B32_SFLOAT, k_GfxSSAONoiseTextureDim, k_GfxSSAONoiseTextureDim);
+      auto noise_tex_params = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT, k_GfxSSAONoiseTextureDim, k_GfxSSAONoiseTextureDim);
 
       noise_tex_params.generate_mipmaps = false;
       noise_tex_params.flags |= BIFROST_TEX_IS_LINEAR;
