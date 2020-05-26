@@ -12,8 +12,6 @@ cmake_minimum_required(VERSION 3.8)
   # NOTE(Shareef): This sets project's name.
 project(BifrostEngine VERSION 1.0)
 
-# add_subdirectory(lib/include/glslang)
-
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)
 set(BIFROST_ENGINE_VERSION_MINOR 0)
@@ -30,17 +28,9 @@ configure_file(
 )
 include_directories(${PROJECT_BINARY_DIR})
 
+# NOTE(Shareef): Print out some CMake Info.
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
 
-# set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_GENERATOR_PLATFORM x64)
-
-  # NOTE(Shareef): Sets the output directory to be in a reasonable place.
-set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin/)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
-
-# NOTE(Shareef): Print out some CMake Info.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
     message(STATUS "We are building a DEBUG 64bit build...")
@@ -54,6 +44,14 @@ else()
    message(STATUS "We are building a RELEASE build...")
   endif()
 endif()
+
+# set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_GENERATOR_PLATFORM x64)
+
+  # NOTE(Shareef): Sets the output directory to be in a reasonable place.
+set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin/)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
   # GCC / Clang
   #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
@@ -288,9 +286,9 @@ else()
     # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/fmod64_vc.lib")
     # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN64}/glfw3dll.lib")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/lua53.lib")
-   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/fmod_vc.lib")
-   # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/lua53.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/fmod_vc.lib")
+    # target_link_libraries(Project_Gemini "${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.lib")
   endif()
 endif()
 

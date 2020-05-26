@@ -233,7 +233,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   void update(float delta_time)
   {
     m_DebugRenderer.update(delta_time);
-    m_Renderer.m_GlobalTime += delta_time;
+    m_Renderer.m_GlobalTime += delta_time;  // TODO: Not very encapsolated.
 
     for (auto& system : m_Systems)
     {
@@ -259,22 +259,18 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     for (auto& system : m_Systems)
     {
-      if (!system->isEnabled())
+      if (system->isEnabled())
       {
-        continue;
+        system->onFrameUpdate(*this, delta_time);
       }
-
-      system->onFrameUpdate(*this, delta_time);
     }
 
     for (auto& system : m_Systems)
     {
-      if (!system->isEnabled())
+      if (system->isEnabled())
       {
-        continue;
+        system->onFrameEnd(*this, delta_time);
       }
-
-      system->onFrameEnd(*this, delta_time);
     }
   }
 
@@ -350,7 +346,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     for (auto& system : m_Systems)
     {
-      // system->onFrameEnd();
+      // system->onDeinit();
       m_MainMemory.deallocateT(system);
     }
 
@@ -363,24 +359,16 @@ namespace bifrost
 {
   inline void CoreEngineGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
   {
-    // TEMP CODE BEGIN
-
-
-
-    // TEMP CODE END
-
     if (event.type == EventType::ON_WINDOW_RESIZE)
     {
       const int window_width  = event.window.width;
       const int window_height = event.window.height;
 
-      bfLogPrint("Window Resized To: (%i, %i)", window_width, window_height);
-
-      engine.renderer().resize(window_width, window_height);
       Camera_onResize(&engine.Camera, window_width, window_height);
+      engine.renderer().resize(window_width, window_height);
     }
 
-    // This is the bottom most layer so why not just accept the event.
+    // This is the bottom most layer so just accept the event.
     event.accept();
   }
 }  // namespace bifrost

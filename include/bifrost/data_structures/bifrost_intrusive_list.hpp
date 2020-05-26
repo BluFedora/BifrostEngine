@@ -206,10 +206,10 @@ namespace bifrost
   template<typename T>
   class List : private bfNonCopyMoveable<List<T>>
   {
-  private:
+   private:
     struct Node;
 
-  public:
+   public:
     class iterator final
     {
       friend class List<T>;
@@ -366,8 +366,14 @@ namespace bifrost
 
     iterator erase(iterator pos)
     {
-      pos.m_Current->cast()->~T();
-      return iterator(m_InternalList.erase(pos.m_Current));
+      Node* const node = &*pos.m_Current;
+
+      const auto it = iterator(m_InternalList.erase(pos.m_Current));
+
+      node->cast()->~T();
+      m_Memory.deallocateT(node);
+
+      return it;
     }
 
     void popBack()
@@ -382,12 +388,10 @@ namespace bifrost
 
     void clear()
     {
-      for (Node& node : m_InternalList)
+      while (!isEmpty())
       {
-        node.cast()->~T();
+        erase(begin());
       }
-
-      m_InternalList.clear();
     }
 
     ~List()

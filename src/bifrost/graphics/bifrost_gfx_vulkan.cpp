@@ -37,8 +37,6 @@
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
 
-
-
 // Memory Functions (To Be Replaced)
 
 template<typename T>
@@ -547,9 +545,9 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 
     const auto SetupStencilState = [&list](BifrostStencilFace face) {
       bfGfxCmdList_setStencilFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
-      bfGfxCmdList_setStencilPassOp(list, face, BIFROST_STENCIL_OP_KEEP);
+      bfGfxCmdList_setStencilPassOp(list, face, BIFROST_STENCIL_OP_REPLACE);
       bfGfxCmdList_setStencilDepthFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
-      bfGfxCmdList_setStencilCompareOp(list, face, BIFROST_STENCIL_OP_KEEP);
+      bfGfxCmdList_setStencilCompareOp(list, face, BIFROST_COMPARE_OP_ALWAYS);
       bfGfxCmdList_setStencilCompareMask(list, face, 0xFF);
       bfGfxCmdList_setStencilWriteMask(list, face, 0xFF);
       bfGfxCmdList_setStencilReference(list, face, 0xFF);
@@ -611,7 +609,7 @@ namespace
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
       VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
 #else
- #error "Invalid platform selected for the Vulkan Rendering Backend."
+#error "Invalid platform selected for the Vulkan Rendering Backend."
 #endif
 
 #if BIFROST_USE_DEBUG_CALLBACK

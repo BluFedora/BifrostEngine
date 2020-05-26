@@ -271,7 +271,8 @@ static void Test2DTransform()
     {
 #if BIFROST_PLATFORM_WINDOWS
       // This test failed.
-      __debugbreak();
+      // __debugbreak();
+        DebugBreak();
 #endif
     }
   }
@@ -355,8 +356,10 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
        GetModuleHandle(nullptr),
        glfwGetWin32Window(window.handle()),
 #elif BIFROST_PLATFORM_MACOS
-      nullptr,
-      window.handle(),
+       nullptr,
+       window.handle(),
+#else
+#error Unsupported platform.
 #endif
       },
       INITIAL_WINDOW_SIZE[0],
@@ -372,7 +375,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     VM& vm = engine.scripting();
 
-    const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<bf::Camera>("Camera", bf::vmMakeCtorBinding<bf::Camera>());
+    const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<Camera>("Camera", bf::vmMakeCtorBinding<Camera>());
 
     vm.stackResize(5);
 
@@ -380,7 +383,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     vm.moduleMake(0, "bifrost");
     vm.stackStore(0, camera_clz_bindings);
     vm.stackLoadVariable(1, 0, "Camera");
-    vm.stackStore(1, "update", &bf::Camera::update);
+    vm.stackStore(1, "update", &Camera::update);
 
     const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
      "TestClass",

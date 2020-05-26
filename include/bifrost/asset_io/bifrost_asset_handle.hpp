@@ -4,6 +4,7 @@
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *  Asset handle definitions.
+ *  // TODO: Make this header leaner
  *
  *  Types of Assets:
  *    > Shader Module
@@ -34,6 +35,8 @@
 #include "bifrost/utility/bifrost_uuid.h"                   /* BifrostUUID          */
 
 #include <cstdint> /* uint16_t    */
+
+#include "bifrost/math/bifrost_rect2.hpp"  // TODO: Find a way to get this to be fwd declared.
 
 class BifrostEngine;
 
@@ -132,6 +135,7 @@ namespace bifrost
     }
     virtual bool pushObject(StringRange key)                      = 0;
     virtual bool pushArray(StringRange key, std::size_t& size)    = 0;
+    virtual void serialize(StringRange key, bool& value)          = 0;
     virtual void serialize(StringRange key, std::int8_t& value)   = 0;
     virtual void serialize(StringRange key, std::uint8_t& value)  = 0;
     virtual void serialize(StringRange key, std::int16_t& value)  = 0;
@@ -159,6 +163,10 @@ namespace bifrost
     virtual void popObject()   = 0;
     virtual void popArray()    = 0;
     virtual void endDocument() = 0;
+
+    // Helpers
+    void serialize(StringRange key, Vector2f& value);
+    void serialize(StringRange key, Vector3f& value);
 
     template<typename T>
     void serializeT(StringRange key, T* value)

@@ -24,6 +24,17 @@ namespace bifrost
     SPOT,
   };
 
+  template<>
+  inline const auto& meta::Meta::registerMembers<LightType>()
+  {
+    static const auto member_ptrs = members(
+     enum_info<LightType>("LightType"),
+     enum_element("DIRECTIONAL", LightType::DIRECTIONAL),
+     enum_element("POINT", LightType::POINT),
+     enum_element("SPOT", LightType::SPOT));
+    return member_ptrs;
+  }
+
   class Light final : public Component<Light>
   {
     friend class StandardRenderer;
@@ -34,7 +45,7 @@ namespace bifrost
       float inv_light_radius_pow2;  // (1.0 / radius)^2
       float spot_scale;             // 1.0 / max(cos(inner_angle) - cos(outer_angle), k_Epsilon)
       float spot_offset;            // -cos(outer_angle) * spot_scale
-      bool  is_dirty;
+      bool  is_dirty;               //
     };
 
    private:
@@ -44,14 +55,14 @@ namespace bifrost
     float             m_Radius;          //!< For POINT and SPOT, must be positive.
     float             m_InnerAngleRad;   //!< For SPOT, must be less than [Light::m_OuterAngleRad].
     float             m_OuterAngleRad;   //!< For SPOT, must be greater than [Light::m_InnerAngleRad].
-    LightGPUDataCache m_GPUCache;        //!< For POINT and SPOT, A cache of soem calulations needed for shading.
+    LightGPUDataCache m_GPUCache;        //!< For POINT and SPOT, A cache of some calulations needed for shading.
 
    public:
     explicit Light(Entity& owner) :
       Base(owner),
       m_Type{LightType::POINT},
       m_ColorIntensity{1.0f, 1.0f, 1.0f, 5.0f},
-      m_Direction{1.0f, 0.0f, 0.0f},
+      m_Direction{0.0f, -1.0f, 0.0f},
       m_Radius{2.0f},
       m_InnerAngleRad{k_PI * 0.5f},
       m_OuterAngleRad{k_PI},
@@ -63,8 +74,12 @@ namespace bifrost
     void             setType(LightType type) { m_Type = type; }
     const bfColor4f& colorIntensity() const { return m_ColorIntensity; }
     void             setColor(const bfColor4f& value) { m_ColorIntensity = value; }
-
-    const Vector3f& direction() const { return m_Direction; }
+    const Vector3f&  direction() const { return m_Direction; }
+    void             setDirection(const Vector3f& value)
+    {
+      m_Direction = value;
+      Vec3f_normalize(&m_Direction);
+     }
 
     float radius() const { return m_Radius; }
     void  setRadius(float value)
@@ -75,21 +90,10 @@ namespace bifrost
 
     float innerAngleRad() const { return m_InnerAngleRad; }
     float outerAngleRad() const { return m_OuterAngleRad; }
-    float innerAngleDeg() const { return m_InnerAngleRad * k_RadToDeg; }
-    float outerAngleDeg() const { return m_OuterAngleRad * k_RadToDeg; }
+    float innerAngleDeg() const { return innerAngleRad() * k_RadToDeg; }
+    float outerAngleDeg() const { return outerAngleRad() * k_RadToDeg; }
   };
 }  // namespace bifrost
-
-template<>
-inline const auto& ::bifrost::meta::Meta::registerMembers<bifrost::LightType>()
-{
-  static const auto member_ptrs = members(
-   enum_info<LightType>("LightType"),
-   enum_element("DIRECTIONAL", LightType::DIRECTIONAL),
-   enum_element("POINT", LightType::POINT),
-   enum_element("SPOT", LightType::SPOT));
-  return member_ptrs;
-}
 
 BIFROST_META_REGISTER(bifrost::Light)
 {
@@ -98,6 +102,7 @@ BIFROST_META_REGISTER(bifrost::Light)
      class_info<Light>("Light"),                                              //
      property("m_Type", &Light::type, &Light::setType),                       //
      property("m_ColorIntensity", &Light::colorIntensity, &Light::setColor),  //
+     property("m_Direction", &Light::direction, &Light::setDirection),        //
      property("m_Radius", &Light::radius, &Light::setRadius)                  //
     )
   BIFROST_META_END()

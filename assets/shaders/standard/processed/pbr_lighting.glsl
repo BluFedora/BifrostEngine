@@ -9,6 +9,8 @@
 //   [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 //   [http://filmicworlds.com/blog/optimizing-ggx-shaders-with-dotlh/]
 //
+//  Requires "camera.ubo.glsl": For the ambient lighting calculation.
+//
 
 #ifndef IS_DIRECTIONAL_LIGHT
 #define IS_DIRECTIONAL_LIGHT 0
@@ -226,7 +228,7 @@ vec3 mainLighting(vec3 radiance, vec3 surface_normal, vec3 albedo, float roughne
 
 vec3 ambientLighting(vec3 albedo, float ao)
 {
-  return vec3(0.03) * albedo * ao;
+  return u_CameraAmbient * albedo * ao;
 }
 
 // reinhard

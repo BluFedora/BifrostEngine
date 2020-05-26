@@ -11,7 +11,7 @@
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
 #ifndef BIFROST_ASSETS_HPP
@@ -22,9 +22,7 @@
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                  */
-
-// TOOD: Make this header leaner
-#include "bifrost_asset_handle.hpp"                       /* AssetHandle<T> */
+#include "bifrost_asset_handle.hpp"                       /* AssetHandle<T>                               */
 
 class BifrostEngine;
 
@@ -35,11 +33,10 @@ namespace bifrost
     class Value;
   }
 
-  using Engine = ::BifrostEngine;
-
   class BaseAssetInfo;
   class BaseAssetHandle;
 
+  using Engine          = BifrostEngine;
   using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
   enum class AssetError : std::uint8_t

@@ -59,6 +59,16 @@ typedef struct CameraModeParams_t
 
 } CameraModeParams;
 
+typedef Vec3f Plane;
+
+typedef struct bfCameraFrustum_t
+{
+  Plane planes[6];
+
+} bfCameraFrustum;
+
+void bfCameraFrustum_set(bfCameraFrustum* self, const Mat4x4* view_proj);
+
 typedef struct BifrostCamera_t
 {
   Vec3f            position;

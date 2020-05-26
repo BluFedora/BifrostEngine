@@ -19,6 +19,8 @@
 #include "bifrost_editor_filesystem.hpp"
 #include "bifrost_editor_inspector.hpp"
 
+#include <memory> /* unique_ptr<T> */
+
 namespace bifrost::editor
 {
   class EditorOverlay;

@@ -17,7 +17,7 @@
 #include "bifrost/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
 #include "bifrost/utility/bifrost_non_copy_move.hpp"    // bfNonCopyMoveable<T>
 
-#include <imgui/imgui.h>
+#include <imgui/imgui.h> /* ImGuiID */
 
 namespace bifrost
 {

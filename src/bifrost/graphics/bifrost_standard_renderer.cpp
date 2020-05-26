@@ -58,9 +58,9 @@ namespace bifrost
     }
 
     // A Brighter ambient background color for editor "Scene View"
-    clear_values[1].color.float32[0] = 0.6f;
-    clear_values[1].color.float32[1] = 0.2f;
-    clear_values[1].color.float32[2] = 0.7f;
+    clear_values[1].color.float32[0] = 1.0f;
+    clear_values[1].color.float32[1] = 1.0f;
+    clear_values[1].color.float32[2] = 1.0f;
 
     clear_values[k_GfxNumGBufferAttachments].depthStencil.depth   = 1.0f;
     clear_values[k_GfxNumGBufferAttachments].depthStencil.stencil = 0;
@@ -99,7 +99,6 @@ namespace bifrost
     for (auto& color_attachment : color_attachments)
     {
       bfGfxDevice_release(device, color_attachment);
-      color_attachment = nullptr;
     }
 
     bfGfxDevice_release(device, depth_attachment);
@@ -107,34 +106,33 @@ namespace bifrost
 
   void SSAOBuffer::init(bfGfxDeviceHandle device, int width, int height)
   {
-    static const float k_KernelSampleScaleStep = 1.0f / float(k_GfxSSAOKernelSize);
-
+    // Create Color Attachments
+    for (auto& color_attachment : color_attachments)
     {
-      for (auto& color_attachment : color_attachments)
-      {
-        color_attachment = gfx::createAttachment(
-         device,
-         bfTextureCreateParams_initColorAttachment(
-          width,
-          height,
-          BIFROST_IMAGE_FORMAT_R8_UNORM,
-          bfTrue,
-          bfFalse),
-         k_SamplerNearestClampToEdge);
-      }
+      color_attachment = gfx::createAttachment(
+       device,
+       bfTextureCreateParams_initColorAttachment(
+        width,
+        height,
+        BIFROST_IMAGE_FORMAT_R8_UNORM,
+        bfTrue,
+        bfFalse),
+       k_SamplerNearestClampToEdge);
     }
 
     // TODO(Shareef): Should probably add a Random Module to Bifrost.
     std::default_random_engine            rand_engine{unsigned(std::chrono::system_clock::now().time_since_epoch().count())};
     std::uniform_real_distribution<float> rand_distribution{0.0f, 1.0f};
 
-    // kernel data init.
+    // Kernel Sample data init
     {
-      SSAOKernelUnifromData kernel{};
-      float                 scale = 0.0f;
+      SSAOKernelUnifromData kernel = {};
+      int                   index  = 0;
 
       for (Vector3f& sample : kernel.u_Kernel)
       {
+        const float scale = float(index) / float(k_GfxSSAOKernelSize);
+
         sample =
          {
           rand_distribution(rand_engine) * 2.0f - 1.0f,  // [-1.0f, +1.0f]
@@ -145,18 +143,17 @@ namespace bifrost
 
         Vec3f_normalize(&sample);
 
-        sample *= rand_distribution(rand_engine) * math::lerp3(0.1f, scale * scale, 1.0f);  // Moves the sample closer to the origin.
+        sample *= math::lerp3(0.1f, scale * scale, 1.0f);  // Moves the sample closer to the origin.
 
-        scale += k_KernelSampleScaleStep;
+        ++index;
       }
 
       kernel.u_SampleRadius = 0.5f;
       kernel.u_SampleBias   = 0.025f;
 
       // TODO: Since (maybe we would want to change SSAOKernelUnifromData::u_SampleRadius) this never changes then this should use staging buffer instead.
-
-      const auto limits = bfGfxDevice_limits(device);
-      const auto size   = bfAlignUpSize(sizeof(SSAOKernelUnifromData), limits.uniform_buffer_offset_alignment);
+      const auto        limits = bfGfxDevice_limits(device);
+      const std::size_t size   = bfAlignUpSize(sizeof(SSAOKernelUnifromData), limits.uniform_buffer_offset_alignment);
 
       const bfBufferCreateParams create_camera_buffer =
        {
@@ -202,7 +199,7 @@ namespace bifrost
     }
 
     {
-      for (auto& clear_value : clear_values)
+      for (BifrostClearValue& clear_value : clear_values)
       {
         clear_value.color.float32[0] = 0.0f;
         clear_value.color.float32[1] = 0.0f;
@@ -381,9 +378,11 @@ namespace bifrost
           buffer_data->u_CameraProjection        = camera.proj_cache;
           buffer_data->u_CameraInvViewProjection = camera.inv_view_proj_cache;
           buffer_data->u_CameraViewProjection    = view_proj;
+          buffer_data->u_CameraView              = camera.view_cache;
           buffer_data->u_CameraForwardAndTime    = camera.forward;
           buffer_data->u_CameraForwardAndTime.w  = m_GlobalTime;
           buffer_data->u_CameraPosition          = camera.position;
+          buffer_data->u_CameraAmbient           = AmbientColor;
 
           m_CameraUniform.flushCurrent(m_FrameInfo);
         }
@@ -764,10 +763,27 @@ namespace bifrost
     bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
 
-    const auto lightingDraw = [this, &camera](auto& shader, auto& buffer) {
+    const auto baseLightingBegin = [this, &camera](auto& shader) {
       bfGfxCmdList_bindProgram(m_MainCmdList, shader);
-
       bindCamera(m_MainCmdList, camera);
+    };
+
+    const auto baseLightingEnd = [this]() {
+      bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
+
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &m_GBuffer.color_attachments[0], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 1, 0, &m_GBuffer.color_attachments[1], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 2, 0, &m_SSAOBuffer.color_attachments[1], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 3, 0, &m_GBuffer.depth_attachment, 1);
+
+      bfGfxCmdList_bindDescriptorSet(m_MainCmdList, k_GfxMaterialSetIndex, &desc_set_textures);
+
+      bfGfxCmdList_draw(m_MainCmdList, 0, 3);
+    };
+
+    const auto lightingDraw = [this, &baseLightingBegin, &baseLightingEnd](auto& shader, auto& buffer) -> void {
+      
+      baseLightingBegin(shader);
 
       {
         buffer.flushCurrent(m_FrameInfo);
@@ -782,38 +798,27 @@ namespace bifrost
         bfGfxCmdList_bindDescriptorSet(m_MainCmdList, k_GfxLightSetIndex, &desc_set_buffer);
       }
 
-      {
-        bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
-
-        bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &m_GBuffer.color_attachments[0], 1);
-        bfDescriptorSetInfo_addTexture(&desc_set_textures, 1, 0, &m_GBuffer.color_attachments[1], 1);
-        bfDescriptorSetInfo_addTexture(&desc_set_textures, 2, 0, &m_SSAOBuffer.color_attachments[1], 1);
-        bfDescriptorSetInfo_addTexture(&desc_set_textures, 3, 0, &m_GBuffer.depth_attachment, 1);
-
-        bfGfxCmdList_bindDescriptorSet(m_MainCmdList, k_GfxMaterialSetIndex, &desc_set_textures);
-      }
-
-      bfGfxCmdList_draw(m_MainCmdList, 0, 3);
+      baseLightingEnd();
     };
 
-    DirectionalLightUniformData* dir_light_buffer   = m_DirectionalLightBuffer.currentElement(m_FrameInfo);
-    PunctualLightUniformData*    point_light_buffer = m_PunctualLightBuffers[0].currentElement(m_FrameInfo);
-    PunctualLightUniformData*    spot_light_buffer  = m_PunctualLightBuffers[1].currentElement(m_FrameInfo);
+    baseLightingBegin(m_AmbientLighting);
+    baseLightingEnd();
 
-    if (dir_light_buffer->u_NumLights)
-    {
-      lightingDraw(m_LightShaders[LightShaders::DIR], m_DirectionalLightBuffer);
-    }
+    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ZERO);
 
-    if (point_light_buffer->u_NumLights)
-    {
-    }
+    lightingDraw(m_LightShaders[LightShaders::DIR], m_DirectionalLightBuffer);
     lightingDraw(m_LightShaders[LightShaders::POINT], m_PunctualLightBuffers[0]);
+    lightingDraw(m_LightShaders[LightShaders::SPOT], m_PunctualLightBuffers[1]);
 
-    if (spot_light_buffer->u_NumLights)
-    {
-      lightingDraw(m_LightShaders[LightShaders::SPOT], m_PunctualLightBuffers[1]);
-    }
+    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ZERO);
+
+    // TODO: Post process pass.
   }
 
   void StandardRenderer::beginScreenPass() const
@@ -851,10 +856,6 @@ namespace bifrost
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
 
     bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_StandardVertexLayout);
-    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_SRC_ALPHA);
-    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
-    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ZERO);
   }
 
   void StandardRenderer::endPass() const
@@ -875,20 +876,23 @@ namespace bifrost
     {
       renderable.destroy(m_GfxDevice);
     }
+    m_RenderablePool.clear();
 
     for (auto resource : m_AutoRelease)
     {
       bfGfxDevice_release(m_GfxDevice, resource);
     }
+    m_AutoRelease.clear();
 
     deinitShaders();
+
+    m_DirectionalLightBuffer.destroy(m_GfxDevice);
 
     for (auto& buffer : m_PunctualLightBuffers)
     {
       buffer.destroy(m_GfxDevice);
     }
 
-    m_DirectionalLightBuffer.destroy(m_GfxDevice);
     m_CameraUniform.destroy(m_GfxDevice);
     m_SSAOBuffer.deinit(m_GfxDevice);
     m_GBuffer.deinit(m_GfxDevice);
@@ -973,18 +977,20 @@ namespace bifrost
 
   void StandardRenderer::initShaders()
   {
-    const auto gbuffer_vert_module     = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.vert.glsl");
-    const auto gbuffer_frag_module     = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.frag.glsl");
-    const auto fullscreen_vert_module  = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/fullscreen_quad.vert.glsl");
-    const auto ssao_frag_module        = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao.frag.glsl");
-    const auto ssao_blur_frag_module   = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao_blur.frag.glsl");
-    const auto dir_light_frag_module   = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/directional_lighting.frag.glsl");
-    const auto point_light_frag_module = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/point_lighting.frag.glsl");
-    const auto spot_light_frag_module  = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/spot_lighting.frag.glsl");
+    const auto gbuffer_vert_module       = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.vert.glsl");
+    const auto gbuffer_frag_module       = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.frag.glsl");
+    const auto fullscreen_vert_module    = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/fullscreen_quad.vert.glsl");
+    const auto ssao_frag_module          = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao.frag.glsl");
+    const auto ssao_blur_frag_module     = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao_blur.frag.glsl");
+    const auto ambient_light_frag_module = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ambient_lighting.frag.glsl");
+    const auto dir_light_frag_module     = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/directional_lighting.frag.glsl");
+    const auto point_light_frag_module   = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/point_lighting.frag.glsl");
+    const auto spot_light_frag_module    = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/spot_lighting.frag.glsl");
 
     m_GBufferShader                     = gfx::createShaderProgram(m_GfxDevice, 4, gbuffer_vert_module, gbuffer_frag_module, "GBuffer Shader");
     m_SSAOBufferShader                  = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, ssao_frag_module, "SSAO Buffer");
     m_SSAOBlurShader                    = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, ssao_blur_frag_module, "SSAO Blur Buffer");
+    m_AmbientLighting                   = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, ambient_light_frag_module, "A Light");
     m_LightShaders[LightShaders::DIR]   = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, dir_light_frag_module, "D Light Shader");
     m_LightShaders[LightShaders::POINT] = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, point_light_frag_module, "P Light Shader");
     m_LightShaders[LightShaders::SPOT]  = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, spot_light_frag_module, "S Light Shader");
@@ -998,6 +1004,10 @@ namespace bifrost
     bindings::addCamera(m_SSAOBlurShader, BIFROST_SHADER_STAGE_VERTEX);
     bindings::addSSAOBlurInputs(m_SSAOBlurShader, BIFROST_SHADER_STAGE_FRAGMENT);
 
+    bindings::addCamera(m_AmbientLighting, BIFROST_SHADER_STAGE_VERTEX | BIFROST_SHADER_STAGE_FRAGMENT);
+    bindings::addLightingInputs(m_AmbientLighting, BIFROST_SHADER_STAGE_FRAGMENT);
+    bindings::addLightBuffer(m_AmbientLighting, BIFROST_SHADER_STAGE_FRAGMENT);
+
     for (const auto& light_shader : m_LightShaders)
     {
       bindings::addCamera(light_shader, BIFROST_SHADER_STAGE_VERTEX | BIFROST_SHADER_STAGE_FRAGMENT);
@@ -1008,6 +1018,7 @@ namespace bifrost
     bfShaderProgram_compile(m_GBufferShader);
     bfShaderProgram_compile(m_SSAOBufferShader);
     bfShaderProgram_compile(m_SSAOBlurShader);
+    bfShaderProgram_compile(m_AmbientLighting);
     bfShaderProgram_compile(m_LightShaders[LightShaders::DIR]);
     bfShaderProgram_compile(m_LightShaders[LightShaders::POINT]);
     bfShaderProgram_compile(m_LightShaders[LightShaders::SPOT]);
@@ -1017,12 +1028,14 @@ namespace bifrost
     m_AutoRelease.push(fullscreen_vert_module);
     m_AutoRelease.push(ssao_frag_module);
     m_AutoRelease.push(ssao_blur_frag_module);
+    m_AutoRelease.push(ambient_light_frag_module);
     m_AutoRelease.push(dir_light_frag_module);
     m_AutoRelease.push(point_light_frag_module);
     m_AutoRelease.push(spot_light_frag_module);
     m_AutoRelease.push(m_GBufferShader);
     m_AutoRelease.push(m_SSAOBufferShader);
     m_AutoRelease.push(m_SSAOBlurShader);
+    m_AutoRelease.push(m_AmbientLighting);
     m_AutoRelease.push(m_LightShaders[LightShaders::DIR]);
     m_AutoRelease.push(m_LightShaders[LightShaders::POINT]);
     m_AutoRelease.push(m_LightShaders[LightShaders::SPOT]);

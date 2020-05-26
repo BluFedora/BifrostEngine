@@ -14,8 +14,8 @@
 #ifndef BIFROST_EDITOR_INSPECTOR_HPP
 #define BIFROST_EDITOR_INSPECTOR_HPP
 
-#include "bifrost_editor_serializer.hpp"              // ImGuiSerializer
-#include "bifrost_editor_window.hpp"                  // EditorWindow
+#include "bifrost_editor_serializer.hpp"  // ImGuiSerializer
+#include "bifrost_editor_window.hpp"      // EditorWindow
 
 namespace bifrost::editor
 {

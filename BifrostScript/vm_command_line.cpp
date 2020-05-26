@@ -11,15 +11,22 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#include "include/bifrost/script/bifrost_vm.hpp"
+#include "bifrost/script/bifrost_vm.hpp"
 
 #include <cstdio>    // printf, fopen, flocse, ftell, fseek, fread, malloc
-#include <iostream>  // std::cin
+#include <iostream>  // cin
 
-static void errorHandler(BifrostVM* vm, BifrostVMError err, int line_no, const char* message) noexcept;
-static void printHandler(BifrostVM* vm, const char* message) noexcept;
-static void moduleHandler(BifrostVM* vm, const char* from, const char* module, BifrostVMModuleLookUp* out) noexcept;
-static void waitForInput() noexcept;
+struct MemoryUsageTracker final
+{
+  std::size_t peak_usage;
+  std::size_t current_usage;
+};
+
+static void  errorHandler(BifrostVM* vm, BifrostVMError err, int line_no, const char* message) noexcept;
+static void  printHandler(BifrostVM* vm, const char* message) noexcept;
+static void  moduleHandler(BifrostVM* vm, const char* from, const char* module, BifrostVMModuleLookUp* out) noexcept;
+static void* memoryHandler(void* user_data, void* ptr, size_t old_size, size_t new_size) noexcept;
+static void  waitForInput() noexcept;
 
 int main(int argc, const char* argv[])
 {
@@ -33,10 +40,14 @@ int main(int argc, const char* argv[])
 
   const char* const file_name = argv[1];
 
+  MemoryUsageTracker mem_tracker{0, 0};
+
   bifrost::VMParams params{};
   params.error_fn  = &errorHandler;
   params.print_fn  = &printHandler;
   params.module_fn = &moduleHandler;
+  params.memory_fn = &memoryHandler;
+  params.user_data = &mem_tracker;
 
   bifrost::VM vm{params};
 
@@ -61,7 +72,12 @@ int main(int argc, const char* argv[])
     return err;
   }
 
-  std::free(const_cast<char*>(load_file.source));
+  memoryHandler(bfVM_userData(vm), const_cast<char*>(load_file.source), sizeof(char) * (load_file.source_len + 1u), 0u);
+
+  std::printf("Memory Stats:\n");
+  std::printf("\tPeak    Usage: %u (bytes)\n", unsigned(mem_tracker.peak_usage));
+  std::printf("\tCurrent Usage: %u (bytes)\n", unsigned(mem_tracker.current_usage));
+
   waitForInput();
   return 0;
 }
@@ -122,7 +138,7 @@ static void printHandler(BifrostVM* /*vm*/, const char* message) noexcept
   std::printf("%s\n", message);
 }
 
-static void moduleHandler(BifrostVM* /*vm*/, const char* /*from*/, const char* module, BifrostVMModuleLookUp* out) noexcept
+static void moduleHandler(BifrostVM* vm, const char* /*from*/, const char* module, BifrostVMModuleLookUp* out) noexcept
 {
   FILE* const file      = std::fopen(module, "rb");  // NOLINT(android-cloexec-fopen)
   char*       buffer    = nullptr;
@@ -135,8 +151,8 @@ static void moduleHandler(BifrostVM* /*vm*/, const char* /*from*/, const char* m
 
     if (file_size != -1L)
     {
-      std::fseek(file, 0, SEEK_SET);  //same as std::rewind(f);
-      buffer = static_cast<char*>(std::malloc(sizeof(char) * (std::size_t(file_size) + 1)));
+      std::fseek(file, 0, SEEK_SET);  //same as std::rewind(file);
+      buffer = static_cast<char*>(memoryHandler(bfVM_userData(vm), nullptr, 0u, sizeof(char) * (std::size_t(file_size) + 1)));
 
       if (buffer)
       {
@@ -158,6 +174,41 @@ static void moduleHandler(BifrostVM* /*vm*/, const char* /*from*/, const char* m
 
   out->source     = buffer;
   out->source_len = file_size;
+}
+
+static void* memoryHandler(void* user_data, void* ptr, size_t old_size, size_t new_size) noexcept
+{
+  //
+  // These checks are largely redundant since it just reimplements
+  // what 'realloc' already does, this is mostly for demonstrative
+  // purposes on how to write your own memory allocator function.
+  //
+
+  MemoryUsageTracker* const mum_tracker = static_cast<MemoryUsageTracker*>(user_data);
+
+  mum_tracker->current_usage -= old_size;
+  mum_tracker->current_usage += new_size;
+
+  if (mum_tracker->current_usage > mum_tracker->peak_usage)
+  {
+    mum_tracker->peak_usage = mum_tracker->current_usage;
+  }
+
+  if (old_size == 0u || ptr == nullptr)  // Both checks are not needed but just for illustration of both ways of checking for new allocation.
+  {
+    return new_size != 0 ? std::malloc(new_size) : nullptr;  // Returning nullptr for a new_size of 0 is not strictly required.
+  }
+
+  if (new_size == 0u)
+  {
+    std::free(ptr);
+  }
+  else
+  {
+    return std::realloc(ptr, new_size);
+  }
+
+  return nullptr;
 }
 
 static void waitForInput() noexcept

@@ -28,8 +28,7 @@ namespace bifrost
   {
     glslang::InitializeProcess();
 
-    // Generates an array with the spv code with variable name being varName ;)
-    // glslang::OutputSpvHex(SpirV, "Output.cpp, "varName");
+    // glslang::OutputSpvHex(SpirV, "Output.cpp, "varName"); // Generates an array with the spv code with variable name being varName ;), Might Be useful later.
   }
 
   GLSLCompiler::~GLSLCompiler()
@@ -291,7 +290,7 @@ namespace bifrost
       bfLogError("Info Debug Log : %s", shader.getInfoDebugLog());
       bfLogPop();
 
-      throw "Parse Error";
+      throw "Shader Parse Error";
     }
 
     program.addShader(&shader);
@@ -304,7 +303,7 @@ namespace bifrost
       bfLogError("Info Debug Log : %s", shader.getInfoDebugLog());
       bfLogPop();
 
-      throw "Link Error";
+      throw "Shader Link Error";
     }
 
     GlslangToSpv(*program.getIntermediate(shader_type), spir_v, &logger, &spvOptions);

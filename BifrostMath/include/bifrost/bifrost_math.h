@@ -13,7 +13,6 @@
 #if __cplusplus
 extern "C" {
 #endif
-
 typedef struct bfColor4f_t
 {
   float r;
@@ -49,11 +48,25 @@ static inline bfColor4u bfColor4u_fromUint32(uint32_t color)
   return ret;
 }
 
-static float bfMathAlignf(float value, float size)
+static inline float bfMathAlignf(float value, float size)
 {
   return floorf(value / size) * size;
 }
 
+static inline float bfMathLerpf(float a, float b, float t)
+{
+  return (1.0f - t) * a + t * b;
+}
+
+static inline float bfMathInvLerpf(float min, float max, float value)
+{
+  return (value - min) / (max - value);
+}
+
+static inline float bfMathRemapf(float old_min, float old_max, float new_min, float new_max, float value)
+{
+  return bfMathLerpf(new_min, new_max, bfMathInvLerpf(old_min, old_max, value));
+}
 #if __cplusplus
 }
 #endif

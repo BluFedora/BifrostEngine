@@ -454,7 +454,7 @@ void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostSten
     self->pipeline_state.state.stencil_face_back_depth_fail_op = op;
   }
 }
-void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostCompareOp op)
 {
   if (face == BIFROST_STENCIL_FACE_FRONT)
   {

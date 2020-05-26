@@ -38,8 +38,8 @@ layout(location = 0) out float o_FragColor0;
 void main()
 {
   ivec2 noise_scale = textureSize(u_NormalTexture, 0) / textureSize(u_NoiseTexture, 0);  // TODO: Check if I should make this a floating point division.
-  vec3  view_pos    = constructViewPos(frag_UV);
-  vec3  view_normal = decodeNormal(texture(u_NormalTexture, frag_UV).xy);
+  vec3  view_pos    = (Camera_getViewMatrix() * vec4(constructWorldPos(frag_UV), 1.0)).xyz;
+  vec3  view_normal = normalize((u_CameraView * vec4(decodeNormal(texture(u_NormalTexture, frag_UV).xy), 0.0)).xyz);
   vec3  rand_dir    = texture(u_NoiseTexture, frag_UV * noise_scale).xyz;
   vec3  tangent     = normalize(rand_dir - view_normal * dot(rand_dir, view_normal));
   vec3  bitangent   = cross(view_normal, tangent);
@@ -50,16 +50,16 @@ void main()
   {
     vec3 sampling_pos    = view_pos + (tbn_mat * u_Kernel[i].xyz) * u_SampleRadius;  // The 'tbn_mat' brings the u_Kernel sample from tangent to view space.
     vec4 sampling_offset = u_CameraProjection * vec4(sampling_pos, 1.0);             // View => Clip Space
-    sampling_offset.xy   = (sampling_pos.xy / sampling_offset.w) * 0.5 + 0.5;        // Perspective Divide Followed by a Map to the [0, 1] range.
+    sampling_offset.xy   = (sampling_offset.xy / sampling_offset.w) * 0.5 + 0.5;     // Perspective Divide Followed by a Map to the [0, 1] range.
 
-    float sample_depth = constructLinearDepth(sampling_offset.xy);
+    float sample_depth = (Camera_getViewMatrix() * vec4(constructWorldPos(sampling_offset.xy), 1.0)).z;
     float check_range  = smoothstep(0.0, 1.0, u_SampleRadius / abs(view_pos.z - sample_depth));
 
-    ao_factor += check_range * step(sample_depth, sampling_pos.z + u_SampleBias);  // (sampling_pos.z < sample_depth) ? 0.0f : 1.0f.
+    ao_factor += check_range * step(sampling_pos.z + u_SampleBias, sample_depth); // (((sampling_pos.z + u_SampleBias) <= sample_depth) ? 1.0f : 0.0f)
   }
 
   // 'Invert' the ao factor.
-  ao_factor = 1.0 - ao_factor / float(k_KernelSize);
+  ao_factor = 1.0 - (ao_factor / float(k_KernelSize));
 
   // Squaring the value is an aethetic choice. Can be adjusted to other powers (including ao_factor^1.0).
   o_FragColor0 = ao_factor * ao_factor;

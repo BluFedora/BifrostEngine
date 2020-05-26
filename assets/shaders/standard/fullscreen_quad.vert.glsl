@@ -58,15 +58,29 @@ void main()
 {
   vec2 uv             = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
   vec4 clip_position  = vec4(uv * 2.0f - 1.0f, k_ZDepth, 1.0f);
-  vec4 world_position = u_CameraInvViewProjection * clip_position;
+  // vec4 world_position = u_CameraInvViewProjection * clip_position;
 
-  world_position.xyz /= world_position.w;
+  // world_position.xyz /= world_position.w;
+
+  vec4 world_position = inverse(u_CameraProjection) * clip_position;
+  world_position /= world_position.w;
+  world_position = inverse(u_CameraView) * world_position;
+
+  vec4 view_position = Camera_getViewMatrix() * world_position;
 
   // Light Volume : float3 positionWS = mul(input.PositionOS, WorldMatrix);
 
   frag_ViewRay     = vec3(world_position) - u_CameraPosition;
   frag_UV          = uv;
-  frag_ViewRaySSAO = clip_position.xyz;
+  frag_ViewRaySSAO = vec3(view_position.xy / view_position.z, 1.0f);
+
+  // TEST
+  //vec4 vp = inverse(u_CameraProjection) * clip_position;
+
+  //vp.xyz /= vp.w;
+
+  //frag_ViewRay = vec3(vp.xy / vp.z, 1.0f);
+  // TEST
 
   gl_Position = clip_position;
 }

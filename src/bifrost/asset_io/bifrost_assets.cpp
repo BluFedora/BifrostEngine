@@ -10,7 +10,7 @@
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
@@ -104,8 +104,8 @@ namespace bifrost
       null_terminated_path[null_terminated_path_length++] = '\\';
       null_terminated_path[null_terminated_path_length++] = '*';
 #endif
-      
-      null_terminated_path[null_terminated_path_length]   = '\0';
+
+      null_terminated_path[null_terminated_path_length] = '\0';
 
 #if BIFROST_PLATFORM_WINDOWS
       WIN32_FIND_DATA out_data;
@@ -116,7 +116,7 @@ namespace bifrost
         return nullptr;
       }
 #else
-      DIR* const file_handle = opendir(null_terminated_path);
+      DIR* const     file_handle = opendir(null_terminated_path);
 
       if (!file_handle)
       {
@@ -265,7 +265,7 @@ namespace bifrost
 
   String Assets::fullPath(const StringRange& relative_path) const
   {
-    String full_path = { m_RootPath, String_length(m_RootPath) };
+    String full_path = {m_RootPath, String_length(m_RootPath)};
 
     full_path.reserve(full_path.size() + 1 + relative_path.length());
 
@@ -445,17 +445,20 @@ namespace bifrost
 
   void Assets::saveAssets()
   {
+    LinearAllocator& temp_alloc         = m_Engine.tempMemory();
+    IMemoryManager&  temp_alloc_no_free = m_Engine.tempMemoryNoFree();
+
     for (const auto& asset : m_DirtyAssetList)
     {
-      const LinearAllocatorScope asset_scope           = {m_Engine.tempMemory()};
+      const LinearAllocatorScope asset_mem_scope       = {temp_alloc};
       BaseAssetInfo* const       info                  = asset.info();
       std::size_t                meta_file_name_length = 0u;
-      char*                      meta_file_name        = metaFileName(m_Engine.tempMemoryNoFree(), info->path(), meta_file_name_length);
-      const TempBuffer           meta_file_path        = metaFullPath(m_Engine.tempMemoryNoFree(), {meta_file_name, meta_file_name + meta_file_name_length});
+      char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->path(), meta_file_name_length);
+      const TempBuffer           meta_file_path        = metaFullPath(temp_alloc_no_free, {meta_file_name, meta_file_name + meta_file_name_length});
 
       {
-        const LinearAllocatorScope json_writer_scope = {m_Engine.tempMemory()};
-        JsonSerializerWriter       json_writer       = JsonSerializerWriter{m_Engine.tempMemoryNoFree()};
+        const LinearAllocatorScope json_writer_scope = {temp_alloc};
+        JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
 
         json_writer.beginDocument(false);
         const bool is_engine_asset = info->save(m_Engine, json_writer);
@@ -469,8 +472,8 @@ namespace bifrost
         }
       }
       {
-        const LinearAllocatorScope json_writer_scope = {m_Engine.tempMemory()};
-        JsonSerializerWriter       json_writer       = JsonSerializerWriter{m_Engine.tempMemoryNoFree()};
+        const LinearAllocatorScope json_writer_scope = {temp_alloc};
+        JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
 
         json_writer.beginDocument(false);
         info->serialize(m_Engine, json_writer);

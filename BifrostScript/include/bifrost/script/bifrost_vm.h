@@ -183,9 +183,9 @@ typedef void (*bfModuleFn)(BifrostVM* vm, const char* from, const char* module, 
 
 /*!
  * @brief
- *   If ptr is NULL : Act as Malloc.
- *   If size == 0u  : Act as Free.
- *   Otherwise      : Act as Realloc.
+ *   If old_size is 0u / ptr == NULL : Act as Malloc.\n
+ *   If new_size == 0u               : Act as Free.\n
+ *   Otherwise                       : Act as Realloc.\n
  */
 typedef void* (*bfMemoryFn)(void* user_data, void* ptr, size_t old_size, size_t new_size);
 

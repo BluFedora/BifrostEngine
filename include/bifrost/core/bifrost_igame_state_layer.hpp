@@ -20,10 +20,11 @@ class BifrostEngine;
 namespace bifrost
 {
   struct Event;
+  class GameStateMachine;
 
   class IGameStateLayer : private bfNonCopyMoveable<IGameStateLayer>
   {
-    friend class BifrostEngine;
+    friend class ::BifrostEngine;
     friend class GameStateMachine;
 
    private:
@@ -34,7 +35,7 @@ namespace bifrost
    protected:
     IGameStateLayer();
 
-  public:// TODO THis isn't right.
+  public:// TODO: This isn't right.
     virtual void onCreate(BifrostEngine& engine);
     virtual void onLoad(BifrostEngine& engine);
     virtual void onEvent(BifrostEngine& engine, Event& event);

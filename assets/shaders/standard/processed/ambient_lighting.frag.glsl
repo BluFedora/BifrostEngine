@@ -1,5 +1,73 @@
 //
 // Author:          Shareef Abdoul-Raheem
+// Standard Shader: Ambient Lighting
+//
+#version 450
+
+layout(location = 0) in vec3 frag_ViewRay;
+layout(location = 1) in vec2 frag_UV;
+
+
+//
+// Camera Uniform Layout
+//
+layout(std140, set = 0, binding = 0) uniform u_Set0
+{
+  mat4  u_CameraProjection;
+  mat4  u_CameraInvViewProjection;
+  mat4  u_CameraViewProjection;
+  mat4  u_CameraView;
+  vec3  u_CameraForward;
+  float u_Time;
+  vec3  u_CameraPosition;
+  float u_Pad0;
+  vec3  u_CameraAmbient;
+};
+
+mat4 Camera_getViewMatrix()
+{
+  return u_CameraView;
+}
+
+layout(set = 2, binding = 0) uniform sampler2D u_GBufferRT0;
+layout(set = 2, binding = 1) uniform sampler2D u_GBufferRT1;
+layout(set = 2, binding = 2) uniform sampler2D u_SSAOBlurredBuffer;
+layout(set = 2, binding = 3) uniform sampler2D u_DepthTexture;
+
+layout(location = 0) out vec4 o_FragColor0;
+
+
+// [https://aras-p.info/texts/CompactNormalStorage.html]
+// [https://mynameismjp.wordpress.com/2009/06/17/storing-normals-using-spherical-coordinates/]
+
+const float k_SimplePI = 3.14159f;
+
+vec2 encodeNormal(vec3 n)
+{
+  vec2 spherical;
+
+  spherical.x = atan(n.y, n.x) / k_SimplePI;
+  spherical.y = n.z;
+
+  return spherical * 0.5f + 0.5f;
+}
+
+vec2 sincos(float x)
+{
+  return vec2(sin(x), cos(x));
+}
+
+vec3 decodeNormal(vec2 spherical)
+{
+  spherical = spherical * 2.0f - 1.0f;
+
+  vec2 sin_cos_theta = sincos(spherical.x * k_SimplePI);
+  vec2 sin_cos_phi   = vec2(sqrt(1.0 - spherical.y * spherical.y), spherical.y);
+
+  return vec3(sin_cos_theta.y * sin_cos_phi.x, sin_cos_theta.x * sin_cos_phi.x, sin_cos_phi.y);
+}
+//
+// Author:          Shareef Abdoul-Raheem
 // Standard Shader: PBR Lighting
 //
 // References:
@@ -242,4 +310,65 @@ vec3 tonemapping(vec3 color)
 vec3 gammaCorrection(vec3 color)
 {
   return pow(color, vec3(k_GammaCorrectionFactor));
+}
+//
+// Bad Design Notes:
+//   > Assumes Both Camera and u_DepthTexture uniforms...
+//   > Assumes frag_ViewRay as one of the fragment inputs...
+//
+
+// Assumed depth range of [0.0 - 1.0]
+// Depth needs to be '2.0f * depth - 1.0f' if the
+// perspective expects [-1.0f - 1.0f] like in OpenGL.
+float constructLinearDepth(vec2 uv)
+{
+  float depth        = texture(u_DepthTexture, uv).x;
+  float linear_depth = u_CameraProjection[3][2] / (depth + u_CameraProjection[2][2]);
+
+  return linear_depth;
+}
+
+#if SSAO
+vec3 constructViewPos(vec2 uv)
+{
+  return frag_ViewRaySSAO * constructLinearDepth(uv);
+}
+#endif
+
+vec3 constructWorldPos(vec2 uv)
+{
+  vec3  view_ray     = normalize(frag_ViewRay);
+  float linear_depth = constructLinearDepth(uv);
+  float view_z_dist  = dot(u_CameraForward, view_ray);
+
+  return u_CameraPosition + view_ray * (linear_depth / view_z_dist);
+}
+
+void main()
+{
+  vec4  gsample1    = texture(u_GBufferRT1, frag_UV);
+  vec4  ssao_sample = texture(u_SSAOBlurredBuffer, frag_UV);
+  vec3  albedo      = gsample1.xyz;
+  float ao          = gsample1.w * ssao_sample.r;
+  vec3  ambient     = ambientLighting(albedo, ao);
+
+  o_FragColor0 = vec4(ambient, 1.0f);
+
+  // Debug Outputs
+  /*
+  vec3 world_position = constructWorldPos(frag_UV);
+  vec3 view_position  = (Camera_getViewMatrix() * vec4(world_position, 1.0f)).xyz;
+  o_FragColor0        = vec4(vec3(ssao_sample.r), 1.0f);
+  
+  if (abs(view_position.z + 1000.0f) > 0.05f)
+  {
+    //o_FragColor0        = vec4(view_position, abs(view_position.z + 1000.0f));
+
+  }
+  else
+  {
+    o_FragColor0 = vec4(vec3(0.4f), abs(view_position.z + 1000.0f));
+    discard;
+  }
+  //*/
 }

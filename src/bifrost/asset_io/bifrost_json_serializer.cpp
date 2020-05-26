@@ -55,6 +55,11 @@ namespace bifrost
     return true;
   }
 
+  void JsonSerializerWriter::serialize(StringRange key, bool& value)
+  {
+    currentObject().add(key, json::Boolean(value));
+  }
+
   void JsonSerializerWriter::serialize(StringRange key, std::int8_t& value)
   {
     currentObject().add(key, json::Number(value));
@@ -265,6 +270,32 @@ namespace bifrost
 
     m_ObjectStack.emplaceBack(object, 0);
     return true;
+  }
+
+  void JsonSerializerReader::serialize(StringRange key, bool& value)
+  {
+    auto& object = currentNode();
+
+    if (object.array_index > -1 && object.object->isArray())
+    {
+      json::Array& arr = object.object->as<json::Array>();
+
+      if (object.array_index < int(arr.size()))
+      {
+        auto& json_number = arr[object.array_index];
+
+        if (json_number.isBoolean())
+        {
+          value = json_number.as<json::Boolean>();
+        }
+
+        ++object.array_index;
+      }
+    }
+    else if (object.object->isObject())
+    {
+      value = object.object->get(key, json::Boolean{});
+    }
   }
 
   template<typename T>

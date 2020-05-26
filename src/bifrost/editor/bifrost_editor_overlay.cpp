@@ -1038,6 +1038,8 @@ namespace bifrost::editor
           {
             ImGui::DragFloat("Rounding", &Rounding, 1.0f, k_Epsilon, 100.0f);
 
+            ImGui::DragFloat3("Ambient Color", &engine.renderer().AmbientColor.x);
+
             if (ImGui::DragFloat3("Position", &engine.Camera.position.x))
             {
               Camera_setViewModified(&engine.Camera);

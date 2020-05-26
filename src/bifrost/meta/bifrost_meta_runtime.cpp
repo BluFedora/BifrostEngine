@@ -1,6 +1,7 @@
 #include "bifrost/meta/bifrost_meta_runtime.hpp"
 
-#include "bifrost/meta/bifrost_meta_runtime_impl.hpp"
+#include "bifrost/bifrost_std.h"                      /* bfInvalidDefaultCase */
+#include "bifrost/meta/bifrost_meta_runtime_impl.hpp" /*  */
 
 namespace
 {
@@ -146,14 +147,14 @@ namespace bifrost::meta
       case 8:
         *reinterpret_cast<std::uint64_t*>(&enum_object) = std::uint64_t(new_value);
         break;
-      default:
-        break;
+        bfInvalidDefaultCase();
     }
   }
 
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name)
   {
     BaseClassMetaInfo** clz_info = gRegistry().at(name);
+
     return clz_info ? *clz_info : nullptr;
   }
 }  // namespace bifrost::meta

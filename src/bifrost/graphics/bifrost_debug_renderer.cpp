@@ -221,7 +221,7 @@ namespace bifrost
 
   void DebugRenderer::addVertices(Array<BufferLink*>& buffer, const Vector3f& a, const Vector3f& b, const bfColor4u& color, const bfGfxFrameInfo& frame_info)
   {
-    static constexpr float k_Thickness = 0.1f;
+    static constexpr float k_Thickness = 0.04f;
 
     const VertexDebugLine vertices[] =
      {

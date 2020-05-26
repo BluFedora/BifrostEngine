@@ -101,6 +101,12 @@ namespace bifrost::editor
     return is_open;
   }
 
+  void ImGuiSerializer::serialize(StringRange key, bool& value)
+  {
+    setNameBuffer(key);
+    hasChangedTop() |= ImGui::Checkbox(m_NameBuffer, &value);
+  }
+
   void ImGuiSerializer::serialize(StringRange key, std::int8_t& value)
   {
     setNameBuffer(key);
@@ -436,6 +442,13 @@ namespace bifrost::editor
   {
     const bool result = m_HasChangedStack.back();
     m_HasChangedStack.pop();
+
+    // Adopt the status of nested scopes.
+    if (!m_HasChangedStack.isEmpty())
+    {
+      hasChangedTop() |= result;
+    }
+
     return result;
   }
 
@@ -730,9 +743,12 @@ namespace bifrost::editor
 
           bool is_active = entity.isComponentActive<T>();
 
-          if (ImGui::Checkbox("Is Active", &is_active))
+          serializer.beginChangeCheck();
+          serializer.serialize("Is Active", is_active);
+
+          if (serializer.endChangedCheck())
           {
-            entity.setComponentActive<T>(is_active);
+            entity.setComponentActive<T>(is_active);   
           }
 
           serializer.serializeT(entity.get<T>());

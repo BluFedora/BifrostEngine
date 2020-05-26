@@ -122,6 +122,7 @@ namespace bifrost
     {
       meta::for_each_template_and_pointer_and_const<
        // std::byte,
+       bool,
        std::int8_t,
        std::uint8_t,
        std::int16_t,
@@ -135,6 +136,8 @@ namespace bifrost
        long double,
        Vec2f,
        Vec3f,
+       Vector2f,
+       Vector3f,
        Quaternionf,
        bfColor4f,
        bfColor4u,
@@ -236,6 +239,16 @@ namespace bifrost
         popArray();
       }
     }
+  }
+
+  void ISerializer::serialize(StringRange key, Vector2f& value)
+  {
+    serialize(key, static_cast<Vec2f&>(value));
+  }
+
+  void ISerializer::serialize(StringRange key, Vector3f& value)
+  {
+    serialize(key, static_cast<Vec3f&>(value));
   }
 
   bool BaseAssetInfo::defaultLoad(Engine& engine)

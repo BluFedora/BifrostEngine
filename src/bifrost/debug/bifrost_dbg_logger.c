@@ -77,15 +77,13 @@ void bfLogPop_(const char* file, const char* func, int line, unsigned amount)
 void bfLogger_deinit(void)
 {
   assert(s_HasInitialized && "The logger subsystem was never initialized.'");
-
   s_HasInitialized = 0;
 }
 
 bfLogColorState bfLogSetColor(BifrostLoggerColor fg_color, BifrostLoggerColor bg_color, unsigned int flags)
 {
 #if BIFROST_PLATFORM_WINDOWS
-
-  static WORD s_FgColorMap[] =
+  static const WORD k_FgColorMap[] =
    {
     0x0,
     FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
@@ -97,7 +95,7 @@ bfLogColorState bfLogSetColor(BifrostLoggerColor fg_color, BifrostLoggerColor bg
     FOREGROUND_BLUE,
    };
 
-  static WORD s_BgColorMap[] =
+  static const WORD k_BgColorMap[] =
    {
     0x0,
     BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE,
@@ -109,7 +107,7 @@ bfLogColorState bfLogSetColor(BifrostLoggerColor fg_color, BifrostLoggerColor bg
     BACKGROUND_BLUE,
    };
 
-  const WORD color = s_FgColorMap[fg_color] | s_BgColorMap[bg_color] |
+  const WORD color = k_FgColorMap[fg_color] | k_BgColorMap[bg_color] |
                      FOREGROUND_INTENSITY * ((flags & BIFROST_LOGGER_COLOR_FG_BOLD) != 0) |
                      BACKGROUND_INTENSITY * ((flags & BIFROST_LOGGER_COLOR_BG_BOLD) != 0) |
                      COMMON_LVB_REVERSE_VIDEO * ((flags & BIFROST_LOGGER_COLOR_INVERT) != 0) |
@@ -123,7 +121,6 @@ bfLogColorState bfLogSetColor(BifrostLoggerColor fg_color, BifrostLoggerColor bg
   //   const WORD saved_attributes = console_info.wAttributes;
 
   SetConsoleTextAttribute(h_console, color);
-
 #else
   // http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#256-colors
   static const int s_ColorMap[] = {30, 37, 33, 35, 36, 31, 32, 34};

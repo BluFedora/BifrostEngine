@@ -282,8 +282,8 @@ typedef enum BifrostGfxObjectType_t
 
 } BifrostGfxObjectType;
 
-typedef uint32_t bfFrameCount_t;
 #define bfFrameCountMax 0xFFFFFFFF
+typedef uint32_t bfFrameCount_t;
 
 typedef struct BifrostGfxObjectBase_t
 {
@@ -543,7 +543,7 @@ void     bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t out
 void     bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
 void     bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
 void     bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
-void     bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op);
+void     bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostCompareOp op);
 void     bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t cmp_mask);
 void     bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t write_mask);
 void     bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t ref_mask);

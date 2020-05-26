@@ -286,6 +286,12 @@ namespace bifrost
 
   File& File::writeUint64(const uint64_t value)
   {
+    // for (int i = 0; i < 64; i += 8)
+    // {
+    //   const uint8_t bits = static_cast<uint8_t>((value & (0x00000000000000FFull << i)) >> i);
+    //   writeUint8(bits);
+    // }
+
     const auto bits0 = static_cast<uint8_t>((value & 0x00000000000000FFull) >> 0);
     const auto bits1 = static_cast<uint8_t>((value & 0x000000000000FF00ull) >> 8);
     const auto bits2 = static_cast<uint8_t>((value & 0x0000000000FF0000ull) >> 16);

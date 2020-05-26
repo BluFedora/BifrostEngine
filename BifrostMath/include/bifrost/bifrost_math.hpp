@@ -76,10 +76,11 @@ namespace bifrost::math
     return ((value - min) / (max - min));
   }
 
-  inline float alignf(float value, float size)
-  {
-    return bfMathAlignf(value, size);
-  }
+  // Function Aliases from the C=API
+
+  constexpr const auto& alignf  = &bfMathAlignf;
+  constexpr const auto& invLerp = &bfMathInvLerpf;
+  constexpr const auto& remapf  = &bfMathRemapf;
 }  // namespace bifrost::math
 
 #endif /* BIFROST_MATH_HPP */

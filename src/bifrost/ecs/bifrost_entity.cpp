@@ -17,6 +17,8 @@
 
 namespace bifrost
 {
+  static constexpr StringRange k_SerializeComponentActiveKey = "__Active__";
+
   Entity::Entity(Scene& scene, const StringRange& name) :
     m_OwningScene{scene},
     m_Name{name},
@@ -91,7 +93,10 @@ namespace bifrost
 
           if (component && serializer.pushObject(name))
           {
+            bool is_active = isComponentActive<T>();
+            serializer.serialize(k_SerializeComponentActiveKey, is_active);
             serializer.serializeT(component);
+            setComponentActive<T>(is_active);
             serializer.popObject();
           }
         });

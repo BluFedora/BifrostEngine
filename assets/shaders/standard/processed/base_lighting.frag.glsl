@@ -2,7 +2,7 @@
 // Author:          Shareef Abdoul-Raheem
 // Standard Shader: Base Lighting
 //
-// #version 450
+// #version 450 (commented out because this file is not used directly)
 
 layout(location = 0) in vec3 frag_ViewRay;
 layout(location = 1) in vec2 frag_UV;
@@ -16,10 +16,18 @@ layout(std140, set = 0, binding = 0) uniform u_Set0
   mat4  u_CameraProjection;
   mat4  u_CameraInvViewProjection;
   mat4  u_CameraViewProjection;
+  mat4  u_CameraView;
   vec3  u_CameraForward;
   float u_Time;
   vec3  u_CameraPosition;
+  float u_Pad0;
+  vec3  u_CameraAmbient;
 };
+
+mat4 Camera_getViewMatrix()
+{
+  return u_CameraView;
+}
 
 layout(set = 2, binding = 0) uniform sampler2D u_GBufferRT0;
 layout(set = 2, binding = 1) uniform sampler2D u_GBufferRT1;
@@ -68,6 +76,8 @@ vec3 decodeNormal(vec2 spherical)
 //   [https://learnopengl.com/PBR/Lighting]
 //   [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 //   [http://filmicworlds.com/blog/optimizing-ggx-shaders-with-dotlh/]
+//
+//  Requires "camera.ubo.glsl": For the ambient lighting calculation.
 //
 
 #ifndef IS_DIRECTIONAL_LIGHT
@@ -286,7 +296,7 @@ vec3 mainLighting(vec3 radiance, vec3 surface_normal, vec3 albedo, float roughne
 
 vec3 ambientLighting(vec3 albedo, float ao)
 {
-  return vec3(0.03) * albedo * ao;
+  return u_CameraAmbient * albedo * ao;
 }
 
 // reinhard
@@ -319,12 +329,10 @@ float constructLinearDepth(vec2 uv)
 }
 
 #if SSAO
-
 vec3 constructViewPos(vec2 uv)
 {
   return frag_ViewRaySSAO * constructLinearDepth(uv);
 }
-
 #endif
 
 vec3 constructWorldPos(vec2 uv)
@@ -345,18 +353,24 @@ void main()
   float roughness          = gsample0.z;
   float metallic           = gsample0.w;
   vec3  albedo             = gsample1.xyz;
-  float ao                 = gsample1.w/* * ssao_sample.r*/;
+  float ao                 = gsample1.w * ssao_sample.a;
   vec3  world_position     = constructWorldPos(frag_UV);
   float one_minus_metallic = 1.0f - metallic;
   vec3  v                  = normalize(u_CameraPosition - world_position);
   vec3  f0                 = mix(vec3(0.04), albedo, metallic);  // Reflectance at normal incidence
-  float n_dot_v            = dot(world_normal, v);
+  float n_dot_v            = max(dot(world_normal, v), 0.0);
   vec3  light_out          = vec3(0.0);
 
   for (int i = 0; i < u_NumLights; ++i)
   {
     Light light        = u_Lights[i];
+    
+    #if IS_DIRECTIONAL_LIGHT == 1
+    vec3  pos_to_light = light.direction;
+    #else
     vec3  pos_to_light = light.position - world_position;
+    #endif
+
     vec3  radiance     = calcRadiance(light, pos_to_light);
     vec3  lighting     = mainLighting(
      radiance,
@@ -372,10 +386,12 @@ void main()
     light_out += lighting;
   }
 
-  vec3 ambient   = ambientLighting(albedo, ao);
-  vec3 lit_color = ambient + light_out;
+  o_FragColor0 = vec4(light_out, 1.0f);
 
   // o_FragColor0 = vec4(gammaCorrection(tonemapping(lit_color)), 1.0f);
-  o_FragColor0 = vec4(gammaCorrection(lit_color), 1.0f);
+  // o_FragColor0 = vec4(tonemapping(lit_color), 1.0f);
   // o_FragColor0 = vec4(world_normal * 0.5 + 0.5, 1.0f);
+  // o_FragColor0 = vec4((Camera_getViewMatrix() * vec4(world_normal, 0.0)).xyz * 0.5 + 0.5, 1.0f);
+  // o_FragColor0 = vec4((Camera_getViewMatrix() * vec4(world_position, 1.0)).xyz, 1.0f);
+  // o_FragColor0 = vec4(world_position, 1.0f);
 }

@@ -151,8 +151,10 @@ namespace bifrost
     Mat4x4   u_CameraProjection;
     Mat4x4   u_CameraInvViewProjection;
     Mat4x4   u_CameraViewProjection;
+    Mat4x4   u_CameraView;
     Vector3f u_CameraForwardAndTime;  // [u_CameraForward, u_Time]
-    Vector3f u_CameraPosition;
+    Vector3f u_CameraPosition;        // [u_CameraPosition, u_Pad0] 
+    Vector3f u_CameraAmbient;
   };
 
   struct ObjectUniformData final
@@ -281,9 +283,22 @@ namespace bifrost
     };
   }
 
+  struct PerCameraData final
+  {
+    BifrostCamera*                 camera;
+    GBuffer                        geometry_buffer;
+    SSAOBuffer                     ssao_buffer;
+    bfTextureHandle                composite_buffer;
+    MultiBuffer<CameraUniformData> camera_uniform_buffer;
+    Mat4x4                         view_projection_cache;
+  };
+
   class StandardRenderer final
   {
     friend class ::BifrostEngine;  // TODO: Not do this?!?!
+
+  public:
+    Vector3f AmbientColor = {0.03f};
 
    private:
     GLSLCompiler                             m_GLSLCompiler;
@@ -300,12 +315,13 @@ namespace bifrost
     bfShaderProgramHandle                    m_GBufferShader;
     bfShaderProgramHandle                    m_SSAOBufferShader;
     bfShaderProgramHandle                    m_SSAOBlurShader;
+    bfShaderProgramHandle                    m_AmbientLighting;
     bfShaderProgramHandle                    m_LightShaders[LightShaders::MAX];
     MultiBuffer<CameraUniformData>           m_CameraUniform;  // TODO(SR): Per camera
     List<Renderable>                         m_RenderablePool;
     HashTable<Entity*, Renderable*>          m_RenderableMapping;  // TODO: Make this per Scene.
     Array<bfGfxBaseHandle>                   m_AutoRelease;
-    Mat4x4                                   m_ViewProjection;
+    Mat4x4                                   m_ViewProjection;  // TODO(SR): Per camera
     bfTextureHandle                          m_WhiteTexture;
     MultiBuffer<DirectionalLightUniformData> m_DirectionalLightBuffer;
     MultiBuffer<PunctualLightUniformData>    m_PunctualLightBuffers[2];  // [Point, Spot]
@@ -327,7 +343,7 @@ namespace bifrost
     [[nodiscard]] bool frameBegin(BifrostCamera& camera);
     void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
     void               bindObject(bfGfxCommandListHandle command_list, Entity& entity);
-    void               bindCamera(bfGfxCommandListHandle command_list, const BifrostCamera& camera);
+    void               bindCamera(bfGfxCommandListHandle command_list, const BifrostCamera& camera); // Has to be called after a shader program change.
     void               addLight(Light& light);
     void               beginGBufferPass();
     void               beginSSAOPass(const BifrostCamera& camera);

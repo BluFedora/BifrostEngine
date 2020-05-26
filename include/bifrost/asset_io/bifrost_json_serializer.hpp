@@ -35,6 +35,7 @@ namespace bifrost
     bool beginDocument(bool is_array) override;
     bool pushObject(StringRange key) override;
     bool pushArray(StringRange key, std::size_t& size) override;
+    void serialize(StringRange key, bool& value) override;
     void serialize(StringRange key, std::int8_t& value) override;
     void serialize(StringRange key, std::uint8_t& value) override;
     void serialize(StringRange key, std::int16_t& value) override;
@@ -87,6 +88,7 @@ namespace bifrost
     bool hasKey(StringRange key) override;
     bool pushObject(StringRange key) override;
     bool pushArray(StringRange key, std::size_t& size) override;
+    void serialize(StringRange key, bool& value) override;
     void serialize(StringRange key, std::int8_t& value) override;
     void serialize(StringRange key, std::uint8_t& value) override;
     void serialize(StringRange key, std::int16_t& value) override;
