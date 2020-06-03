@@ -25,7 +25,7 @@ namespace bifrost
       T*          buffer;
       std::size_t head;
       std::size_t tail;
-      FWrap       wrap;
+      FWrap       wrap; // TODO(SR): This can benefit from a zero sized base class trick.
 
       RingBufferImpl(T* storage) :
         buffer{storage},
@@ -186,9 +186,10 @@ namespace bifrost
            element.~T();
          });
         m_Memory.deallocateAligned(base_t::buffer);
-        base_t::buffer = new_buffer;
-        base_t::head   = 0;
-        base_t::tail   = size();
+        base_t::buffer        = new_buffer;
+        base_t::wrap.capacity = new_capacity;
+        base_t::head          = 0;
+        base_t::tail          = size();
       }
 
       base_t::push(element);

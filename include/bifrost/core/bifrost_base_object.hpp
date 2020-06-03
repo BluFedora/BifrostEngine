@@ -35,18 +35,6 @@ namespace bifrost
     explicit BaseObjectT(PrivateCtorTag) {}
   };
 
-  namespace detail
-  {
-    template<typename... Ts>
-    struct FirstT;
-
-    template<typename T0, typename... Ts>
-    struct FirstT<T0, Ts...>
-    {
-      using Type = T0;
-    };
-  }  // namespace detail
-
   // NOTE(Shareef): Inherit from this
   template<typename... T>
   class BaseObject : public BaseObjectT::Base<T...>
@@ -56,7 +44,7 @@ namespace bifrost
 
     static meta::BaseClassMetaInfo* staticType()
     {
-      return meta::TypeInfo<typename detail::FirstT<T...>::Type>::get();
+      return meta::TypeInfo<meta::NthTypeOf<0, T...>>::get();
     }
 
     meta::BaseClassMetaInfo* type() override

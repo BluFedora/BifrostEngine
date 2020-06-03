@@ -139,43 +139,6 @@ namespace bifrost
     }
   }
 
-  void JsonSerializerWriter::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
-  {
-    pushObject(key);
-
-    switch (type_info->size())
-    {
-      case 1:
-        serialize("value", *reinterpret_cast<std::uint8_t*>(&enum_value));
-        break;
-      case 2:
-        serialize("value", *reinterpret_cast<std::uint16_t*>(&enum_value));
-        break;
-      case 4:
-        serialize("value", *reinterpret_cast<std::uint32_t*>(&enum_value));
-        break;
-      case 8:
-        serialize("value", *reinterpret_cast<std::uint64_t*>(&enum_value));
-        break;
-      default:
-        break;
-    }
-
-    const std::uint64_t mask = type_info->enumValueMask();
-
-    for (const auto& props : type_info->properties())
-    {
-      if ((props->get(&enum_value).as<std::size_t>() & mask) == (enum_value & mask))
-      {
-        String name = props->name().data();
-        serialize("name", name);
-        break;
-      }
-    }
-
-    popObject();
-  }
-
   void JsonSerializerWriter::popObject()
   {
     m_ObjectStack.popBack();
@@ -434,31 +397,6 @@ namespace bifrost
 
       popObject();
     }
-  }
-
-  void JsonSerializerReader::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
-  {
-    pushObject(key);
-
-    switch (type_info->size())
-    {
-      case 1:
-        serialize("value", *reinterpret_cast<std::uint8_t*>(&enum_value));
-        break;
-      case 2:
-        serialize("value", *reinterpret_cast<std::uint16_t*>(&enum_value));
-        break;
-      case 4:
-        serialize("value", *reinterpret_cast<std::uint32_t*>(&enum_value));
-        break;
-      case 8:
-        serialize("value", *reinterpret_cast<std::uint64_t*>(&enum_value));
-        break;
-      default:
-        break;
-    }
-
-    popObject();
   }
 
   void JsonSerializerReader::popObject()

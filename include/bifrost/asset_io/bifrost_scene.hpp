@@ -15,7 +15,7 @@
 
 #include "bifrost/bifrost_math.h"                    /* Vec3f, Mat4x4     */
 #include "bifrost/core/bifrost_base_object.hpp"      /* BaseObject<T>     */
-#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH */
+#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH               */
 #include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
 #include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
 
@@ -141,6 +141,7 @@ BIFROST_META_REGISTER(Quaternionf){
    )
    BIFROST_META_END()}
 
+/* This uses custom serialization cuz reasons.
 BIFROST_META_REGISTER(bifrost::Scene){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
@@ -149,6 +150,7 @@ BIFROST_META_REGISTER(bifrost::Scene){
    field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
    )
    BIFROST_META_END()}
+*/
 
 BIFROST_META_REGISTER(bifrost::AssetSceneInfo){
  BIFROST_META_BEGIN()

@@ -15,7 +15,7 @@
 
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // List<T>
 #include "bifrost/utility/bifrost_json.hpp"                    // Value
-#include "bifrost_asset_handle.hpp"                            // ISerializer
+#include "bifrost_asset_info.hpp"                            // ISerializer
 
 namespace bifrost
 {
@@ -50,7 +50,6 @@ namespace bifrost
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
-    void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;
@@ -103,7 +102,6 @@ namespace bifrost
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
-    void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;

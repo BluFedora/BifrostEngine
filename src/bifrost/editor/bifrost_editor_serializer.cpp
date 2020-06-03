@@ -345,54 +345,56 @@ namespace bifrost::editor
     ImGui::PopID();
   }
 
-  void ImGuiSerializer::serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info)
+  void ImGuiSerializer::serialize(StringRange key, meta::MetaObject& value)
   {
-    setNameBuffer(key);
+    const auto type_info = value.type_info;
 
-    const std::uint64_t mask           = type_info->enumValueMask();
-    const std::uint64_t original_value = type_info->enumValueRead(enum_value) & mask;
-    std::uint64_t       new_value      = original_value;
-    const char*         preview_name   = nullptr;
-
-    for (const auto& props : type_info->properties())
+    if (type_info->isEnum())
     {
-      if ((props->get(&enum_value).as<std::uint64_t>() & mask) == original_value)
-      {
-        preview_name = props->name().data();
-        break;
-      }
-    }
+      setNameBuffer(key);
 
-    if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_None))
-    {
+      const std::uint64_t original_value = value.enum_value;
+      const char*         preview_name   = nullptr;
+
       for (const auto& props : type_info->properties())
       {
-        const std::uint64_t value       = props->get(&enum_value).as<std::uint64_t>() & mask;
-        const bool          is_selected = value == original_value;
-
-        if (ImGui::Selectable(props->name().data(), is_selected, ImGuiSelectableFlags_None))
+        if (meta::variantToCompatibleT<std::uint64_t>(props->get(nullptr)) == original_value)
         {
-          if (!is_selected)
-          {
-            new_value = value;
-          }
+          preview_name = props->name().data();
+          break;
         }
       }
 
-      ImGui::EndCombo();
+      if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_None))
+      {
+        for (const auto& props : type_info->properties())
+        {
+          const std::uint64_t valuev      = meta::variantToCompatibleT<std::uint64_t>(props->get(nullptr));
+          const bool          is_selected = valuev == original_value;
+
+          if (ImGui::Selectable(props->name().data(), is_selected, ImGuiSelectableFlags_None))
+          {
+            if (!is_selected)
+            {
+              value.enum_value = valuev;
+            }
+          }
+        }
+
+        ImGui::EndCombo();
+      }
+
+      const bool has_changed = original_value != value.enum_value;
+
+      hasChangedTop() |= has_changed;
     }
-
-    const bool has_changed = original_value != new_value;
-
-    hasChangedTop() |= has_changed;
-
-    if (has_changed)
+    else
     {
-      type_info->enumValueWrite(enum_value, new_value);
+      ISerializer::serialize(key, value);
     }
   }
 
-  void ImGuiSerializer::serialize(Any& value, meta::BaseClassMetaInfo* type_info)
+  void ImGuiSerializer::serialize(meta::MetaVariant& value, meta::BaseClassMetaInfo* type_info)
   {
     // If the user calls this function from the custom
     // callback then perform default inspection.
@@ -407,7 +409,7 @@ namespace bifrost::editor
     if (custom_entry)
     {
       m_IsInCustomCallback = true;
-      custom_entry->callback(*this, value.as<void*>(), type_info, custom_entry->user_data);
+      custom_entry->callback(*this, value, custom_entry->user_data);
       m_IsInCustomCallback = false;
     }
     else
@@ -494,226 +496,6 @@ namespace bifrost::editor
     return ImGui::InputText(label, const_cast<char*>(string.c_str()), string.capacity(), flags, &ImGuiStdStringCallback, static_cast<void*>(&string));
   }
 
-  template<typename T>
-  static bool InspectInt(const char* label, Any& object, bool* did_change = nullptr)
-  {
-    if (object.is<T>())
-    {
-      int value = int(object.as<T>());
-
-      if (ImGui::DragInt(label, &value))
-      {
-        if constexpr (std::is_unsigned_v<T>)
-        {
-          value = value < 0 ? 0 : value;
-        }
-
-        object.assign<T>(value);
-
-        if (did_change)
-        {
-          *did_change = true;
-        }
-      }
-      else
-      {
-        if (did_change)
-        {
-          *did_change = false;
-        }
-      }
-
-      return true;
-    }
-
-    return false;
-  }
-
-  template<typename T>
-  static bool InspectFloat(const char* label, Any& object, bool* did_change = nullptr)
-  {
-    if (object.is<T>())
-    {
-      float value = float(object.as<T>());
-
-      if (ImGui::DragFloat(label, &value))
-      {
-        object.assign<T>(value);
-
-        if (did_change)
-        {
-          *did_change = true;
-        }
-      }
-      else
-      {
-        if (did_change)
-        {
-          *did_change = false;
-        }
-      }
-
-      return true;
-    }
-
-    if (object.is<T*>())
-    {
-      float value = float(*object.as<T*>());
-
-      if (ImGui::DragFloat(label, &value))
-      {
-        *object.as<T*>() = T(value);
-
-        if (did_change)
-        {
-          *did_change = true;
-        }
-      }
-      else
-      {
-        if (did_change)
-        {
-          *did_change = false;
-        }
-      }
-
-      return true;
-    }
-
-    return false;
-  }
-
-  bool imgui_ext::inspect(const char* label, Any& object, meta::BaseClassMetaInfo* info)
-  {
-    bool did_change = false;
-
-    if (object.isEmpty())
-    {
-      ImGui::Text("%s : <empty>", label);
-    }
-    else if (InspectInt<char>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::int8_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::uint8_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::int16_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::uint16_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::int32_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::uint32_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::int64_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectInt<std::uint64_t>(label, object, &did_change))
-    {
-    }
-    else if (InspectFloat<float>(label, object, &did_change))
-    {
-    }
-    else if (InspectFloat<double>(label, object, &did_change))
-    {
-    }
-    else if (InspectFloat<long double>(label, object, &did_change))
-    {
-    }
-    else if (object.is<Vec3f>())
-    {
-      did_change = ImGui::DragFloat3(label, &object.as<Vec3f>().x);
-    }
-    else if (object.is<Vec3f*>())
-    {
-      did_change = ImGui::DragFloat3(label, &object.as<Vec3f*>()->x);
-    }
-    else if (object.is<std::string>())
-    {
-      did_change = inspect(label, object.as<std::string>());
-    }
-    else if (object.is<std::string*>())
-    {
-      did_change = inspect(label, *object.as<std::string*>());
-    }
-    else if (object.is<void*>())
-    {
-      ImGui::Text("%s : <%p>", label, object.as<void*>());
-    }
-    else if (object.is<bool>())
-    {
-      ImGui::Checkbox(label, &object.as<bool>());
-    }
-    else if (object.is<BaseAssetHandle>())
-    {
-    }
-    else if (object.is<std::byte>())
-    {
-      ImGui::Text("%s : <byte>", label);
-    }
-    else if (info)
-    {
-      if (object.as<void*>() != nullptr)
-      {
-        if (ImGui::TreeNode(label))
-        {
-          for (auto& prop : info->properties())
-          {
-            auto field_value = prop->get(object);
-
-            if (inspect(prop->name().data(), field_value, prop->type()))
-            {
-              prop->set(object, field_value);
-              did_change = true;
-            }
-          }
-
-          if (info->isArray())
-          {
-            const std::size_t size = info->arraySize(object);
-
-            for (std::size_t i = 0; i < size; ++i)
-            {
-              char            label_buffer[s_MaxDigitsUInt64 + 1];
-              LinearAllocator label_alloc{label_buffer, sizeof(label_buffer)};
-
-              auto* const idx_label = string_utils::fmtAlloc(label_alloc, nullptr, "%i", int(i));
-              auto        element   = info->arrayGetElementAt(object, i);
-
-              if (inspect(idx_label, element, info->containedType()))
-              {
-                info->arraySetElementAt(object, i, element);
-              }
-            }
-          }
-
-          ImGui::TreePop();
-        }
-      }
-      else
-      {
-        if (ImGui::Button("Create (DOES NOT WORK)"))
-        {
-          // object     = info->instantiate(g_Engine->mainMemory());
-          did_change = true;
-        }
-      }
-    }
-    else
-    {
-      ImGui::Text("%s : <unknown>", label);
-    }
-
-    return did_change;
-  }
-
   bool imgui_ext::inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer)
   {
     ImGui::PushID(&entity);
@@ -748,7 +530,7 @@ namespace bifrost::editor
 
           if (serializer.endChangedCheck())
           {
-            entity.setComponentActive<T>(is_active);   
+            entity.setComponentActive<T>(is_active);
           }
 
           serializer.serializeT(entity.get<T>());

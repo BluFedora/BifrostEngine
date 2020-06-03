@@ -16,6 +16,7 @@
 namespace bifrost
 {
   static constexpr float    k_PI       = 3.14159265359f;
+  static constexpr float    k_TwoPI    = k_PI * 2.0f;
   static constexpr float    k_RadToDeg = 57.2957795131f;
   static constexpr float    k_DegToRad = 0.01745329251f;
   static constexpr float    k_Epsilon  = 1.0e-4f;
@@ -76,11 +77,17 @@ namespace bifrost::math
     return ((value - min) / (max - min));
   }
 
-  // Function Aliases from the C=API
+  template<typename T>
+  T clamp(T min, T value, T max)
+  {
+    return std::min(std::max(min, value), max);
+  }
 
-  constexpr const auto& alignf  = &bfMathAlignf;
-  constexpr const auto& invLerp = &bfMathInvLerpf;
-  constexpr const auto& remapf  = &bfMathRemapf;
+  // Function Aliases from the C-API
+
+  constexpr const auto& alignf   = &bfMathAlignf;
+  constexpr const auto& invLerpf = &bfMathInvLerpf;
+  constexpr const auto& remapf   = &bfMathRemapf;
 }  // namespace bifrost::math
 
 #endif /* BIFROST_MATH_HPP */

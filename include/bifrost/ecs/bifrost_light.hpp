@@ -11,9 +11,9 @@
 #ifndef BIFROST_LIGHT_HPP
 #define BIFROST_LIGHT_HPP
 
-#include "bifrost/bifrost_math.hpp"       /* bfColor4f     */
-#include "bifrost/math/bifrost_rect2.hpp" /* Vector3f      */
-#include "bifrost_base_component.hpp"     /* BaseComponent */
+#include "bifrost/bifrost_math.hpp"       /* bfColor4f       */
+#include "bifrost/math/bifrost_rect2.hpp" /* Vector3f, clamp */
+#include "bifrost_base_component.hpp"     /* BaseComponent   */
 
 namespace bifrost
 {
@@ -79,7 +79,7 @@ namespace bifrost
     {
       m_Direction = value;
       Vec3f_normalize(&m_Direction);
-     }
+    }
 
     float radius() const { return m_Radius; }
     void  setRadius(float value)
@@ -89,9 +89,23 @@ namespace bifrost
     }
 
     float innerAngleRad() const { return m_InnerAngleRad; }
+    void  setInnerAngleRad(float value)
+    {
+      m_InnerAngleRad     = math::clamp(0.0f, value, m_OuterAngleRad);
+      m_GPUCache.is_dirty = true;
+    }
+
     float outerAngleRad() const { return m_OuterAngleRad; }
+    void  setOuterAngleRad(float value)
+    {
+      m_OuterAngleRad     = math::clamp(m_InnerAngleRad, value, k_TwoPI);
+      m_GPUCache.is_dirty = true;
+    }
+
     float innerAngleDeg() const { return innerAngleRad() * k_RadToDeg; }
+    void  setInnerAngleDeg(float value) { setInnerAngleRad(value * k_DegToRad); }
     float outerAngleDeg() const { return outerAngleRad() * k_RadToDeg; }
+    void  setOuterAngleDeg(float value) { setOuterAngleRad(value * k_DegToRad); }
   };
 }  // namespace bifrost
 
@@ -99,11 +113,13 @@ BIFROST_META_REGISTER(bifrost::Light)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<Light>("Light"),                                              //
-     property("m_Type", &Light::type, &Light::setType),                       //
-     property("m_ColorIntensity", &Light::colorIntensity, &Light::setColor),  //
-     property("m_Direction", &Light::direction, &Light::setDirection),        //
-     property("m_Radius", &Light::radius, &Light::setRadius)                  //
+     class_info<Light>("Light"),                                                 //
+     property("m_Type", &Light::type, &Light::setType),                          //
+     property("m_ColorIntensity", &Light::colorIntensity, &Light::setColor),     //
+     property("m_Direction", &Light::direction, &Light::setDirection),           //
+     property("m_Radius", &Light::radius, &Light::setRadius),                    //
+     property("m_InnerAngle", &Light::innerAngleDeg, &Light::setInnerAngleDeg),  //
+     property("m_OuterAngle", &Light::outerAngleDeg, &Light::setOuterAngleDeg)   //
     )
   BIFROST_META_END()
 }

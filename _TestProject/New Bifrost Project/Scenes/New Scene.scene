@@ -124,12 +124,12 @@
             "m_Name" : "Untitled",
             "m_Components" : {
                 "Light" : {
-                    "m_Radius" : 12.95,
+                    "m_Radius" : 2.5,
                     "m_ColorIntensity" : {
                         "r" : 0.523271,
                         "g" : 0.377809,
                         "b" : 0.708049,
-                        "a" : 2.072
+                        "a" : 13.515
                     },
                     "m_Direction" : {
                         "y" : 0.986441,
@@ -139,14 +139,15 @@
                     },
                     "__Active__" : true,
                     "m_Type" : {
-                        "name" : "POINT",
-                        "value" : 1
-                    }
+                        "__EnumValue__" : 1
+                    },
+                    "m_InnerAngle" : 0,
+                    "m_OuterAngle" : 0
                 }
             },
             "m_Transform" : {
                 "Position" : {
-                    "y" : 1.05,
+                    "y" : 2,
                     "w" : 0,
                     "x" : 0.3,
                     "z" : 1.75
@@ -175,32 +176,33 @@
             "m_Name" : "Scene Light",
             "m_Components" : {
                 "Light" : {
-                    "m_Radius" : 10.25,
+                    "m_Radius" : 50.75,
                     "m_ColorIntensity" : {
-                        "r" : 0.57989,
-                        "g" : 1,
-                        "b" : 0.294143,
-                        "a" : 0.855
+                        "r" : 1,
+                        "g" : 0.839769,
+                        "b" : 0.327359,
+                        "a" : 3.976
                     },
                     "m_Direction" : {
-                        "y" : 0.216817,
+                        "y" : 0.471363,
                         "w" : 0,
-                        "x" : 0.398111,
-                        "z" : 0.891346
+                        "x" : 0.865498,
+                        "z" : 0.169502
                     },
                     "__Active__" : true,
                     "m_Type" : {
-                        "name" : "DIRECTIONAL",
-                        "value" : 0
-                    }
+                        "__EnumValue__" : 0
+                    },
+                    "m_InnerAngle" : 28.15,
+                    "m_OuterAngle" : 111.4
                 }
             },
             "m_Transform" : {
                 "Position" : {
-                    "y" : 5,
+                    "y" : 5.95,
                     "w" : 0,
-                    "x" : 2.95,
-                    "z" : 2.05
+                    "x" : 1.4,
+                    "z" : 3.4
                 },
                 "Origin" : {
                     "y" : 0,
@@ -209,10 +211,10 @@
                     "z" : 0
                 },
                 "Scale" : {
-                    "y" : 2.15,
+                    "y" : 1,
                     "w" : 0,
-                    "x" : 1.3,
-                    "z" : 0.1
+                    "x" : 1,
+                    "z" : 1
                 },
                 "Rotation" : {
                     "y" : 0,

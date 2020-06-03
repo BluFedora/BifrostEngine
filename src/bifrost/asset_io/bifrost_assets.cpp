@@ -14,10 +14,11 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
+#include "bifrost/ecs/bifrost_entity.hpp"
+
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
 #include "bifrost/asset_io/bifrost_file.hpp"             // File
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
-
 #include "bifrost/memory/bifrost_linear_allocator.hpp" /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"       //
 #include "bifrost/platform/bifrost_platform.h"         //
@@ -332,7 +333,7 @@ namespace bifrost
         return;
       }
 
-      Any            asset_handle   = type_info->instantiate(m_Memory, StringRange(path), uuid);
+      Any            asset_handle   = type_info->instantiate_OLD(m_Memory, StringRange(path), uuid);
       BaseAssetInfo* asset_handle_p = asset_handle.as<BaseAssetInfo*>();
       asset_handle_p->m_TypeInfo    = type_info;
 

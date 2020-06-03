@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_meta_function_traits.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -8,8 +9,9 @@
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2020
  */
+/******************************************************************************/
 #ifndef BIFROST_META_FUNCTION_TRAIT_HPP
 #define BIFROST_META_FUNCTION_TRAIT_HPP
 
@@ -34,6 +36,8 @@ namespace bifrost::meta
     template<template<typename...> typename T>
     using apply                = T<P...>;
     static constexpr auto size = sizeof...(P);
+    template<typename... Args>
+    using extend = ParameterPack<P..., Args...>;
   };
 
   template<typename F>
@@ -103,13 +107,13 @@ namespace bifrost::meta
     using tuple_type_raw = FunctionTuple<Args...>;
   };
 
-  // In C++17 and onward 'noexcept'-ness is part of a function's type.
+  // In C++17 and later 'noexcept'-ness is part of a function's type.
 #if __cplusplus > 201402L  // After C++14
 
   template<typename R, typename... Args>
   struct function_traits<R (*)(Args...) noexcept> : public function_traits<R(Args...)>
   {
-    static constexpr bool is_member_fn = true;
+    static constexpr bool is_member_fn = false;
   };
 
   // noexcept member function pointer

@@ -203,7 +203,7 @@ namespace bifrost
       m_Data(),
       m_TypeID(invalid_type())
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
 
       try
       {
@@ -266,9 +266,15 @@ namespace bifrost
     }
 
     template<typename T>
+    static constexpr bool canContainT()
+    {
+      return contains<std::decay_t<T>, Ts...>::value;
+    }
+
+    template<typename T>
     bool is() const noexcept
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
       return (m_TypeID == type_of<T>());
     }
 
@@ -280,7 +286,7 @@ namespace bifrost
     template<typename T, typename... Args>
     T& set(Args&&... args)
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
 
       destroy();
       new (&m_Data) T(std::forward<Args>(args)...);
@@ -292,14 +298,14 @@ namespace bifrost
     template<typename T, std::enable_if_t<contains<T, Ts...>::value> = 0>
     operator T&() noexcept
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
       return this->get<T>();
     }
 
     template<typename T>
     operator const T&() const noexcept
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
       return this->get<T>();
     }
 
@@ -309,7 +315,7 @@ namespace bifrost
      noexcept
 #endif
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
       return this->get<T>();
     }
 
@@ -319,7 +325,7 @@ namespace bifrost
      noexcept
 #endif
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
       return this->get<T>();
     }
 
@@ -329,7 +335,7 @@ namespace bifrost
      noexcept
 #endif
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
 
 #if BIFROST_VARIANT_USE_EXCEPTIONS
       if (!this->is<T>())
@@ -345,7 +351,7 @@ namespace bifrost
      noexcept
 #endif
     {
-      static_assert(contains<T, Ts...>::value, "Type T is not able to be used in this variant");
+      static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
 
 #if BIFROST_VARIANT_USE_EXCEPTIONS
       if (!this->is<T>())

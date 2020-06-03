@@ -13,6 +13,8 @@
 #endif
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"
 
+#include "bifrost_meta_variant.hpp"
+
 #include <string_view> /* string_view */
 
 namespace bifrost::meta
@@ -39,15 +41,15 @@ namespace bifrost::meta
     Array<BaseClassMetaInfo*> m_Parameters;
 
    public:
-    const Array<BaseClassMetaInfo*>& paremeters() const { return m_Parameters; }
+    const Array<BaseClassMetaInfo*>& parameters() const { return m_Parameters; }
 
     virtual ~BaseCtorMetaInfo() = default;
 
    protected:
     BaseCtorMetaInfo();
 
-    virtual Any  instantiateImpl(IMemoryManager& memory, const Any* arguments) = 0;
-    virtual bool isCompatible(const Any* arguments)                            = 0;
+    virtual Any  instantiateImpl_OLD(IMemoryManager& memory, const Any* arguments) = 0;
+    virtual bool isCompatible_OLD(const Any* arguments)                            = 0;
   };
 
   class BaseMetaInfo
@@ -66,8 +68,8 @@ namespace bifrost::meta
   class BasePropertyMetaInfo : public BaseMetaInfo
   {
    private:
-    BaseClassMetaInfo* m_Type;        //!< Type info fpr this property.
-    bool               m_IsProperty;  //!< Since this base classes is shared by both Class::m_Members and Class::getter / Class::setter pairs it is useful to know which type it is.
+    BaseClassMetaInfo* m_Type;        //!< Type info for this property.
+    bool               m_IsProperty;  //!< Since this base class is shared by both Class::m_Members and Class::getter / Class::setter pairs it is useful to know which type it is.
 
    protected:
     BasePropertyMetaInfo(std::string_view name, BaseClassMetaInfo* type, bool is_property);
@@ -75,9 +77,8 @@ namespace bifrost::meta
    public:
     [[nodiscard]] BaseClassMetaInfo* type() const { return m_Type; }
     [[nodiscard]] bool               isProperty() const { return m_IsProperty; }
-
-    virtual Any  get(const Any& instance)             = 0;
-    virtual void set(Any& instance, const Any& value) = 0;
+    virtual MetaVariant              get(const MetaVariant& self)                           = 0;
+    virtual bool                     set(const MetaVariant& self, const MetaVariant& value) = 0;
   };
 
   class BaseMethodMetaInfo : public BaseMetaInfo
@@ -91,27 +92,30 @@ namespace bifrost::meta
     [[nodiscard]] BaseClassMetaInfo*               returnType() const { return m_ReturnType; }
 
     template<typename... Args>
-    Any invoke(Args&&... args)
+    MetaVariant invoke(Args&&... args)
     {
       if (sizeof...(Args) != m_Parameters.size())
       {
         throw "Arity Mismatch";
       }
 
-      const Any any_arguments[] = {args...};
-      return invokeImpl(any_arguments);
+      const MetaVariant variant_args[] = {makeVariant(args)...};
+      return invokeImpl(variant_args);
     }
 
    protected:
     BaseMethodMetaInfo(std::string_view name, std::size_t arity, BaseClassMetaInfo* return_type);
 
    private:
-    virtual Any invokeImpl(const Any* arguments) = 0;
+    virtual MetaVariant invokeImpl(const MetaVariant* arguments) const = 0;
   };
 
   struct InvalidCtorCall
   {};
 
+  using BaseClassMetaInfoPtr = BaseClassMetaInfo*;
+
+  // TODO(Shareef): Make this class more const correct.
   class BaseClassMetaInfo : public BaseMetaInfo
   {
     template<typename T>
@@ -124,9 +128,9 @@ namespace bifrost::meta
     Array<BaseMethodMetaInfo*>   m_Methods;
     std::size_t                  m_Size;
     std::size_t                  m_Alignment;
-    bool                         m_IsArray;
-    bool                         m_IsMap;
-    bool                         m_IsEnum;
+    bool                         m_IsArray;  // TODO(Shareef): Replace with bit-flags.
+    bool                         m_IsMap;    // TODO(Shareef): Replace with bit-flags.
+    bool                         m_IsEnum;   // TODO(Shareef): Replace with bit-flags.
 
    protected:
     BaseClassMetaInfo(std::string_view name, std::size_t size, std::size_t alignment);
@@ -142,33 +146,57 @@ namespace bifrost::meta
     const Array<BasePropertyMetaInfo*>& properties() const { return m_Properties; }
     const Array<BaseMethodMetaInfo*>&   methods() const { return m_Methods; }
 
-    Any instantiate(IMemoryManager& memory)
+    template<typename TEnum>
+    std::enable_if_t<std::is_enum_v<TEnum>, StringRange> enumToString(TEnum enum_value)
     {
-      for (auto& ctor : m_Ctors)
+      return enumToString(std::uint64_t(enum_value));
+    }
+
+    StringRange enumToString(std::uint64_t enum_value) const
+    {
+      for (BasePropertyMetaInfo* const property : properties())
       {
-        if (ctor->paremeters().size() == 0)
+        const auto v = meta::variantToCompatibleT<std::uint64_t>(property->get(nullptr));
+
+        if (v == enum_value)
         {
-          return ctor->instantiateImpl(memory, nullptr);
+          return {
+           property->name().data(),
+           property->name().length(),
+          };
         }
       }
 
-      return nullptr;
+      return {};
+    }
+
+    Any instantiate_OLD(IMemoryManager& memory)
+    {
+      for (auto& ctor : m_Ctors)
+      {
+        if (ctor->parameters().size() == 0)
+        {
+          return ctor->instantiateImpl_OLD(memory, nullptr);
+        }
+      }
+
+      return InvalidCtorCall{};
     }
 
     template<typename... Args>
-    Any instantiate(IMemoryManager& memory, Args&&... args)
+    Any instantiate_OLD(IMemoryManager& memory, Args&&... args)
     {
       const Any any_arguments[] = {args...};
 
       for (auto& ctor : m_Ctors)
       {
-        const std::size_t num_ctor_params = ctor->paremeters().size();
+        const std::size_t num_ctor_params = ctor->parameters().size();
 
         if (sizeof...(Args) == num_ctor_params)
         {
-          if (ctor->isCompatible(any_arguments))
+          if (ctor->isCompatible_OLD(any_arguments))
           {
-            return ctor->instantiateImpl(memory, any_arguments);
+            return ctor->instantiateImpl_OLD(memory, any_arguments);
           }
         }
       }
@@ -179,15 +207,15 @@ namespace bifrost::meta
     BasePropertyMetaInfo* findProperty(std::string_view name) const;
     BaseMethodMetaInfo*   findMethod(std::string_view name) const;
 
-    virtual BaseClassMetaInfo* containedType() const { return nullptr; }
-    virtual std::size_t        arraySize(Any& instance) { return 0; }
-    virtual Any                arrayGetElementAt(Any& instance, std::size_t index) { return {}; }
-    virtual bool               arraySetElementAt(Any& instance, std::size_t index, Any& value) { return false; }
-    virtual Any                mapGetElementAt(Any& instance, Any& key) { return {}; }
-    virtual bool               mapSetElementAt(Any& instance, Any& key, Any& value) { return false; }
-    std::uint64_t              enumValueMask() const;
-    std::uint64_t              enumValueRead(std::uint64_t& enum_object) const;
-    void                       enumValueWrite(std::uint64_t& enum_object, std::uint64_t new_value) const;
+    // New API
+
+    virtual BaseClassMetaInfoPtr keyType() const { return nullptr; }
+    virtual BaseClassMetaInfoPtr valueType() const { return nullptr; }
+    virtual std::size_t          numElements(const MetaVariant& self) const { return 0u; }
+    virtual MetaVariant          elementAt(const MetaVariant& self, std::size_t index) const { return {}; }
+    virtual MetaVariant          elementAt(const MetaVariant& self, const MetaVariant& key) const { return {}; }
+    virtual bool                 setElementAt(const MetaVariant& self, std::size_t index, const MetaVariant& value) const { return false; }
+    virtual bool                 setElementAt(const MetaVariant& self, const MetaVariant& key, const MetaVariant& value) const { return false; }
   };
 
   using BaseUnionMetaInfo  = BaseClassMetaInfo;

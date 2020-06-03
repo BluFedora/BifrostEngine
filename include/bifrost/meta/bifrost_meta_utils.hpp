@@ -96,33 +96,6 @@ namespace bifrost::meta
     // TODO: Add constexpr index to this version for for each....
     //
 
-    template<std::size_t, typename T, typename... Args>
-    class for_each_template_and_pointer_impl
-    {
-     public:
-      template<typename F>
-      static void impl(F&& func)
-      {
-        func(type_holder<T, 0>());
-        func(type_holder<T*, 0>());
-        func(type_holder<const T*, 0>());
-        for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
-      }
-    };
-
-    template<typename T>
-    class for_each_template_and_pointer_impl<1, T>
-    {
-     public:
-      template<typename F>
-      static void impl(F&& func)
-      {
-        func(type_holder<T, 0>());
-        func(type_holder<T*, 0>());
-        func(type_holder<const T*, 0>());
-      }
-    };
-
     template<std::size_t N>
     struct num
     {
@@ -143,13 +116,6 @@ namespace bifrost::meta
   void for_each_template(F&& func)
   {
     detail::for_each_template_impl<sizeof...(Args), 0, Args...>::impl(func);
-  }
-
-  // Same as 'for_each_template' but adds the T* version.
-  template<typename... Args, typename F>
-  void for_each_template_and_pointer_and_const(F&& func)
-  {
-    detail::for_each_template_and_pointer_impl<sizeof...(Args), Args...>::impl(func);
   }
 
   //

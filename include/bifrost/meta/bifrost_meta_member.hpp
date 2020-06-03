@@ -1,7 +1,6 @@
 #ifndef BIFROST_META_MEMBER_HPP
 #define BIFROST_META_MEMBER_HPP
 
-#include <cstdint>     /* uint64_t              */
 #include <tuple>       /* tuple                 */
 #include <type_traits> /* decay_t, is_pointer_v */
 
@@ -105,12 +104,10 @@ namespace bifrost::meta
     {
     }
 
-    std::uint64_t value() const { return m_Value; }
-
     type get(const Class& obj) const
     {
       (void)obj;
-      return (type)value();
+      return (type)m_Value;
     }
 
     void set(Class& obj, const type& value) const
@@ -136,13 +133,11 @@ namespace bifrost::meta
     static constexpr bool is_enum     = false;
   };
 
-  struct EnumWrapper { std::uint64_t value; };
-
   template<typename Class, typename PropertyT, typename CastToT, bool read_only>
   class RawMember final : public BaseMember
   {
    public:
-    using type                        = std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, std::decay_t<PropertyT>>;
+    using type                        = std::decay_t<PropertyT>;
     using type_base                   = CastToT;
     using class_t                     = Class;
     using member_ptr                  = PropertyT class_t::*;
@@ -167,11 +162,10 @@ namespace bifrost::meta
     {
     }
 
-    // NOTE(Shareef)
-    //   This should always be true.
+    // NOTE(Shareef):
     //   The use of 'm_Pointer' is just so there
     //   are no warnings from resharper.
-    [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
+    [[nodiscard]] bool isReadOnly() const { return read_only || m_Pointer != nullptr; }
 
     [[nodiscard]] CastToT& get(Class& obj) const
     {
@@ -197,7 +191,7 @@ namespace bifrost::meta
   {
    public:
     using type_base                   = std::decay_t<PropertyT>;
-    using type                        = std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
+    using type                        = type_base;// std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
     using class_t                     = Class;
     using getter_t                    = const type& (class_t::*)() const;
     using setter_t                    = void (class_t::*)(const type&);
@@ -241,7 +235,7 @@ namespace bifrost::meta
   {
    public:
     using type_base                   = std::decay_t<PropertyT>;
-    using type                        = std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
+    using type                        = type_base;
     using class_t                     = Class;
     using getter_t                    = PropertyT (class_t::*)() const;
     using setter_t                    = void (class_t::*)(PropertyT);
@@ -379,8 +373,8 @@ namespace bifrost::meta
     //   This should always be true.
     //   The use of 'm_Pointer' is just so there are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
-#if 0
 
+    #if 0
     decltype(auto) call(const Class& obj, Args&&... args) const
     {
       if constexpr (std::is_same_v<void, R>)
@@ -396,14 +390,7 @@ namespace bifrost::meta
 
     decltype(auto) call(const Class* obj, Args... args) const
     {
-      if constexpr (std::is_same_v<void, R>)
-      {
-        (obj->*m_Pointer)(std::forward<Args>(args)...);
-      }
-      else
-      {
-        return (obj->*m_Pointer)(std::forward<Args>(args)...);
-      }
+      return (obj->*m_Pointer)(std::forward<Args>(args)...);
     }
 
     // This part of the concept is not available for functions.

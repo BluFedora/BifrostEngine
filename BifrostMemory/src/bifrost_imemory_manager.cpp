@@ -41,6 +41,11 @@ namespace bifrost
 
   void* IMemoryManager::allocateAligned(std::size_t header_size, std::size_t size, std::size_t alignment)
   {
+    if (size == 0)
+    {
+      return nullptr;
+    }
+
     const std::size_t allocation_size = header_size + sizeof(std::uint8_t) + size + (alignment - 1);
     void* const       allocation      = allocate(allocation_size);
 

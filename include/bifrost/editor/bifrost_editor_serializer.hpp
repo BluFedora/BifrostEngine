@@ -13,7 +13,7 @@
 #ifndef BIFROST_EDITOR_SERIALIZER_HPP
 #define BIFROST_EDITOR_SERIALIZER_HPP
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"  // ISerializer
+#include "bifrost/asset_io/bifrost_json_serializer.hpp" // ISerializer
 
 #include <imgui/imgui.h>  // ImGui::*
 
@@ -34,7 +34,7 @@ namespace bifrost::editor
   //
   namespace InspectorRegistry
   {
-    using Callback = void (*)(ImGuiSerializer& serializer, void* object, meta::BaseClassMetaInfo* type_info, void* user_data);
+    using Callback = void (*)(ImGuiSerializer& serializer, meta::MetaVariant& object, void* user_data);
 
     void overrideInspectorImpl(meta::BaseClassMetaInfo* type_info, Callback callback, void* user_data);
 
@@ -89,8 +89,8 @@ namespace bifrost::editor
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
-    void serialize(StringRange key, std::uint64_t& enum_value, meta::BaseClassMetaInfo* type_info) override;
-    void serialize(Any& value, meta::BaseClassMetaInfo* type_info) override;
+    void serialize(StringRange key, meta::MetaObject& value) override;
+    void serialize(meta::MetaVariant& value, meta::BaseClassMetaInfo* type_info) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;
@@ -109,7 +109,6 @@ namespace bifrost::editor
   {
     bool inspect(const char* label, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(const char* label, std::string& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
-    bool inspect(const char* label, Any& object, meta::BaseClassMetaInfo* info);
     bool inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer);
   }  // namespace imgui_ext
 }  // namespace bifrost::editor

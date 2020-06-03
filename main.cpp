@@ -272,13 +272,11 @@ static void Test2DTransform()
 #if BIFROST_PLATFORM_WINDOWS
       // This test failed.
       // __debugbreak();
-        DebugBreak();
+      DebugBreak();
 #endif
     }
   }
 }
-
-// -2.1238898, y: 1.1061869, z: -0.0884841
 
 static void TestQuaternions()
 {
@@ -297,7 +295,100 @@ static void TestQuaternions()
   std::printf("From: EulerAngles(%f, %f, %f    )\n", rotation_euler.x, rotation_euler.y, rotation_euler.z);
 }
 
-static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions};
+static void TestApplyReturningVoid_01(float t)
+{
+  std::printf("TestApplyReturningVoid_01(%f)\n", t);
+}
+
+static float TestApplyReturningVoid_02(float t)
+{
+  std::printf("TestApplyReturningVoid_02(%f)\n", t);
+  return t;
+}
+
+template<typename F>
+static decltype(auto) TestApplyReturningVoid_Test(F&& func, const std::tuple<float>& args)
+{
+  return std::apply(func, args);
+}
+
+static void TestApplyReturningVoid()
+{
+  const std::tuple<float> args{5.3f};
+
+  TestApplyReturningVoid_Test(TestApplyReturningVoid_01, args);
+  TestApplyReturningVoid_Test(TestApplyReturningVoid_02, args);
+}
+
+enum class MetaSystemEnumTest
+{
+  E0,
+  E1,
+};
+
+struct MetaSystemObjectTest : BaseObject<MetaSystemObjectTest>
+{
+  int field = 5;
+
+  MetaSystemEnumTest TestFunction(int t)
+  {
+    std::printf("MetaSystemObjectTest::TestFunction(%f)\n", float(t));
+    return MetaSystemEnumTest::E1;
+  }
+};
+
+BIFROST_META_REGISTER(MetaSystemEnumTest){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   enum_info<MetaSystemEnumTest>("MetaSystemEnumTest"),  //
+   enum_element("E0", MetaSystemEnumTest::E0),           //
+   enum_element("E1", MetaSystemEnumTest::E1)            //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(MetaSystemObjectTest)
+{
+  BIFROST_META_BEGIN()
+    BIFROST_META_MEMBERS(
+     class_info<MetaSystemObjectTest>("MetaSystemObjectTest"),      //
+     field("field", &MetaSystemObjectTest::field),                  //
+     function("TestFunction", &MetaSystemObjectTest::TestFunction)  //
+    )
+  BIFROST_META_END()
+}
+
+static void TestMetaSystem()
+{
+  MetaSystemObjectTest test;
+
+  const auto test_class_info = test.type();
+  const auto test_fn         = test_class_info->findMethod("TestFunction");
+
+  const auto result0 = test_fn->invoke(&test, "Non Compatible");
+  const auto result1 = test_fn->invoke(&test, 3.4f);
+  const auto result2 = test_fn->invoke(&test, 6);
+
+  std::printf("result0.type = %i\n", int(result0.type()));
+  std::printf("result1.type = %i\n", int(result1.type()));
+  std::printf("result2.type = %i\n", int(result2.type()));
+
+  if (result1.is<meta::MetaObject>())
+  {
+    const meta::MetaObject& meta_obj = result1.as<meta::MetaObject>();
+
+    auto enum_str = meta_obj.type_info->enumToString((MetaSystemEnumTest)meta_obj.enum_value);
+
+    std::printf("result1.value = %.*s\n", int(enum_str.length()), enum_str.begin());
+  }
+
+  std::printf("test.field = %i\n", test.field);
+
+  test_class_info->findProperty("field")->set(makeVariant(&test), 3.0f);
+
+  std::printf("test.field = %i\n", test.field);
+}
+
+static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &TestApplyReturningVoid, &TestMetaSystem};
 
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {

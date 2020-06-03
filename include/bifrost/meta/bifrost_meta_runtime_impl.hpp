@@ -31,35 +31,59 @@ namespace bifrost::meta
       return std::is_lvalue_reference_v<std::invoke_result_t<decltype(&MemberConcept::get), const MemberConcept&, Class&>>;
     }
 
-    Any get(const Any& instance) override final
+    MetaVariant get(const MetaVariant& self) override
     {
-      Class& instance_as_class = *instance.as<Class*>();
-
-      if constexpr (isFieldImpl())
+      if constexpr (std::is_enum_v<Class>)
       {
-        return &m_Impl.get(instance_as_class);
+        Class const instance_as_enum = meta::variantToCompatibleT<Class>(self);
+        return makeVariant(m_Impl.get(instance_as_enum));
       }
       else
       {
-        return m_Impl.get(instance_as_class);
-      }
-    }
+        Class* const instance_as_class = meta::variantToCompatibleT<Class*>(self);
 
-    void set(Any& instance, const Any& value) override final
-    {
-      if constexpr (MemberConcept::is_writable)
-      {
-        Class& instance_as_class = *instance.as<Class*>();
-
-        if constexpr (isFieldImpl())
+        if (instance_as_class)
         {
-          m_Impl.set(instance_as_class, *value.as<PropertyBaseT*>());
+          const auto& wtf = m_Impl.get(*instance_as_class);
+
+          return makeVariant(wtf);
         }
         else
         {
-          m_Impl.set(instance_as_class, value.as<PropertyBaseT>());
+          meta::variantToCompatibleT<Class*>(self);
         }
       }
+
+      return {};
+    }
+
+    bool set(const MetaVariant& self, const MetaVariant& value) override
+    {
+      if constexpr (MemberConcept::is_writable)
+      {
+        if constexpr (std::is_enum_v<Class>)
+        {
+          const_cast<MetaVariant&>(self) = value;
+        }
+        else
+        {
+          Class* const instance_as_class = meta::variantToCompatibleT<Class*>(self);
+
+          if (instance_as_class)
+          {
+            std::aligned_storage_t<sizeof(PropertyBaseT), alignof(PropertyBaseT)> value_storage;
+
+            if (meta::variantToCompatibleT2<PropertyBaseT>(&value_storage, value))
+            {
+              m_Impl.set(*instance_as_class, std::move(*reinterpret_cast<PropertyBaseT*>(&value_storage)));
+              reinterpret_cast<PropertyBaseT*>(&value_storage)->~PropertyBaseT();
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
     }
   };
 
@@ -75,46 +99,50 @@ namespace bifrost::meta
     const FunctionConcept& m_Impl;
 
    public:
-    MethodMetaInfo(const FunctionConcept& impl);
+    explicit MethodMetaInfo(const FunctionConcept& impl);
 
-    Any invokeImpl(const Any* arguments) override
+   private:
+    MetaVariant invokeImpl(const MetaVariant* arguments) const override
     {
-      std::array<Any, FnTraits::arity> args;
+      using ArgsType = typename FnTraits::tuple_type;
+
+      ArgsType args;
 
       bool is_compatible = true;
 
-      for_constexpr<args.size()>([arguments, &args, &is_compatible](auto i) {
+      for_constexpr<std::tuple_size_v<ArgsType>>([arguments, &args, &is_compatible](auto i) {
+        using T = typename FnTraits::template argument<i.value>::type;
+
         if (is_compatible)
         {
-          if (!arguments[i.value].template isSimilar<typename FnTraits::template argument<i.value>::type>())
+          const auto& args_i = arguments[i.value];
+
+          if (isVariantCompatible<T>(args_i))
           {
-            is_compatible = false;
+            std::get<i.value>(args) = variantToCompatibleT<T>(args_i);
           }
           else
           {
-            args[i.value] = arguments[i.value];
+            is_compatible = false;
           }
         }
       });
 
       if (is_compatible)
       {
-        return meta::apply(
-         [this](auto&&... args) -> Any {
-           if constexpr (std::is_same_v<ReturnType, void>)
-           {
-             m_Impl.call(args...);
-             return {};
-           }
-           else
-           {
-             return m_Impl.call(args...);
-           }
-         },
-         args);
+        const auto tuple_args = std::tuple_cat(std::make_tuple<const FunctionConcept*>(&m_Impl), args);
+
+        if constexpr (std::is_same_v<ReturnType, void>)
+        {
+          meta::apply(&FunctionConcept::call, tuple_args);
+        }
+        else
+        {
+          return makeVariant(meta::apply(&FunctionConcept::call, tuple_args));
+        }
       }
 
-      return InvalidMethodCall{};
+      return {};
     }
   };
 
@@ -127,7 +155,7 @@ namespace bifrost::meta
     CtorMetaInfo();
 
    protected:
-    bool isCompatible(const Any* arguments) override
+    bool isCompatible_OLD(const Any* arguments) override
     {
       bool is_compatible = true;
 
@@ -162,7 +190,7 @@ namespace bifrost::meta
       construct_from_any_(obj, std::forward<std::array<Any, N>>(tuple), std::make_index_sequence<N>{});
     }
 
-    Any instantiateImpl(IMemoryManager& memory, const Any* arguments) override
+    Any instantiateImpl_OLD(IMemoryManager& memory, const Any* arguments) override
     {
       std::array<Any, std::tuple_size<ArgsTuple>::value> args;
 
@@ -206,30 +234,19 @@ namespace bifrost::meta
       m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<decltype(m_Capacity)>>(m_Capacity));
     }
 
-    BaseClassMetaInfo* containedType() const override;
-
-    std::size_t arraySize(Any& instance) override
-    {
-      Array<Class>* const arr = instance;
-      return arr->size();
-    }
-
-    Any arrayGetElementAt(Any& instance, std::size_t index) override
-    {
-      Array<Class>* arr = instance;
-      return (*arr)[index];
-    }
-
-    bool arraySetElementAt(Any& instance, std::size_t index, Any& value) override
-    {
-      Array<Class>* arr = instance;
-      (*arr)[index]     = value;
-      return true;
-    }
+    BaseClassMetaInfoPtr keyType() const override;
+    BaseClassMetaInfoPtr valueType() const override;
+    std::size_t          numElements(const MetaVariant& self) const override;
+    MetaVariant          elementAt(const MetaVariant& self, std::size_t index) const override;
+    MetaVariant          elementAt(const MetaVariant& self, const MetaVariant& key) const override;
+    bool                 setElementAt(const MetaVariant& self, std::size_t index, const MetaVariant& value) const override;
+    bool                 setElementAt(const MetaVariant& self, const MetaVariant& key, const MetaVariant& value) const override;
   };
 
-template<typename T>
-struct TypeInfo;
+  // TypeInfo<T>
+
+  template<typename T>
+  struct TypeInfo;
 
 #define TYPE_INFO_SPEC(T)                                                                                                        \
   template<>                                                                                                                     \
@@ -289,6 +306,41 @@ struct TypeInfo;
   };
 
   template<typename T>
+  struct TypeInfo<const T&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<volatile T&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const volatile T&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<T&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<T*&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const T*&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
+  struct TypeInfo<const volatile T*&> : public TypeInfo<std::decay_t<T>>
+  {
+  };
+
+  template<typename T>
   struct TypeInfo<Array<T>>
   {
     static BaseClassMetaInfo* get()
@@ -298,7 +350,7 @@ struct TypeInfo;
     }
   };
 
-template<typename T>
+  template<typename T>
   struct TypeInfo
   {
     static BaseClassMetaInfo*& get()
@@ -308,14 +360,15 @@ template<typename T>
       //   Since this is a static variable for a templated function:
       //   Pointer Comparisons still work for type checking since each instanciation of this
       //   function gives a different address.
-      //   Also the name "___NoTypeInfo___" is not registered to the global map
+      //   Also note the name "___NoTypeInfo___" is not registered to the global map
       //   since this uses the base class's constructor.
       //
-      static BaseClassMetaInfo  s_NullType = {"___NoTypeInfo___", 0, 0};
-      static BaseClassMetaInfo* s_Info     = nullptr;
+      static BaseClassMetaInfo    s_NullType = {"___NoTypeInfo___", 0, 0};
+      static BaseClassMetaInfoPtr s_Info     = nullptr;
 
       if (s_Info == nullptr)
       {
+        // TODO(Shareef): Investigate if this is strictly required...
 #define TYPE_INFO_SPEC(T) TypeInfo<T>::get()
         TYPE_INFO_SPEC(std::byte);
         TYPE_INFO_SPEC(char);
@@ -338,8 +391,8 @@ template<typename T>
           {
             if (!s_Info)
             {
-              auto* info = gRttiMemory().allocateT<ClassMetaInfo<T>>(member.name());
-              s_Info     = info;
+              auto* const info = gRttiMemory().allocateT<ClassMetaInfo<T>>(member.name());
+              s_Info           = info;
               info->populateFields();
             }
           }
@@ -369,6 +422,8 @@ template<typename T>
   {
   }
 
+  // CtorMetaInfo<Class, CtorConcept>
+
   template<typename Class, typename CtorConcept>
   CtorMetaInfo<Class, CtorConcept>::CtorMetaInfo() :
     BaseCtorMetaInfo()
@@ -377,6 +432,8 @@ template<typename T>
       m_Parameters.push(TypeInfo<typename std::tuple_element<i.value, ArgsTuple>::type>::get());
     });
   }
+
+  // ClassMetaInfo<Class>
 
   template<typename Class>
   ClassMetaInfo<Class>::ClassMetaInfo(std::string_view name) :
@@ -423,10 +480,87 @@ template<typename T>
     });
   }
 
+  // ArrayClassMetaInfo<Class>
+
   template<typename Class>
-  BaseClassMetaInfo* ArrayClassMetaInfo<Class>::containedType() const
+  BaseClassMetaInfoPtr ArrayClassMetaInfo<Class>::keyType() const
+  {
+    return TypeInfo<std::size_t>::get();
+  }
+
+  template<typename Class>
+  BaseClassMetaInfoPtr ArrayClassMetaInfo<Class>::valueType() const
   {
     return TypeInfo<Class>::get();
+  }
+
+  template<typename Class>
+  std::size_t ArrayClassMetaInfo<Class>::numElements(const MetaVariant& self) const
+  {
+    Array<Class>* const arr = meta::variantToCompatibleT<Array<Class>*>(self);
+
+    if (arr)
+    {
+      return arr->size();
+    }
+
+    return 0u;
+  }
+
+  template<typename Class>
+  MetaVariant ArrayClassMetaInfo<Class>::elementAt(const MetaVariant& self, std::size_t index) const
+  {
+    Array<Class>* const arr = meta::variantToCompatibleT<Array<Class>*>(self);
+
+    if (arr)
+    {
+      return makeVariant(arr->at(index));
+    }
+
+    return {};
+  }
+
+  template<typename Class>
+  MetaVariant ArrayClassMetaInfo<Class>::elementAt(const MetaVariant& self, const MetaVariant& key) const
+  {
+    if (isVariantCompatible<std::size_t>(key))
+    {
+      return elementAt(self, variantToCompatibleT<std::size_t>(key));
+    }
+
+    return {};
+  }
+
+  template<typename Class>
+  bool ArrayClassMetaInfo<Class>::setElementAt(const MetaVariant& self, std::size_t index, const MetaVariant& value) const
+  {
+    Array<Class>* const arr = meta::variantToCompatibleT<Array<Class>*>(self);
+
+    if (arr)
+    {
+      arr->at(index) = variantToCompatibleT<Class>(value);
+    }
+
+    return false;
+  }
+
+  template<typename Class>
+  bool ArrayClassMetaInfo<Class>::setElementAt(const MetaVariant& self, const MetaVariant& key, const MetaVariant& value) const
+  {
+    if (isVariantCompatible<std::size_t>(key))
+    {
+      return setElementAt(self, variantToCompatibleT<std::size_t>(key), value);
+    }
+
+    return false;
+  }
+
+  // Misc
+
+  template<typename T>
+  BaseClassMetaInfo* typeInfoGet()
+  {
+    return TypeInfo<T>::get();
   }
 }  // namespace bifrost::meta
 

@@ -185,7 +185,7 @@ add_executable(
   BifrostEngine
   ${BIFROST_ENGINE_SOURCE_FILES}
   "include/bifrost/ecs/bifrost_collision_system.hpp"
- "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp")
+ "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp" "src/bifrost/core/bifrost_engine.cpp")
 
 target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
 target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)

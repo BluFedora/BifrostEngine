@@ -1,7 +1,7 @@
 #include "bifrost/meta/bifrost_meta_runtime.hpp"
 
-#include "bifrost/bifrost_std.h"                      /* bfInvalidDefaultCase */
-#include "bifrost/meta/bifrost_meta_runtime_impl.hpp" /*  */
+#include "bifrost/bifrost_std.h" /* bfInvalidDefaultCase */
+#include "bifrost/core/bifrost_base_object.hpp"
 
 namespace
 {
@@ -93,68 +93,42 @@ namespace bifrost::meta
     return nullptr;
   }
 
-  std::uint64_t BaseClassMetaInfo::enumValueMask() const
-  {
-    std::uint64_t mask;
-
-    switch (size())
-    {
-      case 1:
-        mask = 0xFF;
-        break;
-      case 2:
-        mask = 0xFFFF;
-        break;
-      case 4:
-        mask = 0xFFFFFFFF;
-        break;
-      case 8:
-        mask = 0xFFFFFFFFFFFFFFFF;
-        break;
-      default:
-        mask = 0x0;
-        break;
-    }
-
-    return mask;
-  }
-
-  std::uint64_t BaseClassMetaInfo::enumValueRead(std::uint64_t& enum_object) const
-  {
-    switch (size())
-    {
-      case 1: return *reinterpret_cast<std::uint8_t*>(&enum_object);
-      case 2: return *reinterpret_cast<std::uint16_t*>(&enum_object);
-      case 4: return *reinterpret_cast<std::uint32_t*>(&enum_object);
-      case 8: return *reinterpret_cast<std::uint64_t*>(&enum_object);
-      default: return 0;
-    }
-  }
-
-  void BaseClassMetaInfo::enumValueWrite(std::uint64_t& enum_object, std::uint64_t new_value) const
-  {
-    switch (size())
-    {
-      case 1:
-        *reinterpret_cast<std::uint8_t*>(&enum_object) = std::uint8_t(new_value);
-        break;
-      case 2:
-        *reinterpret_cast<std::uint16_t*>(&enum_object) = std::uint16_t(new_value);
-        break;
-      case 4:
-        *reinterpret_cast<std::uint32_t*>(&enum_object) = std::uint32_t(new_value);
-        break;
-      case 8:
-        *reinterpret_cast<std::uint64_t*>(&enum_object) = std::uint64_t(new_value);
-        break;
-        bfInvalidDefaultCase();
-    }
-  }
-
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name)
   {
     BaseClassMetaInfo** clz_info = gRegistry().at(name);
 
     return clz_info ? *clz_info : nullptr;
   }
+
+  MetaVariant detail::make(void* ptr, BaseClassMetaInfo* class_info)
+  {
+    // ReSharper disable CppSomeObjectMembersMightNotBeInitialized
+    MetaObject ret{class_info, {nullptr}};
+
+    if (class_info->isEnum())
+    {
+      // ret.enum_value = *static_cast<std::uint64_t*>(ptr);
+      ret.enum_value = 0x0; // Clear it out.
+      std::memcpy(&ret.enum_value, ptr, class_info->size());
+    }
+    else
+    {
+      ret.object_ref = ptr;
+    }
+
+    return ret;
+    // ReSharper restore CppSomeObjectMembersMightNotBeInitialized
+  }
+
+  void* detail::doBaseObjStuff(IBaseObject* base_obj, BaseClassMetaInfo* type_info)
+  {
+    return base_obj->type() == type_info ? base_obj : nullptr;
+  }
+
+  bool detail::isEnum(const MetaObject& obj)
+  {
+    return obj.type_info->isEnum();
+  }
 }  // namespace bifrost::meta
+
+

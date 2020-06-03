@@ -1,7 +1,8 @@
 #ifndef BIFROST_EDITOR_HIERARCHY_HPP
 #define BIFROST_EDITOR_HIERARCHY_HPP
 
-#include "bifrost_editor_window.hpp"  // EditorWindow
+#include "bifrost/data_structures/bifrost_string.hpp"  // String
+#include "bifrost_editor_window.hpp"                   // EditorWindow
 
 namespace bifrost::editor
 {

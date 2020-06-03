@@ -13,8 +13,10 @@
 #ifndef BIFROST_MATERIAL_HPP
 #define BIFROST_MATERIAL_HPP
 
-#include "bifrost/graphics/bifrost_gfx_api.h"
-#include "bifrost_asset_handle.hpp"  // AssetInfo<T>
+#include "bifrost/core/bifrost_base_object.hpp"  // BaseObject<TSelf>
+#include "bifrost/graphics/bifrost_gfx_api.h"    //
+#include "bifrost_asset_handle.hpp"              // AssetHandle<T>
+#include "bifrost_asset_info.hpp"                // AssetInfo<T>
 
 namespace bifrost
 {
