@@ -3,9 +3,11 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 #include "bifrost/math/bifrost_mat4x4.h"
 #include "bifrost/platform/bifrost_window_glfw.hpp"
-#include <algorithm>
+
 #include <glfw/glfw3.h>  // Cursors, KeyboardKeys, and Clipboard...
 #include <imgui/imgui.h>
+
+#include <algorithm>
 
 namespace bifrost::imgui
 {
@@ -101,7 +103,7 @@ namespace bifrost::imgui
 
     // Basic Setup
     io.BackendPlatformName               = "Bifrost GLFW Backend";
-    io.BackendRendererName               = "Bifrost Vulkan Backend";
+    io.BackendRendererName               = "Bifrost Graphics";
     io.IniFilename                       = nullptr;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 

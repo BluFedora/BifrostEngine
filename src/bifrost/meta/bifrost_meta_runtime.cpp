@@ -1,6 +1,5 @@
 #include "bifrost/meta/bifrost_meta_runtime.hpp"
 
-#include "bifrost/bifrost_std.h" /* bfInvalidDefaultCase */
 #include "bifrost/core/bifrost_base_object.hpp"
 
 namespace
@@ -61,10 +60,13 @@ namespace bifrost::meta
     m_Methods{gRttiMemory()},
     m_Size{size},
     m_Alignment{alignment},
-    m_IsArray{false},
-    m_IsMap{false},
-    m_IsEnum{false}
+    m_Flags{0x0}
   {
+  }
+
+  MetaVariant BaseClassMetaInfo::instantiate(IMemoryManager& memory)
+  {
+    return instantiateImpl(memory, nullptr, 0);
   }
 
   BasePropertyMetaInfo* BaseClassMetaInfo::findProperty(std::string_view name) const
@@ -93,6 +95,24 @@ namespace bifrost::meta
     return nullptr;
   }
 
+  MetaVariant BaseClassMetaInfo::instantiateImpl(IMemoryManager& memory, const MetaVariant* args, std::size_t num_args)
+  {
+    for (auto& ctor : m_Ctors)
+    {
+      const std::size_t num_ctor_params = ctor->parameters().size();
+
+      if (num_args == num_ctor_params)
+      {
+        if (ctor->isCompatible(args))
+        {
+          return ctor->instantiateImpl(memory, args);
+        }
+      }
+    }
+
+    return {};
+  }
+
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name)
   {
     BaseClassMetaInfo** clz_info = gRegistry().at(name);
@@ -108,7 +128,7 @@ namespace bifrost::meta
     if (class_info->isEnum())
     {
       // ret.enum_value = *static_cast<std::uint64_t*>(ptr);
-      ret.enum_value = 0x0; // Clear it out.
+      ret.enum_value = 0x0;  // Clear it out.
       std::memcpy(&ret.enum_value, ptr, class_info->size());
     }
     else
@@ -129,6 +149,29 @@ namespace bifrost::meta
   {
     return obj.type_info->isEnum();
   }
+
+  BaseClassMetaInfo* variantTypeInfo(const MetaVariant& value)
+  {
+    BaseClassMetaInfo* result = nullptr;
+
+    if (value.valid())
+    {
+      visit_all(
+       overloaded{
+        [&result](auto& primitive_value) -> void {
+          (void)primitive_value;
+          result = TypeInfo<decltype(primitive_value)>::get();
+        },
+        [&result](IBaseObject* base_obj) -> void {
+          result = base_obj->type();
+        },
+        [&result](meta::MetaObject& meta_obj) -> void {
+          result = meta_obj.type_info;
+        },
+       },
+       value);
+    }
+
+    return result;
+  }
 }  // namespace bifrost::meta
-
-

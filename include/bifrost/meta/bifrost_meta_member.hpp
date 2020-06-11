@@ -1,6 +1,8 @@
 #ifndef BIFROST_META_MEMBER_HPP
 #define BIFROST_META_MEMBER_HPP
 
+#include "bifrost_meta_function_traits.hpp"  // ParameterPack
+
 #include <tuple>       /* tuple                 */
 #include <type_traits> /* decay_t, is_pointer_v */
 
@@ -120,6 +122,7 @@ namespace bifrost::meta
   class CtorInfo final
   {
    public:
+    using ppack                       = ParameterPack<Args...>;
     using type                        = std::tuple<Args...>;
     using type_base                   = type;
     static constexpr bool is_writable = true;
@@ -191,7 +194,7 @@ namespace bifrost::meta
   {
    public:
     using type_base                   = std::decay_t<PropertyT>;
-    using type                        = type_base;// std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
+    using type                        = type_base;  // std::conditional_t<std::is_enum_v<PropertyT>, std::uint64_t, type_base>;
     using class_t                     = Class;
     using getter_t                    = const type& (class_t::*)() const;
     using setter_t                    = void (class_t::*)(const type&);
@@ -374,7 +377,7 @@ namespace bifrost::meta
     //   The use of 'm_Pointer' is just so there are no warnings from resharper.
     [[nodiscard]] bool isReadOnly() const { return m_Pointer != nullptr; }
 
-    #if 0
+#if 0
     decltype(auto) call(const Class& obj, Args&&... args) const
     {
       if constexpr (std::is_same_v<void, R>)

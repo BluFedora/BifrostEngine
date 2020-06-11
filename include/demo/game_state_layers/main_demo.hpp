@@ -10,6 +10,9 @@ class MainDemoLayer final : public bifrost::IGameStateLayer
 
  public:
   ~MainDemoLayer() override = default;
+
+  void onEvent(BifrostEngine& engine, bifrost::Event& event) override;
+  void onUpdate(BifrostEngine& engine, float delta_time) override;
 };
 
 #endif /* MAIN_DEMO_HPP */

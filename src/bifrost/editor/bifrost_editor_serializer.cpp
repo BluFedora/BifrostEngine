@@ -345,6 +345,32 @@ namespace bifrost::editor
     ImGui::PopID();
   }
 
+  void ImGuiSerializer::serialize(StringRange key, BaseRef& value)
+  {
+    setNameBuffer(key);
+
+    ImGui::LabelText(m_NameBuffer, "ObjRef(%p)", value.object());
+
+    const auto& scene = m_Assets->engine().currentScene();
+
+    if (scene)
+    {
+      if (pushObject("Set Object Reference"))
+      {
+        for (const auto& entity : scene->rootEntities())
+        {
+          if (ImGui::Button(entity->name().cstr()))
+          {
+            value.bind(entity);
+            hasChangedTop() |= true;
+          }
+        }
+
+        popObject();
+      }
+    }
+  }
+
   void ImGuiSerializer::serialize(StringRange key, meta::MetaObject& value)
   {
     const auto type_info = value.type_info;
@@ -369,24 +395,18 @@ namespace bifrost::editor
       {
         for (const auto& props : type_info->properties())
         {
-          const std::uint64_t valuev      = meta::variantToCompatibleT<std::uint64_t>(props->get(nullptr));
-          const bool          is_selected = valuev == original_value;
+          const std::uint64_t props_value = meta::variantToCompatibleT<std::uint64_t>(props->get(nullptr));
 
-          if (ImGui::Selectable(props->name().data(), is_selected, ImGuiSelectableFlags_None))
+          if (ImGui::Selectable(props->name().data(), props_value == original_value, ImGuiSelectableFlags_None))
           {
-            if (!is_selected)
-            {
-              value.enum_value = valuev;
-            }
+            value.enum_value = props_value;
           }
         }
 
         ImGui::EndCombo();
       }
 
-      const bool has_changed = original_value != value.enum_value;
-
-      hasChangedTop() |= has_changed;
+      hasChangedTop() |= original_value != value.enum_value;
     }
     else
     {
@@ -394,17 +414,18 @@ namespace bifrost::editor
     }
   }
 
-  void ImGuiSerializer::serialize(meta::MetaVariant& value, meta::BaseClassMetaInfo* type_info)
+  void ImGuiSerializer::serialize(meta::MetaVariant& value)
   {
     // If the user calls this function from the custom
     // callback then perform default inspection.
+
     if (m_IsInCustomCallback)
     {
-      ISerializer::serialize(value, type_info);
+      ISerializer::serialize(value);
       return;
     }
 
-    auto* const custom_entry = InspectorRegistry::s_Registry.at(type_info);
+    auto* const custom_entry = InspectorRegistry::s_Registry.at(variantTypeInfo(value));
 
     if (custom_entry)
     {
@@ -414,7 +435,7 @@ namespace bifrost::editor
     }
     else
     {
-      ISerializer::serialize(value, type_info);
+      ISerializer::serialize(value);
     }
   }
 
@@ -445,7 +466,7 @@ namespace bifrost::editor
     const bool result = m_HasChangedStack.back();
     m_HasChangedStack.pop();
 
-    // Adopt the status of nested scopes.
+    // Adopt the status of enclosed change check scopes.
     if (!m_HasChangedStack.isEmpty())
     {
       hasChangedTop() |= result;
@@ -458,17 +479,19 @@ namespace bifrost::editor
   {
     static_assert(sizeof(m_NameBuffer) == k_FieldNameBufferSize, "Sanity check to make sure I didn't upgrade 'm_NameBuffer' to a String or something.");
 
+    using namespace string_utils;
+
     bool  name_is_valid;
     auto& obj = top();
 
     if (obj.is_array)
     {
-      name_is_valid = string_utils::fmtBuffer(m_NameBuffer, k_FieldNameBufferSize, nullptr, "%i", obj.array_index);
+      name_is_valid = fmtBuffer(m_NameBuffer, k_FieldNameBufferSize, nullptr, "%i", obj.array_index);
       ++obj.array_index;
     }
     else
     {
-      name_is_valid = string_utils::fmtBuffer(m_NameBuffer, k_FieldNameBufferSize, nullptr, "%.*s", int(key.length()), key.begin());
+      name_is_valid = fmtBuffer(m_NameBuffer, k_FieldNameBufferSize, nullptr, "%.*s", int(key.length()), key.begin());
     }
 
     //

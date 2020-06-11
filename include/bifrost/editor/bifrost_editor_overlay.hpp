@@ -329,11 +329,8 @@ namespace bifrost::editor
   using ActionPtr           = UniquePtr<Action>;
   using ProjectPtr          = UniquePtr<Project>;
   using BaseEditorWindowPtr = UniquePtr<BaseEditorWindow>;
-
-  class ARefreshAsset;
-
-  using ActionMap  = HashTable<String, ActionPtr>;
-  using WindowList = Array<BaseEditorWindowPtr>;
+  using ActionMap           = HashTable<String, ActionPtr>;
+  using WindowList          = Array<BaseEditorWindowPtr>;
 
   class EditorOverlay final : public IGameStateLayer
   {

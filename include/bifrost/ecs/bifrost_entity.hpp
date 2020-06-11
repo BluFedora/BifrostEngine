@@ -17,6 +17,8 @@
 #include "bifrost/core/bifrost_base_object.hpp"                // BaseObject
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // ListView
 #include "bifrost/math/bifrost_transform.h"                    // BifrostTransform
+#include "bifrost_component_handle_storage.hpp"
+#include "bifrost_collision_system.hpp"
 
 namespace bifrost::meta
 {
@@ -38,6 +40,7 @@ namespace bifrost::meta
 
 namespace bifrost
 {
+  class ISerializer;
   class Entity;
 
   using EntityList = intrusive::ListView<Entity>;

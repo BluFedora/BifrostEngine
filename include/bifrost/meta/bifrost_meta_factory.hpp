@@ -7,10 +7,6 @@
 
 namespace bifrost::meta
 {
-  // TODO: This should be a public utility.
-  template<int N, typename... Ts>
-  using NthTypeOf = typename std::tuple_element<N, std::tuple<Ts...>>::type;
-
   template<typename BaseT>
   class Factory
   {

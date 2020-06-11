@@ -33,8 +33,14 @@
 
 namespace bifrost
 {
-  static constexpr int         s_MaxDigitsUInt64 = 20;
+  static constexpr int         k_MaxDigitsUInt64 = 20;
   static constexpr StringRange k_EnumValueKey    = "__EnumValue__";
+
+  bool ISerializer::hasKey(StringRange key)
+  {
+    (void)key;
+    return false;
+  }
 
   void ISerializer::serialize(StringRange key, Vec2f& value)
   {
@@ -108,29 +114,76 @@ namespace bifrost
     }
   }
 
+  void ISerializer::serialize(IBaseObject& value)
+  {
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
+    meta::MetaObject meta_obj{};
+    meta_obj.type_info  = value.type();
+    meta_obj.object_ref = &value;
+
+    registerReference(value);
+    serialize(meta_obj);
+  }
+
   void ISerializer::serialize(StringRange key, meta::MetaObject& value)
   {
     if (pushObject(key))
     {
-      if (value.type_info->isEnum())
-      {
-        serialize(k_EnumValueKey, value.enum_value);
-      }
-      else
-      {
-        auto v = meta::MetaVariant{value};
-        serialize(v, value.type_info);
-      }
-
+      serialize(value);
       popObject();
     }
   }
 
-  void ISerializer::serialize(IBaseObject& value)
+  void ISerializer::serialize(meta::MetaObject& value)
   {
-    auto value_variant = meta::makeVariant(&value);
+    meta::BaseClassMetaInfo* const type_info = value.type_info;
 
-    serialize(value_variant, value.type());
+    if (type_info->isEnum())
+    {
+      serialize(k_EnumValueKey, value.enum_value);
+    }
+    else
+    {
+      const meta::MetaVariant as_variant = {value};
+
+      for (auto& prop : type_info->properties())
+      {
+        auto field_value = prop->get(as_variant);
+
+        serialize(StringRange(prop->name().data(), prop->name().size()), field_value);
+
+        prop->set(as_variant, field_value);
+      }
+
+      if (type_info->isArray())
+      {
+        std::size_t array_size;
+
+        if (pushArray("Elements", array_size))
+        {
+          const std::size_t size = type_info->numElements(as_variant);
+          char              label_buffer[k_MaxDigitsUInt64 + 1];
+          std::size_t       idx_label_length;
+
+          for (std::size_t i = 0; i < size; ++i)
+          {
+            if (string_utils::fmtBuffer(label_buffer, sizeof(label_buffer), &idx_label_length, "%zu", i))
+            {
+              auto element = type_info->elementAt(as_variant, i);
+              serialize(StringRange(label_buffer, idx_label_length), element);
+
+              (void)type_info->setElementAt(as_variant, i, element);
+            }
+            else
+            {
+              // TODO(Shareef): This should _never_ happen, and what do you do if it does?
+            }
+          }
+
+          popArray();
+        }
+      }
+    }
   }
 
   void ISerializer::serialize(StringRange key, meta::MetaVariant& value)
@@ -141,43 +194,26 @@ namespace bifrost
      value);
   }
 
-  void ISerializer::serialize(meta::MetaVariant& value, meta::BaseClassMetaInfo* type_info)
+  void ISerializer::serialize(meta::MetaVariant& value)
   {
-    const bool is_array = type_info->isArray();
+    visit_all(
+     meta::overloaded{
+      [this](auto& primitive_value) -> void {
+        // ReSharper disable once CppInitializedValueIsAlwaysRewritten
+        meta::MetaObject meta_obj{};
+        meta_obj.type_info  = meta::TypeInfo<decltype(primitive_value)>::get();
+        meta_obj.object_ref = &primitive_value;
 
-    for (auto& prop : type_info->properties())
-    {
-      auto field_value = prop->get(value);
-
-      serialize(StringRange(prop->name().data(), prop->name().size()), field_value);
-
-      prop->set(value, field_value);
-    }
-
-    if (is_array)
-    {
-      std::size_t array_size;
-      if (pushArray("Elements", array_size))
-      {
-        const std::size_t size = type_info->numElements(value);
-        char              label_buffer[s_MaxDigitsUInt64 + 1];
-        LinearAllocator   label_alloc{label_buffer, sizeof(label_buffer)};
-
-        for (std::size_t i = 0; i < size; ++i)
-        {
-          std::size_t idx_label_length;
-          auto* const idx_label = string_utils::fmtAlloc(label_alloc, &idx_label_length, "%i", int(i));
-          auto        element   = type_info->elementAt(value, i);
-
-          serialize(StringRange(idx_label, idx_label_length), element);
-          (void)type_info->setElementAt(value, i, element);
-
-          label_alloc.clear();
-        }
-
-        popArray();
-      }
-    }
+        serialize(meta_obj);
+      },
+      [this](IBaseObject* base_obj) -> void {
+        serialize(*base_obj);
+      },
+      [this](meta::MetaObject& meta_obj) -> void {
+        serialize(meta_obj);
+      },
+     },
+     value);
   }
 
   void ISerializer::serialize(StringRange key, Vector2f& value)

@@ -10,9 +10,6 @@
 
 namespace bifrost::meta
 {
-  class InvalidMethodCall
-  {};
-
   template<typename MemberConcept>
   class PropertyMetaInfo : public BasePropertyMetaInfo
   {
@@ -149,58 +146,44 @@ namespace bifrost::meta
   template<typename Class, typename CtorConcept>
   class CtorMetaInfo final : public BaseCtorMetaInfo
   {
+    using ArgsPPack = typename CtorConcept::ppack;
     using ArgsTuple = typename CtorConcept::type;
 
    public:
     CtorMetaInfo();
 
    protected:
-    bool isCompatible_OLD(const Any* arguments) override
+    bool isCompatible(const MetaVariant* arguments) override
     {
       bool is_compatible = true;
 
-      for_constexpr<std::tuple_size<ArgsTuple>::value>([arguments, &is_compatible](auto i) {
-        if (is_compatible)
-        {
-          if (!arguments[i.value].template isSimilar<typename std::tuple_element<i.value, ArgsTuple>::type>())
-          {
-            is_compatible = false;
-          }
-        }
+      for_constexpr<std::tuple_size_v<ArgsTuple>>([arguments, &is_compatible](auto i) {
+        using T = typename std::tuple_element<i.value, ArgsTuple>::type;
+
+        is_compatible = is_compatible && isVariantCompatible<T>(arguments[i.value]);
       });
 
       return is_compatible;
     }
 
-    template<std::size_t I>
-    decltype(auto) castAs(Any& value)
+    template<typename... Args, size_t... Is>
+    void constructFromMetaVariant(Class* object, const MetaVariant* arguments, ParameterPack<Args...>, std::index_sequence<Is...>)
     {
-      return value.castSimilar<typename std::tuple_element<I, ArgsTuple>::type>();
+      new (object) Class(variantToCompatibleT<Args>(arguments[Is])...);
     }
 
-    template<std::size_t N, size_t... Is>
-    void construct_from_any_(Class* obj, std::array<Any, N>&& tuple, std::index_sequence<Is...>)
+    MetaVariant instantiateImpl(IMemoryManager& memory, const MetaVariant* arguments) override
     {
-      new (obj) Class(castAs<Is>(std::get<Is>(tuple))...);
-    }
+      Class* const obj = static_cast<Class*>(memory.allocate(sizeof(Class)));
 
-    template<std::size_t N>
-    void construct_from_any(Class* obj, std::array<Any, N>& tuple)
-    {
-      construct_from_any_(obj, std::forward<std::array<Any, N>>(tuple), std::make_index_sequence<N>{});
-    }
+      if (obj)
+      {
+        constructFromMetaVariant(obj, arguments, ArgsPPack{}, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{});
 
-    Any instantiateImpl_OLD(IMemoryManager& memory, const Any* arguments) override
-    {
-      std::array<Any, std::tuple_size<ArgsTuple>::value> args;
+        return makeVariant(obj);
+      }
 
-      for_constexpr<args.size()>([arguments, &args](auto i) {
-        args[i.value] = arguments[i.value];
-      });
-
-      Class* obj = static_cast<Class*>(memory.allocate(sizeof(Class)));
-      construct_from_any(obj, args);
-      return obj;
+      return {};
     }
   };
 
@@ -228,7 +211,7 @@ namespace bifrost::meta
     {
       gRegistry()[name()] = this;
 
-      m_IsArray = true;
+      m_Flags |= k_IsArrayBit;
 
       m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<decltype(m_Size)>>(m_Size));
       m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<decltype(m_Capacity)>>(m_Capacity));
@@ -291,54 +274,40 @@ namespace bifrost::meta
   };
 
   template<typename T>
-  struct TypeInfo<T*> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<T*> : public TypeInfo<std::remove_pointer_t<std::decay_t<T>>>
   {
   };
 
   template<typename T>
-  struct TypeInfo<const T*> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<const T*> : public TypeInfo<std::remove_pointer_t<std::decay_t<T>>>
   {
   };
 
   template<typename T>
-  struct TypeInfo<const volatile T*> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<const volatile T*> : public TypeInfo<std::remove_pointer_t<std::decay_t<T>>>
   {
   };
 
   template<typename T>
-  struct TypeInfo<const T&> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<const T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
   {
   };
 
   template<typename T>
-  struct TypeInfo<volatile T&> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<volatile T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
   {
   };
 
   template<typename T>
-  struct TypeInfo<const volatile T&> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<const volatile T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
   {
   };
 
   template<typename T>
-  struct TypeInfo<T&> : public TypeInfo<std::decay_t<T>>
+  struct TypeInfo<T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
   {
   };
 
-  template<typename T>
-  struct TypeInfo<T*&> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const T*&> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const volatile T*&> : public TypeInfo<std::decay_t<T>>
-  {
-  };
 
   template<typename T>
   struct TypeInfo<Array<T>>
@@ -445,7 +414,9 @@ namespace bifrost::meta
   template<typename Class>
   void ClassMetaInfo<Class>::populateFields()
   {
-    for_each(meta::membersOf<Class>(), [this](const auto& member) {
+    auto& memory = gRttiMemory();
+
+    for_each(meta::membersOf<Class>(), [this, &memory](const auto& member) {
       using MemberT = member_t<decltype(member)>;
 
       if constexpr (meta::is_class_v<MemberT>)
@@ -460,22 +431,22 @@ namespace bifrost::meta
 
       if constexpr (meta::is_enum_v<MemberT>)
       {
-        m_IsEnum = true;
+        m_Flags |= k_IsEnumBit;
       }
 
       if constexpr (meta::is_ctor_v<MemberT>)
       {
-        m_Ctors.push(gRttiMemory().allocateT<CtorMetaInfo<Class, MemberT>>());
+        m_Ctors.push(memory.allocateT<CtorMetaInfo<Class, MemberT>>());
       }
 
       if constexpr (meta::is_property_v<MemberT> || meta::is_field_v<MemberT>)
       {
-        m_Properties.push(gRttiMemory().allocateT<PropertyMetaInfo<MemberT>>(member));
+        m_Properties.push(memory.allocateT<PropertyMetaInfo<MemberT>>(member));
       }
 
       if constexpr (meta::is_function_v<MemberT>)
       {
-        m_Methods.push(gRttiMemory().allocateT<MethodMetaInfo<MemberT>>(member));
+        m_Methods.push(memory.allocateT<MethodMetaInfo<MemberT>>(member));
       }
     });
   }
@@ -539,6 +510,7 @@ namespace bifrost::meta
     if (arr)
     {
       arr->at(index) = variantToCompatibleT<Class>(value);
+      return true;
     }
 
     return false;

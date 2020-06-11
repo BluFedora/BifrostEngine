@@ -14,7 +14,6 @@
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
 
-#include <tuple>
 #include <utility>
 
 #include "glfw/glfw3.h"
@@ -43,7 +42,7 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
   }
 }
 
-namespace bifrost
+namespace bifrost::detail
 {
   class CoreEngineGameStateLayer : public IGameStateLayer
   {
@@ -60,36 +59,6 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   // TEMP CODE START
  public:
   BifrostCamera Camera;
-
-  void cameraControls()
-  {
-    const auto camera_move_speed = 0.05f;
-
-    const std::tuple<int, void (*)(::BifrostCamera*, float), float> CameraControls[] =
-     {
-      {GLFW_KEY_W, &Camera_moveForward, camera_move_speed},
-      {GLFW_KEY_A, &Camera_moveLeft, camera_move_speed},
-      {GLFW_KEY_S, &Camera_moveBackward, camera_move_speed},
-      {GLFW_KEY_D, &Camera_moveRight, camera_move_speed},
-      {GLFW_KEY_Q, &Camera_moveUp, camera_move_speed},
-      {GLFW_KEY_E, &Camera_moveDown, camera_move_speed},
-      {GLFW_KEY_R, &Camera_addPitch, -0.01f},
-      {GLFW_KEY_F, &Camera_addPitch, 0.01f},
-      {GLFW_KEY_H, &Camera_addYaw, 0.01f},
-      {GLFW_KEY_G, &Camera_addYaw, -0.01f},
-     };
-
-    for (const auto& control : CameraControls)
-    {
-      if (glfwGetKey(g_Window, std::get<0>(control)) == GLFW_PRESS)
-      {
-        std::get<1>(control)(&Camera, std::get<2>(control));
-      }
-    }
-
-    Camera_update(&Camera);
-  }
-
   // TEMP CODE END
 
  private:
@@ -179,7 +148,7 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
 
     m_Scripting.create(vm_params);
 
-    m_StateMachine.push<CoreEngineGameStateLayer>();
+    m_StateMachine.push<detail::CoreEngineGameStateLayer>();
 
     bfLogPop();
   }
@@ -188,7 +157,6 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   {
     m_StateMachine.purgeStates();
 
-    cameraControls();
     return m_Renderer.frameBegin(Camera);
   }
 
@@ -332,23 +300,5 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
     bfLogger_deinit();
   }
 };
-
-namespace bifrost
-{
-  inline void CoreEngineGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
-  {
-    if (event.type == EventType::ON_WINDOW_RESIZE)
-    {
-      const int window_width  = event.window.width;
-      const int window_height = event.window.height;
-
-      Camera_onResize(&engine.Camera, window_width, window_height);
-      engine.renderer().resize(window_width, window_height);
-    }
-
-    // This is the bottom most layer so just accept the event.
-    event.accept();
-  }
-}  // namespace bifrost
 
 #endif /* BIFROST_ENGINE_HPP */

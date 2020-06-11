@@ -29,17 +29,6 @@ namespace bifrost
   template<typename... Args>
   using DenseMapTuple    = ContainerTuple<DenseMap, Args...>;
   using ComponentStorage = ComponentPack::apply<DenseMapTuple>;
-
-  template<typename T>
-  struct ComponentHandle  // NOLINT(hicpp-member-init)
-  {
-    DenseMapHandle<T> handle;
-    bool              is_active;
-  };
-
-  template<typename... Args>
-  using DenseMapHandleTuple    = ContainerTuple<ComponentHandle, Args...>;
-  using ComponentHandleStorage = ComponentPack::apply<DenseMapHandleTuple>;
 }  // namespace bifrost
 
 #endif /* BIFROST_COMPONENT_STORAGE_HPP */

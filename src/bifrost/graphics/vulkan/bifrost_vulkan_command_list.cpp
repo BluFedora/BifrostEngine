@@ -1,8 +1,8 @@
 #include "bifrost_vulkan_logical_device.h"
 
 #include "bifrost_vulkan_conversions.h" /* bfVKConvert* */
-#include "bifrost_vulkan_hash.hpp"      /* hash */
-#include <cassert>                      /* assert */
+#include "bifrost_vulkan_hash.hpp"      /* hash         */
+#include <cassert>                      /* assert       */
 
 #define CUSTOM_ALLOC nullptr
 
@@ -203,8 +203,6 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClear
     *color = bfVKConvertClearColor(bf_color);
   }
 }
-
-#include <stdio.h>
 
 void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments)
 {

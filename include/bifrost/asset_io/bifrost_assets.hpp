@@ -168,9 +168,9 @@ namespace bifrost
 
     ~Assets();
 
-    // TODO: Remove this
+    // TODO: Remove these
     detail::AssetMap& assetMap() { return m_AssetMap; }
-
+    Engine&           engine() const { return m_Engine; }
    private:
     BifrostUUID indexAssetImpl(StringRange relative_path, bool& create_new, meta::BaseClassMetaInfo* type_info);
   };

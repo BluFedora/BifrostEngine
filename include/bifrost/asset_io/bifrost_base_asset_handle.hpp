@@ -37,7 +37,6 @@ typedef struct bfColor4u_t   bfColor4u;
 
 namespace bifrost
 {
-  class Any;
   class IBaseObject;
   class BaseObjectT;
   class BaseAssetInfo;
@@ -50,8 +49,8 @@ namespace bifrost
   using Engine = ::BifrostEngine;
 
   //
-  // This class MUST not have any virtual functions.
-  // All subclasses much not add any data members (AssetHandle<T> is the only canon subclass.)
+  // This class MUST not have any virtual functions. (or anything else that violates this being standard layout)
+  // All subclasses much not add any data members (AssetHandle<T> is the only canon subclass).
   //
   class BaseAssetHandle
   {

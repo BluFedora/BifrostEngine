@@ -145,23 +145,24 @@ BifrostString String_clone(BifrostString cloned)
   return String_newLen(String_cstr(cloned), String_length(cloned));
 }
 
-void String_reserve(BifrostString* self, size_t newCapacity)
+void String_reserve(BifrostString* self, size_t new_capacity)
 {
   BifrostStringHeader* header = String_getHeader(*self);
 
-  if (newCapacity > header->capacity)
+  if (new_capacity > header->capacity)
   {
-    /* NOTE(Shareef): Double the space than actually requested */
-    newCapacity <<= 1;
+    while (header->capacity < new_capacity)
+    {
+      header->capacity *= 2;
+    }
 
     BifrostStringHeader* old_header = header;
 
-    header = (BifrostStringHeader*)BIFROST_REALLOC(old_header, sizeof(BifrostStringHeader) + newCapacity, 1);
+    header = (BifrostStringHeader*)BIFROST_REALLOC(old_header, sizeof(BifrostStringHeader) + header->capacity, 1);
 
     if (header)
     {
-      header->capacity = newCapacity;
-      *self            = (char*)header + sizeof(BifrostStringHeader);
+      *self = (char*)header + sizeof(BifrostStringHeader);
     }
     else
     {
@@ -197,12 +198,12 @@ const char* String_cstr(ConstBifrostString self)
 void String_cset(BifrostString* self, const char* str)
 {
   String_getHeader(*self)->length = 0;
-  string_append(self, (size_t)strlen(str), str);
+  String_cappend(self, str);
 }
 
 void String_cappend(BifrostString* self, const char* str)
 {
-  string_append(self, (size_t)strlen(str), str);
+  String_cappendLen(self, str, strlen(str));
 }
 
 void String_cappendLen(BifrostString* self, const char* str, size_t len)

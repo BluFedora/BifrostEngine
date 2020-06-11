@@ -15,10 +15,10 @@
 #include "bifrost/bifrost_std.h"    /* bfStringRange      */
 #include "bifrost_dynamic_string.h" /* ConstBifrostString */
 
-#include <cstddef>   /* size_t        */
-#include <cstring>   /* strncmp       */
-#include <stdexcept> /* runtime_error */
-#include <limits> // numeric_limits
+#include <cstddef>   /* size_t         */
+#include <cstring>   /* strncmp        */
+#include <limits>    /* numeric_limits */
+#include <stdexcept> /* runtime_error  */
 
 namespace bifrost
 {
@@ -75,7 +75,9 @@ namespace bifrost
     // Assumes a nul terminated string. If you only want to compare with a piece then use StringRange.
     [[nodiscard]] bool operator==(const char* rhs) const
     {
-      return std::strncmp(bgn, rhs, length()) == 0 && rhs[length()] == '\0';
+      const std::size_t lhs_length = length();
+
+      return std::strncmp(bgn, rhs, lhs_length) == 0 && rhs[lhs_length] == '\0';
     }
 
     [[nodiscard]] bool operator!=(const StringRange& rhs) const

@@ -181,40 +181,6 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-static GLFWmonitor* get_current_monitor(GLFWwindow* window)
-{
-  int nmonitors;
-  int wx, wy, ww, wh;
-
-  int           bestoverlap = 0;
-  GLFWmonitor*  bestmonitor = nullptr;
-  GLFWmonitor** monitors    = glfwGetMonitors(&nmonitors);
-
-  glfwGetWindowPos(window, &wx, &wy);
-  glfwGetWindowSize(window, &ww, &wh);
-
-  for (int i = 0; i < nmonitors; i++)
-  {
-    int                mx, my;
-    const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
-    const int          mw   = mode->width;
-    const int          mh   = mode->height;
-
-    glfwGetMonitorPos(monitors[i], &mx, &my);
-
-    const int overlap = std::max(0, std::min(wx + ww, mx + mw) - std::max(wx, mx)) * std::max(
-                                                                                      0, std::min(wy + wh, my + mh) - std::max(wy, my));
-
-    if (bestoverlap < overlap)
-    {
-      bestoverlap = overlap;
-      bestmonitor = monitors[i];
-    }
-  }
-
-  return bestmonitor;
-}
-
 static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
 #ifdef _WIN32
@@ -375,8 +341,7 @@ static void TestMetaSystem()
   if (result1.is<meta::MetaObject>())
   {
     const meta::MetaObject& meta_obj = result1.as<meta::MetaObject>();
-
-    auto enum_str = meta_obj.type_info->enumToString((MetaSystemEnumTest)meta_obj.enum_value);
+    const auto              enum_str = meta_obj.type_info->enumToString(meta_obj.enum_value);
 
     std::printf("result1.value = %.*s\n", int(enum_str.length()), enum_str.begin());
   }
@@ -539,30 +504,6 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       while (window.hasNextEvent())
       {
         Event evt = window.getNextEvent();
-
-        if (evt.type == EventType::ON_KEY_DOWN && evt.keyboard.key == 'P' && evt.keyboard.modifiers & KeyboardEvent::CONTROL)
-        {
-          static bool isFullscreen = false;
-          static int  old_info[4];
-
-          if (isFullscreen)
-          {
-            glfwSetWindowMonitor(g_Window, nullptr, old_info[0], old_info[1], old_info[2], old_info[3], 60);
-          }
-          else
-          {
-            glfwGetWindowPos(g_Window, &old_info[0], &old_info[1]);
-            glfwGetWindowSize(g_Window, &old_info[2], &old_info[3]);
-
-            GLFWmonitor*       monitor = get_current_monitor(g_Window);
-            const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
-            glfwSetWindowMonitor(g_Window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-          }
-
-          isFullscreen = !isFullscreen;
-
-          evt.accept();
-        }
 
         imgui::onEvent(evt);
         engine.onEvent(evt);

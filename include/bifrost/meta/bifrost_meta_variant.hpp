@@ -15,20 +15,26 @@
 
 #include "bifrost/asset_io/bifrost_base_asset_handle.hpp" /* BaseAssetHandle, + All Serializable Classes */
 #include "bifrost/bifrost_math.hpp"                       /* bfColor4f, bfColor4u                        */
+#include "bifrost/core/bifrost_ref.hpp"                   /* BaseRef                                     */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* String                                      */
 #include "bifrost/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>                              */
-// #include "bifrost/math/bifrost_rect2.hpp"                 /* Vector2f, Vector3f                          */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                 */
 #include "bifrost_meta_function_traits.hpp"               /* ParameterPack<Ts...>                        */
 #include "bifrost_meta_utils.hpp"                         /* overloaded                                  */
 
 #include <cstddef> /* byte                                                                     */
 #include <cstdint> /* uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t */
-#include <type_traits>
 
 namespace bifrost::meta
 {
   class BaseClassMetaInfo;
+
+  // [https://devblogs.microsoft.com/oldnewthing/20190710-00/?p=102678]
+  template<typename, typename = void>
+  constexpr bool is_type_complete_v = false;
+
+  template<typename T>
+  constexpr bool is_type_complete_v<T, std::void_t<decltype(sizeof(T))>> = true;
 
   struct MetaObject final
   {
@@ -56,14 +62,13 @@ namespace bifrost::meta
    long double,
    Vec2f,
    Vec3f,
-   //Vector2f,  // This is a bit reduntant...
-   //Vector3f,  // This is a bit reduntant...
    Quaternionf,
    bfColor4f,
    bfColor4u,
    String,
    IBaseObject*,
    BaseAssetHandle,
+   BaseRef,
    BifrostUUID>;
 
   using MetaPrimitiveTypes = MetaValueTypes::extend<MetaObject>;
@@ -77,7 +82,15 @@ namespace bifrost::meta
       using RawT     = std::decay_t<T>;
       using RawTBase = std::decay_t<TBase>;
 
-      return std::is_same_v<RawT, RawTBase> || std::is_base_of_v<std::remove_pointer_t<RawTBase>, std::remove_pointer_t<RawT>>;
+      if constexpr (is_type_complete_v<std::remove_pointer_t<RawT>>)
+      {
+        return std::is_same_v<RawT, RawTBase> || std::is_base_of_v<std::remove_pointer_t<RawTBase>, std::remove_pointer_t<RawT>>;
+      }
+      else
+      {
+        // #pragma message("Undefined class type, this is ok but I want to check this very once in a while.")
+        return std::is_same_v<RawT, RawTBase>;
+      }
     }
 
     MetaVariant make(void*, BaseClassMetaInfo*);
@@ -140,7 +153,7 @@ namespace bifrost::meta
   BaseClassMetaInfo* typeInfoGet();
 
   template<typename T>
-  T* stripReference(T*& ptr)
+  T* stripReference(T* ptr)
   {
     return ptr;
   }
@@ -163,6 +176,8 @@ namespace bifrost::meta
 
     return res;
   }
+
+  BaseClassMetaInfo* variantTypeInfo(const MetaVariant& value);
 
   template<typename T>
   bool isVariantCompatible(const MetaVariant& value)
@@ -189,7 +204,7 @@ namespace bifrost::meta
   template<typename T>
   T variantToCompatibleT(const MetaVariant& value)
   {
-    using TDecay = std::decay_t<T>;
+    using TDecay = std::decay_t<std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<std::remove_reference_t<T>>, T>>;
 
     if constexpr (MetaVariant::canContainT<T>())
     {
@@ -199,15 +214,23 @@ namespace bifrost::meta
       }
     }
 
-    if constexpr (std::is_base_of_v<std::remove_pointer_t<IBaseObject>, std::remove_pointer_t<T>>)
+    if constexpr (is_type_complete_v<std::remove_pointer_t<T>>)
     {
-      if (value.is<IBaseObject*>())
+      // NOTE(Shareef): The following "if constexpr" cannot be merged with the surrounding one due to
+      // "is_base_of_v" only being allowed to be used on incomplete class types.
+      // Short circuiting using "&&" seemed to not work on MSVC 2019-Preview as of June 3rd, 2020.
+      // TODO(SR): Investigate more on the issue?
+
+      if constexpr (std::is_base_of_v<std::remove_pointer_t<IBaseObject>, std::remove_pointer_t<T>>)
       {
-        return (T)detail::doBaseObjStuff(value.as<IBaseObject*>(), typeInfoGet<TDecay>());
+        if (value.is<IBaseObject*>())
+        {
+          return (T)detail::doBaseObjStuff(value.as<IBaseObject*>(), typeInfoGet<TDecay>());
+        }
       }
     }
 
-    T return_value{};
+    TDecay return_value;
 
     auto ov = overloaded{
      [&return_value](const auto& arg) {
@@ -230,22 +253,32 @@ namespace bifrost::meta
        {
          if constexpr (std::is_pointer_v<TDecay>)
          {
-           if (meta_obj.type_info == typeInfoGet<TDecay>())  // TODO(Shareef): This check isn't required if 'isVariantCompatible' is always called first..
+           // This check is back for base class shenanigans (Ex: Asset System Stuff)
+           // if (meta_obj.type_info == typeInfoGet<TDecay>())  // TODO(Shareef): This check isn't required if 'isVariantCompatible' is always called first..
            {
-             return_value = static_cast<T>(const_cast<MetaObject&>(meta_obj).object_ref);
+             return_value = static_cast<TDecay>(const_cast<MetaObject&>(meta_obj).object_ref);
            }
+         }
+         else
+         {
+           return_value = *static_cast<TDecay*>(const_cast<MetaObject&>(meta_obj).object_ref);
          }
        }
      }};
 
     if (value.valid())
     {
-      bifrost::visit_all(
-       ov,
-       value);
+      bifrost::visit_all(ov, value);
     }
 
-    return return_value;
+    if constexpr (std::is_reference_v<T>)
+    {
+      return *return_value;
+    }
+    else
+    {
+      return return_value;
+    }
   }
 
 // TODO(SR): CLean this mess up.
@@ -359,9 +392,10 @@ namespace bifrost::meta
        }
      }};
 
-    bifrost::visit_all(
-     ov,
-     value);
+    if (value.valid())
+    {
+      bifrost::visit_all(ov, value);
+    }
 
     return found_match;
   }

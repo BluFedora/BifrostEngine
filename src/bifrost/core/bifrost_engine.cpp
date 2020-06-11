@@ -1,9 +1,5 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
-namespace bifrost
-{
-}
-
 BifrostEngine::BifrostEngine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
   Camera{},
   m_CmdlineArgs{argc, argv},
@@ -29,3 +25,21 @@ AssetSceneHandle BifrostEngine::currentScene() const
 {
   return m_SceneStack.isEmpty() ? AssetSceneHandle{} : m_SceneStack.back();
 }
+
+namespace bifrost
+{
+  void detail::CoreEngineGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
+  {
+    if (event.type == EventType::ON_WINDOW_RESIZE)
+    {
+      const int window_width  = event.window.width;
+      const int window_height = event.window.height;
+
+      Camera_onResize(&engine.Camera, window_width, window_height);
+      engine.renderer().resize(window_width, window_height);
+    }
+
+    // This is the bottom most layer so just accept the event.
+    event.accept();
+  }
+}  // namespace bifrost

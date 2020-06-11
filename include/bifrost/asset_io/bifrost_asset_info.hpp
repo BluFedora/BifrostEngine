@@ -122,15 +122,12 @@ namespace bifrost
     //
     ////////////////////////////////////////////////////////////////////////////////
 
+    virtual void registerReference(IBaseObject& object) { (void)object; }
     virtual bool beginDocument(bool is_array = false) = 0;
-    virtual bool hasKey(StringRange key)
-    {
-      (void)key;
-      return false;
-    }
+    virtual bool hasKey(StringRange key);
     virtual bool pushObject(StringRange key)                   = 0;
     virtual bool pushArray(StringRange key, std::size_t& size) = 0;
-    virtual void serialize(StringRange key, std::byte& value) { serialize(key, *reinterpret_cast<std::uint8_t*>(&value)); }
+    virtual void serialize(StringRange key, std::byte& value) { serialize(key, reinterpret_cast<std::uint8_t&>(value)); }
     virtual void serialize(StringRange key, bool& value)          = 0;
     virtual void serialize(StringRange key, std::int8_t& value)   = 0;
     virtual void serialize(StringRange key, std::uint8_t& value)  = 0;
@@ -151,11 +148,13 @@ namespace bifrost
     virtual void serialize(StringRange key, String& value)          = 0;
     virtual void serialize(StringRange key, BifrostUUID& value)     = 0;
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;
+    virtual void serialize(StringRange key, BaseRef& value)         = 0;
     virtual void serialize(StringRange key, IBaseObject& value);
-    virtual void serialize(StringRange key, meta::MetaObject& value);
     virtual void serialize(IBaseObject& value);
+    virtual void serialize(StringRange key, meta::MetaObject& value);
+    virtual void serialize(meta::MetaObject& value);
     virtual void serialize(StringRange key, meta::MetaVariant& value);
-    virtual void serialize(meta::MetaVariant& value, meta::BaseClassMetaInfo* type_info);
+    virtual void serialize(meta::MetaVariant& value);
     virtual void popObject()   = 0;
     virtual void popArray()    = 0;
     virtual void endDocument() = 0;
@@ -177,8 +176,8 @@ namespace bifrost
     template<typename T>
     void serializeT(T* value)
     {
-      auto v = meta::makeVariant(value);
-      serialize(v, meta::TypeInfo<T>::get());
+      auto variant = meta::makeVariant(value);
+      serialize(variant);
     }
 
     virtual ~ISerializer() = default;

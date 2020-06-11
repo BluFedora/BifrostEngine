@@ -409,6 +409,8 @@ namespace bifrost
       out.append(*file_stream_bgn);
       ++file_stream_bgn;
     }
+
+    // auto s = std::string{std::istreambuf_iterator<char>(m_FileStream), std::istreambuf_iterator<char>{}};
   }
 
   char* File::readAll(IMemoryManager& allocator, std::size_t& out_size)

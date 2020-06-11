@@ -264,7 +264,7 @@ namespace bifrost
   }
 
   WindowGLFW::WindowGLFW() :
-    // IBaseWindow(),
+    IBaseWindow(),
     m_WindowHandle{nullptr}
   {
   }

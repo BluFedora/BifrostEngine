@@ -16,11 +16,34 @@
 
 namespace bifrost
 {
+  static constexpr StringRange k_SerializeObjectRefID = "__ObjectRefID__";
+  static constexpr auto        k_InvalidRefID         = std::numeric_limits<std::uint32_t>::max();
+
   JsonSerializerWriter::JsonSerializerWriter(IMemoryManager& memory) :
     ISerializer(SerializerMode::SAVING),
     m_Document{},
-    m_ObjectStack{memory}
+    m_ObjectStack{memory},
+    m_ReferenceMap{},
+    m_ReferenceID{0u}
   {
+  }
+
+  void JsonSerializerWriter::registerReference(IBaseObject& object)
+  {
+    std::uint32_t ref_id;
+
+    if (!m_ReferenceMap.has(&object))
+    {
+      ref_id = m_ReferenceID++;
+
+      m_ReferenceMap.emplace(&object, ref_id);
+    }
+    else
+    {
+      ref_id = *m_ReferenceMap.at(&object);
+    }
+
+    serialize(k_SerializeObjectRefID, ref_id);
   }
 
   bool JsonSerializerWriter::beginDocument(bool is_array)
@@ -139,6 +162,25 @@ namespace bifrost
     }
   }
 
+  void JsonSerializerWriter::serialize(StringRange key, BaseRef& value)
+  {
+    if (pushObject(key))
+    {
+      std::uint32_t id = k_InvalidRefID;
+
+      if (value.object())
+      {
+        registerReference(*value.object());
+
+        id = m_ReferenceMap[value.object()];
+      }
+
+      serialize(k_SerializeObjectRefID, id);
+
+      popObject();
+    }
+  }
+
   void JsonSerializerWriter::popObject()
   {
     m_ObjectStack.popBack();
@@ -170,6 +212,18 @@ namespace bifrost
     m_Document{document},
     m_ObjectStack{memory}
   {
+  }
+
+  void JsonSerializerReader::registerReference(IBaseObject& object)
+  {
+    std::uint32_t serialized_id = k_InvalidRefID;
+
+    serialize(k_SerializeObjectRefID, serialized_id);
+
+    if (serialized_id != k_InvalidRefID)
+    {
+      m_ReferenceMap[serialized_id] = &object;
+    }
   }
 
   bool JsonSerializerReader::beginDocument(bool is_array)
@@ -257,7 +311,10 @@ namespace bifrost
     }
     else if (object.object->isObject())
     {
-      value = object.object->get(key, json::Boolean{});
+      if (hasKey(key))
+      {
+        value = object.object->get(key, json::Boolean{});
+      }
     }
   }
 
@@ -282,7 +339,10 @@ namespace bifrost
     }
     else if (object.object->isObject())
     {
-      value = T(object.object->get(key, json::Number{}));
+      if (object.object->at(key) != nullptr)
+      {
+        value = T(object.object->get(key, json::Number{}));
+      }
     }
   }
 
@@ -366,7 +426,10 @@ namespace bifrost
     }
     else if (object.object->isObject())
     {
-      value = object.object->get(key, json::String{});
+      if (hasKey(key))
+      {
+        value = object.object->get(key, json::String{});
+      }
     }
   }
 
@@ -399,6 +462,12 @@ namespace bifrost
     }
   }
 
+  void JsonSerializerReader::serialize(StringRange key, BaseRef& value)
+  {
+    (void)key;
+    (void)value;
+  }
+
   void JsonSerializerReader::popObject()
   {
     m_ObjectStack.popBack();
@@ -412,5 +481,26 @@ namespace bifrost
   void JsonSerializerReader::endDocument()
   {
     m_ObjectStack.popBack();
+  }
+
+  void RefPatcherSerializer::serialize(StringRange key, BaseRef& value)
+  {
+    if (pushObject(key))
+    {
+      std::uint32_t id = k_InvalidRefID;
+      m_JsonReader.serialize(k_SerializeObjectRefID, id);
+
+      if (id != k_InvalidRefID)
+      {
+        IBaseObject** const obj = m_JsonReader.m_ReferenceMap.at(id);
+
+        if (obj)
+        {
+          value.bind(*obj);
+        }
+      }
+
+      popObject();
+    }
   }
 }  // namespace bifrost

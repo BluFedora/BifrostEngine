@@ -19,6 +19,13 @@
 namespace bifrost::meta
 {
   //
+  // NthTypeOf<N, Ts...>
+  //
+
+  template<int N, typename... Ts>
+  using NthTypeOf = typename std::tuple_element<N, std::tuple<Ts...>>::type;
+
+  //
   // overloaded
   //
 

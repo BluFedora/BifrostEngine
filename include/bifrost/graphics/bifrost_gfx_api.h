@@ -576,7 +576,7 @@ void     bfGfxCmdList_end(bfGfxCommandListHandle self);
 void     bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
 void     bfGfxCmdList_submit(bfGfxCommandListHandle self);
 
-// TODO: This should not be in this file...
+// TODO: This function should not be in this file...
 char* LoadFileIntoMemory(const char* filename, long* out_size);
 
 #if __cplusplus

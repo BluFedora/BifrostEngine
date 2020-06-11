@@ -195,11 +195,18 @@ namespace bifrost
       if (json_value.isObject())
       {
         JsonSerializerReader json_writer{assets, engine.tempMemoryNoFree(), json_value};
+        RefPatcherSerializer ref_patcher{json_writer};
 
         if (json_writer.beginDocument(false))
         {
           scene.serialize(json_writer);
           json_writer.endDocument();
+        }
+
+        if (ref_patcher.beginDocument(false))
+        {
+          scene.serialize(ref_patcher);
+          ref_patcher.endDocument();
         }
       }
 

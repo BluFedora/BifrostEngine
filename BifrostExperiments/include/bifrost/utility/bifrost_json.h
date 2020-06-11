@@ -71,6 +71,7 @@ double        bfJsonParser_asNumber(const bfJsonParserContext* ctx);
 bfBool32      bfJsonParser_asBoolean(const bfJsonParserContext* ctx);
 void*         bfJsonParser_userStorage(const bfJsonParserContext* ctx);
 void*         bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
+
 /* Writer API (Object -> String) */
 BifrostJsonWriter* bfJsonWriter_new(bfJsonAllocFn alloc_fn);
 size_t             bfJsonWriter_length(const BifrostJsonWriter* self);

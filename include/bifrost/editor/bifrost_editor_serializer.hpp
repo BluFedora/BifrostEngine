@@ -13,7 +13,7 @@
 #ifndef BIFROST_EDITOR_SERIALIZER_HPP
 #define BIFROST_EDITOR_SERIALIZER_HPP
 
-#include "bifrost/asset_io/bifrost_json_serializer.hpp" // ISerializer
+#include "bifrost/asset_io/bifrost_asset_info.hpp" // ISerializer
 
 #include <imgui/imgui.h>  // ImGui::*
 
@@ -89,8 +89,9 @@ namespace bifrost::editor
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
+    void serialize(StringRange key, BaseRef& value) override;
     void serialize(StringRange key, meta::MetaObject& value) override;
-    void serialize(meta::MetaVariant& value, meta::BaseClassMetaInfo* type_info) override;
+    void serialize(meta::MetaVariant& value) override;
     using ISerializer::serialize;
     void popObject() override;
     void popArray() override;

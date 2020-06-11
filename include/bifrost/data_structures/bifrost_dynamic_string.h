@@ -46,7 +46,7 @@ BifrostString String_clone(BifrostString cloned);
 /// NOTE(Shareef): This is mostly a private function but can be used
 ///   if you know how many bytes need to be reserved
 ///   before you do any manipulation (used for optimization)
-void String_reserve(BifrostString* self, size_t newCapacity);
+void String_reserve(BifrostString* self, size_t new_capacity);
 
 /// NOTE(Shareef):
 /// Resizes the string.

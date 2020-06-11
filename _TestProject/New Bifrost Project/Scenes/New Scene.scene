@@ -1,11 +1,15 @@
 {
     "m_Entities" : [
         {
+            "__ObjectRefID__" : 0,
             "m_Name" : "Rhino",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
+                    },
+                    "m_EntityRef" : {
+                        "__ObjectRefID__" : 1
                     },
                     "m_Model" : {
                         "uuid" : "2F5BC8E8-ACD4-4745-BF59-178DC427CB2E"
@@ -41,11 +45,15 @@
             }
         },
         {
+            "__ObjectRefID__" : 2,
             "m_Name" : "Cult Char",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
+                    },
+                    "m_EntityRef" : {
+                        "__ObjectRefID__" : 4.29497e+09
                     },
                     "m_Model" : {
                         "uuid" : "C0275B2A-F168-4EBB-9D74-458E79E19D54"
@@ -81,11 +89,15 @@
             }
         },
         {
+            "__ObjectRefID__" : 3,
             "m_Name" : "Untitled0",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
+                    },
+                    "m_EntityRef" : {
+                        "__ObjectRefID__" : 4.29497e+09
                     },
                     "m_Model" : {
                         "uuid" : "32A2B49A-8DE1-42E2-84E7-D999AE61C084"
@@ -121,6 +133,7 @@
             }
         },
         {
+            "__ObjectRefID__" : 4,
             "m_Name" : "Untitled",
             "m_Components" : {
                 "Light" : {
@@ -173,6 +186,7 @@
             }
         },
         {
+            "__ObjectRefID__" : 1,
             "m_Name" : "Scene Light",
             "m_Components" : {
                 "Light" : {
@@ -225,11 +239,15 @@
             }
         },
         {
+            "__ObjectRefID__" : 5,
             "m_Name" : "Cube",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
+                    },
+                    "m_EntityRef" : {
+                        "__ObjectRefID__" : 4.29497e+09
                     },
                     "m_Model" : {
                         "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
@@ -265,11 +283,15 @@
             }
         },
         {
+            "__ObjectRefID__" : 6,
             "m_Name" : "Cube2",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
                         "uuid" : "C2177178-ED97-450D-907F-0EB1DF927239"
+                    },
+                    "m_EntityRef" : {
+                        "__ObjectRefID__" : 4.29497e+09
                     },
                     "m_Model" : {
                         "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"

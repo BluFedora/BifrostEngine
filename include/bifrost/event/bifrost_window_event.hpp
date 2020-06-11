@@ -182,11 +182,13 @@ namespace bifrost
     ON_KEY_HELD,
     ON_KEY_UP,
     ON_KEY_INPUT,
+    // If you add any more Mouse Events then update the Event::isKeyEvent function.
 
     // Mouse Events
     ON_MOUSE_DOWN,
     ON_MOUSE_MOVE,
     ON_MOUSE_UP,
+    // If you add any more Mouse Events then update the Event::isMouseEvent function.
 
     // Scroll Events
     ON_SCROLL_WHEEL,
@@ -221,6 +223,21 @@ namespace bifrost
     bool isFalsified() const
     {
       return flags & FLAGS_IS_FALSIFIED;
+    }
+
+    bool isType(EventType evt_type) const
+    {
+      return type == evt_type;
+    }
+
+    bool isKeyEvent() const
+    {
+      return isType(EventType::ON_KEY_DOWN) || isType(EventType::ON_KEY_HELD) || isType(EventType::ON_KEY_UP) || isType(EventType::ON_KEY_INPUT);
+    }
+
+    bool isMouseEvent() const
+    {
+      return isType(EventType::ON_MOUSE_DOWN) || isType(EventType::ON_MOUSE_MOVE) || isType(EventType::ON_MOUSE_UP);
     }
 
     void accept()

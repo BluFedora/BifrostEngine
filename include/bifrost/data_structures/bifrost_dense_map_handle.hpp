@@ -11,8 +11,8 @@
 #ifndef BIFROST_DENSE_MAP_HANDLE_HPP
 #define BIFROST_DENSE_MAP_HANDLE_HPP
 
-#include <cstdint> /* uint32_t          */
-#include <limits>  /* numeric_limits<T> */
+#include <cstdint> /* uint32_t, uint16_t */
+#include <limits>  /* numeric_limits<T>  */
 
 namespace bifrost
 {

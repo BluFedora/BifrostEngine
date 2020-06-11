@@ -74,6 +74,7 @@ void loopPush(BifrostParser* self, LoopInfo* loop)
 void loopBodyStart(const BifrostParser* self)
 {
   assert(self->loop_stack);
+
   self->loop_stack->body_start = Array_size(&self->fn_builder->instructions);
 }
 
@@ -464,11 +465,12 @@ void bfParser_dtor(BifrostParser* self)
 {
   self->vm->parser_stack = self->parent;
 
-  // NOTE(Shareef): Handles the case where a script is recompiled into
-  //   The same module.
-  // TODO(Shareef): This is probably horrible broken and since other
-  //   things probably need to be cleared from the module during a recompile (this module is reused).
   BifrostObjFn* const module_fn = &self->current_module->init_fn;
+
+  // NOTE(Shareef): Handles the case where a script is recompiled into the same module.
+  // TODO(Shareef): This is probably horribly broken and since other
+  //                things probably need to be cleared from the module
+  //                during a recompile (this module is reused).
   if (module_fn->name)
   {
     bfVMObject__delete(self->vm, &module_fn->super);
@@ -560,7 +562,8 @@ bfBool32 bfParser_parse(BifrostParser* self)
       //   Since nothing can be executed after a return we just
       //   keep going until we hit a closing curly brace.
 
-      // TODO(SR): Check if returning false may work
+      // TODO(SR): Do more checks on returning 'bfFalse', should work in all cases.
+
       //   This optimizes away unreachable code.
       return bfFalse;
     }

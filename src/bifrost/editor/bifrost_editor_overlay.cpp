@@ -14,7 +14,7 @@
 #include <nativefiledialog/nfd.h> /* nfd**    */
 #include <utility>
 
-#include <imgui/imgui_internal.h> // Must appear after '<imgui/imgui.h>'
+#include <imgui/imgui_internal.h>  // Must appear after '<imgui/imgui.h>'
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -837,7 +837,8 @@ namespace bifrost::editor
 
     ImGuiIO&   io                = ImGui::GetIO();
     auto&      mouse_evt         = event.mouse;
-    const bool imgui_wants_input = io.WantCaptureKeyboard || io.WantCaptureMouse;
+    const bool imgui_wants_input = (io.WantCaptureKeyboard && event.isKeyEvent()) ||
+                                   (io.WantCaptureMouse && event.isMouseEvent());
 
     // if (!imgui_wants_input)
     {
@@ -891,6 +892,7 @@ namespace bifrost::editor
           if (m_CurrentDialog)
           {
             m_CurrentDialog->close();
+            event.accept();
           }
         }
       }
@@ -900,9 +902,6 @@ namespace bifrost::editor
     {
       event.accept();
     }
-
-    // TODO(SR): WHAT IS THIS HERE ABOUT?
-    event.accept();
   }
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)

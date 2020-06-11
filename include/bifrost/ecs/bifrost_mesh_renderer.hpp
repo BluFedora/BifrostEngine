@@ -14,6 +14,8 @@
 #include "bifrost/asset_io/bifrost_material.hpp" /* AssetMaterialHandle */
 #include "bifrost_base_component.hpp"            /* BaseComponent       */
 
+// #include "bifrost_entity.hpp" // TEMP
+
 namespace bifrost
 {
   class MeshRenderer : public Component<MeshRenderer>
@@ -22,12 +24,14 @@ namespace bifrost
 
    private:
     AssetMaterialHandle m_Material;
+    Ref<Entity>         m_EntityRef;  // TEMP CODE
     AssetModelHandle    m_Model;
 
    public:
     explicit MeshRenderer(Entity& owner) :
       Base(owner),
       m_Material{nullptr},
+      m_EntityRef{},
       m_Model{nullptr}
     {
     }
@@ -43,6 +47,7 @@ BIFROST_META_REGISTER(bifrost::MeshRenderer)
     BIFROST_META_MEMBERS(
      class_info<MeshRenderer>("MeshRenderer"),                         //
      field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
+     field<BaseRef>("m_EntityRef", &MeshRenderer::m_EntityRef),        //
      field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
     )
   BIFROST_META_END()

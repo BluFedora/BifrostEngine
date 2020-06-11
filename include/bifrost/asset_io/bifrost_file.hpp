@@ -35,7 +35,7 @@ namespace bifrost
       FILE_DID_NOT_OPEN
     };
 
-    // TODO(SR): These path helpers can probably be in a separate file.
+    // TODO(SR): These path helpers can probably be in a separate header file.
 
     // TODO(SR): This function should be _modernized_ to use 'StringRange' as that would make things a bit clearer in usage.
     //           Also this has nothing to do with 'Paths' this is just a string algorithm!?!

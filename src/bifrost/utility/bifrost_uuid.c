@@ -47,19 +47,7 @@ BifrostUUID bfUUID_generate(void)
     BifrostUUID self;
     memcpy(self.as_number, &out, sizeof(self.as_number));
 
-    sprintf(self.as_string,
-            "%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-            out.Data1,
-            out.Data2,
-            out.Data3,
-            out.Data4[0],
-            out.Data4[1],
-            out.Data4[2],
-            out.Data4[3],
-            out.Data4[4],
-            out.Data4[5],
-            out.Data4[6],
-            out.Data4[7]);
+    bfUUID_numberToString(self.as_number, self.as_string);
 
     return self;
   }
@@ -92,7 +80,7 @@ BifrostUUID bfUUID_fromString(const char source[37])
   source_wide[37] = L'}';
   source_wide[38] = L'\0';
 
-  mbstowcs(source_wide + 1, source, 36);  /* <cstdlib> */
+  mbstowcs(source_wide + 1, source, 36); /* <cstdlib> */
 
   if (IIDFromString(source_wide, &out) == S_OK)
   {
@@ -103,8 +91,6 @@ BifrostUUID bfUUID_fromString(const char source[37])
 
     return self;
   }
-
-  return bfUUID_makeEmpty();
 #elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
   uuid_t out;
 
@@ -116,12 +102,10 @@ BifrostUUID bfUUID_fromString(const char source[37])
 
     return self;
   }
-
-  return bfUUID_makeEmpty();
-
 #else
 #error "Unsupported platform for generating guids."
 #endif
+  return bfUUID_makeEmpty();
 }
 
 int bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs)
@@ -140,4 +124,37 @@ int bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs)
 int bfUUID_isEmpty(const BifrostUUID* self)
 {
   return bfUUID_isEqual(self, &s_EmptyUUID);
+}
+
+void bfUUID_numberToString(const char number[16], char out_string[37])
+{
+#if BIFROST_PLATFORM_WINDOWS
+  GUID native_guid;
+#elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
+  uuid_t native_guid;
+#else
+#error "Unsupported platform for generating guids."
+#endif
+
+  memcpy(&native_guid, number, sizeof(native_guid));
+
+#if BIFROST_PLATFORM_WINDOWS
+  sprintf(out_string,
+          "%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+          native_guid.Data1,
+          native_guid.Data2,
+          native_guid.Data3,
+          native_guid.Data4[0],
+          native_guid.Data4[1],
+          native_guid.Data4[2],
+          native_guid.Data4[3],
+          native_guid.Data4[4],
+          native_guid.Data4[5],
+          native_guid.Data4[6],
+          native_guid.Data4[7]);
+#elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
+  uuid_unparse(native_guid, self.as_string);
+#else
+#error "Unsupported platform for generating guids."
+#endif
 }

@@ -8,7 +8,7 @@
 #if BIFROST_PLATFORM_WINDOWS
 #include <Windows.h> /* GetStdHandle, GetConsoleScreenBufferInfo, SetConsoleTextAttribute */
 #else
-#include <stdio.h> /* printf */
+#include <stdio.h> /* sprintf, printf */
 #endif
 
 static IBifrostDbgLogger  s_ILogger        = {NULL, NULL};

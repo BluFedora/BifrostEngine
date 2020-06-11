@@ -11,19 +11,19 @@
 #ifndef BIFROST_DENSE_MAP_HPP
 #define BIFROST_DENSE_MAP_HPP
 
-#include "bifrost_array.hpp"            /* Array<T>          */
-#include "bifrost_dense_map_handle.hpp" /* Handle<T>         */
-#include <utility>                      /* move              */
+#include "bifrost_array.hpp"            /* Array<T>  */
+#include "bifrost_dense_map_handle.hpp" /* Handle<T> */
+#include <utility>                      /* move      */
 
 namespace bifrost
 {
   /*!
    * @brief
-   *    The DenseMap is used for fast addition and removal of
-   *    elements while keeping a cache coherent array of objects.
+   *   The DenseMap is used for fast addition and removal of
+   *   elements while keeping a cache coherent array of objects.
    *
-   *    Made for faster (frequent) Insert(s) and Remove(s) relative to Vector
-   *    While keeping a cache coherent dense array.
+   *   Made for faster (frequent) Insert(s) and Remove(s) relative to Vector
+   *   While keeping a cache coherent dense array.
    */
   template<typename TObject>
   class DenseMap final
