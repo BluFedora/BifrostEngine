@@ -355,6 +355,8 @@ static void TestMetaSystem()
 
 static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &TestApplyReturningVoid, &TestMetaSystem};
 
+GLFWwindow* g_Window;
+
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
   for (const auto& test_fn : s_Test)
@@ -621,5 +623,3 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     }
   });
 #endif
-
-GLFWwindow* g_Window;

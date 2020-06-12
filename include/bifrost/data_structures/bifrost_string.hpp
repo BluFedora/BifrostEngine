@@ -231,10 +231,7 @@ namespace bifrost
         m_Handle = String_new("");
       }
 
-      if (new_size)
-      {
-        ::String_resize(&m_Handle, new_size);
-      }
+      ::String_resize(&m_Handle, new_size);
     }
 
     const char* begin() const

@@ -136,21 +136,23 @@ namespace bifrost
     bool beginDocument(bool is_array) override { return m_JsonReader.beginDocument(is_array); }
     bool pushObject(StringRange key) override { return m_JsonReader.pushObject(key); }
     bool pushArray(StringRange key, std::size_t& size) override { return m_JsonReader.pushArray(key, size); }
-    void serialize(StringRange key, bool& value) override { }
-    void serialize(StringRange key, std::int8_t& value) override {}
-    void serialize(StringRange key, std::uint8_t& value) override {}
-    void serialize(StringRange key, std::int16_t& value) override {}
-    void serialize(StringRange key, std::uint16_t& value) override {}
-    void serialize(StringRange key, std::int32_t& value) override {}
-    void serialize(StringRange key, std::uint32_t& value) override {}
-    void serialize(StringRange key, std::int64_t& value) override {}
-    void serialize(StringRange key, std::uint64_t& value) override {}
-    void serialize(StringRange key, float& value) override {}
-    void serialize(StringRange key, double& value) override {}
-    void serialize(StringRange key, long double& value) override {}
-    void serialize(StringRange key, String& value) override {}
-    void serialize(StringRange key, BifrostUUID& value) override {}
-    void serialize(StringRange key, BaseAssetHandle& value) override {}
+    // clang-format off
+    void serialize(StringRange key, bool& value) override            { (void)key, (void)value; }
+    void serialize(StringRange key, std::int8_t& value) override     { (void)key, (void)value; }
+    void serialize(StringRange key, std::uint8_t& value) override    { (void)key, (void)value; }
+    void serialize(StringRange key, std::int16_t& value) override    { (void)key, (void)value; }
+    void serialize(StringRange key, std::uint16_t& value) override   { (void)key, (void)value; }
+    void serialize(StringRange key, std::int32_t& value) override    { (void)key, (void)value; }
+    void serialize(StringRange key, std::uint32_t& value) override   { (void)key, (void)value; }
+    void serialize(StringRange key, std::int64_t& value) override    { (void)key, (void)value; }
+    void serialize(StringRange key, std::uint64_t& value) override   { (void)key, (void)value; }
+    void serialize(StringRange key, float& value) override           { (void)key, (void)value; }
+    void serialize(StringRange key, double& value) override          { (void)key, (void)value; }
+    void serialize(StringRange key, long double& value) override     { (void)key, (void)value; }
+    void serialize(StringRange key, String& value) override          { (void)key, (void)value; }
+    void serialize(StringRange key, BifrostUUID& value) override     { (void)key, (void)value; }
+    void serialize(StringRange key, BaseAssetHandle& value) override { (void)key, (void)value; }
+    // clang-format on
     void serialize(StringRange key, BaseRef& value) override;
     void popObject() override { m_JsonReader.popObject(); }
     void popArray() override { m_JsonReader.popArray(); }

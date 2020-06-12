@@ -144,6 +144,7 @@ void VkPoolAllocator_free(PoolAllocator* self, const Allocation* allocation)
   bfBool32                 found     = bfFalse;
 
   block->isPageReserved = bfFalse;
+  block->isPageMapped   = allocation->mapped_ptr != NULL;
 
   const size_t num_layouts = Array_size(&block->layout);
 

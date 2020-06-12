@@ -1684,8 +1684,13 @@ void* bfBuffer_mappedPtr(bfBufferHandle self)
 
 void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 {
-  assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
-  vkMapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle, offset, size, 0, &self->alloc_info.mapped_ptr);
+  // assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
+
+  if (self->alloc_info.mapped_ptr == NULL)
+  {
+    vkMapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle, offset, size, 0, &self->alloc_info.mapped_ptr);
+  }
+
   return self->alloc_info.mapped_ptr;
 }
 

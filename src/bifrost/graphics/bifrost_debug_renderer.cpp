@@ -1,4 +1,8 @@
 #include "bifrost/graphics/bifrost_debug_renderer.hpp"
+
+#include "bifrost/core/bifrost_engine.hpp"
+#include "bifrost/graphics/bifrost_standard_renderer.hpp"
+
 #include <cassert>
 
 namespace bifrost
@@ -52,7 +56,7 @@ namespace bifrost
     grabCommandList(is_overlay).emplaceBack().init(duration, DrawAABB{center, extents, color});
   }
 
-  void DebugRenderer::draw(bfGfxCommandListHandle command_list, BifrostCamera& camera, const bfGfxFrameInfo& frame_info, bool overlay)
+  void DebugRenderer::draw(bfGfxCommandListHandle command_list, CameraRender& camera, const bfGfxFrameInfo& frame_info, bool overlay)
   {
     auto&                          line_buffer = m_LineBuffers[overlay ? 1 : 0];
     /* const */ List<DrawCommand>& list        = grabCommandList(overlay);  // TODO: bifrost::List / bifrost::ListView needs some const iterators.
@@ -114,7 +118,7 @@ namespace bifrost
     bfGfxCmdList_bindProgram(command_list, m_Shaders[overlay ? 1 : 0]);
     bfGfxCmdList_bindVertexDesc(command_list, m_DbgVertexLayout);
 
-    m_Gfx->bindCamera(command_list, camera);
+    camera.gpu_camera.bindDescriptorSet(command_list, frame_info);
 
     for (BufferLink* const link : line_buffer)
     {

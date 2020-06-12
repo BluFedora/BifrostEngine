@@ -126,4 +126,9 @@ namespace bifrost
     m_Children.erase(m_Children.makeIterator(*child));
     child->m_Parent = nullptr;
   }
+
+  ComponentStorage& Entity::sceneComponentStorage(bool is_active) const
+  {
+    return is_active ? m_OwningScene.m_ActiveComponents : m_OwningScene.m_InactiveComponents;
+  }
 }  // namespace bifrost

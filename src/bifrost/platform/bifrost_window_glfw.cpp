@@ -93,33 +93,72 @@ namespace bifrost
     return result;
   }
 
+  static int convertKey(int key)
+  {
+    switch (key)
+    {
+      case GLFW_KEY_A: return KeyCode::A;
+      case GLFW_KEY_B: return KeyCode::B;
+      case GLFW_KEY_C: return KeyCode::C;
+      case GLFW_KEY_D: return KeyCode::D;
+      case GLFW_KEY_E: return KeyCode::E;
+      case GLFW_KEY_F: return KeyCode::F;
+      case GLFW_KEY_G: return KeyCode::G;
+      case GLFW_KEY_H: return KeyCode::H;
+      case GLFW_KEY_I: return KeyCode::I;
+      case GLFW_KEY_J: return KeyCode::J;
+      case GLFW_KEY_K: return KeyCode::K;
+      case GLFW_KEY_L: return KeyCode::L;
+      case GLFW_KEY_M: return KeyCode::M;
+      case GLFW_KEY_N: return KeyCode::N;
+      case GLFW_KEY_O: return KeyCode::O;
+      case GLFW_KEY_P: return KeyCode::P;
+      case GLFW_KEY_Q: return KeyCode::Q;
+      case GLFW_KEY_R: return KeyCode::R;
+      case GLFW_KEY_S: return KeyCode::S;
+      case GLFW_KEY_T: return KeyCode::T;
+      case GLFW_KEY_U: return KeyCode::U;
+      case GLFW_KEY_V: return KeyCode::V;
+      case GLFW_KEY_W: return KeyCode::W;
+      case GLFW_KEY_X: return KeyCode::X;
+      case GLFW_KEY_Y: return KeyCode::Y;
+      case GLFW_KEY_Z: return KeyCode::Z;
+      // default: return -1;
+      default: return 0;
+    }
+  }
+
   static void GLFW_onKeyChanged(GLFWwindow* window, int key, int scan_code, int action, int mods)
   {
-    auto& w = getWindow(window);
+    const int converted_key = convertKey(key);
 
-    EventType evt_type = EventType::ON_KEY_DOWN;
-
-    switch (action)
+    if (converted_key != -1)
     {
-      case GLFW_PRESS:
-      {
-        evt_type = EventType::ON_KEY_DOWN;
-        break;
-      }
-      case GLFW_REPEAT:
-      {
-        evt_type = EventType::ON_KEY_HELD;
-        break;
-      }
-      case GLFW_RELEASE:
-      {
-        evt_type = EventType::ON_KEY_UP;
-        break;
-      }
-        bfInvalidDefaultCase();
-    }
+      auto&     w        = getWindow(window);
+      EventType evt_type = EventType::ON_KEY_DOWN;
 
-    w.pushEvent(evt_type, KeyboardEvent(key, keyModifiers(mods)));
+      switch (action)
+      {
+        case GLFW_PRESS:
+        {
+          evt_type = EventType::ON_KEY_DOWN;
+          break;
+        }
+        case GLFW_REPEAT:
+        {
+          evt_type = EventType::ON_KEY_HELD;
+          break;
+        }
+        case GLFW_RELEASE:
+        {
+          evt_type = EventType::ON_KEY_UP;
+          break;
+        }
+          bfInvalidDefaultCase();
+      }
+
+      w.pushEvent(evt_type, KeyboardEvent(converted_key, keyModifiers(mods)));
+    }
   }
 
   static void GLFW_onMousePosChanged(GLFWwindow* window, double x_pos, double y_pos)

@@ -14,6 +14,7 @@
 #include <nativefiledialog/nfd.h> /* nfd**    */
 #include <utility>
 
+#include "bifrost/editor/bifrost_editor_scene.hpp"
 #include <imgui/imgui_internal.h>  // Must appear after '<imgui/imgui.h>'
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -822,12 +823,6 @@ namespace bifrost::editor
   {
   }
 
-  static const float invalid_mouse_postion = -1.0f;
-  static const float mouse_speed           = 0.01f;
-  float              oldx                  = invalid_mouse_postion;
-  float              oldy                  = invalid_mouse_postion;
-  static bool        is_dragging_mouse     = false;
-
   void EditorOverlay::onEvent(Engine& engine, Event& event)
   {
     if (event.isFalsified())
@@ -837,68 +832,27 @@ namespace bifrost::editor
 
     ImGuiIO&   io                = ImGui::GetIO();
     auto&      mouse_evt         = event.mouse;
-    const bool imgui_wants_input = (io.WantCaptureKeyboard && event.isKeyEvent()) ||
+    const bool imgui_wants_input = (io.WantTextInput && event.isKeyEvent()) ||
                                    (io.WantCaptureMouse && event.isMouseEvent());
 
-    // if (!imgui_wants_input)
+    for (BaseEditorWindowPtr& window : m_OpenWindows)
     {
-      if (event.type == EventType::ON_MOUSE_DOWN || event.type == EventType::ON_MOUSE_UP)
-      {
-        oldx = invalid_mouse_postion;
-        oldy = invalid_mouse_postion;
+      window->handleEvent(*this, event);
+    }
 
-        if (event.type == EventType::ON_MOUSE_DOWN)
+    if (event.type == EventType::ON_KEY_DOWN)
+    {
+      if (event.keyboard.key == KeyCode::ESCAPE)
+      {
+        if (m_CurrentDialog)
         {
-          if (isPointOverSceneView({{mouse_evt.x, mouse_evt.y}}))
-          {
-            is_dragging_mouse = true;
-          }
-        }
-        else
-        {
-          is_dragging_mouse = false;
+          m_CurrentDialog->close();
           event.accept();
-        }
-      }
-      else if (event.type == EventType::ON_MOUSE_MOVE)
-      {
-        m_MousePosition = {float(mouse_evt.x), float(mouse_evt.y)};
-
-        if (is_dragging_mouse && mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
-        {
-          const float newx = float(mouse_evt.x);
-          const float newy = float(mouse_evt.y);
-
-          if (oldx == invalid_mouse_postion)
-          {
-            oldx = newx;
-          }
-
-          if (oldy == invalid_mouse_postion)
-          {
-            oldy = newy;
-          }
-
-          Camera_mouse(&engine.Camera, (newx - oldx) * mouse_speed, (newy - oldy) * -mouse_speed);
-
-          oldx = newx;
-          oldy = newy;
-        }
-      }
-      else if (event.type == EventType::ON_KEY_DOWN)
-      {
-        if (event.keyboard.key == KeyCode::ESCAPE)
-        {
-          if (m_CurrentDialog)
-          {
-            m_CurrentDialog->close();
-            event.accept();
-          }
         }
       }
     }
 
-    if (event.type == EventType::ON_WINDOW_RESIZE || is_dragging_mouse || imgui_wants_input)
+    if (event.type == EventType::ON_WINDOW_RESIZE || imgui_wants_input)
     {
       event.accept();
     }
@@ -1017,106 +971,10 @@ namespace bifrost::editor
 
       ImGui::PopStyleVar(3);
 
-      ImGui::DockBuilderDockWindow("Scene View", dockspace_id);
+      SceneView& scene_window = getWindow<SceneView>();
+
+      ImGui::DockBuilderDockWindow(scene_window.fullImGuiTitle(engine.tempMemory()), dockspace_id);
     }
-
-    static const float k_SceneViewPadding = 1.0f;
-
-    static float Rounding = 5.0f;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_SceneViewPadding, k_SceneViewPadding));
-    if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar))
-    {
-      if (m_OpenProject)
-      {
-        if (ImGui::BeginMenuBar())
-        {
-          if (ImGui::BeginMenu("Camera"))
-          {
-            ImGui::DragFloat("Rounding", &Rounding, 1.0f, k_Epsilon, 100.0f);
-
-            ImGui::DragFloat3("Ambient Color", &engine.renderer().AmbientColor.x);
-
-            if (ImGui::DragFloat3("Position", &engine.Camera.position.x))
-            {
-              Camera_setViewModified(&engine.Camera);
-            }
-
-            ImGui::EndMenu();
-          }
-
-          ImGui::EndMenuBar();
-        }
-
-        static ImVec2 s_OldWindowSize = {0.0f, 0.0f};
-
-        const auto   color_buffer        = engine.renderer().compositeScene();
-        const auto   color_buffer_width  = bfTexture_width(color_buffer);
-        const auto   color_buffer_height = bfTexture_height(color_buffer);
-        const auto   content_area        = ImGui::GetContentRegionAvail();
-        const auto   draw_region         = rect::aspectRatioDrawRegion(color_buffer_width, color_buffer_height, uint32_t(content_area.x), uint32_t(content_area.y));
-        auto* const  window_draw         = ImGui::GetWindowDrawList();
-        const ImVec2 window_pos          = ImGui::GetWindowPos();
-        const ImVec2 cursor_offset       = ImGui::GetCursorPos();
-        const ImVec2 full_offset         = window_pos + cursor_offset;
-        const ImVec2 position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
-        const ImVec2 position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
-
-        m_IsSceneViewHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
-
-        m_SceneViewViewport.setLeft(int(position_min.x));
-        m_SceneViewViewport.setTop(int(position_min.y));
-        m_SceneViewViewport.setRight(int(position_max.x));
-        m_SceneViewViewport.setBottom(int(position_max.y));
-
-        if (s_OldWindowSize.x != content_area.x || s_OldWindowSize.y != content_area.y)
-        {
-          auto& window = engine.window();
-
-          window.pushEvent(
-           EventType::ON_WINDOW_RESIZE,
-           WindowEvent(std::max(int(content_area.x), 1), std::max(int(content_area.y), 1), WindowEvent::FLAGS_DEFAULT),
-           Event::FLAGS_IS_FALSIFIED);
-          s_OldWindowSize = content_area;
-        }
-
-        window_draw->AddImageRounded(
-         color_buffer,
-         position_min,
-         position_max,
-         ImVec2(0.0f, 0.0f),
-         ImVec2(1.0f, 1.0f),
-         0xFFFFFFFF,
-         Rounding,
-         ImDrawCornerFlags_All);
-      }
-      else
-      {
-        static const char* s_StrNoProjectOpen = "No Project Open";
-        static const char* s_StrNewProject    = "  New Project  ";
-        static const char* s_StrOpenProject   = "  Open Project ";
-
-        const auto text_size  = ImGui::CalcTextSize(s_StrNoProjectOpen);
-        const auto mid_screen = (ImGui::GetWindowSize() - text_size) * 0.5f;
-
-        ImGui::SetCursorPos(
-         (ImGui::GetWindowSize() - text_size) * 0.5f);
-
-        ImGui::Text("%s", s_StrNoProjectOpen);
-
-        ImGui::SetCursorPosX(mid_screen.x);
-
-        buttonAction(action_ctx, "File.New.Project", s_StrNewProject);
-
-        ImGui::SetCursorPosX(mid_screen.x);
-
-        buttonAction(action_ctx, "File.Open.Project", s_StrOpenProject);
-      }
-    }
-    ImGui::End();
-    ImGui::PopStyleVar(3);
 
     if (m_OpenProject)
     {
@@ -1149,17 +1007,23 @@ namespace bifrost::editor
         ImGui::Separator();
       }
       ImGui::End();
-
-      for (BaseEditorWindowPtr& window : m_OpenWindows)
-      {
-        window->uiShow(*this);
-      }
-
-      // TODO(SR): Actually check if any windows want to be closed. This is very pessimistic.
-      auto split = std::partition(m_OpenWindows.begin(), m_OpenWindows.end(), [](const BaseEditorWindowPtr& window) { return window->isOpen(); });
-
-      m_OpenWindows.resize(split - m_OpenWindows.begin());
     }
+
+    for (BaseEditorWindowPtr& window : m_OpenWindows)
+    {
+      window->uiShow(*this);
+    }
+
+    // TODO(SR): Actually check if any windows want to be closed. This is very pessimistic.
+    const auto split = std::partition(
+     m_OpenWindows.begin(),
+     m_OpenWindows.end(),
+     [](const BaseEditorWindowPtr& window) {
+       return window->isOpen();
+     });
+
+    m_OpenWindows.resize(split - m_OpenWindows.begin());
+
     /*
 
     if (ImGui::Begin("Command Palette"))
@@ -1359,8 +1223,6 @@ namespace bifrost::editor
     m_CurrentMs{0},
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
-    m_SceneViewViewport{},
-    m_IsSceneViewHovered{false},
     m_MousePosition{},
     m_OpenWindows{allocator()}
   {
@@ -1610,11 +1472,6 @@ namespace bifrost::editor
   void EditorOverlay::viewAddInspector()
   {
     getWindow<Inspector>(allocator());
-  }
-
-  bool EditorOverlay::isPointOverSceneView(const Vector2i& point) const
-  {
-    return m_IsSceneViewHovered && m_SceneViewViewport.intersects(point);
   }
 
   void EditorOverlay::buttonAction(const ActionContext& ctx, const char* action_name) const

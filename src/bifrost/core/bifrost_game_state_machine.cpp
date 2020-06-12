@@ -123,6 +123,11 @@ namespace bifrost
       remove(m_LayerHead);
     }
 
+    while (m_OverlayHead)
+    {
+      remove(m_OverlayHead);
+    }
+
     purgeStates();
   }
 

@@ -440,7 +440,7 @@ void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value)
   }
 }
 
-BIFROST_MATH_API void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value)
+void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value)
 {
   if (self != value)
   {

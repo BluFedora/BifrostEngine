@@ -153,7 +153,7 @@ namespace bifrost
     Mat4x4   u_CameraViewProjection;
     Mat4x4   u_CameraView;
     Vector3f u_CameraForwardAndTime;  // [u_CameraForward, u_Time]
-    Vector3f u_CameraPosition;        // [u_CameraPosition, u_Pad0] 
+    Vector3f u_CameraPosition;        // [u_CameraPosition, u_Pad0]
     Vector3f u_CameraAmbient;
   };
 
@@ -283,49 +283,62 @@ namespace bifrost
     };
   }
 
-  struct PerCameraData final
+  struct CameraGPUData final
   {
-    BifrostCamera*                 camera;
     GBuffer                        geometry_buffer;
     SSAOBuffer                     ssao_buffer;
     bfTextureHandle                composite_buffer;
     MultiBuffer<CameraUniformData> camera_uniform_buffer;
     Mat4x4                         view_projection_cache;
+
+    void init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height);
+    void updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient);
+    void bindDescriptorSet(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info);  // Has to be called after a shader program change.
+    void resize(bfGfxDeviceHandle device, int width, int height);
+    void deinit(bfGfxDeviceHandle device);
+  };
+
+  struct StdPairHash
+  {
+   public:
+    template<typename T, typename U>
+    std::size_t operator()(const std::pair<T, U>& x) const
+    {
+      return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
+    }
   };
 
   class StandardRenderer final
   {
     friend class ::BifrostEngine;  // TODO: Not do this?!?!
 
-  public:
+   public:
     Vector3f AmbientColor = {0.03f};
 
    private:
-    GLSLCompiler                             m_GLSLCompiler;
-    bfGfxContextHandle                       m_GfxBackend;
-    bfGfxDeviceHandle                        m_GfxDevice;
-    bfGfxFrameInfo                           m_FrameInfo;
-    bfVertexLayoutSetHandle                  m_StandardVertexLayout;
-    bfVertexLayoutSetHandle                  m_EmptyVertexLayout;
-    bfGfxCommandListHandle                   m_MainCmdList;
-    bfTextureHandle                          m_MainSurface;
-    GBuffer                                  m_GBuffer;            // TODO(SR): Per camera
-    SSAOBuffer                               m_SSAOBuffer;         // TODO(SR): Per camera
-    bfTextureHandle                          m_DeferredComposite;  // TODO(SR): Per camera
-    bfShaderProgramHandle                    m_GBufferShader;
-    bfShaderProgramHandle                    m_SSAOBufferShader;
-    bfShaderProgramHandle                    m_SSAOBlurShader;
-    bfShaderProgramHandle                    m_AmbientLighting;
-    bfShaderProgramHandle                    m_LightShaders[LightShaders::MAX];
-    MultiBuffer<CameraUniformData>           m_CameraUniform;  // TODO(SR): Per camera
-    List<Renderable>                         m_RenderablePool;
-    HashTable<Entity*, Renderable*>          m_RenderableMapping;  // TODO: Make this per Scene.
-    Array<bfGfxBaseHandle>                   m_AutoRelease;
-    Mat4x4                                   m_ViewProjection;  // TODO(SR): Per camera
-    bfTextureHandle                          m_WhiteTexture;
-    MultiBuffer<DirectionalLightUniformData> m_DirectionalLightBuffer;
-    MultiBuffer<PunctualLightUniformData>    m_PunctualLightBuffers[2];  // [Point, Spot]
-    float                                    m_GlobalTime;
+    using CameraObjectPair = std::pair<const CameraGPUData*, Entity*>;
+
+   private:
+    GLSLCompiler                                              m_GLSLCompiler;
+    bfGfxContextHandle                                        m_GfxBackend;
+    bfGfxDeviceHandle                                         m_GfxDevice;
+    bfGfxFrameInfo                                            m_FrameInfo;
+    bfVertexLayoutSetHandle                                   m_StandardVertexLayout;
+    bfVertexLayoutSetHandle                                   m_EmptyVertexLayout;
+    bfGfxCommandListHandle                                    m_MainCmdList;
+    bfTextureHandle                                           m_MainSurface;
+    bfShaderProgramHandle                                     m_GBufferShader;
+    bfShaderProgramHandle                                     m_SSAOBufferShader;
+    bfShaderProgramHandle                                     m_SSAOBlurShader;
+    bfShaderProgramHandle                                     m_AmbientLighting;
+    bfShaderProgramHandle                                     m_LightShaders[LightShaders::MAX];
+    List<Renderable>                                          m_RenderablePool;
+    HashTable<CameraObjectPair, Renderable*, 64, StdPairHash> m_RenderableMapping;  // TODO: Make this per Scene.
+    Array<bfGfxBaseHandle>                                    m_AutoRelease;
+    bfTextureHandle                                           m_WhiteTexture;
+    MultiBuffer<DirectionalLightUniformData>                  m_DirectionalLightBuffer;
+    MultiBuffer<PunctualLightUniformData>                     m_PunctualLightBuffers[2];  // [Point, Spot]
+    float                                                     m_GlobalTime;
 
    public:
     explicit StandardRenderer(IMemoryManager& memory);
@@ -335,25 +348,40 @@ namespace bifrost
     bfVertexLayoutSetHandle standardVertexLayout() const { return m_StandardVertexLayout; }
     bfGfxCommandListHandle  mainCommandList() const { return m_MainCmdList; }
     bfTextureHandle         surface() const { return m_MainSurface; }
-    const GBuffer&          gBuffer() const { return m_GBuffer; }
-    bfTextureHandle         compositeScene() const { return m_DeferredComposite; }
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
 
     void               init(const bfGfxContextCreateParams& gfx_create_params);
-    [[nodiscard]] bool frameBegin(BifrostCamera& camera);
+    [[nodiscard]] bool frameBegin();
     void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
-    void               bindObject(bfGfxCommandListHandle command_list, Entity& entity);
-    void               bindCamera(bfGfxCommandListHandle command_list, const BifrostCamera& camera); // Has to be called after a shader program change.
+    void               bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
     void               addLight(Light& light);
-    void               beginGBufferPass();
-    void               beginSSAOPass(const BifrostCamera& camera);
-    void               beginLightingPass(const BifrostCamera& camera);
+    void               beginGBufferPass(CameraGPUData& camera) const;
+    void               beginSSAOPass(CameraGPUData& camera) const;
+    void               beginLightingPass(CameraGPUData& camera);
     void               beginScreenPass() const;
     void               endPass() const;
     void               frameEnd() const;
     void               deinit();
 
-    void resize(int width, int height);
+    template<typename FGBufferPass, typename FLightOverlayPass>
+    void renderCameraTo(BifrostCamera& camera, CameraGPUData& camera_gpu_data, FGBufferPass&& gbuffer_callback, FLightOverlayPass&& overlay_callback)
+    {
+      camera_gpu_data.updateBuffers(camera, m_FrameInfo, m_GlobalTime, AmbientColor);
+
+      // GBuffer
+      beginGBufferPass(camera_gpu_data);
+      gbuffer_callback();
+      endPass();
+
+      // SSAO
+      beginSSAOPass(camera_gpu_data);
+      endPass();
+
+      // Lighting
+      beginLightingPass(camera_gpu_data);
+      overlay_callback();
+      endPass();
+    }
 
    private:
     void initShaders();

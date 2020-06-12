@@ -18,7 +18,35 @@ namespace bifrost
   {
     // TODO: The rest of the keys...
     static constexpr int ESCAPE = 256;
+    static constexpr int A      = 'A';
+    static constexpr int B      = 'B';
+    static constexpr int C      = 'C';
+    static constexpr int D      = 'D';
+    static constexpr int E      = 'E';
+    static constexpr int F      = 'F';
+    static constexpr int G      = 'G';
+    static constexpr int H      = 'H';
+    static constexpr int I      = 'I';
+    static constexpr int J      = 'J';
+    static constexpr int K      = 'K';
+    static constexpr int L      = 'L';
+    static constexpr int M      = 'M';
+    static constexpr int N      = 'N';
+    static constexpr int O      = 'O';
+    static constexpr int P      = 'P';
+    static constexpr int Q      = 'Q';
+    static constexpr int R      = 'R';
+    static constexpr int S      = 'S';
+    static constexpr int T      = 'T';
+    static constexpr int U      = 'U';
+    static constexpr int V      = 'V';
+    static constexpr int W      = 'W';
+    static constexpr int X      = 'X';
+    static constexpr int Y      = 'Y';
+    static constexpr int Z      = 'Z';
   }  // namespace KeyCode
+
+  static constexpr int k_KeyCodeMax = KeyCode::ESCAPE;
 
   struct KeyboardEvent final
   {

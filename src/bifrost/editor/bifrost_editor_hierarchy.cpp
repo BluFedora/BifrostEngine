@@ -30,17 +30,17 @@ namespace bifrost::editor
 
     ImGui::Separator();
 
+    imgui_ext::inspect("Search", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
+
     if (!m_SearchQuery.isEmpty())
     {
+      ImGui::SameLine();
+
       if (ImGui::Button("clear"))
       {
         m_SearchQuery.clear();
       }
-
-      ImGui::SameLine();
     }
-
-    imgui_ext::inspect("Search", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
 
     if (ImGui::Button("Add Entity"))
     {

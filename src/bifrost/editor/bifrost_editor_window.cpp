@@ -18,6 +18,11 @@ namespace bifrost::editor
     return string_utils::fmtAlloc(memory, nullptr, "%s###%p%i", title(), static_cast<const void*>(this), m_InstanceID);
   }
 
+  void BaseEditorWindow::handleEvent(EditorOverlay& editor, Event& event)
+  {
+    onEvent(editor, event);
+  }
+
   void BaseEditorWindow::uiShow(EditorOverlay& editor)
   {
     LinearAllocator&     temp_allocator = editor.engine().tempMemory();
@@ -28,6 +33,8 @@ namespace bifrost::editor
     {
       ImGui::SetNextWindowDockID(m_DockID, ImGuiCond_Once);
     }
+
+    onPreDrawGUI(editor);
 
     if (ImGui::Begin(title_id, &m_IsOpen, ImGuiWindowFlags_MenuBar))
     {
@@ -48,6 +55,13 @@ namespace bifrost::editor
               new_window.m_DockID = dock_id;
             }
 
+            if (ImGui::MenuItem("Scene"))
+            {
+              auto& new_window = editor.addWindow<SceneView>();
+
+              new_window.m_DockID = dock_id;
+            }
+
             ImGui::EndMenu();
           }
 
@@ -58,6 +72,7 @@ namespace bifrost::editor
       onDrawGUI(editor);
     }
     ImGui::End();
+    onPostDrawGUI(editor);
   }
 
   void BaseEditorWindow::selectionChange(const Selectable& selectable)

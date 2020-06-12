@@ -21,6 +21,7 @@
 
 namespace bifrost
 {
+  struct Event;
   class IMemoryManager;
   class Entity;
   class IBaseObject;
@@ -59,6 +60,7 @@ namespace bifrost::editor
    public:
     bool                   isOpen() const { return m_IsOpen; }
     const char*            fullImGuiTitle(IMemoryManager& memory) const;
+    void                   handleEvent(EditorOverlay& editor, Event& event);
     void                   uiShow(EditorOverlay& editor);
     void                   selectionChange(const Selectable& selectable);
     virtual EditorWindowID windowID() const = 0;
@@ -67,8 +69,11 @@ namespace bifrost::editor
 
    protected:
     virtual const char* title() const = 0;
+    virtual void        onPreDrawGUI(EditorOverlay& editor) {}
     virtual void        onDrawGUI(EditorOverlay& editor) {}
+    virtual void        onPostDrawGUI(EditorOverlay& editor) {}
     virtual void        onSelectionChanged(const Selectable& selectable) {}
+    virtual void        onEvent(EditorOverlay& editor, Event& event) {}
   };
 
   template<typename T>

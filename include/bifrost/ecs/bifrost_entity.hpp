@@ -13,12 +13,12 @@
 #ifndef BIFROST_ENTITY_HPP
 #define BIFROST_ENTITY_HPP
 
-#include "bifrost/asset_io/bifrost_scene.hpp"                  // Scene
 #include "bifrost/core/bifrost_base_object.hpp"                // BaseObject
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // ListView
 #include "bifrost/math/bifrost_transform.h"                    // BifrostTransform
-#include "bifrost_component_handle_storage.hpp"
-#include "bifrost_collision_system.hpp"
+#include "bifrost_collision_system.hpp"                        // BVHNodeOffset
+#include "bifrost_component_handle_storage.hpp"                // ComponentHandleStorage
+#include "bifrost_component_storage.hpp"                       // ComponentStorage
 
 namespace bifrost::meta
 {
@@ -45,7 +45,9 @@ namespace bifrost
 
   using EntityList = intrusive::ListView<Entity>;
 
-  class Entity final : public BaseObject<Entity>
+  // clang-format off
+  class Entity final : public BaseObject<Entity>, private bfNonCopyMoveable<Entity>
+  // clang-format on
   {
     BIFROST_META_FRIEND;
     friend class Scene;
@@ -185,7 +187,7 @@ namespace bifrost
     template<typename T>
     DenseMap<T>& getComponentList(bool is_active) const
     {
-      return is_active ? m_OwningScene.m_ActiveComponents.get<T>() : m_OwningScene.m_InactiveComponents.get<T>();
+      return sceneComponentStorage(is_active).get<T>();
     }
 
     template<typename T>
@@ -201,6 +203,8 @@ namespace bifrost
     }
 
     void removeChild(Entity* child);
+
+    ComponentStorage& sceneComponentStorage(bool is_active) const;
   };
 }  // namespace bifrost
 

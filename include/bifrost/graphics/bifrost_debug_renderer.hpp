@@ -5,6 +5,7 @@
 
 namespace bifrost
 {
+  struct CameraRender;
   static constexpr int k_DebugRendererNumLinesInBatch   = 256;
   static constexpr int k_DebugRendererNumVerticesInLine = 6;
   static constexpr int k_DebugRendererLineBatchSize     = k_DebugRendererNumLinesInBatch * k_DebugRendererNumVerticesInLine;
@@ -91,7 +92,7 @@ namespace bifrost
     void addLine(const Vector3f& a, const Vector3f& b, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
     void addAABB(const Vector3f& center, const Vector3f& extents, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
 
-    void draw(bfGfxCommandListHandle command_list, BifrostCamera& camera, const bfGfxFrameInfo& frame_info, bool overlay);
+    void draw(bfGfxCommandListHandle command_list, CameraRender& camera, const bfGfxFrameInfo& frame_info, bool overlay);
 
     void deinit();
 

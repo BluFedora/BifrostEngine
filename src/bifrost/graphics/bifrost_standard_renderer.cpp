@@ -273,6 +273,88 @@ namespace bifrost
     bfGfxDevice_release(device, transform_uniform);
   }
 
+  void CameraGPUData::init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height)
+  {
+    const auto limits           = bfGfxDevice_limits(device);
+    const auto create_composite = bfTextureCreateParams_initColorAttachment(
+     initial_width,
+     initial_height,
+     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     bfTrue,
+     bfFalse);
+
+    geometry_buffer.init(device, initial_width, initial_height);
+    ssao_buffer.init(device, initial_width, initial_height);
+    composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
+    camera_uniform_buffer.create(device, BIFROST_BUF_UNIFORM_BUFFER | BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
+  }
+
+  void CameraGPUData::updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient)
+  {
+    CameraUniformData* const buffer_data = camera_uniform_buffer.currentElement(frame_info);
+
+    Mat4x4 view_proj;
+    Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_proj);
+
+    buffer_data->u_CameraProjection        = camera.proj_cache;
+    buffer_data->u_CameraInvViewProjection = camera.inv_view_proj_cache;
+    buffer_data->u_CameraViewProjection    = view_proj;
+    buffer_data->u_CameraView              = camera.view_cache;
+    buffer_data->u_CameraForwardAndTime    = camera.forward;
+    buffer_data->u_CameraForwardAndTime.w  = global_time;
+    buffer_data->u_CameraPosition          = camera.position;
+    buffer_data->u_CameraAmbient           = ambient;
+
+    camera_uniform_buffer.flushCurrent(frame_info);
+
+    Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_projection_cache);
+  }
+
+  void CameraGPUData::bindDescriptorSet(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info)
+  {
+    const bfBufferSize offset = camera_uniform_buffer.offset(frame_info);
+    const bfBufferSize size   = camera_uniform_buffer.elementSize();
+
+    // Update Bindings
+    {
+      // TODO(SR): Optimize into an immutable DescriptorSet!
+      bfDescriptorSetInfo desc_set_camera = bfDescriptorSetInfo_make();
+
+      bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &camera_uniform_buffer.handle(), 1);
+
+      bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &desc_set_camera);
+    }
+  }
+
+  void CameraGPUData::resize(bfGfxDeviceHandle device, int width, int height)
+  {
+    bfGfxDevice_flush(device);
+
+    ssao_buffer.deinit(device);
+    geometry_buffer.deinit(device);
+    bfGfxDevice_release(device, composite_buffer);
+
+    geometry_buffer.init(device, width, height);
+    ssao_buffer.init(device, width, height);
+
+    const auto create_composite = bfTextureCreateParams_initColorAttachment(
+     width,
+     height,
+     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     bfTrue,
+     bfFalse);
+
+    composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
+  }
+
+  void CameraGPUData::deinit(bfGfxDeviceHandle device)
+  {
+    camera_uniform_buffer.destroy(device);
+    ssao_buffer.deinit(device);
+    geometry_buffer.deinit(device);
+    bfGfxDevice_release(device, composite_buffer);
+  }
+
   StandardRenderer::StandardRenderer(IMemoryManager& memory) :
     m_GLSLCompiler{memory},
     m_GfxBackend{nullptr},
@@ -282,18 +364,14 @@ namespace bifrost
     m_EmptyVertexLayout{nullptr},
     m_MainCmdList{nullptr},
     m_MainSurface{nullptr},
-    m_GBuffer{},
-    m_SSAOBuffer{},
-    m_DeferredComposite{nullptr},
     m_GBufferShader{nullptr},
     m_SSAOBufferShader{nullptr},
     m_SSAOBlurShader{nullptr},
+    m_AmbientLighting{nullptr},
     m_LightShaders{nullptr},
-    m_CameraUniform{},
     m_RenderablePool{memory},
     m_RenderableMapping{},
     m_AutoRelease{memory},
-    m_ViewProjection{},
     m_WhiteTexture{nullptr},
     m_DirectionalLightBuffer{},
     m_PunctualLightBuffers{},
@@ -316,24 +394,11 @@ namespace bifrost
 
     m_EmptyVertexLayout = bfVertexLayout_new();
 
-    m_GBuffer.init(m_GfxDevice, k_GfxBaseResolution[0], k_GfxBaseResolution[1]);
-    m_SSAOBuffer.init(m_GfxDevice, k_GfxBaseResolution[0], k_GfxBaseResolution[1]);
-
-    const auto create_composite = bfTextureCreateParams_initColorAttachment(
-     k_GfxBaseResolution[0],
-     k_GfxBaseResolution[1],
-     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
-     bfTrue,
-     bfFalse);
-
-    m_DeferredComposite = gfx::createAttachment(m_GfxDevice, create_composite, k_SamplerNearestRepeat);
-
     initShaders();
 
     {
       const auto limits = bfGfxDevice_limits(m_GfxDevice);
 
-      m_CameraUniform.create(m_GfxDevice, BIFROST_BUF_UNIFORM_BUFFER | BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER, m_FrameInfo, limits.uniform_buffer_offset_alignment);
       m_DirectionalLightBuffer.create(m_GfxDevice, BIFROST_BUF_UNIFORM_BUFFER | BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER, m_FrameInfo, limits.uniform_buffer_offset_alignment);
 
       for (auto& buffer : m_PunctualLightBuffers)
@@ -347,7 +412,7 @@ namespace bifrost
     m_AutoRelease.push(m_WhiteTexture);
   }
 
-  bool StandardRenderer::frameBegin(BifrostCamera& camera)
+  bool StandardRenderer::frameBegin()
   {
     if (bfGfxContext_beginFrame(m_GfxBackend, k_AssumedWindow))
     {
@@ -368,47 +433,11 @@ namespace bifrost
         point_light_buffer->u_NumLights = 0;
         spot_light_buffer->u_NumLights  = 0;
 
-        // Upload Data
-        {
-          CameraUniformData* const buffer_data = m_CameraUniform.currentElement(m_FrameInfo);
-
-          Mat4x4 view_proj;
-          Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_proj);
-
-          buffer_data->u_CameraProjection        = camera.proj_cache;
-          buffer_data->u_CameraInvViewProjection = camera.inv_view_proj_cache;
-          buffer_data->u_CameraViewProjection    = view_proj;
-          buffer_data->u_CameraView              = camera.view_cache;
-          buffer_data->u_CameraForwardAndTime    = camera.forward;
-          buffer_data->u_CameraForwardAndTime.w  = m_GlobalTime;
-          buffer_data->u_CameraPosition          = camera.position;
-          buffer_data->u_CameraAmbient           = AmbientColor;
-
-          m_CameraUniform.flushCurrent(m_FrameInfo);
-        }
-        Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &m_ViewProjection);
-
         return bfGfxCmdList_begin(m_MainCmdList);
       }
     }
 
     return false;
-  }
-
-  void StandardRenderer::bindCamera(bfGfxCommandListHandle command_list, const BifrostCamera& camera)
-  {
-    const bfBufferSize offset = m_CameraUniform.offset(m_FrameInfo);
-    const bfBufferSize size   = m_CameraUniform.elementSize();
-
-    // Update Bindings
-    {
-      // TODO(SR): Optimize into an immutable DescriptorSet!
-      bfDescriptorSetInfo desc_set_camera = bfDescriptorSetInfo_make();
-
-      bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &m_CameraUniform.handle(), 1);
-
-      bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &desc_set_camera);
-    }
   }
 
   void StandardRenderer::bindMaterial(bfGfxCommandListHandle command_list, const Material& material)
@@ -437,9 +466,11 @@ namespace bifrost
     }
   }
 
-  void StandardRenderer::bindObject(bfGfxCommandListHandle command_list, Entity& entity)
+  void StandardRenderer::bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity)
   {
-    auto it = m_RenderableMapping.find(&entity);
+    const auto key = CameraObjectPair{&camera, &entity};
+
+    auto it = m_RenderableMapping.find(key);
 
     Renderable* renderable;
 
@@ -447,7 +478,7 @@ namespace bifrost
     {
       renderable = &m_RenderablePool.emplaceFront();
       renderable->create(m_GfxDevice);
-      m_RenderableMapping.emplace(&entity, renderable);
+      m_RenderableMapping.emplace(key, renderable);
     }
     else
     {
@@ -465,7 +496,7 @@ namespace bifrost
       Mat4x4& model = entity.transform().world_transform;
 
       Mat4x4 model_view_proj;
-      Mat4x4_mult(&m_ViewProjection, &model, &model_view_proj);
+      Mat4x4_mult(&camera.view_projection_cache, &model, &model_view_proj);
 
       obj_data->u_ModelViewProjection = model_view_proj;
       obj_data->u_Model               = model;
@@ -552,7 +583,7 @@ namespace bifrost
     }
   }
 
-  void StandardRenderer::beginGBufferPass()
+  void StandardRenderer::beginGBufferPass(CameraGPUData& camera) const
   {
     static constexpr std::uint16_t k_LoadFlags         = 0x0;
     static constexpr std::uint16_t k_ClearFlags        = bfBit(0) | bfBit(1) | bfBit(2);
@@ -568,6 +599,8 @@ namespace bifrost
       true,
      };
 
+    auto& gbuffer = camera.geometry_buffer;
+
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, k_LoadFlags);
     bfRenderpassInfo_setStencilLoadOps(&renderpass_info, k_LoadFlags);
@@ -575,12 +608,12 @@ namespace bifrost
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, k_StencilClearFlags);
     bfRenderpassInfo_setStoreOps(&renderpass_info, k_StoreFlags);
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, k_StencilStoreFlags);
-    m_GBuffer.setupAttachments(renderpass_info, 0u);
+    gbuffer.setupAttachments(renderpass_info, 0u);
     bfRenderpassInfo_addDependencies(&renderpass_info, &color_write_dep, 1);
 
     bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
-    bfGfxCmdList_setClearValues(m_MainCmdList, m_GBuffer.clear_values);
-    bfGfxCmdList_setAttachments(m_MainCmdList, m_GBuffer.attachments());
+    bfGfxCmdList_setClearValues(m_MainCmdList, gbuffer.clear_values);
+    bfGfxCmdList_setAttachments(m_MainCmdList, gbuffer.attachments());
     bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
 
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
@@ -602,7 +635,7 @@ namespace bifrost
     bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_StandardVertexLayout);
   }
 
-  void StandardRenderer::beginSSAOPass(const BifrostCamera& camera)
+  void StandardRenderer::beginSSAOPass(CameraGPUData& camera) const
   {
     static constexpr std::uint16_t k_LoadFlags         = 0x0;
     static constexpr std::uint16_t k_ClearFlags        = bfBit(0) | bfBit(1) | bfBit(2);
@@ -636,35 +669,37 @@ namespace bifrost
     bfRenderpassInfo_setStoreOps(&renderpass_info0, k_StoreFlags);
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info0, k_StencilStoreFlags);
 
-    auto renderpass_info1 = renderpass_info0;
+    auto  renderpass_info1 = renderpass_info0;
+    auto& ssoa_buffer      = camera.ssao_buffer;
+    auto& gbuffer          = camera.geometry_buffer;
 
-    m_SSAOBuffer.setupAttachments(renderpass_info0, 0u, 0u);
-    m_SSAOBuffer.setupAttachments(renderpass_info1, 0u, 1u);
+    ssoa_buffer.setupAttachments(renderpass_info0, 0u, 0u);
+    ssoa_buffer.setupAttachments(renderpass_info1, 0u, 1u);
 
     bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_EmptyVertexLayout);
     bfGfxCmdList_setDepthTesting(m_MainCmdList, bfFalse);
     bfGfxCmdList_setDepthWrite(m_MainCmdList, bfFalse);
 
     bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info0);
-    bfGfxCmdList_setClearValues(m_MainCmdList, m_SSAOBuffer.clear_values);
-    bfGfxCmdList_setAttachments(m_MainCmdList, m_SSAOBuffer.color_attachments);
+    bfGfxCmdList_setClearValues(m_MainCmdList, ssoa_buffer.clear_values);
+    bfGfxCmdList_setAttachments(m_MainCmdList, ssoa_buffer.color_attachments);
     bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
 
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
 
     bfGfxCmdList_bindProgram(m_MainCmdList, m_SSAOBufferShader);
 
-    bindCamera(m_MainCmdList, camera);
+    camera.bindDescriptorSet(m_MainCmdList, m_FrameInfo);
 
     {
       bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
       bfBufferSize        offset            = 0;
-      bfBufferSize        size              = bfBuffer_size(m_SSAOBuffer.kernel_uniform);
+      bfBufferSize        size              = bfBuffer_size(ssoa_buffer.kernel_uniform);
 
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &m_GBuffer.depth_attachment, 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 1, 0, &m_GBuffer.color_attachments[0], 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 2, 0, &m_SSAOBuffer.noise, 1);
-      bfDescriptorSetInfo_addUniform(&desc_set_textures, 3, 0, &offset, &size, &m_SSAOBuffer.kernel_uniform, 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &gbuffer.depth_attachment, 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 1, 0, &gbuffer.color_attachments[0], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 2, 0, &ssoa_buffer.noise, 1);
+      bfDescriptorSetInfo_addUniform(&desc_set_textures, 3, 0, &offset, &size, &ssoa_buffer.kernel_uniform, 1);
 
       bfGfxCmdList_bindDescriptorSet(m_MainCmdList, k_GfxMaterialSetIndex, &desc_set_textures);
     }
@@ -679,7 +714,7 @@ namespace bifrost
         bfPipelineBarrier_image(
          BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
          BIFROST_ACCESS_SHADER_READ_BIT,
-         m_SSAOBuffer.color_attachments[0],
+         ssoa_buffer.color_attachments[0],
          BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
        };
       const std::uint32_t num_barriers = std::uint32_t(bfCArraySize(barriers));
@@ -694,19 +729,19 @@ namespace bifrost
     }
 
     bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info1);
-    bfGfxCmdList_setClearValues(m_MainCmdList, m_SSAOBuffer.clear_values + 1u);
-    bfGfxCmdList_setAttachments(m_MainCmdList, m_SSAOBuffer.color_attachments + 1u);
+    bfGfxCmdList_setClearValues(m_MainCmdList, ssoa_buffer.clear_values + 1u);
+    bfGfxCmdList_setAttachments(m_MainCmdList, ssoa_buffer.color_attachments + 1u);
     bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
 
     bfGfxCmdList_bindProgram(m_MainCmdList, m_SSAOBlurShader);
 
-    bindCamera(m_MainCmdList, camera);
+    camera.bindDescriptorSet(m_MainCmdList, m_FrameInfo);
 
     {
       bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
 
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &m_SSAOBuffer.color_attachments[0], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &ssoa_buffer.color_attachments[0], 1);
 
       bfGfxCmdList_bindDescriptorSet(m_MainCmdList, k_GfxMaterialSetIndex, &desc_set_textures);
     }
@@ -714,7 +749,7 @@ namespace bifrost
     bfGfxCmdList_draw(m_MainCmdList, 0, 3);
   }
 
-  void StandardRenderer::beginLightingPass(const BifrostCamera& camera)
+  void StandardRenderer::beginLightingPass(CameraGPUData& camera)
   {
     const bfPipelineBarrier barriers[] =
      {
@@ -731,7 +766,7 @@ namespace bifrost
      bfTrue);
 
     bfAttachmentInfo deferred_composite;
-    deferred_composite.texture      = m_DeferredComposite;
+    deferred_composite.texture      = camera.composite_buffer;
     deferred_composite.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     deferred_composite.may_alias    = bfFalse;
 
@@ -751,7 +786,7 @@ namespace bifrost
     clear_colors[0].color.float32[2] = 0.2f;
     clear_colors[0].color.float32[3] = 1.0f;
 
-    bfTextureHandle attachments[] = {m_DeferredComposite};
+    bfTextureHandle attachments[] = {deferred_composite.texture};
 
     bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_EmptyVertexLayout);
     bfGfxCmdList_setDepthTesting(m_MainCmdList, bfFalse);
@@ -763,18 +798,21 @@ namespace bifrost
     bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
     bfGfxCmdList_beginRenderpass(m_MainCmdList);
 
+    auto& ssoa_buffer = camera.ssao_buffer;
+    auto& gbuffer     = camera.geometry_buffer;
+
     const auto baseLightingBegin = [this, &camera](auto& shader) {
       bfGfxCmdList_bindProgram(m_MainCmdList, shader);
-      bindCamera(m_MainCmdList, camera);
+      camera.bindDescriptorSet(m_MainCmdList, m_FrameInfo);
     };
 
-    const auto baseLightingEnd = [this]() {
+    const auto baseLightingEnd = [this, &gbuffer, &ssoa_buffer]() {
       bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
 
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &m_GBuffer.color_attachments[0], 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 1, 0, &m_GBuffer.color_attachments[1], 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 2, 0, &m_SSAOBuffer.color_attachments[1], 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_textures, 3, 0, &m_GBuffer.depth_attachment, 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 0, 0, &gbuffer.color_attachments[0], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 1, 0, &gbuffer.color_attachments[1], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 2, 0, &ssoa_buffer.color_attachments[1], 1);
+      bfDescriptorSetInfo_addTexture(&desc_set_textures, 3, 0, &gbuffer.depth_attachment, 1);
 
       bfGfxCmdList_bindDescriptorSet(m_MainCmdList, k_GfxMaterialSetIndex, &desc_set_textures);
 
@@ -782,7 +820,6 @@ namespace bifrost
     };
 
     const auto lightingDraw = [this, &baseLightingBegin, &baseLightingEnd](auto& shader, auto& buffer) -> void {
-      
       baseLightingBegin(shader);
 
       {
@@ -893,38 +930,12 @@ namespace bifrost
       buffer.destroy(m_GfxDevice);
     }
 
-    m_CameraUniform.destroy(m_GfxDevice);
-    m_SSAOBuffer.deinit(m_GfxDevice);
-    m_GBuffer.deinit(m_GfxDevice);
-    bfGfxDevice_release(m_GfxDevice, m_DeferredComposite);
-
     bfVertexLayout_delete(m_EmptyVertexLayout);
     bfVertexLayout_delete(m_StandardVertexLayout);
     bfGfxContext_delete(m_GfxBackend);
 
     m_GfxDevice  = nullptr;
     m_GfxBackend = nullptr;
-  }
-
-  void StandardRenderer::resize(int width, int height)
-  {
-    bfGfxDevice_flush(m_GfxDevice);
-
-    m_SSAOBuffer.deinit(m_GfxDevice);
-    m_GBuffer.deinit(m_GfxDevice);
-    bfGfxDevice_release(m_GfxDevice, m_DeferredComposite);
-
-    m_GBuffer.init(m_GfxDevice, width, height);
-    m_SSAOBuffer.init(m_GfxDevice, width, height);
-
-    const auto create_composite = bfTextureCreateParams_initColorAttachment(
-     width,
-     height,
-     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
-     bfTrue,
-     bfFalse);
-
-    m_DeferredComposite = gfx::createAttachment(m_GfxDevice, create_composite, k_SamplerNearestRepeat);
   }
 
   namespace bindings

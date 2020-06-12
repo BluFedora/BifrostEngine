@@ -5,6 +5,8 @@
 
 #include "glfw/glfw3.h"
 
+extern GLFWwindow* g_Window;
+
 static GLFWmonitor* get_current_monitor(GLFWwindow* window)
 {
   int nmonitors;
@@ -41,7 +43,9 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
 
 void MainDemoLayer::onEvent(BifrostEngine&, bifrost::Event& event)
 {
-  if (event.type == bifrost::EventType::ON_KEY_DOWN && event.keyboard.key == 'P' && event.keyboard.modifiers & bifrost::KeyboardEvent::CONTROL)
+  const auto is_key_down = event.type == bifrost::EventType::ON_KEY_DOWN;
+
+  if (is_key_down && event.keyboard.key == 'P' && event.keyboard.modifiers & bifrost::KeyboardEvent::CONTROL)
   {
     static bool isFullscreen = false;
     static int  old_info[4];
@@ -64,35 +68,41 @@ void MainDemoLayer::onEvent(BifrostEngine&, bifrost::Event& event)
 
     event.accept();
   }
+
+  if (is_key_down || event.type == bifrost::EventType::ON_KEY_UP)
+  {
+    m_IsKeyDown[event.keyboard.key] = is_key_down;
+    m_IsShiftDown                   = event.keyboard.modifiers & KeyboardEvent::SHIFT;
+  }
 }
 
 void MainDemoLayer::onUpdate(BifrostEngine& engine, float delta_time)
 {
-  const auto camera_move_speed = 1.0f * delta_time;
+  const auto camera_move_speed = (m_IsShiftDown ? 2.2f : 1.0f) * delta_time;
 
-  const std::tuple<int, void (*)(::BifrostCamera*, float), float> CameraControls[] =
+  const std::tuple<int, void (*)(::BifrostCamera*, float), float> camera_controls[] =
    {
-    {GLFW_KEY_W, &Camera_moveForward, camera_move_speed},
-    {GLFW_KEY_A, &Camera_moveLeft, camera_move_speed},
-    {GLFW_KEY_S, &Camera_moveBackward, camera_move_speed},
-    {GLFW_KEY_D, &Camera_moveRight, camera_move_speed},
-    {GLFW_KEY_Q, &Camera_moveUp, camera_move_speed},
-    {GLFW_KEY_E, &Camera_moveDown, camera_move_speed},
-    {GLFW_KEY_R, &Camera_addPitch, -0.01f},
-    {GLFW_KEY_F, &Camera_addPitch, 0.01f},
-    {GLFW_KEY_H, &Camera_addYaw, 0.01f},
-    {GLFW_KEY_G, &Camera_addYaw, -0.01f},
+    {KeyCode::W, &Camera_moveForward, camera_move_speed},
+    {KeyCode::A, &Camera_moveLeft, camera_move_speed},
+    {KeyCode::S, &Camera_moveBackward, camera_move_speed},
+    {KeyCode::D, &Camera_moveRight, camera_move_speed},
+    {KeyCode::Q, &Camera_moveUp, camera_move_speed},
+    {KeyCode::E, &Camera_moveDown, camera_move_speed},
+    {KeyCode::R, &Camera_addPitch, -0.01f},
+    {KeyCode::F, &Camera_addPitch, 0.01f},
+    {KeyCode::H, &Camera_addYaw, 0.01f},
+    {KeyCode::G, &Camera_addYaw, -0.01f},
    };
 
-  auto& Camera = engine.Camera;
-
-  for (const auto& control : CameraControls)
-  {
-    if (glfwGetKey(g_Window, std::get<0>(control)) == GLFW_PRESS)
+  engine.forEachCamera([this, &camera_controls](CameraRender* camera) {
+    for (const auto& control : camera_controls)
     {
-      std::get<1>(control)(&Camera, std::get<2>(control));
+      if (m_IsKeyDown[std::get<0>(control)])
+      {
+        std::get<1>(control)(&camera->cpu_camera, std::get<2>(control));
+      }
     }
-  }
 
-  Camera_update(&Camera);
+    Camera_update(&camera->cpu_camera);
+  });
 }
