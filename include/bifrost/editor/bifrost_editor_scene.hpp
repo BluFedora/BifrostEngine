@@ -32,6 +32,7 @@ namespace bifrost::editor
     void        onDrawGUI(EditorOverlay& editor) override;
     void        onPostDrawGUI(EditorOverlay& editor) override;
     void        onEvent(EditorOverlay& editor, Event& event) override;
+    void        onUpdate(EditorOverlay& editor, float dt) override;
   };
 }  // namespace bifrost::editor
 

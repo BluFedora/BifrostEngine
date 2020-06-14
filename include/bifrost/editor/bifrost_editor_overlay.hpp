@@ -15,7 +15,6 @@
 
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/bifrost.hpp"
-#include "bifrost/math/bifrost_rect2.hpp"
 #include "bifrost_editor_filesystem.hpp"
 #include "bifrost_editor_inspector.hpp"
 
@@ -351,6 +350,8 @@ namespace bifrost::editor
     FileSystem         m_FileSystem;
     Vec2f              m_MousePosition;  // TODO(SR): This should be stored in a shared Engine Input Module.
     WindowList         m_OpenWindows;
+    bool               m_IsKeyDown[k_KeyCodeMax + 1];
+    bool               m_IsShiftDown;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -367,6 +368,9 @@ namespace bifrost::editor
     const char*       name() override { return "Bifrost Editor"; }
     Engine&           engine() const { return *m_Engine; }
     FileSystem&       fileSystem() { return m_FileSystem; }
+
+    bool isKeyDown(int key) const { return m_IsKeyDown[key]; }
+    bool isShiftDown() const { return m_IsShiftDown; }
 
     Action* findAction(const char* name) const;
     void    enqueueDialog(ui::Dialog* dlog);
@@ -412,7 +416,7 @@ namespace bifrost::editor
       }
     }
 
-   // private:
+    // private:
     void buttonAction(const ActionContext& ctx, const char* action_name) const;
     void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label, const ImVec2& size = ImVec2(0.0f, 0.0f)) const;
     void selectableAction(const ActionContext& ctx, const char* action_name) const;

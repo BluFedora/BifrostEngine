@@ -40,8 +40,10 @@ namespace bifrost::meta
 
 namespace bifrost
 {
+  class BaseBehavior;
   class ISerializer;
   class Entity;
+  class bfPureInterface(IBehavior);
 
   using EntityList = intrusive::ListView<Entity>;
 
@@ -61,17 +63,19 @@ namespace bifrost
     intrusive::Node<Entity> m_Hierarchy;
     ComponentHandleStorage  m_ComponentHandles;
     BVHNodeOffset           m_BHVNode;
+    Array<IBehavior*>       m_Behaviors;
 
    public:
     Entity(Scene& scene, const StringRange& name);
 
     // Getters
 
-    [[nodiscard]] Scene&            scene() const { return m_OwningScene; }
-    [[nodiscard]] const String&     name() const { return m_Name; }
-    [[nodiscard]] BifrostTransform& transform() const;
-    [[nodiscard]] const EntityList& children() const { return m_Children; }
-    [[nodiscard]] BVHNodeOffset     bvhID() const { return m_BHVNode; }
+    [[nodiscard]] Scene&                   scene() const { return m_OwningScene; }
+    [[nodiscard]] const String&            name() const { return m_Name; }
+    [[nodiscard]] BifrostTransform&        transform() const;
+    [[nodiscard]] const EntityList&        children() const { return m_Children; }
+    [[nodiscard]] BVHNodeOffset            bvhID() const { return m_BHVNode; }
+    [[nodiscard]] const Array<IBehavior*>& behaviors() const { return m_Behaviors; }
 
     // Child API
     //
@@ -154,7 +158,7 @@ namespace bifrost
     }
 
     template<typename T>
-    void remove()
+    bool remove()
     {
       auto& handle = m_ComponentHandles.get<T>();
 
@@ -163,12 +167,44 @@ namespace bifrost
         getComponentList<T>(handle.is_active).remove(handle.handle);
         handle.handle    = {};
         handle.is_active = false;
+
+        return true;
       }
-      else
-      {
-        // TODO(SR): Error?
-      }
+
+      return false;
     }
+
+    // Behavior API
+
+    template<typename T>
+    T* addBehavior()
+    {
+      static_assert(std::is_base_of_v<IBehavior, T>, "T must derive from the Behavior<T> class.");
+
+      return (T*)addBehavior(meta::typeInfoGet<T>());
+    }
+
+    IBehavior*    addBehavior(const StringRange& name);
+    BaseBehavior* addBehavior(meta::BaseClassMetaInfoPtr type);
+
+    template<typename T>
+    T* findBehavior()
+    {
+      return (T*)findBehaviorByType(meta::typeInfoGet<T>());
+    }
+
+    IBehavior* findBehavior(const StringRange& name) const;
+
+    template<typename T>
+    bool removeBehavior()
+    {
+      auto type_info = meta::typeInfoGet<T>();
+
+      return type_info ? removeBehaviorFromList(type_info) : false;
+    }
+
+    bool removeBehavior(const StringRange& name);
+    bool removeBehavior(IBehavior* behavior);
 
     // Meta
 
@@ -202,9 +238,13 @@ namespace bifrost
       return m_ComponentHandles.get<T>();
     }
 
-    void removeChild(Entity* child);
+    void        removeChild(Entity* child);
+    IBehavior*  findBehaviorByType(meta::BaseClassMetaInfoPtr type) const;     // not found = nullptr, looks through both lists.
+    std::size_t findBehaviorIdxByType(meta::BaseClassMetaInfoPtr type) const;  // not found = BIFROST_ARRAY_INVALID_INDEX
+    bool        removeBehaviorFromList(meta::BaseClassMetaInfoPtr type);       // false if could not find behavior to be removed
 
     ComponentStorage& sceneComponentStorage(bool is_active) const;
+    IMemoryManager&   sceneMemoryManager() const;
   };
 }  // namespace bifrost
 

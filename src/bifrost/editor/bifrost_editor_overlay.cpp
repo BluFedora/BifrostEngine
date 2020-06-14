@@ -7,14 +7,15 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 #include "bifrost/editor/bifrost_editor_inspector.hpp"
+#include "bifrost/editor/bifrost_editor_scene.hpp"
 #include "bifrost/platform/bifrost_ibase_window.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
+
 #include <utility>
 
-#include "bifrost/editor/bifrost_editor_scene.hpp"
 #include <imgui/imgui_internal.h>  // Must appear after '<imgui/imgui.h>'
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -831,7 +832,6 @@ namespace bifrost::editor
     }
 
     ImGuiIO&   io                = ImGui::GetIO();
-    auto&      mouse_evt         = event.mouse;
     const bool imgui_wants_input = (io.WantTextInput && event.isKeyEvent()) ||
                                    (io.WantCaptureMouse && event.isMouseEvent());
 
@@ -855,6 +855,16 @@ namespace bifrost::editor
     if (event.type == EventType::ON_WINDOW_RESIZE || imgui_wants_input)
     {
       event.accept();
+    }
+    else
+    {
+      const auto is_key_down = event.type == EventType::ON_KEY_DOWN;
+
+      if (is_key_down || event.type == EventType::ON_KEY_UP)
+      {
+        m_IsKeyDown[event.keyboard.key] = is_key_down;
+        m_IsShiftDown                   = event.keyboard.modifiers & KeyboardEvent::SHIFT;
+      }
     }
   }
 
@@ -881,7 +891,7 @@ namespace bifrost::editor
         m_FpsTimer   = 1.0f;
       }
 
-      //*
+      /*
       if (ImGui::Button("Play"))
       {
       }
@@ -1009,6 +1019,12 @@ namespace bifrost::editor
       ImGui::End();
     }
 
+    // TODO(SR): These two loops can probably be combined.
+    for (BaseEditorWindowPtr& window : m_OpenWindows)
+    {
+      window->update(*this, delta_time);
+    }
+
     for (BaseEditorWindowPtr& window : m_OpenWindows)
     {
       window->uiShow(*this);
@@ -1024,14 +1040,13 @@ namespace bifrost::editor
 
     m_OpenWindows.resize(split - m_OpenWindows.begin());
 
-    /*
-
+    //*
     if (ImGui::Begin("Command Palette"))
     {
-    for (const auto& action : m_Actions)
-    {
-    buttonAction(action_ctx, action.key().cstr(), action.key().cstr(), ImVec2(-1.0f, 0.0f));
-    }
+      for (const auto& action : m_Actions)
+      {
+        buttonAction(action_ctx, action.key().cstr(), action.key().cstr(), ImVec2(-1.0f, 0.0f));
+      }
     }
     ImGui::End();
 
@@ -1224,7 +1239,9 @@ namespace bifrost::editor
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
     m_MousePosition{},
-    m_OpenWindows{allocator()}
+    m_OpenWindows{allocator()},
+    m_IsKeyDown{false},
+    m_IsShiftDown{false}
   {
   }
 

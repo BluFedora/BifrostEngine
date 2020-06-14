@@ -200,4 +200,39 @@ namespace bifrost::editor
       event.accept();
     }
   }
+
+  void SceneView::onUpdate(EditorOverlay& editor, float dt)
+  {
+    if (m_Camera)
+    {
+      if (isFocused())
+      {
+        const auto camera_move_speed = (editor.isShiftDown() ? 2.2f : 1.0f) * dt;
+
+        const std::tuple<int, void (*)(::BifrostCamera*, float), float> camera_controls[] =
+         {
+          {KeyCode::W, &Camera_moveForward, camera_move_speed},
+          {KeyCode::A, &Camera_moveLeft, camera_move_speed},
+          {KeyCode::S, &Camera_moveBackward, camera_move_speed},
+          {KeyCode::D, &Camera_moveRight, camera_move_speed},
+          {KeyCode::Q, &Camera_moveUp, camera_move_speed},
+          {KeyCode::E, &Camera_moveDown, camera_move_speed},
+          {KeyCode::R, &Camera_addPitch, -0.01f},
+          {KeyCode::F, &Camera_addPitch, 0.01f},
+          {KeyCode::H, &Camera_addYaw, 0.01f},
+          {KeyCode::G, &Camera_addYaw, -0.01f},
+         };
+
+        for (const auto& control : camera_controls)
+        {
+          if (editor.isKeyDown(std::get<0>(control)))
+          {
+            std::get<1>(control)(&m_Camera->cpu_camera, std::get<2>(control));
+          }
+        }
+      }
+
+      Camera_update(&m_Camera->cpu_camera);
+    }
+  }
 }  // namespace bifrost::editor

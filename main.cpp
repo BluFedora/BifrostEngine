@@ -1,10 +1,10 @@
 #define NOMINMAX
 
-#include "bifrost/ecs/bifrost_collision_system.hpp"
 #include "demo/game_state_layers/main_demo.hpp"
 
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
+#include <bifrost/ecs/bifrost_collision_system.hpp>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
 #include <bifrost/platform/bifrost_window_glfw.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
@@ -168,7 +168,7 @@ namespace ErrorCodes
 
 namespace bifrost
 {
-  class Camera
+  class Camera_
   {
    private:
     float m_ElapsedTime = 0.0f;
@@ -433,7 +433,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     VM& vm = engine.scripting();
 
-    const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<Camera>("Camera", bf::vmMakeCtorBinding<Camera>());
+    const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<Camera_>("Camera", bf::vmMakeCtorBinding<Camera_>());
 
     vm.stackResize(5);
 
@@ -441,7 +441,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
     vm.moduleMake(0, "bifrost");
     vm.stackStore(0, camera_clz_bindings);
     vm.stackLoadVariable(1, 0, "Camera");
-    vm.stackStore(1, "update", &Camera::update);
+    vm.stackStore(1, "update", &Camera_::update);
 
     const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
      "TestClass",
@@ -560,66 +560,3 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   return 0;
 }
-
-#if 0
-  window("Game State Machine", [&engine]() {
-    ImGui::Text("Sprite ID: %i", SpriteComponent::s_ComponentID);
-    ImGui::Text("Mesh ID: %i", MeshComponent::s_ComponentID);
-
-    auto& state_machine = engine.stateMachine();
-
-    for (auto& state : state_machine)
-    {
-      ImGui::PushID(&state);
-      if (ImGui::TreeNode(state.name()))
-      {
-        if (&state == state_machine.head())
-        {
-          ImGui::TextColored(ImVec4{1.0f, 0.0f, 0.0f, 1.0f}, "Layer Head");
-        }
-
-        if (&state == state_machine.tail())
-        {
-          ImGui::TextColored(ImVec4{0.0f, 1.0f, 0.0f, 1.0f}, "Layer Tail");
-        }
-
-        if (&state == state_machine.overlayHead())
-        {
-          ImGui::TextColored(ImVec4{0.0f, 1.0f, 0.0f, 1.0f}, "Overlay Head");
-        }
-
-        if (&state == state_machine.overlayTail())
-        {
-          ImGui::TextColored(ImVec4{1.0f, 0.0f, 1.0f, 1.0f}, "Overlay Tail");
-        }
-
-        ImGui::Text("Prev: %s", state.prev() ? state.prev()->name() : "<null>");
-        ImGui::Text("Next: %s", state.next() ? state.next()->name() : "<null>");
-
-        ImGui::Separator();
-
-        if (ImGui::Button("Push Before"))
-        {
-          state_machine.pushBefore<ImGUIOverlay>(state, "Useless");
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Push After"))
-        {
-          state_machine.pushAfter<ImGUIOverlay>(state, "Garbage");
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Remove"))
-        {
-          state_machine.remove(&state);
-        }
-
-        ImGui::TreePop();
-      }
-      ImGui::PopID();
-    }
-  });
-#endif

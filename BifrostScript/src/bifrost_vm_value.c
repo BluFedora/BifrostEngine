@@ -1,4 +1,3 @@
-
 /******************************************************************************/
 /*!
  * @file   bifrost_vm_value.c
@@ -15,48 +14,99 @@
 /******************************************************************************/
 #include "bifrost_vm_value.h"
 
-bfVMValue bfVMValue_fromBool(bfBool32 v)
+bfBool32 bfVMValue_isNull(bfVMValue value)
 {
-  return v ? VAL_TRUE : VAL_FALSE;
+  return value == k_VMValueNull;
+}
+
+bfBool32 bfVMValue_isBool(bfVMValue value)
+{
+  return bfVMValue_isTrue(value) || bfVMValue_isFalse(value);
+}
+
+bfBool32 bfVMValue_isTrue(bfVMValue value)
+{
+  return value == k_VMValueTrue;
+}
+
+bfBool32 bfVMValue_isFalse(bfVMValue value)
+{
+  return value == k_VMValueFalse;
+}
+
+bfBool32 bfVMValue_isPointer(bfVMValue value)
+{
+  return (value & k_VMValuePointerMask) == k_VMValuePointerMask;
+}
+
+bfBool32 bfVMValue_isNumber(bfVMValue value)
+{
+  return (value & k_QuietNan) != k_QuietNan;
+}
+
+bfVMValue bfVMValue_fromNull()
+{
+  return k_VMValueNull;
+}
+
+bfVMValue bfVMValue_fromBool(bfBool32 value)
+{
+  return value ? k_VMValueTrue : k_VMValueFalse;
+}
+
+bfVMValue bfVMValue_fromNumber(bfFloat64 value)
+{
+  uint64_t bits64;
+  memcpy(&bits64, &value, sizeof(bits64));
+  return bits64;
+}
+
+bfVMValue bfVMValue_fromPointer(const void* value)
+{
+  return value ? (bfVMValue)(k_VMValuePointerMask | (uint64_t)((uintptr_t)value))  : bfVMValue_fromNull();
 }
 
 bfFloat64 bfVmValue_asNumber(bfVMValue self)
 {
-  union
-  {
-    uint64_t  bits64;
-    bfFloat64 num;
-  } c;
+  bfFloat64 num;
+  memcpy(&num, &self, sizeof(num));
 
-  c.bits64 = self;
-  return c.num;
+  return num;
+}
+
+void* bfVmValue_asPointer(bfVMValue self)
+{
+  return (void*)((uintptr_t)(self & ~k_VMValuePointerMask));
+}
+
+bfVMValue bfVMValue_sub(bfVMValue lhs, bfVMValue rhs)
+{
+  return bfVMValue_fromNumber(bfVmValue_asNumber(lhs) - bfVmValue_asNumber(rhs));
 }
 
 bfVMValue bfVMValue_mul(bfVMValue lhs, bfVMValue rhs)
 {
-  if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
+  if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return FROM_NUMBER(
-     bfVmValue_asNumber(lhs) * bfVmValue_asNumber(rhs));
+    return bfVMValue_fromNumber(bfVmValue_asNumber(lhs) * bfVmValue_asNumber(rhs));
   }
 
-  return VAL_NULL;
+  return bfVMValue_fromNull();
 }
 
 bfVMValue bfVMValue_div(bfVMValue lhs, bfVMValue rhs)
 {
-  if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
+  if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return FROM_NUMBER(
-     bfVmValue_asNumber(lhs) / bfVmValue_asNumber(rhs));
+    return bfVMValue_fromNumber(bfVmValue_asNumber(lhs) / bfVmValue_asNumber(rhs));
   }
 
-  return VAL_NULL;
+  return bfVMValue_fromNull();
 }
 
 bfBool32 bfVMValue_isThuthy(bfVMValue self)
 {
-  if (IS_NULL(self) || IS_FALSE(self) || (IS_POINTER(self) && !AS_POINTER(self)))
+  if (bfVMValue_isNull(self) || bfVMValue_isFalse(self) || bfVMValue_isPointer(self) && !bfVmValue_asPointer(self))
   {
     return bfFalse;
   }
@@ -66,7 +116,7 @@ bfBool32 bfVMValue_isThuthy(bfVMValue self)
 
 bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
 {
-  if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
+  if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
     const bfFloat64 lhs_num = bfVmValue_asNumber(lhs);
     const bfFloat64 rhs_num = bfVmValue_asNumber(rhs);
@@ -74,7 +124,7 @@ bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
     return lhs_num == rhs_num;
   }
 
-  if (IS_POINTER(lhs) && IS_POINTER(rhs))
+  if (bfVMValue_isPointer(lhs) && bfVMValue_isPointer(rhs))
   {
     BifrostObj* const lhs_obj = BIFROST_AS_OBJ(lhs);
     BifrostObj* const rhs_obj = BIFROST_AS_OBJ(rhs);
@@ -99,7 +149,7 @@ bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
 
 bfBool32 bfVMValue_lt(bfVMValue lhs, bfVMValue rhs)
 {
-  if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
+  if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
     return bfVmValue_asNumber(lhs) < bfVmValue_asNumber(rhs);
   }
@@ -109,7 +159,7 @@ bfBool32 bfVMValue_lt(bfVMValue lhs, bfVMValue rhs)
 
 bfBool32 bfVMValue_gt(bfVMValue lhs, bfVMValue rhs)
 {
-  if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
+  if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
     return bfVmValue_asNumber(lhs) > bfVmValue_asNumber(rhs);
   }
@@ -119,7 +169,7 @@ bfBool32 bfVMValue_gt(bfVMValue lhs, bfVMValue rhs)
 
 bfBool32 bfVMValue_ge(bfVMValue lhs, bfVMValue rhs)
 {
-  if (IS_NUMBER(lhs) && IS_NUMBER(rhs))
+  if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
     return bfVmValue_asNumber(lhs) >= bfVmValue_asNumber(rhs);
   }

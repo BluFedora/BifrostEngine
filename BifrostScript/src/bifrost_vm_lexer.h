@@ -52,47 +52,47 @@ typedef enum
   BIFROST_TOKEN_AT_SIGN     = 50, /*!< @                                     */
 
   // Deprecated names
-  R_PAREN   = BIFROST_TOKEN_R_PAREN,
-  L_SQR_BOI = BIFROST_TOKEN_L_SQR_BOI,
-  R_SQR_BOI = BIFROST_TOKEN_R_SQR_BOI,
-  L_CURLY   = BIFROST_TOKEN_L_CURLY,
-  R_CURLY   = BIFROST_TOKEN_R_CURLY,
-  HASHTAG   = 6,                    // #
-  COLON     = BIFROST_TOKEN_COLON,  // @BIFROST_TOKEN_COLON
-  COMMA     = BIFROST_TOKEN_COMMA,  // @BIFROST_TOKEN_COMMA
-  EQUALS    = 10,                   // @BIFROST_TOKEN_EQUALS
-  PLUS      = 11,                   // +
-  MINUS     = 12,                   // -
-  MULT,                             // *
-  DIV,                              // /
-  PLUS_EQUALS,                      // +=
-  MINUS_EQUALS,                     // -=
-  INCREMENT,                        // ++
-  DECREMENT,                        // --
-  DOT,                              // @BIFROST_TOKEN_DOT
-  IDENTIFIER,                       // @BIFROST_TOKEN_IDENTIFIER
-  VAR_DECL,                         // var
-  IMPORT,                           // import
-  FUNC,                             // func
-  BIFROST_TOKEN_CLASS,              // class
-  CTRL_IF,                          // @BIFROST_TOKEN_CTRL_IF
-  CTRL_ELSE,                        // @BIFROST_TOKEN_CTRL_ELSE
-  CTRL_EE,                          // ==
-  CTRL_LT,                          // <
-  CTRL_GT,                          // >
-  CTRL_LE,                          // <=
-  CTRL_GE,                          // >=
-  CTRL_OR,                          // ||
-  CTRL_AND,                         // &&
-  CTRL_NE,                          // !=
-  CTRL_FOR    = 37,                 // for
-  CTRL_RETURN = 38,                 // return
-  CTRL_NEGATE = 39,                 // !
-  CONST_STR   = 40,                 // "..."
-  CONST_REAL  = 41,                 // 01234567890.0123456789
-  CONST_BOOL  = 42,                 // true, false
-  CONST_NIL   = 43,                 // nil
-  EOP         = 44,                 // End of Program
+  R_PAREN             = BIFROST_TOKEN_R_PAREN,
+  L_SQR_BOI           = BIFROST_TOKEN_L_SQR_BOI,
+  R_SQR_BOI           = BIFROST_TOKEN_R_SQR_BOI,
+  L_CURLY             = BIFROST_TOKEN_L_CURLY,
+  R_CURLY             = BIFROST_TOKEN_R_CURLY,
+  HASHTAG             = 6,                    // #
+  COLON               = BIFROST_TOKEN_COLON,  // @BIFROST_TOKEN_COLON
+  COMMA               = BIFROST_TOKEN_COMMA,  // @BIFROST_TOKEN_COMMA
+  EQUALS              = 10,                   // @BIFROST_TOKEN_EQUALS
+  PLUS                = 11,                   // +
+  MINUS               = 12,                   // -
+  MULT                = 13,                   // *
+  DIV                 = 14,                   // /
+  PLUS_EQUALS         = 15,                   // +=
+  MINUS_EQUALS        = 16,                   // -=
+  INCREMENT           = 17,                   // ++
+  DECREMENT           = 18,                   // --
+  DOT                 = 19,                   // @BIFROST_TOKEN_DOT
+  IDENTIFIER          = 20,                   // @BIFROST_TOKEN_IDENTIFIER
+  VAR_DECL            = 21,                   // var
+  IMPORT              = 22,                   // import
+  FUNC                = 23,                   // func
+  BIFROST_TOKEN_CLASS = 24,                   // class
+  CTRL_IF             = 25,                   // @BIFROST_TOKEN_CTRL_IF
+  CTRL_ELSE           = 26,                   // @BIFROST_TOKEN_CTRL_ELSE
+  CTRL_EE             = 27,                   // ==
+  CTRL_LT             = 28,                   // <
+  CTRL_GT             = 29,                   // >
+  CTRL_LE             = 30,                   // <=
+  CTRL_GE             = 31,                   // >=
+  CTRL_OR             = 32,                   // ||
+  CTRL_AND            = 33,                   // &&
+  CTRL_NE             = 34,                   // !=
+  CTRL_FOR            = 37,                   // for
+  CTRL_RETURN         = 38,                   // return
+  CTRL_NEGATE         = 39,                   // !
+  CONST_STR           = 40,                   // "..."
+  CONST_REAL          = 41,                   // 01234567890.0123456789
+  CONST_BOOL          = 42,                   // true, false
+  CONST_NIL           = 43,                   // nil
+  EOP                 = 44,                   // End of Program
 
   // basics, keywords, meta, literals, literals, flow control
   // TODO(SR): Tokens: '/=', '*=', '%', '%=', '|', '&', '~', '>>', '<<'

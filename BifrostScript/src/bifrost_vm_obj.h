@@ -151,7 +151,7 @@ typedef struct BifrostVMStackFrame_t
 
 } BifrostVMStackFrame;
 
-#define BIFROST_AS_OBJ(value) ((BifrostObj*)AS_POINTER((value)))
+#define BIFROST_AS_OBJ(value) ((BifrostObj*)bfVmValue_asPointer((value)))
 
 // Move to "GC" Header.
 BifrostObjModule*    bfVM_createModule(struct BifrostVM_t* self, bfStringRange name);

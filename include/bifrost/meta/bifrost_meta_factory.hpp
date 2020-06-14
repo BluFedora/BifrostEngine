@@ -1,9 +1,7 @@
 #ifndef BIFROST_META_FACTORY_HPP
 #define BIFROST_META_FACTORY_HPP
 
-#include "bifrost_meta_member.hpp"                        /* membersOf, is_class_v */
-#include "bifrost_meta_runtime_impl.hpp"                  /* TypeInfo<T>           */
-#include "bifrost_meta_utils.hpp"                         /* for_each              */
+#include "bifrost_meta_runtime_impl.hpp" /* TypeInfo<T> */
 
 namespace bifrost::meta
 {
@@ -20,22 +18,17 @@ namespace bifrost::meta
 
    public:
     // Extra 'T's are registering extra classes.
-    template<typename... T>
+    template<typename T>
     class Base : public BaseT
     {
-      friend NthTypeOf<0, T...>;
+      friend T;
 
      private:
       static bool s_IsRegistered;
 
       static bool registerImpl()
       {
-        for_each_template<T...>([](auto t) {
-          using Type = bfForEachTemplateT(t);
-          TypeInfo<Type>::get();
-        });
-
-        return true;
+        return TypeInfo<T>::get() != nullptr;
       }
 
      public:
@@ -52,8 +45,8 @@ namespace bifrost::meta
   };
 
   template<typename BaseT>
-  template<typename... T>
-  bool Factory<BaseT>::Base<T...>::s_IsRegistered = registerImpl();
+  template<typename T>
+  bool Factory<BaseT>::Base<T>::s_IsRegistered = registerImpl();
 }  // namespace bifrost::meta
 
 #endif /* BIFROST_META_FACTORY_HPP */

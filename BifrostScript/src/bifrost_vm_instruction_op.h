@@ -41,7 +41,7 @@ typedef enum bfInstructionOp_t
   BIFROST_VM_OP_STORE_MOVE,    // rA              = rBx
   BIFROST_VM_OP_STORE_SYMBOL,  // rA.SYMBOLS[rB]  = rC
 
-  /* System OPs */
+  /* Memory OPs */
   BIFROST_VM_OP_NEW_CLZ,  // rA = new local[rBx];
 
   // Math OPs
@@ -62,22 +62,22 @@ typedef enum bfInstructionOp_t
   // BIFROST_VM_OP_LOGIC_RS,   // rA = (rB >> rC)
 
   // Comparisons
-  BIFROST_VM_OP_CMP_EE,   // rA = rB == rC
-  BIFROST_VM_OP_CMP_NE,   // rA = rB != rC
-  BIFROST_VM_OP_CMP_LT,   // rA = rB <  rC
-  BIFROST_VM_OP_CMP_LE,   // rA = rB <= rC
-  BIFROST_VM_OP_CMP_GT,   // rA = rB >  rC
-  BIFROST_VM_OP_CMP_GE,   // rA = rB >= rC
-  BIFROST_VM_OP_CMP_AND,  // rA = rB && rC
-  BIFROST_VM_OP_CMP_OR,   // rA = rB || rC
-  BIFROST_VM_OP_NOT,      // rA = !rBx
+  BIFROST_VM_OP_CMP_EE,  /* rA = rB == rC */
+  BIFROST_VM_OP_CMP_NE,  /* rA = rB != rC */
+  BIFROST_VM_OP_CMP_LT,  /* rA = rB <  rC */
+  BIFROST_VM_OP_CMP_LE,  /* rA = rB <= rC */
+  BIFROST_VM_OP_CMP_GT,  /* rA = rB >  rC */
+  BIFROST_VM_OP_CMP_GE,  /* rA = rB >= rC */
+  BIFROST_VM_OP_CMP_AND, /* rA = rB && rC */
+  BIFROST_VM_OP_CMP_OR,  /* rA = rB || rC */
+  BIFROST_VM_OP_NOT,     /* rA = !rBx     */
 
   // Control Flow
-  BIFROST_VM_OP_CALL_FN,      // call(local[rB]) (params-start = rA, num-args = rC)
-  BIFROST_VM_OP_JUMP,         // ip += rsBx
-  BIFROST_VM_OP_JUMP_IF,      // if (rA) ip += rsBx
-  BIFROST_VM_OP_JUMP_IF_NOT,  // if (!rA) ip += rsBx
-  BIFROST_VM_OP_RETURN,       // breaks out of current function.
+  BIFROST_VM_OP_CALL_FN,     /* call(local[rB]) (params-start = rA, num-args = rC) */
+  BIFROST_VM_OP_JUMP,        /* ip += rsBx                                         */
+  BIFROST_VM_OP_JUMP_IF,     /* if (rA) ip += rsBx                                 */
+  BIFROST_VM_OP_JUMP_IF_NOT, /* if (!rA) ip += rsBx                                */
+  BIFROST_VM_OP_RETURN,      /* breaks out of current function scope.              */
 
 } bfInstructionOp;
 
@@ -152,6 +152,13 @@ typedef uint32_t bfInstruction;
  */
 #define bfInstPatchX(inst, x, val) \
   *(inst) = (*(inst) & ~(BIFROST_INST_##x##_MASK << BIFROST_INST_##x##_OFFSET)) | BIFROST_MAKE_INST_##x(val)
+
+#define bfVM_decodeOp(inst) ((uint8_t)((inst)&BIFROST_INST_OP_MASK))
+#define bfVM_decodeRa(inst) ((uint32_t)(((inst) >> BIFROST_INST_RA_OFFSET) & BIFROST_INST_RA_MASK))
+#define bfVM_decodeRb(inst) ((uint32_t)(((inst) >> BIFROST_INST_RB_OFFSET) & BIFROST_INST_RB_MASK))
+#define bfVM_decodeRc(inst) ((uint32_t)(((inst) >> BIFROST_INST_RC_OFFSET) & BIFROST_INST_RC_MASK))
+#define bfVM_decodeRBx(inst) ((uint32_t)(((inst) >> BIFROST_INST_RBx_OFFSET) & BIFROST_INST_RBx_MASK))
+#define bfVM_decodeRsBx(inst) ((int32_t)(bfVM_decodeRBx((inst)) - BIFROST_INST_RsBx_MAX))
 #if __cplusplus
 }
 #endif

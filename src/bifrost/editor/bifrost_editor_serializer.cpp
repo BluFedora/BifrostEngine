@@ -15,6 +15,7 @@
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/bifrost_math.h"
 #include "bifrost/core/bifrost_engine.hpp"
+#include "bifrost/ecs/bifrost_behavior.hpp"
 #include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/math/bifrost_vec2.h"
 #include "bifrost/math/bifrost_vec3.h"
@@ -351,6 +352,11 @@ namespace bifrost::editor
 
     ImGui::LabelText(m_NameBuffer, "ObjRef(%p)", value.object());
 
+    if (value.object())
+    {
+      serialize("__OBJ__", *value.object());
+    }
+
     const auto& scene = m_Assets->engine().currentScene();
 
     if (scene)
@@ -575,6 +581,45 @@ namespace bifrost::editor
         has_missing_component = true;
       }
     });
+
+    IBehavior* behavior_to_remove = nullptr;
+
+    for (IBehavior* behavior : entity.behaviors())
+    {
+      const auto& name = behavior->type()->name();
+
+      LinearAllocatorScope mem_scope{engine.tempMemory()};
+      char*                label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "[%.*s]", int(name.length()), name.data());
+
+      ImGui::PushID(behavior);
+
+      ImGui::Separator();
+
+      bool is_open = true;
+      if (ImGui::CollapsingHeader(label, &is_open, ImGuiTreeNodeFlags_None))
+      {
+        ImGui::Indent();
+
+        behavior->serialize(serializer);
+
+        ImGui::Unindent();
+
+        ImGui::Separator();
+      }
+
+      if (!is_open)
+      {
+        behavior_to_remove = behavior;
+      }
+
+      ImGui::PopID();
+    }
+
+    if (behavior_to_remove)
+    {
+      entity.removeBehavior(behavior_to_remove);
+    }
+
     ImGui::PopID();
 
     if (has_missing_component)
@@ -600,6 +645,32 @@ namespace bifrost::editor
 
         ImGui::EndCombo();
       }
+    }
+
+    if (ImGui::BeginCombo("Add Behavior", "+ Behavior", ImGuiComboFlags_None))
+    {
+      const auto* ibehavior_class_info = meta::typeInfoGet<IBehavior>();
+
+      for (auto& type : meta::gRegistry())
+      {
+        const auto& name      = type.key();
+        auto* const type_info = type.value();
+        const auto& bases     = type_info->baseClasses();
+
+        if (!bases.isEmpty() && bases[0] == ibehavior_class_info)
+        {
+          LinearAllocatorScope mem_scope{engine.tempMemory()};
+
+          char* label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add (%.*s)", int(name.length()), name.data());
+
+          if (ImGui::Selectable(label))
+          {
+            entity.addBehavior(type_info);
+          }
+        }
+      }
+
+      ImGui::EndCombo();
     }
 
     return false;

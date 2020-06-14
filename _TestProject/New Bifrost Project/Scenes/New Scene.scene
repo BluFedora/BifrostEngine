@@ -25,7 +25,7 @@
                     "z" : 6.9
                 },
                 "Origin" : {
-                    "y" : 0.15,
+                    "y" : 0,
                     "w" : 0,
                     "x" : 0,
                     "z" : 0
@@ -42,7 +42,12 @@
                     "x" : 0.706284,
                     "z" : 0.495629
                 }
-            }
+            },
+            "m_Behaviors" : [
+                {
+                    "__BehaviorClass__" : "game::ExampleBehavior"
+                }
+            ]
         },
         {
             "__ObjectRefID__" : 2,
@@ -86,7 +91,10 @@
                     "x" : 0,
                     "z" : 0
                 }
-            }
+            },
+            "m_Behaviors" : [
+
+            ]
         },
         {
             "__ObjectRefID__" : 3,
@@ -130,7 +138,10 @@
                     "x" : 0,
                     "z" : 0.207058
                 }
-            }
+            },
+            "m_Behaviors" : [
+
+            ]
         },
         {
             "__ObjectRefID__" : 4,
@@ -183,7 +194,10 @@
                     "x" : 0,
                     "z" : 0
                 }
-            }
+            },
+            "m_Behaviors" : [
+
+            ]
         },
         {
             "__ObjectRefID__" : 1,
@@ -236,7 +250,10 @@
                     "x" : 0,
                     "z" : 0
                 }
-            }
+            },
+            "m_Behaviors" : [
+
+            ]
         },
         {
             "__ObjectRefID__" : 5,
@@ -280,7 +297,10 @@
                     "x" : 0,
                     "z" : 0
                 }
-            }
+            },
+            "m_Behaviors" : [
+
+            ]
         },
         {
             "__ObjectRefID__" : 6,
@@ -324,7 +344,10 @@
                     "x" : 0,
                     "z" : 0
                 }
-            }
+            },
+            "m_Behaviors" : [
+
+            ]
         }
     ]
 }

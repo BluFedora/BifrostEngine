@@ -17,4 +17,9 @@ namespace bifrost
     m_Owner{&owner}
   {
   }
+
+  BaseComponent::BaseComponent() :
+    m_Owner{nullptr}
+  {
+  }
 }

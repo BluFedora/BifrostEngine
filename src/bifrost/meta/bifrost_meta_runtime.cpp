@@ -142,7 +142,22 @@ namespace bifrost::meta
 
   void* detail::doBaseObjStuff(IBaseObject* base_obj, BaseClassMetaInfo* type_info)
   {
-    return base_obj->type() == type_info ? base_obj : nullptr;
+    const BaseClassMetaInfoPtr obj_info = base_obj->type();
+
+    if (obj_info == type_info)
+    {
+      return base_obj;
+    }
+
+    for (BaseClassMetaInfoPtr base_class_info : obj_info->baseClasses())
+    {
+      if (base_class_info == type_info)
+      {
+        return base_obj;
+      }
+    }
+
+    return nullptr;
   }
 
   bool detail::isEnum(const MetaObject& obj)

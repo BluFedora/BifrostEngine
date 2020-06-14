@@ -41,7 +41,7 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
   return bestmonitor;
 }
 
-void MainDemoLayer::onEvent(BifrostEngine&, bifrost::Event& event)
+void MainDemoLayer::onEvent(BifrostEngine&, Event& event)
 {
   const auto is_key_down = event.type == bifrost::EventType::ON_KEY_DOWN;
 
@@ -68,41 +68,8 @@ void MainDemoLayer::onEvent(BifrostEngine&, bifrost::Event& event)
 
     event.accept();
   }
-
-  if (is_key_down || event.type == bifrost::EventType::ON_KEY_UP)
-  {
-    m_IsKeyDown[event.keyboard.key] = is_key_down;
-    m_IsShiftDown                   = event.keyboard.modifiers & KeyboardEvent::SHIFT;
-  }
 }
 
 void MainDemoLayer::onUpdate(BifrostEngine& engine, float delta_time)
 {
-  const auto camera_move_speed = (m_IsShiftDown ? 2.2f : 1.0f) * delta_time;
-
-  const std::tuple<int, void (*)(::BifrostCamera*, float), float> camera_controls[] =
-   {
-    {KeyCode::W, &Camera_moveForward, camera_move_speed},
-    {KeyCode::A, &Camera_moveLeft, camera_move_speed},
-    {KeyCode::S, &Camera_moveBackward, camera_move_speed},
-    {KeyCode::D, &Camera_moveRight, camera_move_speed},
-    {KeyCode::Q, &Camera_moveUp, camera_move_speed},
-    {KeyCode::E, &Camera_moveDown, camera_move_speed},
-    {KeyCode::R, &Camera_addPitch, -0.01f},
-    {KeyCode::F, &Camera_addPitch, 0.01f},
-    {KeyCode::H, &Camera_addYaw, 0.01f},
-    {KeyCode::G, &Camera_addYaw, -0.01f},
-   };
-
-  engine.forEachCamera([this, &camera_controls](CameraRender* camera) {
-    for (const auto& control : camera_controls)
-    {
-      if (m_IsKeyDown[std::get<0>(control)])
-      {
-        std::get<1>(control)(&camera->cpu_camera, std::get<2>(control));
-      }
-    }
-
-    Camera_update(&camera->cpu_camera);
-  });
 }

@@ -51,6 +51,7 @@ namespace bifrost::editor
 
    private:
     bool    m_IsOpen;
+    bool    m_IsFocused;
     ImGuiID m_DockID;
     int     m_InstanceID;
 
@@ -59,8 +60,10 @@ namespace bifrost::editor
 
    public:
     bool                   isOpen() const { return m_IsOpen; }
+    bool                   isFocused() const { return m_IsFocused; }
     const char*            fullImGuiTitle(IMemoryManager& memory) const;
     void                   handleEvent(EditorOverlay& editor, Event& event);
+    void                   update(EditorOverlay& editor, float delta_time);
     void                   uiShow(EditorOverlay& editor);
     void                   selectionChange(const Selectable& selectable);
     virtual EditorWindowID windowID() const = 0;
@@ -74,6 +77,7 @@ namespace bifrost::editor
     virtual void        onPostDrawGUI(EditorOverlay& editor) {}
     virtual void        onSelectionChanged(const Selectable& selectable) {}
     virtual void        onEvent(EditorOverlay& editor, Event& event) {}
+    virtual void        onUpdate(EditorOverlay& editor, float dt) {}
   };
 
   template<typename T>

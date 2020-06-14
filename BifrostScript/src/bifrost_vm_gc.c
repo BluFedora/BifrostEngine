@@ -205,7 +205,7 @@ size_t bfGCSweep(struct BifrostVM_t* self)
       {
         const bfVMValue value = clz->symbols[symbol].value;
 
-        if (IS_POINTER(value) && bfObjIsFunction(AS_POINTER(value)))
+        if (bfVMValue_isPointer(value) && bfObjIsFunction(bfVmValue_asPointer(value)))
         {
           bfGCMarkObj(g_cursor, GC_MARK_FINALIZE);
 
@@ -373,9 +373,9 @@ static size_t bfGCFinalizePostMark(BifrostVM* self)
 
 static void bfGCMarkValue(bfVMValue value, int mark_value)
 {
-  if (IS_POINTER(value))
+  if (bfVMValue_isPointer(value))
   {
-    void* const ptr = AS_POINTER(value);
+    void* const ptr = bfVmValue_asPointer(value);
 
     if (ptr)
     {
@@ -555,7 +555,7 @@ static void bfGCFinalize(BifrostVM* self)
     stack_restore[0]   = self->stack_top[0];
     stack_restore[1]   = self->stack_top[1];
     self->stack_top[0] = value;
-    self->stack_top[1] = FROM_POINTER(cursor);
+    self->stack_top[1] = bfVMValue_fromPointer(cursor);
     if (bfVM_stackGetType(self, 0) == BIFROST_VM_FUNCTION)
     {
       bfVM_call(self, 0, 1, 1);

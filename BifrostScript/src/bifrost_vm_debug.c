@@ -17,28 +17,28 @@
 #include "bifrost_vm_obj.h"  /* */
 #include <stdio.h>           /* sprintf */
 
-static inline void bfDbgIndentPrint(int indent);
+static void bfDbgIndentPrint(int indent);
 
 size_t bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size)
 {
-  if (IS_NUMBER(value))
+  if (bfVMValue_isNumber(value))
   {
     return (size_t)snprintf(buffer, buffer_size, "%g", bfVmValue_asNumber(value));
   }
 
-  if (IS_BOOL(value))
+  if (bfVMValue_isBool(value))
   {
-    return (size_t)snprintf(buffer, buffer_size, "%s", value == VAL_TRUE ? "true" : "false");
+    return (size_t)snprintf(buffer, buffer_size, "%s", bfVMValue_isTrue(value) ? "true" : "false");
   }
 
-  if (IS_NULL(value))
+  if (bfVMValue_isNull(value))
   {
     return (size_t)snprintf(buffer, buffer_size, "null");
   }
 
-  if (IS_POINTER(value))
+  if (bfVMValue_isPointer(value))
   {
-    const BifrostObj* const obj = AS_POINTER(value);
+    const BifrostObj* const obj = bfVmValue_asPointer(value);
 
     switch (obj->type)
     {
@@ -92,24 +92,24 @@ size_t bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size)
 
 size_t bfDbgValueTypeToString(bfVMValue value, char* buffer, size_t buffer_size)
 {
-  if (IS_NUMBER(value))
+  if (bfVMValue_isNumber(value))
   {
     return (size_t)snprintf(buffer, buffer_size, "<Number>");
   }
 
-  if (IS_BOOL(value))
+  if (bfVMValue_isBool(value))
   {
     return (size_t)snprintf(buffer, buffer_size, "<Boolean>");
   }
 
-  if (IS_NULL(value))
+  if (bfVMValue_isNull(value))
   {
     return (size_t)snprintf(buffer, buffer_size, "<Nil>");
   }
 
-  if (IS_POINTER(value))
+  if (bfVMValue_isPointer(value))
   {
-    const BifrostObj* const obj = AS_POINTER(value);
+    const BifrostObj* const obj = bfVmValue_asPointer(value);
 
     switch (obj->type)
     {
@@ -216,7 +216,7 @@ void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t 
   printf("----------------------------------------------------------------------------------\n");
 }
 
-static inline void bfDbgIndentPrint(int indent)
+static void bfDbgIndentPrint(int indent)
 {
   for (int j = 0; j < indent; ++j)
   {

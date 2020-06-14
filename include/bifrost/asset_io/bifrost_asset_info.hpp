@@ -268,7 +268,7 @@ namespace bifrost
     AssetInfo(const StringRange path, const BifrostUUID uuid) :
       BaseAssetInfo(path, uuid)
     {
-      static_assert(std::is_base_of<BaseObjectT, TPayload>::value, "Only reflect-able types should be used as a payload.");
+      static_assert(std::is_base_of<IBaseObject, TPayload>::value, "Only reflect-able types should be used as a payload.");
 
       // Force the Compiler to register the type.
       (void)s_IsRegistered;

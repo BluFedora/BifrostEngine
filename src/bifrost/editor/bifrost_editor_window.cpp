@@ -6,8 +6,9 @@ namespace bifrost::editor
 
   static int s_IDCounter = 1;
 
-  BaseEditorWindow::BaseEditorWindow():
+  BaseEditorWindow::BaseEditorWindow() :
     m_IsOpen{true},
+    m_IsFocused{false},
     m_DockID{0},
     m_InstanceID{s_IDCounter++}
   {
@@ -21,6 +22,11 @@ namespace bifrost::editor
   void BaseEditorWindow::handleEvent(EditorOverlay& editor, Event& event)
   {
     onEvent(editor, event);
+  }
+
+  void BaseEditorWindow::update(EditorOverlay& editor, float delta_time)
+  {
+    onUpdate(editor, delta_time);
   }
 
   void BaseEditorWindow::uiShow(EditorOverlay& editor)
@@ -38,6 +44,8 @@ namespace bifrost::editor
 
     if (ImGui::Begin(title_id, &m_IsOpen, ImGuiWindowFlags_MenuBar))
     {
+      m_IsFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
       const auto is_docked = ImGui::IsWindowDocked();
 
       if (is_docked)
@@ -71,6 +79,11 @@ namespace bifrost::editor
 
       onDrawGUI(editor);
     }
+    else
+    {
+      m_IsFocused = false;
+    }
+
     ImGui::End();
     onPostDrawGUI(editor);
   }

@@ -20,7 +20,7 @@ class BifrostEngine;
 
 namespace bifrost
 {
-  class IBaseObject
+  class bfPureInterface(IBaseObject)
   {
    public:
     virtual meta::BaseClassMetaInfo* type() = 0;
@@ -29,22 +29,27 @@ namespace bifrost
 
   // NOTE(Shareef): Use this class as the base type.
 
-  class BaseObjectT : public meta::Factory<BaseObjectT>, public IBaseObject
+  namespace detail
   {
-   protected:
-    explicit BaseObjectT(PrivateCtorTag) {}
-  };
+    // clang-format off
+    class BaseObjectT : public meta::Factory<BaseObjectT>, public IBaseObject
+    // clang-format on
+    {
+     protected:
+      explicit BaseObjectT(PrivateCtorTag) {}
+    };
+  }  // namespace detail
 
   // NOTE(Shareef): Inherit from this
-  template<typename... T>
-  class BaseObject : public BaseObjectT::Base<T...>
+  template<typename T>
+  class BaseObject : public detail::BaseObjectT::Base<T>
   {
    public:
-    using Base = BaseObject<T...>;
+    using Base = BaseObject<T>;
 
     static meta::BaseClassMetaInfo* staticType()
     {
-      return meta::TypeInfo<meta::NthTypeOf<0, T...>>::get();
+      return meta::TypeInfo<meta::NthTypeOf<0, T>>::get();
     }
 
     meta::BaseClassMetaInfo* type() override

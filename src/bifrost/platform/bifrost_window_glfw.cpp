@@ -124,7 +124,8 @@ namespace bifrost
       case GLFW_KEY_Y: return KeyCode::Y;
       case GLFW_KEY_Z: return KeyCode::Z;
       // default: return -1;
-      default: return 0;
+      // default: return 0;
+      default: return key;
     }
   }
 

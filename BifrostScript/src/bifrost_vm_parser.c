@@ -49,7 +49,7 @@ uint32_t bfVM_xSetVariable(BifrostVMSymbol** variables, BifrostVM* vm, bfStringR
     for (size_t i = old_size; i < new_size; ++i)
     {
       (*variables)[i].name  = "___UNUSED___";
-      (*variables)[i].value = VAL_NULL;
+      (*variables)[i].value = bfVMValue_fromNull();
     }
   }
 
@@ -372,7 +372,7 @@ static void parseVarDecl(BifrostParser* self, bfBool32 is_static)
   {
     if (is_static)
     {
-      const uint32_t location = bfVM_xSetVariable(&self->current_module->variables, self->vm, name, VAL_NULL);
+      const uint32_t location = bfVM_xSetVariable(&self->current_module->variables, self->vm, name, bfVMValue_fromNull());
 
       if (bfParser_match(self, EQUALS))
       {
@@ -715,7 +715,7 @@ static void parseFunctionDecl(BifrostParser* self)
   const bfStringRange name_str = parserBeginFunction(self, bfTrue);
   const int           arity    = parserParseFunction(self);
   BifrostObjFn* const fn       = bfVM_createFunction(self->vm, self->current_module);
-  const bfVMValue     fn_value = FROM_POINTER(fn);
+  const bfVMValue     fn_value = bfVMValue_fromPointer(fn);
   parserEndFunction(self, fn, arity);
 
   if (is_local)
@@ -739,7 +739,7 @@ static void parseFunctionExpr(BifrostParser* self, ExprInfo* expr, const bfToken
   BifrostObjFn* const fn    = bfVM_createFunction(self->vm, self->current_module);
   parserEndFunction(self, fn, arity);
 
-  const uint32_t k_loc = bfVMFunctionBuilder_addConstant(builder(), FROM_POINTER(fn));
+  const uint32_t k_loc = bfVMFunctionBuilder_addConstant(builder(), bfVMValue_fromPointer(fn));
   bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, expr->write_loc, BIFROST_VM_OP_LOAD_BASIC_CONSTANT + k_loc);
 }
 
@@ -908,15 +908,15 @@ static void parseLiteral(BifrostParser* self, ExprInfo* expr_info, const bfToken
 {
   const bfVMValue constexpr_value = parserTokenConstexprValue(self, token);
 
-  if (constexpr_value == VAL_TRUE)
+  if (bfVMValue_isTrue(constexpr_value))
   {
     bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, expr_info->write_loc, BIFROST_VM_OP_LOAD_BASIC_TRUE);
   }
-  else if (constexpr_value == VAL_FALSE)
+  else if (bfVMValue_isFalse(constexpr_value))
   {
     bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, expr_info->write_loc, BIFROST_VM_OP_LOAD_BASIC_FALSE);
   }
-  else if (constexpr_value == VAL_NULL)
+  else if (bfVMValue_isNull(constexpr_value))
   {
     bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_LOAD_BASIC, expr_info->write_loc, BIFROST_VM_OP_LOAD_BASIC_NULL);
   }
@@ -986,7 +986,7 @@ static void parseSuper(BifrostParser* self, ExprInfo* expr, const bfToken* token
   {
     if (self->current_clz->base_clz)
     {
-      bfParser_loadConstant(self, expr, FROM_POINTER(self->current_clz->base_clz));
+      bfParser_loadConstant(self, expr, bfVMValue_fromPointer(self->current_clz->base_clz));
     }
     else
     {
@@ -1277,16 +1277,11 @@ static bfVMValue parserTokenConstexprValue(const BifrostParser* self, const bfTo
 {
   switch (token->type)
   {
-    case CONST_REAL:
-      return FROM_NUMBER(token->as.num);
-    case CONST_BOOL:
-      return token->as.str[0] == 't' ? VAL_TRUE : VAL_FALSE;
-    case CONST_STR:
-      return FROM_POINTER(bfVM_createString(self->vm, token->as.str_range));
-    case CONST_NIL:
-      return VAL_NULL;
-    default:
-      break;
+    case CONST_REAL: return bfVMValue_fromNumber(token->as.num);
+    case CONST_BOOL: return bfVMValue_fromBool(token->as.str[0] == 't');
+    case CONST_STR: return bfVMValue_fromPointer(bfVM_createString(self->vm, token->as.str_range));
+    case CONST_NIL: return bfVMValue_fromNull();
+    default: break;
   }
 
   assert(!"parserConstexprValue called on non constexpr token.");
@@ -1392,7 +1387,7 @@ static void parseClassDecl(BifrostParser* self)
     {
       const bfVMValue base_class_val = bfVM_stackFindVariable(self->current_module, base_name_str.bgn, bfStringRange_length(&base_name_str));
 
-      if (IS_POINTER(base_class_val))
+      if (bfVMValue_isPointer(base_class_val))
       {
         BifrostObj* const base_class_obj = BIFROST_AS_OBJ(base_class_val);
 
@@ -1433,7 +1428,7 @@ static void parseClassDecl(BifrostParser* self)
   BifrostObjClass* clz = bfVM_createClass(self->vm, self->current_module, name_str, base_clz, 0u);
 
   bfGCPushRoot(self->vm, &clz->super);
-  bfVM_xSetVariable(&self->current_module->variables, self->vm, name_str, FROM_POINTER(clz));
+  bfVM_xSetVariable(&self->current_module->variables, self->vm, name_str, bfVMValue_fromPointer(clz));
 
   self->current_clz = clz;
 
@@ -1488,7 +1483,7 @@ static void parseClassVarDecl(BifrostParser* self, BifrostObjClass* clz, bfBool3
 
   bfParser_eat(self, BIFROST_TOKEN_IDENTIFIER, bfFalse, "Expected name after var keyword.");
 
-  bfVMValue initial_value = VAL_NULL;
+  bfVMValue initial_value = bfVMValue_fromNull();
 
   if (bfParser_match(self, BIFROST_TOKEN_EQUALS))
   {
@@ -1532,7 +1527,7 @@ static void parseClassFunc(BifrostParser* self, BifrostObjClass* clz, bfBool32 i
 
   // TODO(Shareef): This same line is used in 3 (or more) places and should be put in a helper.
   BifrostObjFn* fn = bfVM_createFunction(self->vm, self->current_module);
-  bfVM_xSetVariable(&clz->symbols, self->vm, name_str, FROM_POINTER(fn));
+  bfVM_xSetVariable(&clz->symbols, self->vm, name_str, bfVMValue_fromPointer(fn));
   parserEndFunction(self, fn, arity);
 }
 

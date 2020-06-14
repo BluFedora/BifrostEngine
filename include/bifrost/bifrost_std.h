@@ -17,10 +17,21 @@
   default:                     \
     __debugbreak();            \
     __assume(0)
+
+/*!
+ * @brief
+ *  NOTE(Shareef):
+ *    This is a compiler intrinsic that tells the compiler that
+ *    the this class will never be instantiated and thus vtable
+ *    initialization does not need to happen in this ctor.
+ */
+#define bfPureInterface(T) __declspec(novtable) T
 #else
 #define bfInvalidDefaultCase() \
   default:                     \
     break
+
+#define bfPureInterface(T) T
 #endif
 
 #if __cplusplus

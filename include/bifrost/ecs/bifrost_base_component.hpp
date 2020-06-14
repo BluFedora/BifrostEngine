@@ -65,6 +65,7 @@ namespace bifrost
 
    public:
     explicit BaseComponent(Entity& owner);
+    explicit BaseComponent();
 
     Entity& owner() const { return *m_Owner; }
   };
