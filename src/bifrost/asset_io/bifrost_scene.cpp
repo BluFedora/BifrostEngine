@@ -21,13 +21,13 @@
 
 namespace bifrost
 {
-#define ID_TO_INDEX(id) ((id) - 1)
+#define ID_TO_INDEX(id) ((id)-1)
 
   BifrostTransform* SceneTransformSystem::transformFromIDImpl(IBifrostTransformSystem_t* self, BifrostTransformID id)
   {
     SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
 
-    return id == k_TransformInvalidID  ? nullptr : & system->m_Transforms[ID_TO_INDEX(id)];
+    return id == k_TransformInvalidID ? nullptr : &system->m_Transforms[ID_TO_INDEX(id)];
   }
 
   BifrostTransformID SceneTransformSystem::transformToIDImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
@@ -68,7 +68,7 @@ namespace bifrost
     if (m_FreeList)
     {
       id         = m_FreeList;
-      m_FreeList = m_Transforms[id].freelist_next;
+      m_FreeList = m_Transforms[ID_TO_INDEX(id)].freelist_next;
     }
     else
     {
@@ -83,7 +83,7 @@ namespace bifrost
 
   void SceneTransformSystem::destroyTransform(BifrostTransformID transform)
   {
-    bfTransform_dtor(&m_Transforms[transform]);
+    bfTransform_dtor(&m_Transforms[ID_TO_INDEX(transform)]);
 
     m_Transforms[ID_TO_INDEX(transform)].freelist_next = m_FreeList;
     m_FreeList                                         = transform;
@@ -97,6 +97,7 @@ namespace bifrost
     m_RootEntities{memory},
     m_ActiveComponents{memory},
     m_InactiveComponents{memory},
+    m_ActiveBehaviors{memory},
     m_BVHTree{memory},
     m_TransformSystem{memory}
   {
@@ -141,6 +142,15 @@ namespace bifrost
       if (serializer.mode() == SerializerMode::LOADING)
       {
         m_RootEntities.resize(num_entities);
+
+        for (auto& entity : m_RootEntities)
+        {
+          if (entity)
+          {
+            destroyEntity(entity);
+            entity = nullptr;
+          }
+        }
       }
       else
       {
@@ -162,6 +172,14 @@ namespace bifrost
       }
 
       serializer.popArray();
+    }
+  }
+
+  Scene::~Scene()
+  {
+    while (!m_RootEntities.isEmpty())
+    {
+      removeEntity(m_RootEntities.back());
     }
   }
 

@@ -24,7 +24,7 @@ extern "C" {
  *   Aligns size to required_alignment.
  *
  * @param size
- *   The potentially unlaigned size of an object.
+ *   The potentially unaligned size of an object.
  * 
  * @param required_alignment 
  *   Must be a non zero power of two.

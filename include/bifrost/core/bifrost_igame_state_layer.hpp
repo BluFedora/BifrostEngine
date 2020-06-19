@@ -15,7 +15,7 @@
 
 #include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {
@@ -24,7 +24,7 @@ namespace bifrost
 
   class IGameStateLayer : private bfNonCopyMoveable<IGameStateLayer>
   {
-    friend class ::BifrostEngine;
+    friend class ::Engine;
     friend class GameStateMachine;
 
    private:
@@ -36,13 +36,13 @@ namespace bifrost
     IGameStateLayer();
 
   public:// TODO: This isn't right.
-    virtual void onCreate(BifrostEngine& engine);
-    virtual void onLoad(BifrostEngine& engine);
-    virtual void onEvent(BifrostEngine& engine, Event& event);
-    virtual void onFixedUpdate(BifrostEngine& engine, float delta_time);
-    virtual void onUpdate(BifrostEngine& engine, float delta_time);
-    virtual void onUnload(BifrostEngine& engine);
-    virtual void onDestroy(BifrostEngine& engine);
+    virtual void onCreate(Engine& engine);
+    virtual void onLoad(Engine& engine);
+    virtual void onEvent(Engine& engine, Event& event);
+    virtual void onFixedUpdate(Engine& engine, float delta_time);
+    virtual void onUpdate(Engine& engine, float delta_time);
+    virtual void onUnload(Engine& engine);
+    virtual void onDestroy(Engine& engine);
 
    public:
     virtual const char* name() = 0;

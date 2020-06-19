@@ -39,7 +39,7 @@ namespace bifrost
     return it_end;
   }
 
-  GameStateMachine::GameStateMachine(BifrostEngine& engine, IMemoryManager& memory) :
+  GameStateMachine::GameStateMachine(Engine& engine, IMemoryManager& memory) :
     m_Engine{engine},
     m_Memory{memory},
     m_LayerHead{nullptr},

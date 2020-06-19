@@ -23,6 +23,7 @@ namespace bifrost
 {
   class DebugRenderer;
   class Entity;
+  class bfPureInterface(IBehavior);
 
   class SceneTransformSystem : public IBifrostTransformSystem
   {
@@ -75,6 +76,7 @@ namespace bifrost
     Array<Entity*>       m_RootEntities;
     ComponentStorage     m_ActiveComponents;
     ComponentStorage     m_InactiveComponents;
+    Array<IBehavior*>    m_ActiveBehaviors;
     BVH                  m_BVHTree;
     SceneTransformSystem m_TransformSystem;
 
@@ -86,6 +88,8 @@ namespace bifrost
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
     Entity*               addEntity(const StringRange& name = "Untitled");
     void                  removeEntity(Entity* entity);
+
+    BVH& bvh() { return m_BVHTree; }
 
     // Temp Code Begin
     void update(LinearAllocator& temp, DebugRenderer& dbg_renderer);
@@ -105,9 +109,15 @@ namespace bifrost
       return m_ActiveComponents.get<T>();
     }
 
-    // Extra
+    // Behavior
+
+    const Array<IBehavior*>& behaviors() const { return m_ActiveBehaviors; }
+
+    // Meta
 
     void serialize(ISerializer& serializer);
+
+    ~Scene();
 
    private:
     Entity* createEntity(const StringRange& name);

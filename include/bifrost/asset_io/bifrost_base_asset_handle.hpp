@@ -26,7 +26,7 @@
 #ifndef BIFROST_BASE_ASSET_HANDLE_HPP
 #define BIFROST_BASE_ASSET_HANDLE_HPP
 
-class BifrostEngine;
+class Engine;
 
 // TODO(SR): Make a header for math forward decls
 typedef struct Vec2f_t       Vec2f;
@@ -45,8 +45,6 @@ namespace bifrost
   {
     class BaseClassMetaInfo;
   }
-
-  using Engine = ::BifrostEngine;
 
   //
   // This class MUST not have any virtual functions. (or anything else that violates this being standard layout)

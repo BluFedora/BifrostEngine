@@ -4,7 +4,6 @@
 
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
-#include <bifrost/ecs/bifrost_collision_system.hpp>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
 #include <bifrost/platform/bifrost_window_glfw.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
@@ -359,6 +358,8 @@ GLFWwindow* g_Window;
 
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
+  static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
+
   for (const auto& test_fn : s_Test)
   {
     test_fn();
@@ -392,9 +393,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
   {
     WindowGLFW    window{};
-    BifrostEngine engine{window, main_memory, main_memory_size, argc, argv};
-
-    engine.addECSSystem<CollisionSystem>();
+    Engine engine{window, main_memory, main_memory_size, argc, argv};
 
     if (!window.open("Mjolnir Editor 2020"))
     {

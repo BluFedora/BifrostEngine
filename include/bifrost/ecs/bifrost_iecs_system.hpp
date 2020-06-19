@@ -13,15 +13,13 @@
 #ifndef BIFROST_IECS_SYSTEM_HPP
 #define BIFROST_IECS_SYSTEM_HPP
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {
-  using Engine = ::BifrostEngine;
-
   class IECSSystem
   {
-    friend class BifrostEngine;
+    friend class Engine;
 
    private:
     bool m_IsEnabled;

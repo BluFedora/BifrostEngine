@@ -15,7 +15,7 @@
 #include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"  /* bfNonCopyMoveable<T> */
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {
@@ -23,7 +23,7 @@ namespace bifrost
 
   class GameStateMachine final : private bfNonCopyMoveable<GameStateMachine>
   {
-    friend class BifrostEngine;
+    friend class Engine;
     friend class IGameStateLayer;
 
     template<typename T>
@@ -138,7 +138,7 @@ namespace bifrost
     [[nodiscard]] static iterator find(iterator it_bgn, iterator it_end, IGameStateLayer* state);
 
    private:
-    BifrostEngine&   m_Engine;
+    Engine&   m_Engine;
     IMemoryManager&  m_Memory;
     IGameStateLayer* m_LayerHead;
     IGameStateLayer* m_LayerTail;
@@ -147,7 +147,7 @@ namespace bifrost
     IGameStateLayer* m_DeleteList;
 
    public:
-    GameStateMachine(BifrostEngine& engine, IMemoryManager& memory);
+    GameStateMachine(Engine& engine, IMemoryManager& memory);
 
     // Iteration and Book Keeping.
     [[nodiscard]] iterator         begin() const { return m_LayerHead ? m_LayerHead : m_OverlayHead; }

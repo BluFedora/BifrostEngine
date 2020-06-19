@@ -1,9 +1,10 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
-#include "bifrost/debug/bifrost_dbg_logger.h"
+#include "bifrost/debug/bifrost_dbg_logger.h"       // bfLog*
+#include "bifrost/ecs/bifrost_behavior_system.hpp"  // BehaviorSystem
 
-BifrostEngine::BifrostEngine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
-  bfNonCopyMoveable<BifrostEngine>{},
+Engine::Engine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
+  bfNonCopyMoveable<Engine>{},
   m_CmdlineArgs{argc, argv},
   m_MainMemory{main_memory, main_memory_size},
   m_TempMemory{static_cast<char*>(m_MainMemory.allocate(main_memory_size / 4)), main_memory_size / 4},
@@ -19,21 +20,22 @@ BifrostEngine::BifrostEngine(IBaseWindow& window, char* main_memory, std::size_t
   m_CameraMemory{},
   m_CameraList{nullptr},
   m_CameraResizeList{nullptr},
-  m_CameraDeleteList{nullptr}
+  m_CameraDeleteList{nullptr},
+  m_State{EngineState::RUNTIME_PLAYING}
 {
 }
 
-AssetSceneHandle BifrostEngine::currentScene() const
+AssetSceneHandle Engine::currentScene() const
 {
   return m_SceneStack.isEmpty() ? AssetSceneHandle{} : m_SceneStack.back();
 }
 
-CameraRender* BifrostEngine::borrowCamera(const CameraRenderCreateParams& params)
+CameraRender* Engine::borrowCamera(const CameraRenderCreateParams& params)
 {
   return m_CameraMemory.allocateT<CameraRender>(m_CameraList, m_Renderer.device(), m_Renderer.m_FrameInfo, params);
 }
 
-void BifrostEngine::resizeCamera(CameraRender* camera, int width, int height)
+void Engine::resizeCamera(CameraRender* camera, int width, int height)
 {
   camera->new_width  = width;
   camera->new_height = height;
@@ -46,7 +48,7 @@ void BifrostEngine::resizeCamera(CameraRender* camera, int width, int height)
   }
 }
 
-void BifrostEngine::returnCamera(CameraRender* camera)
+void Engine::returnCamera(CameraRender* camera)
 {
   // Remove Camera from resize list.
   if (camera->resize_list_next)
@@ -95,13 +97,13 @@ void BifrostEngine::returnCamera(CameraRender* camera)
   m_CameraDeleteList = camera;
 }
 
-void BifrostEngine::openScene(const AssetSceneHandle& scene)
+void Engine::openScene(const AssetSceneHandle& scene)
 {
   m_SceneStack.clear();  // TODO: Scene Stacking.
   m_SceneStack.push(scene);
 }
 
-void BifrostEngine::init(const BifrostEngineCreateParams& params)
+void Engine::init(const BifrostEngineCreateParams& params)
 {
   IBifrostDbgLogger logger_config{
    nullptr,
@@ -147,12 +149,16 @@ void BifrostEngine::init(const BifrostEngineCreateParams& params)
 
   m_Scripting.create(vm_params);
 
+  addECSSystem<BehaviorSystem>();
+  addECSSystem<CollisionSystem>();
+
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
+
 
   bfLogPop();
 }
 
-bool BifrostEngine::beginFrame()
+bool Engine::beginFrame()
 {
   deleteCameras();
   resizeCameras();
@@ -161,7 +167,7 @@ bool BifrostEngine::beginFrame()
   return m_Renderer.frameBegin();
 }
 
-void BifrostEngine::onEvent(Event& evt)
+void Engine::onEvent(Event& evt)
 {
   for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != m_StateMachine.rend(); ++it)
   {
@@ -169,7 +175,7 @@ void BifrostEngine::onEvent(Event& evt)
   }
 }
 
-void BifrostEngine::fixedUpdate(float delta_time)
+void Engine::fixedUpdate(float delta_time)
 {
   for (auto& state : m_StateMachine)
   {
@@ -177,14 +183,14 @@ void BifrostEngine::fixedUpdate(float delta_time)
   }
 }
 
-void BifrostEngine::drawEnd() const
+void Engine::drawEnd() const
 {
   m_Renderer.endPass();
 
   m_Renderer.frameEnd();
 }
 
-void BifrostEngine::deinit()
+void Engine::deinit()
 {
   bfGfxDevice_flush(m_Renderer.device());
 
@@ -210,7 +216,7 @@ void BifrostEngine::deinit()
   bfLogger_deinit();
 }
 
-void BifrostEngine::update(float delta_time)
+void Engine::update(float delta_time)
 {
   m_DebugRenderer.update(delta_time);
   m_Renderer.m_GlobalTime += delta_time;  // TODO: Not very encapsolated.
@@ -252,20 +258,26 @@ void BifrostEngine::update(float delta_time)
   }
 }
 
-void BifrostEngine::drawBegin(float render_alpha)
+void Engine::drawBegin(float render_alpha)
 {
   const auto cmd_list = m_Renderer.mainCommandList();
+  auto       scene    = currentScene();
 
-  CameraRender* camera = m_CameraList;
-
-  while (camera)
+  if (scene)
   {
+    for (Light& light : scene->components<Light>())
+    {
+      m_Renderer.addLight(light);
+    }
+  }
+
+  forEachCamera([this, &cmd_list, render_alpha, &scene](CameraRender* camera) {
+    Camera_update(&camera->cpu_camera);
+
     m_Renderer.renderCameraTo(
      camera->cpu_camera,
      camera->gpu_camera,
-     [this, &cmd_list, render_alpha, camera]() {
-       auto scene = currentScene();
-
+     [this, &cmd_list, render_alpha, camera, &scene]() {
        if (scene)
        {
          for (MeshRenderer& renderer : scene->components<MeshRenderer>())
@@ -276,11 +288,6 @@ void BifrostEngine::drawBegin(float render_alpha)
              m_Renderer.bindObject(cmd_list, camera->gpu_camera, renderer.owner());
              renderer.model()->draw(cmd_list);
            }
-         }
-
-         for (Light& light : scene->components<Light>())
-         {
-           m_Renderer.addLight(light);
          }
        }
 
@@ -297,14 +304,12 @@ void BifrostEngine::drawBegin(float render_alpha)
      [this, &cmd_list, camera]() {
        m_DebugRenderer.draw(cmd_list, *camera, m_Renderer.m_FrameInfo, true);
      });
-
-    camera = camera->next;
-  }
+  });
 
   m_Renderer.beginScreenPass();
 }
 
-void BifrostEngine::resizeCameras()
+void Engine::resizeCameras()
 {
   CameraRender* camera = m_CameraResizeList;
 
@@ -321,7 +326,7 @@ void BifrostEngine::resizeCameras()
   m_CameraResizeList = nullptr;
 }
 
-void BifrostEngine::deleteCameras()
+void Engine::deleteCameras()
 {
   if (m_CameraDeleteList)
   {
@@ -344,7 +349,7 @@ void BifrostEngine::deleteCameras()
 
 namespace bifrost
 {
-  void detail::CoreEngineGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
+  void detail::CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
   {
     if (event.type == EventType::ON_WINDOW_RESIZE)
     {

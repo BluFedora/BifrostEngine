@@ -98,7 +98,7 @@
         },
         {
             "__ObjectRefID__" : 3,
-            "m_Name" : "Untitled0",
+            "m_Name" : "Test Plane",
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
@@ -276,7 +276,7 @@
                 "Position" : {
                     "y" : 0,
                     "w" : 1,
-                    "x" : -2.3,
+                    "x" : -9.7,
                     "z" : 0
                 },
                 "Origin" : {

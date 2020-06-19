@@ -1,4 +1,5 @@
 #include "bifrost/editor/bifrost_editor_scene.hpp"
+#include "bifrost/memory/bifrost_stl_allocator.hpp"
 
 namespace bifrost::editor
 {
@@ -91,7 +92,7 @@ namespace bifrost::editor
       m_SceneViewViewport.setRight(int(position_max.x));
       m_SceneViewViewport.setBottom(int(position_max.y));
 
-      if (m_Camera->old_width != content_area.x || m_Camera->old_height != content_area.y)
+      if (m_Camera->old_width != (int)content_area.x || m_Camera->old_height != (int)content_area.y)
       {
         auto& window = engine.window();
 
@@ -142,6 +143,12 @@ namespace bifrost::editor
     ImGui::PopStyleVar(3);
   }
 
+  // TODO(SR): This should be in a public header along with other std:: dat structure typedefs.
+  template<typename T>
+  using StdList = std::list<T, StlAllocator<T>>;
+
+  using ClickResult = std::pair<const BVHNode*, bfRayCastResult>;
+
   void SceneView::onEvent(EditorOverlay& editor, Event& event)
   {
     auto& mouse_evt = event.mouse;
@@ -152,8 +159,61 @@ namespace bifrost::editor
 
       if (event.type == EventType::ON_MOUSE_DOWN)
       {
-        if (isPointOverSceneView({{mouse_evt.x, mouse_evt.y}}))
+        if (isPointOverSceneView({mouse_evt.x, mouse_evt.y}))
         {
+          auto&      engine = editor.engine();
+          const auto scene  = engine.currentScene();
+
+          if (scene)
+          {
+            // Ray cast Hit Begin
+            auto&       io           = ImGui::GetIO();
+            const auto& window_mouse = io.MousePos;
+            Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+
+            local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
+
+            const bfRay3D ray = bfRay3D_make(
+             m_Camera->cpu_camera.position,
+             Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
+
+            StdList<ClickResult> clicked_nodes{engine.tempMemoryNoFree()};
+
+            scene->bvh().traverseConditionally([&ray, &clicked_nodes](const BVHNode& node) -> bool {
+              Vec3f aabb_min;
+              Vec3f aabb_max;
+
+              memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
+              memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
+
+              const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
+
+              if (ray_cast_result.did_hit && (ray_cast_result.min_time >= 0.0f || ray_cast_result.max_time >= 0) && bvh_node::isLeaf(node))
+              {
+                clicked_nodes.emplace_back(&node, ray_cast_result);
+                return false;
+              }
+
+              return ray_cast_result.did_hit;
+            });
+
+            if (!clicked_nodes.empty())
+            {
+              clicked_nodes.sort([](const ClickResult& a, const ClickResult& b) {
+                return a.second.min_time < b.second.min_time;
+              });
+
+              const ClickResult best_click = clicked_nodes.front();
+
+              editor.select(static_cast<Entity*>(best_click.first->user_data));
+            }
+            else
+            {
+              editor.select(nullptr);
+            }
+          }
+          // Ray cast Hit End
+
           m_IsDraggingMouse = true;
         }
       }
@@ -205,6 +265,54 @@ namespace bifrost::editor
   {
     if (m_Camera)
     {
+      auto&       engine       = editor.engine();
+      auto&       io           = ImGui::GetIO();
+      const auto& window_mouse = io.MousePos;
+      Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+
+      local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
+
+      bfRay3D ray = bfRay3D_make(
+       m_Camera->cpu_camera.position,
+       Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
+
+      const auto scene = engine.currentScene();
+
+      if (scene)
+      {
+        ClickResult highlighted_node = {nullptr, {}};
+
+        scene->bvh().traverseConditionally([&ray, &highlighted_node](const BVHNode& node) {
+          Vec3f aabb_min;
+          Vec3f aabb_max;
+
+          memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
+          memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
+
+          const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
+
+          if (ray_cast_result.did_hit && bvh_node::isLeaf(node) && ray_cast_result.min_time > 0.0f && (!highlighted_node.first || highlighted_node.second.min_time > ray_cast_result.min_time))
+          {
+            highlighted_node.first  = &node;
+            highlighted_node.second = ray_cast_result;
+          }
+
+          return ray_cast_result.did_hit;
+        });
+
+        if (highlighted_node.first)
+        {
+          const BVHNode& node = *highlighted_node.first;
+
+          engine.debugDraw().addAABB(
+           (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
+           Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
+           bfColor4u_fromUint32(BIFROST_COLOR_FIREBRICK),
+           0.0f,
+           true);
+        }
+      }
+
       if (isFocused())
       {
         const auto camera_move_speed = (editor.isShiftDown() ? 2.2f : 1.0f) * dt;
@@ -218,8 +326,8 @@ namespace bifrost::editor
           {KeyCode::Q, &Camera_moveUp, camera_move_speed},
           {KeyCode::E, &Camera_moveDown, camera_move_speed},
           {KeyCode::R, &Camera_addPitch, -0.01f},
-          {KeyCode::F, &Camera_addPitch, 0.01f},
-          {KeyCode::H, &Camera_addYaw, 0.01f},
+          {KeyCode::F, &Camera_addPitch, +0.01f},
+          {KeyCode::H, &Camera_addYaw, +0.01f},
           {KeyCode::G, &Camera_addYaw, -0.01f},
          };
 
@@ -231,8 +339,6 @@ namespace bifrost::editor
           }
         }
       }
-
-      Camera_update(&m_Camera->cpu_camera);
     }
   }
 }  // namespace bifrost::editor

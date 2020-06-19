@@ -39,7 +39,7 @@ This is a C multi-line comment!
 
 ```
 var my_string = "Hello World";
-var thisStartsAsNil;
+var thisIsInitializedAsNil;
 ```
 
 ## Functions

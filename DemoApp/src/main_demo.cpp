@@ -41,7 +41,7 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
   return bestmonitor;
 }
 
-void MainDemoLayer::onEvent(BifrostEngine&, Event& event)
+void MainDemoLayer::onEvent(Engine&, Event& event)
 {
   const auto is_key_down = event.type == bifrost::EventType::ON_KEY_DOWN;
 
@@ -70,6 +70,6 @@ void MainDemoLayer::onEvent(BifrostEngine&, Event& event)
   }
 }
 
-void MainDemoLayer::onUpdate(BifrostEngine& engine, float delta_time)
+void MainDemoLayer::onUpdate(Engine& engine, float delta_time)
 {
 }

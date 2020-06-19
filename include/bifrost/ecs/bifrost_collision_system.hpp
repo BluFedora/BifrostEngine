@@ -194,24 +194,37 @@ namespace bifrost
     }
 
     template<typename F>
-    void traverse(BVHNodeOffset node, F&& callback)
+    void traverseConditionally(BVHNodeOffset node, F&& callback)
     {
       if (!bvh_node::isNull(node))
       {
-        callback(nodes[node]);
-
-        if (!bvh_node::isLeaf(nodes[node]))
+        if (callback(nodes[node]) && !bvh_node::isLeaf(nodes[node]))
         {
-          traverse(nodes[node].children[0], callback);
-          traverse(nodes[node].children[1], callback);
+          traverseConditionally(nodes[node].children[0], callback);
+          traverseConditionally(nodes[node].children[1], callback);
         }
       }
+    }
+
+    template<typename F>
+    void traverse(BVHNodeOffset node, F&& callback)
+    {
+      traverseConditionally(node, [&callback](auto&& node) -> bool {
+        callback(std::forward<decltype(node)>(node));
+        return true;
+      });
     }
 
     template<typename F>
     void traverse(F&& callback)
     {
       traverse(root_idx, callback);
+    }
+
+    template<typename F>
+    void traverseConditionally(F&& callback)
+    {
+      traverseConditionally(root_idx, callback);
     }
 
     BVHNodeOffset insert(void* user_data, const AABB& bounds)
@@ -311,15 +324,37 @@ namespace bifrost
         return;
       }
 
-      const BVHNodeOffset parent      = nodes[leaf].parent;
-      const BVHNodeOffset grandparent = nodes[parent].parent;
-      const auto          old_depth   = nodes[parent].depth;
+      const BVHNodeOffset parent          = nodes[leaf].parent;
+      const BVHNodeOffset grandparent     = nodes[parent].parent;
+      const auto          parent_depth    = nodes[parent].depth;
+      const bool          has_grandparent = !bvh_node::isNull(grandparent);
+      const BVHNodeOffset sibling         = nodes[parent].children[(leaf == nodes[parent].children[0] ? 1 : 0)];
 
-      nodes[parent]        = nodes[nodes[parent].children[(leaf == nodes[parent].children[0] ? 1 : 0)]];
-      nodes[parent].parent = grandparent;
-      nodes[parent].depth  = old_depth;
+      if (!has_grandparent)
+      {
+        //__debugbreak();
+      }
 
-      refitChildren(bvh_node::isNull(grandparent) ? root_idx : grandparent, true);
+      if (has_grandparent)
+      {
+        const int child_idx = nodes[grandparent].children[0] == parent ? 0 : 1;
+
+        nodes[grandparent].children[child_idx] = sibling;
+      }
+      else
+      {
+        root_idx = sibling;
+      }
+
+      nodes[sibling].depth  = parent_depth;
+      nodes[sibling].parent = grandparent;
+
+      if (!has_grandparent)
+      {
+        //__debugbreak();
+      }
+
+      refitChildren(has_grandparent ? grandparent : root_idx, true);
     }
 
     /*!
@@ -334,6 +369,8 @@ namespace bifrost
     */
     void endFrame(LinearAllocator& temp_memory, bool refit_parents_with_no_rotation = true)
     {
+      // return;
+
       struct OffsetIndexPair final
       {
         BVHNodeOffset node;   // Index into BVH::nodes
@@ -635,8 +672,14 @@ namespace bifrost
 
     bool refitChildren(BVHNodeOffset self, bool propogate)
     {
-      const BVHNode& node       = nodeAt(self);
-      const AABB     new_bounds = aabb::mergeBounds(nodes[node.children[0]].bounds, nodes[node.children[1]].bounds);
+      const BVHNode& node = nodeAt(self);
+
+      if (bvh_node::isLeaf(node))
+      {
+        return false;
+      }
+
+      const AABB new_bounds = aabb::mergeBounds(nodes[node.children[0]].bounds, nodes[node.children[1]].bounds);
 
       if (nodes[self].bounds != new_bounds)
       {
@@ -682,11 +725,13 @@ namespace bifrost
     {
       if (!bvh_node::isNull(freelist))
       {
-        const BVHNodeOffset idx  = freelist;
-        BVHNode&            node = nodes[idx];
-        resetNode(node, user_data, bounds);
-        freelist = nodes[idx].next;
+        const BVHNodeOffset idx      = freelist;
+        const BVHNodeOffset idx_next = nodes[idx].next;
+        BVHNode&            node     = nodes[idx];
 
+        resetNode(node, user_data, bounds);
+
+        freelist = idx_next;
         return idx;
       }
 

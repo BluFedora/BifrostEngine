@@ -15,8 +15,8 @@ class MainDemoLayer final : public bifrost::IGameStateLayer
 
   const char* name() override { return "Main Demo"; }
 
-  void onEvent(BifrostEngine& engine, bifrost::Event& event) override;
-  void onUpdate(BifrostEngine& engine, float delta_time) override;
+  void onEvent(Engine& engine, bifrost::Event& event) override;
+  void onUpdate(Engine& engine, float delta_time) override;
 };
 
 #endif /* MAIN_DEMO_HPP */

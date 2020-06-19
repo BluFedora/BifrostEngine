@@ -37,8 +37,10 @@ void Camera_init(BifrostCamera* cam, const Vec3f* pos, const Vec3f* world_up, fl
     world_up = &k_DefaultWorldUp;
   }
 
-  cam->position                    = (Vec3f){pos->x, pos->y, pos->z, 1.0f};
-  cam->_worldUp                    = (Vec3f){world_up->x, world_up->y, world_up->z, 0.0f};
+  cam->position                    = *pos;
+  cam->position.w                  = 1.0f;
+  cam->_worldUp                    = *world_up;
+  cam->_worldUp.w                  = 0.0f;
   cam->_yaw                        = yaw;
   cam->_pitch                      = pitch;
   cam->camera_mode.mode            = BIFROST_CAMERA_MODE_PRESPECTIVE;
@@ -135,9 +137,7 @@ void Camera_move(BifrostCamera* cam, const Vec3f* dir, float amt)
 
 void Camera_moveLeft(BifrostCamera* cam, float amt)
 {
-  Vec3f right;
-  Vec3f_cross(&cam->forward, &cam->up, &right);
-  Camera_move(cam, &right, -amt);
+  Camera_moveRight(cam, -amt);
 }
 
 void Camera_moveRight(BifrostCamera* cam, float amt)
@@ -243,4 +243,70 @@ Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size)
   Vec3f_normalize(&ray_world);
 
   return ray_world;
+}
+
+enum
+{
+  k_RayXSignBit = (1 << 0),
+  k_RayYSignBit = (1 << 1),
+  k_RayZSignBit = (1 << 2),
+};
+
+bfRay3D bfRay3D_make(Vec3f origin, Vec3f direction)
+{
+  Vec3f_normalize(&direction);
+
+  bfRay3D self;
+  self.origin          = origin;
+  self.direction       = direction;
+  self.inv_direction.x = 1.0f / self.direction.x;
+  self.inv_direction.y = 1.0f / self.direction.y;
+  self.inv_direction.z = 1.0f / self.direction.z;
+  self.inv_direction.w = 0.0f;
+  self.inv_direction_signs =
+   k_RayXSignBit * (self.inv_direction.x < 0.0f) |
+   k_RayYSignBit * (self.inv_direction.y < 0.0f) |
+   k_RayZSignBit * (self.inv_direction.z < 0.0f);
+
+  return self;
+}
+
+int bfRay3D_sign(const bfRay3D* ray, int bit)
+{
+  return (ray->inv_direction_signs & bit) != 0;
+}
+
+// [https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection]
+bfRayCastResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f aabb_max)
+{
+  bfRayCastResult result   = (bfRayCastResult){0, 0.0f, 0.0f};
+  const Vec3f     bounds[] = {aabb_min, aabb_max};
+  const int       r_sign_x = bfRay3D_sign(ray, k_RayXSignBit);
+  const int       r_sign_y = bfRay3D_sign(ray, k_RayYSignBit);
+  const float     tymin    = (bounds[r_sign_y].y - ray->origin.y) * ray->inv_direction.y;
+  const float     tymax    = (bounds[1 - r_sign_y].y - ray->origin.y) * ray->inv_direction.y;
+
+  float tmin = (bounds[r_sign_x].x - ray->origin.x) * ray->inv_direction.x;
+  float tmax = (bounds[1 - r_sign_x].x - ray->origin.x) * ray->inv_direction.x;
+
+  if (tmin > tymax || tymin > tmax)
+    return result;
+
+  if (tymin > tmin)
+    tmin = tymin;
+
+  if (tymax < tmax)
+    tmax = tymax;
+
+  const int   r_sign_z = bfRay3D_sign(ray, k_RayZSignBit);
+  const float tzmin    = (bounds[r_sign_z].z - ray->origin.z) * ray->inv_direction.z;
+  const float tzmax    = (bounds[1 - r_sign_z].z - ray->origin.z) * ray->inv_direction.z;
+
+  if (tmin > tzmax || tzmin > tmax)
+    return result;
+
+  result.did_hit  = 1;
+  result.min_time = tzmin > tmin ? tzmin : tmin;
+  result.max_time = tzmax < tmax ? tzmax : tmax;
+  return result;
 }

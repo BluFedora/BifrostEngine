@@ -20,6 +20,16 @@
 
 #include <memory> /* unique_ptr<T> */
 
+#include "bifrost/memory/bifrost_stl_allocator.hpp"
+
+#include <unordered_set>
+
+namespace bifrost
+{
+  template<typename T>
+  using StlUnorderedSet = std::unordered_set<T, StlAllocator<T>>;
+}
+
 namespace bifrost::editor
 {
   class EditorOverlay;
@@ -330,28 +340,28 @@ namespace bifrost::editor
   using BaseEditorWindowPtr = UniquePtr<BaseEditorWindow>;
   using ActionMap           = HashTable<String, ActionPtr>;
   using WindowList          = Array<BaseEditorWindowPtr>;
-
+  
   class EditorOverlay final : public IGameStateLayer
   {
     friend class ARefreshAsset;
 
    private:
-    ui::Dialog*        m_CurrentDialog;
-    bool               m_OpenNewDialog;
-    ActionMap          m_Actions;
-    StringPool         m_MenuNameStringPool;
-    ui::MainMenu       m_MainMenu;
-    Engine*            m_Engine;
-    ProjectPtr         m_OpenProject;
-    float              m_FpsTimer;
-    int                m_CurrentFps;
-    int                m_CurrentMs;
-    AssetTextureHandle m_TestTexture;
-    FileSystem         m_FileSystem;
-    Vec2f              m_MousePosition;  // TODO(SR): This should be stored in a shared Engine Input Module.
-    WindowList         m_OpenWindows;
-    bool               m_IsKeyDown[k_KeyCodeMax + 1];
-    bool               m_IsShiftDown;
+    ui::Dialog*                    m_CurrentDialog;
+    bool                           m_OpenNewDialog;
+    ActionMap                      m_Actions;
+    StringPool                     m_MenuNameStringPool;
+    ui::MainMenu                   m_MainMenu;
+    Engine*                        m_Engine;
+    ProjectPtr                     m_OpenProject;
+    float                          m_FpsTimer;
+    int                            m_CurrentFps;
+    int                            m_CurrentMs;
+    AssetTextureHandle             m_TestTexture;
+    FileSystem                     m_FileSystem;
+    Vec2f                          m_MousePosition;  // TODO(SR): This should be stored in a shared Engine Input Module.
+    WindowList                     m_OpenWindows;
+    bool                           m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
+    bool                           m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
 
    protected:
     void onCreate(Engine& engine) override;

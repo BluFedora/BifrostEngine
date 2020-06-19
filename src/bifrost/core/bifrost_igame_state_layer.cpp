@@ -9,40 +9,40 @@ namespace bifrost
   {
   }
 
-  void IGameStateLayer::onCreate(BifrostEngine& engine)
+  void IGameStateLayer::onCreate(Engine& engine)
   {
     (void)engine;
   }
 
-  void IGameStateLayer::onLoad(BifrostEngine& engine)
+  void IGameStateLayer::onLoad(Engine& engine)
   {
     (void)engine;
   }
 
-  void IGameStateLayer::onEvent(BifrostEngine& engine, Event& event)
+  void IGameStateLayer::onEvent(Engine& engine, Event& event)
   {
     (void)engine;
     (void)event;
   }
 
-  void IGameStateLayer::onFixedUpdate(BifrostEngine& engine, float delta_time)
+  void IGameStateLayer::onFixedUpdate(Engine& engine, float delta_time)
   {
     (void)engine;
     (void)delta_time;
   }
 
-  void IGameStateLayer::onUpdate(BifrostEngine& engine, float delta_time)
+  void IGameStateLayer::onUpdate(Engine& engine, float delta_time)
   {
     (void)engine;
     (void)delta_time;
   }
 
-  void IGameStateLayer::onUnload(BifrostEngine& engine)
+  void IGameStateLayer::onUnload(Engine& engine)
   {
     (void)engine;
   }
 
-  void IGameStateLayer::onDestroy(BifrostEngine& engine)
+  void IGameStateLayer::onDestroy(Engine& engine)
   {
     (void)engine;
   }

@@ -1,8 +1,8 @@
-
 //
-// Unity Build For All Editor Code (Eaiser To Make New Files Without having to go through CMake)
+// Unity Build For All Editor Code (Easier To Make New Files Without having to go through CMake)
 //
 
+#include "bifrost_editor_game.cpp"
 #include "bifrost_editor_hierarchy.cpp"
 #include "bifrost_editor_overlay.cpp"
 #include "bifrost_editor_scene.cpp"

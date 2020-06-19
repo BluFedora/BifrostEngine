@@ -24,7 +24,7 @@
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                  */
 #include "bifrost_asset_handle.hpp"                       /* AssetHandle<T>                               */
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {
@@ -36,7 +36,6 @@ namespace bifrost
   class BaseAssetInfo;
   class BaseAssetHandle;
 
-  using Engine          = BifrostEngine;
   using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
   enum class AssetError : std::uint8_t

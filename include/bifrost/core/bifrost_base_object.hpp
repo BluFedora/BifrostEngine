@@ -16,7 +16,7 @@
 
 #include "bifrost/meta/bifrost_meta_factory.hpp" /* Factory<T> */
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {

@@ -107,6 +107,28 @@ BIFROST_MATH_API void  Camera_setProjectionModified(BifrostCamera* cam);
 BIFROST_MATH_API void  Camera_setViewModified(BifrostCamera* cam);
 BIFROST_MATH_API Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size);
 
+/* Ray API */
+
+typedef struct bfRay3D_t
+{
+  Vec3f origin;              /* Required                   */
+  Vec3f direction;           /* Required                   */
+  Vec3f inv_direction;       /* Derived From direction     */
+  int   inv_direction_signs; /* Derived From inv_direction */
+
+} bfRay3D;
+
+typedef struct bfRayCastResult_t
+{
+  int   did_hit;  /* Check this to se if the ray hit anything.      */
+  float min_time; /* Set To An Undefined Value if did_hit is false. */
+  float max_time; /* Set To An Undefined Value if did_hit is false. */
+
+} bfRayCastResult;
+
+BIFROST_MATH_API bfRay3D         bfRay3D_make(Vec3f origin, Vec3f direction);
+BIFROST_MATH_API bfRayCastResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f aabb_max);
+
 #ifdef __cplusplus
 }
 #endif

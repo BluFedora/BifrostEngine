@@ -90,7 +90,6 @@ Random:
 //   * Error throwing in native functions.
 //   * Do while loop.
 //   * Standard Lib
-//   * Class inheritance.
 //   * Unary Not
 //   * Unary Minus
 //   * +=, -=, *=, /=

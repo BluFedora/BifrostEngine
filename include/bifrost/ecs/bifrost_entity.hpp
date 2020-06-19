@@ -73,15 +73,16 @@ namespace bifrost
     [[nodiscard]] Scene&                   scene() const { return m_OwningScene; }
     [[nodiscard]] const String&            name() const { return m_Name; }
     [[nodiscard]] BifrostTransform&        transform() const;
+    [[nodiscard]] BVHNode&                 bvhNode() const;
     [[nodiscard]] const EntityList&        children() const { return m_Children; }
     [[nodiscard]] BVHNodeOffset            bvhID() const { return m_BHVNode; }
     [[nodiscard]] const Array<IBehavior*>& behaviors() const { return m_Behaviors; }
 
     // Child API
-    //
+    
     // This API needs to make it nearly impossible to leak children.
     // This is why there is no "removeChild" function publically available.
-    // To removed a child you must destroy the object itself which
+    // To remove a child you must destroy the object itself which
     // will enforce that it does not dangle outside of the hierarchy ;)
 
     Entity* addChild(const StringRange& name);
@@ -242,6 +243,7 @@ namespace bifrost
     IBehavior*  findBehaviorByType(meta::BaseClassMetaInfoPtr type) const;     // not found = nullptr, looks through both lists.
     std::size_t findBehaviorIdxByType(meta::BaseClassMetaInfoPtr type) const;  // not found = BIFROST_ARRAY_INVALID_INDEX
     bool        removeBehaviorFromList(meta::BaseClassMetaInfoPtr type);       // false if could not find behavior to be removed
+    void        deleteBehavior(IBehavior* behavior) const;
 
     ComponentStorage& sceneComponentStorage(bool is_active) const;
     IMemoryManager&   sceneMemoryManager() const;

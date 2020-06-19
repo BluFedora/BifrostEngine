@@ -101,7 +101,12 @@ namespace bifrost
 
     template<>
     struct Vec2T<int> : public Vec2i
-    {};
+    {
+      Vec2T(int x, int y) :
+        Vec2i{x, y}
+      {
+      }
+    };
 
     template<typename T>
     struct Vec3T
@@ -224,8 +229,8 @@ namespace bifrost
       //   By design you should have to be explicit or allow uninitialized for cheaper constuction (Similar to Vector).
       //   This constructor allows for Rect2{0.0f} which looks ambiguous to all hell.
       Rect2T(T x = T(0), T y = T(0), T width = T(0), T height = T(0)) :
-        m_Min{{x, y}},
-        m_Max{{x + width, y + height}}
+        m_Min{x, y},
+        m_Max{x + width, y + height}
       {
       }
 
@@ -249,6 +254,7 @@ namespace bifrost
       [[nodiscard]] const VectorT& bottomRight() const { return m_Max; }
       [[nodiscard]] VectorT        bottomLeft() const { return VectorT{m_Min.x, m_Max.y}; }
       [[nodiscard]] VectorT        center() const { return VectorT{centerX(), centerY()}; }
+      [[nodiscard]] VectorT        size() const { return VectorT{width(), height()}; }
       [[nodiscard]] T              left() const { return m_Min.x; }
       [[nodiscard]] T              right() const { return m_Max.x; }
       [[nodiscard]] T              top() const { return m_Min.y; }
@@ -451,7 +457,7 @@ namespace bifrost
   {
     // Returns a zero area Rect2i if any of the parameters are 0.
     Rect2i aspectRatioDrawRegion(std::uint32_t aspect_w, std::uint32_t aspect_h, std::uint32_t window_w, std::uint32_t window_h);
-  }
+  }  // namespace rect
 
   namespace vec
   {

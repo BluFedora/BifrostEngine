@@ -41,14 +41,12 @@ namespace bifrost::detail
   class CoreEngineGameStateLayer : public IGameStateLayer
   {
    protected:
-    void onEvent(BifrostEngine& engine, Event& event) override;
+    void onEvent(Engine& engine, Event& event) override;
 
    public:
     const char* name() override { return "__CoreEngineLayer__"; }
   };
 }  // namespace bifrost::detail
-
-using namespace bifrost;
 
 namespace bifrost
 {
@@ -60,7 +58,7 @@ namespace bifrost
 
   struct CameraRender final
   {
-    friend class ::BifrostEngine;
+    friend class ::Engine;
 
     bfGfxDeviceHandle device;
     BifrostCamera     cpu_camera;
@@ -116,9 +114,18 @@ namespace bifrost
       }
     }
   };
+
+  enum class EngineState : std::uint8_t
+  {
+    RUNTIME_PLAYING,
+    EDITOR_PLAYING,
+    PAUSED,
+  };
 }  // namespace bifrost
 
-class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
+using namespace bifrost;
+
+class Engine : private bfNonCopyMoveable<Engine>
 {
  private:
   std::pair<int, const char**>    m_CmdlineArgs;
@@ -137,9 +144,10 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   CameraRender*                   m_CameraList;
   CameraRender*                   m_CameraResizeList;
   CameraRender*                   m_CameraDeleteList;
+  EngineState                     m_State;
 
  public:
-  explicit BifrostEngine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]);
+  explicit Engine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]);
 
   FreeListAllocator& mainMemory() { return m_MainMemory; }
   LinearAllocator&   tempMemory() { return m_TempMemory; }
@@ -155,6 +163,9 @@ class BifrostEngine : private bfNonCopyMoveable<BifrostEngine>
   CameraRender* borrowCamera(const CameraRenderCreateParams& params);
   void          resizeCamera(CameraRender* camera, int width, int height);
   void          returnCamera(CameraRender* camera);
+
+  EngineState state() const { return m_State; }
+  void        setState(EngineState value) { m_State = value; }
 
   template<typename F>
   void forEachCamera(F&& callback)

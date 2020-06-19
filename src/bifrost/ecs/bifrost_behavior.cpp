@@ -26,3 +26,19 @@ namespace bifrost
     (void)serializer;
   }
 }  // namespace bifrost
+
+#include "bifrost/ecs/bifrost_entity.hpp"
+#include "bifrost/asset_io/bifrost_scene.hpp"
+
+using namespace bifrost;
+
+void game::ExampleBehavior::onUpdate(Engine& engine, float dt)
+{
+  auto& transform = owner().transform();
+
+  const Vector3f scale = {(std::sin(time) + 1.0f) * (3.0f * 0.5f)};
+
+  bfTransform_setScale(&transform, &scale);
+
+  time += dt;
+}

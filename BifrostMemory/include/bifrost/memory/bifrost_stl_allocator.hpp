@@ -27,8 +27,28 @@
 
 namespace bifrost
 {
+  namespace detail
+  {
+    class StlAllocatorBase
+    {
+     protected:
+      IMemoryManager &m_MemoryBackend;
+
+     protected:
+      explicit StlAllocatorBase(IMemoryManager &backend) noexcept :
+        m_MemoryBackend{backend}
+      {
+      }
+
+      explicit StlAllocatorBase(const StlAllocatorBase &rhs) noexcept :
+        m_MemoryBackend{rhs.m_MemoryBackend}
+      {
+      }
+    };
+  }  // namespace detail
+
   template<class T>
-  class StlAllocator final
+  class StlAllocator final : public detail::StlAllocatorBase
   {
    public:
     using pointer                                = T *;
@@ -52,25 +72,22 @@ namespace bifrost
       using other = StlAllocator<U>;
     };
 
-   private:
-    IMemoryManager &m_MemoryBackend;
-
    public:
     StlAllocator(IMemoryManager &backend) noexcept :
-      m_MemoryBackend{backend}
+      StlAllocatorBase{backend}
     {
     }
 
     template<class U>
     StlAllocator(const StlAllocator<U> &rhs) noexcept :
-      m_MemoryBackend{rhs.m_MemoryBackend}
+      StlAllocatorBase{rhs}
     {
     }
 
-    pointer          address(reference x) const { return &x; }
-    const_pointer    address(const_reference x) const { return &x; }
-    pointer          allocate(size_type s, void const * /* hint */ = nullptr) { return allocate(s); }
-    value_type &     allocate(size_type s) { return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr; }
+    pointer       address(reference x) const { return &x; }
+    const_pointer address(const_reference x) const { return &x; }
+    // pointer          allocate(size_type s, void const * /* hint */ = nullptr) { return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr; }
+    pointer          allocate(size_type s) { return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr; }
     void             deallocate(pointer p, size_type) { m_MemoryBackend.deallocate(p); }
     static size_type max_size() noexcept { return std::numeric_limits<size_t>::max() / sizeof(value_type); }
 

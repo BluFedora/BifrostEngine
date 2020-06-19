@@ -42,6 +42,11 @@ namespace bifrost
     return *transform_system.transformFromID(&transform_system, m_Transform);
   }
 
+  BVHNode& Entity::bvhNode() const
+  {
+    return m_OwningScene.m_BVHTree.nodes[m_BHVNode];
+  }
+
   Entity* Entity::addChild(const StringRange& name)
   {
     Entity* child   = m_OwningScene.createEntity(name);
@@ -139,7 +144,7 @@ namespace bifrost
 
     if (was_found)
     {
-      sceneMemoryManager().deallocateT(m_Behaviors[index]);
+      deleteBehavior(m_Behaviors[index]);
       m_Behaviors.removeAt(index);
     }
 
@@ -232,12 +237,28 @@ namespace bifrost
 
   Entity::~Entity()
   {
+    // Components
+    ComponentStorage::forEachType([this](auto t) {
+      using T = bfForEachTemplateT(t);
+      remove<T>();
+    });
+
+    // Behaviors
+    for (IBehavior* const behavior : m_Behaviors)
+    {
+      deleteBehavior(behavior);
+    }
+    m_Behaviors.clear();
+
+    // Children
     for (Entity& child : m_Children)
     {
       m_OwningScene.destroyEntity(&child);
     }
 
+    // Transform
     scene().m_TransformSystem.destroyTransform(m_Transform);
+    scene().m_BVHTree.remove(m_BHVNode);
 
     if (m_Parent)
     {
@@ -257,6 +278,7 @@ namespace bifrost
 
     if (behavior)
     {
+      m_OwningScene.m_ActiveBehaviors.push(behavior);
       m_Behaviors.push(behavior);
       behavior->setOwner(*this);
     }
@@ -294,13 +316,25 @@ namespace bifrost
 
     if (index != BIFROST_ARRAY_INVALID_INDEX)
     {
-      sceneMemoryManager().deallocateT(m_Behaviors[index]);
+      deleteBehavior(m_Behaviors[index]);
       m_Behaviors.removeAt(index);
 
       return true;
     }
 
     return false;
+  }
+
+  void Entity::deleteBehavior(IBehavior* behavior) const
+  {
+    const auto idx = m_OwningScene.m_ActiveBehaviors.find(behavior);
+
+    if (idx != BIFROST_ARRAY_INVALID_INDEX)
+    {
+      m_OwningScene.m_ActiveBehaviors.swapAndPopAt(idx);
+    }
+
+    sceneMemoryManager().deallocateT(behavior);
   }
 
   ComponentStorage& Entity::sceneComponentStorage(bool is_active) const

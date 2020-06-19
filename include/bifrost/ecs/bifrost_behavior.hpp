@@ -24,12 +24,13 @@ namespace bifrost
 
   // clang-format off
   class bfPureInterface(IBehavior) : public IBaseObject
-  // clang-format on
   {
    public:
-    virtual void         serialize(ISerializer & serializer) = 0;
-    virtual ~IBehavior()                                     = default;
+    virtual void serialize(ISerializer & serializer) = 0;
+    virtual void onUpdate(Engine & engine, float dt) { (void)engine; (void)dt; }
+    virtual ~IBehavior()                             = default;
   };
+  // clang-format on
 
   // clang-format off
   class BaseBehavior : public IBehavior, public meta::Factory<BaseBehavior>, public BaseComponent, private bfNonCopyMoveable<BaseBehavior>
@@ -127,7 +128,12 @@ namespace game
   class ExampleBehavior : public bifrost::Behavior<ExampleBehavior>
   {
    public:
-    ExampleBehavior() = default;  // Required to be default constructable for serialization purposes.
+    float time = 0.0f;
+
+   public:
+    // Required to be default constructable for serialization purposes.
+    ExampleBehavior() = default;
+    void onUpdate(Engine& engine, float dt) override;
   };
 }  // namespace game
 

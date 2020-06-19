@@ -185,7 +185,7 @@ add_executable(
   BifrostEngine
   ${BIFROST_ENGINE_SOURCE_FILES}
   "include/bifrost/ecs/bifrost_collision_system.hpp"
- "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp" "src/bifrost/core/bifrost_engine.cpp" "DemoApp/src/main_demo.cpp" "src/bifrost/ecs/bifrost_behavior.cpp")
+ "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp" "src/bifrost/core/bifrost_engine.cpp" "DemoApp/src/main_demo.cpp" "src/bifrost/ecs/bifrost_behavior.cpp" "src/bifrost/ecs/bifrost_behavior_system.cpp")
 
 target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
 target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)
@@ -247,7 +247,7 @@ if (WIN32)
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapper.lib")
   endif()
-  target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
+  # target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
 elseif (APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
   target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libglslang.a")
@@ -314,3 +314,4 @@ add_subdirectory(include/bifrost/graphics/)
 add_subdirectory(BifrostScript)
 add_subdirectory(BifrostMath)
 add_subdirectory(BifrostExperiments)
+add_subdirectory(EngineStandalone)

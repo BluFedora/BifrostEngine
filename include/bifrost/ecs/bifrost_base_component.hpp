@@ -16,12 +16,10 @@
 
 #include <type_traits> /* false_type, void_t, declval */
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {
-  using Engine = ::BifrostEngine;
-
   class Entity;
 
   /*

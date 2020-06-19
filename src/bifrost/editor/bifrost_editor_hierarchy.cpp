@@ -51,10 +51,6 @@ namespace bifrost::editor
 
     ImGui::Separator();
 
-    static bool is_overlay = false;
-
-    ImGui::Checkbox("Is Overlay", &is_overlay);
-
     for (Entity* const root_entity : current_scene->rootEntities())
     {
       ImGui::PushID(root_entity);
@@ -64,13 +60,6 @@ namespace bifrost::editor
       }
 
       bfTransform_flushChanges(&root_entity->transform());
-
-      engine.debugDraw().addAABB(
-       root_entity->transform().world_position,
-       root_entity->transform().world_scale,
-       bfColor4u_fromUint32(BIFROST_COLOR_SALMON),
-       0.0f,
-       is_overlay);
 
       ImGui::PopID();
     }

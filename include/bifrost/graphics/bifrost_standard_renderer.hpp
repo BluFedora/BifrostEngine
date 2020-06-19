@@ -25,7 +25,7 @@
 #include "bifrost_gfx_api.h"                                  /* Bifrost C Gfx API       */
 #include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
-class BifrostEngine;
+class Engine;
 
 namespace bifrost
 {
@@ -310,7 +310,7 @@ namespace bifrost
 
   class StandardRenderer final
   {
-    friend class ::BifrostEngine;  // TODO: Not do this?!?!
+    friend class ::Engine;  // TODO: Not do this?!?!
 
    public:
     Vector3f AmbientColor = {0.03f};

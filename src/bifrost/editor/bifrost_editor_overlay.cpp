@@ -677,10 +677,7 @@ namespace bifrost::editor
 
   void ui::MenuAction::doAction(const ActionContext& ctx)
   {
-    if (m_Action)
-    {
-      m_Action->execute(ctx);
-    }
+    m_Action->execute(ctx);
   }
 
   void ui::MenuAction::endItem()
@@ -822,6 +819,7 @@ namespace bifrost::editor
 
   void EditorOverlay::onLoad(Engine& engine)
   {
+    engine.setState(EngineState::EDITOR_PLAYING);
   }
 
   void EditorOverlay::onEvent(Engine& engine, Event& event)
@@ -891,12 +889,6 @@ namespace bifrost::editor
         m_FpsTimer   = 1.0f;
       }
 
-      /*
-      if (ImGui::Button("Play"))
-      {
-      }
-      //*/
-
       {
         LinearAllocatorScope mem_scope{engine.tempMemory()};
         if (s_ShowFPS)
@@ -906,8 +898,6 @@ namespace bifrost::editor
           if (ImGui::Selectable(buffer, &s_ShowFPS, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(buffer).x, 0.0f)))
           {
           }
-
-          // ImGui::Text("| %ifps | Memory (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
         }
         else
         {
@@ -917,12 +907,6 @@ namespace bifrost::editor
           {
           }
         }
-      }
-
-      static bool is_selected = false;
-
-      if (ImGui::Selectable("Paused", &is_selected, ImGuiSelectableFlags_None))
-      {
       }
 
       m_MainMenu.endItem();
@@ -985,6 +969,8 @@ namespace bifrost::editor
 
       ImGui::DockBuilderDockWindow(scene_window.fullImGuiTitle(engine.tempMemory()), dockspace_id);
     }
+
+    getWindow<GameView>();
 
     if (m_OpenProject)
     {
@@ -1542,8 +1528,9 @@ namespace bifrost::editor
   void EditorOverlay::addMenuItem(const StringRange& menu_path, const char* action_name)
   {
     LinearAllocatorScope mem_scope        = {m_Engine->tempMemory()};
+    IMemoryManager&      token_allocator  = m_Engine->tempMemoryNoFree();
     ui::MenuDropdown*    current_dropdown = &m_MainMenu;
-    const TokenizeResult tokens           = string_utils::tokenizeAlloc(m_Engine->tempMemory(), menu_path, '/');
+    const TokenizeResult tokens           = string_utils::tokenizeAlloc(token_allocator, menu_path, '/');
     StringLink*          link_start       = tokens.head;
 
     assert(tokens.size > 0 && "This is not a valid path for a menu item.");
@@ -1566,7 +1553,7 @@ namespace bifrost::editor
 
     current_dropdown->addItem(ui::makeAction(m_MenuNameStringPool.intern(tokens.tail->string), findAction(action_name)));
 
-    string_utils::tokenizeFree(m_Engine->tempMemoryNoFree(), tokens);
+    string_utils::tokenizeFree(token_allocator, tokens);
   }
 
   static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry)

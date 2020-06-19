@@ -24,7 +24,7 @@
 
 #include <cstdint> /* uint16_t    */
 
-class BifrostEngine;
+class Engine;
 
 typedef struct Vec2f_t       Vec2f;
 typedef struct Vec3f_t       Vec3f;
@@ -42,8 +42,6 @@ namespace bifrost
   {
     class BaseClassMetaInfo;
   }
-
-  using Engine = ::BifrostEngine;
 
   // TODO(Shareef): Remove the extra data in 'BaseAssetHandle' for non editor builds.
   // TODO(Shareef): Make is so 'AssetTagList::m_Tags' does not own the string but rather just references a string pool or something.
