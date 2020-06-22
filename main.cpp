@@ -395,7 +395,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   */
 
 #define retarded_return(msg, ...) \
-  std::printf("%s\n", msg);  \
+  std::printf("%s\n", msg);       \
   return __VA_ARGS__
 
   const std::size_t             engine_memory_size = 100000000u;
@@ -492,7 +492,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 
     main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
       Engine* const engine = (Engine*)window->user_data;
-      imgui::onEvent(window , * event);
+      imgui::onEvent(window, *event);
       engine->onEvent(*event);
     };
 
@@ -546,7 +546,7 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
         const float render_alpha = time_accumulator / time_step_ms;  // current_state * render_alpha + previous_state * (1.0f - render_alpha)
 
         engine->drawBegin(render_alpha);
-        imgui::endFrame(&renderer, (bfWindowSurfaceHandle) window->renderer_data);
+        imgui::endFrame(&renderer, (bfWindowSurfaceHandle)window->renderer_data);
         engine->drawEnd();
       }
     };

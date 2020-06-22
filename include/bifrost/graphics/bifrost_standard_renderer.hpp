@@ -253,7 +253,12 @@ namespace bifrost
 
     void flushCurrent(const bfGfxFrameInfo& info)
     {
-      bfBuffer_flushRange(handle(), offset(info), elementAlignedSize());
+      flushCurrent(info, elementAlignedSize());
+    }
+
+    void flushCurrent(const bfGfxFrameInfo& info, bfBufferSize size)
+    {
+      bfBuffer_flushRange(handle(), offset(info), size);
     }
   };
 
@@ -263,9 +268,9 @@ namespace bifrost
 
   struct Renderable final
   {
-    bfBufferHandle transform_uniform;
+    MultiBuffer<ObjectUniformData> transform_uniform;
 
-    void create(bfGfxDeviceHandle device);
+    void create(bfGfxDeviceHandle device, const bfGfxFrameInfo& info);
     void destroy(bfGfxDeviceHandle device) const;
   };
 

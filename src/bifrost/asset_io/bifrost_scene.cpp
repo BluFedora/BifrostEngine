@@ -157,6 +157,27 @@ namespace bifrost
         num_entities = m_RootEntities.size();
       }
 
+      // NOTE(SR):
+      //   DO NOT _Modernize_ this loop.
+      //   Entity::serialize potentially adds chilren
+      //   and those chilren start off in the 'm_RootEntities' Array
+      //   so 'm_RootEntities' may regrow in the middle of iterating.
+      for (std::size_t i = 0; i < m_RootEntities.size(); ++i)
+      {
+        auto& entity = m_RootEntities[i];
+
+        if (!entity)
+        {
+          entity = createEntity(nullptr);
+        }
+
+        if (serializer.pushObject(entity->name()))
+        {
+          entity->serialize(serializer);
+          serializer.popObject();
+        }
+      }
+      /*
       for (auto& entity : m_RootEntities)
       {
         if (!entity)
@@ -170,7 +191,7 @@ namespace bifrost
           serializer.popObject();
         }
       }
-
+      */
       serializer.popArray();
     }
   }

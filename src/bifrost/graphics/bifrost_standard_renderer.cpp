@@ -253,23 +253,16 @@ namespace bifrost
     bfGfxDevice_release(device, handle);
   }
 
-  void Renderable::create(bfGfxDeviceHandle device)
+  void Renderable::create(bfGfxDeviceHandle device, const bfGfxFrameInfo& info)
   {
-    const bfBufferCreateParams create_transform_buffer =
-     {
-      {
-       sizeof(ObjectUniformData),
-       BIFROST_BPF_HOST_MAPPABLE,
-      },
-      BIFROST_BUF_UNIFORM_BUFFER,
-     };
+    const auto limits = bfGfxDevice_limits(device);
 
-    transform_uniform = bfGfxDevice_newBuffer(device, &create_transform_buffer);
+    transform_uniform.create(device, BIFROST_BUF_UNIFORM_BUFFER, info, limits.uniform_buffer_offset_alignment);
   }
 
   void Renderable::destroy(bfGfxDeviceHandle device) const
   {
-    bfGfxDevice_release(device, transform_uniform);
+    transform_uniform.destroy(device);
   }
 
   void CameraGPUData::init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height)
@@ -477,7 +470,7 @@ namespace bifrost
     if (it == m_RenderableMapping.end())
     {
       renderable = &m_RenderablePool.emplaceFront();
-      renderable->create(m_GfxDevice);
+      renderable->create(m_GfxDevice, m_FrameInfo);
       m_RenderableMapping.emplace(key, renderable);
     }
     else
@@ -485,13 +478,12 @@ namespace bifrost
       renderable = it->value();
     }
 
+    const bfBufferSize offset = renderable->transform_uniform.offset(m_FrameInfo);
+    const bfBufferSize size   = sizeof(ObjectUniformData);
+
     // Upload Data
     {
-      ObjectUniformData* const obj_data =
-       static_cast<ObjectUniformData*>(bfBuffer_map(
-        renderable->transform_uniform,
-        0,
-        sizeof(ObjectUniformData)));
+      ObjectUniformData* const obj_data = (ObjectUniformData*)bfBuffer_map(renderable->transform_uniform.handle(), offset, size);
 
       Mat4x4& model = entity.transform().world_transform;
 
@@ -502,7 +494,8 @@ namespace bifrost
       obj_data->u_Model               = model;
       obj_data->u_NormalModel         = entity.transform().normal_transform;
 
-      bfBuffer_unMap(renderable->transform_uniform);
+      renderable->transform_uniform.flushCurrent(m_FrameInfo, size);
+      bfBuffer_unMap(renderable->transform_uniform.handle());
     }
 
     // Update Bindings
@@ -510,10 +503,7 @@ namespace bifrost
       // TODO(SR): Optimize into an immutable DescriptorSet!
       bfDescriptorSetInfo desc_set_object = bfDescriptorSetInfo_make();
 
-      const bfBufferSize offset = 0;
-      const bfBufferSize size   = sizeof(ObjectUniformData);
-
-      bfDescriptorSetInfo_addUniform(&desc_set_object, 0, 0, &offset, &size, &renderable->transform_uniform, 1);
+      bfDescriptorSetInfo_addUniform(&desc_set_object, 0, 0, &offset, &size, &renderable->transform_uniform.handle(), 1);
 
       bfGfxCmdList_bindDescriptorSet(command_list, k_GfxObjectSetIndex, &desc_set_object);
     }
