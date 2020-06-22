@@ -285,10 +285,9 @@ void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t n
   /*
     NOTE(Shareef):
       "if new_size is zero, the behavior is implementation defined
-      (null pointer may be returned
-      (in which case the old memory block may or may not be freed),
+      (null pointer may be returned in which case the old memory block may or may not be freed),
       or some non-null pointer may be returned that may
-      not be used to access storage)."
+      not be used to access storage."
   */
   if (new_size == 0u)
   {

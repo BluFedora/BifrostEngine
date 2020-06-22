@@ -103,9 +103,10 @@ namespace bifrost
     char m_AllocBlock[memory_block_size];
 
    public:
+    // Not initialized by design since the PoolAllocatorImpl ctor does some setup.
+    // ReSharper disable once CppPossiblyUninitializedMember
     PoolAllocator() :
-      PoolAllocatorImpl{m_AllocBlock, memory_block_size, sizeof(T), alignof(T)},
-      m_AllocBlock{}
+      PoolAllocatorImpl{m_AllocBlock, memory_block_size, sizeof(T), alignof(T)}
     {
     }
   };

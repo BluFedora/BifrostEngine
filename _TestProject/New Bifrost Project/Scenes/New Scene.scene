@@ -1,6 +1,9 @@
 {
     "m_Entities" : [
         {
+            "m_Children" : [
+
+            ],
             "__ObjectRefID__" : 0,
             "m_Name" : "Rhino",
             "m_Components" : {
@@ -22,7 +25,7 @@
                     "y" : 0,
                     "w" : 0,
                     "x" : 0,
-                    "z" : 6.9
+                    "z" : 6.45
                 },
                 "Origin" : {
                     "y" : 0,
@@ -31,16 +34,16 @@
                     "z" : 0
                 },
                 "Scale" : {
-                    "y" : 2.5,
+                    "y" : 1,
                     "w" : 0,
-                    "x" : 2,
+                    "x" : 1,
                     "z" : 1
                 },
                 "Rotation" : {
-                    "y" : -0.0345144,
-                    "w" : 0.504305,
-                    "x" : 0.706284,
-                    "z" : 0.495629
+                    "y" : 0.396308,
+                    "w" : 0.881924,
+                    "x" : -0.00582946,
+                    "z" : -0.255179
                 }
             },
             "m_Behaviors" : [
@@ -50,6 +53,9 @@
             ]
         },
         {
+            "m_Children" : [
+
+            ],
             "__ObjectRefID__" : 2,
             "m_Name" : "Cult Char",
             "m_Components" : {
@@ -97,6 +103,9 @@
             ]
         },
         {
+            "m_Children" : [
+
+            ],
             "__ObjectRefID__" : 3,
             "m_Name" : "Test Plane",
             "m_Components" : {
@@ -144,6 +153,9 @@
             ]
         },
         {
+            "m_Children" : [
+
+            ],
             "__ObjectRefID__" : 4,
             "m_Name" : "Untitled",
             "m_Components" : {
@@ -200,6 +212,9 @@
             ]
         },
         {
+            "m_Children" : [
+
+            ],
             "__ObjectRefID__" : 1,
             "m_Name" : "Scene Light",
             "m_Components" : {
@@ -256,60 +271,63 @@
             ]
         },
         {
-            "__ObjectRefID__" : 5,
-            "m_Name" : "Cube",
-            "m_Components" : {
-                "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
-                    },
-                    "m_EntityRef" : {
-                        "__ObjectRefID__" : 4.29497e+09
-                    },
-                    "m_Model" : {
-                        "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
-                    },
-                    "__Active__" : true
-                }
-            },
-            "m_Transform" : {
-                "Position" : {
-                    "y" : 0,
-                    "w" : 1,
-                    "x" : -9.7,
-                    "z" : 0
-                },
-                "Origin" : {
-                    "y" : 0,
-                    "w" : 1,
-                    "x" : 0,
-                    "z" : 0
-                },
-                "Scale" : {
-                    "y" : 1,
-                    "w" : 0,
-                    "x" : 1,
-                    "z" : 1
-                },
-                "Rotation" : {
-                    "y" : 0,
-                    "w" : 1,
-                    "x" : 0,
-                    "z" : 0
-                }
-            },
-            "m_Behaviors" : [
+            "m_Children" : [
+                {
+                    "m_Children" : [
 
-            ]
-        },
-        {
-            "__ObjectRefID__" : 6,
+                    ],
+                    "__ObjectRefID__" : 6,
+                    "m_Name" : "Cube",
+                    "m_Components" : {
+                        "MeshRenderer" : {
+                            "m_Material" : {
+                                "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
+                            },
+                            "m_EntityRef" : {
+                                "__ObjectRefID__" : 4.29497e+09
+                            },
+                            "m_Model" : {
+                                "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
+                            },
+                            "__Active__" : true
+                        }
+                    },
+                    "m_Transform" : {
+                        "Position" : {
+                            "y" : 0,
+                            "w" : 1,
+                            "x" : -9.7,
+                            "z" : 0
+                        },
+                        "Origin" : {
+                            "y" : 0,
+                            "w" : 1,
+                            "x" : 0,
+                            "z" : 0
+                        },
+                        "Scale" : {
+                            "y" : 1,
+                            "w" : 0,
+                            "x" : 1,
+                            "z" : 1
+                        },
+                        "Rotation" : {
+                            "y" : 0,
+                            "w" : 1,
+                            "x" : 0,
+                            "z" : 0
+                        }
+                    },
+                    "m_Behaviors" : [
+
+                    ]
+                }
+            ],
+            "__ObjectRefID__" : 5,
             "m_Name" : "Cube2",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "C2177178-ED97-450D-907F-0EB1DF927239"
-                    },
+                    "m_Material" : null,
                     "m_EntityRef" : {
                         "__ObjectRefID__" : 4.29497e+09
                     },
@@ -321,9 +339,9 @@
             },
             "m_Transform" : {
                 "Position" : {
-                    "y" : -0.4,
+                    "y" : 1.05,
                     "w" : 1,
-                    "x" : -0.4,
+                    "x" : -4.6,
                     "z" : 3.45
                 },
                 "Origin" : {
@@ -333,16 +351,16 @@
                     "z" : 0
                 },
                 "Scale" : {
-                    "y" : 1,
+                    "y" : 1.65,
                     "w" : 0,
-                    "x" : 1,
+                    "x" : 1.55,
                     "z" : 1
                 },
                 "Rotation" : {
-                    "y" : 0,
-                    "w" : 1,
-                    "x" : 0,
-                    "z" : 0
+                    "y" : 0.0748157,
+                    "w" : 0.987449,
+                    "x" : -0.138516,
+                    "z" : 0.0126792
                 }
             },
             "m_Behaviors" : [

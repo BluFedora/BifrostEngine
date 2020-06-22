@@ -1,11 +1,20 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_dbg_logger.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019-2020
+ */
+/******************************************************************************/
 #include "bifrost/debug/bifrost_dbg_logger.h"
-
-#include "bifrost/platform/bifrost_platform.h"
 
 #include <assert.h> /* assert */
 #include <string.h> /* memset */
 
-#if BIFROST_PLATFORM_WINDOWS
+#if _WIN32
 #include <Windows.h> /* GetStdHandle, GetConsoleScreenBufferInfo, SetConsoleTextAttribute */
 #else
 #include <stdio.h> /* sprintf, printf */
@@ -21,9 +30,8 @@ static void callCallback(BifrostLoggerLevel level, const char* file, const char*
 
 void bfLogger_init(const IBifrostDbgLogger* logger)
 {
-  assert(logger && "A valid logger must be passed into 'bfLogger_init'");
-  assert(logger->callback && "A valid logger must be passed into 'bfLogger_init'");
-  assert(!s_HasInitialized && "The logger subsystem was already initialized.'");
+  assert(!s_HasInitialized && "The logger subsystem was already initialized.");
+  assert(logger && logger->callback && "A valid logger must be passed into 'bfLogger_init'");
 
   s_ILogger        = *logger;
   s_IndentLevel    = 0u;
@@ -31,12 +39,9 @@ void bfLogger_init(const IBifrostDbgLogger* logger)
   s_HasInitialized = 1;
 }
 
-void bfLogPush_(const char* file, const char* func, int line, const char* format, ...)
+void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...)
 {
-  if (!s_HasInitialized)
-  {
-    return;
-  }
+  assert(s_HasInitialized && "The logger subsystem was never initialized.");
 
   va_list args;
   va_start(args, format);
@@ -45,12 +50,10 @@ void bfLogPush_(const char* file, const char* func, int line, const char* format
   ++s_IndentLevel;
 }
 
-void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, const char* format, ...)
+void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, int line, bfFormatString(const char*) format, ...)
 {
-  if (!s_HasInitialized)
-  {
-    return;
-  }
+  assert(s_HasInitialized && "The logger subsystem was never initialized.");
+
 
   va_list args;
   va_start(args, format);
@@ -60,11 +63,7 @@ void bfLogPrint_(BifrostLoggerLevel level, const char* file, const char* func, i
 
 void bfLogPop_(const char* file, const char* func, int line, unsigned amount)
 {
-  if (!s_HasInitialized)
-  {
-    return;
-  }
-
+  assert(s_HasInitialized && "The logger subsystem was never initialized.");
   assert(amount <= s_IndentLevel && "There were more pops than pushes performed.");
 
   va_list args;
@@ -76,13 +75,13 @@ void bfLogPop_(const char* file, const char* func, int line, unsigned amount)
 
 void bfLogger_deinit(void)
 {
-  assert(s_HasInitialized && "The logger subsystem was never initialized.'");
+  assert(s_HasInitialized && "The logger subsystem was never initialized.");
   s_HasInitialized = 0;
 }
 
 bfLogColorState bfLogSetColor(BifrostLoggerColor fg_color, BifrostLoggerColor bg_color, unsigned int flags)
 {
-#if BIFROST_PLATFORM_WINDOWS
+#if _WIN32
   static const WORD k_FgColorMap[] =
    {
     0x0,

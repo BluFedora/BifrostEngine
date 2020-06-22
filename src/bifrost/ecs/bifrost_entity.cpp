@@ -21,6 +21,7 @@ namespace bifrost
 {
   static constexpr StringRange k_SerializeComponentActiveKey   = "__Active__";
   static constexpr StringRange k_SerializeBehaviorClassNameKey = "__BehaviorClass__";
+  static constexpr StringRange k_SerializeArrayIndexKey        = "__Idx__";
 
   Entity::Entity(Scene& scene, const StringRange& name) :
     m_OwningScene{scene},
@@ -49,9 +50,9 @@ namespace bifrost
 
   Entity* Entity::addChild(const StringRange& name)
   {
-    Entity* child   = m_OwningScene.createEntity(name);
-    child->m_Parent = this;
-    m_Children.pushBack(*child);
+    Entity* child = m_OwningScene.addEntity(name);
+    child->setParent(this);
+
     return child;
   }
 
@@ -59,20 +60,27 @@ namespace bifrost
   {
     if (m_Parent != new_parent)
     {
+      auto& root_entities = m_OwningScene.m_RootEntities;
+
       if (m_Parent)
       {
         m_Parent->removeChild(this);
+      }
+      else
+      {
+        root_entities.removeAt(root_entities.find(this));
       }
 
       m_Parent = new_parent;
 
       if (new_parent)
       {
+        bfTransform_setParent(&transform(), &new_parent->transform());
         new_parent->m_Children.pushBack(*this);
       }
       else
       {
-        m_OwningScene.m_RootEntities.push(this);
+        root_entities.push(this);
       }
     }
   }
@@ -157,6 +165,36 @@ namespace bifrost
 
     if (serializer.mode() != SerializerMode::INSPECTING)
     {
+      std::size_t num_children;
+      if (serializer.pushArray("m_Children", num_children))
+      {
+        if (serializer.mode() == SerializerMode::LOADING)
+        {
+          for (std::size_t i = 0; i < num_children; ++i)
+          {
+            if (serializer.pushObject(k_SerializeArrayIndexKey))
+            {
+              Entity* const child = addChild("");
+              child->serialize(serializer);
+              serializer.popObject();
+            }
+          }
+        }
+        else
+        {
+          for (Entity& child : m_Children)
+          {
+            if (serializer.pushObject(k_SerializeArrayIndexKey))
+            {
+              child.serialize(serializer);
+              serializer.popObject();
+            }
+          }
+        }
+
+        serializer.popArray();
+      }
+
       if (serializer.pushObject("m_Components"))
       {
         ComponentStorage::forEachType([&serializer, this](auto t) {
@@ -195,7 +233,7 @@ namespace bifrost
         {
           for (std::size_t i = 0; i < num_behaviors; ++i)
           {
-            if (serializer.pushObject("_"))
+            if (serializer.pushObject(k_SerializeArrayIndexKey))
             {
               String class_name_str;
 
@@ -216,7 +254,7 @@ namespace bifrost
         {
           for (IBehavior* behavior : m_Behaviors)
           {
-            if (serializer.pushObject("_"))
+            if (serializer.pushObject(k_SerializeArrayIndexKey))
             {
               const std::string_view class_name_sv  = behavior->type()->name();
               const StringRange      class_name_sr  = {class_name_sv.data(), class_name_sv.length()};
@@ -251,19 +289,20 @@ namespace bifrost
     m_Behaviors.clear();
 
     // Children
-    for (Entity& child : m_Children)
-    {
-      m_OwningScene.destroyEntity(&child);
-    }
-
-    // Transform
-    scene().m_TransformSystem.destroyTransform(m_Transform);
-    scene().m_BVHTree.remove(m_BHVNode);
 
     if (m_Parent)
     {
       m_Parent->removeChild(this);
     }
+
+    while (!m_Children.isEmpty())
+    {
+      m_OwningScene.destroyEntity(&m_Children.back());
+    }
+
+    // Transform
+    scene().m_TransformSystem.destroyTransform(m_Transform);
+    scene().m_BVHTree.remove(m_BHVNode);
   }
 
   void Entity::removeChild(Entity* child)

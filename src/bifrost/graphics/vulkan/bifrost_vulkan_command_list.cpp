@@ -17,6 +17,11 @@ static void AddCachedResource(bfGfxDeviceHandle device, BifrostGfxObjectBase* ob
 
 void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj);
 
+bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self)
+{
+  return self->window;
+}
+
 bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
 {
   VkCommandBufferBeginInfo begin_info;
@@ -1196,6 +1201,8 @@ void bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffe
   vkCmdUpdateBuffer(self->handle, buffer->handle, offset, size, data);
 }
 
+extern void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window);
+
 void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
   const VkFence command_fence = self->fence;
@@ -1234,13 +1241,14 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
   if (err == VK_ERROR_OUT_OF_DATE_KHR)
   {
-    bfGfxContext_onResize(self->context);
+    gfxDestroySwapchain(self->context, window);
   }
   else
   {
     assert(err == VK_SUCCESS && "GfxContext_submitFrame: failed to present graphics queue");
   }
 
+  window.current_cmd_list = nullptr;
   delete self;
 }
 

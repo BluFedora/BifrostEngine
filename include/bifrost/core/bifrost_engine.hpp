@@ -4,7 +4,6 @@
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
-#include "bifrost/event/bifrost_window_event.hpp"
 #include "bifrost/graphics/bifrost_debug_renderer.hpp"
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
@@ -16,11 +15,7 @@
 
 #include <utility>
 
-struct BifrostEngineCreateParams : public bfGfxContextCreateParams
-{
-  std::uint32_t width;
-  std::uint32_t height;
-};
+using BifrostEngineCreateParams = bfGfxContextCreateParams;
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -38,7 +33,7 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
 
 namespace bifrost::detail
 {
-  class CoreEngineGameStateLayer : public IGameStateLayer
+  class CoreEngineGameStateLayer final : public IGameStateLayer
   {
    protected:
     void onEvent(Engine& engine, Event& event) override;
@@ -139,15 +134,15 @@ class Engine : private bfNonCopyMoveable<Engine>
   Array<AssetSceneHandle>         m_SceneStack;
   Assets                          m_Assets;
   Array<IECSSystem*>              m_Systems;
-  IBaseWindow&                    m_Window;
   PoolAllocator<CameraRender, 16> m_CameraMemory;
   CameraRender*                   m_CameraList;
   CameraRender*                   m_CameraResizeList;
   CameraRender*                   m_CameraDeleteList;
   EngineState                     m_State;
+  BifrostWindow*                  m_MainWindow;
 
  public:
-  explicit Engine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]);
+  explicit Engine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]);
 
   FreeListAllocator& mainMemory() { return m_MainMemory; }
   LinearAllocator&   tempMemory() { return m_TempMemory; }
@@ -157,7 +152,6 @@ class Engine : private bfNonCopyMoveable<Engine>
   StandardRenderer&  renderer() { return m_Renderer; }
   DebugRenderer&     debugDraw() { return m_DebugRenderer; }
   Assets&            assets() { return m_Assets; }
-  IBaseWindow&       window() const { return m_Window; }
   AssetSceneHandle   currentScene() const;
 
   CameraRender* borrowCamera(const CameraRenderCreateParams& params);
@@ -187,7 +181,7 @@ class Engine : private bfNonCopyMoveable<Engine>
     m_Systems.push(m_MainMemory.allocateT<T>());
   }
 
-  void               init(const BifrostEngineCreateParams& params);
+  void               init(const BifrostEngineCreateParams& params, BifrostWindow* main_window);
   [[nodiscard]] bool beginFrame();
   void               onEvent(Event& evt);
   void               fixedUpdate(float delta_time);

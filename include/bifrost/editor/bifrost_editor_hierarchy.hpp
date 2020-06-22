@@ -17,6 +17,9 @@ namespace bifrost::editor
    protected:
     const char* title() const override { return "Hierarchy View"; }
     void        onDrawGUI(EditorOverlay& editor) override;
+
+   private:
+    void guiEntityList(EditorOverlay& editor, Entity* entity);
   };
 }  // namespace bifrost::editor
 

@@ -73,34 +73,28 @@ namespace bifrost::editor
         ImGui::EndMenuBar();
       }
 
-      const auto   color_buffer        = m_Camera->gpu_camera.composite_buffer;
-      const auto   color_buffer_width  = bfTexture_width(color_buffer);
-      const auto   color_buffer_height = bfTexture_height(color_buffer);
-      const auto   content_area        = ImGui::GetContentRegionAvail();
-      const auto   draw_region         = rect::aspectRatioDrawRegion(color_buffer_width, color_buffer_height, uint32_t(content_area.x), uint32_t(content_area.y));
-      auto* const  window_draw         = ImGui::GetWindowDrawList();
-      const ImVec2 window_pos          = ImGui::GetWindowPos();
-      const ImVec2 cursor_offset       = ImGui::GetCursorPos();
-      const ImVec2 full_offset         = window_pos + cursor_offset;
-      const ImVec2 position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
-      const ImVec2 position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
+      const auto           color_buffer        = m_Camera->gpu_camera.composite_buffer;
+      const auto           color_buffer_width  = bfTexture_width(color_buffer);
+      const auto           color_buffer_height = bfTexture_height(color_buffer);
+      const auto           content_area        = ImGui::GetContentRegionAvail();
+      const auto           draw_region         = rect::aspectRatioDrawRegion(color_buffer_width, color_buffer_height, uint32_t(content_area.x), uint32_t(content_area.y));
+      auto* const          window_draw         = ImGui::GetWindowDrawList();
+      const ImVec2         window_pos          = ImGui::GetWindowPos();
+      const ImVec2         cursor_offset       = ImGui::GetCursorPos();
+      const ImVec2         full_offset         = window_pos + cursor_offset;
+      const ImVec2         position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
+      const ImVec2         position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
+      ImGuiViewport* const viewport            = ImGui::GetWindowViewport();
 
       m_IsSceneViewHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
 
-      m_SceneViewViewport.setLeft(int(position_min.x));
-      m_SceneViewViewport.setTop(int(position_min.y));
-      m_SceneViewViewport.setRight(int(position_max.x));
-      m_SceneViewViewport.setBottom(int(position_max.y));
+      m_SceneViewViewport.setLeft(int(position_min.x - viewport->Pos.x));
+      m_SceneViewViewport.setTop(int(position_min.y - viewport->Pos.y));
+      m_SceneViewViewport.setRight(int(position_max.x - viewport->Pos.x));
+      m_SceneViewViewport.setBottom(int(position_max.y - viewport->Pos.y));
 
       if (m_Camera->old_width != (int)content_area.x || m_Camera->old_height != (int)content_area.y)
       {
-        auto& window = engine.window();
-
-        window.pushEvent(
-         EventType::ON_WINDOW_RESIZE,
-         WindowEvent(std::max(int(content_area.x), 1), std::max(int(content_area.y), 1), WindowEvent::FLAGS_DEFAULT),
-         Event::FLAGS_IS_FALSIFIED);
-
         engine.resizeCamera(m_Camera, std::max(int(content_area.x), 1), std::max(int(content_area.y), 1));
       }
 
@@ -153,11 +147,11 @@ namespace bifrost::editor
   {
     auto& mouse_evt = event.mouse;
 
-    if (event.type == EventType::ON_MOUSE_DOWN || event.type == EventType::ON_MOUSE_UP)
+    if (event.type == BIFROST_EVT_ON_MOUSE_DOWN || event.type == BIFROST_EVT_ON_MOUSE_UP)
     {
       m_OldMousePos = {k_InvalidMousePos, k_InvalidMousePos};
 
-      if (event.type == EventType::ON_MOUSE_DOWN)
+      if (event.type == BIFROST_EVT_ON_MOUSE_DOWN)
       {
         if (isPointOverSceneView({mouse_evt.x, mouse_evt.y}))
         {
@@ -223,11 +217,11 @@ namespace bifrost::editor
         event.accept();
       }
     }
-    else if (event.type == EventType::ON_MOUSE_MOVE)
+    else if (event.type == BIFROST_EVT_ON_MOUSE_MOVE)
     {
       m_MousePos = {float(mouse_evt.x), float(mouse_evt.y)};
 
-      if (m_IsDraggingMouse && mouse_evt.button_state & MouseEvent::BUTTON_LEFT)
+      if (m_IsDraggingMouse && mouse_evt.button_state & BIFROST_BUTTON_LEFT)
       {
         const float newx = float(mouse_evt.x);
         const float newy = float(mouse_evt.y);
@@ -319,16 +313,16 @@ namespace bifrost::editor
 
         const std::tuple<int, void (*)(::BifrostCamera*, float), float> camera_controls[] =
          {
-          {KeyCode::W, &Camera_moveForward, camera_move_speed},
-          {KeyCode::A, &Camera_moveLeft, camera_move_speed},
-          {KeyCode::S, &Camera_moveBackward, camera_move_speed},
-          {KeyCode::D, &Camera_moveRight, camera_move_speed},
-          {KeyCode::Q, &Camera_moveUp, camera_move_speed},
-          {KeyCode::E, &Camera_moveDown, camera_move_speed},
-          {KeyCode::R, &Camera_addPitch, -0.01f},
-          {KeyCode::F, &Camera_addPitch, +0.01f},
-          {KeyCode::H, &Camera_addYaw, +0.01f},
-          {KeyCode::G, &Camera_addYaw, -0.01f},
+          {BIFROST_KEY_W, &Camera_moveForward, camera_move_speed},
+          {BIFROST_KEY_A, &Camera_moveLeft, camera_move_speed},
+          {BIFROST_KEY_S, &Camera_moveBackward, camera_move_speed},
+          {BIFROST_KEY_D, &Camera_moveRight, camera_move_speed},
+          {BIFROST_KEY_Q, &Camera_moveUp, camera_move_speed},
+          {BIFROST_KEY_E, &Camera_moveDown, camera_move_speed},
+          {BIFROST_KEY_R, &Camera_addPitch, -0.01f},
+          {BIFROST_KEY_F, &Camera_addPitch, +0.01f},
+          {BIFROST_KEY_H, &Camera_addYaw, +0.01f},
+          {BIFROST_KEY_G, &Camera_addYaw, -0.01f},
          };
 
         for (const auto& control : camera_controls)

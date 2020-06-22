@@ -1,14 +1,12 @@
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 
 #include "bifrost/asset_io/bifrost_assets.hpp"
-#include "bifrost/asset_io/bifrost_json_serializer.hpp"
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/bifrost.hpp"
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 #include "bifrost/editor/bifrost_editor_inspector.hpp"
 #include "bifrost/editor/bifrost_editor_scene.hpp"
-#include "bifrost/platform/bifrost_ibase_window.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>          /* ImGUI::* */
@@ -801,20 +799,16 @@ namespace bifrost::editor
     addMenuItem("Window/Inspector View", "View.AddInspector");
     addMenuItem("Window/Hierarchy View", "View.HierarchyView");
 
-    /*
+    //*
     InspectorRegistry::overrideInspector<MeshRenderer>(
-     [](ImGuiSerializer& serializer, void* object, meta::BaseClassMetaInfo* type_info, void* user_data) {
-       MeshRenderer* mesh_renderer = (MeshRenderer*)object;
+     [](ImGuiSerializer& serializer, meta::MetaVariant& object, void* user_data) {
+       MeshRenderer* mesh_renderer = meta::variantToCompatibleT<MeshRenderer*>(object);
 
        ImGui::Text("This is a custom Mesh Renderer Callback");
+
+      serializer.serializeT(mesh_renderer);
      });
     //*/
-
-    // addMainMenuItem("Asset", asset_menu_items);
-    // addMainMenuItem("Edit", edit_menu_items);
-    // addMainMenuItem("Entity", entity_menu_items);
-    // addMainMenuItem("Component", component_menu_items);
-    // addMainMenuItem("Help", help_menu_items);
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -838,9 +832,9 @@ namespace bifrost::editor
       window->handleEvent(*this, event);
     }
 
-    if (event.type == EventType::ON_KEY_DOWN)
+    if (event.type == BIFROST_EVT_ON_KEY_DOWN)
     {
-      if (event.keyboard.key == KeyCode::ESCAPE)
+      if (event.keyboard.key == BIFROST_KEY_ESCAPE)
       {
         if (m_CurrentDialog)
         {
@@ -850,18 +844,18 @@ namespace bifrost::editor
       }
     }
 
-    if (event.type == EventType::ON_WINDOW_RESIZE || imgui_wants_input)
+    if (event.type == BIFROST_EVT_ON_WINDOW_RESIZE || imgui_wants_input)
     {
       event.accept();
     }
     else
     {
-      const auto is_key_down = event.type == EventType::ON_KEY_DOWN;
+      const auto is_key_down = event.type == BIFROST_EVT_ON_KEY_DOWN;
 
-      if (is_key_down || event.type == EventType::ON_KEY_UP)
+      if (is_key_down || event.type == BIFROST_EVT_ON_KEY_UP)
       {
         m_IsKeyDown[event.keyboard.key] = is_key_down;
-        m_IsShiftDown                   = event.keyboard.modifiers & KeyboardEvent::SHIFT;
+        m_IsShiftDown                   = event.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
       }
     }
   }
@@ -978,20 +972,6 @@ namespace bifrost::editor
 
       if (ImGui::Begin("Project View"))
       {
-        if (ImGui::Button("Debug Draw 0"))
-        {
-          const float rand_x = (float(std::rand()) / float(RAND_MAX)) * 2.0f - 1.0f;
-          const float rand_y = (float(std::rand()) / float(RAND_MAX)) * 2.0f - 1.0f;
-          const float rand_z = (float(std::rand()) / float(RAND_MAX)) * 2.0f - 1.0f;
-
-          engine.debugDraw().addAABB(
-           Vector3f{rand_x, rand_y, rand_z, 1.0f},
-           Vector3f{1.0f, 1.0f, 1.0f, 0.0f},
-           bfColor4u_fromUint32(BIFROST_COLOR_RED),
-           5.0f,
-           false);
-        }
-
         if (imgui_ext::inspect("Project Name", m_OpenProject->name()))
         {
         }
@@ -1016,17 +996,24 @@ namespace bifrost::editor
       window->uiShow(*this);
     }
 
+    const auto open_windows_end = m_OpenWindows.end();
+
     // TODO(SR): Actually check if any windows want to be closed. This is very pessimistic.
     const auto split = std::partition(
      m_OpenWindows.begin(),
-     m_OpenWindows.end(),
+     open_windows_end,
      [](const BaseEditorWindowPtr& window) {
        return window->isOpen();
      });
 
+    for (auto closed_window = split; closed_window != open_windows_end; ++closed_window)
+    {
+      (*closed_window)->onDestroy(*this);
+    }
+
     m_OpenWindows.resize(split - m_OpenWindows.begin());
 
-    //*
+    /*
     if (ImGui::Begin("Command Palette"))
     {
       for (const auto& action : m_Actions)
@@ -1074,6 +1061,7 @@ namespace bifrost::editor
     ImGui::End();
     //*/
 
+#if 0
     if (ImGui::Begin("Node Editor Test"))
     {
       static constexpr float k_GridSize  = 20.0f;
@@ -1174,6 +1162,7 @@ namespace bifrost::editor
       }
     }
     ImGui::End();
+#endif
 
     if (m_OpenNewDialog)
     {
@@ -1203,6 +1192,11 @@ namespace bifrost::editor
 
   void EditorOverlay::onUnload(Engine& engine)
   {
+    for (BaseEditorWindowPtr& window : m_OpenWindows)
+    {
+      window->onDestroy(*this);
+    }
+
     m_OpenWindows.clear();
   }
 
@@ -1224,10 +1218,10 @@ namespace bifrost::editor
     m_CurrentMs{0},
     m_TestTexture{nullptr},
     m_FileSystem{allocator()},
-    m_MousePosition{},
     m_OpenWindows{allocator()},
     m_IsKeyDown{false},
-    m_IsShiftDown{false}
+    m_IsShiftDown{false},
+    m_Selection{allocator()}
   {
   }
 

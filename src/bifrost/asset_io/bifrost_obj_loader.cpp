@@ -241,7 +241,7 @@ namespace bifrost
 
     const Vector3f scale         = max_bounds - min_bounds;
     const Vector3f center        = (max_bounds + min_bounds) * 0.5f;
-    const float    max_scale     = std::max(scale.x, std::max(scale.y, scale.z));
+    const float    max_scale     = std::max({scale.x, scale.y, scale.z});
     const float    inv_max_scale = 1.0f / std::max(max_scale, k_Epsilon);
 
     for (std::size_t i = 0; i < faces.size(); ++i)

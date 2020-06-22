@@ -144,17 +144,19 @@ BIFROST_DEFINE_HANDLE(Pipeline)
   VkPipeline           handle;
 };
 
-typedef struct
+BIFROST_DEFINE_HANDLE(WindowSurface)
 {
-  VkSurfaceKHR        surface;
-  VulkanSwapchainInfo swapchain_info;
-  VulkanSwapchain     swapchain;
-  VkSemaphore         is_image_available;
-  VkSemaphore         is_render_done;
-  uint32_t            image_index;
-  bfBool32            swapchain_needs_creation;
+  VkSurfaceKHR           surface;
+  VulkanSwapchainInfo    swapchain_info;
+  VulkanSwapchain        swapchain;
+  VkSemaphore            is_image_available;
+  VkSemaphore            is_render_done;
+  uint32_t               image_index;
+  bfBool32               swapchain_needs_creation;
+  bfGfxCommandListHandle current_cmd_list;
+};
 
-} VulkanWindow;
+using VulkanWindow = bfWindowSurface;
 
 BIFROST_DEFINE_HANDLE(GfxCommandList)
 {

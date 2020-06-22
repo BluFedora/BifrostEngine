@@ -122,6 +122,7 @@ enum
 
 typedef enum BifrostPipelineDynamicFlags_t
 {
+  BIFROST_PIPELINE_DYNAMIC_NONE                 = 0x0,
   BIFROST_PIPELINE_DYNAMIC_VIEWPORT             = (1 << 0),
   BIFROST_PIPELINE_DYNAMIC_SCISSOR              = (1 << 1),
   BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH           = (1 << 2),

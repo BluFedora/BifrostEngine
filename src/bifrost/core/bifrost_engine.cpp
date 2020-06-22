@@ -1,9 +1,11 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
-#include "bifrost/debug/bifrost_dbg_logger.h"       // bfLog*
-#include "bifrost/ecs/bifrost_behavior_system.hpp"  // BehaviorSystem
+#include "bifrost/debug/bifrost_dbg_logger.h"         // bfLog*
+#include "bifrost/ecs/bifrost_behavior_system.hpp"    // BehaviorSystem
+#include "bifrost/platform/bifrost_platform_event.h"  // bfEvent
+#include "bifrost/platform/bifrost_platform.h" // BifrostWindow
 
-Engine::Engine(IBaseWindow& window, char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
+Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
   bfNonCopyMoveable<Engine>{},
   m_CmdlineArgs{argc, argv},
   m_MainMemory{main_memory, main_memory_size},
@@ -16,12 +18,12 @@ Engine::Engine(IBaseWindow& window, char* main_memory, std::size_t main_memory_s
   m_SceneStack{m_MainMemory},
   m_Assets{*this, m_MainMemory},
   m_Systems{m_MainMemory},
-  m_Window{window},
   m_CameraMemory{},
   m_CameraList{nullptr},
   m_CameraResizeList{nullptr},
   m_CameraDeleteList{nullptr},
-  m_State{EngineState::RUNTIME_PLAYING}
+  m_State{EngineState::RUNTIME_PLAYING},
+  m_MainWindow{nullptr}
 {
 }
 
@@ -103,8 +105,10 @@ void Engine::openScene(const AssetSceneHandle& scene)
   m_SceneStack.push(scene);
 }
 
-void Engine::init(const BifrostEngineCreateParams& params)
+void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_window)
 {
+  m_MainWindow = main_window;
+
   IBifrostDbgLogger logger_config{
    nullptr,
    [](void* data, BifrostDbgLogInfo* info, va_list args) {
@@ -130,7 +134,7 @@ void Engine::init(const BifrostEngineCreateParams& params)
 
   bfLogPush("Engine Init of App: %s", params.app_name);
 
-  m_Renderer.init(params);
+  m_Renderer.init(params, main_window);
   m_DebugRenderer.init(m_Renderer);
 
   VMParams vm_params{};
@@ -153,7 +157,6 @@ void Engine::init(const BifrostEngineCreateParams& params)
   addECSSystem<CollisionSystem>();
 
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
-
 
   bfLogPop();
 }
@@ -185,7 +188,7 @@ void Engine::fixedUpdate(float delta_time)
 
 void Engine::drawEnd() const
 {
-  m_Renderer.endPass();
+  m_Renderer.endPass(m_Renderer.mainCommandList());
 
   m_Renderer.frameEnd();
 }
@@ -204,6 +207,7 @@ void Engine::deinit()
   assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
   deleteCameras();
 
+  bfGfxContext_destroyWindow(m_Renderer.context(), (bfWindowSurfaceHandle)m_MainWindow->renderer_data);
   m_Renderer.deinit();
 
   for (auto& system : m_Systems)
@@ -306,7 +310,7 @@ void Engine::drawBegin(float render_alpha)
      });
   });
 
-  m_Renderer.beginScreenPass();
+  m_Renderer.beginScreenPass(m_Renderer.mainCommandList());
 }
 
 void Engine::resizeCameras()
@@ -351,16 +355,6 @@ namespace bifrost
 {
   void detail::CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
   {
-    if (event.type == EventType::ON_WINDOW_RESIZE)
-    {
-      // __debugbreak();
-      //const int window_width  = event.window.width;
-      //const int window_height = event.window.height;
-
-      //Camera_onResize(&engine.Camera, window_width, window_height);
-      //engine.renderer().resize(window_width, window_height);
-    }
-
     // This is the bottom most layer so just accept the event.
     event.accept();
   }

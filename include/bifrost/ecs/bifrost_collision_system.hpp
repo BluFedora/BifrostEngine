@@ -37,6 +37,38 @@ namespace bifrost
 
     AABB(const BifrostTransform& transform)
     {
+      Vector3f base_coords[] = {
+       {+0.5f, -0.5f, -0.5f, 1.0f},
+       {-0.5f, +0.5f, -0.5f, 1.0f},
+       {-0.5f, -0.5f, +0.5f, 1.0f},
+
+       {+0.5f, +0.5f, -0.5f, 1.0f},
+       {-0.5f, +0.5f, +0.5f, 1.0f},
+       {+0.5f, -0.5f, +0.5f, 1.0f},
+
+       {-0.5f, -0.5f, -0.5f, 1.0f},
+       {+0.5f, +0.5f, +0.5f, 1.0f},
+      };
+
+      min[0] = std::numeric_limits<float>::max();
+      min[1] = std::numeric_limits<float>::max();
+      min[2] = std::numeric_limits<float>::max();
+      max[0] = std::numeric_limits<float>::min();
+      max[1] = std::numeric_limits<float>::min();
+      max[2] = std::numeric_limits<float>::min();
+
+      for (Vector3f& point : base_coords)
+      {
+        Vec3f_mulMat(&point, &transform.world_transform);
+
+        min[0] = std::min(min[0], point.x);
+        min[1] = std::min(min[1], point.y);
+        min[2] = std::min(min[2], point.z);
+        max[0] = std::max(max[0], point.x);
+        max[1] = std::max(max[1], point.y);
+        max[2] = std::max(max[2], point.z);
+      }
+#if 0
       // TODO: This isn't correct for rotation.
       const Vector3f half_extent = Vector3f(transform.world_scale) * 0.5f;
       const Vector3f min_v       = Vector3f(transform.world_position) - half_extent;
@@ -48,6 +80,7 @@ namespace bifrost
       max[0] = max_v.x;
       max[1] = max_v.y;
       max[2] = max_v.z;
+#endif
     }
 
     bool operator==(const AABB& rhs) const
@@ -144,7 +177,8 @@ namespace bifrost
   static constexpr BVHNodeOffset k_BVHNodeInvalidOffset = 0xFFFFu;
   static constexpr float         k_BVHRotationBenefit   = 0.3f;
   static constexpr float         k_BVHMergeDownBenefit  = 0.35f;
-  static constexpr float         k_BVHBoundsSkin        = 0.1f;
+  static constexpr float         k_BVHBoundsSkin        = 0.0f;
+  // static constexpr float         k_BVHBoundsSkin        = 0.1f;
 
   struct BVHNode final
   {

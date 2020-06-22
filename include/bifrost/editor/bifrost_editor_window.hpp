@@ -19,9 +19,14 @@
 
 #include <imgui/imgui.h> /* ImGuiID */
 
+extern "C" {
+struct bfEvent_t;
+typedef struct bfEvent_t bfEvent;
+}
+
 namespace bifrost
 {
-  struct Event;
+  using Event = struct ::bfEvent_t;
   class IMemoryManager;
   class Entity;
   class IBaseObject;
@@ -37,9 +42,9 @@ namespace bifrost::editor
 
   //
   // This unique type ID system may not work across dll boundaries.
-  // This solution works for me right now since I do not plan
+  // The solution works for me right now since I do not plan
   // on having EditorWindows across dlls but that would be a
-  // thing to remeber to change this system...
+  // thing to remeber if I make a change to this system...
   //
 
   using EditorWindowID = int;
@@ -67,6 +72,9 @@ namespace bifrost::editor
     void                   uiShow(EditorOverlay& editor);
     void                   selectionChange(const Selectable& selectable);
     virtual EditorWindowID windowID() const = 0;
+
+    virtual void onCreate(EditorOverlay& editor) {}
+    virtual void onDestroy(EditorOverlay& editor) {}
 
     virtual ~BaseEditorWindow() = default;
 

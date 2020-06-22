@@ -19,7 +19,7 @@ namespace bifrost
     (void)engine;
   }
 
-  void IGameStateLayer::onEvent(Engine& engine, Event& event)
+  void IGameStateLayer::onEvent(Engine& engine, bfEvent& event)
   {
     (void)engine;
     (void)event;

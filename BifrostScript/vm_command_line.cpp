@@ -30,6 +30,7 @@ static void  waitForInput() noexcept;
 
 int main(int argc, const char* argv[])
 {
+#ifndef __EMSCRIPTEN__
   if (argc != 2)
   {
     std::printf("There is an example script loaded at 'assets/scripts/test_script.bscript'\n");
@@ -39,6 +40,9 @@ int main(int argc, const char* argv[])
   }
 
   const char* const file_name = argv[1];
+#else
+  const char* const file_name = "test_script.bscript";
+#endif
 
   MemoryUsageTracker mem_tracker{0, 0};
 
@@ -213,6 +217,7 @@ static void* memoryHandler(void* user_data, void* ptr, size_t old_size, size_t n
 
 static void waitForInput() noexcept
 {
+#ifndef __EMSCRIPTEN__
   try
   {
     std::cin.ignore();
@@ -220,4 +225,5 @@ static void waitForInput() noexcept
   catch (const std::ios::failure&)
   {
   }
+#endif
 }

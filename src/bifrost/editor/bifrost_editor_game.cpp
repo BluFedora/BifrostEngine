@@ -2,7 +2,6 @@
 
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
-#include "bifrost/platform/bifrost_ibase_window.hpp"
 
 #include <imgui/imgui.h>
 

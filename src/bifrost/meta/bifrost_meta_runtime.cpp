@@ -173,14 +173,14 @@ namespace bifrost::meta
     {
       visit_all(
        overloaded{
-        [&result](auto& primitive_value) -> void {
+        [&result](const auto& primitive_value) -> void {
           (void)primitive_value;
           result = TypeInfo<decltype(primitive_value)>::get();
         },
         [&result](IBaseObject* base_obj) -> void {
           result = base_obj->type();
         },
-        [&result](meta::MetaObject& meta_obj) -> void {
+        [&result](const meta::MetaObject& meta_obj) -> void {
           result = meta_obj.type_info;
         },
        },

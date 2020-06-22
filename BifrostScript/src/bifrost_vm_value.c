@@ -106,7 +106,7 @@ bfVMValue bfVMValue_div(bfVMValue lhs, bfVMValue rhs)
 
 bfBool32 bfVMValue_isThuthy(bfVMValue self)
 {
-  if (bfVMValue_isNull(self) || bfVMValue_isFalse(self) || bfVMValue_isPointer(self) && !bfVmValue_asPointer(self))
+  if (bfVMValue_isNull(self) || bfVMValue_isFalse(self) || (bfVMValue_isPointer(self) && !bfVmValue_asPointer(self)))
   {
     return bfFalse;
   }

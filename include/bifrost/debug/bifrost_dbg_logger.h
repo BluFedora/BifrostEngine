@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_dbg_logger.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -7,6 +8,7 @@
  *
  * @copyright Copyright (c) 2019-2020
  */
+/******************************************************************************/
 #ifndef BIFROST_DBG_LOGGER_H
 #define BIFROST_DBG_LOGGER_H
 
@@ -27,12 +29,12 @@ extern "C" {
 
 typedef enum BifrostLoggerLevel_t
 {
-  BIFROST_LOGGER_LVL_VERBOSE,  // Normal logging
-  BIFROST_LOGGER_LVL_WARNING,  // When the user does an action that is undesirable but not necessarily bad.
-  BIFROST_LOGGER_LVL_ERROR,    // A recoverable error.
-  BIFROST_LOGGER_LVL_FATAL,    // An unrecoverable error and the program must be shut down.
-  BIFROST_LOGGER_LVL_PUSH,     // Meta Data Needed For The Callback (Editor graphical handling)
-  BIFROST_LOGGER_LVL_POP,      // Meta Data Needed For The Callback (Editor graphical handling) WARNING: DO NOT USE 'info->args' as it will be uninitialized.
+  BIFROST_LOGGER_LVL_VERBOSE,  /* Normal logging                                                                                           */
+  BIFROST_LOGGER_LVL_WARNING,  /* When the user does an action that is undesirable but not necessarily bad.                                */
+  BIFROST_LOGGER_LVL_ERROR,    /* A recoverable error.                                                                                     */
+  BIFROST_LOGGER_LVL_FATAL,    /* An unrecoverable error and the program must be shut down.                                                */ 
+  BIFROST_LOGGER_LVL_PUSH,     /* Meta Data (ex: Editor graphical handling)                                                                */
+  BIFROST_LOGGER_LVL_POP,      /* Meta Data (ex: Editor graphical handling) DO NOT USE the callback 'va_list' as it will be uninitialized. */
 
 } BifrostLoggerLevel;
 

@@ -9,12 +9,11 @@
   # NOTE(Shareef): This sets the minimum version of CMake that must be used
 cmake_minimum_required(VERSION 3.8)
 
-  # NOTE(Shareef): This sets project's name.
 project(BifrostEngine VERSION 1.0)
 
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)
-set(BIFROST_ENGINE_VERSION_MINOR 0)
+set(BIFROST_ENGINE_VERSION_MINOR 3)
 set(BIFROST_ENGINE_VERSION_PATCH 0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -166,31 +165,43 @@ elseif (APPLE)
   set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "lib/include/nativefiledialog/nfd_cocoa.m")
 endif()
 
-
 # NOTE(Shareef): Add the libraries we are linking against to the target.
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenCL)
 
-  # NOTE(Shareef): This makes is you can #include engine / game / library code without doing the "../" thing.
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR})
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostMemory/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
 include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
-# include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include/glslang/External/googletest/googletest/include)
 
 add_executable(
   BifrostEngine
   ${BIFROST_ENGINE_SOURCE_FILES}
   "include/bifrost/ecs/bifrost_collision_system.hpp"
- "src/bifrost/ecs/bifrost_collision_system.cpp" "src/bifrost/graphics/bifrost_debug_renderer.cpp" "src/bifrost/core/bifrost_engine.cpp" "DemoApp/src/main_demo.cpp" "src/bifrost/ecs/bifrost_behavior.cpp" "src/bifrost/ecs/bifrost_behavior_system.cpp")
+  "src/bifrost/ecs/bifrost_collision_system.cpp"
+  "src/bifrost/graphics/bifrost_debug_renderer.cpp"
+  "src/bifrost/core/bifrost_engine.cpp"
+  "DemoApp/src/main_demo.cpp"
+  "src/bifrost/ecs/bifrost_behavior.cpp"
+  "src/bifrost/ecs/bifrost_behavior_system.cpp"
+)
 
 target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
 target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)
+target_link_libraries(BifrostEngine PRIVATE BifrostPlatform_shared)
 
-# NOTE(Shareef): Allows Visual Studio to detect the use of C++17 while doing static analysis.
+# Compile Definitions
+
+if (BIFROST_OPT_GRAPHICS_VULKAN)
+  # target_compile_definitions()
+elseif(BIFROST_OPT_GRAPHICS_OPENGL)
+
+endif()
+
+# target_compile_definitions()
+
 set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
   # NOTE(Shareef): Sets the working directory of the exe to be at the exe
@@ -212,13 +223,12 @@ if (WIN32)
 
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
-    set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win32")
-    set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
     # set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
   endif()
   set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
+  set(BIFROST_ENGINE_GLFW_LIB "${BIFROST_ENGINE_LIB_DIR}/glfw3dll.lib")
 
 elseif (APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK")
@@ -257,7 +267,7 @@ elseif (APPLE)
   target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
 endif()
 
-target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_GLFW_LIB}")
+# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_GLFW_LIB}")
 target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARIES})
 
 if(OpenCL_FOUND)
@@ -298,6 +308,7 @@ if (WIN32)
   configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
+  # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostPlatform_shared.dll"   COPYONLY)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
@@ -310,7 +321,18 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.dll" "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 endif()
 
+add_custom_command(TARGET BifrostEngine POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"
+        $<TARGET_FILE_DIR:BifrostEngine>)
+
+# add_custom_command(TARGET BifrostEngine POST_BUILD
+#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         "${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"
+#         $<TARGET_FILE_DIR:BifrostEngine>)
+
 add_subdirectory(include/bifrost/graphics/)
+add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
 add_subdirectory(BifrostMath)
 add_subdirectory(BifrostExperiments)

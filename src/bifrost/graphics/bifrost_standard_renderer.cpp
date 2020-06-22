@@ -19,7 +19,6 @@
 
 namespace bifrost
 {
-  static const int                        k_AssumedWindow             = -1;
   static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
@@ -375,15 +374,18 @@ namespace bifrost
     m_WhiteTexture{nullptr},
     m_DirectionalLightBuffer{},
     m_PunctualLightBuffers{},
-    m_GlobalTime{0.0f}
+    m_GlobalTime{0.0f},
+    m_MainWindow{nullptr}
   {
   }
 
-  void StandardRenderer::init(const bfGfxContextCreateParams& gfx_create_params)
+  void StandardRenderer::init(const bfGfxContextCreateParams& gfx_create_params, BifrostWindow* main_window)
   {
-    m_GfxBackend = bfGfxContext_new(&gfx_create_params);
-    m_GfxDevice  = bfGfxContext_device(m_GfxBackend);
-    m_FrameInfo  = bfGfxContext_getFrameInfo(m_GfxBackend, k_AssumedWindow);
+    m_GfxBackend               = bfGfxContext_new(&gfx_create_params);
+    m_GfxDevice                = bfGfxContext_device(m_GfxBackend);
+    main_window->renderer_data = bfGfxContext_createWindow(m_GfxBackend, main_window);
+    m_MainWindow               = (bfWindowSurfaceHandle)main_window->renderer_data;
+    m_FrameInfo                = bfGfxContext_getFrameInfo(m_GfxBackend, m_MainWindow);
 
     m_StandardVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_StandardVertexLayout, 0, sizeof(StandardVertex));
@@ -414,16 +416,14 @@ namespace bifrost
 
   bool StandardRenderer::frameBegin()
   {
-    if (bfGfxContext_beginFrame(m_GfxBackend, k_AssumedWindow))
+    if (bfGfxContext_beginFrame(m_GfxBackend, m_MainWindow))
     {
-      const bfGfxCommandListCreateParams thread_command_list{0, k_AssumedWindow};
-
-      m_MainCmdList = bfGfxContext_requestCommandList(m_GfxBackend, &thread_command_list);
-      m_FrameInfo   = bfGfxContext_getFrameInfo(m_GfxBackend, k_AssumedWindow);
+      m_MainCmdList = bfGfxContext_requestCommandList(m_GfxBackend, m_MainWindow, 0);
+      m_FrameInfo   = bfGfxContext_getFrameInfo(m_GfxBackend, m_MainWindow);
 
       if (m_MainCmdList)
       {
-        m_MainSurface = bfGfxDevice_requestSurface(m_MainCmdList);
+        m_MainSurface = bfGfxDevice_requestSurface(m_MainWindow);
 
         DirectionalLightUniformData* dir_light_buffer   = m_DirectionalLightBuffer.currentElement(m_FrameInfo);
         PunctualLightUniformData*    point_light_buffer = m_PunctualLightBuffers[0].currentElement(m_FrameInfo);
@@ -706,7 +706,7 @@ namespace bifrost
 
     bfGfxCmdList_draw(m_MainCmdList, 0, 3);
 
-    endPass();
+    endPass(m_MainCmdList);
 
     {
       const bfPipelineBarrier barriers[] =
@@ -858,10 +858,12 @@ namespace bifrost
     // TODO: Post process pass.
   }
 
-  void StandardRenderer::beginScreenPass() const
+  void StandardRenderer::beginScreenPass(bfGfxCommandListHandle command_list) const
   {
+    const bfTextureHandle surface_tex = bfGfxDevice_requestSurface(bfGfxCmdList_window(command_list));
+
     bfAttachmentInfo main_surface;
-    main_surface.texture      = m_MainSurface;
+    main_surface.texture      = surface_tex;
     main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     main_surface.may_alias    = bfFalse;
 
@@ -881,23 +883,23 @@ namespace bifrost
     clear_colors[0].color.float32[2] = 0.75f;
     clear_colors[0].color.float32[3] = 1.0f;
 
-    bfTextureHandle attachments[] = {m_MainSurface};
+    bfTextureHandle attachments[] = {surface_tex};
 
-    bfGfxCmdList_setDepthTesting(m_MainCmdList, bfFalse);
-    bfGfxCmdList_setDepthWrite(m_MainCmdList, bfFalse);
+    bfGfxCmdList_setDepthTesting(command_list, bfFalse);
+    bfGfxCmdList_setDepthWrite(command_list, bfFalse);
 
-    bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info);
-    bfGfxCmdList_setClearValues(m_MainCmdList, clear_colors);
-    bfGfxCmdList_setAttachments(m_MainCmdList, attachments);
-    bfGfxCmdList_setRenderAreaRel(m_MainCmdList, 0.0f, 0.0f, 1.0f, 1.0f);
-    bfGfxCmdList_beginRenderpass(m_MainCmdList);
+    bfGfxCmdList_setRenderpassInfo(command_list, &renderpass_info);
+    bfGfxCmdList_setClearValues(command_list, clear_colors);
+    bfGfxCmdList_setAttachments(command_list, attachments);
+    bfGfxCmdList_setRenderAreaRel(command_list, 0.0f, 0.0f, 1.0f, 1.0f);
+    bfGfxCmdList_beginRenderpass(command_list);
 
-    bfGfxCmdList_bindVertexDesc(m_MainCmdList, m_StandardVertexLayout);
+    bfGfxCmdList_bindVertexDesc(command_list, m_StandardVertexLayout);
   }
 
-  void StandardRenderer::endPass() const
+  void StandardRenderer::endPass(bfGfxCommandListHandle command_list) const
   {
-    bfGfxCmdList_endRenderpass(m_MainCmdList);
+    bfGfxCmdList_endRenderpass(command_list);
   }
 
   void StandardRenderer::frameEnd() const

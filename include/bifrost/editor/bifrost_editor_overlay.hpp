@@ -15,20 +15,12 @@
 
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/bifrost.hpp"
+#include "bifrost/platform/bifrost_platform_event.h"
 #include "bifrost_editor_filesystem.hpp"
 #include "bifrost_editor_inspector.hpp"
+#include "bifrost_editor_selection.hpp"  // Selection
 
 #include <memory> /* unique_ptr<T> */
-
-#include "bifrost/memory/bifrost_stl_allocator.hpp"
-
-#include <unordered_set>
-
-namespace bifrost
-{
-  template<typename T>
-  using StlUnorderedSet = std::unordered_set<T, StlAllocator<T>>;
-}
 
 namespace bifrost::editor
 {
@@ -340,33 +332,33 @@ namespace bifrost::editor
   using BaseEditorWindowPtr = UniquePtr<BaseEditorWindow>;
   using ActionMap           = HashTable<String, ActionPtr>;
   using WindowList          = Array<BaseEditorWindowPtr>;
-  
+
   class EditorOverlay final : public IGameStateLayer
   {
     friend class ARefreshAsset;
 
    private:
-    ui::Dialog*                    m_CurrentDialog;
-    bool                           m_OpenNewDialog;
-    ActionMap                      m_Actions;
-    StringPool                     m_MenuNameStringPool;
-    ui::MainMenu                   m_MainMenu;
-    Engine*                        m_Engine;
-    ProjectPtr                     m_OpenProject;
-    float                          m_FpsTimer;
-    int                            m_CurrentFps;
-    int                            m_CurrentMs;
-    AssetTextureHandle             m_TestTexture;
-    FileSystem                     m_FileSystem;
-    Vec2f                          m_MousePosition;  // TODO(SR): This should be stored in a shared Engine Input Module.
-    WindowList                     m_OpenWindows;
-    bool                           m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
-    bool                           m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
+    ui::Dialog*        m_CurrentDialog;
+    bool               m_OpenNewDialog;
+    ActionMap          m_Actions;
+    StringPool         m_MenuNameStringPool;
+    ui::MainMenu       m_MainMenu;
+    Engine*            m_Engine;
+    ProjectPtr         m_OpenProject;
+    float              m_FpsTimer;
+    int                m_CurrentFps;
+    int                m_CurrentMs;
+    AssetTextureHandle m_TestTexture;
+    FileSystem         m_FileSystem;
+    WindowList         m_OpenWindows;
+    bool               m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
+    bool               m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
+    Selection          m_Selection;
 
    protected:
     void onCreate(Engine& engine) override;
     void onLoad(Engine& engine) override;
-    void onEvent(Engine& engine, Event& event) override;
+    void onEvent(Engine& engine, bfEvent& event) override;
     void onUpdate(Engine& engine, float delta_time) override;
     void onUnload(Engine& engine) override;
     void onDestroy(Engine& engine) override;
@@ -374,10 +366,11 @@ namespace bifrost::editor
    public:
     EditorOverlay();
 
-    const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     const char*       name() override { return "Bifrost Editor"; }
+    const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     Engine&           engine() const { return *m_Engine; }
     FileSystem&       fileSystem() { return m_FileSystem; }
+    Selection&        selection() { return m_Selection; }
 
     bool isKeyDown(int key) const { return m_IsKeyDown[key]; }
     bool isShiftDown() const { return m_IsShiftDown; }
@@ -413,6 +406,8 @@ namespace bifrost::editor
       T* window = allocator().allocateT<T>(std::forward<decltype(args)>(args)...);
 
       m_OpenWindows.emplace(window);
+
+      window->onCreate(*this);
 
       return *window;
     }

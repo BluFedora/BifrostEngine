@@ -5,7 +5,6 @@
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
-#include <bifrost/platform/bifrost_window_glfw.hpp>
 #include <bifrost_editor/bifrost_imgui_glfw.hpp>
 
 #include <chrono>
@@ -160,11 +159,6 @@ static char source[] = R"(
   }
 )";
 
-namespace ErrorCodes
-{
-  static constexpr int GLFW_FAILED_TO_INIT = -1;
-}  // namespace ErrorCodes
-
 namespace bifrost
 {
   class Camera_
@@ -179,8 +173,6 @@ namespace bifrost
     }
   };
 }  // namespace bifrost
-
-static constexpr int INITIAL_WINDOW_SIZE[] = {1280, 720};
 
 #ifdef _WIN32
 extern "C" {
@@ -354,7 +346,21 @@ static void TestMetaSystem()
 
 static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &TestApplyReturningVoid, &TestMetaSystem};
 
-GLFWwindow* g_Window;
+namespace Error
+{
+  static constexpr int FAILED_TO_INITIALIZE_PLATFORM = 1;
+  static constexpr int FAILED_TO_CREATE_MAIN_WINDOW  = 2;
+}  // namespace Error
+
+GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
+
+static constexpr float frame_rate       = 60.0f;
+static constexpr float min_frame_rate   = 4.0f;
+static constexpr float time_step_ms     = 1.0f / frame_rate;
+static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
+
+float current_time;
+float time_accumulator;
 
 int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
 {
@@ -368,16 +374,16 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   namespace bfmeta = meta;
   namespace bf     = bifrost;
 
+  if (!bfPlatformInit({argc, argv, nullptr, BIFROST_PLATFORM_GFX_VUlKAN, nullptr}))
+  {
+    return Error::FAILED_TO_INITIALIZE_PLATFORM;
+  }
+
   bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
   std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
   bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
   TestClass my_obj = {74, "This message will be in Y"};
-
-  if (!startupGLFW(nullptr, nullptr))
-  {
-    return ErrorCodes::GLFW_FAILED_TO_INIT;
-  }
 
   /*
   glfwMakeContextCurrent(main_window);
@@ -388,44 +394,46 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   }
   */
 
-  const std::size_t main_memory_size = 100000000u;
-  char*             main_memory      = new char[main_memory_size];
+#define retarded_return(msg, ...) \
+  std::printf("%s\n", msg);  \
+  return __VA_ARGS__
+
+  const std::size_t             engine_memory_size = 100000000u;
+  const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
 
   {
-    WindowGLFW    window{};
-    Engine engine{window, main_memory, main_memory_size, argc, argv};
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    if (!window.open("Mjolnir Editor 2020"))
+    Engine               engine{engine_memory.get(), engine_memory_size, argc, argv};
+    BifrostWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
+
+    if (!main_window)
     {
-      return -1;
+      return Error::FAILED_TO_CREATE_MAIN_WINDOW;
     }
 
-    g_Window = window.handle();
+    g_Window = (GLFWwindow*)main_window->handle;
 
-    glfwSetWindowSizeLimits(window.handle(), 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
     const BifrostEngineCreateParams params =
-     {
-      {
-       argv[0],
-       0,
+    {
+      argv[0],
+      0,
 #if BIFROST_PLATFORM_WINDOWS
-       GetModuleHandle(nullptr),
-       glfwGetWin32Window(window.handle()),
+      GetModuleHandle(nullptr),
+      glfwGetWin32Window(g_Window)
 #elif BIFROST_PLATFORM_MACOS
-       nullptr,
-       window.handle(),
+      nullptr,
+      window.handle()
 #else
 #error Unsupported platform.
 #endif
-      },
-      INITIAL_WINDOW_SIZE[0],
-      INITIAL_WINDOW_SIZE[1],
-     };
+    };
 
-    engine.init(params);
+    engine.init(params, main_window);
 
-    imgui::startup(engine.renderer().context(), window);
+    imgui::startup(engine.renderer().context(), main_window);
 
     engine.stateMachine().push<MainDemoLayer>();
     engine.stateMachine().addOverlay<editor::EditorOverlay>();
@@ -477,20 +485,24 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       update_fn = vm.stackMakeHandle(0);
     }
 
-    const auto CurrentTimeSeconds = []() -> float {
-      return float(glfwGetTime());
+    current_time     = float(glfwGetTime());
+    time_accumulator = 0.0f;
+
+    main_window->user_data = &engine;
+
+    main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
+      Engine* const engine = (Engine*)window->user_data;
+      imgui::onEvent(window , * event);
+      engine->onEvent(*event);
     };
 
-    static constexpr float frame_rate       = 60.0f;
-    static constexpr float min_frame_rate   = 4.0f;
-    static constexpr float time_step_ms     = 1.0f / frame_rate;
-    static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
+    main_window->frame_fn = [](BifrostWindow* window) {
+      Engine* const engine = (Engine*)window->user_data;
 
-    float current_time     = CurrentTimeSeconds();
-    float time_accumulator = 0.0f;
+      const auto CurrentTimeSeconds = []() -> float {
+        return float(glfwGetTime());
+      };
 
-    while (!window.wantsToClose())
-    {
       const float new_time   = CurrentTimeSeconds();
       const float delta_time = std::min(new_time - current_time, max_time_step_ms);
 
@@ -498,64 +510,60 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
       time_accumulator += delta_time;
 
       int window_width, window_height;
-      glfwGetWindowSize(window.handle(), &window_width, &window_height);
+      glfwGetWindowSize((GLFWwindow*)window->handle, &window_width, &window_height);
 
-      glfwPollEvents();
-
-      while (window.hasNextEvent())
+      if (engine->beginFrame())
       {
-        Event evt = window.getNextEvent();
+        StandardRenderer& renderer = engine->renderer();
 
-        imgui::onEvent(evt);
-        engine.onEvent(evt);
+#if 0
+    if (update_fn)
+    {
+      vm.stackResize(1);
+      vm.stackLoadHandle(0, update_fn);
+
+      if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+      {
+        vm.call(0, delta_time);
       }
-
-      if (engine.beginFrame())
-      {
-        StandardRenderer& renderer = engine.renderer();
-
-        if (update_fn)
-        {
-          vm.stackResize(1);
-          vm.stackLoadHandle(0, update_fn);
-
-          if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-          {
-            vm.call(0, delta_time);
-          }
-        }
+    }
+#endif
 
         imgui::beginFrame(
          renderer.surface(),
          float(window_width),
          float(window_height),
-         new_time);
+         delta_time);
 
         while (time_accumulator >= time_step_ms)
         {
-          engine.fixedUpdate(time_step_ms);
+          engine->fixedUpdate(time_step_ms);
           time_accumulator -= time_step_ms;
         }
 
-        engine.update(delta_time);
+        engine->update(delta_time);
 
-        const float render_alpha = time_accumulator / time_step_ms;  // current_state * alpha + previous_state * (1.0f - alpha)
+        const float render_alpha = time_accumulator / time_step_ms;  // current_state * render_alpha + previous_state * (1.0f - render_alpha)
 
-        engine.drawBegin(render_alpha);
-        imgui::endFrame(renderer.mainCommandList());
-        engine.drawEnd();
+        engine->drawBegin(render_alpha);
+        imgui::endFrame(&renderer, (bfWindowSurfaceHandle) window->renderer_data);
+        engine->drawEnd();
       }
+    };
+
+    while (!bfWindow_wantsToClose(main_window))
+    {
+      bfPlatformPumpEvents();
+      main_window->frame_fn(main_window);
     }
 
     vm.stackDestroyHandle(update_fn);
     imgui::shutdown();
     engine.deinit();
-    window.close();
+    bfPlatformDestroyWindow(main_window);
   }
 
-  delete[] main_memory;
-
-  shutdownGLFW();
+  bfPlatformQuit();
 
   return 0;
 }

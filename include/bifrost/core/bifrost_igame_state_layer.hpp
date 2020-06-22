@@ -17,9 +17,13 @@
 
 class Engine;
 
+struct bfEvent_t;
+typedef struct bfEvent_t bfEvent;
+
 namespace bifrost
 {
-  struct Event;
+  using Event = ::bfEvent;
+
   class GameStateMachine;
 
   class IGameStateLayer : private bfNonCopyMoveable<IGameStateLayer>
@@ -35,10 +39,10 @@ namespace bifrost
    protected:
     IGameStateLayer();
 
-  public:// TODO: This isn't right.
+   public:  // TODO: This isn't right.
     virtual void onCreate(Engine& engine);
     virtual void onLoad(Engine& engine);
-    virtual void onEvent(Engine& engine, Event& event);
+    virtual void onEvent(Engine& engine, bfEvent& event);
     virtual void onFixedUpdate(Engine& engine, float delta_time);
     virtual void onUpdate(Engine& engine, float delta_time);
     virtual void onUnload(Engine& engine);

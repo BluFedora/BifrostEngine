@@ -1,3 +1,4 @@
+
 #ifndef BIFROST_FUNCTION_VIEW_HPP
 #define BIFROST_FUNCTION_VIEW_HPP
 
@@ -9,7 +10,7 @@ namespace bifrost
   class FunctionView; /* undefined */
 
   template<typename R, typename... Args>
-  class FunctionView<R(Args...)>
+  class FunctionView<R(Args...)> final
   {
    private:
     using InstancePtr = void*;
@@ -31,6 +32,37 @@ namespace bifrost
     FunctionPair m_Callback;
 
    public:
+    static FunctionView make(FunctionPtr fn_ptr)
+    {
+      FunctionView self;
+      self.bind(fn_ptr);
+      return self;
+    }
+
+    template<FunctionPtr callback>
+    static FunctionView make()
+    {
+      FunctionView self;
+      self.bind<callback>();
+      return self;
+    }
+
+    template<typename Clz, R (Clz::*callback)(Args...)>
+    static FunctionView make(Clz* obj)
+    {
+      FunctionView self;
+      self.template bind<Clz, callback>(obj);
+      return self;
+    }
+
+    template<typename Clz, R (Clz::*callback)(Args...) const>
+    static FunctionView make(Clz* obj)
+    {
+      FunctionView self;
+      self.template bind<Clz, callback>(obj);
+      return self;
+    }
+
     FunctionView() :
       m_Callback{nullptr, nullptr}
     {
@@ -46,16 +78,9 @@ namespace bifrost
       return (m_Callback.second != nullptr);
     }
 
-    template<typename F>
-    void bind(F&& lambda)
+    void bind(FunctionPtr fn_ptr)
     {
-      m_Callback.first  = &lambda;
-      m_Callback.second = &FunctionView::template lambda_function_wrapper<F>;
-    }
-
-    void bind(FunctionPtr lambda)
-    {
-      m_Callback.first  = reinterpret_cast<void*>(lambda);
+      m_Callback.first  = reinterpret_cast<void*>(fn_ptr);
       m_Callback.second = &FunctionView::c_ptr_function_wrapper;
     }
 
@@ -108,6 +133,16 @@ namespace bifrost
     R call(Args&&... args) const
     {
       return (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
+    }
+
+    bool operator==(const FunctionView& rhs) const
+    {
+      return m_Callback.first == rhs.m_Callback.first && m_Callback.second == rhs.m_Callback.second;
+    }
+
+    bool operator!=(const FunctionView& rhs) const
+    {
+      return m_Callback.first != rhs.m_Callback.first || m_Callback.second != rhs.m_Callback.second;
     }
 
    private:

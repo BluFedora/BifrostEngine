@@ -1,21 +1,26 @@
 #ifndef BIFROST_IMGUI_GLFW
 #define BIFROST_IMGUI_GLFW
 
-#include "bifrost/platform/bifrost_ibase_window.hpp"
 #include "bifrost/graphics/bifrost_gfx_handle.h"
+#include "bifrost/platform/bifrost_platform_fwd.h"
+
+struct bfEvent_t;
+typedef struct bfEvent_t bfEvent;
 
 namespace bifrost
 {
-  struct Event;
+  using Event = struct ::bfEvent_t;
+
+  class StandardRenderer;
 
   namespace imgui
   {
-    void startup(bfGfxContextHandle graphics, IBaseWindow& window);
-    void onEvent(Event& evt);
-    void beginFrame(bfTextureHandle surface, float window_width, float window_height, float current_time);
-    void endFrame(bfGfxCommandListHandle command_list);
+    void startup(bfGfxContextHandle graphics, BifrostWindow* window);
+    void onEvent(BifrostWindow* target_window, Event& evt);
+    void beginFrame(bfTextureHandle surface, float window_width, float window_height, float delta_time);
+    void endFrame(StandardRenderer* renderer, bfWindowSurfaceHandle window);
     void shutdown();
-  }  // namespace editor::imgui
+  }  // namespace imgui
 
 }  // namespace bifrost
 

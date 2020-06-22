@@ -8,6 +8,8 @@
 #include "vulkan/bifrost_vulkan_material_pool.h"
 #include "vulkan/bifrost_vulkan_mem_allocator.h"
 
+#include "bifrost/platform/bifrost_platform_vulkan.h"
+
 #include <glfw/glfw3.h>
 
 #include "vulkan/bifrost_vulkan_conversions.h"
@@ -71,7 +73,7 @@ struct FixedArray
   {
   }
 
-  // A resize will not copy over the only elements.
+  // A resize will not copy over the elements.
   void setSize(std::size_t new_size)
   {
     if (new_size != m_Size)
@@ -127,12 +129,11 @@ BIFROST_DEFINE_HANDLE(GfxContext)
   VkInstance                       instance;
   FixedArray<VulkanPhysicalDevice> physical_devices;
   VulkanPhysicalDevice*            physical_device;
-  VulkanWindow                     main_window;
-  bfGfxDeviceHandle                logical_device;
-  VkCommandPool                    command_pools[1];  // TODO(Shareef): One per thread.
-  uint32_t                         image_index;
-  bfFrameCount_t                   frame_count;
-  bfFrameCount_t                   frame_index;  // frame_count % max_frames_in_flight
+  // VulkanWindow                     main_window;
+  bfGfxDeviceHandle logical_device;
+  VkCommandPool     command_pools[1];  // TODO(Shareef): One per thread.
+  bfFrameCount_t    frame_count;
+  bfFrameCount_t    frame_index;  // frame_count % max_frames_in_flight
 
 #if BIFROST_USE_DEBUG_CALLBACK
   VkDebugReportCallbackEXT debug_callback;
@@ -148,7 +149,7 @@ namespace
   const char* gfxContextSetupPhysicalDevices(bfGfxContextHandle self);
   void        gfxContextPrintExtensions();
   const char* gfxContextSelectPhysicalDevice(bfGfxContextHandle self);
-  const char* gfxContextInitSurface(bfGfxContextHandle self);
+  // const char* gfxContextInitSurface(bfGfxContextHandle self);
   const char* gfxContextFindSurfacePresent(bfGfxContextHandle self, VulkanWindow& window);
   const char* gfxContextCreateLogicalDevice(bfGfxContextHandle self);
   const char* gfxContextInitAllocator(bfGfxContextHandle self);
@@ -199,7 +200,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
 
 // Context
 
-static void gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window);
+static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window);
+void        gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window);
 
 bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
 {
@@ -226,14 +228,14 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
   }
   {
     gfxContextSelectPhysicalDevice(self);
-    gfxContextInitSurface(self);
-    gfxContextFindSurfacePresent(self, self->main_window);
+    // gfxContextInitSurface(self);
+    // gfxContextFindSurfacePresent(self, self->main_window);
     gfxContextCreateLogicalDevice(self);
     gfxContextInitAllocator(self);
     gfxContextInitCommandPool(self, 0);
-    gfxContextInitSwapchainInfo(self, self->main_window);
-    gfxContextInitSemaphores(self, self->main_window);
-    gfxRecreateSwapchain(self, self->main_window);
+    //gfxContextInitSwapchainInfo(self, self->main_window);
+    //gfxContextInitSemaphores(self, self->main_window);
+    //gfxRecreateSwapchain(self, self->main_window);
   }
 
   self->params = nullptr;
@@ -245,26 +247,53 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
   return self->logical_device;
 }
 
-bfTextureHandle bfGfxContext_swapchainImage(bfGfxContextHandle self)
+bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window)
 {
-  return &self->main_window.swapchain.img_list.images[self->image_index];
+  bfWindowSurfaceHandle surface = new bfWindowSurface();
+
+  if (bfWindow_createVulkanSurface(bf_window, self->instance, &surface->surface))
+  {
+    surface->current_cmd_list = nullptr;
+
+    gfxContextFindSurfacePresent(self, *surface);
+    gfxContextInitSwapchainInfo(self, *surface);
+    gfxContextInitSemaphores(self, *surface);
+    gfxRecreateSwapchain(self, *surface);
+  }
+  else
+  {
+    delete surface;
+    surface = nullptr;
+  }
+
+  return surface;
 }
 
-static void gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
+void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
+{
+  gfxDestroySwapchain(self, *window_handle);
+  vkDestroySemaphore(self->logical_device->handle, window_handle->is_image_available, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroySemaphore(self->logical_device->handle, window_handle->is_render_done, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+
+  delete window_handle;
+}
+
+static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
   if (gfxContextInitSwapchain(self, window))
   {
     gfxContextInitSwapchainImageList(self, window);
     gfxContextInitCmdFences(self, window);
     gfxContextInitCmdBuffers(self, window);
+    return true;
   }
+
+  return false;
 }
 
-void bfGfxContext_onResize(bfGfxContextHandle self)
+void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
   bfGfxDevice_flush(self->logical_device);
-
-  auto& window = self->main_window;
 
   VulkanSwapchain old_swapchain = window.swapchain;
 
@@ -273,82 +302,59 @@ void bfGfxContext_onResize(bfGfxContextHandle self)
   gfxContextDestroySwapchainImageList(self, &old_swapchain);
   gfxContextDestroySwapchain(self, &old_swapchain);
 
-  gfxRecreateSwapchain(self, window);
+  window.swapchain_needs_creation = bfTrue;
 }
 
-bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, int window_idx)
+bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window)
 {
-  if (window_idx < 0)
+  if (window->swapchain_needs_creation)
   {
-    window_idx = 0;
+    // bfGfxDevice_flush(self->logical_device);
+
+    if (!gfxRecreateSwapchain(self, *window))
+    {
+      return bfFalse;
+    }
   }
 
-  VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
-
-  if (window)
+  if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
   {
-    if (window->swapchain_needs_creation)
-    {
-      bfGfxDevice_flush(self->logical_device);
-      gfxRecreateSwapchain(self, *window);
-
-      return bfFalse;
-    }
-
-    if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
-    {
-      return bfFalse;
-    }
-
-    const VkResult err = vkAcquireNextImageKHR(self->logical_device->handle,
-                                               window->swapchain.handle,
-                                               UINT64_MAX,
-                                               window->is_image_available,
-                                               VK_NULL_HANDLE,
-                                               &window->image_index);
-
-    if (!(err == VK_SUCCESS || err == VK_TIMEOUT || err == VK_NOT_READY || err == VK_SUBOPTIMAL_KHR))
-    {
-      if (err == VK_ERROR_OUT_OF_DATE_KHR)
-      {
-        bfGfxContext_onResize(self);
-        // std::printf("Surface out of date.... recreating swap chain\n");
-      }
-
-      return bfFalse;
-    }
-
-    const VkFence command_fence = window->swapchain.fences[window->image_index];
-
-    if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
-    {
-      // std::printf("Waiting for fence takes too long!");
-      return bfFalse;
-    }
-
-    vkResetFences(self->logical_device->handle, 1, &command_fence);
-
-    return bfTrue;
+    return bfFalse;
   }
 
-  return bfFalse;
+  const VkResult err = vkAcquireNextImageKHR(self->logical_device->handle,
+                                             window->swapchain.handle,
+                                             UINT64_MAX,
+                                             window->is_image_available,
+                                             VK_NULL_HANDLE,
+                                             &window->image_index);
+
+  if (!(err == VK_SUCCESS || err == VK_TIMEOUT || err == VK_NOT_READY || err == VK_SUBOPTIMAL_KHR))
+  {
+    if (err == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+      gfxDestroySwapchain(self, *window);
+    }
+
+    return bfFalse;
+  }
+
+  const VkFence command_fence = window->swapchain.fences[window->image_index];
+
+  if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
+  {
+    // std::printf("Waiting for fence takes too long!");
+    return bfFalse;
+  }
+
+  vkResetFences(self->logical_device->handle, 1, &command_fence);
+
+  return bfTrue;
 }
 
-bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, int window_idx)
+bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, bfWindowSurfaceHandle window)
 {
-  if (window_idx < 0)
-  {
-    window_idx = 0;
-  }
-
-  VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
-
-  if (window)
-  {
-    return {window->image_index, self->frame_count, window->swapchain.img_list.size};
-  }
-
-  return {0, 0, 0};
+  return {window->image_index, self->frame_count, window->swapchain.img_list.size};
 }
 
 template<typename T, typename TCache>
@@ -359,7 +365,7 @@ static void bfGfxContext_removeFromCache(TCache& cache, BifrostGfxObjectBase* ob
 
 void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
-  // TODO: This whole set of garbage collection should maybe get called not every frame??
+  // TODO: This whole set of garbage collection should not get called every frame??
 
   BifrostGfxObjectBase* prev         = nullptr;
   BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
@@ -437,9 +443,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
 
 void bfGfxContext_delete(bfGfxContextHandle self)
 {
-  auto&           window        = self->main_window;
-  VulkanSwapchain old_swapchain = window.swapchain;
-  auto            device        = self->logical_device;
+  auto device = self->logical_device;
 
   BifrostGfxObjectBase* curr = device->cached_resources;
 
@@ -452,15 +456,7 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 
   VkPoolAllocatorDtor(&device->device_memory_allocator);
 
-  gfxContextDestroyCmdBuffers(self, &old_swapchain);
-  gfxContextDestroyCmdFences(self, &old_swapchain);
-  gfxContextDestroySwapchainImageList(self, &old_swapchain);
-  gfxContextDestroySwapchain(self, &old_swapchain);
-
   MaterialPool_delete(device->descriptor_pool);
-
-  vkDestroySemaphore(device->handle, window.is_image_available, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  vkDestroySemaphore(device->handle, window.is_render_done, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
 
 #if BIFROST_USE_DEBUG_CALLBACK
   PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
@@ -486,102 +482,96 @@ void bfGfxDevice_flush(bfGfxDeviceHandle self)
   (void)result;
 }
 
-bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, const bfGfxCommandListCreateParams* params)
+bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index)
 {
-  int window_idx = params->window_idx;
+  (void)thread_index;
 
-  if (window_idx < 0)
+  if (window->current_cmd_list)
   {
-    window_idx = 0;
+    return window->current_cmd_list;
   }
 
-  VulkanWindow* window = window_idx == 0 ? &self->main_window : nullptr;
+  bfGfxCommandListHandle list = new bfGfxCommandList();
 
-  if (window)
+  list->context        = self;
+  list->parent         = self->logical_device;
+  list->handle         = window->swapchain.command_buffers[window->image_index];
+  list->fence          = window->swapchain.fences[window->image_index];
+  list->window         = window;
+  list->render_area    = {};
+  list->framebuffer    = nullptr;
+  list->pipeline       = nullptr;
+  list->pipeline_state = {};
+  list->has_command    = bfFalse;
+  std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
+  std::memset(&list->pipeline_state, 0x0, sizeof(list->pipeline_state));  // Constent hashing behavior + Memcmp is used for the cache system.
+
+  vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+
+  bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_LIST);
+  bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CCW);
+  bfGfxCmdList_setCullFace(list, BIFROST_CULL_FACE_NONE);
+  bfGfxCmdList_setDepthTesting(list, bfFalse);
+  bfGfxCmdList_setDepthWrite(list, bfFalse);
+  bfGfxCmdList_setDepthTestOp(list, BIFROST_COMPARE_OP_ALWAYS);
+  bfGfxCmdList_setStencilTesting(list, bfFalse);
+  bfGfxCmdList_setPrimitiveRestart(list, bfFalse);
+  bfGfxCmdList_setRasterizerDiscard(list, bfFalse);
+  bfGfxCmdList_setDepthBias(list, bfFalse);
+  bfGfxCmdList_setSampleShading(list, bfFalse);
+  bfGfxCmdList_setAlphaToCoverage(list, bfFalse);
+  bfGfxCmdList_setAlphaToOne(list, bfFalse);
+  bfGfxCmdList_setLogicOp(list, BIFROST_LOGIC_OP_CLEAR);
+  bfGfxCmdList_setPolygonFillMode(list, BIFROST_POLYGON_MODE_FILL);
+
+  for (int i = 0; i < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS; ++i)
   {
-    bfGfxCommandListHandle list = new bfGfxCommandList();
-
-    list->context        = self;
-    list->parent         = self->logical_device;
-    list->handle         = window->swapchain.command_buffers[window->image_index];
-    list->fence          = window->swapchain.fences[window->image_index];
-    list->window         = window;
-    list->render_area    = {};
-    list->framebuffer    = nullptr;
-    list->pipeline       = nullptr;
-    list->pipeline_state = {};
-    list->has_command    = bfFalse;
-    std::memset(list->clear_colors, 0x0, sizeof(list->clear_colors));
-    std::memset(&list->pipeline_state, 0x0, sizeof(list->pipeline_state));  // Constent hashing behavior + Memcmp is used for the cache system.
-
-    vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-
-    bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_LIST);
-    bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CCW);
-    bfGfxCmdList_setCullFace(list, BIFROST_CULL_FACE_NONE);
-    bfGfxCmdList_setDepthTesting(list, bfFalse);
-    bfGfxCmdList_setDepthWrite(list, bfFalse);
-    bfGfxCmdList_setDepthTestOp(list, BIFROST_COMPARE_OP_ALWAYS);
-    bfGfxCmdList_setStencilTesting(list, bfFalse);
-    bfGfxCmdList_setPrimitiveRestart(list, bfFalse);
-    bfGfxCmdList_setRasterizerDiscard(list, bfFalse);
-    bfGfxCmdList_setDepthBias(list, bfFalse);
-    bfGfxCmdList_setSampleShading(list, bfFalse);
-    bfGfxCmdList_setAlphaToCoverage(list, bfFalse);
-    bfGfxCmdList_setAlphaToOne(list, bfFalse);
-    bfGfxCmdList_setLogicOp(list, BIFROST_LOGIC_OP_CLEAR);
-    bfGfxCmdList_setPolygonFillMode(list, BIFROST_POLYGON_MODE_FILL);
-
-    for (int i = 0; i < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS; ++i)
-    {
-      bfGfxCmdList_setColorWriteMask(list, i, BIFROST_COLOR_MASK_RGBA);
-      bfGfxCmdList_setColorBlendOp(list, i, BIFROST_BLEND_OP_ADD);
-      bfGfxCmdList_setBlendSrc(list, i, BIFROST_BLEND_FACTOR_SRC_ALPHA);
-      bfGfxCmdList_setBlendDst(list, i, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
-      bfGfxCmdList_setAlphaBlendOp(list, i, BIFROST_BLEND_OP_ADD);
-      bfGfxCmdList_setBlendSrcAlpha(list, i, BIFROST_BLEND_FACTOR_ONE);
-      bfGfxCmdList_setBlendDstAlpha(list, i, BIFROST_BLEND_FACTOR_ZERO);
-    }
-
-    const auto SetupStencilState = [&list](BifrostStencilFace face) {
-      bfGfxCmdList_setStencilFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
-      bfGfxCmdList_setStencilPassOp(list, face, BIFROST_STENCIL_OP_REPLACE);
-      bfGfxCmdList_setStencilDepthFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
-      bfGfxCmdList_setStencilCompareOp(list, face, BIFROST_COMPARE_OP_ALWAYS);
-      bfGfxCmdList_setStencilCompareMask(list, face, 0xFF);
-      bfGfxCmdList_setStencilWriteMask(list, face, 0xFF);
-      bfGfxCmdList_setStencilReference(list, face, 0xFF);
-    };
-
-    SetupStencilState(BIFROST_STENCIL_FACE_FRONT);
-    SetupStencilState(BIFROST_STENCIL_FACE_BACK);
-
-    // bfGfxCmdList_setDynamicStates(list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
-    bfGfxCmdList_setDynamicStates(list, 0x0);
-    const float depths[] = {0.0f, 1.0f};
-    bfGfxCmdList_setViewport(list, 0.0f, 0.0f, 0.0f, 0.0f, depths);
-    bfGfxCmdList_setScissorRect(list, 0, 0, 1, 1);
-    const float blend_constants[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    bfGfxCmdList_setBlendConstants(list, blend_constants);
-    bfGfxCmdList_setLineWidth(list, 1.0f);
-    bfGfxCmdList_setDepthClampEnabled(list, bfFalse);
-    bfGfxCmdList_setDepthBoundsTestEnabled(list, bfFalse);
-    bfGfxCmdList_setDepthBounds(list, 0.0f, 1.0f);
-    bfGfxCmdList_setDepthBiasConstantFactor(list, 0.0f);
-    bfGfxCmdList_setDepthBiasClamp(list, 0.0f);
-    bfGfxCmdList_setDepthBiasSlopeFactor(list, 0.0f);
-    bfGfxCmdList_setMinSampleShading(list, 0.0f);
-    bfGfxCmdList_setSampleMask(list, 0xFFFFFFFF);
-
-    return list;
+    bfGfxCmdList_setColorWriteMask(list, i, BIFROST_COLOR_MASK_RGBA);
+    bfGfxCmdList_setColorBlendOp(list, i, BIFROST_BLEND_OP_ADD);
+    bfGfxCmdList_setBlendSrc(list, i, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(list, i, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setAlphaBlendOp(list, i, BIFROST_BLEND_OP_ADD);
+    bfGfxCmdList_setBlendSrcAlpha(list, i, BIFROST_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(list, i, BIFROST_BLEND_FACTOR_ZERO);
   }
 
-  return nullptr;
+  const auto SetupStencilState = [&list](BifrostStencilFace face) {
+    bfGfxCmdList_setStencilFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
+    bfGfxCmdList_setStencilPassOp(list, face, BIFROST_STENCIL_OP_REPLACE);
+    bfGfxCmdList_setStencilDepthFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
+    bfGfxCmdList_setStencilCompareOp(list, face, BIFROST_COMPARE_OP_ALWAYS);
+    bfGfxCmdList_setStencilCompareMask(list, face, 0xFF);
+    bfGfxCmdList_setStencilWriteMask(list, face, 0xFF);
+    bfGfxCmdList_setStencilReference(list, face, 0xFF);
+  };
+
+  SetupStencilState(BIFROST_STENCIL_FACE_FRONT);
+  SetupStencilState(BIFROST_STENCIL_FACE_BACK);
+
+  bfGfxCmdList_setDynamicStates(list, BIFROST_PIPELINE_DYNAMIC_NONE);
+  const float depths[] = {0.0f, 1.0f};
+  bfGfxCmdList_setViewport(list, 0.0f, 0.0f, 0.0f, 0.0f, depths);
+  bfGfxCmdList_setScissorRect(list, 0, 0, 1, 1);
+  const float blend_constants[] = {1.0f, 1.0f, 1.0f, 1.0f};
+  bfGfxCmdList_setBlendConstants(list, blend_constants);
+  bfGfxCmdList_setLineWidth(list, 1.0f);
+  bfGfxCmdList_setDepthClampEnabled(list, bfFalse);
+  bfGfxCmdList_setDepthBoundsTestEnabled(list, bfFalse);
+  bfGfxCmdList_setDepthBounds(list, 0.0f, 1.0f);
+  bfGfxCmdList_setDepthBiasConstantFactor(list, 0.0f);
+  bfGfxCmdList_setDepthBiasClamp(list, 0.0f);
+  bfGfxCmdList_setDepthBiasSlopeFactor(list, 0.0f);
+  bfGfxCmdList_setMinSampleShading(list, 0.0f);
+  bfGfxCmdList_setSampleMask(list, 0xFFFFFFFF);
+
+  window->current_cmd_list = list;
+
+  return list;
 }
 
-bfTextureHandle bfGfxDevice_requestSurface(bfGfxCommandListHandle command_list)
+bfTextureHandle bfGfxDevice_requestSurface(bfWindowSurfaceHandle window)
 {
-  return &command_list->window->swapchain.img_list.images[command_list->window->image_index];
+  return &window->swapchain.img_list.images[window->image_index];
 }
 
 bfDeviceLimits bfGfxDevice_limits(bfGfxDeviceHandle self)
@@ -944,6 +934,7 @@ namespace
 #define CUSTOM_ALLOCATOR nullptr
 #endif
 
+  #if 0
   const char* gfxContextInitSurface(bfGfxContextHandle self)
   {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -980,6 +971,7 @@ namespace
 
     return err ? "Failed to create Surface" : nullptr;
   }
+  #endif
 
   uint32_t findQueueBasic(const VulkanPhysicalDevice* device, uint32_t queue_size, VkQueueFlags flags);
 
@@ -1386,7 +1378,7 @@ namespace
     VkCommandBufferAllocateInfo cmd_alloc_info;
     cmd_alloc_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cmd_alloc_info.pNext              = nullptr;
-    cmd_alloc_info.commandPool        = self->command_pools[0];
+    cmd_alloc_info.commandPool        = self->command_pools[0]; // TODO: Threaded pool...
     cmd_alloc_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd_alloc_info.commandBufferCount = num_buffers;
 

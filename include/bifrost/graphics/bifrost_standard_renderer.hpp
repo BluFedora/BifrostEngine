@@ -22,6 +22,7 @@
 #include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
 #include "bifrost/data_structures/bifrost_array.hpp"          /* Array<T>                */
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
+#include "bifrost/platform/bifrost_platform_fwd.h"            /* BifrostWindow           */
 #include "bifrost_gfx_api.h"                                  /* Bifrost C Gfx API       */
 #include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
@@ -339,6 +340,7 @@ namespace bifrost
     MultiBuffer<DirectionalLightUniformData>                  m_DirectionalLightBuffer;
     MultiBuffer<PunctualLightUniformData>                     m_PunctualLightBuffers[2];  // [Point, Spot]
     float                                                     m_GlobalTime;
+    bfWindowSurfaceHandle                                     m_MainWindow;
 
    public:
     explicit StandardRenderer(IMemoryManager& memory);
@@ -350,7 +352,7 @@ namespace bifrost
     bfTextureHandle         surface() const { return m_MainSurface; }
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
 
-    void               init(const bfGfxContextCreateParams& gfx_create_params);
+    void               init(const bfGfxContextCreateParams& gfx_create_params, BifrostWindow* main_window);
     [[nodiscard]] bool frameBegin();
     void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
     void               bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
@@ -358,8 +360,8 @@ namespace bifrost
     void               beginGBufferPass(CameraGPUData& camera) const;
     void               beginSSAOPass(CameraGPUData& camera) const;
     void               beginLightingPass(CameraGPUData& camera);
-    void               beginScreenPass() const;
-    void               endPass() const;
+    void               beginScreenPass(bfGfxCommandListHandle command_list) const;
+    void               endPass(bfGfxCommandListHandle command_list) const;
     void               frameEnd() const;
     void               deinit();
 
@@ -371,16 +373,16 @@ namespace bifrost
       // GBuffer
       beginGBufferPass(camera_gpu_data);
       gbuffer_callback();
-      endPass();
+      endPass(m_MainCmdList);
 
       // SSAO
       beginSSAOPass(camera_gpu_data);
-      endPass();
+      endPass(m_MainCmdList);
 
       // Lighting
       beginLightingPass(camera_gpu_data);
       overlay_callback();
-      endPass();
+      endPass(m_MainCmdList);
     }
 
    private:

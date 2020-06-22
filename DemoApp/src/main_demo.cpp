@@ -1,9 +1,9 @@
 #include "demo/game_state_layers/main_demo.hpp"
 
 #include "bifrost/bifrost.hpp"
-#include "bifrost/event/bifrost_window_event.hpp"
 
 #include "glfw/glfw3.h"
+#include "bifrost/platform/bifrost_platform_event.h"
 
 extern GLFWwindow* g_Window;
 
@@ -43,9 +43,9 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
 
 void MainDemoLayer::onEvent(Engine&, Event& event)
 {
-  const auto is_key_down = event.type == bifrost::EventType::ON_KEY_DOWN;
+  const auto is_key_down = event.type == BIFROST_EVT_ON_KEY_DOWN;
 
-  if (is_key_down && event.keyboard.key == 'P' && event.keyboard.modifiers & bifrost::KeyboardEvent::CONTROL)
+  if (is_key_down && event.keyboard.key == 'P' && event.keyboard.modifiers & BIFROST_KEY_FLAG_CONTROL)
   {
     static bool isFullscreen = false;
     static int  old_info[4];
