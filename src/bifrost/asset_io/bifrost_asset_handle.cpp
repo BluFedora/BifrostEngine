@@ -105,6 +105,27 @@ namespace bifrost
     }
   }
 
+  void ISerializer::serialize(StringRange key, BifrostUUIDNumber& value)
+  {
+    static constexpr int k_AsStringSize = sizeof(value);
+
+    String as_string = {value.data, k_AsStringSize};
+
+    serialize(key, as_string);
+
+    if (mode() == SerializerMode::LOADING)
+    {
+      if (as_string.length() != k_AsStringSize || !hasKey(key))
+      {
+        std::memset(&value, 0x0, sizeof(value));
+      }
+      else
+      {
+        std::memcpy(&value, as_string.c_str(), k_AsStringSize);
+      }
+    }
+  }
+
   void ISerializer::serialize(StringRange key, IBaseObject& value)
   {
     if (pushObject(key))
@@ -121,7 +142,6 @@ namespace bifrost
     meta_obj.type_info  = value.type();
     meta_obj.object_ref = &value;
 
-    registerReference(value);
     serialize(meta_obj);
   }
 

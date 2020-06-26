@@ -88,4 +88,12 @@ namespace bifrost
     std::memset(begin(), BIFROST_MEMORY_DEBUG_SIGNATURE, memory_block_size);
 #endif
   }
+
+  void MemoryManager::checkPointer(const void* ptr) const
+  {
+    if (ptr < begin() || ptr > end())
+    {
+      throw std::exception();
+    }
+  }
 }  // namespace bifrost

@@ -6,12 +6,16 @@
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
 #include "bifrost/graphics/bifrost_debug_renderer.hpp"
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
-#include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
 #include "bifrost/memory/bifrost_pool_allocator.hpp"
 #include "bifrost/script/bifrost_vm.hpp"
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
+
+// ReSharper disable once CppUnusedIncludeDirective
+#include "bifrost/memory/bifrost_c_allocator.hpp"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "bifrost/memory/bifrost_freelist_allocator.hpp"
 
 #include <utility>
 
@@ -45,6 +49,8 @@ namespace bifrost::detail
 
 namespace bifrost
 {
+  static constexpr int k_MaxNumCamera = 16;
+
   struct CameraRenderCreateParams final
   {
     int width;
@@ -116,50 +122,90 @@ namespace bifrost
     EDITOR_PLAYING,
     PAUSED,
   };
+
+  class ObjectDatabase final : private bfNonCopyMoveable<Engine>
+  {
+    static constexpr int k_InitialMapSize = 256;
+
+   private:
+    using UUIDToObject = HashTable<BifrostUUIDNumber, IBaseObject*, k_InitialMapSize, UUIDHasher, UUIDEqual>;
+    using ObjectToUUID = HashTable<IBaseObject*, BifrostUUIDNumber, k_InitialMapSize>;
+
+   private:
+    UUIDToObject m_IDToObject;
+    ObjectToUUID m_ObjectToID;
+
+   public:
+    explicit ObjectDatabase() :
+      m_IDToObject{},
+      m_ObjectToID{}
+    {
+    }
+
+    BifrostUUIDNumber registerObject(IBaseObject* object);
+    IBaseObject*      grabObject(const BifrostUUIDNumber& id);
+    void              removeObject(IBaseObject* object);
+  };
 }  // namespace bifrost
 
 using namespace bifrost;
 
+#define USE_CRT_HEAP 0
+
+#if USE_CRT_HEAP
+using MainHeap = CAllocator;
+#else
+using MainHeap = FreeListAllocator;
+#endif
+
 class Engine : private bfNonCopyMoveable<Engine>
 {
  private:
-  std::pair<int, const char**>    m_CmdlineArgs;
-  FreeListAllocator               m_MainMemory;
-  LinearAllocator                 m_TempMemory;
-  NoFreeAllocator                 m_TempAdapter;
-  GameStateMachine                m_StateMachine;
-  VM                              m_Scripting;
-  StandardRenderer                m_Renderer;
-  DebugRenderer                   m_DebugRenderer;
-  Array<AssetSceneHandle>         m_SceneStack;
-  Assets                          m_Assets;
-  Array<IECSSystem*>              m_Systems;
-  PoolAllocator<CameraRender, 16> m_CameraMemory;
-  CameraRender*                   m_CameraList;
-  CameraRender*                   m_CameraResizeList;
-  CameraRender*                   m_CameraDeleteList;
-  EngineState                     m_State;
-  BifrostWindow*                  m_MainWindow;
+  using CommandLineArgs    = std::pair<int, const char**>;
+  using CameraRenderMemory = PoolAllocator<CameraRender, k_MaxNumCamera>;
+
+ private:
+  CommandLineArgs         m_CmdlineArgs;
+  MainHeap                m_MainMemory;
+  LinearAllocator         m_TempMemory;
+  NoFreeAllocator         m_TempAdapter;
+  GameStateMachine        m_StateMachine;
+  VM                      m_Scripting;
+  StandardRenderer        m_Renderer;
+  DebugRenderer           m_DebugRenderer;
+  Array<AssetSceneHandle> m_SceneStack;
+  Assets                  m_Assets;
+  Array<IECSSystem*>      m_Systems;
+  CameraRenderMemory      m_CameraMemory;
+  CameraRender*           m_CameraList;
+  CameraRender*           m_CameraResizeList;
+  CameraRender*           m_CameraDeleteList;
+  EngineState             m_State;
+  BifrostWindow*          m_MainWindow;
+  ObjectDatabase          m_ObjectDatabase;
 
  public:
   explicit Engine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]);
 
-  FreeListAllocator& mainMemory() { return m_MainMemory; }
-  LinearAllocator&   tempMemory() { return m_TempMemory; }
-  IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
-  GameStateMachine&  stateMachine() { return m_StateMachine; }
-  VM&                scripting() { return m_Scripting; }
-  StandardRenderer&  renderer() { return m_Renderer; }
-  DebugRenderer&     debugDraw() { return m_DebugRenderer; }
-  Assets&            assets() { return m_Assets; }
-  AssetSceneHandle   currentScene() const;
+  // Subsystems (Getters / Setters)
+
+  MainHeap&         mainMemory() { return m_MainMemory; }
+  LinearAllocator&  tempMemory() { return m_TempMemory; }
+  IMemoryManager&   tempMemoryNoFree() { return m_TempAdapter; }
+  GameStateMachine& stateMachine() { return m_StateMachine; }
+  VM&               scripting() { return m_Scripting; }
+  StandardRenderer& renderer() { return m_Renderer; }
+  DebugRenderer&    debugDraw() { return m_DebugRenderer; }
+  Assets&           assets() { return m_Assets; }
+  AssetSceneHandle  currentScene() const;
+  EngineState       state() const { return m_State; }
+  void              setState(EngineState value) { m_State = value; }
+
+  // Low Level Camera API
 
   CameraRender* borrowCamera(const CameraRenderCreateParams& params);
   void          resizeCamera(CameraRender* camera, int width, int height);
   void          returnCamera(CameraRender* camera);
-
-  EngineState state() const { return m_State; }
-  void        setState(EngineState value) { m_State = value; }
 
   template<typename F>
   void forEachCamera(F&& callback)
@@ -173,7 +219,27 @@ class Engine : private bfNonCopyMoveable<Engine>
     }
   }
 
+  // Scene Management API
+
   void openScene(const AssetSceneHandle& scene);
+
+  // Object Database Management API
+
+  template<typename T, typename... Args>
+  T* instantiate(Args&&... args)
+  {
+    static_assert(std::is_base_of_v<IBaseObject, T>, "This function is for instantiating new instances of IBaseObject derived classes.");
+
+    T* const object = mainMemory().allocateT<T>(std::forward<Args>(args)...);
+
+    return object;
+  }
+
+  void destroy(IBaseObject* object)
+  {
+  }
+
+  // "System" Functions to be called by the Application
 
   template<typename T>
   void addECSSystem()

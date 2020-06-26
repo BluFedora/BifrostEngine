@@ -137,10 +137,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Math Module
   "BifrostMath/src/*.cpp"
 
-  # Bifrost Memory Module
-  "BifrostMemory/src/*.cpp"
-  "BifrostMemory/src/*.c"
-
   # Bifrost Meta Module
   "src/bifrost/meta/bifrost_meta_runtime.cpp"
 
@@ -167,14 +163,12 @@ endif()
 
 # NOTE(Shareef): Add the libraries we are linking against to the target.
 find_package(OpenGL REQUIRED)
-find_package(Vulkan REQUIRED)
 find_package(OpenCL)
 
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostMemory/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
-include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/DemoApp/include)
 
 add_executable(
   BifrostEngine
@@ -186,21 +180,23 @@ add_executable(
   "DemoApp/src/main_demo.cpp"
   "src/bifrost/ecs/bifrost_behavior.cpp"
   "src/bifrost/ecs/bifrost_behavior_system.cpp"
-)
+ "src/bifrost/ecs/bifrost_entity_ref.cpp")
+
+# Bifrost Engine Submodules
 
 target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
 target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)
+target_link_libraries(BifrostEngine PRIVATE BifrostMemory)
 target_link_libraries(BifrostEngine PRIVATE BifrostPlatform_shared)
 
-# Compile Definitions
+# Vulkan Library Handling
 
-if (BIFROST_OPT_GRAPHICS_VULKAN)
-  # target_compile_definitions()
-elseif(BIFROST_OPT_GRAPHICS_OPENGL)
+find_package(Vulkan)
 
+if(${Vulkan_FOUND})
+  include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
+  target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARIES})
 endif()
-
-# target_compile_definitions()
 
 set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
@@ -267,8 +263,6 @@ elseif (APPLE)
   target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
 endif()
 
-# target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_GLFW_LIB}")
-target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARIES})
 
 if(OpenCL_FOUND)
   include_directories(${OPENCL_INCLUDE_DIR})
@@ -331,9 +325,10 @@ add_custom_command(TARGET BifrostEngine POST_BUILD
 #         "${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"
 #         $<TARGET_FILE_DIR:BifrostEngine>)
 
-add_subdirectory(include/bifrost/graphics/)
+# add_subdirectory(include/bifrost/graphics/)
 add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
 add_subdirectory(BifrostMath)
+add_subdirectory(BifrostMemory)
 add_subdirectory(BifrostExperiments)
 add_subdirectory(EngineStandalone)

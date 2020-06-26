@@ -8,7 +8,7 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostScript VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
+project(BifrostScript VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge." LANGUAGES C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   #   "-fno-rtti"                 = "/GR-"
   #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
+  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g -pedantic")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # using Intel C++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -41,7 +41,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
   set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
+  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /permissive- /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
 endif()
 
 include_directories("${PROJECT_BINARY_DIR}")
@@ -72,8 +72,13 @@ add_library(
 )
 
 target_include_directories(
-  BifrostScript PUBLIC
-  ${PROJECT_SOURCE_DIR}/include
+  BifrostScript 
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+set_property(
+  TARGET BifrostScript 
+  PROPERTY C_STANDARD 99
 )
 
 target_compile_definitions(BifrostScript PRIVATE BIFROST_VM_EXPORT_STATIC)
@@ -81,7 +86,7 @@ target_compile_definitions(BifrostScript PRIVATE BIFROST_VM_EXPORT_STATIC)
 set_target_properties(BifrostScript PROPERTIES OUTPUT_NAME BifrostScript_static)
 set_target_properties(BifrostScript PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(BifrostScript PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
-set_target_properties(BifrostScript PROPERTIES CXX_STANDARD 17)
+# set_target_properties(BifrostScript PROPERTIES CXX_STANDARD 17)
 set_target_properties(BifrostScript PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 # set_target_properties(BifrostScript PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
@@ -114,10 +119,23 @@ add_executable(
   "vm_command_line.cpp"
 )
 
+target_link_libraries(
+  BifrostScript_cli 
+  PRIVATE BifrostScript
+)
+
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 target_compile_definitions(BifrostScript_cli PRIVATE BIFROST_VM_EXPORT_STATIC)
 
-target_link_libraries(BifrostScript_cli PRIVATE BifrostScript)
+set_target_properties(
+  BifrostScript_cli
+  PROPERTIES
+  CXX_STANDARD 17
+  CXX_EXTENSIONS OFF
+)
+
+set_property(TARGET BifrostScript_cli PROPERTY CXX_STANDARD 17)
+set_property(TARGET BifrostScript_cli PROPERTY CXX_STANDARD_REQUIRED ON)

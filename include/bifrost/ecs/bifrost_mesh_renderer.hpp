@@ -24,7 +24,7 @@ namespace bifrost
 
    private:
     AssetMaterialHandle m_Material;
-    Ref<Entity>         m_EntityRef;  // TEMP CODE
+    EntityRef           m_EntityRef;  // TEMP CODE
     AssetModelHandle    m_Model;
 
    public:
@@ -47,7 +47,7 @@ BIFROST_META_REGISTER(bifrost::MeshRenderer)
     BIFROST_META_MEMBERS(
      class_info<MeshRenderer>("MeshRenderer"),                         //
      field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
-     field<BaseRef>("m_EntityRef", &MeshRenderer::m_EntityRef),        //
+     field("m_EntityRef", &MeshRenderer::m_EntityRef),      //
      field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
     )
   BIFROST_META_END()

@@ -22,9 +22,9 @@ namespace bifrost::editor
   class Inspector final : public EditorWindow<Inspector>
   {
    private:
-    Selectable      m_SelectedObject;
-    ImGuiSerializer m_Serializer;
-    bool            m_IsLocked;
+    Array<Selectable> m_LockedSelection;
+    ImGuiSerializer   m_Serializer;
+    bool              m_IsLocked;
 
    public:
     explicit Inspector(IMemoryManager& memory);
@@ -32,7 +32,9 @@ namespace bifrost::editor
    protected:
     const char* title() const override { return "Inspector View"; }
     void        onDrawGUI(EditorOverlay& editor) override;
-    void        onSelectionChanged(const Selectable& selectable) override;
+
+   private:
+    void guiDrawSelection(Engine& engine, Selectable& selectable);
   };
 }  // namespace bifrost::editor
 

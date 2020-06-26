@@ -19,6 +19,14 @@
 #if __cplusplus
 extern "C" {
 #endif
+
+// clang-format off
+#define bfBytes(n)     (n)
+#define bfKilobytes(n) (bfBytes(n) * 1024)
+#define bfMegabytes(n) (bfKilobytes(n) * 1024)
+#define bfGigabytes(n) (bfMegabytes(n) * 1024)
+// clang-format on
+
 /*!
  * @brief 
  *   Aligns size to required_alignment.

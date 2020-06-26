@@ -41,7 +41,7 @@ typedef struct BifrostVMFunctionBuilder_t
   BifrostVMLocalVar*     local_vars;
   bfScopeVarCount*       local_var_scope_size;
   uint32_t*              instructions;
-  uint16_t*              line_to_code;
+  uint16_t*              code_to_line;
   size_t                 max_local_idx;
   struct BifrostLexer_t* lexer;
 
@@ -61,7 +61,6 @@ void     bfVMFunctionBuilder_addInstABx(BifrostVMFunctionBuilder* self, bfInstru
 void     bfVMFunctionBuilder_addInstAsBx(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, int32_t sbx);
 void     bfVMFunctionBuilder_addInstBreak(BifrostVMFunctionBuilder* self);
 void     bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstructionOp op);
-void     bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* _);
 void     bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn_t* out, int arity);
 void     bfVMFunctionBuilder_dtor(BifrostVMFunctionBuilder* self);
 #if __cplusplus

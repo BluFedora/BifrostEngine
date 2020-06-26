@@ -54,7 +54,7 @@ namespace bifrost::editor
 
         if (ImGui::BeginMenuBar())
         {
-          if (ImGui::BeginMenu("Add Tab"))
+          if (ImGui::BeginMenu("Window"))
           {
             if (ImGui::MenuItem("Inspector"))
             {
@@ -86,10 +86,5 @@ namespace bifrost::editor
 
     ImGui::End();
     onPostDrawGUI(editor);
-  }
-
-  void BaseEditorWindow::selectionChange(const Selectable& selectable)
-  {
-    onSelectionChanged(selectable);
   }
 }  // namespace bifrost::editor

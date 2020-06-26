@@ -79,6 +79,8 @@ namespace bifrost
 
   void FreeListAllocator::deallocate(void* ptr)
   {
+    checkPointer(ptr);
+
     AllocationHeader* const header = reinterpret_cast<AllocationHeader*>(reinterpret_cast<char*>(ptr) - header_size);
     FreeListNode* const     node   = reinterpret_cast<FreeListNode*>(reinterpret_cast<char*>(header));
 

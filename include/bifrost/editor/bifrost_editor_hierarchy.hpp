@@ -19,7 +19,8 @@ namespace bifrost::editor
     void        onDrawGUI(EditorOverlay& editor) override;
 
    private:
-    void guiEntityList(EditorOverlay& editor, Entity* entity);
+    void guiEntityList(EditorOverlay& editor, Entity* entity) const;
+    void actionReparent(Entity* entity, Entity* new_parent);
   };
 }  // namespace bifrost::editor
 

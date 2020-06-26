@@ -166,8 +166,8 @@ typedef struct
 {
   const char* app_name;
   uint32_t    app_version;
-  void*       platform_module;
-  void*       platform_window;
+  // void*       platform_module;
+  // void*       platform_window;
 
   /*
     if (Window)

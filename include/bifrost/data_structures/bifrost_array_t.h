@@ -41,8 +41,8 @@
 extern "C" {
 #endif
 typedef unsigned char* BifrostArray;
-typedef int(__cdecl* ArraySortCompare)(const void*, const void*);
-typedef int(__cdecl* ArrayFindCompare)(const void*, const void*);
+typedef int(/*__cdecl*/ *ArraySortCompare)(const void*, const void*);
+typedef int(/*__cdecl*/* ArrayFindCompare)(const void*, const void*);
 void*  _ArrayT_new(const size_t stride, const size_t initial_size);
 void*  Array_begin(const void* const self);
 void*  Array_end(const void* const self);
@@ -79,8 +79,8 @@ typedef void* (*bfArrayAllocator)(void* user_data, void* ptr, size_t size);
 /* a  < b : < 0 */
 /* a == b :   0 */
 /* a  > b : > 0 */
-typedef int(__cdecl* bfArraySortCompare)(const void*, const void*);
-typedef int(__cdecl* bfArrayFindCompare)(const void*, const void*);
+typedef int(/*__cdecl*/ *bfArraySortCompare)(const void*, const void*);
+typedef int(/*__cdecl*/ *bfArrayFindCompare)(const void*, const void*);
 
 #if __cplusplus
 #include <type_traits> /* remove_reference_t */

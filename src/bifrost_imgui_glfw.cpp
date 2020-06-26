@@ -1,6 +1,7 @@
-#include "bifrost_editor/bifrost_imgui_glfw.hpp"
+#include "bifrost_imgui_glfw.hpp"
 
 #include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include "bifrost/math/bifrost_mat4x4.h"
 #include "bifrost/platform/bifrost_platform.h"
 #include "bifrost/platform/bifrost_platform_event.h"
@@ -8,7 +9,6 @@
 #include <glfw/glfw3.h>  // TODO(SR): Remove, but still needed for Cursors and KeyboardKeys...
 #include <imgui/imgui.h>
 
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include <algorithm>
 #include <memory>  // unique_ptr
 
@@ -571,10 +571,12 @@ namespace bifrost::imgui
     }
   }
 
-  void endFrame(StandardRenderer* renderer, bfWindowSurfaceHandle window)
+  void endFrame(StandardRenderer* renderer)
   {
+    ImGuiViewport* const main_viewport = ImGui::GetMainViewport();
+
     ImGui::Render();
-    frameDraw(ImGui::GetDrawData(), window, s_RenderData.main_viewport_data->buffers.get());
+    frameDraw(ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->buffers.get());
 
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {

@@ -268,7 +268,7 @@ namespace bifrost::editor
   void ImGuiSerializer::serialize(StringRange key, BifrostUUID& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::InputText(m_NameBuffer, value.as_string, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
+    hasChangedTop() |= ImGui::InputText(m_NameBuffer, value.as_string.data, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
   }
 
   void ImGuiSerializer::serialize(StringRange key, BaseAssetHandle& value)
@@ -346,7 +346,7 @@ namespace bifrost::editor
     ImGui::PopID();
   }
 
-  void ImGuiSerializer::serialize(StringRange key, BaseRef& value)
+  void ImGuiSerializer::serialize(StringRange key, EntityRef& value)
   {
     setNameBuffer(key);
 
@@ -519,6 +519,12 @@ namespace bifrost::editor
     return ImGui::InputText(label, const_cast<char*>(string.cstr()), string.capacity(), flags, &ImGuiStringCallback, static_cast<void*>(&string));
   }
 
+  bool imgui_ext::inspect(const char* label, const char* hint, String& string, ImGuiInputTextFlags flags)
+  {
+    flags |= ImGuiInputTextFlags_CallbackResize;
+    return ImGui::InputTextWithHint(label, hint, const_cast<char*>(string.cstr()), string.capacity(), flags, &ImGuiStringCallback, static_cast<void*>(&string));
+  }
+
   bool imgui_ext::inspect(const char* label, std::string& string, ImGuiInputTextFlags flags)
   {
     flags |= ImGuiInputTextFlags_CallbackResize;
@@ -544,8 +550,6 @@ namespace bifrost::editor
         char*                label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "[%.*s]", int(component_name.length()), component_name.begin());
 
         ImGui::PushID(label);
-
-        ImGui::Separator();
 
         bool is_open = true;
         if (ImGui::CollapsingHeader(label, &is_open, ImGuiTreeNodeFlags_None))

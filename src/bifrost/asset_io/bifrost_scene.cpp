@@ -91,15 +91,16 @@ namespace bifrost
 
 #undef ID_TO_INDEX
 
-  Scene::Scene(IMemoryManager& memory) :
+  Scene::Scene(Engine& engine) :
     BaseObject<Scene>{},
-    m_Memory{memory},
-    m_RootEntities{memory},
-    m_ActiveComponents{memory},
-    m_InactiveComponents{memory},
-    m_ActiveBehaviors{memory},
-    m_BVHTree{memory},
-    m_TransformSystem{memory}
+    m_Engine{engine},
+    m_Memory{m_Engine.mainMemory()},
+    m_RootEntities{m_Memory},
+    m_ActiveComponents{m_Memory},
+    m_InactiveComponents{m_Memory},
+    m_ActiveBehaviors{m_Memory},
+    m_BVHTree{m_Memory},
+    m_TransformSystem{m_Memory}
   {
   }
 
@@ -121,7 +122,7 @@ namespace bifrost
   {
     for (Entity* entity : m_RootEntities)
     {
-      m_BVHTree.markLeafDirty(entity->bvhID(), entity->transform());
+      markEntityTransformDirty(entity);
     }
 
     m_BVHTree.endFrame(temp, true);
@@ -132,6 +133,16 @@ namespace bifrost
        Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
        bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
     });
+  }
+
+  void Scene::markEntityTransformDirty(Entity* entity)
+  {
+    for (Entity& child : entity->children())
+    {
+      markEntityTransformDirty(&child);
+    }
+
+    m_BVHTree.markLeafDirty(entity->bvhID(), entity->transform());
   }
 
   void Scene::serialize(ISerializer& serializer)
@@ -229,23 +240,16 @@ namespace bifrost
       LinearAllocatorScope scope       = {engine.tempMemory()};
       const TempBuffer     json_buffer = file_in.readAll(engine.tempMemoryNoFree());
       json::Value          json_value  = json::fromString(json_buffer.buffer(), json_buffer.size());
-      Scene&               scene       = m_Payload.set<Scene>(engine.mainMemory());
+      Scene&               scene       = m_Payload.set<Scene>(engine);
 
       if (json_value.isObject())
       {
         JsonSerializerReader json_writer{assets, engine.tempMemoryNoFree(), json_value};
-        RefPatcherSerializer ref_patcher{json_writer};
 
         if (json_writer.beginDocument(false))
         {
           scene.serialize(json_writer);
           json_writer.endDocument();
-        }
-
-        if (ref_patcher.beginDocument(false))
-        {
-          scene.serialize(ref_patcher);
-          ref_patcher.endDocument();
         }
       }
 

@@ -128,7 +128,6 @@ namespace bifrost
   static constexpr int k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls"                             */
   static constexpr int k_GfxSSAONoiseTextureNumElements  = k_GfxSSAONoiseTextureDim * k_GfxSSAONoiseTextureDim;
   static constexpr int k_GfxMaxLightsOnScreen            = k_GfxMaxPunctualLightsOnScreen + k_GfxMaxDirectionalLightsOnScreen;
-  static const int     k_GfxBaseResolution[]             = {1600, 900};
 
   //
   // Struct Mappings
@@ -154,7 +153,7 @@ namespace bifrost
     Mat4x4   u_CameraViewProjection;
     Mat4x4   u_CameraView;
     Vector3f u_CameraForwardAndTime;  // [u_CameraForward, u_Time]
-    Vector3f u_CameraPosition;        // [u_CameraPosition, u_Pad0]
+    Vector3f u_CameraPosition;        // [u_CameraPosition, u_CameraAspect]
     Vector3f u_CameraAmbient;
   };
 
@@ -319,7 +318,7 @@ namespace bifrost
     friend class ::Engine;  // TODO: Not do this?!?!
 
    public:
-    Vector3f AmbientColor = {0.03f};
+    Vector3f AmbientColor = {0.64f};
 
    private:
     using CameraObjectPair = std::pair<const CameraGPUData*, Entity*>;

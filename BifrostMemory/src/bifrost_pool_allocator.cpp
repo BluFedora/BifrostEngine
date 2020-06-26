@@ -16,8 +16,9 @@
 
 #include "bifrost/memory/bifrost_memory_utils.h" /* bfAlignUpSize */
 
-#include <cassert> /* assert  */
-#include <cstdint> /* uint8_t */
+#include <algorithm> /* max     */
+#include <cassert>   /* assert  */
+#include <cstdint>   /* uint8_t */
 
 namespace bifrost
 {
@@ -47,12 +48,14 @@ namespace bifrost
 
   void PoolAllocatorImpl::deallocate(void* ptr)
   {
+    checkPointer(ptr);
+
     PoolHeader* const header = reinterpret_cast<PoolHeader*>(ptr);
 
 #ifdef BIFROST_MEMORY_DEBUG_WIPE_MEMORY
     if (ptr > end() || ptr < begin())
     {
-      throw std::exception("This pointer is not within this pool.");
+      throw std::exception(/*"This pointer is not within this pool."*/);
     }
 
     std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, m_BlockSize);

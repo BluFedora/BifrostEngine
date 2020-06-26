@@ -19,7 +19,9 @@ namespace bifrost::editor
    public:
     explicit Selection(IMemoryManager& memory);
 
-    const Array<Selectable>& selectables() const { return m_Selectables; }
+    // const Array<Selectable>& selectables() const { return m_Selectables; }
+
+    Array<Selectable>& selectables() { return m_Selectables; }
 
     template<typename T, typename F>
     void forEachOfType(F&& callback)

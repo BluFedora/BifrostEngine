@@ -8,8 +8,7 @@
 //
 #version 450
 
-const float k_Aspect      = 1600.0f / 900.0f;
-const bool  k_DoMiterJoin = true;
+const bool k_DoMiterJoin = true;
 
 layout(location = 0) in vec4 in_CurrPosition;
 layout(location = 1) in vec4 in_NextPosition;
@@ -24,7 +23,7 @@ layout(location = 0) out vec3 frag_Color;
 
 void main()
 {
-  vec2 aspect    = vec2(k_Aspect, 1.0f);
+  vec2 aspect    = vec2(u_CameraAspect, 1.0f);
   vec4 clip_curr = u_CameraViewProjection * vec4(in_CurrPosition.xyz, 1.0f);
   vec4 clip_next = u_CameraViewProjection * vec4(in_NextPosition.xyz, 1.0f);
   vec4 clip_prev = u_CameraViewProjection * vec4(in_PrevPosition.xyz, 1.0f);
@@ -61,7 +60,7 @@ void main()
   }
 
   vec2 normal = vec2(-direction.y, direction.x) * thickness * 0.5f;
-  normal.x /= k_Aspect;
+  normal.x /= u_CameraAspect;
 
   frag_Color = in_Color.rgb;
 

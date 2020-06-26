@@ -24,7 +24,7 @@ layout(std140, set = 0, binding = 0) uniform u_Set0
   vec3  u_CameraForward;
   float u_Time;
   vec3  u_CameraPosition;
-  float u_Pad0;
+  float u_CameraAspect;
   vec3  u_CameraAmbient;
 };
 

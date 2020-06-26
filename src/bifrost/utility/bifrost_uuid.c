@@ -28,8 +28,8 @@
 
 static const BifrostUUID s_EmptyUUID =
  {
-  "0000000000000000",
-  "00000000-0000-0000-0000-000000000000",
+  {"0000000000000000"},
+  {"00000000-0000-0000-0000-000000000000"},
 };
 
 BifrostUUID bfUUID_makeEmpty(void)
@@ -45,9 +45,9 @@ BifrostUUID bfUUID_generate(void)
   if (CoCreateGuid(&out) == S_OK)
   {
     BifrostUUID self;
-    memcpy(self.as_number, &out, sizeof(self.as_number));
+    memcpy(self.as_number.data, &out, sizeof(self.as_number.data));
 
-    bfUUID_numberToString(self.as_number, self.as_string);
+    bfUUID_numberToString(self.as_number.data, self.as_string.data);
 
     return self;
   }
@@ -59,9 +59,9 @@ BifrostUUID bfUUID_generate(void)
   uuid_t out;
   uuid_generate_random(out);
 
-  memcpy(self.as_number, out, sizeof(self.as_number));
+  memcpy(self.as_number.data, out, sizeof(self.as_number.data));
 
-  uuid_unparse(out, self.as_string);
+  bfUUID_numberToString(self.as_number.data, self.as_string.data);
 
   return self;
 #else
@@ -85,9 +85,9 @@ BifrostUUID bfUUID_fromString(const char source[37])
   if (IIDFromString(source_wide, &out) == S_OK)
   {
     BifrostUUID self;
-    memcpy(self.as_number, &out, sizeof(self.as_number));
+    memcpy(self.as_number.data, &out, sizeof(self.as_number));
 
-    strcpy(self.as_string, source);
+    strcpy(self.as_string.data, source);
 
     return self;
   }
@@ -97,8 +97,8 @@ BifrostUUID bfUUID_fromString(const char source[37])
   if (uuid_parse((char*)source, out) != -1)
   {
     BifrostUUID self;
-    memcpy(self.as_number, out, sizeof(self.as_number));
-    strcpy(self.as_string, source);
+    memcpy(self.as_number.data, out, sizeof(self.as_number.data));
+    strcpy(self.as_string.data, source);
 
     return self;
   }
@@ -110,15 +110,7 @@ BifrostUUID bfUUID_fromString(const char source[37])
 
 int bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs)
 {
-  for (int i = 0; i < 16; ++i)
-  {
-    if (lhs->as_number[i] != rhs->as_number[i])
-    {
-      return 0;
-    }
-  }
-
-  return 1;
+  return bfUUID_numberCmp(&lhs->as_number, &rhs->as_number);
 }
 
 int bfUUID_isEmpty(const BifrostUUID* self)
@@ -157,4 +149,34 @@ void bfUUID_numberToString(const char number[16], char out_string[37])
 #else
 #error "Unsupported platform for generating guids."
 #endif
+}
+
+int bfUUID_numberCmp(const BifrostUUIDNumber* lhs, const BifrostUUIDNumber* rhs)
+{
+  const int num_bytes_to_cmp = (int)sizeof(BifrostUUIDNumber);
+
+  for (int i = 0; i < num_bytes_to_cmp; ++i)
+  {
+    if (lhs->data[i] != rhs->data[i])
+    {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs)
+{
+  const int num_bytes_to_cmp = (int)sizeof(BifrostUUIDString) - 1;
+
+  for (int i = 0; i < num_bytes_to_cmp; ++i)
+  {
+    if (lhs->data[i] != rhs->data[i])
+    {
+      return 0;
+    }
+  }
+
+  return 1;
 }

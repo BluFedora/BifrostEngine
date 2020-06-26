@@ -17,7 +17,7 @@
 #define k_HalfPI (k_PI * 0.5f)
 #define k_RadToDegf (57.2958f)
 #define k_DegToRadf (0.01745329251f)
-#define k_Epsilonf 0.00001f
+#define k_Epsilonf (0.00001f)
 
 // Quaternion
 
@@ -214,7 +214,7 @@ void bfQuaternionf_normalize(Quaternionf* self)
   }
 }
 
-void bfQuaternionf_toMatrix(Quaternionf* self, Mat4x4* out_rot_mat)
+void bfQuaternionf_toMatrix(const Quaternionf* self, Mat4x4* out_rot_mat)
 {
   Quaternionf normalized_clone = *self;
   bfQuaternionf_normalize(&normalized_clone);
@@ -457,6 +457,27 @@ void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value)
   }
 }
 
+static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f position, const Quaternionf rotation, const Vec3f scale)
+{
+  Mat4x4 translation_mat;
+  Mat4x4 rotation_mat;
+  Mat4x4 scale_mat;
+  Mat4x4 origin_mat;
+  Vec3f  total_translation;
+
+  total_translation = position;
+  Vec3f_add(&total_translation, &origin);
+
+  Mat4x4_initTranslatef(&translation_mat, total_translation.x, total_translation.y, total_translation.z);
+  bfQuaternionf_toMatrix(&rotation, &rotation_mat);
+  Mat4x4_initScalef(&scale_mat, scale.x, scale.y, scale.z);
+  Mat4x4_initTranslatef(&origin_mat, -origin.x, -origin.y, -origin.z);
+
+  Mat4x4_mult(&scale_mat, &origin_mat, out);
+  Mat4x4_mult(&rotation_mat, out, out);
+  Mat4x4_mult(&translation_mat, out, out);
+}
+
 void bfTransform_flushChanges(BifrostTransform* self)
 {
   BifrostTransform* work_stack[k_TransformQueueStackMax] = {NULL}; /* TODO(Shareef): Make this dynamic? */
@@ -464,36 +485,21 @@ void bfTransform_flushChanges(BifrostTransform* self)
 
   work_stack[work_stack_top++] = self;
 
-  Mat4x4 translation_mat;
-  Mat4x4 rotation_mat;
-  Mat4x4 scale_mat;
-  Mat4x4 origin_mat;
-  Vec3f  total_translation;
-
   while (work_stack_top)
   {
     BifrostTransform*       node        = work_stack[--work_stack_top];
     const BifrostTransform* node_parent = bfTransformParent(node);
     BifrostTransform*       child       = bfTransformFirstChild(node);
 
-    total_translation = node->local_position;
-    Vec3f_add(&total_translation, &node->origin);
-
-    Mat4x4_initTranslatef(&translation_mat, total_translation.x, total_translation.y, total_translation.z);
-    bfQuaternionf_toMatrix(&self->local_rotation, &rotation_mat);
-    Mat4x4_initScalef(&scale_mat, self->local_scale.x, self->local_scale.y, self->local_scale.z);
-    Mat4x4_initTranslatef(&origin_mat, -self->origin.x, -self->origin.y, -self->origin.z);
-
-    Mat4x4_mult(&scale_mat, &origin_mat, &node->local_transform);
-    Mat4x4_mult(&rotation_mat, &node->local_transform, &node->local_transform);
-    Mat4x4_mult(&translation_mat, &node->local_transform, &node->local_transform);
+    bfTransform_flushMatrix(&node->local_transform, node->origin, node->local_position, node->local_rotation, node->local_scale);
 
     if (node_parent)
     {
       const Mat4x4* const parent_mat = &node_parent->world_transform;
 
-      Mat4x4_mult(&node->local_transform, parent_mat, &node->world_transform);
-      Mat4x4_multVec(parent_mat, &node->local_position, &self->world_position);
+      Mat4x4_mult(parent_mat, &node->local_transform, &node->world_transform);
+
+      Mat4x4_multVec(parent_mat, &node->local_position, &node->world_position);
       node->world_rotation = node->local_rotation;
       bfQuaternionf_multQ(&node->world_rotation, &node_parent->world_rotation);
       node->world_scale = node->local_scale;

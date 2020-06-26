@@ -1,4 +1,4 @@
-#include "demo/game_state_layers/main_demo.hpp"
+#include "main_demo.hpp"
 
 #include "bifrost/bifrost.hpp"
 
@@ -41,6 +41,11 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
   return bestmonitor;
 }
 
+MainDemoLayer::MainDemoLayer():
+  IGameStateLayer()
+{
+}
+
 void MainDemoLayer::onEvent(Engine&, Event& event)
 {
   const auto is_key_down = event.type == BIFROST_EVT_ON_KEY_DOWN;
@@ -68,8 +73,4 @@ void MainDemoLayer::onEvent(Engine&, Event& event)
 
     event.accept();
   }
-}
-
-void MainDemoLayer::onUpdate(Engine& engine, float delta_time)
-{
 }

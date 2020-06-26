@@ -294,6 +294,7 @@ namespace bifrost
         // Stage 2: Add the Object as normal
         const BVHNodeOffset sibling    = nodeToIndex(*current_node);
         const BVHNodeOffset old_parent = current_node->parent;
+        const BVHNodeOffset old_depth = current_node->depth;
         const BVHNodeOffset new_parent = createNode(nullptr, aabb::mergeBounds(object_bounds, current_node->bounds));
         const BVHNodeOffset new_leaf   = createNode(user_data, object_bounds);
 
@@ -320,7 +321,7 @@ namespace bifrost
           }
         }
 
-        updateDepth(new_parent, current_node->depth);
+        updateDepth(new_parent, old_depth);
         refitChildren(root_idx, true);  // TODO: This is doing more work than need be.
 
         return new_leaf;

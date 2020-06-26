@@ -70,7 +70,6 @@ namespace bifrost::editor
     void                   handleEvent(EditorOverlay& editor, Event& event);
     void                   update(EditorOverlay& editor, float delta_time);
     void                   uiShow(EditorOverlay& editor);
-    void                   selectionChange(const Selectable& selectable);
     virtual EditorWindowID windowID() const = 0;
 
     virtual void onCreate(EditorOverlay& editor) {}
@@ -83,7 +82,6 @@ namespace bifrost::editor
     virtual void        onPreDrawGUI(EditorOverlay& editor) {}
     virtual void        onDrawGUI(EditorOverlay& editor) {}
     virtual void        onPostDrawGUI(EditorOverlay& editor) {}
-    virtual void        onSelectionChanged(const Selectable& selectable) {}
     virtual void        onEvent(EditorOverlay& editor, Event& event) {}
     virtual void        onUpdate(EditorOverlay& editor, float dt) {}
   };

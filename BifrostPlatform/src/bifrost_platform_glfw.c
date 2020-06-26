@@ -394,6 +394,24 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
 
   if (window)
   {
+    if (g_BifrostPlatform.gfx_api == BIFROST_PLATFORM_GFX_VUlKAN)
+    {
+      glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    }
+    else
+    {
+      /*
+      glfwMakeContextCurrent(main_window);
+      if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+      {
+        error_code = ErrorCodes::GLAD_FAILED_TO_INIT;
+        goto shutdown_glfw;  // NOLINT(hicpp-avoid-goto)
+      }
+      */
+
+      glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+    }
+
     glfwWindowHint(GLFW_RESIZABLE, flags & BIFROST_WINDOW_FLAG_IS_RESIZABLE ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_VISIBLE, flags & BIFROST_WINDOW_FLAG_IS_VISIBLE ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_DECORATED, flags & BIFROST_WINDOW_FLAG_IS_DECORATED ? GLFW_TRUE : GLFW_FALSE);
@@ -503,3 +521,14 @@ int bfWindow_createVulkanSurface(BifrostWindow* self, VkInstance instance, VkSur
 {
   return glfwCreateWindowSurface(instance, self->handle, NULL, out) == VK_SUCCESS;
 }
+
+#if BIFROST_PLATFORM_WINDOWS
+#define GLFW_EXPOSE_NATIVE_WIN32
+#elif BIFROST_PLATFORM_MACOS
+// #define GLFW_EXPOSE_NATIVE_COCOA
+#endif
+
+#include <glfw/glfw3native.h>
+
+#undef GLFW_EXPOSE_NATIVE_WIN32
+#undef GLFW_EXPOSE_NATIVE_COCOA

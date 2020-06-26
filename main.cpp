@@ -1,29 +1,19 @@
 #define NOMINMAX
 
-#include "demo/game_state_layers/main_demo.hpp"
-
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
-#include <bifrost_editor/bifrost_imgui_glfw.hpp>
+#include <bifrost/memory/bifrost_memory_utils.h>  // bfMegabytes
+#include <bifrost_imgui_glfw.hpp>
+
+#include "main_demo.hpp"
+
+#include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
 #include <chrono>
 #include <functional>
-#include <future>
-#include <glfw/glfw3.h>
 #include <iostream>
 #include <utility>
-
-#if BIFROST_PLATFORM_WINDOWS
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif BIFROST_PLATFORM_MACOS
-// #define GLFW_EXPOSE_NATIVE_COCOA
-#endif
-
-#include <glfw/glfw3native.h>
-
-#undef GLFW_EXPOSE_NATIVE_WIN32
-#undef GLFW_EXPOSE_NATIVE_COCOA
 
 struct TestClass final
 {
@@ -159,22 +149,21 @@ static char source[] = R"(
   }
 )";
 
-namespace bifrost
+class Camera_
 {
-  class Camera_
-  {
-   private:
-    float m_ElapsedTime = 0.0f;
+ private:
+  float m_ElapsedTime = 0.0f;
 
-   public:
-    void update(float dt)
-    {
-      m_ElapsedTime += dt;
-    }
-  };
-}  // namespace bifrost
+ public:
+  void update(float dt)
+  {
+    m_ElapsedTime += dt;
+  }
+};
 
 #ifdef _WIN32
+#include <intsafe.h> /* DWORD */
+
 extern "C" {
 __declspec(dllexport) DWORD NvOptimusEnablement                = 0x00000001;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
@@ -228,8 +217,8 @@ static void Test2DTransform()
     {
 #if BIFROST_PLATFORM_WINDOWS
       // This test failed.
-      // __debugbreak();
-      DebugBreak();
+      __debugbreak();
+      // DebugBreak();
 #endif
     }
   }
@@ -348,8 +337,10 @@ static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &Tes
 
 namespace Error
 {
-  static constexpr int FAILED_TO_INITIALIZE_PLATFORM = 1;
-  static constexpr int FAILED_TO_CREATE_MAIN_WINDOW  = 2;
+  static constexpr int SUCCESS                          = 0;
+  static constexpr int FAILED_TO_INITIALIZE_PLATFORM    = 1;
+  static constexpr int FAILED_TO_CREATE_MAIN_WINDOW     = 2;
+  static constexpr int FAILED_TO_ALLOCATE_ENGINE_MEMORY = 3;
 }  // namespace Error
 
 GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
@@ -362,9 +353,15 @@ static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
 float current_time;
 float time_accumulator;
 
-int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
+#define MainQuit(code, label) \
+  err_code = (code);          \
+  goto label
+
+int main(int argc, const char* argv[])
 {
   static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
+
+  int err_code = Error::SUCCESS;
 
   for (const auto& test_fn : s_Test)
   {
@@ -372,198 +369,184 @@ int main(int argc, const char* argv[])  // NOLINT(bugprone-exception-escape)
   }
 
   namespace bfmeta = meta;
-  namespace bf     = bifrost;
 
   if (!bfPlatformInit({argc, argv, nullptr, BIFROST_PLATFORM_GFX_VUlKAN, nullptr}))
   {
-    return Error::FAILED_TO_INITIALIZE_PLATFORM;
+    MainQuit(Error::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
+  }
+
+  BifrostWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
+
+  if (!main_window)
+  {
+    MainQuit(Error::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
   }
 
   bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
   std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
   bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
-  TestClass my_obj = {74, "This message will be in Y"};
-
-  /*
-  glfwMakeContextCurrent(main_window);
-  if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
   {
-    error_code = ErrorCodes::GLAD_FAILED_TO_INIT;
-    goto shutdown_glfw;  // NOLINT(hicpp-avoid-goto)
-  }
-  */
+    TestClass my_obj = {74, "This message will be in Y"};
 
-#define retarded_return(msg, ...) \
-  std::printf("%s\n", msg);       \
-  return __VA_ARGS__
-
-  const std::size_t             engine_memory_size = 100000000u;
-  const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
-
-  {
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    Engine               engine{engine_memory.get(), engine_memory_size, argc, argv};
-    BifrostWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
-
-    if (!main_window)
+    try
     {
-      return Error::FAILED_TO_CREATE_MAIN_WINDOW;
-    }
+      const std::size_t             engine_memory_size = bfMegabytes(50);
+      const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
 
-    g_Window = (GLFWwindow*)main_window->handle;
+      Engine engine{engine_memory.get(), engine_memory_size, argc, argv};
 
-    glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
+      g_Window = (GLFWwindow*)main_window->handle;
 
-    const BifrostEngineCreateParams params =
-    {
-      argv[0],
-      0,
-#if BIFROST_PLATFORM_WINDOWS
-      GetModuleHandle(nullptr),
-      glfwGetWin32Window(g_Window)
-#elif BIFROST_PLATFORM_MACOS
-      nullptr,
-      window.handle()
-#else
-#error Unsupported platform.
-#endif
-    };
+      glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-    engine.init(params, main_window);
+      const BifrostEngineCreateParams params = {argv[0], 0};
 
-    imgui::startup(engine.renderer().context(), main_window);
+      engine.init(params, main_window);
 
-    engine.stateMachine().push<MainDemoLayer>();
-    engine.stateMachine().addOverlay<editor::EditorOverlay>();
+      imgui::startup(engine.renderer().context(), main_window);
 
-    VM& vm = engine.scripting();
+      engine.stateMachine().push<MainDemoLayer>();
+      engine.stateMachine().addOverlay<editor::EditorOverlay>();
 
-    const BifrostVMClassBind camera_clz_bindings = bf::vmMakeClassBinding<Camera_>("Camera", bf::vmMakeCtorBinding<Camera_>());
+      VM& vm = engine.scripting();
 
-    vm.stackResize(5);
+      const BifrostVMClassBind camera_clz_bindings = vmMakeClassBinding<Camera_>("Camera", vmMakeCtorBinding<Camera_>());
 
-    vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
-    vm.moduleMake(0, "bifrost");
-    vm.stackStore(0, camera_clz_bindings);
-    vm.stackLoadVariable(1, 0, "Camera");
-    vm.stackStore(1, "update", &Camera_::update);
+      vm.stackResize(5);
 
-    const BifrostVMClassBind clz_bind = bf::vmMakeClassBinding<TestClass>(
-     "TestClass",
-     bf::vmMakeCtorBinding<TestClass, int>(),
-     bf::vmMakeMemberBinding<&TestClass::printf>("printf"));
+      vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
+      vm.moduleMake(0, "bifrost");
+      vm.stackStore(0, camera_clz_bindings);
+      vm.stackLoadVariable(1, 0, "Camera");
+      vm.stackStore(1, "update", &Camera_::update);
 
-    vm.stackResize(1);
-    vm.moduleMake(0, "main");
-    vm.stackStore(0, clz_bind);
-    vm.stackStore<testFN>(0, "cppFn");
+      const BifrostVMClassBind clz_bind = vmMakeClassBinding<TestClass>(
+       "TestClass",
+       vmMakeCtorBinding<TestClass, int>(),
+       vmMakeMemberBinding<&TestClass::printf>("printf"));
 
-    float capture = 6.0f;
-    vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
-      std::printf("Will this work out %f???\n", capture);
-      ++capture;
-      my_obj.x = 65;
-    });
-    vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
-
-    const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
-
-    bfValueHandle update_fn = nullptr;
-
-    if (!err)
-    {
       vm.stackResize(1);
-      vm.moduleLoad(0, "main2");
-      vm.stackLoadVariable(0, 0, "callMeFromCpp");
+      vm.moduleMake(0, "main");
+      vm.stackStore(0, clz_bind);
+      vm.stackStore<testFN>(0, "cppFn");
 
-      vm.call(0, 45, std::string("Hello from cpp") + "!!!", false);
+      float capture = 6.0f;
+      vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
+        std::printf("Will this work out %f???\n", capture);
+        ++capture;
+        my_obj.x = 65;
+      });
+      vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
 
-      vm.moduleLoad(0, "main2");
-      vm.stackLoadVariable(0, 0, "update");
-      update_fn = vm.stackMakeHandle(0);
-    }
+      const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
 
-    current_time     = float(glfwGetTime());
-    time_accumulator = 0.0f;
+      bfValueHandle update_fn = nullptr;
 
-    main_window->user_data = &engine;
+      if (!err)
+      {
+        vm.stackResize(1);
+        vm.moduleLoad(0, "main2");
+        vm.stackLoadVariable(0, 0, "callMeFromCpp");
 
-    main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
-      Engine* const engine = (Engine*)window->user_data;
-      imgui::onEvent(window, *event);
-      engine->onEvent(*event);
-    };
+        vm.call(0, 45, std::string("Hello from cpp") + "!!!", false);
 
-    main_window->frame_fn = [](BifrostWindow* window) {
-      Engine* const engine = (Engine*)window->user_data;
+        vm.moduleLoad(0, "main2");
+        vm.stackLoadVariable(0, 0, "update");
+        update_fn = vm.stackMakeHandle(0);
+      }
 
-      const auto CurrentTimeSeconds = []() -> float {
-        return float(glfwGetTime());
+      current_time     = float(glfwGetTime());
+      time_accumulator = 0.0f;
+
+      main_window->user_data = &engine;
+
+      main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
+        Engine* const engine = (Engine*)window->user_data;
+        imgui::onEvent(window, *event);
+        engine->onEvent(*event);
       };
 
-      const float new_time   = CurrentTimeSeconds();
-      const float delta_time = std::min(new_time - current_time, max_time_step_ms);
+      main_window->frame_fn = [](BifrostWindow* window) {
+        Engine* const engine = (Engine*)window->user_data;
 
-      current_time = new_time;
-      time_accumulator += delta_time;
+        const auto CurrentTimeSeconds = []() -> float {
+          return float(glfwGetTime());
+        };
 
-      int window_width, window_height;
-      glfwGetWindowSize((GLFWwindow*)window->handle, &window_width, &window_height);
+        const float new_time   = CurrentTimeSeconds();
+        const float delta_time = std::min(new_time - current_time, max_time_step_ms);
 
-      if (engine->beginFrame())
-      {
-        StandardRenderer& renderer = engine->renderer();
+        current_time = new_time;
+        time_accumulator += delta_time;
+
+        int window_width;
+        int window_height;
+        bfWindow_getSize(window, &window_width, &window_height);
+
+        if (engine->beginFrame())
+        {
+          StandardRenderer& renderer = engine->renderer();
 
 #if 0
-    if (update_fn)
-    {
-      vm.stackResize(1);
-      vm.stackLoadHandle(0, update_fn);
+        if (update_fn)
+        {
+          vm.stackResize(1);
+          vm.stackLoadHandle(0, update_fn);
 
-      if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-      {
-        vm.call(0, delta_time);
-      }
-    }
+          if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+          {
+            vm.call(0, delta_time);
+          }
+        }
 #endif
 
-        imgui::beginFrame(
-         renderer.surface(),
-         float(window_width),
-         float(window_height),
-         delta_time);
+          imgui::beginFrame(
+           renderer.surface(),
+           float(window_width),
+           float(window_height),
+           delta_time);
 
-        while (time_accumulator >= time_step_ms)
-        {
-          engine->fixedUpdate(time_step_ms);
-          time_accumulator -= time_step_ms;
+          while (time_accumulator >= time_step_ms)
+          {
+            engine->fixedUpdate(time_step_ms);
+            time_accumulator -= time_step_ms;
+          }
+
+          engine->update(delta_time);
+
+          const float render_alpha = time_accumulator / time_step_ms;  // current_state * render_alpha + previous_state * (1.0f - render_alpha)
+
+          engine->drawBegin(render_alpha);
+          imgui::endFrame(&renderer);
+          engine->drawEnd();
         }
+      };
 
-        engine->update(delta_time);
-
-        const float render_alpha = time_accumulator / time_step_ms;  // current_state * render_alpha + previous_state * (1.0f - render_alpha)
-
-        engine->drawBegin(render_alpha);
-        imgui::endFrame(&renderer, (bfWindowSurfaceHandle)window->renderer_data);
-        engine->drawEnd();
+      while (!bfWindow_wantsToClose(main_window))
+      {
+        bfPlatformPumpEvents();
+        main_window->frame_fn(main_window);
       }
-    };
 
-    while (!bfWindow_wantsToClose(main_window))
-    {
-      bfPlatformPumpEvents();
-      main_window->frame_fn(main_window);
+      vm.stackDestroyHandle(update_fn);
+      imgui::shutdown();
+      engine.deinit();
     }
-
-    vm.stackDestroyHandle(update_fn);
-    imgui::shutdown();
-    engine.deinit();
-    bfPlatformDestroyWindow(main_window);
+    catch (std::bad_alloc&)
+    {
+      MainQuit(Error::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
+    }
   }
 
+quit_window:
+  bfPlatformDestroyWindow(main_window);
+
+quit_platform:
   bfPlatformQuit();
 
-  return 0;
+quit_main:
+  return err_code;
 }
+
+#undef MainQuit

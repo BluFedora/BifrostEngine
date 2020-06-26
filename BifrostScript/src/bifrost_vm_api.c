@@ -1069,7 +1069,7 @@ static void bfVM_popAllCallFrames(BifrostVM* self, const BifrostVMStackFrame* re
     {
       const BifrostVMStackFrame* frame    = Array_at(&self->frames, i);
       const BifrostObjFn* const  fn       = frame->fn;
-      const uint16_t             line_num = fn ? fn->line_to_code[frame->ip - fn->instructions] : (uint16_t)-1;
+      const uint16_t             line_num = fn ? fn->code_to_line[frame->ip - fn->instructions] : (uint16_t)-1;
       const char* const          fn_name  = fn ? fn->name : "<native>";
 
       String_sprintf(&error_str, "%*.s[%zu] Stack Frame Line(%u): %s\n", (int)i * 3, "", i, (unsigned)line_num, fn_name);

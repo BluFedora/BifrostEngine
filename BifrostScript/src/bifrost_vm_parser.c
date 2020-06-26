@@ -6,11 +6,12 @@
  *   Handles the pasring of the languages grammar and uses
  *   the function builder to generate a function.   
  * 
- *   The output is a module with an executable function if the
- *   parser ran into no issues.  
+ *   The output is a module with an executable function assuming the
+ *   parser ran into no issues.
  * 
  *   References:
  *     [http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/]
+ *
  * @version 0.0.1
  * @date    2020-02-16
  * 
@@ -26,6 +27,8 @@
 #include <bifrost/data_structures/bifrost_array_t.h>
 #include <bifrost/data_structures/bifrost_dynamic_string.h>
 #include <bifrost/script/bifrost_vm.h>
+
+#include "bifrost_vm_debug.h"
 
 #include <assert.h>
 #include <stdarg.h> /* va_list, va_start, va_copy, va_end */
@@ -215,57 +218,57 @@ typedef struct
 
 static const GrammarRule s_Rules[BIFROST_TOKEN_AT_SIGN + 1] =
  {
-  /*  0 */ GRAMMAR_BOTH(parseGroup, parseCall, PREC_CALL),  // (BIFROST_TOKEN_L_PAREN);
-  /*  1 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_R_PAREN);
-  /*  2 */ GRAMMAR_INFIX(parseSubscript, PREC_CALL),        // (BIFROST_TOKEN_L_SQR_BOI);
-  /*  3 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_R_SQR_BOI);
-  /*  4 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_L_CURLY);
-  /*  5 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_R_CURLY);
-  /*  6 */ GRAMMAR_NONE(),                                  // (HASHTAG);
-  /*  7 */ GRAMMAR_INFIX(parseMethodCall, PREC_CALL),       // (BIFROST_TOKEN_COLON);
-  /*  8 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_SEMI_COLON);
-  /*  9 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_COMMA);
-  /* 10 */ GRAMMAR_INFIX(parseAssign, PREC_ASSIGN),         // (BIFROST_TOKEN_EQUALS);
-  /* 11 */ GRAMMAR_INFIX(parseBinOp, PREC_TERM),            // (PLUS);
-  /* 12 */ GRAMMAR_INFIX(parseBinOp, PREC_TERM),            // (MINUS);
-  /* 13 */ GRAMMAR_INFIX(parseBinOp, PREC_FACTOR),          // (MULT);
-  /* 14 */ GRAMMAR_INFIX(parseBinOp, PREC_FACTOR),          // (DIV);
-  /* 15 */ GRAMMAR_INFIX(parseAssign, PREC_ASSIGN),         // (PLUS_EQUALS);
-  /* 16 */ GRAMMAR_INFIX(parseAssign, PREC_ASSIGN),         // (MINUS_EQUALS);
-  /* 17 */ GRAMMAR_NONE(),                                  // (INCREMENT);
-  /* 18 */ GRAMMAR_NONE(),                                  // (DECREMENT);
-  /* 19 */ GRAMMAR_INFIX(parseDotOp, PREC_CALL),            // (DOT);
-  /* 20 */ GRAMMAR_PREFIX(parseVariable),                   // (IDENTIFIER);
-  /* 21 */ GRAMMAR_NONE(),                                  // (VAR_DECL);
-  /* 22 */ GRAMMAR_NONE(),                                  // (IMPORT);
-  /* 23 */ GRAMMAR_PREFIX(parseFunctionExpr),               // (FUNC);
-  /* 24 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_CLASS);
-  /* 25 */ GRAMMAR_NONE(),                                  // (CTRL_IF);
-  /* 26 */ GRAMMAR_NONE(),                                  // (CTRL_ELSE);
-  /* 27 */ GRAMMAR_INFIX(parseBinOp, PREC_EQUALITY),        // (CTRL_EE);
-  /* 28 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      // (CTRL_LT);
-  /* 29 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      // (CTRL_GT);
-  /* 30 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      // (CTRL_LE);
-  /* 31 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      // (CTRL_GE);
-  /* 32 */ GRAMMAR_INFIX(parseBinOp, PREC_OR),              // (CTRL_OR);
-  /* 33 */ GRAMMAR_INFIX(parseBinOp, PREC_AND),             // (CTRL_AND);
-  /* 34 */ GRAMMAR_INFIX(parseBinOp, PREC_EQUALITY),        // (CTRL_NE);
-  /* 35 */ GRAMMAR_NONE(),                                  //
-  /* 36 */ GRAMMAR_NONE(),                                  // (CTRL_WHILE);
-  /* 37 */ GRAMMAR_NONE(),                                  // (CTRL_FOR);
-  /* 38 */ GRAMMAR_NONE(),                                  // (CTRL_RETURN);
-  /* 39 */ GRAMMAR_NONE(),                                  // (CTRL_NEGATE);
-  /* 40 */ GRAMMAR_PREFIX(parseLiteral),                    // (CONST_STR);
-  /* 41 */ GRAMMAR_PREFIX(parseLiteral),                    // (CONST_REAL);
-  /* 42 */ GRAMMAR_PREFIX(parseLiteral),                    // (CONST_BOOL);
-  /* 43 */ GRAMMAR_PREFIX(parseLiteral),                    // (CONST_NIL);
-  /* 44 */ GRAMMAR_NONE(),                                  // (EOP);
-  /* 45 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_CTRL_BREAK)
-  /* 46 */ GRAMMAR_PREFIX(parseNew),                        // (BIFROST_TOKEN_NEW)
-  /* 47 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_STATIC)
-  /* 48 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_AS)
-  /* 49 */ GRAMMAR_PREFIX(parseSuper),                      // (BIFROST_TOKEN_SUPER)
-  /* 50 */ GRAMMAR_NONE(),                                  // (BIFROST_TOKEN_AT_SIGN)
+  /*  0 */ GRAMMAR_BOTH(parseGroup, parseCall, PREC_CALL),  /* (BIFROST_TOKEN_L_PAREN)    */
+  /*  1 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_R_PAREN)    */
+  /*  2 */ GRAMMAR_INFIX(parseSubscript, PREC_CALL),        /* (BIFROST_TOKEN_L_SQR_BOI)  */
+  /*  3 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_R_SQR_BOI)  */
+  /*  4 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_L_CURLY)    */
+  /*  5 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_R_CURLY)    */
+  /*  6 */ GRAMMAR_NONE(),                                  /* (HASHTAG)                  */
+  /*  7 */ GRAMMAR_INFIX(parseMethodCall, PREC_CALL),       /* (BIFROST_TOKEN_COLON)      */
+  /*  8 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_SEMI_COLON) */
+  /*  9 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_COMMA)      */
+  /* 10 */ GRAMMAR_INFIX(parseAssign, PREC_ASSIGN),         /* (BIFROST_TOKEN_EQUALS)     */
+  /* 11 */ GRAMMAR_INFIX(parseBinOp, PREC_TERM),            /* (PLUS)                     */
+  /* 12 */ GRAMMAR_INFIX(parseBinOp, PREC_TERM),            /* (MINUS)                    */
+  /* 13 */ GRAMMAR_INFIX(parseBinOp, PREC_FACTOR),          /* (MULT)                     */
+  /* 14 */ GRAMMAR_INFIX(parseBinOp, PREC_FACTOR),          /* (DIV)                      */
+  /* 15 */ GRAMMAR_INFIX(parseAssign, PREC_ASSIGN),         /* (PLUS_EQUALS)              */
+  /* 16 */ GRAMMAR_INFIX(parseAssign, PREC_ASSIGN),         /* (MINUS_EQUALS)             */
+  /* 17 */ GRAMMAR_NONE(),                                  /* (INCREMENT)                */
+  /* 18 */ GRAMMAR_NONE(),                                  /* (DECREMENT)                */
+  /* 19 */ GRAMMAR_INFIX(parseDotOp, PREC_CALL),            /* (DOT)                      */
+  /* 20 */ GRAMMAR_PREFIX(parseVariable),                   /* (IDENTIFIER)               */
+  /* 21 */ GRAMMAR_NONE(),                                  /* (VAR_DECL)                 */
+  /* 22 */ GRAMMAR_NONE(),                                  /* (IMPORT)                   */
+  /* 23 */ GRAMMAR_PREFIX(parseFunctionExpr),               /* (FUNC)                     */
+  /* 24 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_CLASS)      */
+  /* 25 */ GRAMMAR_NONE(),                                  /* (CTRL_IF)                  */
+  /* 26 */ GRAMMAR_NONE(),                                  /* (CTRL_ELSE)                */
+  /* 27 */ GRAMMAR_INFIX(parseBinOp, PREC_EQUALITY),        /* (CTRL_EE)                  */
+  /* 28 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      /* (CTRL_LT)                  */
+  /* 29 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      /* (CTRL_GT)                  */
+  /* 30 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      /* (CTRL_LE)                  */
+  /* 31 */ GRAMMAR_INFIX(parseBinOp, PREC_COMPARISON),      /* (CTRL_GE)                  */
+  /* 32 */ GRAMMAR_INFIX(parseBinOp, PREC_OR),              /* (CTRL_OR)                  */
+  /* 33 */ GRAMMAR_INFIX(parseBinOp, PREC_AND),             /* (CTRL_AND)                 */
+  /* 34 */ GRAMMAR_INFIX(parseBinOp, PREC_EQUALITY),        /* (CTRL_NE)                  */
+  /* 35 */ GRAMMAR_NONE(),                                  /*                            */
+  /* 36 */ GRAMMAR_NONE(),                                  /* (CTRL_WHILE)               */
+  /* 37 */ GRAMMAR_NONE(),                                  /* (CTRL_FOR)                 */
+  /* 38 */ GRAMMAR_NONE(),                                  /* (CTRL_RETURN)              */
+  /* 39 */ GRAMMAR_NONE(),                                  /* (CTRL_NEGATE)              */
+  /* 40 */ GRAMMAR_PREFIX(parseLiteral),                    /* (CONST_STR)                */
+  /* 41 */ GRAMMAR_PREFIX(parseLiteral),                    /* (CONST_REAL)               */
+  /* 42 */ GRAMMAR_PREFIX(parseLiteral),                    /* (CONST_BOOL)               */
+  /* 43 */ GRAMMAR_PREFIX(parseLiteral),                    /* (CONST_NIL)                */
+  /* 44 */ GRAMMAR_NONE(),                                  /* (EOP)                      */
+  /* 45 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_CTRL_BREAK) */
+  /* 46 */ GRAMMAR_PREFIX(parseNew),                        /* (BIFROST_TOKEN_NEW)        */
+  /* 47 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_STATIC)     */
+  /* 48 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_AS)         */
+  /* 49 */ GRAMMAR_PREFIX(parseSuper),                      /* (BIFROST_TOKEN_SUPER)      */
+  /* 50 */ GRAMMAR_NONE(),                                  /* (BIFROST_TOKEN_AT_SIGN)    */
 };
 
 static void bfEmitError(BifrostParser* self, const char* format, ...)
@@ -701,6 +704,9 @@ void bfParser_popBuilder(BifrostParser* self, BifrostObjFn* fn_out, int arity)
   bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_RETURN, 0, 0);
 
   bfVMFunctionBuilder_end(self->fn_builder, fn_out, arity);
+
+  bfDbgDisassembleFunction(0, fn_out);
+
   bfVMFunctionBuilder_dtor(self->fn_builder);
   Array_pop(&self->fn_builder_stack);
   self->fn_builder = Array_back(&self->fn_builder_stack);
@@ -1278,7 +1284,9 @@ static bfVMValue parserTokenConstexprValue(const BifrostParser* self, const bfTo
   switch (token->type)
   {
     case CONST_REAL: return bfVMValue_fromNumber(token->as.num);
-    case CONST_BOOL: return bfVMValue_fromBool(token->as.str[0] == 't');
+    case CONST_BOOL:
+      return bfVMValue_fromBool(token->as.str[0] == 't');
+      /* TODO(SR): The call to 'bfVM_createString' should be delayed, interning the string would save on memory. */
     case CONST_STR: return bfVMValue_fromPointer(bfVM_createString(self->vm, token->as.str_range));
     case CONST_NIL: return bfVMValue_fromNull();
     default: break;
@@ -1322,7 +1330,7 @@ static bfStringRange parserBeginFunction(BifrostParser* self, bfBool32 require_n
   }
   else
   {
-    bfEmitError(self, "Function name or \"[]\" or \"[]=\" expected after 'func' keyword.");
+    bfEmitError(self, "An identifier, \"[]\" or \"[]=\" is expected after 'func' keyword.");
   }
 
   bfParser_pushBuilder(self, name_str.bgn, bfStringRange_length(&name_str));
@@ -1332,8 +1340,12 @@ static bfStringRange parserBeginFunction(BifrostParser* self, bfBool32 require_n
 static int parserParseFunction(BifrostParser* self)
 {
   /* GRAMMAR(Shareef):
-      func <identifier>(<identifier>,...) {}
-      func <identifier>() {}
+      func <identifier>(<identifier>,...) { ... }
+      func <identifier>() { ... }
+      func []()  { ... }
+      func [](<identifier>,...)  { ... }
+      func []=() { ... }
+      func []=(<identifier>,...) { ... }
   */
 
   int arity = 0;
@@ -1566,12 +1578,14 @@ static inline void parserPatchJumpHelper(BifrostParser* self, uint32_t jump_idx,
 static void parserPatchJump(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, bfBool32 if_not)
 {
   const uint32_t current_loc = (uint32_t)Array_size(&self->fn_builder->instructions);
+
   parserPatchJumpHelper(self, jump_idx, cond_var, (int)current_loc - (int)jump_idx, if_not);
 }
 
 static void parserPatchJumpRev(BifrostParser* self, uint32_t jump_idx, uint32_t cond_var, bfBool32 if_not)
 {
   const uint32_t current_loc = (uint32_t)Array_size(&self->fn_builder->instructions);
+
   bfVMFunctionBuilder_addInstAsBx(self->fn_builder, BIFROST_VM_OP_JUMP, 0, 0);
   parserPatchJumpHelper(self, current_loc, cond_var, (int)jump_idx - (int)current_loc, if_not);
 }
@@ -1693,6 +1707,7 @@ static VariableInfo parserVariableMakeTemp(uint16_t temp_loc)
   VariableInfo ret;
   ret.location = temp_loc;
   ret.kind     = V_LOCAL;
+
   return ret;
 }
 
@@ -1702,6 +1717,7 @@ static ExprInfo exprMake(uint16_t write_loc, VariableInfo variable)
   ret.write_loc = write_loc;
   ret.token     = BIFROST_TOKEN_MAKE_STR(EOP, "EOP");
   ret.var       = variable;
+
   return ret;
 }
 
@@ -1722,6 +1738,7 @@ static int parserCallArgs(BifrostParser* self, uint16_t temp_first, int num_para
       parseExpr(self, &param_expr, PREC_NONE);
 
       ++num_params;
+
     } while (bfParser_match(self, BIFROST_TOKEN_COMMA));
   }
 

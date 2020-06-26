@@ -2,13 +2,17 @@
 
 #include "bifrost/debug/bifrost_dbg_logger.h"         // bfLog*
 #include "bifrost/ecs/bifrost_behavior_system.hpp"    // BehaviorSystem
+#include "bifrost/platform/bifrost_platform.h"        // BifrostWindow
 #include "bifrost/platform/bifrost_platform_event.h"  // bfEvent
-#include "bifrost/platform/bifrost_platform.h" // BifrostWindow
 
 Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
   bfNonCopyMoveable<Engine>{},
   m_CmdlineArgs{argc, argv},
+#if USE_CRT_HEAP
+  m_MainMemory{},
+#else
   m_MainMemory{main_memory, main_memory_size},
+#endif
   m_TempMemory{static_cast<char*>(m_MainMemory.allocate(main_memory_size / 4)), main_memory_size / 4},
   m_TempAdapter{m_TempMemory},
   m_StateMachine{*this, m_MainMemory},
@@ -23,8 +27,12 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, const 
   m_CameraResizeList{nullptr},
   m_CameraDeleteList{nullptr},
   m_State{EngineState::RUNTIME_PLAYING},
-  m_MainWindow{nullptr}
+  m_MainWindow{nullptr},
+  m_ObjectDatabase{}
 {
+#if USE_CRT_HEAP
+  (void)main_memory;
+#endif
 }
 
 AssetSceneHandle Engine::currentScene() const
@@ -163,6 +171,7 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
 
 bool Engine::beginFrame()
 {
+  tempMemory().clear();
   deleteCameras();
   resizeCameras();
   m_StateMachine.purgeStates();
@@ -200,14 +209,14 @@ void Engine::deinit()
   m_StateMachine.removeAll();
   m_Scripting.destroy();
   m_SceneStack.clear();
-  m_Assets.saveAssets();
+  // m_Assets.saveAssets();
+  m_Assets.clearDirtyList();
   m_Assets.setRootPath(nullptr);
   m_DebugRenderer.deinit();
 
   assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
   deleteCameras();
 
-  bfGfxContext_destroyWindow(m_Renderer.context(), (bfWindowSurfaceHandle)m_MainWindow->renderer_data);
   m_Renderer.deinit();
 
   for (auto& system : m_Systems)

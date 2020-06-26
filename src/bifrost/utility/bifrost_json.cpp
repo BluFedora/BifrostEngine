@@ -293,19 +293,19 @@ namespace bifrost::json
   Value::Value(int value) :
     Base_t()
   {
-    set<double>(double(value));
+    set<Number>(Number(value));
   }
 
   Value::Value(std::uint64_t value) :
     Base_t()
   {
-    set<double>(double(value));
+    set<Number>(Number(value));
   }
 
   Value::Value(std::int64_t value) :
     Base_t()
   {
-    set<double>(double(value));
+    set<Number>(Number(value));
   }
 
   Value& Value::operator=(detail::ObjectInitializer&& values)

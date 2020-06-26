@@ -69,7 +69,7 @@ namespace bifrost
       rhs.m_Data = nullptr;
     }
 
-    Array& operator=(const T& rhs) noexcept
+    Array& operator=(const Array& rhs) noexcept
     {
       if (this != &rhs)
       {
@@ -80,7 +80,7 @@ namespace bifrost
       return *this;
     }
 
-    Array& operator=(T&& rhs) noexcept
+    Array& operator=(Array&& rhs) noexcept
     {
       if (this != &rhs)
       {

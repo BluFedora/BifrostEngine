@@ -31,7 +31,7 @@ void bfVMFunctionBuilder_ctor(BifrostVMFunctionBuilder* self)
   self->local_vars           = Array_new(BifrostVMLocalVar, DEFAULT_ARRAY_SIZE);
   self->local_var_scope_size = Array_new(int, DEFAULT_ARRAY_SIZE);
   self->instructions         = NULL;
-  self->line_to_code         = NULL;
+  self->code_to_line         = NULL;
   self->max_local_idx        = 0;
   self->lexer                = NULL;
 }
@@ -46,7 +46,7 @@ void bfVMFunctionBuilder_begin(BifrostVMFunctionBuilder* self, const char* name,
   Array_clear(&self->local_vars);
   Array_clear(&self->local_var_scope_size);
   self->instructions = Array_new(uint32_t, DEFAULT_ARRAY_SIZE);
-  self->line_to_code = OLD_bfArray_newA(self->line_to_code, DEFAULT_ARRAY_SIZE);
+  self->code_to_line = OLD_bfArray_newA(self->code_to_line, DEFAULT_ARRAY_SIZE);
 
   bfVMFunctionBuilder_pushScope(self);
 }
@@ -161,7 +161,7 @@ void bfVMFunctionBuilder_popScope(BifrostVMFunctionBuilder* self)
 
 static inline bfInstruction* bfVMFunctionBuilder_addInst(BifrostVMFunctionBuilder* self)
 {
-  *(uint16_t*)Array_emplace(&self->line_to_code) = (uint16_t)self->lexer->current_line_no;
+  *(uint16_t*)Array_emplace(&self->code_to_line) = (uint16_t)self->lexer->current_line_no;
   return Array_emplace(&self->instructions);
 }
 
@@ -191,34 +191,6 @@ void bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstruction
   *inst               = BIFROST_MAKE_INST_OP(op);
 }
 
-void bfVMFunctionBuilder_disassemble(BifrostVMFunctionBuilder* _)
-{
-  assert(!"Reimplement this function in the general debug header.");
-  /*
-  printf("\nDisassemble: [%s]: \n", self->name);
-  printf("Num slots: %zu - ARITY\n", self->max_local_idx + 1);
-
-  const size_t num_vars = Array_size(&self->local_vars);
-  printf("Variables: (%zu)\n", num_vars);
-
-  for (size_t i = 0; i < num_vars; ++i)
-  {
-    const BifrostVMLocalVar* var = self->local_vars + i;
-
-    if (var->name_len)
-    {
-      printf("  [%zu] %.*s @ len(%zu)\n", i, (int)var->name_len, var->name, var->name_len);
-    }
-  }
-
-  const size_t num_k = Array_size(&self->constants);
-  printf("Konstants: (%zu)\n", num_k);
-
-  bfInstDissasemble(self->instructions, Array_size(&self->instructions), 1);
-  printf("\n");
-  */
-}
-
 void bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn_t* out, int arity)
 {
   bfVMFunctionBuilder_popScope(self);
@@ -226,10 +198,9 @@ void bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn
   out->super.type         = BIFROST_VM_OBJ_FUNCTION;
   out->name               = String_newLen(self->name, self->name_len);
   out->arity              = arity;
-  out->line_to_code       = NULL;
+  out->code_to_line       = self->code_to_line;
   out->constants          = self->constants;
   out->instructions       = self->instructions;
-  out->line_to_code       = self->line_to_code;
   out->needed_stack_space = self->max_local_idx + arity + 1;
 
   // Transfer of ownership of the constants to output function.

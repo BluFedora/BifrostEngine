@@ -337,6 +337,11 @@ namespace bifrost
       BaseAssetInfo*          asset_handle_p = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
       asset_handle_p->m_TypeInfo             = type_info;
 
+      if (std::strlen(asset_handle_p->uuid().as_string.data) < 36)
+      {
+        __debugbreak();
+      }
+
       m_AssetMap.emplace(uuid, asset_handle_p);
       m_NameToGUID.emplace(path.c_str(), uuid);
 
@@ -489,6 +494,16 @@ namespace bifrost
 
         writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
       }
+    }
+
+    clearDirtyList();
+  }
+
+  void Assets::clearDirtyList()
+  {
+    for (const auto& asset : m_DirtyAssetList)
+    {
+      BaseAssetInfo* const info = asset.info();
 
       info->m_IsDirty = false;
     }

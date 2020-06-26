@@ -3,24 +3,22 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
+
 #include "bifrost/debug/bifrost_dbg_logger.h"
+#include "bifrost/platform/bifrost_platform_vulkan.h"
+#include "vulkan/bifrost_vulkan_conversions.h"
 #include "vulkan/bifrost_vulkan_logical_device.h"
 #include "vulkan/bifrost_vulkan_material_pool.h"
 #include "vulkan/bifrost_vulkan_mem_allocator.h"
 
-#include "bifrost/platform/bifrost_platform_vulkan.h"
-
-#include <glfw/glfw3.h>
-
-#include "vulkan/bifrost_vulkan_conversions.h"
-
 #include <algorithm> /* clamp */
 #include <cassert>   /* assert   */
-#include <cmath>
-#include <cstddef> /* size_t   */
-#include <cstdint> /* uint32_t */
-#include <cstdlib>
-#include <cstring> /* strcmp   */
+#include <cmath>     /* */
+#include <cstddef>   /* size_t   */
+#include <cstdint>   /* uint32_t */
+#include <cstdlib>   /* */
+#include <cstring>   /* strcmp   */
+
 #include <vulkan/vulkan.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -129,11 +127,10 @@ BIFROST_DEFINE_HANDLE(GfxContext)
   VkInstance                       instance;
   FixedArray<VulkanPhysicalDevice> physical_devices;
   VulkanPhysicalDevice*            physical_device;
-  // VulkanWindow                     main_window;
-  bfGfxDeviceHandle logical_device;
-  VkCommandPool     command_pools[1];  // TODO(Shareef): One per thread.
-  bfFrameCount_t    frame_count;
-  bfFrameCount_t    frame_index;  // frame_count % max_frames_in_flight
+  bfGfxDeviceHandle                logical_device;
+  VkCommandPool                    command_pools[1];  // TODO(Shareef): One per thread.
+  bfFrameCount_t                   frame_count;
+  bfFrameCount_t                   frame_index;  // frame_count % max_frames_in_flight
 
 #if BIFROST_USE_DEBUG_CALLBACK
   VkDebugReportCallbackEXT debug_callback;
@@ -149,7 +146,6 @@ namespace
   const char* gfxContextSetupPhysicalDevices(bfGfxContextHandle self);
   void        gfxContextPrintExtensions();
   const char* gfxContextSelectPhysicalDevice(bfGfxContextHandle self);
-  // const char* gfxContextInitSurface(bfGfxContextHandle self);
   const char* gfxContextFindSurfacePresent(bfGfxContextHandle self, VulkanWindow& window);
   const char* gfxContextCreateLogicalDevice(bfGfxContextHandle self);
   const char* gfxContextInitAllocator(bfGfxContextHandle self);
@@ -624,7 +620,7 @@ namespace
     app_info.applicationVersion = params->app_version;
     app_info.pEngineName        = BIFROST_ENGINE_NAME;
     app_info.engineVersion      = BIFROST_ENGINE_VERSION;
-    app_info.apiVersion         = VK_API_VERSION_1_0;
+    app_info.apiVersion         = VK_API_VERSION_1_1;
 
     VkInstanceCreateInfo init_info;
     init_info.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -934,7 +930,7 @@ namespace
 #define CUSTOM_ALLOCATOR nullptr
 #endif
 
-  #if 0
+#if 0
   const char* gfxContextInitSurface(bfGfxContextHandle self)
   {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -971,7 +967,7 @@ namespace
 
     return err ? "Failed to create Surface" : nullptr;
   }
-  #endif
+#endif
 
   uint32_t findQueueBasic(const VulkanPhysicalDevice* device, uint32_t queue_size, VkQueueFlags flags);
 
@@ -1378,7 +1374,7 @@ namespace
     VkCommandBufferAllocateInfo cmd_alloc_info;
     cmd_alloc_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cmd_alloc_info.pNext              = nullptr;
-    cmd_alloc_info.commandPool        = self->command_pools[0]; // TODO: Threaded pool...
+    cmd_alloc_info.commandPool        = self->command_pools[0];  // TODO: Threaded pool...
     cmd_alloc_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd_alloc_info.commandBufferCount = num_buffers;
 

@@ -415,9 +415,15 @@ namespace bifrost::editor
     template<typename T>
     void select(T&& selectable)
     {
-      for (BaseEditorWindowPtr& window : m_OpenWindows)
+      const Selectable s = selectable;
+
+      if (s.valid())
       {
-        window->selectionChange(selectable);
+        m_Selection.select(selectable);
+      }
+      else
+      {
+        m_Selection.clear();
       }
     }
 

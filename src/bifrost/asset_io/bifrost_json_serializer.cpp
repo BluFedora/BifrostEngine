@@ -13,6 +13,7 @@
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"
 
 #include "bifrost/asset_io/bifrost_assets.hpp"  // Assets
+#include "bifrost/ecs/bifrost_entity.hpp"       // Entity
 
 namespace bifrost
 {
@@ -22,28 +23,8 @@ namespace bifrost
   JsonSerializerWriter::JsonSerializerWriter(IMemoryManager& memory) :
     ISerializer(SerializerMode::SAVING),
     m_Document{},
-    m_ObjectStack{memory},
-    m_ReferenceMap{},
-    m_ReferenceID{0u}
+    m_ObjectStack{memory}
   {
-  }
-
-  void JsonSerializerWriter::registerReference(IBaseObject& object)
-  {
-    std::uint32_t ref_id;
-
-    if (!m_ReferenceMap.has(&object))
-    {
-      ref_id = m_ReferenceID++;
-
-      m_ReferenceMap.emplace(&object, ref_id);
-    }
-    else
-    {
-      ref_id = *m_ReferenceMap.at(&object);
-    }
-
-    serialize(k_SerializeObjectRefID, ref_id);
   }
 
   bool JsonSerializerWriter::beginDocument(bool is_array)
@@ -145,7 +126,14 @@ namespace bifrost
 
   void JsonSerializerWriter::serialize(StringRange key, BifrostUUID& value)
   {
-    currentObject().add(key, String(value.as_string));
+    auto str = String(value.as_string.data);
+
+    if (str.length() < 36)
+    {
+      __debugbreak();
+    }
+
+    currentObject().add(key, str);
   }
 
   void JsonSerializerWriter::serialize(StringRange key, BaseAssetHandle& value)
@@ -162,18 +150,11 @@ namespace bifrost
     }
   }
 
-  void JsonSerializerWriter::serialize(StringRange key, BaseRef& value)
+  void JsonSerializerWriter::serialize(StringRange key, EntityRef& value)
   {
     if (pushObject(key))
     {
       std::uint32_t id = k_InvalidRefID;
-
-      if (value.object())
-      {
-        registerReference(*value.object());
-
-        id = m_ReferenceMap[value.object()];
-      }
 
       serialize(k_SerializeObjectRefID, id);
 
@@ -212,18 +193,6 @@ namespace bifrost
     m_Document{document},
     m_ObjectStack{memory}
   {
-  }
-
-  void JsonSerializerReader::registerReference(IBaseObject& object)
-  {
-    std::uint32_t serialized_id = k_InvalidRefID;
-
-    serialize(k_SerializeObjectRefID, serialized_id);
-
-    if (serialized_id != k_InvalidRefID)
-    {
-      m_ReferenceMap[serialized_id] = &object;
-    }
   }
 
   bool JsonSerializerReader::beginDocument(bool is_array)
@@ -462,7 +431,7 @@ namespace bifrost
     }
   }
 
-  void JsonSerializerReader::serialize(StringRange key, BaseRef& value)
+  void JsonSerializerReader::serialize(StringRange key, EntityRef& value)
   {
     (void)key;
     (void)value;
@@ -481,26 +450,5 @@ namespace bifrost
   void JsonSerializerReader::endDocument()
   {
     m_ObjectStack.popBack();
-  }
-
-  void RefPatcherSerializer::serialize(StringRange key, BaseRef& value)
-  {
-    if (pushObject(key))
-    {
-      std::uint32_t id = k_InvalidRefID;
-      m_JsonReader.serialize(k_SerializeObjectRefID, id);
-
-      if (id != k_InvalidRefID)
-      {
-        IBaseObject** const obj = m_JsonReader.m_ReferenceMap.at(id);
-
-        if (obj)
-        {
-          value.bind(*obj);
-        }
-      }
-
-      popObject();
-    }
   }
 }  // namespace bifrost

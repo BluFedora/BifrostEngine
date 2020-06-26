@@ -6,11 +6,12 @@
  *   Handles the pasring of the languages grammar and uses
  *   the function builder to generate a function.   
  * 
- *   The output is a module with an executable function if the
- *   parser ran into no issues.  
+ *   The output is a module with an executable function assuming the
+ *   parser ran into no issues.
  * 
  *   References:
  *     [http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/]
+ *
  * @version 0.0.1
  * @date    2020-02-16
  * 
@@ -30,7 +31,6 @@ struct BifrostVMFunctionBuilder_t;
 struct BifrostObjModule_t;
 struct BifrostObjClass_t;
 struct BifrostObjFn_t;
-struct LoopInfo_t;
 typedef struct LoopInfo_t LoopInfo;
 
 typedef struct BifrostParser_t

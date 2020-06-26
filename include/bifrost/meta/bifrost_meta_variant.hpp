@@ -15,9 +15,9 @@
 
 #include "bifrost/asset_io/bifrost_base_asset_handle.hpp" /* BaseAssetHandle, + All Serializable Classes */
 #include "bifrost/bifrost_math.hpp"                       /* bfColor4f, bfColor4u                        */
-#include "bifrost/core/bifrost_ref.hpp"                   /* BaseRef                                     */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* String                                      */
 #include "bifrost/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>                              */
+#include "bifrost/ecs/bifrost_entity_ref.hpp"             /* EntityRef                                     */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                 */
 #include "bifrost_meta_function_traits.hpp"               /* ParameterPack<Ts...>                        */
 #include "bifrost_meta_utils.hpp"                         /* overloaded                                  */
@@ -68,7 +68,8 @@ namespace bifrost::meta
    String,
    IBaseObject*,
    BaseAssetHandle,
-   BaseRef,
+   EntityRef,
+   BifrostUUIDNumber,
    BifrostUUID>;
 
   using MetaPrimitiveTypes = MetaValueTypes::extend<MetaObject>;

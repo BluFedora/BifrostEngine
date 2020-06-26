@@ -56,7 +56,6 @@ Meta system Should have been more specialized:
 
     // Extra Info:
     is_serialized: bool;
-
   };
 
   // Should be all fundamental types...

@@ -781,6 +781,7 @@ namespace bifrost::editor
     colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.28f, 0.27f, 0.35f, 1.00f);
     colors[ImGuiCol_DockingPreview]     = ImVec4(0.19f, 0.31f, 0.33f, 0.70f);
     colors[ImGuiCol_TextSelectedBg]     = ImVec4(0.44f, 0.58f, 0.61f, 0.35f);
+    colors[ImGuiCol_DragDropTarget]     = ImVec4(0.52f, 0.56f, 0.63f, 0.90f);
 
     m_Actions.emplace("File.New.Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
     m_Actions.emplace("File.Open.Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
@@ -806,7 +807,7 @@ namespace bifrost::editor
 
        ImGui::Text("This is a custom Mesh Renderer Callback");
 
-      serializer.serializeT(mesh_renderer);
+       serializer.serializeT(mesh_renderer);
      });
     //*/
   }
@@ -854,15 +855,19 @@ namespace bifrost::editor
 
       if (is_key_down || event.type == BIFROST_EVT_ON_KEY_UP)
       {
-        m_IsKeyDown[event.keyboard.key] = is_key_down;
-        m_IsShiftDown                   = event.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
+        if (event.keyboard.key < bfCArraySize(m_IsKeyDown))
+        {
+          m_IsKeyDown[event.keyboard.key] = is_key_down;
+        }
+
+        m_IsShiftDown = event.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
       }
     }
   }
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    // ImGui::ShowDemoWindow();
+    ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
 
@@ -1855,7 +1860,7 @@ namespace bifrost::editor
   }
 
   Inspector::Inspector(IMemoryManager& memory) :
-    m_SelectedObject{},
+    m_LockedSelection{memory},
     m_Serializer{memory},
     m_IsLocked{false}
   {
@@ -1873,6 +1878,10 @@ namespace bifrost::editor
       {
         if (ImGui::MenuItem("Is Selection Locked", nullptr, &m_IsLocked))
         {
+          if (m_IsLocked)
+          {
+            m_LockedSelection = editor.selection().selectables();
+          }
         }
 
         ImGui::EndMenu();
@@ -1881,61 +1890,82 @@ namespace bifrost::editor
       ImGui::EndMenuBar();
     }
 
+    auto&             selection      = m_IsLocked ? m_LockedSelection : editor.selection().selectables();
+    const std::size_t selection_size = selection.size();
+
     m_Serializer.beginDocument(false);
 
-    if (m_SelectedObject.valid())
+    if (selection.isEmpty())
     {
-      AssetSceneHandle current_scene = engine.currentScene();
-
-      visit_all(
-       meta::overloaded{
-        [this](IBaseObject* object) {
-          m_Serializer.serialize(*object);
-        },
-        [this, &current_scene, &engine](Entity* object) {
-          m_Serializer.beginChangeCheck();
-
-          imgui_ext::inspect(engine, *object, m_Serializer);
-
-          if (m_Serializer.endChangedCheck())
-          {
-            engine.assets().markDirty(current_scene);
-          }
-        },
-        [this, &engine](auto& asset_handle) {
-          if (asset_handle)
-          {
-            m_Serializer.beginChangeCheck();
-            m_Serializer.serialize(*asset_handle.payload());
-            ImGui::Separator();
-
-            asset_handle.info()->serialize(engine, m_Serializer);
-
-            if (m_Serializer.endChangedCheck())
-            {
-              engine.assets().markDirty(asset_handle);
-            }
-          }
-        },
-       },
-       m_SelectedObject);
-
-      ImGui::Separator();
-
-      if (ImGui::Button("Clear Selection"))
+      ImGui::Text("(No Selection)");
+    }
+    else if (selection.size() == 1)
+    {
+      guiDrawSelection(engine, selection[0]);
+    }
+    else
+    {
+      for (std::size_t i = 0; i < selection_size; ++i)
       {
-        selectionChange(nullptr);
+        char number_buffer[22];
+        string_utils::fmtBuffer(number_buffer, sizeof(number_buffer), nullptr, "%i", int(i));
+
+        if (ImGui::TreeNode(number_buffer))
+        {
+          guiDrawSelection(engine, selection[i]);
+          ImGui::Separator();
+
+          ImGui::TreePop();
+        }
+      }
+    }
+
+    if (m_IsLocked)
+    {
+      if (ImGui::Button("Clear Locked Selection"))
+      {
+        m_LockedSelection.clear();
       }
     }
 
     m_Serializer.endDocument();
   }
 
-  void Inspector::onSelectionChanged(const Selectable& selectable)
+  void Inspector::guiDrawSelection(Engine& engine, Selectable& selectable)
   {
-    if (!m_IsLocked)
-    {
-      m_SelectedObject = selectable;
-    }
+    AssetSceneHandle current_scene = engine.currentScene();
+
+    visit_all(
+     meta::overloaded{
+      [this](IBaseObject* object) {
+        m_Serializer.serialize(*object);
+      },
+      [this, &current_scene, &engine](Entity* object) {
+        m_Serializer.beginChangeCheck();
+
+        imgui_ext::inspect(engine, *object, m_Serializer);
+
+        if (m_Serializer.endChangedCheck())
+        {
+          engine.assets().markDirty(current_scene);
+        }
+      },
+      [this, &engine](auto& asset_handle) {
+        if (asset_handle)
+        {
+          m_Serializer.beginChangeCheck();
+          m_Serializer.serialize(*asset_handle.payload());
+          ImGui::Separator();
+
+          asset_handle.info()->serialize(engine, m_Serializer);
+
+          if (m_Serializer.endChangedCheck())
+          {
+            engine.assets().markDirty(asset_handle);
+          }
+        }
+      },
+     },
+     selectable);
   }
 }  // namespace bifrost::editor

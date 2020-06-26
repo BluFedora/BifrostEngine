@@ -180,7 +180,7 @@ void bfVMObject__delete(struct BifrostVM_t* self, BifrostObj* obj)
       String_delete(fn->name);
       Array_delete(&fn->constants);
       Array_delete(&fn->instructions);
-      Array_delete(&fn->line_to_code);
+      Array_delete(&fn->code_to_line);
       break;
     }
     case BIFROST_VM_OBJ_NATIVE_FN:

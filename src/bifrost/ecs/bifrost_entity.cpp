@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
 * @file   bifrost_entity.cpp
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -10,6 +11,7 @@
 *
 * @copyright Copyright (c) 2019-2020
 */
+/******************************************************************************/
 #include "bifrost/ecs/bifrost_entity.hpp"
 
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
@@ -32,7 +34,9 @@ namespace bifrost
     m_Hierarchy{},
     m_ComponentHandles{},
     m_BHVNode{k_BVHNodeInvalidOffset},
-    m_Behaviors{sceneMemoryManager()}
+    m_Behaviors{sceneMemoryManager()},
+    m_RefCount{ATOMIC_VAR_INIT(1)},
+    m_UUID{bfUUID_makeEmpty().as_number}
   {
   }
 
@@ -80,6 +84,7 @@ namespace bifrost
       }
       else
       {
+        bfTransform_setParent(&transform(), nullptr);
         root_entities.push(this);
       }
     }
@@ -157,6 +162,22 @@ namespace bifrost
     }
 
     return was_found;
+  }
+
+  std::uint32_t Entity::refCount() const
+  {
+    return m_RefCount.load();
+  }
+
+  void Entity::acquire()
+  {
+    ++m_RefCount;
+  }
+
+  void Entity::release()
+  {
+    assert(m_RefCount > 0);
+    --m_RefCount;
   }
 
   void Entity::serialize(ISerializer& serializer)

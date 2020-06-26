@@ -32,8 +32,8 @@ typedef struct BifrostUUIDString_t
 
 typedef struct BifrostUUID_t
 {
-  char as_number[16]; /*!< The number as a string.                                         */
-  char as_string[37]; /*!< Nul terminated string. '00000000-0000-0000-0000-000000000000\0' */
+  BifrostUUIDNumber as_number; /*!< The number as a string.                                         */
+  BifrostUUIDString as_string; /*!< Nul terminated string. '00000000-0000-0000-0000-000000000000\0' */
 
 } BifrostUUID;
 
@@ -43,6 +43,8 @@ BifrostUUID bfUUID_fromString(const char source[37]);  // Expects a string in th
 int         bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs);
 int         bfUUID_isEmpty(const BifrostUUID* self);
 void        bfUUID_numberToString(const char number[16], char out_string[37]);
+int         bfUUID_numberCmp(const BifrostUUIDNumber* lhs, const BifrostUUIDNumber* rhs);
+int         bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs);
 
 #ifdef __cplusplus
 }

@@ -9,7 +9,6 @@
  * @date    2020-02-16
  * 
  * @copyright Copyright (c) 2020
- * 
  */
 /******************************************************************************/
 #ifndef BIFROST_VM_OBJ_H
@@ -64,9 +63,9 @@ typedef struct BifrostObjFn_t
   BifrostObj                 super;
   BifrostString              name;
   int32_t                    arity;  //!< An arity of -1 indicates infinite (read: 0-511) params
-  uint16_t*                  line_to_code;
+  uint16_t*                  code_to_line;
   bfVMValue*                 constants;
-  uint32_t*                  instructions;
+  bfInstruction*             instructions;
   size_t                     needed_stack_space; /* params + locals + temps */
   struct BifrostObjModule_t* module;
 
@@ -144,10 +143,10 @@ typedef struct BifrostObjWeakRef_t
 
 typedef struct BifrostVMStackFrame_t
 {
-  BifrostObjFn* fn;        /*!< Needed for addition debug info for stack traces. */
-  uint32_t*     ip;        /*!< The current instruction being executed.          */
-  size_t        old_stack; /*!< The top of the stack to restore to.              */
-  size_t        stack;     /*!< The place where this stacks locals start.        */
+  BifrostObjFn*  fn;        /*!< Needed for addition debug info for stack traces. */
+  bfInstruction* ip;        /*!< The current instruction being executed.          */
+  size_t         old_stack; /*!< The top of the stack to restore to.              */
+  size_t         stack;     /*!< The place where this stacks locals start.        */
 
 } BifrostVMStackFrame;
 

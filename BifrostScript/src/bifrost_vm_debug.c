@@ -14,8 +14,8 @@
 /******************************************************************************/
 #include "bifrost_vm_debug.h"
 
-#include "bifrost_vm_obj.h"  /* */
-#include <stdio.h>           /* sprintf */
+#include "bifrost_vm_obj.h" /* */
+#include <stdio.h>          /* sprintf */
 
 static void bfDbgIndentPrint(int indent);
 
@@ -193,7 +193,7 @@ const char* bfInstOpToString(bfInstructionOp op)
 #undef bfInstOpToStringImpl
 }
 
-void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t code_length)
+void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t code_length, uint16_t* code_to_line)
 {
   bfDbgIndentPrint(indent);
 
@@ -207,6 +207,11 @@ void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t 
 
     bfDbgIndentPrint(indent);
 
+    if (code_to_line)
+    {
+      printf("Line[%3i]: ", (int)code_to_line[i]);
+    }
+
     printf("| 0x%08X ", code[i]);
     printf("| %15s ", bfInstOpToString(op));
     printf("|a: %3u| b: %3u| c: %3u| bx: %7u| sbx: %+7i|\n", (uint32_t)regs[0], (uint32_t)regs[1], (uint32_t)regs[2], regs[3], rsbx);
@@ -214,6 +219,34 @@ void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t 
 
   bfDbgIndentPrint(indent);
   printf("----------------------------------------------------------------------------------\n");
+}
+
+void bfDbgDisassembleFunction(int indent, BifrostObjFn* function)
+{
+  const size_t num_constants      = Array_size(&function->constants);
+  const size_t num_instructions   = Array_size(&function->instructions);
+  const size_t needed_stack_space = function->needed_stack_space;
+  char         temp_buffer[128];
+
+  bfDbgIndentPrint(indent + 0);
+  printf("Function(%s, arity = %i, stack_space = %i, module = '%s'):\n", function->name, function->arity, (int)needed_stack_space, function->module->name);
+  
+  bfDbgIndentPrint(indent + 1);
+  printf("Constants(%i):\n", (int)num_constants);
+
+  for (size_t i = 0; i < num_constants; ++i)
+  {
+    bfDbgValueToString(function->constants[i], temp_buffer, sizeof(temp_buffer));
+
+    bfDbgIndentPrint(indent + 2);
+    printf("[%i] = %s\n", (int)i, temp_buffer);
+  }
+
+  bfDbgIndentPrint(indent + 1);
+  printf("Instructions(%i):\n", (int)num_instructions);
+  bfDbgDisassembleInstructions(indent + 2, function->instructions, num_instructions, function->code_to_line);
+
+  bfDbgIndentPrint(indent + 1);
 }
 
 static void bfDbgIndentPrint(int indent)

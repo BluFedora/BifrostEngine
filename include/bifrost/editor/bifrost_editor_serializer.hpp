@@ -89,7 +89,7 @@ namespace bifrost::editor
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, BifrostUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
-    void serialize(StringRange key, BaseRef& value) override;
+    void serialize(StringRange key, EntityRef& value) override;
     void serialize(StringRange key, meta::MetaObject& value) override;
     void serialize(meta::MetaVariant& value) override;
     using ISerializer::serialize;
@@ -109,6 +109,7 @@ namespace bifrost::editor
   namespace imgui_ext
   {
     bool inspect(const char* label, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
+    bool inspect(const char* label, const char* hint, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(const char* label, std::string& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer);
   }  // namespace imgui_ext

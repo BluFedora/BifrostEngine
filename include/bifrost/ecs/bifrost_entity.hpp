@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_entity.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -10,6 +11,7 @@
  *
  * @copyright Copyright (c) 2019-2020
  */
+/******************************************************************************/
 #ifndef BIFROST_ENTITY_HPP
 #define BIFROST_ENTITY_HPP
 
@@ -19,6 +21,8 @@
 #include "bifrost_collision_system.hpp"                        // BVHNodeOffset
 #include "bifrost_component_handle_storage.hpp"                // ComponentHandleStorage
 #include "bifrost_component_storage.hpp"                       // ComponentStorage
+
+#include <atomic>  // std::atomic_uint32_t
 
 namespace bifrost::meta
 {
@@ -43,6 +47,7 @@ namespace bifrost
   class BaseBehavior;
   class ISerializer;
   class Entity;
+  class Scene;
   class bfPureInterface(IBehavior);
 
   using EntityList = intrusive::ListView<Entity>;
@@ -64,6 +69,8 @@ namespace bifrost
     ComponentHandleStorage  m_ComponentHandles;
     BVHNodeOffset           m_BHVNode;
     Array<IBehavior*>       m_Behaviors;
+    std::atomic_uint32_t    m_RefCount;
+    BifrostUUIDNumber       m_UUID;
 
    public:
     Entity(Scene& scene, const StringRange& name);
@@ -207,6 +214,12 @@ namespace bifrost
     bool removeBehavior(const StringRange& name);
     bool removeBehavior(IBehavior* behavior);
 
+    // GC / Ref Count API
+
+    [[nodiscard]] std::uint32_t refCount() const;
+    void                        acquire();
+    void                        release();
+
     // Meta
 
     void serialize(ISerializer& serializer);
@@ -254,8 +267,8 @@ BIFROST_META_REGISTER(bifrost::Entity)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<Entity>("Entity"),                                                  //
-     ctor<Scene&, const StringRange&>(),                                            //
+     class_info<Entity>("Entity"),  //
+     // ctor<Scene&, const StringRange&>(),                                            // TODO(Shareef): Tries to Register Scene before it is fullt defined :(
      field("m_Name", &Entity::m_Name),                                              //
      property("m_Transform", &Entity::metaGetTransform, &Entity::metaSetTransform)  //
     )

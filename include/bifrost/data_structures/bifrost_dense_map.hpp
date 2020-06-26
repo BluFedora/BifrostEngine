@@ -251,10 +251,15 @@ namespace bifrost
     {
       if (has(id))
       {
-        id.id      = id.id & dense_map::INDEX_MASK;
-        Index& in  = m_SparseIndices[id.id];
-        auto&  obj = m_DenseArray[in.index];
-        obj        = std::move(m_DenseArray.back());
+        id.id               = id.id & dense_map::INDEX_MASK;
+        Index& in           = m_SparseIndices[id.id];
+        auto&  obj          = m_DenseArray[in.index];
+        auto&  back_element = m_DenseArray.back();
+
+        if (&obj != &back_element)
+        {
+          obj = std::move(back_element);
+        }
 
         m_SparseIndices[obj.id & dense_map::INDEX_MASK].index = in.index;
         in.index                                              = dense_map::INDEX_MASK;

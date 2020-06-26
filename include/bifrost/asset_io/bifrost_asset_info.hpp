@@ -120,7 +120,6 @@ namespace bifrost
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    virtual void registerReference(IBaseObject& object) { (void)object; }
     virtual bool beginDocument(bool is_array = false) = 0;
     virtual bool hasKey(StringRange key);
     virtual bool pushObject(StringRange key)                   = 0;
@@ -144,9 +143,10 @@ namespace bifrost
     virtual void serialize(StringRange key, bfColor4f& value);
     virtual void serialize(StringRange key, bfColor4u& value);
     virtual void serialize(StringRange key, String& value)          = 0;
+    virtual void serialize(StringRange key, BifrostUUIDNumber& value);
     virtual void serialize(StringRange key, BifrostUUID& value)     = 0;
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;
-    virtual void serialize(StringRange key, BaseRef& value)         = 0;
+    virtual void serialize(StringRange key, EntityRef& value)       = 0;
     virtual void serialize(StringRange key, IBaseObject& value);
     virtual void serialize(IBaseObject& value);
     virtual void serialize(StringRange key, meta::MetaObject& value);

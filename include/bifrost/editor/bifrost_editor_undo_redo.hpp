@@ -14,24 +14,10 @@
 #ifndef BIFROST_EDITOR_UNDO_REDO_HPP
 #define BIFROST_EDITOR_UNDO_REDO_HPP
 
-namespace bifrost
-{
-  
-}
-
 namespace bifrost::editor
 {
 
 
-  class SerializedProperty
-  {
-    
-  };
-
-  class SerializedObject
-  {
-    
-  };
 
 }  // namespace bifrost::editor
 

@@ -295,6 +295,7 @@ namespace bifrost
     buffer_data->u_CameraForwardAndTime    = camera.forward;
     buffer_data->u_CameraForwardAndTime.w  = global_time;
     buffer_data->u_CameraPosition          = camera.position;
+    buffer_data->u_CameraPosition.w        = camera.camera_mode.aspect_ratio;
     buffer_data->u_CameraAmbient           = ambient;
 
     camera_uniform_buffer.flushCurrent(frame_info);
@@ -901,6 +902,8 @@ namespace bifrost
 
   void StandardRenderer::deinit()
   {
+    bfGfxContext_destroyWindow(m_GfxBackend, m_MainWindow);
+
     for (Renderable& renderable : m_RenderablePool)
     {
       renderable.destroy(m_GfxDevice);

@@ -72,6 +72,7 @@ namespace bifrost
     friend class Entity;
 
    private:
+    Engine&              m_Engine;
     IMemoryManager&      m_Memory;
     Array<Entity*>       m_RootEntities;
     ComponentStorage     m_ActiveComponents;
@@ -81,7 +82,7 @@ namespace bifrost
     SceneTransformSystem m_TransformSystem;
 
    public:
-    explicit Scene(IMemoryManager& memory);
+    explicit Scene(Engine& engine);
 
     // Entity Management
 
@@ -93,6 +94,7 @@ namespace bifrost
 
     // Temp Code Begin
     void update(LinearAllocator& temp, DebugRenderer& dbg_renderer);
+    void markEntityTransformDirty(Entity* entity);
     // Temp Code End
 
     // Component

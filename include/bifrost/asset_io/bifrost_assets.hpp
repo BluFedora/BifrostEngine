@@ -21,7 +21,7 @@
 #include "bifrost/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
 #include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
-#include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                  */
+#include "bifrost/utility/bifrost_uuid.hpp"               /* BifrostUUID                                  */
 #include "bifrost_asset_handle.hpp"                       /* AssetHandle<T>                               */
 
 class Engine;
@@ -73,31 +73,6 @@ namespace bifrost
 
   namespace detail
   {
-    struct UUIDHasher final
-    {
-      std::size_t operator()(const BifrostUUID& uuid) const
-      {
-        // ReSharper disable CppUnreachableCode
-        if constexpr (sizeof(std::size_t) == 4)
-        {
-          return bfString_hashN(uuid.as_number, sizeof(uuid.as_number));
-        }
-        else
-        {
-          return bfString_hashN64(uuid.as_number, sizeof(uuid.as_number));
-        }
-        // ReSharper restore CppUnreachableCode
-      }
-    };
-
-    struct UUIDEqual final
-    {
-      bool operator()(const BifrostUUID& lhs, const BifrostUUID& rhs) const
-      {
-        return bfUUID_isEqual(&lhs, &rhs) != 0;
-      }
-    };
-
     using AssetMap = HashTable<BifrostUUID, BaseAssetInfo*, 64, UUIDHasher, UUIDEqual>;
   }  // namespace detail
 
@@ -164,12 +139,14 @@ namespace bifrost
     void       markDirty(const BaseAssetHandle& asset);
     bool       writeJsonToFile(const StringRange& path, const json::Value& value) const;
     void       saveAssets();
+    void       clearDirtyList();
 
     ~Assets();
 
     // TODO: Remove these
     detail::AssetMap& assetMap() { return m_AssetMap; }
     Engine&           engine() const { return m_Engine; }
+
    private:
     BifrostUUID indexAssetImpl(StringRange relative_path, bool& create_new, meta::BaseClassMetaInfo* type_info);
   };

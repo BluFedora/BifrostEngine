@@ -419,6 +419,9 @@ namespace bifrost
 
    protected:
     MemoryManager(char* memory_block, std::size_t memory_block_size);
+
+    void checkPointer(const void* ptr) const;
+
     ~MemoryManager() = default;
 
    public:

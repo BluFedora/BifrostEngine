@@ -52,6 +52,8 @@ namespace bifrost
 
   void StackAllocator::deallocate(void* ptr)
   {
+    checkPointer(ptr);
+
     StackHeader* header      = reinterpret_cast<StackHeader*>(static_cast<char*>(ptr) - sizeof(StackHeader));
     const auto   full_size   = (header->block_size + header->align_size);
     const auto   block_start = reinterpret_cast<char*>(header) - header->align_size;
