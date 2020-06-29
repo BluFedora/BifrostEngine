@@ -1,20 +1,17 @@
 ﻿################################################################################
 #                                                                              #
-#                          BIFROST PLATFORM PROJECT                            #
+#                          BIFROST GRAPHICS PROJECT                            #
 #                                                                              #
 ################################################################################
-###  CMakeList.txt : Bifrost Platform Sub Project of the Bifrost Engine      ###
+###  CMakeList.txt : Bifrost Graphics Sub Project of the Bifrost Engine      ###
 ################################################################################
 
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostPlatform VERSION 0.0.2 DESCRIPTION "The platform abstraction layer sub project.")
+project(BifrostGraphics VERSION 0.0.2 DESCRIPTION "The graphics abstraction layer sub project.")
 
-option(BIFROST_PLATFORM_GLFW       "This will use GLFW for windowing and system functions." ON)
-option(BIFROST_PLATFORM_SDL        "This will use SDL for windowing and system functions."  OFF)
-option(BIFROST_PLATFORM_QT         "This will use QT for windowing and system functions."   OFF)
-option(BIFROST_OPT_GRAPHICS_VULKAN "Vulkan will be used as the graphics Backend"            ON)
-option(BIFROST_OPT_GRAPHICS_OPENGL "OpenGL will be used as the graphics Backend"            OFF)
+option(BIFROST_OPT_GRAPHICS_VULKAN "Vulkan will be used as the graphics Backend" ON)
+option(BIFROST_OPT_GRAPHICS_OPENGL "OpenGL will be used as the graphics Backend" OFF)
 
   # GCC / Clang
   #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
@@ -59,28 +56,23 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
-set(BIFROST_PLATFORM_SOURCE_FILES "src/bifrost_platform.c")
-set(BIFROST_PLATFORM_LIB_FILES "")
+set(BIFROST_GRAPHICS_SOURCE_FILES "")
+set(BIFROST_GRAPHICS_LIB_FILES "")
 
-if(BIFROST_PLATFORM_GLFW)
-  set(BIFROST_PLATFORM_SOURCE_FILES
-    ${BIFROST_PLATFORM_SOURCE_FILES}
+if(BIFROST_OPT_GRAPHICS_VULKAN)
+  set(BIFROST_GRAPHICS_SOURCE_FILES
+    ${BIFROST_GRAPHICS_SOURCE_FILES}
     "src/bifrost_platform_glfw.c"
   )
 
-  set(BIFROST_PLATFORM_LIB_FILES
-    ${BIFROST_PLATFORM_LIB_FILES}
+  set(BIFROST_GRAPHICS_LIB_FILES
+    ${BIFROST_GRAPHICS_LIB_FILES}
     "${CMAKE_BINARY_DIR}/glfw3dll.lib"
   )
-elseif(BIFROST_PLATFORM_SDL)
+elseif(BIFROST_OPT_GRAPHICS_OPENGL)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}
     "src/bifrost_platform_sdl.c"
-  )
-elseif(BIFROST_PLATFORM_QT)
-  set(BIFROST_PLATFORM_SOURCE_FILES
-    ${BIFROST_PLATFORM_SOURCE_FILES}
-    "src/bifrost_platform_qt.c"
   )
 else()
 endif()

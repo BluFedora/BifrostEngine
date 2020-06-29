@@ -18,8 +18,12 @@ namespace bifrost
     void startup(bfGfxContextHandle graphics, BifrostWindow* window);
     void onEvent(BifrostWindow* target_window, Event& evt);
     void beginFrame(bfTextureHandle surface, float window_width, float window_height, float delta_time);
-    void endFrame(StandardRenderer* renderer);
+    void endFrame();
     void shutdown();
+
+    // Helpers
+
+    void setupDefaultRenderPass(bfGfxCommandListHandle command_list, bfTextureHandle surface);
   }  // namespace imgui
 
 }  // namespace bifrost

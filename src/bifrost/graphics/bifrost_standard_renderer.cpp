@@ -10,12 +10,16 @@
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
 
 #include "bifrost/asset_io/bifrost_material.hpp"
-#include "bifrost/bifrost.hpp"
 #include "bifrost/data_structures/bifrost_string.hpp"
+#include "bifrost/ecs/bifrost_entity.hpp"  // Entity
+#include "bifrost/ecs/bifrost_light.hpp"   // LightType
 #include "bifrost/memory/bifrost_memory_utils.h"
+#include "bifrost/platform/bifrost_platform.h"  // BifrostWindow
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */
+
+#include "bifrost/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
 
 namespace bifrost
 {
@@ -379,7 +383,7 @@ namespace bifrost
     m_GfxDevice                = bfGfxContext_device(m_GfxBackend);
     main_window->renderer_data = bfGfxContext_createWindow(m_GfxBackend, main_window);
     m_MainWindow               = (bfWindowSurfaceHandle)main_window->renderer_data;
-    m_FrameInfo                = bfGfxContext_getFrameInfo(m_GfxBackend, m_MainWindow);
+    m_FrameInfo                = bfGfxContext_getFrameInfo(m_GfxBackend);
 
     m_StandardVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_StandardVertexLayout, 0, sizeof(StandardVertex));
@@ -413,7 +417,7 @@ namespace bifrost
     if (bfGfxContext_beginFrame(m_GfxBackend, m_MainWindow))
     {
       m_MainCmdList = bfGfxContext_requestCommandList(m_GfxBackend, m_MainWindow, 0);
-      m_FrameInfo   = bfGfxContext_getFrameInfo(m_GfxBackend, m_MainWindow);
+      m_FrameInfo   = bfGfxContext_getFrameInfo(m_GfxBackend);
 
       if (m_MainCmdList)
       {
@@ -866,7 +870,7 @@ namespace bifrost
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, bfTexture_layout(surface_tex));
 
     BifrostClearValue clear_colors[1];
     clear_colors[0].color.float32[0] = 0.6f;
@@ -893,10 +897,14 @@ namespace bifrost
     bfGfxCmdList_endRenderpass(command_list);
   }
 
-  void StandardRenderer::frameEnd() const
+  void StandardRenderer::drawEnd() const
   {
     bfGfxCmdList_end(m_MainCmdList);
     bfGfxCmdList_submit(m_MainCmdList);
+  }
+
+  void StandardRenderer::frameEnd() const
+  {
     bfGfxContext_endFrame(m_GfxBackend);
   }
 

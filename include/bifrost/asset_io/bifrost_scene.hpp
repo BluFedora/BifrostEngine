@@ -70,6 +70,7 @@ namespace bifrost
   {
     BIFROST_META_FRIEND;
     friend class Entity;
+    friend class Engine;
 
    private:
     Engine&              m_Engine;
@@ -87,7 +88,7 @@ namespace bifrost
     // Entity Management
 
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
-    Entity*               addEntity(const StringRange& name = "Untitled");
+    EntityRef             addEntity(const StringRange& name = "Untitled");
     void                  removeEntity(Entity* entity);
 
     BVH& bvh() { return m_BVHTree; }
@@ -120,10 +121,6 @@ namespace bifrost
     void serialize(ISerializer& serializer);
 
     ~Scene();
-
-   private:
-    Entity* createEntity(const StringRange& name);
-    void    destroyEntity(Entity* entity) const;
   };
 
   class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>

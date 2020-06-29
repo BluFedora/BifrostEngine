@@ -2,6 +2,7 @@
 #define BIFROST_VULKAN_PHYSICAL_DEVICE_H
 
 #include "bifrost/graphics/bifrost_gfx_api.h"
+
 #include <vulkan/vulkan.h>
 
 #if __cplusplus
@@ -62,7 +63,8 @@ typedef struct VulkanSwapchain_t
   VkExtent2D               extents;
   VulkanSwapchainImageList img_list;
   VkCommandBuffer*         command_buffers;
-  VkFence*                 fences;
+  VkFence*                 in_flight_fences;
+  VkFence*                 in_flight_images;
 
 } VulkanSwapchain;
 

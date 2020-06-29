@@ -94,7 +94,7 @@ namespace bifrost::editor
 
       if (!string_utils::fmtBuffer(obj.name, k_FieldNameBufferSize, nullptr, "%.*s", int(key.length()), key.begin()))
       {
-        bfLogWarn("Failed to format name string in ImGuiSerializer::pushObject.");
+        bfLogWarn("Failed to format name string in ImGuiSerializer::pushArray.");
       }
     }
 
@@ -265,6 +265,16 @@ namespace bifrost::editor
     hasChangedTop() |= imgui_ext::inspect(m_NameBuffer, value);
   }
 
+  void ImGuiSerializer::serialize(StringRange key, BifrostUUIDNumber& value)
+  {
+    setNameBuffer(key);
+
+    char as_string[37];
+    bfUUID_numberToString(value.data, as_string);
+
+    ImGui::Text("UUID <%s>", as_string);
+  }
+
   void ImGuiSerializer::serialize(StringRange key, BifrostUUID& value)
   {
     setNameBuffer(key);
@@ -350,31 +360,78 @@ namespace bifrost::editor
   {
     setNameBuffer(key);
 
-    ImGui::LabelText(m_NameBuffer, "ObjRef(%p)", value.object());
+    ImGui::PushID(&value);
 
-    if (value.object())
+    if (value)
     {
-      serialize("__OBJ__", *value.object());
-    }
-
-    const auto& scene = m_Assets->engine().currentScene();
-
-    if (scene)
-    {
-      if (pushObject("Set Object Reference"))
+      if (ImGui::Button("clear"))
       {
-        for (const auto& entity : scene->rootEntities())
-        {
-          if (ImGui::Button(entity->name().cstr()))
-          {
-            value.bind(entity);
-            hasChangedTop() |= true;
-          }
-        }
-
-        popObject();
+        value = nullptr;
+        hasChangedTop() |= true;
       }
+
+      ImGui::SameLine();
     }
+
+    Entity* const     entity          = value.object();
+    const char* const preview_name    = entity ? entity->name().c_str() : "<null>";
+    Entity*           assigned_entity = entity;
+
+    if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightRegular))
+    {
+      const auto scene = m_Assets->engine().currentScene();
+
+      if (scene)
+      {
+        for (Entity* const scene_entity : scene->rootEntities())
+        {
+          const bool is_selected = scene_entity == entity;
+
+          ImGui::PushID(scene_entity);
+
+          if (ImGui::Selectable(scene_entity->name().c_str(), is_selected, ImGuiSelectableFlags_None))
+          {
+            if (!is_selected)
+            {
+              assigned_entity = scene_entity;
+            }
+          }
+
+          ImGui::PopID();
+        }
+      }
+
+      ImGui::EndCombo();
+    }
+
+    // TODO(SR): All drag / drop areas shoudl be put in function for maintainance reasons.
+    if (ImGui::BeginDragDropTarget())
+    {
+      const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+
+      if (payload && payload->IsDataType("DROP_ENTITY"))
+      {
+        Entity* const data = *static_cast<Entity**>(payload->Data);
+
+        assert(payload->DataSize == sizeof(Entity*));
+
+        if (ImGui::AcceptDragDropPayload("DROP_ENTITY", ImGuiDragDropFlags_None))
+        {
+          assigned_entity = data;
+        }
+      }
+
+      ImGui::EndDragDropTarget();
+    }
+
+    if (assigned_entity != entity)
+    {
+      value = EntityRef(assigned_entity);
+
+      hasChangedTop() |= true;
+    }
+
+    ImGui::PopID();
   }
 
   void ImGuiSerializer::serialize(StringRange key, meta::MetaObject& value)

@@ -50,6 +50,11 @@ namespace bifrost
   class Scene;
   class bfPureInterface(IBehavior);
 
+  namespace gc
+  {
+    struct GCContext;
+  }
+
   using EntityList = intrusive::ListView<Entity>;
 
   // clang-format off
@@ -58,6 +63,14 @@ namespace bifrost
   {
     BIFROST_META_FRIEND;
     friend class Scene;
+    friend struct gc::GCContext;
+
+   public:
+    static constexpr std::uint8_t IS_PENDING_DELETED     = bfBit(0);
+    static constexpr std::uint8_t IS_HIDDEN_IN_HIERARCHY = bfBit(1);
+    static constexpr std::uint8_t IS_PREFAB_INSTANCE     = bfBit(2);
+    static constexpr std::uint8_t IS_ACTIVE              = bfBit(3);
+    static constexpr std::uint8_t IS_SERIALIZABLE        = bfBit(4);
 
    private:
     Scene&                  m_OwningScene;
@@ -70,7 +83,9 @@ namespace bifrost
     BVHNodeOffset           m_BHVNode;
     Array<IBehavior*>       m_Behaviors;
     std::atomic_uint32_t    m_RefCount;
-    BifrostUUIDNumber       m_UUID;
+    intrusive::Node<Entity> m_GCList;
+    std::uint8_t            m_Flags;
+    BifrostUUIDNumber       m_UUID; /*!< This uuid will remain unset until the first use through "Entity::uuid". */
 
    public:
     Entity(Scene& scene, const StringRange& name);
@@ -84,6 +99,8 @@ namespace bifrost
     [[nodiscard]] EntityList&              children() { return m_Children; }
     [[nodiscard]] BVHNodeOffset            bvhID() const { return m_BHVNode; }
     [[nodiscard]] const Array<IBehavior*>& behaviors() const { return m_Behaviors; }
+    [[nodiscard]] bool                     hasUUID() const;
+    [[nodiscard]] const BifrostUUIDNumber& uuid();
 
     // Child API
 
@@ -92,8 +109,8 @@ namespace bifrost
     // To remove a child you must destroy the object itself which
     // will enforce that it does not dangle outside of the hierarchy ;)
 
-    Entity* addChild(const StringRange& name);
-    void    setParent(Entity* new_parent);
+    EntityRef addChild(const StringRange& name);
+    void      setParent(Entity* new_parent);
 
     // Component API
 
@@ -220,6 +237,15 @@ namespace bifrost
     void                        acquire();
     void                        release();
 
+    void destroy();
+
+    // Flags
+
+    [[nodiscard]] bool isFlagSet(std::uint8_t flag) const { return m_Flags & flag; }
+    void               setFlags(std::uint8_t flags) { m_Flags = flags; }
+    void               addFlags(std::uint8_t flags) { m_Flags |= flags; }
+    void               clearFlags(std::uint8_t flags) { m_Flags &= ~flags; }
+
     // Meta
 
     void serialize(ISerializer& serializer);
@@ -253,7 +279,7 @@ namespace bifrost
     }
 
     void        removeChild(Entity* child);
-    IBehavior*  findBehaviorByType(meta::BaseClassMetaInfoPtr type) const;     // not found = nullptr, looks through both lists.
+    IBehavior*  findBehaviorByType(meta::BaseClassMetaInfoPtr type) const;     // not found = nullptr
     std::size_t findBehaviorIdxByType(meta::BaseClassMetaInfoPtr type) const;  // not found = BIFROST_ARRAY_INVALID_INDEX
     bool        removeBehaviorFromList(meta::BaseClassMetaInfoPtr type);       // false if could not find behavior to be removed
     void        deleteBehavior(IBehavior* behavior) const;
@@ -268,8 +294,10 @@ BIFROST_META_REGISTER(bifrost::Entity)
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
      class_info<Entity>("Entity"),  //
-     // ctor<Scene&, const StringRange&>(),                                            // TODO(Shareef): Tries to Register Scene before it is fullt defined :(
+     // ctor<Scene&, const StringRange&>(),                                            // TODO(Shareef): Tries to Register Scene before it is fully defined :(
      field("m_Name", &Entity::m_Name),                                              //
+     field("m_Flags", &Entity::m_Flags),                                            //
+     field("m_UUID", &Entity::m_UUID),                                              //
      property("m_Transform", &Entity::metaGetTransform, &Entity::metaSetTransform)  //
     )
   BIFROST_META_END()

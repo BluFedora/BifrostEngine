@@ -184,6 +184,10 @@ typedef struct
   */
 } bfGfxContextCreateParams;
 
+/* Same as Vulkan's versioning system */
+#define bfGfxMakeVersion(major, minor, patch) \
+  (((major) << 22) | ((minor) << 12) | (patch))
+
 typedef struct bfAllocationCreateInfo_t
 {
   bfBufferSize         size;
@@ -270,9 +274,10 @@ typedef struct
 bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
 bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window);
+void                   bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 void                   bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window);
-bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self, bfWindowSurfaceHandle window);
+bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self);
 bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index);
 void                   bfGfxContext_endFrame(bfGfxContextHandle self);
 void                   bfGfxContext_delete(bfGfxContextHandle self);
@@ -518,7 +523,7 @@ bfPipelineBarrier bfPipelineBarrier_buffer(BifrostAccessFlagsBits src_access, Bi
 bfPipelineBarrier bfPipelineBarrier_image(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfTextureHandle image, BifrostImageLayout new_layout);
 
 bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self);
-bfBool32              bfGfxCmdList_begin(bfGfxCommandListHandle self);   // True if no error
+bfBool32              bfGfxCmdList_begin(bfGfxCommandListHandle self);  // True if no error
 void                  bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, bfBool32 reads_same_pixel);
 void                  bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel);
 void                  bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass);

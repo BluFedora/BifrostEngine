@@ -343,6 +343,8 @@ namespace Error
   static constexpr int FAILED_TO_ALLOCATE_ENGINE_MEMORY = 3;
 }  // namespace Error
 
+extern void toggleFs();
+
 GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
 
 static constexpr float frame_rate       = 60.0f;
@@ -357,7 +359,7 @@ float time_accumulator;
   err_code = (code);          \
   goto label
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
   static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
 
@@ -463,6 +465,12 @@ int main(int argc, const char* argv[])
 
       main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
         Engine* const engine = (Engine*)window->user_data;
+
+        if (event->isType(BIFROST_EVT_ON_WINDOW_RESIZE))
+        {
+          bfGfxWindow_markResized(engine->renderer().context(), (bfWindowSurfaceHandle)window->renderer_data);
+        }
+
         imgui::onEvent(window, *event);
         engine->onEvent(*event);
       };
@@ -477,8 +485,8 @@ int main(int argc, const char* argv[])
         const float new_time   = CurrentTimeSeconds();
         const float delta_time = std::min(new_time - current_time, max_time_step_ms);
 
-        current_time = new_time;
         time_accumulator += delta_time;
+        current_time = new_time;
 
         int window_width;
         int window_height;
@@ -513,18 +521,20 @@ int main(int argc, const char* argv[])
             time_accumulator -= time_step_ms;
           }
 
-          engine->update(delta_time);
-
           const float render_alpha = time_accumulator / time_step_ms;  // current_state * render_alpha + previous_state * (1.0f - render_alpha)
 
+          engine->update(delta_time);
+
           engine->drawBegin(render_alpha);
-          imgui::endFrame(&renderer);
+          imgui::endFrame();
           engine->drawEnd();
         }
+        engine->endFrame();
       };
 
       while (!bfWindow_wantsToClose(main_window))
       {
+        toggleFs();
         bfPlatformPumpEvents();
         main_window->frame_fn(main_window);
       }

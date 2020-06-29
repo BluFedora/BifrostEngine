@@ -34,6 +34,8 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
 
   self->dynamic_state_dirty = 0xFFFF;
 
+  assert(error == VK_SUCCESS);
+
   return error == VK_SUCCESS;
 }
 
@@ -299,6 +301,7 @@ void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
   begin_render_pass_info.pClearValues    = self->clear_colors;
 
   vkCmdBeginRenderPass(self->handle, &begin_render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
   self->pipeline_state.subpass_index = 0;
 }
 
@@ -1205,12 +1208,13 @@ extern void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window);
 
 void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
-  const VkFence command_fence = self->fence;
-  VulkanWindow& window        = *self->window;
+  const VkFence       command_fence = self->fence;
+  VulkanWindow&       window        = *self->window;
+  const std::uint32_t frame_index   = bfGfxContext_getFrameInfo(self->context).frame_index;
 
-  VkSemaphore          wait_semaphores[]   = {window.is_image_available};
+  VkSemaphore          wait_semaphores[]   = {window.is_image_available[frame_index]};
   VkPipelineStageFlags wait_stages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};  // What to wait for, like: DO NOT WRITE TO COLOR UNTIL IMAGE IS AVALIBALLE.
-  VkSemaphore          signal_semaphores[] = {window.is_render_done};
+  VkSemaphore          signal_semaphores[] = {window.is_render_done[frame_index]};
 
   VkSubmitInfo submit_info;
   submit_info.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1222,6 +1226,8 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
   submit_info.pCommandBuffers      = &self->handle;
   submit_info.signalSemaphoreCount = uint32_t(bfCArraySize(signal_semaphores));
   submit_info.pSignalSemaphores    = signal_semaphores;
+
+  vkResetFences(self->parent->handle, 1, &command_fence);
 
   VkResult err = vkQueueSubmit(self->parent->queues[BIFROST_GFX_QUEUE_GRAPHICS], 1, &submit_info, command_fence);
 
@@ -1239,7 +1245,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
   err = vkQueuePresentKHR(self->parent->queues[BIFROST_GFX_QUEUE_PRESENT], &present_info);
 
-  if (err == VK_ERROR_OUT_OF_DATE_KHR)
+  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
   {
     gfxDestroySwapchain(self->context, window);
   }
@@ -1247,6 +1253,8 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
   {
     assert(err == VK_SUCCESS && "GfxContext_submitFrame: failed to present graphics queue");
   }
+
+  // vkQueueWaitIdle(self->parent->queues[BIFROST_GFX_QUEUE_PRESENT]);
 
   window.current_cmd_list = nullptr;
   delete self;

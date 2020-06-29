@@ -1,4 +1,4 @@
 - Selection of deleted objects crash the editor.
 - Clicking into the Scene View needs a more advanced selection model.
 - Game View should not have debug lines being drawn.
-- 
+- Clicking in Scene view is now project with multi viewport.

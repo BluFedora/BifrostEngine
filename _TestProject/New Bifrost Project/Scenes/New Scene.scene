@@ -1,10 +1,10 @@
 {
     "m_Entities" : [
         {
+            "m_UUID" : "261362FE-4497-479E-B128-31D707FEB3B0",
             "m_Children" : [
 
             ],
-            "__ObjectRefID__" : 0,
             "m_Name" : "Rhino",
             "m_Components" : {
                 "MeshRenderer" : {
@@ -12,7 +12,7 @@
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
                     },
                     "m_EntityRef" : {
-                        "__ObjectRefID__" : 1
+                        "uuid" : "261362FE-4497-479E-B128-31D707FEB3B0"
                     },
                     "m_Model" : {
                         "uuid" : "2F5BC8E8-ACD4-4745-BF59-178DC427CB2E"
@@ -46,6 +46,7 @@
                     "z" : -0.255179
                 }
             },
+            "m_Flags" : 24,
             "m_Behaviors" : [
                 {
                     "__BehaviorClass__" : "game::ExampleBehavior"
@@ -53,10 +54,10 @@
             ]
         },
         {
+            "m_UUID" : "00000000-0000-0000-0000-000000000000",
             "m_Children" : [
 
             ],
-            "__ObjectRefID__" : 2,
             "m_Name" : "Cult Char",
             "m_Components" : {
                 "MeshRenderer" : {
@@ -64,7 +65,7 @@
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
                     },
                     "m_EntityRef" : {
-                        "__ObjectRefID__" : 4.29497e+09
+                        "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
                     "m_Model" : {
                         "uuid" : "C0275B2A-F168-4EBB-9D74-458E79E19D54"
@@ -98,15 +99,16 @@
                     "z" : 0
                 }
             },
+            "m_Flags" : 24,
             "m_Behaviors" : [
 
             ]
         },
         {
+            "m_UUID" : "00000000-0000-0000-0000-000000000000",
             "m_Children" : [
 
             ],
-            "__ObjectRefID__" : 3,
             "m_Name" : "Test Plane",
             "m_Components" : {
                 "MeshRenderer" : {
@@ -114,7 +116,7 @@
                         "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
                     },
                     "m_EntityRef" : {
-                        "__ObjectRefID__" : 4.29497e+09
+                        "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
                     "m_Model" : {
                         "uuid" : "32A2B49A-8DE1-42E2-84E7-D999AE61C084"
@@ -148,15 +150,16 @@
                     "z" : 0.207058
                 }
             },
+            "m_Flags" : 24,
             "m_Behaviors" : [
 
             ]
         },
         {
+            "m_UUID" : "00000000-0000-0000-0000-000000000000",
             "m_Children" : [
 
             ],
-            "__ObjectRefID__" : 4,
             "m_Name" : "Untitled",
             "m_Components" : {
                 "Light" : {
@@ -207,15 +210,16 @@
                     "z" : 0
                 }
             },
+            "m_Flags" : 24,
             "m_Behaviors" : [
 
             ]
         },
         {
+            "m_UUID" : "00000000-0000-0000-0000-000000000000",
             "m_Children" : [
 
             ],
-            "__ObjectRefID__" : 1,
             "m_Name" : "Scene Light",
             "m_Components" : {
                 "Light" : {
@@ -266,17 +270,19 @@
                     "z" : 0
                 }
             },
+            "m_Flags" : 24,
             "m_Behaviors" : [
 
             ]
         },
         {
+            "m_UUID" : "00000000-0000-0000-0000-000000000000",
             "m_Children" : [
                 {
+                    "m_UUID" : "00000000-0000-0000-0000-000000000000",
                     "m_Children" : [
 
                     ],
-                    "__ObjectRefID__" : 6,
                     "m_Name" : "Cube",
                     "m_Components" : {
                         "MeshRenderer" : {
@@ -284,7 +290,7 @@
                                 "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
                             },
                             "m_EntityRef" : {
-                                "__ObjectRefID__" : 4.29497e+09
+                                "uuid" : "00000000-0000-0000-0000-000000000000"
                             },
                             "m_Model" : {
                                 "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
@@ -318,12 +324,12 @@
                             "z" : 0
                         }
                     },
+                    "m_Flags" : 24,
                     "m_Behaviors" : [
 
                     ]
                 }
             ],
-            "__ObjectRefID__" : 5,
             "m_Name" : "Cube2",
             "m_Components" : {
                 "MeshRenderer" : {
@@ -331,7 +337,7 @@
                         "uuid" : "C2177178-ED97-450D-907F-0EB1DF927239"
                     },
                     "m_EntityRef" : {
-                        "__ObjectRefID__" : 4.29497e+09
+                        "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
                     "m_Model" : {
                         "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
@@ -365,6 +371,7 @@
                     "z" : -0.301621
                 }
             },
+            "m_Flags" : 24,
             "m_Behaviors" : [
 
             ]

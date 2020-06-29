@@ -3,7 +3,7 @@
  * @file   bifrost_entity_ref.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *  This is for having safe refences to Entities even if they get deleted.
+ *  This is for having safe refences to Entities even if they get _deleted_.
  *
  * @version 0.0.1
  * @date    2020-06-09
@@ -16,23 +16,25 @@
 
 #include "bifrost/utility/bifrost_uuid.h" /* BifrostUUIDNumber */
 
+#include <cstddef> /* nullptr_t */
+
 namespace bifrost
 {
-  class IBaseObject;
   class Entity;
+  class IMemoryManager;
 
   class EntityRef final
   {
+    friend class JsonSerializerWriter;
+    friend class JsonSerializerReader;
+
    private:
     BifrostUUIDNumber m_ID;
     Entity*           m_CachedEntity;
 
    public:
-    explicit EntityRef(Entity* object = nullptr) noexcept :
-      m_ID{},
-      m_CachedEntity{object}
-    {
-    }
+    explicit EntityRef(Entity* object = nullptr) noexcept;
+    EntityRef(std::nullptr_t) noexcept;
 
     EntityRef(const EntityRef& rhs) noexcept;
     EntityRef(EntityRef&& rhs) noexcept;
@@ -40,23 +42,37 @@ namespace bifrost
     EntityRef& operator=(const EntityRef& rhs) noexcept;
     EntityRef& operator=(EntityRef&& rhs) noexcept;
 
-    [[nodiscard]] Entity* object() const noexcept
-    {
-      return m_CachedEntity;
-    }
+    [[nodiscard]] const BifrostUUIDNumber& uuid() const;
+    [[nodiscard]] Entity*                  object() noexcept;
 
-    void bind(Entity* obj) noexcept
-    {
-      m_CachedEntity = obj;
-    }
+    [[nodiscard]]         operator bool() { return object() != nullptr; }
+    [[nodiscard]]         operator Entity*() { return object(); }
+    [[nodiscard]] Entity* operator->() noexcept;
+    [[nodiscard]] Entity& operator*() noexcept;
 
     ~EntityRef() noexcept;
 
    private:
-    void unref();
-    void safeUnref();
+    void unref(bool reset_id = true);
+    void safeUnref(bool reset_id = true);
     void ref(Entity* obj);
+    void safeRef(Entity* obj);
   };
+
+  //
+  // This is the API for the very basic Entity Garbage collection system
+  //
+  namespace gc
+  {
+    void    init(IMemoryManager& memory);
+    bool    hasUUID(const BifrostUUIDNumber& id);
+    void    registerEntity(Entity& object);
+    Entity* findEntity(const BifrostUUIDNumber& id);
+    void    removeEntity(Entity& object);
+    void    reviveEntity(Entity& object);  // TODO(SR): Editor only API
+    void    collect(IMemoryManager& entity_memory);
+    void    quit();
+  }  // namespace gc
 }  // namespace bifrost
 
 #endif /* BIFROST_REF_HPP */

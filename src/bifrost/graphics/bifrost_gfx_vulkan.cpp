@@ -4,7 +4,6 @@
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
 
-#include "bifrost/debug/bifrost_dbg_logger.h"
 #include "bifrost/platform/bifrost_platform_vulkan.h"
 #include "vulkan/bifrost_vulkan_conversions.h"
 #include "vulkan/bifrost_vulkan_logical_device.h"
@@ -37,7 +36,17 @@
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
 
+#if BIFROST_GRAPHICS_NO_LOG
+#define bfLogPush(...)
+#define bfLogPrint(...)
+#define bfLogError(...)
+#define bfLogPop(...)
+#else
+#include "bifrost/debug/bifrost_dbg_logger.h"
+#endif
 // Memory Functions (To Be Replaced)
+
+// ReSharper disable CppZeroConstantCanBeReplacedWithNullptr
 
 template<typename T>
 T* allocN(std::size_t num_elements)
@@ -158,7 +167,7 @@ namespace
   void        gfxContextInitCmdBuffers(bfGfxContextHandle self, VulkanWindow& window);
   void        gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain);
   void        gfxContextDestroyCmdFences(bfGfxContextHandle self, const VulkanSwapchain* swapchain);
-  void        gfxContextDestroySwapchainImageList(bfGfxContextHandle self, const VulkanSwapchain* swapchain);
+  void        gfxContextDestroySwapchainImageList(bfGfxContextHandle self, VulkanSwapchain* swapchain);
   void        gfxContextDestroySwapchain(bfGfxContextHandle self, VulkanSwapchain* swapchain);
 }  // namespace
 
@@ -265,22 +274,36 @@ bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct 
   return surface;
 }
 
+void bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
+{
+  // gfxDestroySwapchain(self, *window_handle);
+}
+
 void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
 {
   gfxDestroySwapchain(self, *window_handle);
-  vkDestroySemaphore(self->logical_device->handle, window_handle->is_image_available, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  vkDestroySemaphore(self->logical_device->handle, window_handle->is_render_done, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+
+  for (std::uint32_t i = 0; i < self->max_frames_in_flight; ++i)
+  {
+    vkDestroySemaphore(self->logical_device->handle, window_handle->is_image_available[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+    vkDestroySemaphore(self->logical_device->handle, window_handle->is_render_done[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  }
+
+  freeN(window_handle->is_image_available);  // window_handle->is_render_done shared an allcoation with 'window_handle->is_render_done'.
 
   delete window_handle;
 }
 
 static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
+  assert(window.swapchain_needs_creation);
+
   if (gfxContextInitSwapchain(self, window))
   {
     gfxContextInitSwapchainImageList(self, window);
     gfxContextInitCmdFences(self, window);
     gfxContextInitCmdBuffers(self, window);
+
     return true;
   }
 
@@ -289,24 +312,25 @@ static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
 
 void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
-  bfGfxDevice_flush(self->logical_device);
+  if (!window.swapchain_needs_creation)
+  {
+    bfGfxDevice_flush(self->logical_device);
 
-  VulkanSwapchain old_swapchain = window.swapchain;
+    VulkanSwapchain& old_swapchain = window.swapchain;
 
-  gfxContextDestroyCmdBuffers(self, &old_swapchain);
-  gfxContextDestroyCmdFences(self, &old_swapchain);
-  gfxContextDestroySwapchainImageList(self, &old_swapchain);
-  gfxContextDestroySwapchain(self, &old_swapchain);
+    gfxContextDestroyCmdBuffers(self, &old_swapchain);
+    gfxContextDestroyCmdFences(self, &old_swapchain);
+    gfxContextDestroySwapchainImageList(self, &old_swapchain);
+    gfxContextDestroySwapchain(self, &old_swapchain);
 
-  window.swapchain_needs_creation = bfTrue;
+    window.swapchain_needs_creation = bfTrue;
+  }
 }
 
 bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window)
 {
   if (window->swapchain_needs_creation)
   {
-    // bfGfxDevice_flush(self->logical_device);
-
     if (!gfxRecreateSwapchain(self, *window))
     {
       return bfFalse;
@@ -318,10 +342,19 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
     return bfFalse;
   }
 
+  {
+    const VkFence command_fence = window->swapchain.in_flight_fences[self->frame_index];
+
+    if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+    {
+      return bfFalse;
+    }
+  }
+
   const VkResult err = vkAcquireNextImageKHR(self->logical_device->handle,
                                              window->swapchain.handle,
                                              UINT64_MAX,
-                                             window->is_image_available,
+                                             window->is_image_available[self->frame_index],
                                              VK_NULL_HANDLE,
                                              &window->image_index);
 
@@ -332,31 +365,34 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
       gfxDestroySwapchain(self, *window);
     }
 
-    return bfFalse;
+    if (!gfxRecreateSwapchain(self, *window))
+    {
+      return bfFalse;
+    }
   }
 
-  const VkFence command_fence = window->swapchain.fences[window->image_index];
-
-  if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_FALSE, UINT64_MAX) != VK_SUCCESS)
+  if (window->swapchain.in_flight_images[window->image_index] != VK_NULL_HANDLE)
   {
-    // std::printf("Waiting for fence takes too long!");
-    return bfFalse;
+    if (vkWaitForFences(self->logical_device->handle, 1, &window->swapchain.in_flight_images[window->image_index], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+    {
+      return bfFalse;
+    }
   }
 
-  vkResetFences(self->logical_device->handle, 1, &command_fence);
+  window->swapchain.in_flight_images[window->image_index] = window->swapchain.in_flight_fences[self->frame_index];
 
   return bfTrue;
 }
 
-bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self, bfWindowSurfaceHandle window)
+bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self)
 {
-  return {window->image_index, self->frame_count, window->swapchain.img_list.size};
+  return {self->frame_index, self->frame_count, self->max_frames_in_flight};
 }
 
 template<typename T, typename TCache>
 static void bfGfxContext_removeFromCache(TCache& cache, BifrostGfxObjectBase* object)
 {
-  cache.remove(object->hash_code, (T)object);
+  cache.remove(object->hash_code, reinterpret_cast<T>(object));
 }
 
 void bfGfxContext_endFrame(bfGfxContextHandle self)
@@ -455,7 +491,7 @@ void bfGfxContext_delete(bfGfxContextHandle self)
   MaterialPool_delete(device->descriptor_pool);
 
 #if BIFROST_USE_DEBUG_CALLBACK
-  PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
+  const PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
 
   if (func)
   {
@@ -492,7 +528,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
   list->context        = self;
   list->parent         = self->logical_device;
   list->handle         = window->swapchain.command_buffers[window->image_index];
-  list->fence          = window->swapchain.fences[window->image_index];
+  list->fence          = window->swapchain.in_flight_fences[self->frame_index];
   list->window         = window;
   list->render_area    = {};
   list->framebuffer    = nullptr;
@@ -1137,7 +1173,7 @@ namespace
 
   const char* gfxContextInitCommandPool(bfGfxContextHandle self, uint16_t thread_index)
   {
-    assert(thread_index == 0 && "Current implemetation only supports one thread currently.");
+    assert(thread_index == 0 && "Current implemetation only supports one thread.");
 
     const VulkanPhysicalDevice* const phys_device    = self->physical_device;
     const bfGfxDeviceHandle           logical_device = self->logical_device;
@@ -1161,24 +1197,40 @@ namespace
 
   const char* gfxContextInitSemaphores(bfGfxContextHandle self, VulkanWindow& window)
   {
-    VkSemaphore* const semaphores[] = {&window.is_image_available, &window.is_render_done};
-
     VkSemaphoreCreateInfo semaphore_create_info;
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphore_create_info.pNext = NULL;
     semaphore_create_info.flags = 0;
 
-    for (auto semaphore : semaphores)
-    {
-      const VkResult err = vkCreateSemaphore(
-       self->logical_device->handle,
-       &semaphore_create_info,
-       BIFROST_VULKAN_CUSTOM_ALLOCATOR,
-       semaphore);
+    window.is_image_available = allocN<VkSemaphore>(std::size_t(self->max_frames_in_flight) * 2);
+    window.is_render_done     = window.is_image_available + self->max_frames_in_flight;
 
-      if (err)
+    for (std::uint32_t i = 0; i < self->max_frames_in_flight; ++i)
+    {
       {
-        return "Failed to create a Semaphore";
+        const VkResult err = vkCreateSemaphore(
+         self->logical_device->handle,
+         &semaphore_create_info,
+         BIFROST_VULKAN_CUSTOM_ALLOCATOR,
+         window.is_image_available + i);
+
+        if (err)
+        {
+          return "Failed to create a Semaphore";
+        }
+      }
+
+      {
+        const VkResult err = vkCreateSemaphore(
+         self->logical_device->handle,
+         &semaphore_create_info,
+         BIFROST_VULKAN_CUSTOM_ALLOCATOR,
+         window.is_render_done + i);
+
+        if (err)
+        {
+          return "Failed to create a Semaphore";
+        }
       }
     }
 
@@ -1305,7 +1357,7 @@ namespace
       swapchain_ci.pQueueFamilyIndices   = queue_family_indices;
     }
 
-    VkResult err = vkCreateSwapchainKHR(self->logical_device->handle, &swapchain_ci, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &window.swapchain.handle);
+    const VkResult err = vkCreateSwapchainKHR(self->logical_device->handle, &swapchain_ci, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &window.swapchain.handle);
 
     window.swapchain.extents        = surface_extents;
     window.swapchain.present_mode   = surface_present_mode;
@@ -1313,7 +1365,7 @@ namespace
 
     if (err)
     {
-      // std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
+      std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
     }
 
     return true;
@@ -1335,13 +1387,15 @@ namespace
     {
       bfTexture* const image = swapchain->img_list.images + i;
 
+      BifrostGfxObjectBase_ctor(&image->super, BIFROST_GFX_OBJECT_TEXTURE);
+
       image->image_type      = BIFROST_TEX_TYPE_2D;
       image->image_width     = int32_t(swapchain->extents.width);
       image->image_height    = int32_t(swapchain->extents.height);
       image->image_depth     = 1;
       image->image_miplevels = 1;
       image->tex_memory      = VK_NULL_HANDLE;
-      image->tex_view        = bfCreateImageView2D(logical_device->handle, temp_images[i], swapchain->format.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+      image->tex_view        = bfCreateImageView2D(logical_device->handle, temp_images[i], swapchain->format.format, VK_IMAGE_ASPECT_COLOR_BIT, image->image_miplevels);
       image->tex_sampler     = VK_NULL_HANDLE;
       image->tex_layout      = BIFROST_IMAGE_LAYOUT_UNDEFINED;
       image->tex_format      = swapchain->format.format;
@@ -1353,17 +1407,24 @@ namespace
   {
     bfGfxDeviceHandle logical_device = self->logical_device;
 
-    const std::uint32_t num_fences = window.swapchain.img_list.size;
-    window.swapchain.fences        = allocN<VkFence>(num_fences);
+    const std::uint32_t num_in_flight_fences = self->max_frames_in_flight;
+    const std::uint32_t num_in_images_fences = window.swapchain.img_list.size;
+    window.swapchain.in_flight_fences        = allocN<VkFence>(num_in_flight_fences + num_in_images_fences);
+    window.swapchain.in_flight_images        = window.swapchain.in_flight_fences + num_in_flight_fences;
 
-    for (uint32_t i = 0; i < num_fences; ++i)
+    for (uint32_t i = 0; i < num_in_flight_fences; ++i)
     {
       VkFenceCreateInfo fence_create_info;
       fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
       fence_create_info.pNext = NULL;
       fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-      vkCreateFence(logical_device->handle, &fence_create_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, window.swapchain.fences + i);
+      vkCreateFence(logical_device->handle, &fence_create_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, window.swapchain.in_flight_fences + i);
+    }
+
+    for (uint32_t i = 0; i < num_in_images_fences; ++i)
+    {
+      window.swapchain.in_flight_images[i] = VK_NULL_HANDLE;
     }
   }
 
@@ -1392,6 +1453,7 @@ namespace
   {
     VkCommandBuffer* result = allocN<VkCommandBuffer>(num_buffers);
     gfxContextCreateCommandBuffers(self, num_buffers, result);
+
     return result;
   }
 
@@ -1467,26 +1529,43 @@ namespace
     bfGfxDeviceHandle logical_device = self->logical_device;
     VkDevice          device         = logical_device->handle;
 
-    for (uint32_t i = 0; i < swapchain->img_list.size; ++i)
+    for (uint32_t i = 0; i < self->max_frames_in_flight; ++i)
     {
-      vkDestroyFence(device, swapchain->fences[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+      vkDestroyFence(device, swapchain->in_flight_fences[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
     }
 
-    freeN(swapchain->fences);
+    freeN(swapchain->in_flight_fences);
+    const_cast<VulkanSwapchain*>(swapchain)->in_flight_fences = nullptr;
+    const_cast<VulkanSwapchain*>(swapchain)->in_flight_images = nullptr;
+    // freeN(swapchain->in_flight_images); Shared allocation w/ 'swapchain->in_flight_fences'.
   }
 
-  void gfxContextDestroySwapchainImageList(bfGfxContextHandle self, const VulkanSwapchain* swapchain)
+  void gfxContextDestroySwapchainImageList(bfGfxContextHandle self, VulkanSwapchain* swapchain)
   {
-    bfGfxDeviceHandle                     logical_device = self->logical_device;
-    VkDevice                              device         = logical_device->handle;
-    const VulkanSwapchainImageList* const image_list     = &swapchain->img_list;
+    bfGfxDeviceHandle               logical_device = self->logical_device;
+    const VkDevice                  device         = logical_device->handle;
+    VulkanSwapchainImageList* const image_list     = &swapchain->img_list;
 
     for (uint32_t i = 0; i < image_list->size; ++i)
     {
-      vkDestroyImageView(device, image_list->images[i].tex_view, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+      const bfTextureHandle image = image_list->images + i;
+
+      logical_device->cache_framebuffer.forEach([image](bfFramebufferHandle fb, bfFramebufferState& config_data) {
+        for (uint32_t i = 0; i < config_data.num_attachments; ++i)
+        {
+          if (config_data.attachments[i] == image)
+          {
+            config_data.attachments[i] = nullptr;
+            fb->attachments[i]         = nullptr;
+          }
+        }
+      });
+
+      vkDestroyImageView(device, image->tex_view, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
     }
 
-    free(image_list->images);
+    freeN(image_list->images);
+    image_list->images = nullptr;
   }
 
   void gfxContextDestroySwapchain(bfGfxContextHandle self, VulkanSwapchain* swapchain)
@@ -1554,6 +1633,7 @@ namespace
   {
     VkPresentModeKHR best_mode = VK_PRESENT_MODE_FIFO_KHR;  // Guaranteed to exist according to the standard.
 
+#ifndef BIFROST_GRAPHICS_POWER_SAVER
     const VkPresentModeKHR* const present_mode_end = present_modes + num_present_modes;
     const VkPresentModeKHR*       present_mode     = present_modes;
 
@@ -1571,6 +1651,10 @@ namespace
 
       ++present_mode;
     }
+#else
+    (void)present_modes;
+    (void)num_present_modes;
+#endif
 
     return best_mode;
   }
@@ -2315,50 +2399,16 @@ static void bfTexture__allocMemory(bfTextureHandle self)
 
 bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
 {
-  static constexpr int k_NumReqComps = 4;
-  // static constexpr stbi_uc k_PadValue    = 0x00;
+  static constexpr size_t k_NumReqComps = 4;
 
   int      num_components = 0;
   stbi_uc* texture_data   = stbi_load(file, &self->image_width, &self->image_height, &num_components, STBI_rgb_alpha);
 
   if (texture_data)
   {
-    const size_t num_req_bytes = self->image_width * self->image_height * k_NumReqComps * sizeof(char);
-    // const size_t num_raw_bytes = self->image_width * self->image_height * num_components * sizeof(char);
+    const size_t num_req_bytes = size_t(self->image_width) * size_t(self->image_height) * k_NumReqComps * sizeof(char);
 
-    stbi_uc* padded_texture_data = texture_data;
-#if 0
-    if (num_components != k_NumReqComps)
-    {
-      const int num_missing = k_NumReqComps - num_components;
-
-      assert(num_missing > 0);
-
-      padded_texture_data = (stbi_uc*)malloc(num_req_bytes);
-
-      size_t i_pad = 0;
-      size_t i_raw = 0;
-
-      while (i_pad < num_req_bytes && i_raw < num_raw_bytes)
-      {
-        for (int i = 0; i < num_components; ++i)
-        {
-          padded_texture_data[i_pad++] = texture_data[i_raw++];
-        }
-
-        for (int i = 0; i < num_missing; ++i)
-        {
-          padded_texture_data[i_pad++] = k_PadValue;
-        }
-      }
-    }
-#endif
-    bfTexture_loadData(self, reinterpret_cast<const char*>(padded_texture_data), num_req_bytes);
-
-    if (padded_texture_data != texture_data)
-    {
-      free(padded_texture_data);
-    }
+    bfTexture_loadData(self, reinterpret_cast<const char*>(texture_data), num_req_bytes);
 
     stbi_image_free(texture_data);
 
@@ -2648,3 +2698,5 @@ void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj)
 {
   obj->last_frame_used = ctx->frame_count;
 }
+
+// ReSharper restore CppZeroConstantCanBeReplacedWithNullptr

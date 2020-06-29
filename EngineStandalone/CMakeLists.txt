@@ -79,8 +79,8 @@ target_link_libraries(BifrostRuntime PRIVATE "d3d12.lib" "dxgi.lib" "d3dcompiler
 set_target_properties(
   BifrostRuntime
   PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY       "${CMAKE_SOURCE_DIR}/archive"
-  LIBRARY_OUTPUT_DIRECTORY       "${CMAKE_SOURCE_DIR}/library"
+  # ARCHIVE_OUTPUT_DIRECTORY       "${CMAKE_SOURCE_DIR}/archive"
+  # LIBRARY_OUTPUT_DIRECTORY       "${CMAKE_SOURCE_DIR}/library"
   RUNTIME_OUTPUT_DIRECTORY       "${CMAKE_SOURCE_DIR}/bin"
   CXX_STANDARD                   17
   VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"

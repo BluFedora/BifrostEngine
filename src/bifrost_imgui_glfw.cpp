@@ -260,7 +260,7 @@ namespace bifrost::imgui
     s_RenderData.ctx  = graphics;
     const auto device = s_RenderData.device = bfGfxContext_device(graphics);
 
-    s_RenderData.main_viewport_data = new UIRenderData(bfGfxContext_getFrameInfo(s_RenderData.ctx, (bfWindowSurfaceHandle)window->renderer_data).num_frame_indices);
+    s_RenderData.main_viewport_data = new UIRenderData(bfGfxContext_getFrameInfo(s_RenderData.ctx).num_frame_indices);
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -463,7 +463,7 @@ namespace bifrost::imgui
       if (fb_width <= 0 || fb_height <= 0)
         return;
 
-      const bfGfxFrameInfo info = bfGfxContext_getFrameInfo(s_RenderData.ctx, window);
+      const bfGfxFrameInfo info = bfGfxContext_getFrameInfo(s_RenderData.ctx);
 
       UIFrameData& frame = buffers[info.frame_index];
 
@@ -571,7 +571,7 @@ namespace bifrost::imgui
     }
   }
 
-  void endFrame(StandardRenderer* renderer)
+  void endFrame()
   {
     ImGuiViewport* const main_viewport = ImGui::GetMainViewport();
 
@@ -581,7 +581,7 @@ namespace bifrost::imgui
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
       ImGui::UpdatePlatformWindows();
-      ImGui::RenderPlatformWindowsDefault(nullptr, renderer);
+      ImGui::RenderPlatformWindowsDefault(nullptr, nullptr);
     }
   }
 
@@ -601,6 +601,41 @@ namespace bifrost::imgui
     }
 
     ImGui::DestroyContext(nullptr);
+  }
+
+  void setupDefaultRenderPass(bfGfxCommandListHandle command_list, bfTextureHandle surface)
+  {
+    bfAttachmentInfo main_surface;
+    main_surface.texture      = surface;
+    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    main_surface.may_alias    = bfFalse;
+
+    auto renderpass_info = bfRenderpassInfo_init(1);
+    bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
+    bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
+    bfRenderpassInfo_setClearOps(&renderpass_info, bfBit(0));
+    bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
+    bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
+    bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
+    bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    BifrostClearValue clear_colors[1];
+    clear_colors[0].color.float32[0] = 0.6f;
+    clear_colors[0].color.float32[1] = 0.6f;
+    clear_colors[0].color.float32[2] = 0.75f;
+    clear_colors[0].color.float32[3] = 1.0f;
+
+    bfTextureHandle attachments[] = {surface};
+
+    bfGfxCmdList_setDepthTesting(command_list, bfFalse);
+    bfGfxCmdList_setDepthWrite(command_list, bfFalse);
+
+    bfGfxCmdList_setRenderpassInfo(command_list, &renderpass_info);
+    bfGfxCmdList_setClearValues(command_list, clear_colors);
+    bfGfxCmdList_setAttachments(command_list, attachments);
+    bfGfxCmdList_setRenderAreaRel(command_list, 0.0f, 0.0f, 1.0f, 1.0f);
+    bfGfxCmdList_beginRenderpass(command_list);
   }
 
   static const char* GLFW_ClipboardGet(void* user_data)
@@ -718,7 +753,7 @@ namespace bifrost::imgui
   {
     BifrostWindow* const        bf_window      = (BifrostWindow*)vp->PlatformHandle;
     const bfWindowSurfaceHandle surface        = bfGfxContext_createWindow(s_RenderData.ctx, bf_window);
-    const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo(s_RenderData.ctx, surface);
+    const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo(s_RenderData.ctx);
     UIRenderData* const         ui_render_data = new UIRenderData(info.num_frame_indices);
 
     vp->RendererUserData  = surface;
@@ -751,9 +786,10 @@ namespace bifrost::imgui
 
   static void ImGui_RendererRenderWindow(ImGuiViewport* vp, void* render_arg)
   {
+    (void)render_arg;
+
     UIRenderData* const         ui_render_data = (UIRenderData*)vp->PlatformHandleRaw;
     const bfWindowSurfaceHandle surface        = (bfWindowSurfaceHandle)vp->RendererUserData;
-    StandardRenderer* const     renderer       = (StandardRenderer*)render_arg;
 
     if (bfGfxContext_beginFrame(s_RenderData.ctx, surface))
     {
@@ -761,9 +797,11 @@ namespace bifrost::imgui
 
       if (bfGfxCmdList_begin(command_list))
       {
-        renderer->beginScreenPass(command_list);
+        const bfTextureHandle surface_tex = bfGfxDevice_requestSurface(surface);
+
+        setupDefaultRenderPass(command_list, surface_tex);
         frameDraw(vp->DrawData, surface, ui_render_data->buffers.get());
-        renderer->endPass(command_list);
+        bfGfxCmdList_endRenderpass(command_list);
 
         bfGfxCmdList_end(command_list);
         bfGfxCmdList_submit(command_list);

@@ -56,3 +56,16 @@ void bfPlatformFree(void* ptr, size_t old_size)
 {
   (void)g_BifrostPlatform.allocator(ptr, old_size, 0u, g_BifrostPlatform.user_data);
 }
+
+void bfPlatformDoMainLoop(BifrostWindow* main_window)
+{
+  while (!bfWindow_wantsToClose(main_window))
+  {
+    bfPlatformPumpEvents();
+
+    if (main_window->frame_fn)
+    {
+      main_window->frame_fn(main_window);
+    }
+  }
+}

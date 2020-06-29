@@ -122,30 +122,6 @@ namespace bifrost
     EDITOR_PLAYING,
     PAUSED,
   };
-
-  class ObjectDatabase final : private bfNonCopyMoveable<Engine>
-  {
-    static constexpr int k_InitialMapSize = 256;
-
-   private:
-    using UUIDToObject = HashTable<BifrostUUIDNumber, IBaseObject*, k_InitialMapSize, UUIDHasher, UUIDEqual>;
-    using ObjectToUUID = HashTable<IBaseObject*, BifrostUUIDNumber, k_InitialMapSize>;
-
-   private:
-    UUIDToObject m_IDToObject;
-    ObjectToUUID m_ObjectToID;
-
-   public:
-    explicit ObjectDatabase() :
-      m_IDToObject{},
-      m_ObjectToID{}
-    {
-    }
-
-    BifrostUUIDNumber registerObject(IBaseObject* object);
-    IBaseObject*      grabObject(const BifrostUUIDNumber& id);
-    void              removeObject(IBaseObject* object);
-  };
 }  // namespace bifrost
 
 using namespace bifrost;
@@ -161,7 +137,7 @@ using MainHeap = FreeListAllocator;
 class Engine : private bfNonCopyMoveable<Engine>
 {
  private:
-  using CommandLineArgs    = std::pair<int, const char**>;
+  using CommandLineArgs    = std::pair<int, char**>;
   using CameraRenderMemory = PoolAllocator<CameraRender, k_MaxNumCamera>;
 
  private:
@@ -182,10 +158,9 @@ class Engine : private bfNonCopyMoveable<Engine>
   CameraRender*           m_CameraDeleteList;
   EngineState             m_State;
   BifrostWindow*          m_MainWindow;
-  ObjectDatabase          m_ObjectDatabase;
 
  public:
-  explicit Engine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]);
+  explicit Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]);
 
   // Subsystems (Getters / Setters)
 
@@ -221,23 +196,8 @@ class Engine : private bfNonCopyMoveable<Engine>
 
   // Scene Management API
 
-  void openScene(const AssetSceneHandle& scene);
-
-  // Object Database Management API
-
-  template<typename T, typename... Args>
-  T* instantiate(Args&&... args)
-  {
-    static_assert(std::is_base_of_v<IBaseObject, T>, "This function is for instantiating new instances of IBaseObject derived classes.");
-
-    T* const object = mainMemory().allocateT<T>(std::forward<Args>(args)...);
-
-    return object;
-  }
-
-  void destroy(IBaseObject* object)
-  {
-  }
+  void      openScene(const AssetSceneHandle& scene);
+  EntityRef createEntity(Scene& scene, const StringRange& name = "New Entity");
 
   // "System" Functions to be called by the Application
 
@@ -254,6 +214,7 @@ class Engine : private bfNonCopyMoveable<Engine>
   void               update(float delta_time);
   void               drawBegin(float render_alpha);
   void               drawEnd() const;
+  void               endFrame();
   void               deinit();
 
  private:

@@ -107,9 +107,12 @@ namespace bifrost
 
   void ISerializer::serialize(StringRange key, BifrostUUIDNumber& value)
   {
-    static constexpr int k_AsStringSize = sizeof(value);
+    static constexpr int k_AsStringSize = sizeof(BifrostUUIDString) - 1;
 
-    String as_string = {value.data, k_AsStringSize};
+    char as_string_chars[37];
+    bfUUID_numberToString(value.data, as_string_chars);
+
+    String as_string = {as_string_chars, k_AsStringSize};
 
     serialize(key, as_string);
 
@@ -121,7 +124,9 @@ namespace bifrost
       }
       else
       {
-        std::memcpy(&value, as_string.c_str(), k_AsStringSize);
+        const BifrostUUID uuid = bfUUID_fromString(as_string.c_str());
+
+        value = uuid.as_number;
       }
     }
   }

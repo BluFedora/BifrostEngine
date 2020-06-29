@@ -366,6 +366,7 @@ namespace bifrost
     void               beginLightingPass(CameraGPUData& camera);
     void               beginScreenPass(bfGfxCommandListHandle command_list) const;
     void               endPass(bfGfxCommandListHandle command_list) const;
+    void               drawEnd() const;
     void               frameEnd() const;
     void               deinit();
 

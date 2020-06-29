@@ -104,18 +104,14 @@ namespace bifrost
   {
   }
 
-  Entity* Scene::addEntity(const StringRange& name)
+  EntityRef Scene::addEntity(const StringRange& name)
   {
-    Entity* entity = createEntity(name);
-    m_RootEntities.push(entity);
-
-    return entity;
+    return m_Engine.createEntity(*this, name);
   }
 
   void Scene::removeEntity(Entity* entity)
   {
     m_RootEntities.removeAt(m_RootEntities.find(entity));
-    destroyEntity(entity);
   }
 
   void Scene::update(LinearAllocator& temp, DebugRenderer& dbg_renderer)
@@ -152,15 +148,17 @@ namespace bifrost
     {
       if (serializer.mode() == SerializerMode::LOADING)
       {
-        m_RootEntities.resize(num_entities);
-
         for (auto& entity : m_RootEntities)
         {
-          if (entity)
-          {
-            destroyEntity(entity);
-            entity = nullptr;
-          }
+          entity->destroy();
+        }
+
+        m_RootEntities.clear();
+        m_RootEntities.reserve(num_entities);
+
+        for (std::size_t i = 0; i < num_entities; ++i)
+        {
+          addEntity(nullptr);
         }
       }
       else
@@ -169,18 +167,13 @@ namespace bifrost
       }
 
       // NOTE(SR):
-      //   DO NOT _Modernize_ this loop.
+      //   DO NOT _modernize_ this loop.
       //   Entity::serialize potentially adds chilren
       //   and those chilren start off in the 'm_RootEntities' Array
       //   so 'm_RootEntities' may regrow in the middle of iterating.
       for (std::size_t i = 0; i < m_RootEntities.size(); ++i)
       {
         auto& entity = m_RootEntities[i];
-
-        if (!entity)
-        {
-          entity = createEntity(nullptr);
-        }
 
         if (serializer.pushObject(entity->name()))
         {
@@ -211,22 +204,9 @@ namespace bifrost
   {
     while (!m_RootEntities.isEmpty())
     {
-      removeEntity(m_RootEntities.back());
+      m_RootEntities.back()->destroy();
+      m_RootEntities.pop();
     }
-  }
-
-  Entity* Scene::createEntity(const StringRange& name)
-  {
-    Entity* const entity = m_Memory.allocateT<Entity>(*this, name);
-
-    entity->m_BHVNode = m_BVHTree.insert(entity, entity->transform());
-
-    return entity;
-  }
-
-  void Scene::destroyEntity(Entity* entity) const
-  {
-    m_Memory.deallocateT(entity);
   }
 
   bool AssetSceneInfo::load(Engine& engine)

@@ -808,6 +808,8 @@ namespace bifrost::editor
        ImGui::Text("This is a custom Mesh Renderer Callback");
 
        serializer.serializeT(mesh_renderer);
+
+       ImGui::Text("This is a custom Mesh Renderer Callback");
      });
     //*/
   }

@@ -3,11 +3,12 @@
 
 #include "bifrost/graphics/bifrost_gfx_api.h"        /*                       */
 #include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable     */
-#include <cassert>                                   /* assert                */
-#include <cstddef>                                   /* size_t                */
-#include <cstdint>                                   /* uint64_t              */
-#include <cstring>                                   /* memset                */
-#include <type_traits>                               /* is_trivially_copyable */
+
+#include <cassert>     /* assert                */
+#include <cstddef>     /* size_t                */
+#include <cstdint>     /* uint64_t              */
+#include <cstring>     /* memset                */
+#include <type_traits> /* is_trivially_copyable */
 
 struct bfDescriptorSetLayoutInfo_t;
 typedef struct bfDescriptorSetLayoutInfo_t bfDescriptorSetLayoutInfo;
@@ -80,11 +81,6 @@ namespace bifrost::vk
           {
             return node.value;
           }
-          else
-          {
-            // __debugbreak();
-            // Compare::operator()(node.config_data, config_data);
-          }
         }
 
         idx = idx + 1 & hash_mask;
@@ -106,7 +102,7 @@ namespace bifrost::vk
         {
           node.value     = nullptr;
           node.hash_code = key;
-          
+
           return true;
         }
 

@@ -134,7 +134,7 @@ BIFROST_DEFINE_HANDLE(Framebuffer)
 {
   BifrostGfxObjectBase super;
   VkFramebuffer        handle;
-  uint32_t             num_attachments;
+  // uint32_t             num_attachments;
   bfTextureHandle      attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
 };
 
@@ -149,8 +149,8 @@ BIFROST_DEFINE_HANDLE(WindowSurface)
   VkSurfaceKHR           surface;
   VulkanSwapchainInfo    swapchain_info;
   VulkanSwapchain        swapchain;
-  VkSemaphore            is_image_available;
-  VkSemaphore            is_render_done;
+  VkSemaphore*           is_image_available;
+  VkSemaphore*           is_render_done;
   uint32_t               image_index;
   bfBool32               swapchain_needs_creation;
   bfGfxCommandListHandle current_cmd_list;

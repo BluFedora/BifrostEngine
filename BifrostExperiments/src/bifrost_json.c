@@ -600,7 +600,7 @@ static size_t bfJsonUnescapeString(char* str)
       }
     }
 
-    *new_str++ = (char)c;
+    *new_str++ = c;
   }
 
   new_str[0] = '\0';
@@ -690,7 +690,7 @@ static bfBool32 bfJsonEat(bfJsonParserContext* ctx, bfJsonTokenType type, bfBool
              (char)ctx->current_object.type);
     ctx->callback(ctx, BIFROST_JSON_EVENT_PARSE_ERROR, ctx->user_data);
     longjmp(ctx->error_handling, 1);
-    // return bfFalse;
+    /* return bfFalse; */
   }
 
   return optional;

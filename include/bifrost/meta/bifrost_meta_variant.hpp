@@ -237,7 +237,7 @@ namespace bifrost::meta
      [&return_value](const auto& arg) {
        using ActualT = std::decay_t<decltype(arg)>;
 
-       if constexpr (std::is_convertible_v<ActualT, TDecay>)
+       if constexpr (std::is_constructible_v<TDecay, const ActualT&>)
        {
          return_value = T(arg);
        }

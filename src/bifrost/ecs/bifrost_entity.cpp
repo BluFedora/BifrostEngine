@@ -33,11 +33,14 @@ namespace bifrost
     m_Children{&Entity::m_Hierarchy},
     m_Hierarchy{},
     m_ComponentHandles{},
-    m_BHVNode{k_BVHNodeInvalidOffset},
+    m_BHVNode{scene.m_BVHTree.insert(this, transform())},
     m_Behaviors{sceneMemoryManager()},
-    m_RefCount{ATOMIC_VAR_INIT(1)},
+    m_RefCount{ATOMIC_VAR_INIT(0)},
+    m_GCList{},
+    m_Flags{IS_ACTIVE | IS_SERIALIZABLE},
     m_UUID{bfUUID_makeEmpty().as_number}
   {
+    setComponentActive<MeshRenderer>(false);
   }
 
   BifrostTransform& Entity::transform() const
@@ -52,9 +55,32 @@ namespace bifrost
     return m_OwningScene.m_BVHTree.nodes[m_BHVNode];
   }
 
-  Entity* Entity::addChild(const StringRange& name)
+  bool Entity::hasUUID() const
   {
-    Entity* child = m_OwningScene.addEntity(name);
+    return !bfUUID_numberIsEmpty(&m_UUID);
+  }
+
+  const BifrostUUIDNumber& Entity::uuid()
+  {
+    if (!hasUUID())
+    {
+      m_UUID = bfUUID_generate().as_number;
+
+      // Make sure this ID is actually unique.
+      while (gc::hasUUID(m_UUID))
+      {
+        m_UUID = bfUUID_generate().as_number;
+      }
+
+      gc::registerEntity(*this);
+    }
+
+    return m_UUID;
+  }
+
+  EntityRef Entity::addChild(const StringRange& name)
+  {
+    EntityRef child = m_OwningScene.addEntity(name);
     child->setParent(this);
 
     return child;
@@ -177,12 +203,30 @@ namespace bifrost
   void Entity::release()
   {
     assert(m_RefCount > 0);
+
     --m_RefCount;
+  }
+
+  void Entity::destroy()
+  {
+    setFlags(IS_PENDING_DELETED);
+
+    setParent(nullptr);
+
+    gc::removeEntity(*this);
   }
 
   void Entity::serialize(ISerializer& serializer)
   {
     serializer.serializeT(this);
+
+    if (serializer.mode() == SerializerMode::LOADING)
+    {
+      if (hasUUID() && !gc::hasUUID(m_UUID))
+      {
+        gc::registerEntity(*this);
+      }
+    }
 
     if (serializer.mode() != SerializerMode::INSPECTING)
     {
@@ -195,7 +239,7 @@ namespace bifrost
           {
             if (serializer.pushObject(k_SerializeArrayIndexKey))
             {
-              Entity* const child = addChild("");
+              Entity* const child = addChild(nullptr);
               child->serialize(serializer);
               serializer.popObject();
             }
@@ -296,6 +340,11 @@ namespace bifrost
 
   Entity::~Entity()
   {
+    if (hasUUID())
+    {
+      gc::removeEntity(*this);
+    }
+
     // Components
     ComponentStorage::forEachType([this](auto t) {
       using T = bfForEachTemplateT(t);
@@ -318,7 +367,7 @@ namespace bifrost
 
     while (!m_Children.isEmpty())
     {
-      m_OwningScene.destroyEntity(&m_Children.back());
+      m_Children.back().destroy();
     }
 
     // Transform
@@ -328,6 +377,8 @@ namespace bifrost
 
   void Entity::removeChild(Entity* child)
   {
+    assert(child->m_Parent == this);
+
     m_Children.erase(m_Children.makeIterator(*child));
     child->m_Parent = nullptr;
   }

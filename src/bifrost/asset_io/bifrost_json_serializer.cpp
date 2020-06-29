@@ -17,9 +17,6 @@
 
 namespace bifrost
 {
-  static constexpr StringRange k_SerializeObjectRefID = "__ObjectRefID__";
-  static constexpr auto        k_InvalidRefID         = std::numeric_limits<std::uint32_t>::max();
-
   JsonSerializerWriter::JsonSerializerWriter(IMemoryManager& memory) :
     ISerializer(SerializerMode::SAVING),
     m_Document{},
@@ -126,7 +123,7 @@ namespace bifrost
 
   void JsonSerializerWriter::serialize(StringRange key, BifrostUUID& value)
   {
-    auto str = String(value.as_string.data);
+    const auto str = String(value.as_string.data);
 
     if (str.length() < 36)
     {
@@ -154,10 +151,7 @@ namespace bifrost
   {
     if (pushObject(key))
     {
-      std::uint32_t id = k_InvalidRefID;
-
-      serialize(k_SerializeObjectRefID, id);
-
+      serialize("uuid", value.m_ID);
       popObject();
     }
   }
@@ -308,9 +302,11 @@ namespace bifrost
     }
     else if (object.object->isObject())
     {
-      if (object.object->at(key) != nullptr)
+      json::Value* const j_value = object.object->at(key);
+
+      if (j_value && j_value->isNumber())
       {
-        value = T(object.object->get(key, json::Number{}));
+        value = T(j_value->as<json::Number>());
       }
     }
   }
@@ -433,8 +429,11 @@ namespace bifrost
 
   void JsonSerializerReader::serialize(StringRange key, EntityRef& value)
   {
-    (void)key;
-    (void)value;
+    if (pushObject(key))
+    {
+      serialize("uuid", value.m_ID);
+      popObject();
+    }
   }
 
   void JsonSerializerReader::popObject()

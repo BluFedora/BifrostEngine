@@ -95,7 +95,7 @@ extern "C"
   typedef struct bfPlatformInitParams_t
   {
     int                 argc;
-    const char**        argv;
+    char**              argv;
     bfPlatformAllocator allocator;
     bfPlatformGfxAPI    gfx_api;
     void*               user_data;
@@ -117,12 +117,11 @@ extern "C"
 
   typedef struct BifrostWindow_t
   {
-    void* handle;
-    void* user_data;
-    void* renderer_data;
+    void*           handle;
+    void*           user_data;
+    void*           renderer_data;
     bfWindowEventFn event_fn;
     bfWindowFrameFn frame_fn;
-    // struct BifrostWindow_t* next;
 
   } BifrostWindow;
 
@@ -135,7 +134,7 @@ extern "C"
    *   Some configuration parameters for startup.
    *
    * @return
-   *   0     (false) - If there were was an error initializing.
+   *       0 (false) - If there were was an error initializing.
    *   non 0 (true)  - Successfully initialized. 
    */
   BIFROST_PLATFORM_API int            bfPlatformInit(bfPlatformInitParams params);
@@ -159,6 +158,7 @@ extern "C"
   BIFROST_PLATFORM_API void*          bfPlatformAlloc(size_t size);
   BIFROST_PLATFORM_API void*          bfPlatformRealloc(void* ptr, size_t old_size, size_t new_size);
   BIFROST_PLATFORM_API void           bfPlatformFree(void* ptr, size_t old_size);
+  BIFROST_PLATFORM_API void           bfPlatformDoMainLoop(BifrostWindow* main_window);
 #if __cplusplus
 }
 #endif

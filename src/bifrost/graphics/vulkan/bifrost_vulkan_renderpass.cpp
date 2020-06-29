@@ -1,6 +1,5 @@
 #include "bifrost_vulkan_logical_device.h"
 
-#include "bifrost/meta/bifrost_meta_utils.hpp"
 #include "bifrost_vulkan_conversions.h"
 
 #include <cassert> /* assert */
@@ -254,13 +253,12 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         });
 
         self->cache_framebuffer.forEach([texture](bfFramebufferHandle fb, bfFramebufferState& config_data) {
-          (void)fb;
-
           for (uint32_t i = 0; i < config_data.num_attachments; ++i)
           {
             if (config_data.attachments[i] == texture)
             {
               config_data.attachments[i] = nullptr;
+              fb->attachments[i]         = nullptr;
             }
           }
         });
@@ -287,6 +285,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
     }
 
+    memset(obj, 0xCD, sizeof(*obj));
     delete obj;
   }
 }

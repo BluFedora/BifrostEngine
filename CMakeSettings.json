@@ -49,7 +49,7 @@
       ]
     },
     {
-      "name": "x64-Release",
+      "name": "x64 GLFW (Release)",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "msvc_x64_x64" ],

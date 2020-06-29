@@ -2,10 +2,11 @@
 
 #include "bifrost/debug/bifrost_dbg_logger.h"         // bfLog*
 #include "bifrost/ecs/bifrost_behavior_system.hpp"    // BehaviorSystem
+#include "bifrost/ecs/bifrost_entity.hpp"             // Entity
 #include "bifrost/platform/bifrost_platform.h"        // BifrostWindow
 #include "bifrost/platform/bifrost_platform_event.h"  // bfEvent
 
-Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, const char* argv[]) :
+Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
   bfNonCopyMoveable<Engine>{},
   m_CmdlineArgs{argc, argv},
 #if USE_CRT_HEAP
@@ -27,8 +28,7 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, const 
   m_CameraResizeList{nullptr},
   m_CameraDeleteList{nullptr},
   m_State{EngineState::RUNTIME_PLAYING},
-  m_MainWindow{nullptr},
-  m_ObjectDatabase{}
+  m_MainWindow{nullptr}
 {
 #if USE_CRT_HEAP
   (void)main_memory;
@@ -113,6 +113,18 @@ void Engine::openScene(const AssetSceneHandle& scene)
   m_SceneStack.push(scene);
 }
 
+EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
+{
+  Entity* const entity = m_MainMemory.allocateT<Entity>(scene, name);
+
+  if (entity)
+  {
+    scene.m_RootEntities.push(entity);
+  }
+
+  return EntityRef{entity};
+}
+
 void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_window)
 {
   m_MainWindow = main_window;
@@ -141,6 +153,8 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
   bfLogger_init(&logger_config);
 
   bfLogPush("Engine Init of App: %s", params.app_name);
+
+  gc::init(m_MainMemory);
 
   m_Renderer.init(params, main_window);
   m_DebugRenderer.init(m_Renderer);
@@ -198,8 +212,14 @@ void Engine::fixedUpdate(float delta_time)
 void Engine::drawEnd() const
 {
   m_Renderer.endPass(m_Renderer.mainCommandList());
+  m_Renderer.drawEnd();
+}
 
+void Engine::endFrame()
+{
   m_Renderer.frameEnd();
+
+  gc::collect(m_MainMemory);
 }
 
 void Engine::deinit()
@@ -226,6 +246,9 @@ void Engine::deinit()
   }
 
   m_Systems.clear();
+
+  gc::quit();
+
   bfLogger_deinit();
 }
 

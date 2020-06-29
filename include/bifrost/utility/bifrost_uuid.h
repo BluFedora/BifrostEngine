@@ -44,6 +44,7 @@ int         bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs);
 int         bfUUID_isEmpty(const BifrostUUID* self);
 void        bfUUID_numberToString(const char number[16], char out_string[37]);
 int         bfUUID_numberCmp(const BifrostUUIDNumber* lhs, const BifrostUUIDNumber* rhs);
+int         bfUUID_numberIsEmpty(const BifrostUUIDNumber* lhs);
 int         bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs);
 
 #ifdef __cplusplus

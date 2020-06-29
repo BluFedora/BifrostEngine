@@ -28,7 +28,7 @@
 
 static const BifrostUUID s_EmptyUUID =
  {
-  {"0000000000000000"},
+  {"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"},
   {"00000000-0000-0000-0000-000000000000"},
 };
 
@@ -164,6 +164,11 @@ int bfUUID_numberCmp(const BifrostUUIDNumber* lhs, const BifrostUUIDNumber* rhs)
   }
 
   return 1;
+}
+
+int bfUUID_numberIsEmpty(const BifrostUUIDNumber* lhs)
+{
+  return bfUUID_numberCmp(lhs, &s_EmptyUUID.as_number);
 }
 
 int bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs)

@@ -2,8 +2,8 @@
 
 #include "bifrost/bifrost.hpp"
 
-#include "glfw/glfw3.h"
 #include "bifrost/platform/bifrost_platform_event.h"
+#include "glfw/glfw3.h"
 
 extern GLFWwindow* g_Window;
 
@@ -41,9 +41,41 @@ static GLFWmonitor* get_current_monitor(GLFWwindow* window)
   return bestmonitor;
 }
 
-MainDemoLayer::MainDemoLayer():
+MainDemoLayer::MainDemoLayer() :
   IGameStateLayer()
 {
+}
+
+static bool do_fs = false;
+
+void toggleFs()
+{
+  if (!do_fs) return;
+
+  static bool isFullscreen = false;
+  static int  old_info[4];
+
+  if (isFullscreen)
+  {
+    glfwSetWindowMonitor(g_Window, nullptr, old_info[0], old_info[1], old_info[2], old_info[3], 60);
+  }
+  else
+  {
+    GLFWmonitor* monitor = get_current_monitor(g_Window);
+
+    if (!monitor)
+    {
+      return;
+    }
+
+    glfwGetWindowPos(g_Window, &old_info[0], &old_info[1]);
+    glfwGetWindowSize(g_Window, &old_info[2], &old_info[3]);
+
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    glfwSetWindowMonitor(g_Window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+  }
+
+  isFullscreen = !isFullscreen;
 }
 
 void MainDemoLayer::onEvent(Engine&, Event& event)
@@ -52,25 +84,13 @@ void MainDemoLayer::onEvent(Engine&, Event& event)
 
   if (is_key_down && event.keyboard.key == 'P' && event.keyboard.modifiers & BIFROST_KEY_FLAG_CONTROL)
   {
-    static bool isFullscreen = false;
-    static int  old_info[4];
-
-    if (isFullscreen)
-    {
-      glfwSetWindowMonitor(g_Window, nullptr, old_info[0], old_info[1], old_info[2], old_info[3], 60);
-    }
-    else
-    {
-      glfwGetWindowPos(g_Window, &old_info[0], &old_info[1]);
-      glfwGetWindowSize(g_Window, &old_info[2], &old_info[3]);
-
-      GLFWmonitor*       monitor = get_current_monitor(g_Window);
-      const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
-      glfwSetWindowMonitor(g_Window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-    }
-
-    isFullscreen = !isFullscreen;
-
+    toggleFs();
+    do_fs = true;
     event.accept();
   }
+}
+
+void MainDemoLayer::onUpdate(Engine& engine, float delta_time)
+{
+  // toggleFs();
 }
