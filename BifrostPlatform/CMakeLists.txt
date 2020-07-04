@@ -119,7 +119,7 @@ set_target_properties(BifrostPlatform_static PROPERTIES VERSION ${PROJECT_VERSIO
 set_target_properties(BifrostPlatform_static PROPERTIES PUBLIC_HEADER include/bifrost/platform/bifrost_platform.h)
 set_target_properties(BifrostPlatform_static PROPERTIES CXX_STANDARD 17)
 set_target_properties(BifrostPlatform_static PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-set_target_properties(BifrostPlatform_static PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
+# set_target_properties(BifrostPlatform_static PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
 # Shared Library
 
