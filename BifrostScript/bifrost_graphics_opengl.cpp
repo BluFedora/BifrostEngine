@@ -510,10 +510,10 @@ struct VertexLayoutSetDetail final
 
 struct VertexBindingDetail final
 {
-  size_t                           stride;
+  std::uint32_t                    stride;
   StdVector<VertexLayoutSetDetail> details;
 
-  VertexBindingDetail(size_t stride) :
+  VertexBindingDetail(std::uint32_t stride) :
     stride{stride},
     details{s_GraphicsMemory}
   {
@@ -635,6 +635,11 @@ bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct 
   {
     self_surface->window           = bf_window;
     self_surface->current_cmd_list = nullptr;
+
+#if !USE_WEBGL_STANDARD
+    bfWindow_makeGLContextCurrent(bf_window);
+    assert(gladLoadGLLoader(bfPlatformGetProcAddress()));
+#endif
   }
 
   return self_surface;
@@ -780,10 +785,6 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
 
   ++self->frame_count;
   self->frame_index = self->frame_count % self->max_frames_in_flight;
-
-#if !USE_WEBGL_STANDARD
-// TODO(SR): Swap Buffers or Something?
-#endif
 }
 
 void bfGfxContext_delete(bfGfxContextHandle self)
@@ -1089,7 +1090,7 @@ void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 #if USE_WEBGL_STANDARD
   const GLbitfield access_flags = /*0x1A | */ 0xA;
 #else
-  const GLbitfield access_flags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
+  const GLbitfield access_flags = GL_MAP_WRITE_BIT/* | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT*/;
 #endif
 
   const auto whole_size = static_cast<GLsizeiptr>(std::min(self->real_size - offset, size));
@@ -1184,7 +1185,7 @@ void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t bindi
     const GLenum         type          = bfGLVertexFormatType(format);
     const bool           is_normalized = format == BIFROST_VFA_UCHAR8_4_UNORM;
 
-    detail.details.emplace_back(num_comps, type, reinterpret_cast<void*>(offset), is_normalized);
+    detail.details.emplace_back(num_comps, type, reinterpret_cast<void*>(uintptr_t(offset)), is_normalized);
   }
 }
 
@@ -1222,7 +1223,7 @@ bfBool32 bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, 
     GLint(source_length),
   };
 
-  glShaderSource(self->handle, bfCArraySize(sources), sources, source_lengths);
+  glShaderSource(self->handle, (GLsizei)bfCArraySize(sources), sources, source_lengths);
   glCompileShader(self->handle);
 
   int  success;
@@ -1319,7 +1320,7 @@ bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle 
 
   if (desc_set)
   {
-    BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_DESCRIPTOR_SET);
+    BifrostGfxObjectBase_ctor(&desc_set->super, BIFROST_GFX_OBJECT_DESCRIPTOR_SET);
 
     desc_set->shader_program = self;
     desc_set->set_index      = index;
@@ -2368,10 +2369,14 @@ void bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint3
 
 void bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances)
 {
+  // GLenum mode, GLint first, GLsizei count, GLsizei instancecount
+
+  assert(first_instance == 0);
+
 #if USE_OPENGL_ES_STANDARD
   assert(!"Not implemented on webgl");
 #else
-  glDrawArraysInstanced(...);
+  glDrawArraysInstanced(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode), first_vertex, num_vertices, num_instances);
 #endif
 }
 
@@ -2412,7 +2417,7 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
   glDrawElements(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode),
                  num_indices,
                  self->index_type == BIFROST_INDEX_TYPE_UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-                 (const void*)(index_offset * index_size));
+                 (const void*)(uintptr_t(index_offset * index_size)));
 
   if (vertex_offset != 0)
   {
@@ -2458,20 +2463,22 @@ void bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffe
 void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
 #if !USE_WEBGL_STANDARD
-  assert(false && "DO A SWAP BUFFERS HERE");
+  bfWindowGL_swapBuffers(self->window->window);
 #endif
 }
 
 template<typename T, typename... Args>
 static T* allocate(Args&&... args)
 {
-  return s_GraphicsMemory.allocateT<T>(std::forward<Args>(args)...);
+  //return s_GraphicsMemory.allocateT<T>(std::forward<Args>(args)...);
+  return new T(std::forward<Args>(args)...);
 }
 
 template<typename T>
 static void deallocate(T* ptr)
 {
-  s_GraphicsMemory.deallocateT(ptr);
+  //s_GraphicsMemory.deallocateT(ptr);
+  delete ptr;
 }
 
 static GLenum bfGLBufferUsageTarget(const bfBufferUsageBits usage)
@@ -2906,3 +2913,7 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
 
   return true;
 }
+
+#if !USE_WEBGL_STANDARD
+#include <glad/glad.c>
+#endif

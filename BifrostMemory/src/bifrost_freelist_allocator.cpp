@@ -87,7 +87,7 @@ namespace bifrost
     const std::size_t block_size = header->size;
 
 #if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
-    std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, block_size);
+    //std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, block_size);
 #endif
 
     node->size = block_size;

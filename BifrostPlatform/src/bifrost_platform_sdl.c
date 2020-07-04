@@ -1,6 +1,8 @@
 #include "bifrost/platform/bifrost_platform.h"
 
 #include "bifrost/platform/bifrost_platform_event.h"
+#include "bifrost/platform/bifrost_platform_vulkan.h"
+#include "bifrost/platform/bifrost_platform_gl.h"
 
 #include <sdl/SDL.h>        /* SDL_* */
 #include <sdl/SDL_vulkan.h> /* SDL_Vulkan_CreateSurface */
@@ -26,6 +28,14 @@ extern bfPlatformInitParams g_BifrostPlatform;
 #define bfTrue 1
 #define bfFalse 0
 #endif
+
+// TODO(SR):
+//   - SDL_GL_CreateContext
+//   - SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+//   - SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+//   - SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+//   - SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+//   - SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
 int bfPlatformInit(bfPlatformInitParams params)
 {
@@ -175,4 +185,14 @@ void bfWindow_makeGLContextCurrent(BifrostWindow* self)
   {
     SDL_GL_MakeCurrent(self->handle, self->gl_context);
   }
+}
+
+GLADloadproc bfPlatformGetProcAddress(void)
+{
+  return (GLADloadproc)SDL_GL_GetProcAddress;
+}
+
+void bfWindowGL_swapBuffers(BifrostWindow* self)
+{
+  SDL_GL_SwapWindow(self->handle);
 }

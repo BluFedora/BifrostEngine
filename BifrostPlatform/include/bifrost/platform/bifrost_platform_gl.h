@@ -14,14 +14,16 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #elif BIFROST_PLATFORM_WINDOWS
-/* TODO(Shareef): Other Platforms */
+#include <glad/glad.h>
 #endif
 
 #if __cplusplus
 extern "C" {
 #endif
 
-BIFROST_PLATFORM_API void bfWindow_makeGLContextCurrent(BifrostWindow* self);
+BIFROST_PLATFORM_API void         bfWindow_makeGLContextCurrent(BifrostWindow* self);
+BIFROST_PLATFORM_API GLADloadproc bfPlatformGetProcAddress(void);
+BIFROST_PLATFORM_API void         bfWindowGL_swapBuffers(BifrostWindow* self);
 
 #if __cplusplus
 }

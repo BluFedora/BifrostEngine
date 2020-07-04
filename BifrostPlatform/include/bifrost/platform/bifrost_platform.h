@@ -3,8 +3,8 @@
 
 #include "bifrost_platform_export.h"
 
-#include <stdint.h> /* uint32_t */
 #include <stddef.h> /* size_t   */
+#include <stdint.h> /* uint32_t */
 
 // https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
 
@@ -86,7 +86,7 @@ extern "C"
 
   typedef void* (*bfPlatformAllocator)(void* ptr, size_t old_size, size_t new_size, void* user_data);
 
-  typedef enum bfPlatformGfxAPI_t
+  typedef enum
   {
     BIFROST_PLATFORM_GFX_VUlKAN,
     BIFROST_PLATFORM_GFX_OPENGL,
@@ -141,28 +141,29 @@ extern "C"
    *       0 (false) - If there were was an error initializing.
    *   non 0 (true)  - Successfully initialized. 
    */
-  BIFROST_PLATFORM_API int            bfPlatformInit(bfPlatformInitParams params);
-  BIFROST_PLATFORM_API void           bfPlatformPumpEvents(void);
-  BIFROST_PLATFORM_API BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags);
-  BIFROST_PLATFORM_API int            bfWindow_wantsToClose(BifrostWindow* self);
-  BIFROST_PLATFORM_API void           bfWindow_show(BifrostWindow* self);
-  BIFROST_PLATFORM_API void           bfWindow_getPos(BifrostWindow* self, int* x, int* y);
-  BIFROST_PLATFORM_API void           bfWindow_setPos(BifrostWindow* self, int x, int y);
-  BIFROST_PLATFORM_API void           bfWindow_getSize(BifrostWindow* self, int* x, int* y);
-  BIFROST_PLATFORM_API void           bfWindow_setSize(BifrostWindow* self, int x, int y);
-  BIFROST_PLATFORM_API void           bfWindow_focus(BifrostWindow* self);
-  BIFROST_PLATFORM_API int            bfWindow_isFocused(BifrostWindow* self);
-  BIFROST_PLATFORM_API int            bfWindow_isMinimized(BifrostWindow* self);
-  BIFROST_PLATFORM_API int            bfWindow_isHovered(BifrostWindow* self);
-  BIFROST_PLATFORM_API void           bfWindow_setTitle(BifrostWindow* self, const char* title);
-  BIFROST_PLATFORM_API void           bfWindow_setAlpha(BifrostWindow* self, float value);
-  BIFROST_PLATFORM_API void           bfPlatformDestroyWindow(BifrostWindow* window);
-  BIFROST_PLATFORM_API void           bfPlatformQuit(void);
-  BIFROST_PLATFORM_API void*          bfPlatformDefaultAllocator(void* ptr, size_t old_size, size_t new_size, void* user_data);
-  BIFROST_PLATFORM_API void*          bfPlatformAlloc(size_t size);
-  BIFROST_PLATFORM_API void*          bfPlatformRealloc(void* ptr, size_t old_size, size_t new_size);
-  BIFROST_PLATFORM_API void           bfPlatformFree(void* ptr, size_t old_size);
-  BIFROST_PLATFORM_API void           bfPlatformDoMainLoop(BifrostWindow* main_window);
+  BIFROST_PLATFORM_API int              bfPlatformInit(bfPlatformInitParams params);
+  BIFROST_PLATFORM_API void             bfPlatformPumpEvents(void);
+  BIFROST_PLATFORM_API BifrostWindow*   bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags);
+  BIFROST_PLATFORM_API int              bfWindow_wantsToClose(BifrostWindow* self);
+  BIFROST_PLATFORM_API void             bfWindow_show(BifrostWindow* self);
+  BIFROST_PLATFORM_API void             bfWindow_getPos(BifrostWindow* self, int* x, int* y);
+  BIFROST_PLATFORM_API void             bfWindow_setPos(BifrostWindow* self, int x, int y);
+  BIFROST_PLATFORM_API void             bfWindow_getSize(BifrostWindow* self, int* x, int* y);
+  BIFROST_PLATFORM_API void             bfWindow_setSize(BifrostWindow* self, int x, int y);
+  BIFROST_PLATFORM_API void             bfWindow_focus(BifrostWindow* self);
+  BIFROST_PLATFORM_API int              bfWindow_isFocused(BifrostWindow* self);
+  BIFROST_PLATFORM_API int              bfWindow_isMinimized(BifrostWindow* self);
+  BIFROST_PLATFORM_API int              bfWindow_isHovered(BifrostWindow* self);
+  BIFROST_PLATFORM_API void             bfWindow_setTitle(BifrostWindow* self, const char* title);
+  BIFROST_PLATFORM_API void             bfWindow_setAlpha(BifrostWindow* self, float value);
+  BIFROST_PLATFORM_API void             bfPlatformDestroyWindow(BifrostWindow* window);
+  BIFROST_PLATFORM_API void             bfPlatformQuit(void);
+  BIFROST_PLATFORM_API bfPlatformGfxAPI bfPlatformGetGfxAPI(void);
+  BIFROST_PLATFORM_API void*            bfPlatformDefaultAllocator(void* ptr, size_t old_size, size_t new_size, void* user_data);
+  BIFROST_PLATFORM_API void*            bfPlatformAlloc(size_t size);
+  BIFROST_PLATFORM_API void*            bfPlatformRealloc(void* ptr, size_t old_size, size_t new_size);
+  BIFROST_PLATFORM_API void             bfPlatformFree(void* ptr, size_t old_size);
+  BIFROST_PLATFORM_API void             bfPlatformDoMainLoop(BifrostWindow* main_window);
 #if __cplusplus
 }
 #endif

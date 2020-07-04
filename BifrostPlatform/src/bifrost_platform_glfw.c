@@ -1,6 +1,7 @@
 #include "bifrost/platform/bifrost_platform.h"
 
 #include "bifrost/platform/bifrost_platform_event.h"
+#include "bifrost/platform/bifrost_platform_gl.h"
 #include "bifrost/platform/bifrost_platform_vulkan.h"
 
 #include <glfw/glfw3.h>
@@ -13,6 +14,8 @@
 #include <assert.h>
 
 extern bfPlatformInitParams g_BifrostPlatform;
+
+static BifrostWindow* s_MainWindow = NULL;
 
 int bfPlatformInit(bfPlatformInitParams params)
 {
@@ -424,7 +427,7 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
     glfwWindowHint(GLFW_FOCUSED, flags & BIFROST_WINDOW_FLAG_IS_FOCUSED ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, flags & BIFROST_WINDOW_FLAG_IS_FOCUSED_ON_SHOW ? GLFW_TRUE : GLFW_FALSE);
 
-    GLFWwindow* const glfw_handle = glfwCreateWindow(width, height, title, NULL, NULL);
+    GLFWwindow* const glfw_handle = glfwCreateWindow(width, height, title, NULL, s_MainWindow ? s_MainWindow ->handle : NULL);
 
     window->handle        = glfw_handle;
     window->event_fn      = NULL;
@@ -444,6 +447,11 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
     glfwSetWindowFocusCallback(glfw_handle, GLFW_onWindowFocusChanged);
     glfwSetWindowCloseCallback(glfw_handle, GLFW_onWindowClose);
     glfwSetWindowRefreshCallback(glfw_handle, GLFW_onWindowRefresh);
+
+    if (!s_MainWindow)
+    {
+      s_MainWindow = window;
+    }
   }
 
   return window;
@@ -542,6 +550,17 @@ void bfWindow_makeGLContextCurrent(BifrostWindow* self)
   glfwMakeContextCurrent(self->handle);
 }
 
+GLADloadproc bfPlatformGetProcAddress(void)
+{
+  return (GLADloadproc)glfwGetProcAddress;
+}
+
+void bfWindowGL_swapBuffers(BifrostWindow* self)
+{
+  glfwSwapBuffers(self->handle);
+}
+
+#if 0
 #if BIFROST_PLATFORM_WINDOWS
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif BIFROST_PLATFORM_MACOS
@@ -552,3 +571,4 @@ void bfWindow_makeGLContextCurrent(BifrostWindow* self)
 
 #undef GLFW_EXPOSE_NATIVE_WIN32
 #undef GLFW_EXPOSE_NATIVE_COCOA
+#endif

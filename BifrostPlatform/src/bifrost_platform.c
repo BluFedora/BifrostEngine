@@ -10,6 +10,11 @@
 
 bfPlatformInitParams g_BifrostPlatform;
 
+bfPlatformGfxAPI bfPlatformGetGfxAPI(void)
+{
+  return g_BifrostPlatform.gfx_api;
+}
+
 void* bfPlatformDefaultAllocator(void* ptr, size_t old_size, size_t new_size, void* user_data)
 {
   (void)user_data;

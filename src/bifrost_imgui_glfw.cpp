@@ -290,13 +290,16 @@ namespace bifrost::imgui
     s_RenderData.fragment_shader = bfGfxDevice_newShaderModule(device, BIFROST_SHADER_TYPE_FRAGMENT);
     s_RenderData.program         = bfGfxDevice_newShaderProgram(device, &create_shader);
 
-#if BIFROST_PLATFORM_EMSCRIPTEN
-    bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/shaders/es3/imgui.vert.glsl");
-    bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/shaders/es3/imgui.frag.glsl");
-#else
-    bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/imgui.vert.spv");
-    bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/imgui.frag.spv");
-#endif
+    if (bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL)
+    {
+      bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/shaders/es3/imgui.vert.glsl");
+      bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/shaders/es3/imgui.frag.glsl");
+    }
+    else
+    {
+      bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/imgui.vert.spv");
+      bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/imgui.frag.spv");
+    }
 
     bfShaderProgram_addModule(s_RenderData.program, s_RenderData.vertex_shader);
     bfShaderProgram_addModule(s_RenderData.program, s_RenderData.fragment_shader);
@@ -507,11 +510,14 @@ namespace bifrost::imgui
       const ImVec2 tl = draw_data->DisplayPos;
       const ImVec2 br = {tl.x + draw_data->DisplaySize.x, tl.y + draw_data->DisplaySize.y};
 
-      #if __EMSCRIPTEN__
-      Mat4x4_ortho(uniform_buffer_ptr, tl.x, br.x, br.y, tl.y, 0.0f, 1.0f);
-      #else
-      Mat4x4_orthoVk(uniform_buffer_ptr, tl.x, br.x, br.y, tl.y, 0.0f, 1.0f);
-      #endif
+      if (bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL)
+      {
+        Mat4x4_ortho(uniform_buffer_ptr, tl.x, br.x, br.y, tl.y, 0.0f, 1.0f);
+      }
+      else
+      {
+        Mat4x4_orthoVk(uniform_buffer_ptr, tl.x, br.x, br.y, tl.y, 0.0f, 1.0f);
+      }
 
       bfBuffer_unMap(frame.vertex_buffer);
       bfBuffer_unMap(frame.index_buffer);

@@ -165,14 +165,7 @@ target_include_directories(
     ${CMAKE_SYSTEM_INCLUDE_PATH}
 )
 
-target_link_libraries(
-  BifrostWeb 
-  PRIVATE 
-    BifrostScript
-    BifrostPlatform_static
-    BifrostMemory
-    BifrostMath_static
-)
+
 
 set_target_properties(
   BifrostWeb
@@ -182,10 +175,31 @@ set_target_properties(
   CXX_STANDARD_REQUIRED ON
 )
 
-target_compile_definitions(
- BifrostWeb
- PRIVATE __EMSCRIPTEN__=1
+if (EMSCRIPTEN)
+  target_compile_definitions(
+    BifrostWeb
+    PRIVATE 
+      __EMSCRIPTEN__=1
+  )
+
+  target_link_libraries(
+    BifrostWeb 
+    PRIVATE 
+      BifrostScript
+      BifrostPlatform_static
+      BifrostMemory
+      BifrostMath_static
+  )
+else()
+target_link_libraries(
+  BifrostWeb 
+  PRIVATE 
+    BifrostScript
+    BifrostPlatform_shared
+    BifrostMemory
+    BifrostMath_shared
 )
+endif()
 
 if(EMSCRIPTEN)
   #set(CMAKE_EXECUTABLE_SUFFIX ".html")
