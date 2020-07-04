@@ -337,11 +337,13 @@ namespace bifrost
       BaseAssetInfo*          asset_handle_p = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
       asset_handle_p->m_TypeInfo             = type_info;
 
+#if 0
       if (std::strlen(asset_handle_p->uuid().as_string.data) < 36)
       {
         __debugbreak();
       }
-
+#endif
+      
       m_AssetMap.emplace(uuid, asset_handle_p);
       m_NameToGUID.emplace(path.c_str(), uuid);
 

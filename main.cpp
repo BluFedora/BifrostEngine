@@ -378,6 +378,7 @@ int main(int argc, char* argv[])
     MainQuit(Error::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
   }
 
+      {
   BifrostWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
 
   if (!main_window)
@@ -551,7 +552,7 @@ int main(int argc, char* argv[])
 
 quit_window:
   bfPlatformDestroyWindow(main_window);
-
+      }
 quit_platform:
   bfPlatformQuit();
 

@@ -315,10 +315,12 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.dll" "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 endif()
 
-add_custom_command(TARGET BifrostEngine POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"
-        $<TARGET_FILE_DIR:BifrostEngine>)
+if (WIN32)
+  add_custom_command(TARGET BifrostEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"
+          $<TARGET_FILE_DIR:BifrostEngine>)
+endif()
 
 # add_custom_command(TARGET BifrostEngine POST_BUILD
 #   COMMAND ${CMAKE_COMMAND} -E copy_if_different

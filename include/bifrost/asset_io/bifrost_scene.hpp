@@ -19,6 +19,8 @@
 #include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
 #include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
 
+class Engine;
+
 namespace bifrost
 {
   class DebugRenderer;
@@ -70,7 +72,7 @@ namespace bifrost
   {
     BIFROST_META_FRIEND;
     friend class Entity;
-    friend class Engine;
+    friend class ::Engine;
 
    private:
     Engine&              m_Engine;

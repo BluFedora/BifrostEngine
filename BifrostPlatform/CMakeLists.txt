@@ -28,7 +28,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # using Intel C++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # NOTE(Shareef): Setting the compiler flags we will be using.
-  #    
+  #
   #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
   #   "/WX"   - treat warnings as errors.
   #   "/EHsc" - is for enabling C++ exceptions which we will NOT be using.
@@ -69,10 +69,17 @@ if(BIFROST_PLATFORM_GLFW)
   )
 
   if(NOT EMSCRIPTEN)
-    set(BIFROST_PLATFORM_LIB_FILES
-      ${BIFROST_PLATFORM_LIB_FILES}
-      "${CMAKE_BINARY_DIR}/glfw3dll.lib"
-    )
+    if (WIN32)
+      set(BIFROST_PLATFORM_LIB_FILES
+        ${BIFROST_PLATFORM_LIB_FILES}
+        "${CMAKE_BINARY_DIR}/glfw3dll.lib"
+      )
+    elseif(APPLE)
+      set(BIFROST_PLATFORM_LIB_FILES
+        ${BIFROST_PLATFORM_LIB_FILES}
+        "${PROJECT_SOURCE_DIR}/../lib/macOS/libglfw.3.dylib"
+      )
+    endif()
   endif()
 
 elseif(BIFROST_PLATFORM_SDL)
@@ -94,7 +101,7 @@ add_library(
 )
 
 target_include_directories(
-  BifrostPlatform_static 
+  BifrostPlatform_static
    INTERFACE ${PROJECT_SOURCE_DIR}/include
    PRIVATE   ${PROJECT_SOURCE_DIR}/include
 )
@@ -108,7 +115,7 @@ if(BIFROST_OPT_GRAPHICS_VULKAN)
 endif()
 
 target_link_libraries(
-  BifrostPlatform_static 
+  BifrostPlatform_static
   PUBLIC "${BIFROST_PLATFORM_LIB_FILES}"
 )
 
@@ -128,18 +135,18 @@ if(NOT EMSCRIPTEN)
       BifrostPlatform_shared SHARED
       ${BIFROST_PLATFORM_SOURCE_FILES}
   )
-  
+
   target_include_directories(
       BifrostPlatform_shared
       INTERFACE ${PROJECT_SOURCE_DIR}/include
       PRIVATE   ${PROJECT_SOURCE_DIR}/include
   )
-  
+
   target_link_libraries(
-      BifrostPlatform_shared 
+      BifrostPlatform_shared
       PUBLIC "${BIFROST_PLATFORM_LIB_FILES}"
   )
-  
+
   target_compile_definitions(BifrostPlatform_shared PRIVATE BIFROST_PLATFORM_EXPORT)
 
 if(BIFROST_OPT_GRAPHICS_VULKAN)

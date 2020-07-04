@@ -1320,7 +1320,7 @@ namespace
 
     if (err)
     {
-      std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
+      // std::printf("GfxContext_initSwapchain %s %s", "vkCreateSwapchainKHR", "Failed to Create Swapchain");
     }
 
     return true;

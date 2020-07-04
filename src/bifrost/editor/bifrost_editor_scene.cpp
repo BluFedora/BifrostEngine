@@ -1,6 +1,8 @@
 #include "bifrost/editor/bifrost_editor_scene.hpp"
 #include "bifrost/memory/bifrost_stl_allocator.hpp"
 
+#include <list>
+
 namespace bifrost::editor
 {
   static const float k_SceneViewPadding = 1.0f;

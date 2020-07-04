@@ -109,13 +109,13 @@ namespace bifrost::meta
   template<typename... Args>
   static void debug()
   {
-    __debugbreak();
+    //__debugbreak();
   }
 
   template<bool... Args>
   static void debug()
   {
-    __debugbreak();
+    //__debugbreak();
   }
 
   template<typename T, typename TT, typename TTT>
