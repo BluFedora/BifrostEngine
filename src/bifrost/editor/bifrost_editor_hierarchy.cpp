@@ -139,6 +139,19 @@ namespace bifrost::editor
       ImGui::EndDragDropTarget();
     }
 
+    if (is_opened)
+    {
+      if (has_children)
+      {
+        for (Entity& child : entity->children())
+        {
+          guiEntityList(editor, &child);
+        }
+      }
+
+      ImGui::TreePop();
+    }
+
     ImGui::InvisibleButton("Reorder", ImVec2{ImGui::GetWindowContentRegionWidth(), 2.0f});
 
     if (ImGui::BeginDragDropTarget())
@@ -158,19 +171,6 @@ namespace bifrost::editor
       }
 
       ImGui::EndDragDropTarget();
-    }
-
-    if (is_opened)
-    {
-      if (has_children)
-      {
-        for (Entity& child : entity->children())
-        {
-          guiEntityList(editor, &child);
-        }
-      }
-
-      ImGui::TreePop();
     }
 
     ImGui::PopID();

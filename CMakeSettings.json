@@ -1,7 +1,7 @@
 ﻿{
   "configurations": [
     {
-      "name": "x86-Debug",
+      "name": "x86-Debug [Broken]",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x86" ],
@@ -14,7 +14,7 @@
       "variables": []
     },
     {
-      "name": "x86-Release",
+      "name": "x86-Release [Broken]",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "msvc_x86" ],
@@ -61,7 +61,7 @@
       "variables": []
     },
     {
-      "name": "x64-Debug-SDL",
+      "name": "x64-Debug-SDL [Broken]",
       "generator": "Ninja",
       "configurationType": "Debug",
       "buildRoot": "C:/Users/rshar/Documents/BifrostEngine/build/cmake",
@@ -97,6 +97,94 @@
       "wslPath": "${defaultWSLPath}",
       "addressSanitizerRuntimeFlags": "detect_leaks=0",
       "variables": []
+    },
+    {
+      "name": "x86 Emscripten (Debug)",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "cmakeToolchain": "D:/emsdk/fastcomp/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "inheritEnvironments": [ "clang_cl_x86" ],
+      "variables": [
+        {
+          "name": "CMAKE_C_COMPILER",
+          "value": "D:/emsdk/fastcomp/emscripten/emcc.bat",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "CMAKE_CXX_COMPILER",
+          "value": "D:/emsdk/fastcomp/emscripten/em++.bat",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_VULKAN",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_OPENGL",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_PLATFORM_SDL",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_PLATFORM_GLFW",
+          "value": "False",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x86 Emscripten-GLFW (Debug)",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "cmakeToolchain": "D:/emsdk/fastcomp/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "inheritEnvironments": [ "clang_cl_x86" ],
+      "variables": [
+        {
+          "name": "CMAKE_C_COMPILER",
+          "value": "D:/emsdk/fastcomp/emscripten/emcc.bat",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "CMAKE_CXX_COMPILER",
+          "value": "D:/emsdk/fastcomp/emscripten/em++.bat",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_VULKAN",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_OPENGL",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_PLATFORM_SDL",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_PLATFORM_GLFW",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
     }
   ]
 }

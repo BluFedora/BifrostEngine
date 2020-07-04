@@ -3,10 +3,14 @@
 #include "bifrost/platform/bifrost_platform_event.h"
 #include "bifrost/platform/bifrost_platform_vulkan.h"
 
-#include <assert.h>
-
-#define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
+
+#if BIFROST_PLATFORM_EMSCRIPTEN
+#include <emscripten/emscripten.h>
+#include <emscripten/html5.h>  // EmscriptenWebGLContextAttributes etc
+#endif
+
+#include <assert.h>
 
 extern bfPlatformInitParams g_BifrostPlatform;
 
@@ -401,7 +405,7 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
     else
     {
       /*
-      glfwMakeContextCurrent(main_window);
+      MAKE CURRENT
       if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
       {
         error_code = ErrorCodes::GLAD_FAILED_TO_INIT;
@@ -440,8 +444,6 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
     glfwSetWindowFocusCallback(glfw_handle, GLFW_onWindowFocusChanged);
     glfwSetWindowCloseCallback(glfw_handle, GLFW_onWindowClose);
     glfwSetWindowRefreshCallback(glfw_handle, GLFW_onWindowRefresh);
-
-    // glfwSetWindowOpacity(m_WindowHandle, 0.9f);
   }
 
   return window;
@@ -469,7 +471,15 @@ void bfWindow_setPos(BifrostWindow* self, int x, int y)
 
 void bfWindow_getSize(BifrostWindow* self, int* x, int* y)
 {
+#if BIFROST_PLATFORM_EMSCRIPTEN
+  double w, h;
+  emscripten_get_element_css_size("#canvas", &w, &h);
+
+  *x = (int)w;
+  *y = (int)h;
+#else
   glfwGetWindowSize(self->handle, x, y);
+#endif
 }
 
 void bfWindow_setSize(BifrostWindow* self, int x, int y)
@@ -504,12 +514,15 @@ void bfWindow_setTitle(BifrostWindow* self, const char* title)
 
 void bfWindow_setAlpha(BifrostWindow* self, float value)
 {
-  glfwSetWindowOpacity(self->handle, value);
+#ifndef __EMSCRIPTEN__  // (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300)
+  // glfwSetWindowOpacity(self->handle, value);
+#endif
 }
 
 void bfPlatformDestroyWindow(BifrostWindow* window)
 {
   glfwDestroyWindow(window->handle);
+  bfPlatformFree(window, sizeof(BifrostWindow));
 }
 
 void bfPlatformQuit(void)
@@ -517,9 +530,16 @@ void bfPlatformQuit(void)
   glfwTerminate();
 }
 
+#if GLFW_INCLUDE_VULKAN
 int bfWindow_createVulkanSurface(BifrostWindow* self, VkInstance instance, VkSurfaceKHR* out)
 {
   return glfwCreateWindowSurface(instance, self->handle, NULL, out) == VK_SUCCESS;
+}
+#endif
+
+void bfWindow_makeGLContextCurrent(BifrostWindow* self)
+{
+  glfwMakeContextCurrent(self->handle);
 }
 
 #if BIFROST_PLATFORM_WINDOWS

@@ -202,7 +202,6 @@ typedef struct bfBufferCreateParams_t
 
 } bfBufferCreateParams;
 
-struct bfRenderpassInfo_t;
 typedef struct bfRenderpassInfo_t bfRenderpassCreateParams;
 
 typedef struct bfShaderProgramCreateParams_t
@@ -421,7 +420,8 @@ BifrostShaderType     bfShaderModule_type(bfShaderModuleHandle self);
 bfBool32              bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file);
 bfBool32              bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length);
 void                  bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle module);
-void                  bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);  // glBindAttribLocation
+void                  bfShaderProgram_link(bfShaderProgramHandle self);
+void                  bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);
 void                  bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages);
 void                  bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages);
 void                  bfShaderProgram_compile(bfShaderProgramHandle self);
@@ -464,7 +464,7 @@ void                bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, ui
 /* The Descriptor Set API is for 'Immutable' Bindings otherwise use the bfDescriptorSetInfo API */
 
 void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
-void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
+void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
 void bfDescriptorSet_flushWrites(bfDescriptorSetHandle self);
 
 /* Texture */
@@ -523,6 +523,7 @@ bfPipelineBarrier bfPipelineBarrier_buffer(BifrostAccessFlagsBits src_access, Bi
 bfPipelineBarrier bfPipelineBarrier_image(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfTextureHandle image, BifrostImageLayout new_layout);
 
 bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self);
+void                  bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self);
 bfBool32              bfGfxCmdList_begin(bfGfxCommandListHandle self);  // True if no error
 void                  bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, bfBool32 reads_same_pixel);
 void                  bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel);

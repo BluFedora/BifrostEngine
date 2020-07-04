@@ -7,8 +7,6 @@
 #include <emscripten.h>        // EM_ASM
 #include <emscripten/html5.h>  //
 
-static EMSCRIPTEN_WEBGL_CONTEXT_HANDLE s_GlCtx;
-
 void updateFromWebGL()
 {
   glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -47,9 +45,6 @@ extern void basicDrawing(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE);
   emscripten_webgl_make_context_current(s_GlCtx);
 
   basicDrawing(s_GlCtx);
-
-  argc    = 2;
-  argv[1] = "test_script.bts";
 
   // const int positionAttributeLocation = glGetAttribLocation(shader);
 

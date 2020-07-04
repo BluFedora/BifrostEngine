@@ -10,6 +10,8 @@
 #ifndef BIFROST_PLATFORM_EVENT_H
 #define BIFROST_PLATFORM_EVENT_H
 
+#include "bifrost_platform_export.h"
+
 #include <stdint.h> /* uint8_t */
 #include <string.h> /* memcpy  */
 
@@ -125,24 +127,6 @@ typedef struct bfKeyboardEvent_t
 
 } bfKeyboardEvent;
 
-inline bfKeyboardEvent bfKeyboardEvent_makeKeyMod(int key, uint8_t modifiers)
-{
-  bfKeyboardEvent self;
-  self.key       = key;
-  self.modifiers = modifiers;
-
-  return self;
-}
-
-inline bfKeyboardEvent bfKeyboardEvent_makeCodepoint(unsigned codepoint)
-{
-  bfKeyboardEvent self;
-  self.codepoint = codepoint;
-  self.modifiers = 0x0;
-
-  return self;
-}
-
 typedef struct bfMouseEvent_t
 {
   int           x;
@@ -152,32 +136,12 @@ typedef struct bfMouseEvent_t
 
 } bfMouseEvent;
 
-inline bfMouseEvent bfMouseEvent_make(int x, int y, uint8_t target_button, bfButtonFlags button_state)
-{
-  bfMouseEvent self;
-  self.x             = x;
-  self.y             = y;
-  self.target_button = target_button;
-  self.button_state  = button_state;
-
-  return self;
-}
-
 typedef struct bfScrollWheelEvent_t
 {
   double x;
   double y;
 
 } bfScrollWheelEvent;
-
-inline bfScrollWheelEvent bfScrollWheelEvent_make(double x, double y)
-{
-  bfScrollWheelEvent self;
-  self.x = x;
-  self.y = y;
-
-  return self;
-}
 
 typedef struct bfWindowEvent_t
 {
@@ -186,16 +150,6 @@ typedef struct bfWindowEvent_t
   bfWindowFlags state;
 
 } bfWindowEvent;
-
-inline bfWindowEvent bfWindowEvent_make(int width, int height, bfWindowFlags state)
-{
-  bfWindowEvent self;
-  self.width  = width;
-  self.height = height;
-  self.state  = state;
-
-  return self;
-}
 
 #if 0
   enum class ControllerButton : unsigned char
@@ -366,20 +320,12 @@ typedef struct bfEvent_t bfEvent;
 }
 #endif
 
-inline struct bfEvent_t bfEvent_makeImpl(bfEventType type, uint8_t flags, const void* data, size_t data_size)
-{
-#if __cplusplus
-  bfEvent self{type, flags};
-#else
-  bfEvent self;
-  self.type  = type;
-  self.flags = flags;
-#endif
-
-  memcpy(&self.keyboard, data, data_size);
-
-  return self;
-}
+BIFROST_PLATFORM_API bfKeyboardEvent    bfKeyboardEvent_makeKeyMod(int key, uint8_t modifiers);
+BIFROST_PLATFORM_API bfKeyboardEvent    bfKeyboardEvent_makeCodepoint(unsigned codepoint);
+BIFROST_PLATFORM_API bfMouseEvent       bfMouseEvent_make(int x, int y, uint8_t target_button, bfButtonFlags button_state);
+BIFROST_PLATFORM_API bfScrollWheelEvent bfScrollWheelEvent_make(double x, double y);
+BIFROST_PLATFORM_API bfWindowEvent      bfWindowEvent_make(int width, int height, bfWindowFlags state);
+BIFROST_PLATFORM_API struct bfEvent_t   bfEvent_makeImpl(bfEventType type, uint8_t flags, const void* data, size_t data_size);
 
 #define bfEvent_make(type, flags, data) \
   bfEvent_makeImpl((type), (flags), &data, sizeof(data))

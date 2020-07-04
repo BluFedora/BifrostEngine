@@ -1,123 +1,24 @@
 #ifndef BIFROST_VULKAN_LOGICAL_DEVICE_H
 #define BIFROST_VULKAN_LOGICAL_DEVICE_H
 
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bifrost/graphics/bifrost_gfx_object_cache.hpp"
 #include "bifrost_vulkan_hash.hpp"
 #include "bifrost_vulkan_material_pool.h"
 #include "bifrost_vulkan_mem_allocator.h"
 #include "bifrost_vulkan_physical_device.h"
 
-typedef struct
-{
-  bfTextureHandle attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
-  uint32_t        num_attachments;
-
-} bfFramebufferState;
-
-struct ComparebfDescriptorSetInfo
-{
-  bool operator()(const bfDescriptorSetInfo& a, const bfDescriptorSetInfo& b) const
-  {
-    if (a.num_bindings != b.num_bindings)
-    {
-      return false;
-    }
-
-    for (uint32_t i = 0; i < a.num_bindings; ++i)
-    {
-      const bfDescriptorElementInfo* const binding_a = &a.bindings[i];
-      const bfDescriptorElementInfo* const binding_b = &b.bindings[i];
-
-      if (binding_a->type != binding_b->type)
-      {
-        return false;
-      }
-
-      if (binding_a->binding != binding_b->binding)
-      {
-        return false;
-      }
-
-      if (binding_a->array_element_start != binding_b->array_element_start)
-      {
-        return false;
-      }
-
-      if (binding_a->num_handles != binding_b->num_handles)
-      {
-        return false;
-      }
-
-      // self = hash::addU32(self, parent.layout_bindings[i].stageFlags);
-
-      for (uint32_t j = 0; j < binding_a->num_handles; ++j)
-      {
-        if (binding_a->handles[j] != binding_b->handles[j])
-        {
-          return false;
-        }
-
-        if (binding_a->type == BIFROST_DESCRIPTOR_ELEMENT_BUFFER)
-        {
-          if (binding_a->offsets[j] != binding_b->offsets[j])
-          {
-            return false;
-          }
-
-          if (binding_a->sizes[j] != binding_b->sizes[j])
-          {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
-  }
-};
-
-struct ComparebfPipelineCache
-{
-  bool operator()(const bfPipelineCache& a, const bfPipelineCache& b) const;
-};
-
-struct ComparebfFramebufferState
-{
-  bool operator()(const bfFramebufferState& a, const bfFramebufferState& b) const
-  {
-    if (a.num_attachments != b.num_attachments)
-    {
-      return false;
-    }
-
-    for (std::uint32_t i = 0; i < a.num_attachments; ++i)
-    {
-      if (a.attachments[i] != b.attachments[i])
-      {
-        return false;
-      }
-    }
-
-    return true;
-  }
-};
-
-using VulkanDescSetCache     = bifrost::vk::ObjectHashCache<bfDescriptorSet, bfDescriptorSetInfo, ComparebfDescriptorSetInfo>;
-using VulkanPipelineCache    = bifrost::vk::ObjectHashCache<bfPipeline, bfPipelineCache, ComparebfPipelineCache>;
-using VulkanFramebufferCache = bifrost::vk::ObjectHashCache<bfFramebuffer, bfFramebufferState, ComparebfFramebufferState>;
-
 BIFROST_DEFINE_HANDLE(GfxDevice)
 {
-  VulkanPhysicalDevice*                                        parent;
-  VkDevice                                                     handle;
-  PoolAllocator                                                device_memory_allocator;
-  VulkanDescriptorPool*                                        descriptor_pool;
-  VkQueue                                                      queues[BIFROST_GFX_QUEUE_MAX];
-  bifrost::vk::ObjectHashCache<bfRenderpass, bfRenderpassInfo> cache_renderpass;
-  VulkanPipelineCache                                          cache_pipeline;
-  VulkanFramebufferCache                                       cache_framebuffer;
-  VulkanDescSetCache                                           cache_descriptor_set;
-  BifrostGfxObjectBase*                                        cached_resources; /* Linked List */
+  VulkanPhysicalDevice*  parent;
+  VkDevice               handle;
+  PoolAllocator          device_memory_allocator;
+  VulkanDescriptorPool*  descriptor_pool;
+  VkQueue                queues[BIFROST_GFX_QUEUE_MAX];
+  GfxRenderpassCache     cache_renderpass;
+  VulkanPipelineCache    cache_pipeline;
+  VulkanFramebufferCache cache_framebuffer;
+  VulkanDescSetCache     cache_descriptor_set;
+  BifrostGfxObjectBase*  cached_resources; /* Linked List */
 };
 
 #if __cplusplus
@@ -135,7 +36,7 @@ BIFROST_DEFINE_HANDLE(Framebuffer)
   BifrostGfxObjectBase super;
   VkFramebuffer        handle;
   // uint32_t             num_attachments;
-  bfTextureHandle      attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  bfTextureHandle attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
 };
 
 BIFROST_DEFINE_HANDLE(Pipeline)
@@ -152,6 +53,7 @@ BIFROST_DEFINE_HANDLE(WindowSurface)
   VkSemaphore*           is_image_available;
   VkSemaphore*           is_render_done;
   uint32_t               image_index;
+  bfBool32               swapchain_needs_deletion;
   bfBool32               swapchain_needs_creation;
   bfGfxCommandListHandle current_cmd_list;
 };

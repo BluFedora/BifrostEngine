@@ -869,7 +869,7 @@ namespace bifrost::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
 

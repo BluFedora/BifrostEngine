@@ -36,6 +36,7 @@ struct TestClass final
   [[nodiscard]] const char* printf(float h) const
   {
     std::cout << "h = " << h << ", my var = " << x << "\n";
+
     return "__ Return from printf *^";
   }
 
@@ -528,13 +529,12 @@ int main(int argc, char* argv[])
           engine->drawBegin(render_alpha);
           imgui::endFrame();
           engine->drawEnd();
+          engine->endFrame();
         }
-        engine->endFrame();
       };
 
       while (!bfWindow_wantsToClose(main_window))
       {
-        toggleFs();
         bfPlatformPumpEvents();
         main_window->frame_fn(main_window);
       }

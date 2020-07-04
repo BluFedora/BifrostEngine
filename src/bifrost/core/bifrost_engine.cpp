@@ -169,7 +169,7 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
     bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
   };
   vm_params.min_heap_size      = 20;
-  vm_params.heap_size          = 200;
+  vm_params.heap_size          = 150;
   vm_params.heap_growth_factor = 0.1f;
   vm_params.user_data          = this;
 
@@ -229,7 +229,6 @@ void Engine::deinit()
   m_StateMachine.removeAll();
   m_Scripting.destroy();
   m_SceneStack.clear();
-  // m_Assets.saveAssets();
   m_Assets.clearDirtyList();
   m_Assets.setRootPath(nullptr);
   m_DebugRenderer.deinit();

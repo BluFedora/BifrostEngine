@@ -34,11 +34,38 @@ namespace bifrost
 
   namespace detail
   {
+    // Vecotr2
+
     template<typename T>
     struct Vec2T
     {
       T x;
       T y;
+    };
+
+    template<>
+    struct Vec2T<float> : public Vec2f
+    {
+      Vec2T(float x, float y) :
+        Vec2f{x, y}
+      {
+      }
+
+      Vec2T(const Vec2f& rhs) :
+        Vec2f{rhs}
+      {
+      }
+
+      Vec2T() = default;
+    };
+
+    template<>
+    struct Vec2T<int> : public Vec2i
+    {
+      Vec2T(int x, int y) :
+        Vec2i{x, y}
+      {
+      }
     };
 
     template<typename T>
@@ -66,6 +93,24 @@ namespace bifrost
     }
 
     template<typename T>
+    Vec2T<T>& operator-=(Vec2T<T>& lhs, const Vec2T<T>& rhs)
+    {
+      lhs.x -= rhs.x;
+      lhs.y -= rhs.y;
+
+      return lhs;
+    }
+
+    template<typename T>
+    Vec2T<T>& operator+=(Vec2T<T>& lhs, const Vec2T<T>& rhs)
+    {
+      lhs.x += rhs.x;
+      lhs.y += rhs.y;
+
+      return lhs;
+    }
+
+    template<typename T>
     bool operator-(const Vec2T<T>& lhs)
     {
       return Vec2T<T>{-lhs.x, -lhs.y};
@@ -83,30 +128,7 @@ namespace bifrost
       return lhs.x != rhs.x && lhs.y != rhs.y;
     }
 
-    template<>
-    struct Vec2T<float> : public Vec2f
-    {
-      Vec2T(float x, float y) :
-        Vec2f{x, y}
-      {
-      }
-
-      Vec2T(const Vec2f& rhs) :
-        Vec2f{rhs}
-      {
-      }
-
-      Vec2T() = default;
-    };
-
-    template<>
-    struct Vec2T<int> : public Vec2i
-    {
-      Vec2T(int x, int y) :
-        Vec2i{x, y}
-      {
-      }
-    };
+    // Vector3
 
     template<typename T>
     struct Vec3T

@@ -870,7 +870,7 @@ namespace bifrost
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, bfTexture_layout(surface_tex));
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     BifrostClearValue clear_colors[1];
     clear_colors[0].color.float32[0] = 0.6f;
@@ -1008,6 +1008,14 @@ namespace bifrost
     m_LightShaders[LightShaders::DIR]   = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, dir_light_frag_module, "D Light Shader");
     m_LightShaders[LightShaders::POINT] = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, point_light_frag_module, "P Light Shader");
     m_LightShaders[LightShaders::SPOT]  = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, spot_light_frag_module, "S Light Shader");
+
+    bfShaderProgram_link(m_GBufferShader);
+    bfShaderProgram_link(m_SSAOBufferShader);
+    bfShaderProgram_link(m_SSAOBlurShader);
+    bfShaderProgram_link(m_AmbientLighting);
+    bfShaderProgram_link(m_LightShaders[LightShaders::DIR]);
+    bfShaderProgram_link(m_LightShaders[LightShaders::POINT]);
+    bfShaderProgram_link(m_LightShaders[LightShaders::SPOT]);
 
     bindings::addObject(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
     bindings::addMaterial(m_GBufferShader, BIFROST_SHADER_STAGE_FRAGMENT);

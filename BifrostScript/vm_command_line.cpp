@@ -11,7 +11,8 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#include "bifrost/script/bifrost_vm.hpp"
+
+#include <bifrost/script/bifrost_vm.hpp> /* VM C++ API */
 
 #include <cstdio>    // printf, fopen, flocse, ftell, fseek, fread, malloc
 #include <iostream>  // cin
@@ -28,9 +29,11 @@ static void  moduleHandler(BifrostVM* vm, const char* from, const char* module, 
 static void* memoryHandler(void* user_data, void* ptr, size_t old_size, size_t new_size) noexcept;
 static void  waitForInput() noexcept;
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
-#ifndef __EMSCRIPTEN__
+#if __EMSCRIPTEN__
+  const char* const file_name = "assets/scripts/test_script.bscript";
+#else
   if (argc != 2)
   {
     std::printf("There is an example script loaded at 'assets/scripts/test_script.bscript'\n");
@@ -40,8 +43,6 @@ int main(int argc, const char* argv[])
   }
 
   const char* const file_name = argv[1];
-#else
-  const char* const file_name = "test_script.bscript";
 #endif
 
   MemoryUsageTracker mem_tracker{0, 0};
@@ -53,34 +54,38 @@ int main(int argc, const char* argv[])
   params.memory_fn = &memoryHandler;
   params.user_data = &mem_tracker;
 
-  bifrost::VM vm{params};
-
-  BifrostVMModuleLookUp load_file;
-
-  moduleHandler(vm, nullptr, file_name, &load_file);
-
-  if (!load_file.source || load_file.source_len == 0)
   {
-    std::printf("failed to load '%s'\n", file_name);
-    return 1;
+    bifrost::VM vm{params};
+
+    BifrostVMModuleLookUp load_file;
+
+    moduleHandler(vm, nullptr, file_name, &load_file);
+
+    if (!load_file.source || load_file.source_len == 0)
+    {
+      std::printf("failed to load '%s'\n", file_name);
+      return 1;
+    }
+
+    vm.stackResize(1);
+    vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
+
+    const BifrostVMError err = vm.execInModule(nullptr, load_file.source, load_file.source_len);
+
+    memoryHandler(bfVM_userData(vm), const_cast<char*>(load_file.source), sizeof(char) * (load_file.source_len + 1u), 0u);
+
+    if (err)
+    {
+      waitForInput();
+      return err;
+    }
+
+    std::printf("Memory Stats:\n");
+    std::printf("\tPeak    Usage: %u (bytes)\n", unsigned(mem_tracker.peak_usage));
+    std::printf("\tCurrent Usage: %u (bytes)\n", unsigned(mem_tracker.current_usage));
   }
 
-  vm.stackResize(1);
-  vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
-
-  const BifrostVMError err = vm.execInModule(nullptr, load_file.source, load_file.source_len);
-
-  if (err)
-  {
-    waitForInput();
-    return err;
-  }
-
-  memoryHandler(bfVM_userData(vm), const_cast<char*>(load_file.source), sizeof(char) * (load_file.source_len + 1u), 0u);
-
-  std::printf("Memory Stats:\n");
-  std::printf("\tPeak    Usage: %u (bytes)\n", unsigned(mem_tracker.peak_usage));
-  std::printf("\tCurrent Usage: %u (bytes)\n", unsigned(mem_tracker.current_usage));
+  std::printf("\tAfter    Dtor: %u (bytes)\n", unsigned(mem_tracker.current_usage));
 
   waitForInput();
   return 0;

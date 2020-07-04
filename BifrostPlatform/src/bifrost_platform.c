@@ -1,5 +1,11 @@
 #include "bifrost/platform/bifrost_platform.h"
 
+#include "bifrost/platform/bifrost_platform_event.h"
+
+#if BIFROST_PLATFORM_EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 #include <stdlib.h> /* realloc */
 
 bfPlatformInitParams g_BifrostPlatform;
@@ -57,15 +63,98 @@ void bfPlatformFree(void* ptr, size_t old_size)
   (void)g_BifrostPlatform.allocator(ptr, old_size, 0u, g_BifrostPlatform.user_data);
 }
 
+// emscripten_cancel_main_loop();
+
+void bfPlatformDoMainLoopImpl(void* arg)
+{
+  BifrostWindow* main_window = (BifrostWindow*)arg;
+
+  bfPlatformPumpEvents();
+
+  if (main_window->frame_fn)
+  {
+    main_window->frame_fn(main_window);
+  }
+
+#if BIFROST_PLATFORM_EMSCRIPTEN
+  // Needed only if " ctx_attribs.explicitSwapControl" is true.
+  // emscripten_webgl_commit_frame();
+#endif
+}
+
 void bfPlatformDoMainLoop(BifrostWindow* main_window)
 {
+#if BIFROST_PLATFORM_EMSCRIPTEN
+  emscripten_set_main_loop_arg(&bfPlatformDoMainLoopImpl, main_window, 0 /* could also be 60fps */, 1);
+#else
   while (!bfWindow_wantsToClose(main_window))
   {
-    bfPlatformPumpEvents();
-
-    if (main_window->frame_fn)
-    {
-      main_window->frame_fn(main_window);
-    }
+    bfPlatformDoMainLoopImpl(main_window);
   }
+#endif
+}
+
+/* Events */
+
+bfKeyboardEvent bfKeyboardEvent_makeKeyMod(int key, uint8_t modifiers)
+{
+  bfKeyboardEvent self;
+  self.key       = key;
+  self.modifiers = modifiers;
+
+  return self;
+}
+
+bfKeyboardEvent bfKeyboardEvent_makeCodepoint(unsigned codepoint)
+{
+  bfKeyboardEvent self;
+  self.codepoint = codepoint;
+  self.modifiers = 0x0;
+
+  return self;
+}
+
+bfMouseEvent bfMouseEvent_make(int x, int y, uint8_t target_button, bfButtonFlags button_state)
+{
+  bfMouseEvent self;
+  self.x             = x;
+  self.y             = y;
+  self.target_button = target_button;
+  self.button_state  = button_state;
+
+  return self;
+}
+
+bfScrollWheelEvent bfScrollWheelEvent_make(double x, double y)
+{
+  bfScrollWheelEvent self;
+  self.x = x;
+  self.y = y;
+
+  return self;
+}
+
+bfWindowEvent bfWindowEvent_make(int width, int height, bfWindowFlags state)
+{
+  bfWindowEvent self;
+  self.width  = width;
+  self.height = height;
+  self.state  = state;
+
+  return self;
+}
+
+struct bfEvent_t bfEvent_makeImpl(bfEventType type, uint8_t flags, const void* data, size_t data_size)
+{
+#if __cplusplus
+  bfEvent self{type, flags};
+#else
+  bfEvent self;
+  self.type  = type;
+  self.flags = flags;
+#endif
+
+  memcpy(&self.keyboard, data, data_size);
+
+  return self;
 }

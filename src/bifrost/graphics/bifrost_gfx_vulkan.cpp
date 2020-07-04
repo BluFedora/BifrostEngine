@@ -20,9 +20,7 @@
 
 #include <vulkan/vulkan.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-#undef STB_IMAGE_IMPLEMENTATION
 
 #define BIFROST_USE_DEBUG_CALLBACK 1
 
@@ -233,14 +231,9 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
   }
   {
     gfxContextSelectPhysicalDevice(self);
-    // gfxContextInitSurface(self);
-    // gfxContextFindSurfacePresent(self, self->main_window);
     gfxContextCreateLogicalDevice(self);
     gfxContextInitAllocator(self);
     gfxContextInitCommandPool(self, 0);
-    //gfxContextInitSwapchainInfo(self, self->main_window);
-    //gfxContextInitSemaphores(self, self->main_window);
-    //gfxRecreateSwapchain(self, self->main_window);
   }
 
   self->params = nullptr;
@@ -281,7 +274,9 @@ void bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle wind
 
 void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
 {
-  gfxDestroySwapchain(self, *window_handle);
+  window_handle->swapchain_needs_creation = bfFalse;
+  window_handle->swapchain_needs_deletion = bfTrue;
+  gfxRecreateSwapchain(self, *window_handle);
 
   for (std::uint32_t i = 0; i < self->max_frames_in_flight; ++i)
   {
@@ -296,15 +291,33 @@ void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle w
 
 static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
-  assert(window.swapchain_needs_creation);
+  //assert(window.swapchain_needs_creation);
 
-  if (gfxContextInitSwapchain(self, window))
+  if (window.swapchain_needs_deletion)
   {
-    gfxContextInitSwapchainImageList(self, window);
-    gfxContextInitCmdFences(self, window);
-    gfxContextInitCmdBuffers(self, window);
+    VulkanSwapchain& old_swapchain = window.swapchain;
 
-    return true;
+    gfxContextDestroyCmdBuffers(self, &old_swapchain);
+    gfxContextDestroyCmdFences(self, &old_swapchain);
+    gfxContextDestroySwapchainImageList(self, &old_swapchain);
+    gfxContextDestroySwapchain(self, &old_swapchain);
+
+    window.swapchain_needs_deletion = bfFalse;
+  }
+
+  if (window.swapchain_needs_creation)
+  {
+    if (gfxContextInitSwapchain(self, window))
+    {
+      gfxContextInitSwapchainImageList(self, window);
+      gfxContextInitCmdFences(self, window);
+      gfxContextInitCmdBuffers(self, window);
+
+      return true;
+    }
+
+      return true;
+
   }
 
   return false;
@@ -314,15 +327,9 @@ void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
   if (!window.swapchain_needs_creation)
   {
-    bfGfxDevice_flush(self->logical_device);
+    //bfGfxDevice_flush(self->logical_device);
 
-    VulkanSwapchain& old_swapchain = window.swapchain;
-
-    gfxContextDestroyCmdBuffers(self, &old_swapchain);
-    gfxContextDestroyCmdFences(self, &old_swapchain);
-    gfxContextDestroySwapchainImageList(self, &old_swapchain);
-    gfxContextDestroySwapchain(self, &old_swapchain);
-
+    window.swapchain_needs_deletion = bfTrue;
     window.swapchain_needs_creation = bfTrue;
   }
 }
@@ -369,6 +376,8 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
     {
       return bfFalse;
     }
+
+    return bfFalse;
   }
 
   if (window->swapchain.in_flight_images[window->image_index] != VK_NULL_HANDLE)
@@ -540,61 +549,7 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 
   vkResetCommandBuffer(list->handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
-  bfGfxCmdList_setDrawMode(list, BIFROST_DRAW_MODE_TRIANGLE_LIST);
-  bfGfxCmdList_setFrontFace(list, BIFROST_FRONT_FACE_CCW);
-  bfGfxCmdList_setCullFace(list, BIFROST_CULL_FACE_NONE);
-  bfGfxCmdList_setDepthTesting(list, bfFalse);
-  bfGfxCmdList_setDepthWrite(list, bfFalse);
-  bfGfxCmdList_setDepthTestOp(list, BIFROST_COMPARE_OP_ALWAYS);
-  bfGfxCmdList_setStencilTesting(list, bfFalse);
-  bfGfxCmdList_setPrimitiveRestart(list, bfFalse);
-  bfGfxCmdList_setRasterizerDiscard(list, bfFalse);
-  bfGfxCmdList_setDepthBias(list, bfFalse);
-  bfGfxCmdList_setSampleShading(list, bfFalse);
-  bfGfxCmdList_setAlphaToCoverage(list, bfFalse);
-  bfGfxCmdList_setAlphaToOne(list, bfFalse);
-  bfGfxCmdList_setLogicOp(list, BIFROST_LOGIC_OP_CLEAR);
-  bfGfxCmdList_setPolygonFillMode(list, BIFROST_POLYGON_MODE_FILL);
-
-  for (int i = 0; i < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS; ++i)
-  {
-    bfGfxCmdList_setColorWriteMask(list, i, BIFROST_COLOR_MASK_RGBA);
-    bfGfxCmdList_setColorBlendOp(list, i, BIFROST_BLEND_OP_ADD);
-    bfGfxCmdList_setBlendSrc(list, i, BIFROST_BLEND_FACTOR_SRC_ALPHA);
-    bfGfxCmdList_setBlendDst(list, i, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
-    bfGfxCmdList_setAlphaBlendOp(list, i, BIFROST_BLEND_OP_ADD);
-    bfGfxCmdList_setBlendSrcAlpha(list, i, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDstAlpha(list, i, BIFROST_BLEND_FACTOR_ZERO);
-  }
-
-  const auto SetupStencilState = [&list](BifrostStencilFace face) {
-    bfGfxCmdList_setStencilFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
-    bfGfxCmdList_setStencilPassOp(list, face, BIFROST_STENCIL_OP_REPLACE);
-    bfGfxCmdList_setStencilDepthFailOp(list, face, BIFROST_STENCIL_OP_KEEP);
-    bfGfxCmdList_setStencilCompareOp(list, face, BIFROST_COMPARE_OP_ALWAYS);
-    bfGfxCmdList_setStencilCompareMask(list, face, 0xFF);
-    bfGfxCmdList_setStencilWriteMask(list, face, 0xFF);
-    bfGfxCmdList_setStencilReference(list, face, 0xFF);
-  };
-
-  SetupStencilState(BIFROST_STENCIL_FACE_FRONT);
-  SetupStencilState(BIFROST_STENCIL_FACE_BACK);
-
-  bfGfxCmdList_setDynamicStates(list, BIFROST_PIPELINE_DYNAMIC_NONE);
-  const float depths[] = {0.0f, 1.0f};
-  bfGfxCmdList_setViewport(list, 0.0f, 0.0f, 0.0f, 0.0f, depths);
-  bfGfxCmdList_setScissorRect(list, 0, 0, 1, 1);
-  const float blend_constants[] = {1.0f, 1.0f, 1.0f, 1.0f};
-  bfGfxCmdList_setBlendConstants(list, blend_constants);
-  bfGfxCmdList_setLineWidth(list, 1.0f);
-  bfGfxCmdList_setDepthClampEnabled(list, bfFalse);
-  bfGfxCmdList_setDepthBoundsTestEnabled(list, bfFalse);
-  bfGfxCmdList_setDepthBounds(list, 0.0f, 1.0f);
-  bfGfxCmdList_setDepthBiasConstantFactor(list, 0.0f);
-  bfGfxCmdList_setDepthBiasClamp(list, 0.0f);
-  bfGfxCmdList_setDepthBiasSlopeFactor(list, 0.0f);
-  bfGfxCmdList_setMinSampleShading(list, 0.0f);
-  bfGfxCmdList_setSampleMask(list, 0xFFFFFFFF);
+  bfGfxCmdList_setDefaultPipeline(list);
 
   window->current_cmd_list = list;
 
@@ -1526,8 +1481,8 @@ namespace
 
   void gfxContextDestroyCmdFences(bfGfxContextHandle self, const VulkanSwapchain* swapchain)
   {
-    bfGfxDeviceHandle logical_device = self->logical_device;
-    VkDevice          device         = logical_device->handle;
+    const bfGfxDeviceHandle logical_device = self->logical_device;
+    const VkDevice          device         = logical_device->handle;
 
     for (uint32_t i = 0; i < self->max_frames_in_flight; ++i)
     {
@@ -1535,9 +1490,9 @@ namespace
     }
 
     freeN(swapchain->in_flight_fences);
-    const_cast<VulkanSwapchain*>(swapchain)->in_flight_fences = nullptr;
-    const_cast<VulkanSwapchain*>(swapchain)->in_flight_images = nullptr;
     // freeN(swapchain->in_flight_images); Shared allocation w/ 'swapchain->in_flight_fences'.
+    //const_cast<VulkanSwapchain*>(swapchain)->in_flight_fences = nullptr;
+    //const_cast<VulkanSwapchain*>(swapchain)->in_flight_images = nullptr;
   }
 
   void gfxContextDestroySwapchainImageList(bfGfxContextHandle self, VulkanSwapchain* swapchain)
@@ -1633,7 +1588,7 @@ namespace
   {
     VkPresentModeKHR best_mode = VK_PRESENT_MODE_FIFO_KHR;  // Guaranteed to exist according to the standard.
 
-#ifndef BIFROST_GRAPHICS_POWER_SAVER
+#if !defined(BIFROST_GRAPHICS_POWER_SAVER)
     const VkPresentModeKHR* const present_mode_end = present_modes + num_present_modes;
     const VkPresentModeKHR*       present_mode     = present_modes;
 
@@ -1870,34 +1825,6 @@ BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self)
   return self->type;
 }
 
-char* LoadFileIntoMemory(const char* const filename, long* out_size)
-{
-  FILE* f      = fopen(filename, "rb");  // NOLINT(android-cloexec-fopen)
-  char* buffer = nullptr;
-
-  if (f)
-  {
-    fseek(f, 0, SEEK_END);
-    long file_size = ftell(f);
-    fseek(f, 0, SEEK_SET);  //same as rewind(f);
-    buffer = static_cast<char*>(std::malloc(file_size + 1));
-    if (buffer)
-    {
-      fread(buffer, sizeof(char), file_size, f);
-      buffer[file_size] = '\0';
-    }
-    else
-    {
-      file_size = 0;
-    }
-
-    *out_size = file_size;
-    fclose(f);
-  }
-
-  return buffer;
-}
-
 bfBool32 bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length)
 {
   assert(source && source_length && "bfShaderModule_loadData invalid parameters");
@@ -1932,6 +1859,11 @@ void bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle 
   }
 
   self->modules.elements[self->modules.size++] = module;
+}
+
+void bfShaderProgram_link(bfShaderProgramHandle self)
+{
+  /* No-OP Dy Design */
 }
 
 void bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding)
@@ -2089,9 +2021,9 @@ void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint
   }
 }
 
-void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
+void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
 {
-  VkWriteDescriptorSet*   write        = bfDescriptorSet__checkForFlush(self, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, array_element_start, num_buffers, 0, 0);
+  VkWriteDescriptorSet*   write        = bfDescriptorSet__checkForFlush(self, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, binding, 0, num_buffers, 0, 0);
   VkDescriptorBufferInfo* buffer_infos = const_cast<VkDescriptorBufferInfo*>(write->pBufferInfo);
 
   for (uint32_t i = 0; i < num_buffers; ++i)

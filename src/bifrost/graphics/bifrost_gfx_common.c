@@ -1,8 +1,12 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"
 
-#include <assert.h>                       /* assert         */
-#include <stdlib.h>                       /* free */
-#include <string.h> /* memcpy, memset */  // TODO(Shareef): Use the Bifrost Versions
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+#undef STB_IMAGE_IMPLEMENTATION
+
+#include <assert.h> /* assert         */
+#include <stdlib.h> /* free           */
+#include <string.h> /* memcpy, memset */
 
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, uint32_t num_layers);
 static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_t height, BifrostImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
@@ -82,6 +86,7 @@ bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
     return was_successful;
   }
 
+  printf("Failed to load file %s\n", file);
   return bfFalse;
 }
 
@@ -182,7 +187,7 @@ void bfRenderpassInfo_addInput(bfRenderpassInfo* self, uint16_t subpass_index, u
   assert(subpass->num_in_attachment_refs + 1 < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS);
 
   attachment_ref->attachment_index = attachment;
-  attachment_ref->layout = bfTexture_layout(self->attachments[attachment].texture);
+  attachment_ref->layout           = bfTexture_layout(self->attachments[attachment].texture);
 
   ++subpass->num_in_attachment_refs;
 }
@@ -284,4 +289,108 @@ static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_
   {
     self->flags |= BIFROST_TEX_IS_TRANSIENT;
   }
+}
+
+void bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self)
+{
+  bfGfxCmdList_setDrawMode(self, BIFROST_DRAW_MODE_TRIANGLE_LIST);
+  bfGfxCmdList_setFrontFace(self, BIFROST_FRONT_FACE_CCW);
+  bfGfxCmdList_setCullFace(self, BIFROST_CULL_FACE_NONE);
+  bfGfxCmdList_setDepthTesting(self, bfFalse);
+  bfGfxCmdList_setDepthWrite(self, bfFalse);
+  bfGfxCmdList_setDepthTestOp(self, BIFROST_COMPARE_OP_ALWAYS);
+  bfGfxCmdList_setStencilTesting(self, bfFalse);
+  bfGfxCmdList_setPrimitiveRestart(self, bfFalse);
+  bfGfxCmdList_setRasterizerDiscard(self, bfFalse);
+  bfGfxCmdList_setDepthBias(self, bfFalse);
+  bfGfxCmdList_setSampleShading(self, bfFalse);
+  bfGfxCmdList_setAlphaToCoverage(self, bfFalse);
+  bfGfxCmdList_setAlphaToOne(self, bfFalse);
+  bfGfxCmdList_setLogicOp(self, BIFROST_LOGIC_OP_CLEAR);
+  bfGfxCmdList_setPolygonFillMode(self, BIFROST_POLYGON_MODE_FILL);
+
+  for (int i = 0; i < BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS; ++i)
+  {
+    bfGfxCmdList_setColorWriteMask(self, i, BIFROST_COLOR_MASK_RGBA);
+    bfGfxCmdList_setColorBlendOp(self, i, BIFROST_BLEND_OP_ADD);
+    bfGfxCmdList_setBlendSrc(self, i, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(self, i, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setAlphaBlendOp(self, i, BIFROST_BLEND_OP_ADD);
+    // bfGfxCmdList_setBlendSrcAlpha(self, i, BIFROST_BLEND_FACTOR_ONE);
+    // bfGfxCmdList_setBlendDstAlpha(self, i, BIFROST_BLEND_FACTOR_ZERO);
+    bfGfxCmdList_setBlendSrcAlpha(self, i, BIFROST_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDstAlpha(self, i, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+  }
+
+  for (BifrostStencilFace face = BIFROST_STENCIL_FACE_FRONT; face <= BIFROST_STENCIL_FACE_BACK; face = (BifrostStencilFace)(face + 1))
+  {
+    bfGfxCmdList_setStencilFailOp(self, face, BIFROST_STENCIL_OP_KEEP);
+    bfGfxCmdList_setStencilPassOp(self, face, BIFROST_STENCIL_OP_REPLACE);
+    bfGfxCmdList_setStencilDepthFailOp(self, face, BIFROST_STENCIL_OP_KEEP);
+    bfGfxCmdList_setStencilCompareOp(self, face, BIFROST_COMPARE_OP_ALWAYS);
+    bfGfxCmdList_setStencilCompareMask(self, face, 0xFF);
+    bfGfxCmdList_setStencilWriteMask(self, face, 0xFF);
+    bfGfxCmdList_setStencilReference(self, face, 0xFF);
+  }
+
+  bfGfxCmdList_setDynamicStates(self, BIFROST_PIPELINE_DYNAMIC_NONE);
+  const float depths[] = {0.0f, 1.0f};
+  bfGfxCmdList_setViewport(self, 0.0f, 0.0f, 0.0f, 0.0f, depths);
+  bfGfxCmdList_setScissorRect(self, 0, 0, 1, 1);
+  const float blend_constants[] = {1.0f, 1.0f, 1.0f, 1.0f};
+  bfGfxCmdList_setBlendConstants(self, blend_constants);
+  bfGfxCmdList_setLineWidth(self, 1.0f);
+  bfGfxCmdList_setDepthClampEnabled(self, bfFalse);
+  bfGfxCmdList_setDepthBoundsTestEnabled(self, bfFalse);
+  bfGfxCmdList_setDepthBounds(self, 0.0f, 1.0f);
+  bfGfxCmdList_setDepthBiasConstantFactor(self, 0.0f);
+  bfGfxCmdList_setDepthBiasClamp(self, 0.0f);
+  bfGfxCmdList_setDepthBiasSlopeFactor(self, 0.0f);
+  bfGfxCmdList_setMinSampleShading(self, 0.0f);
+  bfGfxCmdList_setSampleMask(self, 0xFFFFFFFF);
+}
+
+void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandListHandle self, float x, float y, float width, float height)
+{
+  // TODO: Clamp the paramters or emit an error.
+
+  const int32_t fb_width  = bfTexture_width(texture);
+  const int32_t fb_height = bfTexture_height(texture);
+
+  bfGfxCmdList_setRenderAreaAbs(
+   self,
+   (int32_t)(fb_width * x),
+   (int32_t)(fb_height * y),
+   (uint32_t)(fb_width * width),
+   (uint32_t)(fb_height * height));
+}
+
+#include <stdio.h>
+
+char* LoadFileIntoMemory(const char* const filename, long* out_size)
+{
+  FILE* f      = fopen(filename, "rb");  // NOLINT(android-cloexec-fopen)
+  char* buffer = NULL;
+
+  if (f)
+  {
+    fseek(f, 0, SEEK_END);
+    long file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);  //same as rewind(f);
+    buffer = (char*)(malloc(file_size + 1));
+    if (buffer)
+    {
+      fread(buffer, sizeof(char), file_size, f);
+      buffer[file_size] = '\0';
+    }
+    else
+    {
+      file_size = 0;
+    }
+
+    *out_size = file_size;
+    fclose(f);
+  }
+
+  return buffer;
 }

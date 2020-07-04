@@ -137,7 +137,7 @@ namespace bifrost::editor
     ImGui::PopStyleVar(3);
   }
 
-  // TODO(SR): This should be in a public header along with other std:: dat structure typedefs.
+  // TODO(SR): This should be in a public header along with other std:: data structure typedefs.
   template<typename T>
   using StdList = std::list<T, StlAllocator<T>>;
 
@@ -164,6 +164,13 @@ namespace bifrost::editor
             auto&       io           = ImGui::GetIO();
             const auto& window_mouse = io.MousePos;
             Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+
+            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            {
+              ImGuiViewport* const main_vp = ImGui::GetMainViewport();
+
+              local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
+            }
 
             local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
 
@@ -263,6 +270,13 @@ namespace bifrost::editor
       auto&       io           = ImGui::GetIO();
       const auto& window_mouse = io.MousePos;
       Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+
+      if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+      {
+        ImGuiViewport* const main_vp = ImGui::GetMainViewport();
+
+        local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
+      }
 
       local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
 

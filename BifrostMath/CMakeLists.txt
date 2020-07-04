@@ -73,8 +73,9 @@ add_library(
 )
 
 target_include_directories(
-  BifrostMath_static PUBLIC
-  ${BIFROST_MATH_SOURCE_FILES}/include
+  BifrostMath_static 
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
 )
 
 target_compile_definitions(BifrostMath_static PRIVATE BIFROST_MATH_EXPORT_STATIC)
@@ -88,21 +89,23 @@ set_target_properties(BifrostMath_static PROPERTIES VS_DEBUGGER_WORKING_DIRECTOR
 
 # Shared Library Setttings
 
-project(BifrostMath_shared)
+if(NOT EMSCRIPTEN)
+  project(BifrostMath_shared)
 
-add_library(
-  BifrostMath_shared SHARED
-  ${BIFROST_MATH_SOURCE_FILES}
-)
+  add_library(
+    BifrostMath_shared SHARED
+    ${BIFROST_MATH_SOURCE_FILES}
+  )
 
-target_include_directories(BifrostMath_shared
-    INTERFACE
-    ${PROJECT_SOURCE_DIR}/include
-)
+  target_include_directories(BifrostMath_shared
+      INTERFACE
+      ${PROJECT_SOURCE_DIR}/include
+  )
 
-target_compile_definitions(BifrostMath_shared PRIVATE BIFROST_MATH_EXPORT)
-set_target_properties(BifrostMath_shared PROPERTIES PUBLIC_HEADER include/bifrost/bifrost_math.h)
+  target_compile_definitions(BifrostMath_shared PRIVATE BIFROST_MATH_EXPORT)
+  set_target_properties(BifrostMath_shared PROPERTIES PUBLIC_HEADER include/bifrost/bifrost_math.h)
 
-set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
+  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
+  set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+  set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
+endif()

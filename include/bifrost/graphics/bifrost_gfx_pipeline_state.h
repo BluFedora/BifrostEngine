@@ -66,7 +66,7 @@ typedef enum BifrostCullFaceFlags_t
   BIFROST_CULL_FACE_NONE  = 0ull,
   BIFROST_CULL_FACE_FRONT = 1ull,
   BIFROST_CULL_FACE_BACK  = 2ull,
-  BIFROST_CULL_FACE_BOTH  = 3ull,
+  BIFROST_CULL_FACE_BOTH  = BIFROST_CULL_FACE_FRONT | BIFROST_CULL_FACE_BACK, // (3ull)
 
 } BifrostCullFaceFlags;  // NOTE(Shareef): 2-bits
 
@@ -223,7 +223,7 @@ typedef struct
 
   /********************************************************************************************************/
   /* BITS:                                                             || Size                   | Offset */
-  uint64_t draw_mode : BIFROST_PIPELINE_STATE_DRAW_MODE_BITS;          /* 3                      |   0    */
+  uint64_t draw_mode : BIFROST_PIPELINE_STATE_DRAW_MODE_BITS;          /* 3 (BifrostDrawMode)    |   0    */
   uint64_t front_face : BIFROST_PIPELINE_STATE_FRONT_FACE_BITS;        /* 1                      |   3    */
   uint64_t cull_face : BIFROST_PIPELINE_STATE_CULL_FACE_BITS;          /* 2                      |   4    */
   uint64_t do_depth_test : BIFROST_PIPELINE_STATE_DEPTH_TEST_BITS;     /* 1                      |   6    */

@@ -68,10 +68,13 @@ if(BIFROST_PLATFORM_GLFW)
     "src/bifrost_platform_glfw.c"
   )
 
-  set(BIFROST_PLATFORM_LIB_FILES
-    ${BIFROST_PLATFORM_LIB_FILES}
-    "${CMAKE_BINARY_DIR}/glfw3dll.lib"
-  )
+  if(NOT EMSCRIPTEN)
+    set(BIFROST_PLATFORM_LIB_FILES
+      ${BIFROST_PLATFORM_LIB_FILES}
+      "${CMAKE_BINARY_DIR}/glfw3dll.lib"
+    )
+  endif()
+
 elseif(BIFROST_PLATFORM_SDL)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}
@@ -92,8 +95,17 @@ add_library(
 
 target_include_directories(
   BifrostPlatform_static 
-  PRIVATE ${PROJECT_SOURCE_DIR}/include
+   INTERFACE ${PROJECT_SOURCE_DIR}/include
+   PRIVATE   ${PROJECT_SOURCE_DIR}/include
 )
+
+if(BIFROST_OPT_GRAPHICS_VULKAN)
+  target_compile_definitions(
+    BifrostPlatform_static
+    PRIVATE
+      GLFW_INCLUDE_VULKAN
+  )
+endif()
 
 target_link_libraries(
   BifrostPlatform_static 
@@ -111,22 +123,32 @@ set_target_properties(BifrostPlatform_static PROPERTIES LINK_FLAGS "/ENTRY:mainC
 
 # Shared Library
 
-add_library(
-  BifrostPlatform_shared SHARED
-  ${BIFROST_PLATFORM_SOURCE_FILES}
-)
+if(NOT EMSCRIPTEN)
+  add_library(
+      BifrostPlatform_shared SHARED
+      ${BIFROST_PLATFORM_SOURCE_FILES}
+  )
+  
+  target_include_directories(
+      BifrostPlatform_shared
+      INTERFACE ${PROJECT_SOURCE_DIR}/include
+      PRIVATE   ${PROJECT_SOURCE_DIR}/include
+  )
+  
+  target_link_libraries(
+      BifrostPlatform_shared 
+      PUBLIC "${BIFROST_PLATFORM_LIB_FILES}"
+  )
+  
+  target_compile_definitions(BifrostPlatform_shared PRIVATE BIFROST_PLATFORM_EXPORT)
 
-target_include_directories(
-  BifrostPlatform_shared
-  INTERFACE ${PROJECT_SOURCE_DIR}/include
-  PRIVATE   ${PROJECT_SOURCE_DIR}/include
-)
+if(BIFROST_OPT_GRAPHICS_VULKAN)
+  target_compile_definitions(
+    BifrostPlatform_shared
+    PRIVATE
+      GLFW_INCLUDE_VULKAN
+  )
+endif()
 
-target_link_libraries(
-  BifrostPlatform_shared 
-  PUBLIC "${BIFROST_PLATFORM_LIB_FILES}"
-)
-
-target_compile_definitions(BifrostPlatform_shared PRIVATE BIFROST_PLATFORM_EXPORT)
-set_target_properties(BifrostPlatform_shared PROPERTIES PUBLIC_HEADER include/bifrost/platform/bifrost_platform.h)
-
+  set_target_properties(BifrostPlatform_shared PROPERTIES PUBLIC_HEADER include/bifrost/platform/bifrost_platform.h)
+endif()

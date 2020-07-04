@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   #   "-fno-rtti"                 = "/GR-"
   #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g -pedantic")
+  set(CMAKE_CXX_FLAGS "-std=c++17 -fno-rtti -Wall -g -pedantic")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # using Intel C++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -92,23 +92,25 @@ set_target_properties(BifrostScript PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${
 
 # Shared Library Setttings
 
-project(BifrostScript_shared VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
-
-add_library(
-  BifrostScript_shared SHARED
-  ${BIFROST_SCRIPT_SOURCE_FILES}
-  "../src/bifrost/data_structures/bifrost_array_t.c"
-  "../src/bifrost/data_structures/bifrost_dynamic_string.c"
-  "../src/bifrost/data_structures/bifrost_hash_map.c"
-)
-
-target_include_directories(BifrostScript_shared
-    INTERFACE
-    ${PROJECT_SOURCE_DIR}/include
-)
-
-target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
-set_target_properties(BifrostScript_shared PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
+if(NOT EMSCRIPTEN)
+  project(BifrostScript_shared VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge.")
+  
+  add_library(
+    BifrostScript_shared SHARED
+    ${BIFROST_SCRIPT_SOURCE_FILES}
+    "../src/bifrost/data_structures/bifrost_array_t.c"
+    "../src/bifrost/data_structures/bifrost_dynamic_string.c"
+    "../src/bifrost/data_structures/bifrost_hash_map.c"
+  )
+  
+  target_include_directories(BifrostScript_shared
+      INTERFACE
+      ${PROJECT_SOURCE_DIR}/include
+  )
+  
+  target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
+  set_target_properties(BifrostScript_shared PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
+endif()
 
 # Command Line Interface
 
@@ -121,7 +123,8 @@ add_executable(
 
 target_link_libraries(
   BifrostScript_cli 
-  PRIVATE BifrostScript
+  PRIVATE 
+    BifrostScript
 )
 
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
@@ -137,5 +140,56 @@ set_target_properties(
   CXX_EXTENSIONS OFF
 )
 
-set_property(TARGET BifrostScript_cli PROPERTY CXX_STANDARD 17)
-set_property(TARGET BifrostScript_cli PROPERTY CXX_STANDARD_REQUIRED ON)
+# WebGL
+
+project(BifrostWeb)
+
+add_executable(
+  BifrostWeb
+  "webgl_testing.cpp"
+  "${CMAKE_SOURCE_DIR}/src/bifrost/graphics/bifrost_gfx_common.c"
+  "bifrost_graphics_opengl.cpp"
+
+  "${CMAKE_SOURCE_DIR}/src/bifrost/utility/bifrost_hash.cpp"
+
+  "${CMAKE_SOURCE_DIR}/src/bifrost_imgui_glfw.cpp"
+
+  "${CMAKE_SOURCE_DIR}/lib/include/imgui/imgui.cpp"
+  "${CMAKE_SOURCE_DIR}/lib/include/imgui/imgui_widgets.cpp"
+  "${CMAKE_SOURCE_DIR}/lib/include/imgui/imgui_draw.cpp"
+ )
+
+target_include_directories(
+  BifrostWeb
+  PRIVATE 
+    ${CMAKE_SYSTEM_INCLUDE_PATH}
+)
+
+target_link_libraries(
+  BifrostWeb 
+  PRIVATE 
+    BifrostScript
+    BifrostPlatform_static
+    BifrostMemory
+    BifrostMath_static
+)
+
+set_target_properties(
+  BifrostWeb
+  PROPERTIES
+  CXX_STANDARD 17
+  CXX_EXTENSIONS OFF
+  CXX_STANDARD_REQUIRED ON
+)
+
+target_compile_definitions(
+ BifrostWeb
+ PRIVATE __EMSCRIPTEN__=1
+)
+
+if(EMSCRIPTEN)
+  #set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  set(CMAKE_CXX_FLAGS "--preload-file assets -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s USE_SDL=2 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR -s WASM=0 -s ASSERTIONS=2 --js-library ../../../lib/bifrost_webgl.js")
+
+  file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
+endif()

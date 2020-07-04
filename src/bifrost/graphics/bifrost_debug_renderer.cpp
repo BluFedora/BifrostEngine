@@ -39,6 +39,9 @@ namespace bifrost
     bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_1, offsetof(VertexDebugLine, direction));
     bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_1, offsetof(VertexDebugLine, thickness));
 
+    bfShaderProgram_link(m_Shaders[0]);
+    bfShaderProgram_link(m_Shaders[1]);
+
     bfShaderProgram_addUniformBuffer(m_Shaders[0], "u_Set0", k_GfxCameraSetIndex, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
     bfShaderProgram_addUniformBuffer(m_Shaders[1], "u_Set0", k_GfxCameraSetIndex, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
 

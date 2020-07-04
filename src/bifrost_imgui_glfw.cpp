@@ -1,7 +1,6 @@
 #include "bifrost_imgui_glfw.hpp"
 
 #include "bifrost/graphics/bifrost_gfx_api.h"
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 #include "bifrost/math/bifrost_mat4x4.h"
 #include "bifrost/platform/bifrost_platform.h"
 #include "bifrost/platform/bifrost_platform_event.h"
@@ -132,6 +131,7 @@ namespace bifrost::imgui
 
   static void ImGui_ImplGlfw_UpdateMonitors()
   {
+#ifndef __EMSCRIPTEN__
     ImGuiPlatformIO& platform_io    = ImGui::GetPlatformIO();
     int              monitors_count = 0;
     GLFWmonitor**    glfw_monitors  = glfwGetMonitors(&monitors_count);
@@ -144,14 +144,14 @@ namespace bifrost::imgui
       const GLFWvidmode* vid_mode = glfwGetVideoMode(glfw_monitors[n]);
       monitor.MainPos = monitor.WorkPos = ImVec2((float)x, (float)y);
       monitor.MainSize = monitor.WorkSize = ImVec2((float)vid_mode->width, (float)vid_mode->height);
-#if GLFW_HAS_PER_MONITOR_DPI
-      // Warning: the validity of monitor DPI information on Windows depends on the application DPI awareness settings, which generally needs to be set in the manifest or at runtime.
+
       float x_scale, y_scale;
       glfwGetMonitorContentScale(glfw_monitors[n], &x_scale, &y_scale);
       monitor.DpiScale = x_scale;
-#endif
+
       platform_io.Monitors.push_back(monitor);
     }
+#endif
   }
 
   static void   ImGui_PlatformCreateWindow(ImGuiViewport* vp);
@@ -176,6 +176,8 @@ namespace bifrost::imgui
     ImGui::CreateContext(nullptr);
 
     ImGuiIO& io = ImGui::GetIO();
+
+    // io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset;
 
     // Basic Setup
     io.BackendPlatformName               = "Bifrost GLFW Backend";
@@ -226,7 +228,9 @@ namespace bifrost::imgui
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     // Viewport
+#if !BIFROST_PLATFORM_ANDROID && !BIFROST_PLATFORM_IOS && !BIFROST_PLATFORM_EMSCRIPTEN
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+#endif
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -279,25 +283,33 @@ namespace bifrost::imgui
 
     // Renderer Setup: Shaders
     bfShaderProgramCreateParams create_shader;
-    create_shader.debug_name    = "ImGui Shader";
+    create_shader.debug_name    = "ImGui.Shader";
     create_shader.num_desc_sets = 1;
 
     s_RenderData.vertex_shader   = bfGfxDevice_newShaderModule(device, BIFROST_SHADER_TYPE_VERTEX);
     s_RenderData.fragment_shader = bfGfxDevice_newShaderModule(device, BIFROST_SHADER_TYPE_FRAGMENT);
     s_RenderData.program         = bfGfxDevice_newShaderProgram(device, &create_shader);
 
+#if BIFROST_PLATFORM_EMSCRIPTEN
+    bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/shaders/es3/imgui.vert.glsl");
+    bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/shaders/es3/imgui.frag.glsl");
+#else
     bfShaderModule_loadFile(s_RenderData.vertex_shader, "assets/imgui.vert.spv");
     bfShaderModule_loadFile(s_RenderData.fragment_shader, "assets/imgui.frag.spv");
+#endif
 
     bfShaderProgram_addModule(s_RenderData.program, s_RenderData.vertex_shader);
     bfShaderProgram_addModule(s_RenderData.program, s_RenderData.fragment_shader);
 
+    bfShaderProgram_link(s_RenderData.program);
+
     bfShaderProgram_addImageSampler(s_RenderData.program, "u_Texture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
-    bfShaderProgram_addUniformBuffer(s_RenderData.program, "u_Projection", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addUniformBuffer(s_RenderData.program, "u_Set0", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(s_RenderData.program);
 
     // Renderer Setup: Font Texture
+
     io.Fonts->AddFontFromFileTTF(
      "assets/fonts/Abel.ttf",
      18.0f,
@@ -479,7 +491,7 @@ namespace bifrost::imgui
 
       ImDrawVert* vertex_buffer_ptr  = static_cast<ImDrawVert*>(bfBuffer_map(frame.vertex_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
       ImDrawIdx*  index_buffer_ptr   = static_cast<ImDrawIdx*>(bfBuffer_map(frame.index_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
-      Mat4x4*     uniform_buffer_ptr = static_cast<Mat4x4*>(bfBuffer_map(frame.uniform_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
+      Mat4x4*     uniform_buffer_ptr = static_cast<Mat4x4*>(bfBuffer_map(frame.uniform_buffer, 0, sizeof(Mat4x4)));
 
       for (int i = 0; i < draw_data->CmdListsCount; ++i)
       {
@@ -495,7 +507,11 @@ namespace bifrost::imgui
       const ImVec2 tl = draw_data->DisplayPos;
       const ImVec2 br = {tl.x + draw_data->DisplaySize.x, tl.y + draw_data->DisplaySize.y};
 
+      #if __EMSCRIPTEN__
+      Mat4x4_ortho(uniform_buffer_ptr, tl.x, br.x, br.y, tl.y, 0.0f, 1.0f);
+      #else
       Mat4x4_orthoVk(uniform_buffer_ptr, tl.x, br.x, br.y, tl.y, 0.0f, 1.0f);
+      #endif
 
       bfBuffer_unMap(frame.vertex_buffer);
       bfBuffer_unMap(frame.index_buffer);

@@ -184,7 +184,7 @@ void bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle 
 
 void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info)
 {
-  const uint64_t hash_code = bifrost::vk::hash(0x0, renderpass_info);
+  const uint64_t hash_code = bifrost::gfx_hash::hash(0x0, renderpass_info);
 
   bfRenderpassHandle rp = self->parent->cache_renderpass.find(hash_code, *renderpass_info);
 
@@ -274,19 +274,11 @@ void bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32
   bfGfxCmdList_setScissorRect(self, x, y, width, height);
 }
 
+extern "C" void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandListHandle self, float x, float y, float width, float height);
+
 void bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height)
 {
-  // TODO: Clamp the paramters or emit an error.
-
-  const int32_t fb_width  = self->framebuffer->attachments[0]->image_width;
-  const int32_t fb_height = self->framebuffer->attachments[0]->image_height;
-
-  bfGfxCmdList_setRenderAreaAbs(
-   self,
-   int32_t(fb_width * x),
-   int32_t(fb_height * y),
-   uint32_t(fb_width * width),
-   uint32_t(fb_height * height));
+  bfGfxCmdList_setRenderAreaRelImpl(self->framebuffer->attachments[0], self, x, y, width, height);
 }
 
 void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
@@ -729,7 +721,6 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
           bfDescriptorSet_setUniformBuffers(
            desc_set,
            binding_info->binding,
-           binding_info->array_element_start,
            binding_info->offsets,
            binding_info->sizes,
            (bfBufferHandle*)binding_info->handles,
@@ -1206,6 +1197,8 @@ void bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffe
 
 extern void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window);
 
+#include <stdio.h>
+
 void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
   const VkFence       command_fence = self->fence;
@@ -1254,8 +1247,6 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
     assert(err == VK_SUCCESS && "GfxContext_submitFrame: failed to present graphics queue");
   }
 
-  // vkQueueWaitIdle(self->parent->queues[BIFROST_GFX_QUEUE_PRESENT]);
-
   window.current_cmd_list = nullptr;
   delete self;
 }
@@ -1265,50 +1256,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
 namespace bifrost::vk
 {
-  static void hash(std::uint64_t& self, const BifrostViewport& vp)
-  {
-    self = hash::addF32(self, vp.x);
-    self = hash::addF32(self, vp.y);
-    self = hash::addF32(self, vp.width);
-    self = hash::addF32(self, vp.height);
-    self = hash::addF32(self, vp.min_depth);
-    self = hash::addF32(self, vp.max_depth);
-  }
-
-  static void hash(std::uint64_t& self, const BifrostScissorRect& scissor)
-  {
-    self = hash::addS32(self, scissor.x);
-    self = hash::addS32(self, scissor.y);
-    self = hash::addU32(self, scissor.width);
-    self = hash::addU32(self, scissor.height);
-  }
-
-  static void hash(std::uint64_t& self, const BifrostPipelineDepthInfo& depth, const bfPipelineState& state)
-  {
-    if (!state.dynamic_depth_bias)
-    {
-      self = hash::addF32(self, depth.bias_constant_factor);
-      self = hash::addF32(self, depth.bias_clamp);
-      self = hash::addF32(self, depth.bias_slope_factor);
-    }
-
-    if (!state.dynamic_depth_bounds)
-    {
-      self = hash::addF32(self, depth.min_bound);
-      self = hash::addF32(self, depth.max_bound);
-    }
-  }
-
-  static void hash(std::uint64_t& self, const bfFramebufferBlending& fb_blending)
-  {
-    uint32_t blend_state_bits;
-
-    static_assert(sizeof(bfFramebufferBlending) == sizeof(blend_state_bits), "Required size.");
-
-    std::memcpy(&blend_state_bits, &fb_blending, sizeof(blend_state_bits));
-
-    self = hash::addU32(self, blend_state_bits);
-  }
+  using namespace bifrost::gfx_hash;
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {
@@ -1329,12 +1277,12 @@ namespace bifrost::vk
 
     if (!pipeline->state.dynamic_viewport)
     {
-      hash(self, pipeline->viewport);
+      gfx_hash::hash(self, pipeline->viewport);
     }
 
     if (!pipeline->state.dynamic_scissor)
     {
-      hash(self, pipeline->scissor_rect);
+      gfx_hash::hash(self, pipeline->scissor_rect);
     }
 
     if (!pipeline->state.dynamic_blend_constants)
@@ -1350,7 +1298,7 @@ namespace bifrost::vk
       self = hash::addF32(self, pipeline->line_width);
     }
 
-    hash(self, pipeline->depth, pipeline->state);
+    gfx_hash::hash(self, pipeline->depth, pipeline->state);
     self = hash::addF32(self, pipeline->min_sample_shading);
     self = hash::addU64(self, pipeline->sample_mask);
     self = hash::addU32(self, pipeline->subpass_index);
@@ -1358,7 +1306,7 @@ namespace bifrost::vk
 
     for (std::uint32_t i = 0; i < num_attachments; ++i)
     {
-      hash(self, pipeline->blending[i]);
+      gfx_hash::hash(self, pipeline->blending[i]);
     }
 
     self = hash::addPointer(self, pipeline->program);
@@ -1380,69 +1328,6 @@ namespace bifrost::vk
     {
       self = hash::addPointer(self, attachments[i]);
     }
-
-    return self;
-  }
-
-  std::uint64_t hash(std::uint64_t self, const bfRenderpassInfo* renderpass_info)
-  {
-    self = hash::addU32(self, renderpass_info->load_ops);
-    self = hash::addU32(self, renderpass_info->stencil_load_ops);
-    self = hash::addU32(self, renderpass_info->clear_ops);
-    self = hash::addU32(self, renderpass_info->stencil_clear_ops);
-    self = hash::addU32(self, renderpass_info->store_ops);
-    self = hash::addU32(self, renderpass_info->stencil_store_ops);
-    self = hash::addU32(self, renderpass_info->num_subpasses);
-
-    for (uint16_t i = 0; i < renderpass_info->num_subpasses; ++i)
-    {
-      self = hash(self, renderpass_info->subpasses + i);
-    }
-
-    self = hash::addU32(self, renderpass_info->num_attachments);
-
-    for (uint32_t i = 0; i < renderpass_info->num_attachments; ++i)
-    {
-      self = hash(self, renderpass_info->attachments + i);
-    }
-
-    return self;
-  }
-
-  std::uint64_t hash(std::uint64_t self, const bfAttachmentInfo* attachment_info)
-  {
-    self = hash::addPointer(self, attachment_info->texture);
-    self = hash::addU32(self, attachment_info->final_layout);
-    self = hash::addU32(self, attachment_info->may_alias);
-
-    return self;
-  }
-
-  std::uint64_t hash(std::uint64_t self, const bfSubpassCache* subpass_info)
-  {
-    self = hash::addU32(self, subpass_info->num_out_attachment_refs);
-
-    for (uint32_t i = 0; i < subpass_info->num_out_attachment_refs; ++i)
-    {
-      self = hash(self, subpass_info->out_attachment_refs + i);
-    }
-
-    self = hash::addU32(self, subpass_info->num_in_attachment_refs);
-
-    for (uint32_t i = 0; i < subpass_info->num_in_attachment_refs; ++i)
-    {
-      self = hash(self, subpass_info->in_attachment_refs + i);
-    }
-
-    self = hash(self, &subpass_info->depth_attachment);
-
-    return self;
-  }
-
-  std::uint64_t hash(std::uint64_t self, const bfAttachmentRefCache* attachment_ref_info)
-  {
-    self = hash::addU32(self, attachment_ref_info->attachment_index);
-    self = hash::addU32(self, attachment_ref_info->layout);
 
     return self;
   }

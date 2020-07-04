@@ -3,7 +3,8 @@
 
 #include "bifrost_platform_export.h"
 
-#include <stdint.h> /* size_t, uint32_t */
+#include <stdint.h> /* uint32_t */
+#include <stddef.h> /* size_t   */
 
 // https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
 
@@ -122,6 +123,9 @@ extern "C"
     void*           renderer_data;
     bfWindowEventFn event_fn;
     bfWindowFrameFn frame_fn;
+
+    // SDL
+    void* gl_context;
 
   } BifrostWindow;
 
