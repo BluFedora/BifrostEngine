@@ -145,7 +145,7 @@ void bfUUID_numberToString(const char number[16], char out_string[37])
           native_guid.Data4[6],
           native_guid.Data4[7]);
 #elif BIFROST_PLATFORM_LINUX || BIFROST_PLATFORM_MACOS
-  uuid_unparse(native_guid, self.as_string);
+  uuid_unparse(native_guid, out_string);
 #else
 #error "Unsupported platform for generating guids."
 #endif

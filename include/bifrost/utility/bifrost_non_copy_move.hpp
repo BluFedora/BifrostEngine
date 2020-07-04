@@ -11,7 +11,7 @@ namespace bifrost
     explicit bfNonCopyable(const T&)    = delete;
     bfNonCopyable& operator=(const T&) = delete;
 
-   protected:
+   //protected:
     bfNonCopyable()  = default;
     ~bfNonCopyable() = default;
   };
@@ -24,7 +24,7 @@ namespace bifrost
     explicit bfNonMoveable(T&&)    = delete;
     bfNonMoveable& operator=(T&&) = delete;
 
-   protected:
+   //protected:
     bfNonMoveable()  = default;
     ~bfNonMoveable() = default;
   };

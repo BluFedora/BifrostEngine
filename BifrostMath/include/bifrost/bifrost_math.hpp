@@ -85,9 +85,9 @@ namespace bifrost::math
 
   // Function Aliases from the C-API
 
-  constexpr const auto& alignf   = &bfMathAlignf;
-  constexpr const auto& invLerpf = &bfMathInvLerpf;
-  constexpr const auto& remapf   = &bfMathRemapf;
+  inline constexpr const auto& alignf   = &bfMathAlignf;
+  inline constexpr const auto& invLerpf = &bfMathInvLerpf;
+  inline constexpr const auto& remapf   = &bfMathRemapf;
 }  // namespace bifrost::math
 
 #endif /* BIFROST_MATH_HPP */

@@ -125,11 +125,13 @@ namespace bifrost
   {
     const auto str = String(value.as_string.data);
 
+#if 0
     if (str.length() < 36)
     {
       __debugbreak();
     }
-
+#endif
+    
     currentObject().add(key, str);
   }
 
