@@ -34,7 +34,7 @@
 #include "ecs/bifrost_entity.hpp"
 
 // Graphics
-#include "graphics/bifrost_gfx_api.h"
+#include "bifrost/graphics/bifrost_gfx_api.h"
 
 // Math
 #include "bifrost/bifrost_math.h"

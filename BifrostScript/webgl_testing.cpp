@@ -28,7 +28,7 @@ struct Application final
 
 int main(int argc, char* argv[])
 {
-  if (!bfPlatformInit({argc, argv, nullptr, BIFROST_PLATFORM_GFX_OPENGL, nullptr}))
+  if (!bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
     std::printf("Failed to initialize the platform.\n");
     return 1;

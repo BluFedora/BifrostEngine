@@ -638,7 +638,9 @@ bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct 
 
 #if !USE_WEBGL_STANDARD
     bfWindow_makeGLContextCurrent(bf_window);
-    assert(gladLoadGLLoader(bfPlatformGetProcAddress()));
+    const int glad_successful = gladLoadGLLoader(bfPlatformGetProcAddress());
+    assert(glad_successful != 0);
+    (void)glad_successful;
 #endif
   }
 
@@ -1380,6 +1382,11 @@ uint32_t bfTexture_height(bfTextureHandle self)
 uint32_t bfTexture_depth(bfTextureHandle self)
 {
   return self->image_depth;
+}
+
+uint32_t bfTexture_numMipLevels(bfTextureHandle self)
+{
+  return self->image_miplevels;
 }
 
 BifrostImageLayout bfTexture_layout(bfTextureHandle self)

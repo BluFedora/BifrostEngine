@@ -16,8 +16,8 @@
 #include "bifrost/data_structures/bifrost_array.hpp"       // Array<T>
 #include "bifrost/data_structures/bifrost_hash_table.hpp"  // HashTable<K, V>
 #include "bifrost/data_structures/bifrost_string.hpp"      // String
+#include "bifrost/graphics/bifrost_gfx_api.h"              // BifrostShaderType
 #include "bifrost/utility/bifrost_non_copy_move.hpp"       // bfNonCopyMoveable
-#include "bifrost_gfx_api.h"                               // BifrostShaderType
 
 namespace bifrost
 {

@@ -123,17 +123,9 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/editor/bifrost_editor_build.cpp"
 
   # Bifrost Graphics Module
-  "src/bifrost/graphics/bifrost_gfx_common.c"
   "src/bifrost/graphics/bifrost_standard_renderer.cpp"
   "src/bifrost/graphics/bifrost_glsl_compiler.cpp"
-  ## Vulkan Backend
-  "src/bifrost/graphics/vulkan/bifrost_vulkan_command_list.cpp"
-  "src/bifrost/graphics/vulkan/bifrost_vulkan_conversions.c"
-  "src/bifrost/graphics/vulkan/bifrost_vulkan_material_pool.cpp"
-  "src/bifrost/graphics/vulkan/bifrost_vulkan_mem_allocator.cpp"
-  "src/bifrost/graphics/vulkan/bifrost_vulkan_renderpass.cpp"
-  "src/bifrost/graphics/bifrost_gfx_vulkan.cpp"
-
+  
   # Bifrost Math Module
   "BifrostMath/src/*.cpp"
 
@@ -184,19 +176,15 @@ add_executable(
 
 # Bifrost Engine Submodules
 
-target_link_libraries(BifrostEngine PRIVATE BifrostScript_shared)
-target_link_libraries(BifrostEngine PRIVATE BifrostMath_shared)
-target_link_libraries(BifrostEngine PRIVATE BifrostMemory)
-target_link_libraries(BifrostEngine PRIVATE BifrostPlatform_shared)
-
-# Vulkan Library Handling
-
-find_package(Vulkan)
-
-if(${Vulkan_FOUND})
-  include_directories(BifrostEngine ${Vulkan_INCLUDE_DIR})
-  target_link_libraries(BifrostEngine PRIVATE ${Vulkan_LIBRARIES})
-endif()
+target_link_libraries(
+  BifrostEngine 
+  PRIVATE 
+    BifrostScript_shared
+    BifrostMath_shared
+    BifrostMemory
+    BifrostPlatform_shared
+    BifrostGraphics_shared
+)
 
 set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
 
@@ -325,10 +313,10 @@ add_custom_command(TARGET BifrostEngine POST_BUILD
 #         "${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"
 #         $<TARGET_FILE_DIR:BifrostEngine>)
 
-# add_subdirectory(include/bifrost/graphics/)
-add_subdirectory(BifrostPlatform)
-add_subdirectory(BifrostScript)
+add_subdirectory(BifrostExperiments)
+add_subdirectory(BifrostGraphics)
 add_subdirectory(BifrostMath)
 add_subdirectory(BifrostMemory)
-add_subdirectory(BifrostExperiments)
+add_subdirectory(BifrostPlatform)
+add_subdirectory(BifrostScript)
 add_subdirectory(EngineStandalone)

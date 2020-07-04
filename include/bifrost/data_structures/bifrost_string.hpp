@@ -207,6 +207,11 @@ namespace bifrost
       return !(*this == rhs);
     }
 
+    [[nodiscard]] char operator[](std::size_t index) const
+    {
+      return m_Handle ? data()[index] : '\0';
+    }
+
     operator StringRange() const
     {
       return {cstr(), cstr() + length()};
@@ -271,6 +276,11 @@ namespace bifrost
 
     // For STL Compat.
     [[nodiscard]] const char* c_str() const
+    {
+      return String_cstr(m_Handle);
+    }
+
+    [[nodiscard]] const char* data() const
     {
       return String_cstr(m_Handle);
     }

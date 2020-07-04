@@ -51,13 +51,13 @@ endif()
 include_directories("${PROJECT_BINARY_DIR}")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
+   set(BIFROST_PLATFORM_LIB_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win32)
+   set(BIFROST_PLATFORM_LIB_DIR       ${CMAKE_SOURCE_DIR}/lib/win32)
 endif()
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
+# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+# set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 set(BIFROST_PLATFORM_SOURCE_FILES "src/bifrost_platform.c")
 set(BIFROST_PLATFORM_LIB_FILES "")
@@ -72,7 +72,7 @@ if(BIFROST_PLATFORM_GLFW)
     if (WIN32)
       set(BIFROST_PLATFORM_LIB_FILES
         ${BIFROST_PLATFORM_LIB_FILES}
-        "${CMAKE_BINARY_DIR}/glfw3dll.lib"
+        "${BIFROST_PLATFORM_LIB_DIR}/glfw3dll.lib"
       )
     elseif(APPLE)
       set(BIFROST_PLATFORM_LIB_FILES
@@ -107,10 +107,27 @@ target_include_directories(
 )
 
 if(BIFROST_OPT_GRAPHICS_VULKAN)
+  find_package(Vulkan)
+
+  if(${Vulkan_FOUND})
+    target_include_directories(
+      BifrostPlatform_static 
+      PRIVATE "${Vulkan_INCLUDE_DIR}"
+     )
+  endif()
+
   target_compile_definitions(
     BifrostPlatform_static
     PRIVATE
       GLFW_INCLUDE_VULKAN
+      BIFROST_PLATFORM_USE_VULKAN=1
+  )
+else()
+  target_compile_definitions(
+    BifrostPlatform_static
+    PRIVATE
+      GLFW_INCLUDE_VULKAN
+      BIFROST_PLATFORM_USE_OPENGL=1
   )
 endif()
 
@@ -121,7 +138,7 @@ target_link_libraries(
 
 target_compile_definitions(BifrostPlatform_static PRIVATE BIFROST_PLATFORM_EXPORT_STATIC)
 
-set_target_properties(BifrostPlatform_static PROPERTIES OUTPUT_NAME BifrostPlatform_static)
+# set_target_properties(BifrostPlatform_static PROPERTIES OUTPUT_NAME BifrostPlatform_static)
 set_target_properties(BifrostPlatform_static PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(BifrostPlatform_static PROPERTIES PUBLIC_HEADER include/bifrost/platform/bifrost_platform.h)
 set_target_properties(BifrostPlatform_static PROPERTIES CXX_STANDARD 17)
@@ -150,10 +167,25 @@ if(NOT EMSCRIPTEN)
   target_compile_definitions(BifrostPlatform_shared PRIVATE BIFROST_PLATFORM_EXPORT)
 
 if(BIFROST_OPT_GRAPHICS_VULKAN)
+  if(${Vulkan_FOUND})
+    target_include_directories(
+      BifrostPlatform_shared 
+      PRIVATE "${Vulkan_INCLUDE_DIR}"
+     )
+  endif()
+
   target_compile_definitions(
     BifrostPlatform_shared
     PRIVATE
       GLFW_INCLUDE_VULKAN
+    PUBLIC
+      BIFROST_PLATFORM_USE_VULKAN=1
+  )
+else()
+  target_compile_definitions(
+    BifrostPlatform_shared
+    PUBLIC
+      BIFROST_PLATFORM_USE_OPENGL=1
   )
 endif()
 

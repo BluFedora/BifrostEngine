@@ -98,7 +98,6 @@ extern "C"
     int                 argc;
     char**              argv;
     bfPlatformAllocator allocator;
-    bfPlatformGfxAPI    gfx_api;
     void*               user_data;
 
   } bfPlatformInitParams;

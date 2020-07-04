@@ -147,8 +147,6 @@ project(BifrostWeb)
 add_executable(
   BifrostWeb
   "webgl_testing.cpp"
-  "${CMAKE_SOURCE_DIR}/src/bifrost/graphics/bifrost_gfx_common.c"
-  "bifrost_graphics_opengl.cpp"
 
   "${CMAKE_SOURCE_DIR}/src/bifrost/utility/bifrost_hash.cpp"
 
@@ -164,8 +162,6 @@ target_include_directories(
   PRIVATE 
     ${CMAKE_SYSTEM_INCLUDE_PATH}
 )
-
-
 
 set_target_properties(
   BifrostWeb
@@ -189,6 +185,7 @@ if (EMSCRIPTEN)
       BifrostPlatform_static
       BifrostMemory
       BifrostMath_static
+      BifrostGraphics_static
   )
 else()
 target_link_libraries(
@@ -198,6 +195,7 @@ target_link_libraries(
     BifrostPlatform_shared
     BifrostMemory
     BifrostMath_shared
+    BifrostGraphics_shared
 )
 endif()
 

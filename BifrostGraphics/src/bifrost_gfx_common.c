@@ -291,6 +291,53 @@ static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_
   }
 }
 
+static bfPipelineBarrier bfPipelineBarrier_makeBase(bfPipelineBarrierType type, BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access)
+{
+  bfPipelineBarrier result;
+
+  memset(&result, 0x0, sizeof(bfPipelineBarrier));
+
+  result.type              = type;
+  result.access[0]         = src_access;
+  result.access[1]         = dst_access;
+  result.queue_transfer[0] = BIFROST_GFX_QUEUE_IGNORE;
+  result.queue_transfer[1] = BIFROST_GFX_QUEUE_IGNORE;
+
+  return result;
+}
+
+bfPipelineBarrier bfPipelineBarrier_memory(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access)
+{
+  return bfPipelineBarrier_makeBase(BIFROST_PIPELINE_BARRIER_MEMORY, src_access, dst_access);
+}
+
+bfPipelineBarrier bfPipelineBarrier_buffer(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size)
+{
+  bfPipelineBarrier result = bfPipelineBarrier_makeBase(BIFROST_PIPELINE_BARRIER_BUFFER, src_access, dst_access);
+
+  result.info.buffer.handle = buffer;
+  result.info.buffer.offset = offset;
+  result.info.buffer.size   = size;
+
+  // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
+  return result;
+}
+
+bfPipelineBarrier bfPipelineBarrier_image(BifrostAccessFlagsBits src_access, BifrostAccessFlagsBits dst_access, bfTextureHandle image, BifrostImageLayout new_layout)
+{
+  bfPipelineBarrier result = bfPipelineBarrier_makeBase(BIFROST_PIPELINE_BARRIER_IMAGE, src_access, dst_access);
+
+  result.info.image.handle               = image;
+  result.info.image.layout_transition[0] = bfTexture_layout(image);
+  result.info.image.layout_transition[1] = new_layout;
+  result.info.image.base_mip_level       = 0;
+  result.info.image.level_count          = bfTexture_numMipLevels(image);
+  result.info.image.base_array_layer     = 0;
+  result.info.image.layer_count          = bfTexture_depth(image);
+
+  return result;
+}
+
 void bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self)
 {
   bfGfxCmdList_setDrawMode(self, BIFROST_DRAW_MODE_TRIANGLE_LIST);

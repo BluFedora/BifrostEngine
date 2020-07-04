@@ -325,8 +325,13 @@ namespace bifrost
   {
     const bfShaderModuleHandle module = bfGfxDevice_newShaderModule(device, type);
 
-    const String&        source     = load(filename);
+    const String& source = load(filename);
+
+#if BIFROST_PLATFORM_USE_VULKAN
     Array<std::uint32_t> spirv_code = toSPIRV(source, type);
+#else
+    const String& spirv_code = source;
+#endif
 
     if (!bfShaderModule_loadData(module, (const char*)spirv_code.data(), spirv_code.size() * sizeof(spirv_code[0])))
     {

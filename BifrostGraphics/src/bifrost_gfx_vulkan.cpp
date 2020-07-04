@@ -2104,6 +2104,11 @@ uint32_t bfTexture_depth(bfTextureHandle self)
   return self->image_depth;
 }
 
+uint32_t bfTexture_numMipLevels(bfTextureHandle self)
+{
+  return self->image_miplevels;
+}
+
 BifrostImageLayout bfTexture_layout(bfTextureHandle self)
 {
   return self->tex_layout;

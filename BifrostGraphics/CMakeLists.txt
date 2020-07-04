@@ -8,8 +8,6 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostGraphics VERSION 0.0.2 DESCRIPTION "The graphics abstraction layer sub project.")
-
 option(BIFROST_OPT_GRAPHICS_VULKAN "Vulkan will be used as the graphics Backend" ON)
 option(BIFROST_OPT_GRAPHICS_OPENGL "OpenGL will be used as the graphics Backend" OFF)
 
@@ -45,3 +43,144 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
 endif()
 
+project(BifrostGraphics VERSION 1.0.0 DESCRIPTION "The graphics abstraction layer sub project.")
+
+set(
+  BIFROST_GRAPHICS_DEFINES
+  ""
+)
+
+set(
+  BIFROST_GRAPHICS_INCLUDE_DIRS
+  "${PROJECT_SOURCE_DIR}/include"
+)
+
+set(
+  BIFROST_GRAPHICS_SOURCES
+  "src/bifrost_gfx_common.c"
+  "${CMAKE_SOURCE_DIR}/src/bifrost/utility/bifrost_hash.cpp"
+)
+
+set(
+  BIFROST_GRAPHICS_LIBRARIES
+  ""
+)
+
+if (BIFROST_OPT_GRAPHICS_VULKAN)
+  set(
+    BIFROST_GRAPHICS_SOURCES
+    "${BIFROST_GRAPHICS_SOURCES}"
+    "src/vulkan/bifrost_vulkan_command_list.cpp"
+    "src/vulkan/bifrost_vulkan_conversions.c"
+    "src/vulkan/bifrost_vulkan_material_pool.cpp"
+    "src/vulkan/bifrost_vulkan_mem_allocator.cpp"
+    "src/vulkan/bifrost_vulkan_renderpass.cpp"
+    "src/bifrost_gfx_vulkan.cpp"
+
+    # TODO(SR): Dependencies That Should Not Be Here!!
+    "${CMAKE_SOURCE_DIR}/src/bifrost/data_structures/bifrost_array_t.c"
+    "${CMAKE_SOURCE_DIR}/src/bifrost/debug/bifrost_dbg_logger.c"
+  )
+
+  find_package(Vulkan)
+
+  if(${Vulkan_FOUND})
+    set(
+      BIFROST_GRAPHICS_INCLUDE_DIRS 
+      "${BIFROST_GRAPHICS_INCLUDE_DIRS}"
+      "${Vulkan_INCLUDE_DIR}"
+     )
+
+     set(
+       BIFROST_GRAPHICS_LIBRARIES
+       "${BIFROST_GRAPHICS_LIBRARIES}"
+       "${Vulkan_LIBRARIES}"
+     )
+  else()
+    message(SEND_ERROR "Vulkan Not Found But is Required For The Vulkan Graphics Backend.")
+  endif()
+
+  if (WIN32)
+    set(
+      BIFROST_GRAPHICS_DEFINES
+      "${BIFROST_GRAPHICS_DEFINES}"
+      "VK_USE_PLATFORM_WIN32_KHR"
+    )
+  elseif(APPLE)
+    set(
+      BIFROST_GRAPHICS_DEFINES
+      "${BIFROST_GRAPHICS_DEFINES}"
+      "VK_USE_PLATFORM_MACOS_MVK"
+    )
+  else()
+    message(SEND_ERROR "This is an unsupported Vulkan Platform.")
+  endif()
+elseif (BIFROST_OPT_GRAPHICS_OPENGL)
+  set(
+    BIFROST_GRAPHICS_SOURCES
+    "${BIFROST_GRAPHICS_SOURCES}"
+    "src/bifrost_gfx_opengl.cpp"
+  )
+
+  set(
+    BIFROST_GRAPHICS_LIBRARIES
+    "${BIFROST_GRAPHICS_LIBRARIES}"
+    BifrostMemory
+  )
+else()
+  message(SEND_ERROR "Either 'BIFROST_OPT_GRAPHICS_VULKAN' or 'BIFROST_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
+endif()
+
+add_library(
+  BifrostGraphics_static STATIC
+  "${BIFROST_GRAPHICS_SOURCES}"
+)
+
+target_compile_definitions(
+  BifrostGraphics_static
+  PRIVATE
+    "${BIFROST_GRAPHICS_DEFINES}"
+    BIFROST_VM_EXPORT_STATIC
+    BIFROST_GRAPHICS_NO_LOG
+)
+
+target_include_directories(
+  BifrostGraphics_static 
+  PUBLIC 
+    "${BIFROST_GRAPHICS_INCLUDE_DIRS}"
+)
+
+target_link_libraries(
+  BifrostGraphics_static
+  PUBLIC
+    BifrostPlatform_static
+  PRIVATE
+    "${BIFROST_GRAPHICS_LIBRARIES}"
+)
+
+add_library(
+  BifrostGraphics_shared SHARED
+  "${BIFROST_GRAPHICS_SOURCES}"
+)
+
+target_compile_definitions(
+  BifrostGraphics_shared
+  PRIVATE
+    "${BIFROST_GRAPHICS_DEFINES}"
+    BIFROST_GFX_EXPORT
+    BIFROST_GRAPHICS_NO_LOG
+)
+
+target_include_directories(
+  BifrostGraphics_shared 
+  PUBLIC 
+    "${BIFROST_GRAPHICS_INCLUDE_DIRS}"
+)
+
+target_link_libraries(
+  BifrostGraphics_shared
+  PUBLIC
+    BifrostPlatform_shared
+  PRIVATE
+    "${BIFROST_GRAPHICS_LIBRARIES}"
+)

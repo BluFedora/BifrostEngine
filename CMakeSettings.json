@@ -26,7 +26,7 @@
       "variables": []
     },
     {
-      "name": "x64 GLFW (Debug)",
+      "name": "x64 GLFW-Vk (Debug)",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -45,11 +45,21 @@
           "name": "BIFROST_PLATFORM_SDL",
           "value": "False",
           "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_OPENGL",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_VULKAN",
+          "value": "True",
+          "type": "BOOL"
         }
       ]
     },
     {
-      "name": "x64 GLFW (Release)",
+      "name": "x64 GLFW-Vk (Release)",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -181,6 +191,62 @@
         },
         {
           "name": "BIFROST_PLATFORM_GLFW",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64 GLFW-GL (Debug)",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "C:/Users/rshar/Documents/BifrostEngine/build/cmake",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_CXX_FLAGS:STRING=\"/DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /W3 /GR /EHsc /Od\"",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "BIFROST_PLATFORM_GLFW",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_PLATFORM_SDL",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_OPENGL",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_VULKAN",
+          "value": "False",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64 GLFW-GL (Release)",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_CXX_FLAGS:STRING=\"/DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /W3 /GR /EHsc /O2\"",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "BIFROST_OPT_GRAPHICS_VULKAN",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BIFROST_OPT_GRAPHICS_OPENGL",
           "value": "True",
           "type": "BOOL"
         }

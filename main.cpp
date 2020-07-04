@@ -373,7 +373,7 @@ int main(int argc, char* argv[])
 
   namespace bfmeta = meta;
 
-  if (!bfPlatformInit({argc, argv, nullptr, BIFROST_PLATFORM_GFX_VUlKAN, nullptr}))
+  if (!bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
     MainQuit(Error::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
   }

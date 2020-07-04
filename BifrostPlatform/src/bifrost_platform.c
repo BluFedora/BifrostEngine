@@ -12,7 +12,13 @@ bfPlatformInitParams g_BifrostPlatform;
 
 bfPlatformGfxAPI bfPlatformGetGfxAPI(void)
 {
-  return g_BifrostPlatform.gfx_api;
+#if defined(BIFROST_PLATFORM_USE_VULKAN)
+  return BIFROST_PLATFORM_GFX_VUlKAN;
+#elif defined(BIFROST_PLATFORM_USE_OPENGL)
+  return BIFROST_PLATFORM_GFX_OPENGL;
+#else
+#error "One of these should be defined"
+#endif
 }
 
 void* bfPlatformDefaultAllocator(void* ptr, size_t old_size, size_t new_size, void* user_data)

@@ -22,8 +22,8 @@
 #include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
 #include "bifrost/data_structures/bifrost_array.hpp"          /* Array<T>                */
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
+#include "bifrost/graphics/bifrost_gfx_api.h"                 /* Bifrost C Gfx API       */
 #include "bifrost/platform/bifrost_platform_fwd.h"            /* BifrostWindow           */
-#include "bifrost_gfx_api.h"                                  /* Bifrost C Gfx API       */
 #include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
 class Engine;

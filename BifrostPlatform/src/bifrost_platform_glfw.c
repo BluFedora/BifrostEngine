@@ -401,24 +401,9 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
 
   if (window)
   {
-    if (g_BifrostPlatform.gfx_api == BIFROST_PLATFORM_GFX_VUlKAN)
-    {
-      glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    }
-    else
-    {
-      /*
-      MAKE CURRENT
-      if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-      {
-        error_code = ErrorCodes::GLAD_FAILED_TO_INIT;
-        goto shutdown_glfw;  // NOLINT(hicpp-avoid-goto)
-      }
-      */
+    const int is_opengl = bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL;
 
-      glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-    }
-
+    glfwWindowHint(GLFW_CLIENT_API, is_opengl ? GLFW_OPENGL_API : GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, flags & BIFROST_WINDOW_FLAG_IS_RESIZABLE ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_VISIBLE, flags & BIFROST_WINDOW_FLAG_IS_VISIBLE ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_DECORATED, flags & BIFROST_WINDOW_FLAG_IS_DECORATED ? GLFW_TRUE : GLFW_FALSE);
@@ -427,7 +412,7 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
     glfwWindowHint(GLFW_FOCUSED, flags & BIFROST_WINDOW_FLAG_IS_FOCUSED ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, flags & BIFROST_WINDOW_FLAG_IS_FOCUSED_ON_SHOW ? GLFW_TRUE : GLFW_FALSE);
 
-    GLFWwindow* const glfw_handle = glfwCreateWindow(width, height, title, NULL, s_MainWindow ? s_MainWindow ->handle : NULL);
+    GLFWwindow* const glfw_handle = glfwCreateWindow(width, height, title, NULL, is_opengl && s_MainWindow ? s_MainWindow->handle : NULL);
 
     window->handle        = glfw_handle;
     window->event_fn      = NULL;
