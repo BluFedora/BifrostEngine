@@ -9,6 +9,7 @@
 #include <OpenGLES/ES3/gl.h>
 #elif BIFROST_PLATFORM_MACOS
 #include <OpenGL/gl3.h>
+#include <glad/glad.h>
 #elif BIFROST_PLATFORM_EMSCRIPTEN
 #define GL_GLEXT_PROTOTYPES
 #include <GLES2/gl2.h>

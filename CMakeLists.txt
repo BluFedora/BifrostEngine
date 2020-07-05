@@ -126,7 +126,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Graphics Module
   "src/bifrost/graphics/bifrost_standard_renderer.cpp"
   "src/bifrost/graphics/bifrost_glsl_compiler.cpp"
-  
+
   # Bifrost Math Module
   "BifrostMath/src/*.cpp"
 
@@ -178,8 +178,8 @@ add_executable(
 # Bifrost Engine Submodules
 
 target_link_libraries(
-  BifrostEngine 
-  PRIVATE 
+  BifrostEngine
+  PRIVATE
     BifrostScript_shared
     BifrostMath_shared
     BifrostMemory
