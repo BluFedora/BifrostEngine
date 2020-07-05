@@ -154,7 +154,7 @@ namespace bifrost
 
       if (mem_block)
       {
-        return new(mem_block) T(std::forward<decltype(args)>(args)...);
+        return new (mem_block) T(std::forward<Args>(args)...);
       }
 
       return nullptr;
@@ -393,7 +393,7 @@ namespace bifrost
           ++elements;
         }
 
-        deallocateAligned(ptr);
+        deallocateAligned(sizeof(ArrayHeader), ptr);
       }
     }
 

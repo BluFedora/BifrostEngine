@@ -2477,15 +2477,13 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 template<typename T, typename... Args>
 static T* allocate(Args&&... args)
 {
-  //return s_GraphicsMemory.allocateT<T>(std::forward<Args>(args)...);
-  return new T(std::forward<Args>(args)...);
+  return s_GraphicsMemory.allocateT<T>(std::forward<Args>(args)...);
 }
 
 template<typename T>
 static void deallocate(T* ptr)
 {
-  //s_GraphicsMemory.deallocateT(ptr);
-  delete ptr;
+  s_GraphicsMemory.deallocateT(ptr);
 }
 
 static GLenum bfGLBufferUsageTarget(const bfBufferUsageBits usage)

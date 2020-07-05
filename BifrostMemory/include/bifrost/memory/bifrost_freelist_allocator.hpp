@@ -7,6 +7,9 @@
 *   overhead. This has the largest header size of any allocator but can be
 *   used as a direct replacement for "malloc/new" and "free/delete".
 *
+*   For allocating a first fit policy is used.
+*   For deallocating an address-ordered pilicy is used.
+*
 * @version 0.0.1
 * @date    2019-12-26
 *
@@ -39,21 +42,20 @@ namespace bifrost
    private:
     struct AllocationHeader
     {
-      std::size_t size;
-      std::size_t PADD;
+      std::size_t size; //!< size does not include the size of the header itself, rather it is the size of the writable region of memory.
     };
 
-    struct FreeListNode
+    struct FreeListNode final : public AllocationHeader
     {
-      FreeListNode* next;
-      std::size_t   size;
+      //
+      // When size is used here it includes the memory taken up by FreeListNode::next.
+      //
 
-     public:
+      FreeListNode* next; //!< Next free block.
+
       unsigned char* begin() const { return reinterpret_cast<unsigned char*>(const_cast<FreeListNode*>(this)); }
-      unsigned char* end() const { return begin() + size + header_size; }
+      unsigned char* end() const { return begin() + header_size + size; }
     };
-
-    static_assert(sizeof(FreeListNode) == sizeof(AllocationHeader), "FreeListNode needs to the same size as AllocationHeader");
 
    public:
     static constexpr std::size_t header_size = sizeof(AllocationHeader);

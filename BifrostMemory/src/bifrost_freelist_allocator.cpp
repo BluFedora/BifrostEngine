@@ -7,10 +7,13 @@
 *   overhead. This has the largest header size of any allocator but can be
 *   used as a direct replacement for "malloc/new" and "free/delete".
 *
+*   For allocating a first fit policy is used.
+*   For deallocating an address-ordered pilicy is used.
+*
 * @version 0.0.1
 * @date    2019-12-26
 *
-* @copyright Copyright (c) 2019
+* @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
@@ -26,52 +29,53 @@ namespace bifrost
     m_FreeList(cast(memory_block, FreeListNode*)),
     m_UsedBytes(0)
   {
-    this->m_FreeList->next = nullptr;
-    this->m_FreeList->size = memory_block_size - FreeListAllocator::header_size;
+    m_FreeList->size = memory_block_size - header_size;
+    m_FreeList->next = nullptr;
   }
 
   void* FreeListAllocator::allocate(std::size_t size)
   {
-    FreeListNode* curr_node = this->m_FreeList;
+    FreeListNode* curr_node = m_FreeList;
     FreeListNode* prev_node = nullptr;
 
     while (curr_node)
     {
-      const std::size_t potential_space = (size + header_size);
-
-      if (curr_node->size <= potential_space)
+      // Block is not big enough so skip over it.
+      if (curr_node->size < size)
       {
         prev_node = curr_node;
         curr_node = curr_node->next;
         continue;
       }
 
-      void* data = cast(curr_node, void*);
+      const std::size_t block_size        = curr_node->size;
+      const std::size_t space_after_alloc = block_size - size;
+      FreeListNode*     block_next        = curr_node->next;
 
-      const std::size_t free_space = curr_node->size;
+      if (space_after_alloc > sizeof(FreeListNode))
+      {
+        const std::size_t   offset_from_block = header_size + size;
+        FreeListNode* const new_node          = cast(reinterpret_cast<char*>(curr_node) + offset_from_block, FreeListNode*);
 
-      const std::size_t moved_fwd      = (curr_node->size - free_space);
-      const std::size_t new_block_size = header_size + size;
+        new_node->size = block_size - offset_from_block - header_size;
+        new_node->next = block_next;
 
-      FreeListNode* new_node = cast(reinterpret_cast<char*>(data) + new_block_size, FreeListNode*);
-      new_node->size         = curr_node->size - new_block_size - moved_fwd;
-      new_node->next         = curr_node->next;
+        curr_node->size = size;
+        block_next      = new_node;
+      }
 
       if (prev_node)
       {
-        prev_node->next = new_node;
+        prev_node->next = block_next;
       }
       else
       {
-        this->m_FreeList = new_node;
+        m_FreeList = block_next;
       }
 
-      AllocationHeader* header = reinterpret_cast<AllocationHeader*>(data);
+      m_UsedBytes += curr_node->size;
 
-      header->size = size;
-
-      m_UsedBytes += size + moved_fwd;
-      return reinterpret_cast<char*>(data) + header_size;
+      return cast(curr_node, char*) + header_size;
     }
 
     return nullptr;
@@ -82,69 +86,73 @@ namespace bifrost
     checkPointer(ptr);
 
     AllocationHeader* const header = reinterpret_cast<AllocationHeader*>(reinterpret_cast<char*>(ptr) - header_size);
-    FreeListNode* const     node   = reinterpret_cast<FreeListNode*>(reinterpret_cast<char*>(header));
-
-    const std::size_t block_size = header->size;
+    FreeListNode* const     node   = static_cast<FreeListNode*>(header);
 
 #if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
-    //std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, block_size);
+    std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, header->size);
 #endif
 
-    node->size = block_size;
-
-    m_UsedBytes -= node->size;
-
-    FreeListNode* current    = m_FreeList;
-    FreeListNode* previous   = nullptr;
-    void* const   node_begin = node->begin();
-    void* const   node_end   = node->end();
+    FreeListNode*     current    = m_FreeList;
+    FreeListNode*     previous   = nullptr;
+    const void* const node_begin = node->begin();
+    const void* const node_end   = node->end();
 
     while (current)
     {
-      if (current->begin() >= node_end)
+      //
+      // if current is past the end of this current block.
+      //                      or
+      // The last block be passed by vacn be merged with us.
+      //
+
+      if (current->begin() >= node_end || (previous && previous->end() == node_begin))
       {
         break;
-      }
-
-      if (previous)
-      {
-        if (previous->end() == node_begin)
-        {
-          break;
-        }
       }
 
       previous = current;
       current  = current->next;
     }
 
+    //
+    // Merge Node => Current
+    //
     if (current && current->begin() == node_end)
     {
       if (previous)
+      {
         previous->next = node;
+      }
       else
+      {
         m_FreeList = node;
+      }
 
       node->size += (current->size + header_size);
       node->next = current->next;
     }
     else if (previous)
     {
+      //
+      // Merge Prev => Node
+      //
       if (previous->end() == node_begin)
       {
         previous->size += (node->size + header_size);
       }
-      else
+      else  // Add To Freelist Normally
       {
         node->next     = previous->next;
         previous->next = node;
       }
     }
-    else
+    else  // Add To Freelist Normally
     {
       node->next = m_FreeList;
       m_FreeList = node;
     }
+
+    m_UsedBytes -= node->size;
   }
 }  // namespace bifrost
 
