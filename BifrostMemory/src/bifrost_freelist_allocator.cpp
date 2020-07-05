@@ -92,6 +92,8 @@ namespace bifrost
     std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, header->size);
 #endif
 
+    m_UsedBytes -= node->size;
+
     FreeListNode*     current    = m_FreeList;
     FreeListNode*     previous   = nullptr;
     const void* const node_begin = node->begin();
@@ -151,8 +153,6 @@ namespace bifrost
       node->next = m_FreeList;
       m_FreeList = node;
     }
-
-    m_UsedBytes -= node->size;
   }
 }  // namespace bifrost
 
