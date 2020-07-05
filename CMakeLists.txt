@@ -40,7 +40,7 @@ else()
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
     message(STATUS "We are building a RELEASE 64bit build...")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-   message(STATUS "We are building a RELEASE build...")
+   message(STATUS "We are building a RELEASE 32bit build...")
   endif()
 endif()
 
@@ -120,6 +120,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "src/bifrost/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
+  "include/bifrost/editor/*.hpp"
   "src/bifrost/editor/bifrost_editor_build.cpp"
 
   # Bifrost Graphics Module
@@ -303,10 +304,12 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
   # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.dll" "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 endif()
 
+if (false)
 add_custom_command(TARGET BifrostEngine POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"
         $<TARGET_FILE_DIR:BifrostEngine>)
+endif()
 
 # add_custom_command(TARGET BifrostEngine POST_BUILD
 #   COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -319,4 +322,3 @@ add_subdirectory(BifrostMath)
 add_subdirectory(BifrostMemory)
 add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
-add_subdirectory(EngineStandalone)
