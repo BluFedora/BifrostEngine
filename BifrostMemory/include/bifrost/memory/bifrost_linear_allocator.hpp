@@ -17,7 +17,8 @@
 #define BIFROST_LINEAR_ALLOCATOR_HPP
 
 #include "bifrost_imemory_manager.hpp" /* MemoryManager */
-#include <exception>                   /* exception     */
+
+#include <exception> /* exception */
 
 namespace bifrost
 {
@@ -26,7 +27,7 @@ namespace bifrost
   class linear_allocator_free : public std::exception
   {
    public:
-    virtual const char* what() const noexcept(true);
+    const char* what() const noexcept(true) override;
   };
 
   class LinearAllocator final : public MemoryManager
@@ -52,7 +53,7 @@ namespace bifrost
     char* currentBlock() const;
   };
 
-  class LinearAllocatorScope
+  class LinearAllocatorScope final
   {
    private:
     LinearAllocator& m_Allocator;

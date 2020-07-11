@@ -22,7 +22,7 @@
             },
             "m_Transform" : {
                 "Position" : {
-                    "y" : 0,
+                    "y" : -0.4,
                     "w" : 0,
                     "x" : 0,
                     "z" : 6.45
@@ -54,7 +54,7 @@
             ]
         },
         {
-            "m_UUID" : "00000000-0000-0000-0000-000000000000",
+            "m_UUID" : "F9984A00-5CEB-4C14-8072-915D3507AE1B",
             "m_Children" : [
 
             ],
@@ -342,7 +342,7 @@
                     "m_Model" : {
                         "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
                     },
-                    "__Active__" : true
+                    "__Active__" : false
                 }
             },
             "m_Transform" : {
@@ -374,6 +374,51 @@
             "m_Flags" : 24,
             "m_Behaviors" : [
 
+            ]
+        },
+        {
+            "m_UUID" : "400F970C-4F1F-49CF-81BB-717816CFA11A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Camera",
+            "m_Components" : {
+
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+                {
+                    "m_Player" : {
+                        "uuid" : "F9984A00-5CEB-4C14-8072-915D3507AE1B"
+                    },
+                    "__BehaviorClass__" : "CameraController"
+                }
             ]
         }
     ]

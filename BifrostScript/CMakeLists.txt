@@ -66,14 +66,15 @@ include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/include)
 add_library(
   BifrostScript STATIC
   ${BIFROST_SCRIPT_SOURCE_FILES}
-  "../src/bifrost/data_structures/bifrost_array_t.c"
-  "../src/bifrost/data_structures/bifrost_dynamic_string.c"
-  "../src/bifrost/data_structures/bifrost_hash_map.c"
+  "../BifrostRuntime/src/data_structures/bifrost_array_t.c"
+  "../BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
+  "../BifrostRuntime/src/data_structures/bifrost_hash_map.c"
 )
 
 target_include_directories(
   BifrostScript 
   PUBLIC ${PROJECT_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
 )
 
 set_property(
@@ -98,14 +99,16 @@ if(NOT EMSCRIPTEN)
   add_library(
     BifrostScript_shared SHARED
     ${BIFROST_SCRIPT_SOURCE_FILES}
-    "../src/bifrost/data_structures/bifrost_array_t.c"
-    "../src/bifrost/data_structures/bifrost_dynamic_string.c"
-    "../src/bifrost/data_structures/bifrost_hash_map.c"
+    "../BifrostRuntime/src/data_structures/bifrost_array_t.c"
+    "../BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
+    "../BifrostRuntime/src/data_structures/bifrost_hash_map.c"
   )
   
   target_include_directories(BifrostScript_shared
       INTERFACE
-      ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include
+      PRIVATE
+        ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
   )
   
   target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
@@ -148,9 +151,8 @@ add_executable(
   BifrostWeb
   "webgl_testing.cpp"
 
-  "${CMAKE_SOURCE_DIR}/src/bifrost/utility/bifrost_hash.cpp"
-
-  "${CMAKE_SOURCE_DIR}/src/bifrost_imgui_glfw.cpp"
+  "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/utility/bifrost_hash.cpp"
+  "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/bifrost_imgui_glfw.cpp"
 
   "${CMAKE_SOURCE_DIR}/lib/include/imgui/imgui.cpp"
   "${CMAKE_SOURCE_DIR}/lib/include/imgui/imgui_widgets.cpp"

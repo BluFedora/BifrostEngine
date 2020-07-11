@@ -35,8 +35,9 @@ target_sources(
 )
 
 set_target_properties(
-  BifrostMemory PROPERTIES
-  PUBLIC_HEADER include/bifrost/memory/bifrost_imemory_manager.hpp
+  BifrostMemory 
+  PROPERTIES
+    PUBLIC_HEADER include/bifrost/memory/bifrost_imemory_manager.hpp
 )
 
 target_compile_features(

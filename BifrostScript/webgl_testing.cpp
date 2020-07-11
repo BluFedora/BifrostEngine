@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
 
     if (bfGfxContext_beginFrame(app->gfx_ctx, app->main_window_surface))
     {
-#if 1
       const bfGfxCommandListHandle main_command_list = bfGfxContext_requestCommandList(app->gfx_ctx, app->main_window_surface, 0);
 
       if (main_command_list && bfGfxCmdList_begin(main_command_list))
@@ -102,7 +101,7 @@ int main(int argc, char* argv[])
         bfGfxCmdList_end(main_command_list);
         bfGfxCmdList_submit(main_command_list);
       }
-#endif
+
       bfGfxContext_endFrame(app->gfx_ctx);
     }
   };

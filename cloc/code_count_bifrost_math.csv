@@ -1,9 +1,18 @@
-language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (14.0 files/s, 3518.0 lines/s)"
-C,..\BifrostMath\src\bifrost_mat4x4.c,109,76,458,
-C,..\BifrostMath\src\bifrost_transform.c,68,6,369,
-C,..\BifrostMath\src\bifrost_camera.c,38,5,181,
-C,..\BifrostMath\src\bifrost_vec3.c,34,14,165,
-C,..\BifrostMath\src\bifrost_vec2.c,17,0,72,
-,,,,,
-C++,..\BifrostMath\src\bifrost_rect2.cpp,4,13,26,
-,,,,1271,
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (34.0 files/s, 6926.0 lines/s)"
+C,..\BifrostMath\src\bifrost_mat4x4.c,116,68,487
+C,..\BifrostMath\src\bifrost_transform.c,94,19,453
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_rect2.hpp,79,35,406
+C,..\BifrostMath\src\bifrost_camera.c,55,4,253
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_vec3.h,23,24,212
+C,..\BifrostMath\src\bifrost_vec3.c,34,14,165
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_transform.h,21,20,116
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_camera.h,24,22,90
+C,..\BifrostMath\src\bifrost_vec2.c,17,0,72
+C/C++ Header,..\BifrostMath\include\bifrost\bifrost_math.h,15,0,59
+CMake,..\BifrostMath\CMakeLists.txt,19,33,59
+C/C++ Header,..\BifrostMath\include\bifrost\bifrost_math.hpp,14,20,59
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_mat4x4.h,13,13,52
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_math_export.h,4,16,35
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_vec2.h,7,1,33
+C/C++ Header,..\BifrostMath\include\bifrost\math\bifrost_math.h,7,9,29
+C++,..\BifrostMath\src\bifrost_rect2.cpp,4,13,26

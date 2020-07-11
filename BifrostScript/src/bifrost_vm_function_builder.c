@@ -193,6 +193,7 @@ void bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstruction
 
 void bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn_t* out, int arity)
 {
+  bfVMFunctionBuilder_addInstABx(self, BIFROST_VM_OP_RETURN, 0, 0);
   bfVMFunctionBuilder_popScope(self);
 
   out->super.type         = BIFROST_VM_OBJ_FUNCTION;

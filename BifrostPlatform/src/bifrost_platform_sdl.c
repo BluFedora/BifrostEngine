@@ -136,6 +136,8 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
     window->renderer_data = NULL;
     window->gl_context    = NULL;
 
+   // SDL_SetWindowData(window->handle, "GL_CONTEXT", )
+
     if (!window->handle)
     {
       bfPlatformFree(window, sizeof(BifrostWindow));

@@ -1,2 +1,0 @@
-cd C:\Users\rshar\Documents\bifrost-script
-cl.exe /FI "bifrost/bifrost_c_alloc.h" /Zi /DEBUG:FULL /Fo:build\msvc_obj\ /Fe:bin\vm_msvc.exe main.c src/bifrost/script/bifrost_vm_build.c ../bifrost-core/bifrost_core/bifrost/data_structures/bifrost_array_t.c ../bifrost-core/bifrost_core/bifrost/data_structures/bifrost_dynamic_string.c ../bifrost-core/bifrost_core/bifrost/data_structures/bifrost_hash_map.c -I../bifrost-core/bifrost_core -Iinclude

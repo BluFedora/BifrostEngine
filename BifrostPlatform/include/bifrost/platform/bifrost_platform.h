@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bifrost_platform.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Handles the windowing and event layer for the bifrost engine.
+ *
+ * @version 0.0.1
+ * @date    2020-07-05
+ *
+ * @copyright Copyright (c) 2020 Shareef Abdoul-Raheem
+ */
+/******************************************************************************/
 #ifndef BIFORST_PLATFORM_H
 #define BIFORST_PLATFORM_H
 
@@ -9,7 +22,7 @@
 // https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
 
 /* clang-format off */
-#ifndef PLATFORM_WIN32
+#ifndef BIFROST_PLATFORM_WIN32
 #define BIFROST_PLATFORM_WIN32         0
 #define BIFROST_PLATFORM_WIN64         0
 #define BIFROST_PLATFORM_WINDOWS       0
@@ -55,7 +68,6 @@
 
   #undef BIFROST_PLATFORM_LINUX
   #define BIFROST_PLATFORM_LINUX 1
-
   // linux
 #elif __unix // all unices not caught above
              // Unix
@@ -95,10 +107,10 @@ extern "C"
 
   typedef struct bfPlatformInitParams_t
   {
-    int                 argc;
-    char**              argv;
-    bfPlatformAllocator allocator;
-    void*               user_data;
+    int                 argc;      /*!< Argc from the main function, could be 0.                                                                                    */
+    char**              argv;      /*!< Argv from the main function, allowed to be NULL                                                                             */
+    bfPlatformAllocator allocator; /*!< Custom allocator if you wanted to control where the platform gets it's memory from, if NULL will use the default allocator. */
+    void*               user_data; /*!< User data for keeping tack some some global state, could be NULL.                                                           */
 
   } bfPlatformInitParams;
 
@@ -123,7 +135,7 @@ extern "C"
     bfWindowEventFn event_fn;
     bfWindowFrameFn frame_fn;
 
-    // SDL
+    // SDL needs this.
     void* gl_context;
 
   } BifrostWindow;
@@ -137,8 +149,8 @@ extern "C"
    *   Some configuration parameters for startup.
    *
    * @return
-   *       0 (false) - If there were was an error initializing.
-   *   non 0 (true)  - Successfully initialized. 
+   *   0 (false) - If there were was an error initializing.
+   *   1 (true)  - Successfully initialized.
    */
   BIFROST_PLATFORM_API int              bfPlatformInit(bfPlatformInitParams params);
   BIFROST_PLATFORM_API void             bfPlatformPumpEvents(void);

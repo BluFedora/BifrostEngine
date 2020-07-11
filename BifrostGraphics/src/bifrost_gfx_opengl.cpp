@@ -2472,6 +2472,9 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 #if !USE_WEBGL_STANDARD
   bfWindowGL_swapBuffers(self->window->window);
 #endif
+
+  self->window->current_cmd_list = NULL;
+  deallocate(self);
 }
 
 template<typename T, typename... Args>

@@ -107,6 +107,10 @@ BIFROST_MATH_API void  Camera_setProjectionModified(BifrostCamera* cam);
 BIFROST_MATH_API void  Camera_setViewModified(BifrostCamera* cam);
 BIFROST_MATH_API Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size);
 
+// 'New' API
+
+BIFROST_MATH_API void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos);
+
 /* Ray API */
 
 typedef struct bfRay3D_t

@@ -41,6 +41,11 @@ extern "C" {
  *   The size of the object for the required alignment,
  */
 size_t bfAlignUpSize(size_t size, size_t required_alignment);
+
+void* bfAlignUpPointer(const void* ptr, size_t required_alignment);
+
+  /* Implements "std::align" but in C. */
+void* bfStdAlign(size_t alignment, size_t size, void** ptr, size_t* space);
 #if __cplusplus
 }
 #endif

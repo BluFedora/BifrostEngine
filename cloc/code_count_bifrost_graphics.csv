@@ -1,0 +1,24 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (46.0 files/s, 24810.0 lines/s)"
+C++,..\BifrostGraphics\src\bifrost_gfx_opengl.cpp,485,54,2388
+C++,..\BifrostGraphics\src\bifrost_gfx_vulkan.cpp,477,75,2087
+C++,..\BifrostGraphics\src\vulkan\bifrost_vulkan_command_list.cpp,243,6,1117
+C++,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_render_graph.cpp,191,48,1019
+C,..\BifrostGraphics\src\vulkan\bifrost_vulkan_conversions.c,83,2,469
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_api.h,104,66,435
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_types.h,19,9,368
+C,..\BifrostGraphics\src\bifrost_gfx_common.c,81,8,354
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_pipeline_state.h,52,22,268
+C/C++ Header,..\BifrostGraphics\src\vulkan\bifrost_vulkan_logical_device.h,45,2,248
+C++,..\BifrostGraphics\src\vulkan\bifrost_vulkan_renderpass.cpp,48,3,240
+C++,..\BifrostGraphics\src\vulkan\bifrost_vulkan_mem_allocator.cpp,65,1,211
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_object_cache.hpp,46,1,191
+CMake,..\BifrostGraphics\CMakeLists.txt,23,32,132
+C++,..\BifrostGraphics\src\vulkan\bifrost_vulkan_material_pool.cpp,33,1,124
+C/C++ Header,..\BifrostGraphics\src\vulkan\bifrost_vulkan_physical_device.h,17,2,74
+C/C++ Header,..\BifrostGraphics\src\vulkan\bifrost_vulkan_mem_allocator.h,14,2,53
+C/C++ Header,..\BifrostGraphics\src\vulkan\bifrost_vulkan_conversions.h,4,0,51
+C/C++ Header,..\BifrostGraphics\src\vulkan\bifrost_vulkan_material_pool.h,10,0,38
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_export.h,12,14,35
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_handle.h,5,0,30
+C/C++ Header,..\BifrostGraphics\include\bifrost\graphics\bifrost_gfx_limits.h,4,24,21
+C/C++ Header,..\BifrostGraphics\src\vulkan\bifrost_vulkan_hash.hpp,5,0,14

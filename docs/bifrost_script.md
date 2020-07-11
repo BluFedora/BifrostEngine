@@ -66,7 +66,7 @@ Both C and C++ style comments are supported:
 */
 ```
 
-*As like C the C-style comment cannot be nested by another C-style comment for ex ``/** /** **/ **/`` is illegal*
+*Like C the C-style comment cannot be nested by another C-style comment for ex ``/* /* */ */`` is illegal*
 
 ## Declaring variables
 
@@ -200,6 +200,12 @@ var customCtorIsCalled = new ClassName.customCtor(args...);
 ```
 
 ## Importing Modules
+
+```swift
+
+```
+
+## Standard Library
 
 ```swift
 

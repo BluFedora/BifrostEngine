@@ -123,7 +123,7 @@ namespace bifrost
         }
         else if constexpr (std::is_pointer_v<T>)
         {
-          bfVM_stackStoreWeakRef(self, slot, value);
+          bfVM_stackMakeWeakRef(self, slot, value);
         }
         else
         {
@@ -509,6 +509,7 @@ namespace bifrost
       bfVM_stackLoadHandle(self(), dst_idx, handle);
     }
 
+    //! @copydoc bfVM_stackDestroyHandle
     void stackDestroyHandle(bfValueHandle handle) noexcept
     {
       bfVM_stackDestroyHandle(self(), handle);
@@ -535,11 +536,13 @@ namespace bifrost
       return vmCall(self(), fn_idx, std::forward<Args>(args)...);
     }
 
+    //! @copydoc bfVM_execInModule
     BifrostVMError execInModule(const char* module, const char* source, size_t source_length) noexcept
     {
       return bfVM_execInModule(self(), module, source, source_length);
     }
 
+    //! @copydoc bfVM_gc
     void gc() noexcept
     {
       bfVM_gc(self());

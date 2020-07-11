@@ -1,0 +1,141 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (280.0 files/s, 62148.0 lines/s)"
+C++,..\BifrostRuntime\src\editor\bifrost_editor_overlay.cpp,388,83,1583
+C++,..\BifrostRuntime\src\graphics\bifrost_standard_renderer.cpp,228,25,872
+C++,..\BifrostRuntime\src\bifrost_imgui_glfw.cpp,149,14,674
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_collision_system.hpp,122,55,621
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_hash_table.hpp,144,21,604
+C++,..\BifrostRuntime\src\editor\bifrost_editor_serializer.cpp,163,20,595
+C,..\BifrostRuntime\src\data_structures\bifrost_array_t.c,147,30,491
+C++,..\BifrostRuntime\src\ecs\bifrost_entity.cpp,111,19,461
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_member.hpp,82,17,458
+C++,..\BifrostRuntime\src\physics\bifrost_collisionfine.cpp,125,135,450
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_prismtypes.h,85,199,440
+C++,..\BifrostRuntime\src\physics\bifrost_rigidbodycontact.cpp,109,146,432
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_runtime_impl.hpp,98,14,427
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_string.hpp,88,41,406
+C++,..\BifrostRuntime\src\asset_io\bifrost_assets.cpp,116,17,401
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_variant.hpp,75,5,392
+C++,..\BifrostRuntime\src\asset_io\bifrost_json_serializer.cpp,83,12,360
+C++,..\BifrostRuntime\src\asset_io\bifrost_file.cpp,96,8,337
+C++,..\BifrostRuntime\src\utility\bifrost_json.cpp,59,13,326
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_intrusive_list.hpp,80,4,326
+C,..\BifrostRuntime\src\data_structures\bifrost_dynamic_string.c,89,22,325
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_overlay.hpp,79,18,325
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_any.hpp,65,45,319
+C++,..\BifrostRuntime\src\core\bifrost_engine.cpp,79,13,318
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_variant.hpp,64,28,318
+C++,..\BifrostRuntime\src\graphics\bifrost_glsl_compiler.cpp,52,16,301
+C++,..\BifrostRuntime\src\asset_io\bifrost_asset_handle.cpp,63,28,297
+C++,..\BifrostRuntime\src\editor\bifrost_editor_scene.cpp,70,3,281
+C/C++ Header,..\BifrostRuntime\include\bifrost\graphics\bifrost_standard_renderer.hpp,55,96,271
+C++,..\BifrostRuntime\src\physics\bifrost_rigidbody.cpp,48,4,261
+C++,..\BifrostRuntime\src\asset_io\bifrost_obj_loader.cpp,55,7,258
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_material.hpp,62,15,251
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_array.hpp,55,31,248
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_entity.hpp,72,36,247
+C,..\BifrostRuntime\src\data_structures\bifrost_hash_map.c,48,4,228
+C++,..\BifrostRuntime\src\graphics\bifrost_debug_renderer.cpp,50,3,215
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_particleforcegenerators.h,57,2,213
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_dense_map.hpp,42,64,212
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_asset_info.hpp,46,41,209
+C++,..\BifrostRuntime\src\ecs\bifrost_entity_ref.cpp,51,14,200
+C++,..\BifrostRuntime\src\core\bifrost_game_state_machine.cpp,47,6,197
+C++,..\BifrostRuntime\src\asset_io\bifrost_scene.cpp,45,17,182
+C/C++ Header,..\BifrostRuntime\include\bifrost\core\bifrost_engine.hpp,37,7,180
+C/C++ Header,..\BifrostRuntime\include\bifrost\core\bifrost_game_state_machine.hpp,45,14,179
+C++,..\BifrostRuntime\src\editor\bifrost_editor_hierarchy.cpp,49,4,168
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_ring_buffer.hpp,30,16,159
+C++,..\BifrostRuntime\src\meta\bifrost_meta_runtime.cpp,31,3,158
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_object_hash_cache.hpp,37,7,158
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_runtime.hpp,44,1,157
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_collisioncoarse.h,39,5,154
+C/C++ Header,..\BifrostRuntime\include\bifrost\utility\bifrost_function_view.hpp,30,2,149
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_function_traits.hpp,34,34,149
+C,..\BifrostRuntime\src\utility\bifrost_uuid.c,35,13,139
+C++,..\BifrostRuntime\src\physics\bifrost_particlecontacts.cpp,44,2,127
+C++,..\BifrostRuntime\src\physics\bifrost_rigidbodyfracture.cpp,30,1,124
+C++,..\BifrostRuntime\src\editor\bifrost_editor_game.cpp,27,1,123
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_scene.hpp,37,33,123
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_rigidbodyforcegenerators.h,28,4,123
+C++,..\BifrostRuntime\src\asset_io\bifrost_material.cpp,38,13,121
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_undo_redo.hpp,28,13,120
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_file.hpp,31,16,118
+C,..\BifrostRuntime\src\debug\bifrost_dbg_logger.c,28,18,118
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_assets.hpp,28,24,114
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_container_tuple.hpp,25,8,111
+C++,..\BifrostRuntime\src\bifrost_script_behavior.cpp,33,14,110
+C++,..\BifrostRuntime\src\editor\bifrost_editor_selection.cpp,22,0,110
+C++,..\BifrostRuntime\src\utility\bifrost_hash.cpp,28,9,105
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_rigidbodyworld.h,26,0,103
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_light.hpp,14,10,103
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_behavior.hpp,35,32,101
+C/C++ Header,..\BifrostRuntime\include\bifrost\utility\bifrost_json.hpp,30,25,98
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_rigidbodyfracture.h,25,34,97
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_collisionfine.h,23,0,95
+C/C++ Header,..\BifrostRuntime\include\bifrost\bifrost_std.h,19,24,94
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_json_serializer.hpp,15,12,93
+C++,..\BifrostRuntime\src\data_structures\bifrost_string.cpp,28,1,93
+C/C++ Header,..\BifrostRuntime\include\bifrost\graphics\bifrost_debug_renderer.hpp,19,0,89
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_particleworld.h,21,11,88
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_array_t.h,13,32,87
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_serializer.hpp,17,15,87
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_utils.hpp,21,34,85
+C/C++ Header,..\BifrostRuntime\include\bifrost\debug\bifrost_dbg_logger.h,19,19,77
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_rigidbodycontact.h,24,0,75
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_particlelinks.h,22,3,72
+C++,..\BifrostRuntime\src\editor\bifrost_editor_window.cpp,20,0,70
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_window.hpp,19,19,68
+C++,..\BifrostRuntime\src\physics\bifrost_collisioncoarse.cpp,12,6,65
+C/C++ Header,..\BifrostRuntime\include\bifrost\utility\bifrost_uuid.hpp,9,15,60
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_rigidbody.h,18,0,60
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_base_component.hpp,18,48,59
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_hash_map.h,19,22,54
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_entity_ref.hpp,15,16,51
+C++,..\BifrostRuntime\src\ecs\bifrost_behavior.cpp,14,11,48
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_base_asset_handle.hpp,13,30,45
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_filesystem.hpp,11,13,43
+C++,..\BifrostRuntime\src\physics\bifrost_rigidbodyjoint.cpp,11,0,41
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_dense_map_handle.hpp,12,10,41
+C++,..\BifrostRuntime\src\core\bifrost_igame_state_layer.cpp,8,0,41
+C++,..\BifrostRuntime\src\physics\bifrost_rigidbodyforcegenerators.cpp,10,1,40
+C/C++ Header,..\BifrostRuntime\include\bifrost\data_structures\bifrost_dynamic_string.h,26,50,40
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_selection.hpp,12,1,40
+C++,..\BifrostRuntime\src\bifrost_script.cpp,11,11,40
+C/C++ Header,..\BifrostRuntime\include\bifrost\meta\bifrost_meta_factory.hpp,10,3,39
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_mesh_renderer.hpp,8,11,37
+C/C++ Header,..\BifrostRuntime\include\bifrost\core\bifrost_igame_state_layer.hpp,12,12,36
+C/C++ Header,..\BifrostRuntime\include\bifrost\core\bifrost_base_object.hpp,9,17,36
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_asset_handle.hpp,9,33,35
+C++,..\BifrostRuntime\src\physics\bifrost_particle.cpp,12,0,35
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_particlecontacts.h,10,0,35
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_scene.hpp,6,0,33
+C/C++ Header,..\BifrostRuntime\include\bifrost\utility\bifrost_uuid.h,10,13,31
+C++,..\BifrostRuntime\src\ecs\bifrost_behavior_system.cpp,4,1,31
+C/C++ Header,..\BifrostRuntime\include\bifrost\asset_io\bifrost_script.hpp,11,11,31
+C/C++ Header,..\BifrostRuntime\include\bifrost\utility\bifrost_non_copy_move.hpp,6,4,30
+C/C++ Header,..\BifrostRuntime\include\bifrost\script\bifrost_script_behavior.hpp,9,11,30
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_particle.h,6,0,27
+C++,..\BifrostRuntime\src\ecs\bifrost_base_component.cpp,6,11,26
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_game.hpp,6,0,26
+C++,..\BifrostRuntime\src\editor\bifrost_editor_undo_redo.cpp,5,0,26
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_component_handle_storage.hpp,6,11,25
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_iecs_system.hpp,8,14,24
+C/C++ Header,..\BifrostRuntime\include\bifrost\graphics\bifrost_glsl_compiler.hpp,5,13,24
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_component_list.hpp,7,30,22
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_memory.hpp,7,12,22
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_inspector.hpp,6,13,22
+C/C++ Header,..\BifrostRuntime\include\bifrost\editor\bifrost_editor_hierarchy.hpp,6,0,21
+C/C++ Header,..\BifrostRuntime\include\bifrost\utility\bifrost_hash.hpp,5,11,21
+C/C++ Header,..\BifrostRuntime\include\bifrost_imgui_glfw.hpp,9,1,21
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_spatial.h,7,1,20
+C/C++ Header,..\BifrostRuntime\include\bifrost\bifrost.hpp,12,22,20
+C/C++ Header,..\BifrostRuntime\src\physics\bifrost_rigidbodyjoint.h,9,0,19
+C++,..\BifrostRuntime\src\ecs\bifrost_collision_system.cpp,4,12,16
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_component_storage.hpp,4,16,14
+C/C++ Header,..\BifrostRuntime\include\bifrost\ecs\bifrost_behavior_system.hpp,3,10,12
+C++,..\BifrostRuntime\src\physics\bifrost_particleforcegenerators.cpp,1,0,9
+C++,..\BifrostRuntime\src\ecs\bifrost_iecs_system.cpp,1,12,8
+C++,..\BifrostRuntime\src\editor\bifrost_editor_build.cpp,1,3,8
+C++,..\BifrostRuntime\src\physics\bifrost_particleworld.cpp,1,0,4
+C++,..\BifrostRuntime\src\physics\bifrost_particlelinks.cpp,1,0,4
+C++,..\BifrostRuntime\src\physics\bifrost_rigidbodyworld.cpp,1,0,4

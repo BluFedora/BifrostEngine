@@ -156,7 +156,7 @@ void* bfVM_userData(const BifrostVM* self)
   return self->params.user_data;
 }
 
-static inline BifrostVMError bfVM__moduleMake(BifrostVM* self, const char* module, BifrostObjModule** out)
+static BifrostVMError bfVM__moduleMake(BifrostVM* self, const char* module, BifrostObjModule** out)
 {
   static const char* ANON_MODULE_NAME = "__anon_module__";
 
@@ -167,14 +167,19 @@ static inline BifrostVMError bfVM__moduleMake(BifrostVM* self, const char* modul
     module = ANON_MODULE_NAME;
   }
 
-  // TODO(SR):
-  //   Make it so this check only happens in debug builds??
   const bfStringRange name_range = bfMakeStringRangeC(module);
-  *out                           = bfVM_findModule(self, module, bfStringRange_length(&name_range));
 
-  if (*out)
+  if (!is_anon)
   {
-    return BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED;
+    // TODO(SR):
+    //   Make it so this check only happens in debug builds??
+
+    *out = bfVM_findModule(self, module, bfStringRange_length(&name_range));
+
+    if (*out)
+    {
+      return BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED;
+    }
   }
 
   *out = bfVM_createModule(self, name_range);
@@ -194,9 +199,11 @@ BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module)
 {
   bfVM_assertStackIndex(self, idx);
 
-  BifrostObjModule* temp;
-  BifrostVMError    err = bfVM__moduleMake(self, module, &temp);
-  self->stack_top[idx]  = bfVMValue_fromPointer(temp);
+  BifrostObjModule*    temp;
+  const BifrostVMError err = bfVM__moduleMake(self, module, &temp);
+
+  self->stack_top[idx] = bfVMValue_fromPointer(temp);
+
   return err;
 }
 

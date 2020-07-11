@@ -701,11 +701,9 @@ bfBool32 bfParser_parse(BifrostParser* self)
 
 void bfParser_popBuilder(BifrostParser* self, BifrostObjFn* fn_out, int arity)
 {
-  bfVMFunctionBuilder_addInstABx(builder(), BIFROST_VM_OP_RETURN, 0, 0);
-
   bfVMFunctionBuilder_end(self->fn_builder, fn_out, arity);
 
-  bfDbgDisassembleFunction(0, fn_out);
+  // bfDbgDisassembleFunction(0, fn_out);
 
   bfVMFunctionBuilder_dtor(self->fn_builder);
   Array_pop(&self->fn_builder_stack);

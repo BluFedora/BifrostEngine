@@ -245,6 +245,12 @@ Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size)
   return ray_world;
 }
 
+void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos)
+{
+  cam->position = *pos;
+  Camera_setViewModified(cam);
+}
+
 enum
 {
   k_RayXSignBit = (1 << 0),

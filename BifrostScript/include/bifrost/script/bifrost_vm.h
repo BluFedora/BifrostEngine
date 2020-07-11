@@ -160,7 +160,7 @@ typedef struct
   const char* source;     /*!< Must have been allocated by the same allocator as the vm's one. (BifrostVMParams::memory_fn) */
   size_t      source_len; /*!< The number of bytes to used by [BifrostVMModuleLookUp::source]                               */
 
-} BifrostVMModuleLookUp; /*!< Definition of a vm class. */
+} BifrostVMModuleLookUp;
 
 /*!
  * @brief
@@ -933,6 +933,7 @@ BIFROST_VM_API void bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValu
 /*!
  * @brief
  *   Destroys the \p handle rendering it invalid after this function is called.
+ *   Freeing a null handle is safe.
  *
  * @param self
  *   The vm that will be operated on.
@@ -940,7 +941,7 @@ BIFROST_VM_API void bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValu
  * @param handle
  *   The handle to be destroyed.
  */
-BIFROST_VM_API void bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);  // Freeing a null handle is safe.
+BIFROST_VM_API void bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);
 
 /*!
  * @brief

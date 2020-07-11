@@ -4,7 +4,7 @@
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
 * @brief
 *   > This allocator is a designed for use with stl containers.            \n
-*   > This must only be used in C++11 and after.                           \n
+*   > This must only be used in C++11 and later.                           \n
 *   > This is because C++03 allowed all allocators of a certain type to be \n
 *     compatible but since this allocator scheme is stateful               \n
 *     that is not be guaranteed.                                           \n
@@ -40,10 +40,7 @@ namespace bifrost
       {
       }
 
-      explicit StlAllocatorBase(const StlAllocatorBase &rhs) noexcept :
-        m_MemoryBackend{rhs.m_MemoryBackend}
-      {
-      }
+      explicit StlAllocatorBase(const StlAllocatorBase &rhs) noexcept = default;
     };
   }  // namespace detail
 

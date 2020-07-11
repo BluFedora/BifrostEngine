@@ -48,16 +48,15 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
 endif()
 
-include_directories("${PROJECT_BINARY_DIR}")
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-   set(BIFROST_PLATFORM_LIB_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-   set(BIFROST_PLATFORM_LIB_DIR       ${CMAKE_SOURCE_DIR}/lib/win32)
+if (WIN32)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+     set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/win64)
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+     set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/win32)
+  endif()
+elseif(APPLE)
+  set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/macOS)
 endif()
-
-# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-# set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 set(BIFROST_PLATFORM_SOURCE_FILES "src/bifrost_platform.c")
 set(BIFROST_PLATFORM_LIB_FILES "")
@@ -77,7 +76,7 @@ if(BIFROST_PLATFORM_GLFW)
     elseif(APPLE)
       set(BIFROST_PLATFORM_LIB_FILES
         ${BIFROST_PLATFORM_LIB_FILES}
-        "${PROJECT_SOURCE_DIR}/../lib/macOS/libglfw.3.dylib"
+        "${BIFROST_PLATFORM_LIB_DIR}/libglfw.3.dylib"
       )
     endif()
   endif()
@@ -112,7 +111,8 @@ if(BIFROST_OPT_GRAPHICS_VULKAN)
   if(${Vulkan_FOUND})
     target_include_directories(
       BifrostPlatform_static 
-      PRIVATE "${Vulkan_INCLUDE_DIR}"
+      PRIVATE 
+        "${Vulkan_INCLUDE_DIR}"
      )
   endif()
 
@@ -133,17 +133,15 @@ endif()
 
 target_link_libraries(
   BifrostPlatform_static
-  PUBLIC "${BIFROST_PLATFORM_LIB_FILES}"
+  PUBLIC 
+    "${BIFROST_PLATFORM_LIB_FILES}"
 )
 
 target_compile_definitions(BifrostPlatform_static PRIVATE BIFROST_PLATFORM_EXPORT_STATIC)
 
-# set_target_properties(BifrostPlatform_static PROPERTIES OUTPUT_NAME BifrostPlatform_static)
 set_target_properties(BifrostPlatform_static PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(BifrostPlatform_static PROPERTIES PUBLIC_HEADER include/bifrost/platform/bifrost_platform.h)
-set_target_properties(BifrostPlatform_static PROPERTIES CXX_STANDARD 17)
 set_target_properties(BifrostPlatform_static PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-# set_target_properties(BifrostPlatform_static PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
 # Shared Library
 
@@ -161,7 +159,8 @@ if(NOT EMSCRIPTEN)
 
   target_link_libraries(
       BifrostPlatform_shared
-      PUBLIC "${BIFROST_PLATFORM_LIB_FILES}"
+      PUBLIC 
+        "${BIFROST_PLATFORM_LIB_FILES}"
   )
 
   target_compile_definitions(BifrostPlatform_shared PRIVATE BIFROST_PLATFORM_EXPORT)
@@ -170,7 +169,8 @@ if(BIFROST_OPT_GRAPHICS_VULKAN)
   if(${Vulkan_FOUND})
     target_include_directories(
       BifrostPlatform_shared 
-      PRIVATE "${Vulkan_INCLUDE_DIR}"
+      PRIVATE 
+        "${Vulkan_INCLUDE_DIR}"
      )
   endif()
 

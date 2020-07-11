@@ -87,7 +87,6 @@ endif()
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Libs
-  "lib/include/glad/glad.c"
   "lib/include/imgui/imgui.cpp"
   "lib/include/imgui/imgui_widgets.cpp"
   "lib/include/imgui/imgui_draw.cpp"
@@ -99,51 +98,50 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "BifrostExperiments/src/*.c"
 
   # Bifrost Asset Module
-  "src/bifrost/asset_io/*.cpp"
+  "BifrostRuntime/src/asset_io/*.cpp"
 
   # Bifrost Core Module
-  "src/bifrost/core/bifrost_game_state_machine.cpp"
-  "src/bifrost/core/bifrost_igame_state_layer.cpp"
+  "BifrostRuntime/src/core/bifrost_game_state_machine.cpp"
+  "BifrostRuntime/src/core/bifrost_igame_state_layer.cpp"
 
   # Bifrost Datastructures Module
-  "src/bifrost/data_structures/bifrost_array_t.c"
-  "src/bifrost/data_structures/bifrost_dynamic_string.c"
-  "src/bifrost/data_structures/bifrost_hash_map.c"
-  "src/bifrost/data_structures/bifrost_string.cpp"
+  "BifrostRuntime/src/data_structures/bifrost_array_t.c"
+  "BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
+  "BifrostRuntime/src/data_structures/bifrost_hash_map.c"
+  "BifrostRuntime/src/data_structures/bifrost_string.cpp"
 
   # Bifrost Debug Module
-  "src/bifrost/debug/bifrost_dbg_logger.c"
+  "BifrostRuntime/src/debug/bifrost_dbg_logger.c"
 
   # Bifrost ECS Module
-  "src/bifrost/ecs/bifrost_entity.cpp"
-  "src/bifrost/ecs/bifrost_base_component.cpp"
-  "src/bifrost/ecs/bifrost_iecs_system.cpp"
+  "BifrostRuntime/src/ecs/bifrost_entity.cpp"
+  "BifrostRuntime/src/ecs/bifrost_base_component.cpp"
+  "BifrostRuntime/src/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
   "include/bifrost/editor/*.hpp"
-  "src/bifrost/editor/bifrost_editor_build.cpp"
+  "BifrostRuntime/src/editor/bifrost_editor_build.cpp"
 
   # Bifrost Graphics Module
-  "src/bifrost/graphics/bifrost_standard_renderer.cpp"
-  "src/bifrost/graphics/bifrost_glsl_compiler.cpp"
+  "BifrostRuntime/src/graphics/bifrost_standard_renderer.cpp"
+  "BifrostRuntime/src/graphics/bifrost_glsl_compiler.cpp"
 
   # Bifrost Math Module
-  "BifrostMath/src/*.cpp"
+  "BifrostMath/src/bifrost_rect2.cpp"
 
   # Bifrost Meta Module
-  "src/bifrost/meta/bifrost_meta_runtime.cpp"
+  "BifrostRuntime/src/meta/bifrost_meta_runtime.cpp"
 
   # Bifrost Utility Module
-  "src/bifrost/utility/bifrost_hash.cpp"
-  "src/bifrost/utility/bifrost_json.cpp"
-  "src/bifrost/utility/bifrost_uuid.c"
+  "BifrostRuntime/src/utility/bifrost_hash.cpp"
+  "BifrostRuntime/src/utility/bifrost_json.cpp"
+  "BifrostRuntime/src/utility/bifrost_uuid.c"
 
   # Editor
-  "src/bifrost_imgui_glfw.cpp"
-  "src/bifrost/platform/bifrost_window_glfw.cpp"
+  "BifrostRuntime/src/bifrost_imgui_glfw.cpp"
 
   # Physics
-  "src/bifrost/physics/bifrost_particle.cpp"
+  "BifrostRuntime/src/bifrost/physics/bifrost_particle.cpp"
 
   "main.cpp"
  )
@@ -155,7 +153,7 @@ elseif (APPLE)
 endif()
 
 # NOTE(Shareef): Add the libraries we are linking against to the target.
-find_package(OpenGL REQUIRED)
+# find_package(OpenGL REQUIRED)
 find_package(OpenCL)
 
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
@@ -166,16 +164,31 @@ include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/DemoApp/include)
 add_executable(
   BifrostEngine
   ${BIFROST_ENGINE_SOURCE_FILES}
-  "include/bifrost/ecs/bifrost_collision_system.hpp"
-  "src/bifrost/ecs/bifrost_collision_system.cpp"
-  "src/bifrost/graphics/bifrost_debug_renderer.cpp"
-  "src/bifrost/core/bifrost_engine.cpp"
+  "BifrostRuntime/src/ecs/bifrost_collision_system.cpp"
+  "BifrostRuntime/src/graphics/bifrost_debug_renderer.cpp"
+  "BifrostRuntime/src/core/bifrost_engine.cpp"
   "DemoApp/src/main_demo.cpp"
-  "src/bifrost/ecs/bifrost_behavior.cpp"
-  "src/bifrost/ecs/bifrost_behavior_system.cpp"
- "src/bifrost/ecs/bifrost_entity_ref.cpp")
+  "BifrostRuntime/src/ecs/bifrost_behavior.cpp"
+  "BifrostRuntime/src/ecs/bifrost_behavior_system.cpp"
+  "BifrostRuntime/src/ecs/bifrost_entity_ref.cpp"
+
+  # Runtime
+
+  "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script_behavior.cpp"
+  "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script.cpp"
+
+  # 'Game' Code
+ "DemoApp/src/camera_controller.cpp"
+
+)
 
 # Bifrost Engine Submodules
+
+target_include_directories(
+  BifrostEngine
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}/BifrostRuntime/include
+)
 
 target_link_libraries(
   BifrostEngine
@@ -199,9 +212,6 @@ set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${
 add_custom_command(TARGET BifrostEngine PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngine>/assets)
-
-## Uncomment to inject these options into the command line when preforming a code analysis, it just works
-## add_compile_definitions( "dummyDefine=0 /DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /GR /EHsc /std:c++17 /Zc:__cplusplus /DDummy2")
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
@@ -311,14 +321,11 @@ add_custom_command(TARGET BifrostEngine POST_BUILD
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
-# add_custom_command(TARGET BifrostEngine POST_BUILD
-#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         "${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"
-#         $<TARGET_FILE_DIR:BifrostEngine>)
-
 add_subdirectory(BifrostExperiments)
 add_subdirectory(BifrostGraphics)
 add_subdirectory(BifrostMath)
 add_subdirectory(BifrostMemory)
 add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
+
+add_subdirectory(BuildTimeAnalyzerGUI)

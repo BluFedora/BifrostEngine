@@ -13,16 +13,13 @@
 /******************************************************************************/
 #include "bifrost/memory/bifrost_imemory_manager.hpp"
 
+#include "bifrost/memory/bifrost_memory_utils.h" /* bfAlignUpPointer */
+
 #include <cstdint>
 
 namespace bifrost
 {
 #define bfCastByte(arr) ((unsigned char*)(arr))
-
-  static void* alignUpPtr(uintptr_t element_ptr, uintptr_t element_alignment)
-  {
-    return reinterpret_cast<void*>(element_ptr + (element_alignment - 1) & ~(element_alignment - 1));
-  }
 
   static std::uint8_t grabOffset(const void* self)
   {
@@ -51,7 +48,7 @@ namespace bifrost
 
     if (allocation)
     {
-      void*              data_start = alignUpPtr(std::uintptr_t(allocation) + header_size, alignment);
+      void*              data_start = bfAlignUpPointer(bfCastByte(allocation) + header_size, alignment);
       const std::uint8_t new_offset = std::uint8_t(std::uintptr_t(data_start) - std::uintptr_t(allocation) - header_size);
 
 #if BIFROST_MEMORY_DEBUG_WIPE_MEMORY

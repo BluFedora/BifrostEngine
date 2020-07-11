@@ -53,12 +53,13 @@ set(
 set(
   BIFROST_GRAPHICS_INCLUDE_DIRS
   "${PROJECT_SOURCE_DIR}/include"
+  "${CMAKE_SOURCE_DIR}/BifrostRuntime/include"
 )
 
 set(
   BIFROST_GRAPHICS_SOURCES
   "src/bifrost_gfx_common.c"
-  "${CMAKE_SOURCE_DIR}/src/bifrost/utility/bifrost_hash.cpp"
+  "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/utility/bifrost_hash.cpp"
 )
 
 set(
@@ -78,8 +79,8 @@ if (BIFROST_OPT_GRAPHICS_VULKAN)
     "src/bifrost_gfx_vulkan.cpp"
 
     # TODO(SR): Dependencies That Should Not Be Here!!
-    "${CMAKE_SOURCE_DIR}/src/bifrost/data_structures/bifrost_array_t.c"
-    "${CMAKE_SOURCE_DIR}/src/bifrost/debug/bifrost_dbg_logger.c"
+    "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/data_structures/bifrost_array_t.c"
+    "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/debug/bifrost_dbg_logger.c"
   )
 
   find_package(Vulkan)

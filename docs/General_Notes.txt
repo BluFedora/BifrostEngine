@@ -5,7 +5,7 @@ There are really only 2 data structures:
         a. Tree (Specialized case of Graph)
             i. Linked List (Specialized case of Tree)
     2. Arrays
-All other dat structures are variations on these two concepts.
+All other data structures are variations on these two concepts.
 
 TODO:
 	Search for 'CUSTOM_ALLOC' for any hacks in the Vulkan Gfx Backend.
