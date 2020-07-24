@@ -1019,6 +1019,7 @@ namespace bifrost
 
     bindings::addObject(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
     bindings::addMaterial(m_GBufferShader, BIFROST_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
 
     bindings::addCamera(m_SSAOBufferShader, BIFROST_SHADER_STAGE_VERTEX | BIFROST_SHADER_STAGE_FRAGMENT);
     bindings::addSSAOInputs(m_SSAOBufferShader, BIFROST_SHADER_STAGE_FRAGMENT);

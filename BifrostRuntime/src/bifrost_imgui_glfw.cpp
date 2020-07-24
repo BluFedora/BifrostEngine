@@ -5,7 +5,7 @@
 #include "bifrost/platform/bifrost_platform.h"
 #include "bifrost/platform/bifrost_platform_event.h"
 
-#include <glfw/glfw3.h>  // TODO(SR): Remove, but still needed for Cursors and KeyboardKeys...
+#include <glfw/glfw3.h>  // TODO(SR): Remove, but still needed for Cursors, Clipboard, and monitors.
 #include <imgui/imgui.h>
 
 #include <algorithm>
@@ -186,28 +186,28 @@ namespace bifrost::imgui
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     // Keyboard Setup
-    io.KeyMap[ImGuiKey_Tab]         = GLFW_KEY_TAB;
-    io.KeyMap[ImGuiKey_LeftArrow]   = GLFW_KEY_LEFT;
-    io.KeyMap[ImGuiKey_RightArrow]  = GLFW_KEY_RIGHT;
-    io.KeyMap[ImGuiKey_UpArrow]     = GLFW_KEY_UP;
-    io.KeyMap[ImGuiKey_DownArrow]   = GLFW_KEY_DOWN;
-    io.KeyMap[ImGuiKey_PageUp]      = GLFW_KEY_PAGE_UP;
-    io.KeyMap[ImGuiKey_PageDown]    = GLFW_KEY_PAGE_DOWN;
-    io.KeyMap[ImGuiKey_Home]        = GLFW_KEY_HOME;
-    io.KeyMap[ImGuiKey_End]         = GLFW_KEY_END;
-    io.KeyMap[ImGuiKey_Insert]      = GLFW_KEY_INSERT;
-    io.KeyMap[ImGuiKey_Delete]      = GLFW_KEY_DELETE;
-    io.KeyMap[ImGuiKey_Backspace]   = GLFW_KEY_BACKSPACE;
-    io.KeyMap[ImGuiKey_Space]       = GLFW_KEY_SPACE;
-    io.KeyMap[ImGuiKey_Enter]       = GLFW_KEY_ENTER;
-    io.KeyMap[ImGuiKey_Escape]      = GLFW_KEY_ESCAPE;
-    io.KeyMap[ImGuiKey_KeyPadEnter] = GLFW_KEY_KP_ENTER;
-    io.KeyMap[ImGuiKey_A]           = GLFW_KEY_A;
-    io.KeyMap[ImGuiKey_C]           = GLFW_KEY_C;
-    io.KeyMap[ImGuiKey_V]           = GLFW_KEY_V;
-    io.KeyMap[ImGuiKey_X]           = GLFW_KEY_X;
-    io.KeyMap[ImGuiKey_Y]           = GLFW_KEY_Y;
-    io.KeyMap[ImGuiKey_Z]           = GLFW_KEY_Z;
+    io.KeyMap[ImGuiKey_Tab]         = BIFROST_KEY_TAB;
+    io.KeyMap[ImGuiKey_LeftArrow]   = BIFROST_KEY_LEFT;
+    io.KeyMap[ImGuiKey_RightArrow]  = BIFROST_KEY_RIGHT;
+    io.KeyMap[ImGuiKey_UpArrow]     = BIFROST_KEY_UP;
+    io.KeyMap[ImGuiKey_DownArrow]   = BIFROST_KEY_DOWN;
+    io.KeyMap[ImGuiKey_PageUp]      = BIFROST_KEY_PAGE_UP;
+    io.KeyMap[ImGuiKey_PageDown]    = BIFROST_KEY_PAGE_DOWN;
+    io.KeyMap[ImGuiKey_Home]        = BIFROST_KEY_HOME;
+    io.KeyMap[ImGuiKey_End]         = BIFROST_KEY_END;
+    io.KeyMap[ImGuiKey_Insert]      = BIFROST_KEY_INSERT;
+    io.KeyMap[ImGuiKey_Delete]      = BIFROST_KEY_DELETE;
+    io.KeyMap[ImGuiKey_Backspace]   = BIFROST_KEY_BACKSPACE;
+    io.KeyMap[ImGuiKey_Space]       = BIFROST_KEY_SPACE;
+    io.KeyMap[ImGuiKey_Enter]       = BIFROST_KEY_ENTER;
+    io.KeyMap[ImGuiKey_Escape]      = BIFROST_KEY_ESCAPE;
+    io.KeyMap[ImGuiKey_KeyPadEnter] = BIFROST_KEY_PAD_ENTER;
+    io.KeyMap[ImGuiKey_A]           = BIFROST_KEY_A;
+    io.KeyMap[ImGuiKey_C]           = BIFROST_KEY_C;
+    io.KeyMap[ImGuiKey_V]           = BIFROST_KEY_V;
+    io.KeyMap[ImGuiKey_X]           = BIFROST_KEY_X;
+    io.KeyMap[ImGuiKey_Y]           = BIFROST_KEY_Y;
+    io.KeyMap[ImGuiKey_Z]           = BIFROST_KEY_Z;
 
     io.GetClipboardTextFn = GLFW_ClipboardGet;
     io.SetClipboardTextFn = GLFW_ClipboardSet;
@@ -394,10 +394,10 @@ namespace bifrost::imgui
 
         io.KeysDown[key] = (evt.type == BIFROST_EVT_ON_KEY_DOWN);
 
-        io.KeyCtrl  = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-        io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-        io.KeyAlt   = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-        io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+        io.KeyCtrl  = evt.keyboard.modifiers & BIFROST_KEY_FLAG_CONTROL;
+        io.KeyShift = evt.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
+        io.KeyAlt   = evt.keyboard.modifiers & BIFROST_KEY_FLAG_ALT;
+        io.KeySuper = evt.keyboard.modifiers & BIFROST_KEY_FLAG_SUPER;
         break;
       }
       case BIFROST_EVT_ON_KEY_INPUT:
@@ -691,8 +691,7 @@ namespace bifrost::imgui
       convertVpFlag(vp, ImGuiViewportFlags_TopMost, BIFROST_WINDOW_FLAG_IS_FLOATING));
 
     window->event_fn = [](struct BifrostWindow_t* window, bfEvent* event) {
-      (void)window;
-      imgui::onEvent(window, *event);
+      onEvent(window, *event);
     };
 
     window->frame_fn = [](struct BifrostWindow_t* window) {

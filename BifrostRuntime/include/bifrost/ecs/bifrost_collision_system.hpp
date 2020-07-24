@@ -791,7 +791,6 @@ namespace bifrost
     void onFrameBegin(Engine& engine, float dt) override;
     void onFrameUpdate(Engine& engine, float dt) override;
     void onFrameEnd(Engine& engine, float dt) override;
-    void onFrameDraw(Engine& engine, float alpha) override;
   };
 }  // namespace bifrost
 

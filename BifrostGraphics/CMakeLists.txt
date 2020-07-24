@@ -64,7 +64,7 @@ set(
 
 set(
   BIFROST_GRAPHICS_LIBRARIES
-  ""
+  BifrostDataStructuresCxx
 )
 
 if (BIFROST_OPT_GRAPHICS_VULKAN)
@@ -78,8 +78,6 @@ if (BIFROST_OPT_GRAPHICS_VULKAN)
     "src/vulkan/bifrost_vulkan_renderpass.cpp"
     "src/bifrost_gfx_vulkan.cpp"
 
-    # TODO(SR): Dependencies That Should Not Be Here!!
-    "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/data_structures/bifrost_array_t.c"
     "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/debug/bifrost_dbg_logger.c"
   )
 
@@ -141,8 +139,9 @@ target_compile_definitions(
   BifrostGraphics_static
   PRIVATE
     "${BIFROST_GRAPHICS_DEFINES}"
-    BIFROST_VM_EXPORT_STATIC
     BIFROST_GRAPHICS_NO_LOG
+  PUBLIC
+    BIFROST_GFX_EXPORT_STATIC
 )
 
 target_include_directories(

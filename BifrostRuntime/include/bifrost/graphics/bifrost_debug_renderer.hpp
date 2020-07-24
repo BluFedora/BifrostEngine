@@ -1,11 +1,12 @@
 #pragma once
 
 #include "bifrost/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
-#include "bifrost_standard_renderer.hpp"
+#include "bifrost_standard_renderer.hpp" 
 
 namespace bifrost
 {
   struct CameraRender;
+
   static constexpr int k_DebugRendererNumLinesInBatch   = 256;
   static constexpr int k_DebugRendererNumVerticesInLine = 6;
   static constexpr int k_DebugRendererLineBatchSize     = k_DebugRendererNumLinesInBatch * k_DebugRendererNumVerticesInLine;
@@ -22,6 +23,8 @@ namespace bifrost
 
   class DebugRenderer final
   {
+    using VertexBuffer = TransientVertexBuffer<VertexDebugLine, k_DebugRendererLineBatchSize>;
+
     using DebugVertexBuffer = VertexDebugLine[k_DebugRendererLineBatchSize];
 
     struct BufferLink final
@@ -83,7 +86,7 @@ namespace bifrost
 
     void init(StandardRenderer& renderer);
 
-    inline void update(float delta_time)
+    void update(float delta_time)
     {
       updateDrawCommands(m_DepthDrawCommands, delta_time);
       updateDrawCommands(m_OverlayDrawCommands, delta_time);

@@ -65,6 +65,7 @@ namespace bifrost::meta
    Quaternionf,
    bfColor4f,
    bfColor4u,
+   Rect2f,
    String,
    IBaseObject*,
    BaseAssetHandle,

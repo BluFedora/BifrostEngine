@@ -25,7 +25,7 @@
 #include "core/bifrost_igame_state_layer.hpp"
 
 // Data Structures
-#include "data_structures/bifrost_array_t.h"
+#include "bifrost/data_structures/bifrost_array_t.h"
 
 // Debug
 #include "debug/bifrost_dbg_logger.h"

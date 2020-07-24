@@ -14,7 +14,7 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
-#include "bifrost/ecs/bifrost_entity.hpp"
+// #include "bifrost/ecs/bifrost_entity.hpp"
 
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
 #include "bifrost/asset_io/bifrost_file.hpp"             // File
@@ -410,11 +410,14 @@ namespace bifrost
       m_RootPath[path_length++] = static_cast<char>(path_char);
     }
 
-    m_MetaPath.clear();
-    m_MetaPath.append(m_RootPath, path_length);
-    m_MetaPath.append(META_PATH_NAME, sizeof(META_PATH_NAME) - 1);
+    
+    const std::size_t new_root_path_length = file::canonicalizePath(m_RootPath);
+    String_resize(&m_RootPath, new_root_path_length);
 
-    // TODO: Canonicalize Paths
+    m_MetaPath.clear();
+    m_MetaPath.append(m_RootPath, new_root_path_length);
+    m_MetaPath.append('/');
+    m_MetaPath.append(META_PATH_NAME, sizeof(META_PATH_NAME) - 1);
 
     return AssetError::NONE;
   }

@@ -13,8 +13,9 @@
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
-#include "bifrost/bifrost_math.h"                    /* Vec3f, Mat4x4     */
-#include "bifrost/core/bifrost_base_object.hpp"      /* BaseObject<T>     */
+#include "bifrost/bifrost_math.h"               /* Vec3f, Mat4x4     */
+#include "bifrost/core/bifrost_base_object.hpp" /* BaseObject<T>     */
+#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 #include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH               */
 #include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
 #include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
@@ -65,7 +66,8 @@ namespace bifrost
     }
   };
 
-  using Camera = BifrostCamera;
+  using Camera     = BifrostCamera;
+  using EntityList = intrusive::ListView<Entity>;
 
   /*!
    * @brief
@@ -79,15 +81,16 @@ namespace bifrost
     friend class BaseBehavior;
 
    private:
-    Engine&              m_Engine;
-    IMemoryManager&      m_Memory;
-    Array<Entity*>       m_RootEntities;
-    ComponentStorage     m_ActiveComponents;
-    ComponentStorage     m_InactiveComponents;
-    Array<BaseBehavior*> m_ActiveBehaviors;
-    BVH                  m_BVHTree;
-    SceneTransformSystem m_TransformSystem;
-    Camera               m_Camera;
+    Engine&                     m_Engine;
+    IMemoryManager&             m_Memory;
+    Array<Entity*>              m_RootEntities;
+    EntityList                  m_Entities;
+    ComponentStorage            m_ActiveComponents;
+    ComponentStorage            m_InactiveComponents;
+    Array<BaseBehavior*>        m_ActiveBehaviors;
+    BVH                         m_BVHTree;
+    SceneTransformSystem        m_TransformSystem;
+    Camera                      m_Camera;
 
    public:
     explicit Scene(Engine& engine);
@@ -101,6 +104,7 @@ namespace bifrost
     // Entity Management
 
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
+    const EntityList&     entities() const { return m_Entities; }
     EntityRef             addEntity(const StringRange& name = "Untitled");
     EntityRef             findEntity(const StringRange& name) const;
     void                  removeEntity(Entity* entity);

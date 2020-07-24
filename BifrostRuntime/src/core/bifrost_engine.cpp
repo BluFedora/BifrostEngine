@@ -2,10 +2,11 @@
 
 #include "bifrost/debug/bifrost_dbg_logger.h"  // bfLog*
 #include "bifrost/ecs/bifrost_behavior.hpp"
-#include "bifrost/ecs/bifrost_behavior_system.hpp"    // BehaviorSystem
-#include "bifrost/ecs/bifrost_entity.hpp"             // Entity
-#include "bifrost/platform/bifrost_platform.h"        // BifrostWindow
-#include "bifrost/platform/bifrost_platform_event.h"  // bfEvent
+#include "bifrost/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
+#include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
+#include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
+#include "bifrost/platform/bifrost_platform.h"              // BifrostWindow
+#include "bifrost/platform/bifrost_platform_event.h"        // bfEvent
 
 Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
   bfNonCopyMoveable<Engine>{},
@@ -177,16 +178,17 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
   m_Scripting.moduleMake(0, "bifrost");
 
   const BifrostVMClassBind behavior_clz_bindings = vmMakeClassBinding<BaseBehavior>(
-   "Behavior"//,
-   //vmMakeMemberBinding<&BaseBehavior::owner>("owner"),
-   //vmMakeMemberBinding<&BaseBehavior::scene>("scene"),
-   //vmMakeMemberBinding<&BaseBehavior::engine>("engine")
+   "Behavior"  //,
+               //vmMakeMemberBinding<&BaseBehavior::owner>("owner"),
+               //vmMakeMemberBinding<&BaseBehavior::scene>("scene"),
+               //vmMakeMemberBinding<&BaseBehavior::engine>("engine")
   );
 
   m_Scripting.stackStore(0, behavior_clz_bindings);
 
   addECSSystem<BehaviorSystem>();
   addECSSystem<CollisionSystem>();
+  addECSSystem<ComponentRenderer>();
 
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
 
@@ -250,19 +252,20 @@ void Engine::deinit()
   assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
   deleteCameras();
 
-  m_Renderer.deinit();
-
+  // Must happen before 'm_Renderer.deinit' since ECS systems may want to use renderer resources.
   for (auto& system : m_Systems)
   {
-    // system->onDeinit();
+    system->onDeinit(*this);
     m_MainMemory.deallocateT(system);
   }
+
+  m_Renderer.deinit();
 
   m_Systems.clear();
 
   gc::quit();
 
-  // This happens after most systems because they could be holding bfValueHandles that needs to be released.
+  // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
   m_Scripting.destroy();
 
   // Shutdown last since there could be errors logged on shutdown if any failures happen.
@@ -324,31 +327,18 @@ void Engine::drawBegin(float render_alpha)
     }
   }
 
-  forEachCamera([this, &cmd_list, render_alpha, &scene](CameraRender* camera) {
+  forEachCamera([this, &cmd_list, render_alpha](CameraRender* camera) {
     Camera_update(&camera->cpu_camera);
 
     m_Renderer.renderCameraTo(
      camera->cpu_camera,
      camera->gpu_camera,
-     [this, &cmd_list, render_alpha, camera, &scene]() {
-       if (scene)
-       {
-         for (MeshRenderer& renderer : scene->components<MeshRenderer>())
-         {
-           if (renderer.material() && renderer.model())
-           {
-             m_Renderer.bindMaterial(cmd_list, *renderer.material());
-             m_Renderer.bindObject(cmd_list, camera->gpu_camera, renderer.owner());
-             renderer.model()->draw(cmd_list);
-           }
-         }
-       }
-
+     [this, &cmd_list, render_alpha, camera]() {
        for (auto& system : m_Systems)
        {
          if (system->isEnabled())
          {
-           system->onFrameDraw(*this, render_alpha);
+           system->onFrameDraw(*this, *camera, render_alpha);
          }
        }
 
@@ -404,6 +394,8 @@ namespace bifrost
 {
   void detail::CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
   {
+    (void)engine;
+
     // This is the bottom most layer so just accept the event.
     event.accept();
   }

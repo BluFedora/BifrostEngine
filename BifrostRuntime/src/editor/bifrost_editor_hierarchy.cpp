@@ -147,10 +147,13 @@ namespace bifrost::editor
       ImGui::EndDragDropSource();
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+    if (!ImGui::IsItemToggledOpen())
     {
-      selection.clear();
-      selection.select(entity);
+      if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+      {
+        selection.clear();
+        selection.select(entity);
+      }
     }
 
     if (ImGui::BeginDragDropTarget())

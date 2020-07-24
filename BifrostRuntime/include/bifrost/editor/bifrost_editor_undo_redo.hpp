@@ -128,7 +128,7 @@ namespace bifrost::editor
    private:
     void clearRedo()
     {
-      m_UndoRedoStack.resize(m_StackTop + 1u);
+      m_UndoRedoStack.resize(std::size_t(m_StackTop) + 1u);
     }
   };
 

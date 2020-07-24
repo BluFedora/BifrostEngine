@@ -7,6 +7,7 @@
 #endif
 
 #include <stdlib.h> /* realloc */
+#include <string.h> /* memcpy  */
 
 bfPlatformInitParams g_BifrostPlatform;
 
@@ -74,9 +75,8 @@ void bfPlatformFree(void* ptr, size_t old_size)
   (void)g_BifrostPlatform.allocator(ptr, old_size, 0u, g_BifrostPlatform.user_data);
 }
 
-// emscripten_cancel_main_loop();
 
-void bfPlatformDoMainLoopImpl(void* arg)
+static void bfPlatformDoMainLoopImpl(void* arg)
 {
   BifrostWindow* main_window = (BifrostWindow*)arg;
 
@@ -90,6 +90,7 @@ void bfPlatformDoMainLoopImpl(void* arg)
 #if BIFROST_PLATFORM_EMSCRIPTEN
   // Needed only if " ctx_attribs.explicitSwapControl" is true.
   // emscripten_webgl_commit_frame();
+  // emscripten_cancel_main_loop();
 #endif
 }
 

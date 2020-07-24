@@ -252,10 +252,10 @@ namespace bifrost::editor
 
     if (has_changed)
     {
-      value.r = std::uint8_t(value4f.r * k_ToUint8Point);
-      value.g = std::uint8_t(value4f.g * k_ToUint8Point);
-      value.b = std::uint8_t(value4f.b * k_ToUint8Point);
-      value.a = std::uint8_t(value4f.a * k_ToUint8Point);
+      value.r = std::uint8_t(std::round(value4f.r * k_ToUint8Point));
+      value.g = std::uint8_t(std::round(value4f.g * k_ToUint8Point));
+      value.b = std::uint8_t(std::round(value4f.b * k_ToUint8Point));
+      value.a = std::uint8_t(std::round(value4f.a * k_ToUint8Point));
     }
 
     hasChangedTop() |= has_changed;
@@ -264,6 +264,7 @@ namespace bifrost::editor
   void ImGuiSerializer::serialize(StringRange key, String& value)
   {
     setNameBuffer(key);
+
     hasChangedTop() |= imgui_ext::inspect(m_NameBuffer, value);
   }
 

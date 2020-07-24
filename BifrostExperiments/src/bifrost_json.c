@@ -5,7 +5,7 @@
 * @brief
 *   Basic Json parser with an Event (SAX) API.
 *   Has some extensions to make wrting json easier.
-*   Just search for '@JsonSpecExtention'.
+*   Just search for '@JsonSpecExtention' in the source file.
 *
 * @version 0.0.1
 * @date    2020-03-14
@@ -24,7 +24,7 @@
   Reader API
 */
 
-typedef enum bfJsonTokenType_t
+typedef enum
 {
   BIFROST_JSON_L_CURLY   = '{',
   BIFROST_JSON_R_CURLY   = '}',
@@ -48,7 +48,7 @@ typedef struct bfJsonUserStorage_t
 
 } bfJsonUserStorage;
 
-typedef struct bfJsonObject_t
+typedef struct
 {
   bfJsonTokenType type;
   const char*     source_bgn;
@@ -542,7 +542,7 @@ static char bfJsonUnescapeStringHelper(char character, const char** inc)
 {
   /*
     @JsonSpecExtention
-      Added support for a bit more escape characters.
+      Added support for some more escape characters.
   */
 
   const char* hex_start = *inc + 1;

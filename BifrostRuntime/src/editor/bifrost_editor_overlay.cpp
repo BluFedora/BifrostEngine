@@ -8,6 +8,7 @@
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 #include "bifrost/editor/bifrost_editor_inspector.hpp"
 #include "bifrost/editor/bifrost_editor_scene.hpp"
+#include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>          /* ImGUI::* */
@@ -990,6 +991,21 @@ namespace bifrost::editor
 
         ImGui::Separator();
       }
+      ImGui::End();
+    }
+
+    if (ImGui::Begin("Easing Test"))
+    {
+      static constexpr int k_PlotDensity = 100;
+
+      ImGui::PlotLines(
+       "Linear", [](void* data, int idx) -> float {
+         return (float(idx) / float(k_PlotDensity - 1)) * 100;
+       },
+       nullptr,
+       k_PlotDensity,
+       0);
+
       ImGui::End();
     }
 

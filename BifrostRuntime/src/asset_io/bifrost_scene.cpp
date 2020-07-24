@@ -96,6 +96,7 @@ namespace bifrost
     m_Engine{engine},
     m_Memory{m_Engine.mainMemory()},
     m_RootEntities{m_Memory},
+    m_Entities{&Entity::m_Hierarchy},
     m_ActiveComponents{m_Memory},
     m_InactiveComponents{m_Memory},
     m_ActiveBehaviors{m_Memory},
@@ -183,9 +184,9 @@ namespace bifrost
     {
       if (serializer.mode() == SerializerMode::LOADING)
       {
-        for (auto& entity : m_RootEntities)
+        while (!m_RootEntities.isEmpty())
         {
-          entity->destroy();
+          m_RootEntities.back()->destroy();
         }
 
         m_RootEntities.clear();

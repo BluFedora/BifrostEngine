@@ -54,7 +54,7 @@ namespace bifrost
     AssetMaterialHandle m_Material;
     Vector2f            m_Size;
     Rect2f              m_UVRect;
-    bfColor4f           m_Color;
+    bfColor4u           m_Color;
     SpriteRendererFlags m_Flags;
 
    public:
@@ -63,10 +63,16 @@ namespace bifrost
       m_Material{nullptr},
       m_Size{1.0f, 1.0f},
       m_UVRect{0.0f, 0.0f, 1.0f, 1.0f},
-      m_Color{1.0f, 1.0f, 1.0f, 1.0f},
+      m_Color{255, 255, 255, 255},
       m_Flags{FLAG_DEFAULT}
     {
     }
+
+    AssetMaterialHandle& material() { return m_Material; }
+    Vector2f&            size() { return m_Size; }
+    Rect2f&              uvRect() { return m_UVRect; }
+    bfColor4u&           color() { return m_Color; }
+    SpriteRendererFlags& flags() { return m_Flags; }
   };
 
   using ParticleEmitterFlags = std::uint8_t;
@@ -101,14 +107,26 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-BIFROST_META_REGISTER(bifrost::MeshRenderer)
+BIFROST_META_REGISTER(bifrost::MeshRenderer){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<MeshRenderer>("MeshRenderer"),                         //
+   field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
+   field("m_EntityRef", &MeshRenderer::m_EntityRef),                 //
+   field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bifrost::SpriteRenderer)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<MeshRenderer>("MeshRenderer"),                         //
-     field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
-     field("m_EntityRef", &MeshRenderer::m_EntityRef),                 //
-     field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
+     class_info<SpriteRenderer>("SpriteRenderer"),                       //
+     field<BaseAssetHandle>("m_Material", &SpriteRenderer::m_Material),  //
+     field("m_Size", &SpriteRenderer::m_Size),                           //
+     field("m_UVRect", &SpriteRenderer::m_UVRect),                       //
+     field("m_Color", &SpriteRenderer::m_Color),                         //
+     field("m_Flags", &SpriteRenderer::m_Flags)                          //
     )
   BIFROST_META_END()
 }

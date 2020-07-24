@@ -153,6 +153,24 @@ static int convertKey(int key)
 {
   switch (key)
   {
+    case GLFW_KEY_ESCAPE: return BIFROST_KEY_ESCAPE;
+    case GLFW_KEY_ENTER: return BIFROST_KEY_ENTER;
+    case GLFW_KEY_TAB: return BIFROST_KEY_TAB;
+    case GLFW_KEY_LEFT: return BIFROST_KEY_LEFT;
+    case GLFW_KEY_RIGHT: return BIFROST_KEY_RIGHT;
+    case GLFW_KEY_UP: return BIFROST_KEY_UP;
+    case GLFW_KEY_DOWN: return BIFROST_KEY_DOWN;
+    case GLFW_KEY_PAGE_UP: return BIFROST_KEY_PAGE_UP;
+    case GLFW_KEY_PAGE_DOWN: return BIFROST_KEY_PAGE_DOWN;
+    case GLFW_KEY_HOME: return BIFROST_KEY_HOME;
+    case GLFW_KEY_END: return BIFROST_KEY_END ;
+    case GLFW_KEY_INSERT: return BIFROST_KEY_INSERT;
+    case GLFW_KEY_DELETE: return BIFROST_KEY_DELETE;
+    case GLFW_KEY_BACKSPACE: return BIFROST_KEY_BACKSPACE;
+    case GLFW_KEY_KP_ENTER: return BIFROST_KEY_PAD_ENTER;
+
+    case GLFW_KEY_SPACE: return BIFROST_KEY_SPACE;
+
     case GLFW_KEY_A: return BIFROST_KEY_A;
     case GLFW_KEY_B: return BIFROST_KEY_B;
     case GLFW_KEY_C: return BIFROST_KEY_C;
@@ -179,8 +197,7 @@ static int convertKey(int key)
     case GLFW_KEY_X: return BIFROST_KEY_X;
     case GLFW_KEY_Y: return BIFROST_KEY_Y;
     case GLFW_KEY_Z: return BIFROST_KEY_Z;
-    // default: return -1;
-    // default: return 0;
+    
     default: return key;
   }
 }

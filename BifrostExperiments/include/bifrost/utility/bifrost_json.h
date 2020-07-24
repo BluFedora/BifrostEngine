@@ -5,7 +5,7 @@
 * @brief
 *   Basic Json parser with an Event (SAX) API.
 *   Has some extensions to make wrting json easier.
-*   Just search for '@JsonSpecExtention'.
+*   Just search for '@JsonSpecExtention' in the source file.
 *
 * @version 0.0.1
 * @date    2020-03-14
@@ -21,8 +21,11 @@
 #if __cplusplus
 extern "C" {
 #endif
+
 #define BIFROST_JSON_USER_STORAGE_SIZE 64
 #define BIFROST_JSON_STRING_BLOCK_SIZE 256
+
+/* Reader API (String -> Object) */
 
 typedef enum bfJsonEvent_t
 {
@@ -50,18 +53,8 @@ typedef enum bfJsonType_t
 struct bfJsonParserContext_t;
 typedef struct bfJsonParserContext_t bfJsonParserContext;
 
-struct bfJsonStringBlock_t;
-typedef struct bfJsonStringBlock_t bfJsonStringBlock;
-
-struct bfJsonWriter_t;
-typedef struct bfJsonWriter_t BifrostJsonWriter;
-
 typedef void (*bfJsonFn)(bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
-typedef void* (*bfJsonAllocFn)(size_t size); /* TODO: Add void* user_data parameter. */
-typedef void (*bfJsonFreeFn)(void* ptr);     /* TODO: Add void* user_data parameter. */
-typedef void (*bfJsonWriterForEachFn)(const bfJsonStringBlock* block, void* user_data);
 
-/* Reader API (String -> Object) */
 void          bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callback, void* user_data);
 const char*   bfJsonParser_errorMessage(const bfJsonParserContext* ctx);
 bfJsonType    bfJsonParser_valueType(const bfJsonParserContext* ctx);
@@ -73,6 +66,17 @@ void*         bfJsonParser_userStorage(const bfJsonParserContext* ctx);
 void*         bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
 
 /* Writer API (Object -> String) */
+
+struct bfJsonWriter_t;
+typedef struct bfJsonWriter_t BifrostJsonWriter;
+
+struct bfJsonStringBlock_t;
+typedef struct bfJsonStringBlock_t bfJsonStringBlock;
+
+typedef void* (*bfJsonAllocFn)(size_t size); /* TODO: Add void* user_data parameter. */
+typedef void (*bfJsonFreeFn)(void* ptr);     /* TODO: Add void* user_data parameter. */
+typedef void (*bfJsonWriterForEachFn)(const bfJsonStringBlock* block, void* user_data);
+
 BifrostJsonWriter* bfJsonWriter_new(bfJsonAllocFn alloc_fn);
 size_t             bfJsonWriter_length(const BifrostJsonWriter* self);
 void               bfJsonWriter_beginArray(BifrostJsonWriter* self);

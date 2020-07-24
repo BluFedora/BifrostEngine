@@ -13,37 +13,58 @@
 #include "bifrost_platform_export.h"
 
 #include <stdint.h> /* uint8_t */
-#include <string.h> /* memcpy  */
+
+// clang-format off
 
 // TODO: The rest of the keys...
-#define BIFROST_KEY_ESCAPE 256
-#define BIFROST_KEY_A 'A'
-#define BIFROST_KEY_B 'B'
-#define BIFROST_KEY_C 'C'
-#define BIFROST_KEY_D 'D'
-#define BIFROST_KEY_E 'E'
-#define BIFROST_KEY_F 'F'
-#define BIFROST_KEY_G 'G'
-#define BIFROST_KEY_H 'H'
-#define BIFROST_KEY_I 'I'
-#define BIFROST_KEY_J 'J'
-#define BIFROST_KEY_K 'K'
-#define BIFROST_KEY_L 'L'
-#define BIFROST_KEY_M 'M'
-#define BIFROST_KEY_N 'N'
-#define BIFROST_KEY_O 'O'
-#define BIFROST_KEY_P 'P'
-#define BIFROST_KEY_Q 'Q'
-#define BIFROST_KEY_R 'R'
-#define BIFROST_KEY_S 'S'
-#define BIFROST_KEY_T 'T'
-#define BIFROST_KEY_U 'U'
-#define BIFROST_KEY_V 'V'
-#define BIFROST_KEY_W 'W'
-#define BIFROST_KEY_X 'X'
-#define BIFROST_KEY_Y 'Y'
-#define BIFROST_KEY_Z 'Z'
-#define k_KeyCodeMax BIFROST_KEY_ESCAPE
+#define BIFROST_KEY_ESCAPE    256
+#define BIFROST_KEY_ENTER     257
+#define BIFROST_KEY_TAB       258
+#define BIFROST_KEY_LEFT      259
+#define BIFROST_KEY_RIGHT     260
+#define BIFROST_KEY_UP        261
+#define BIFROST_KEY_DOWN      262
+#define BIFROST_KEY_PAGE_UP   263
+#define BIFROST_KEY_PAGE_DOWN 264
+#define BIFROST_KEY_HOME      265
+#define BIFROST_KEY_END       266
+#define BIFROST_KEY_INSERT    267
+#define BIFROST_KEY_DELETE    268
+#define BIFROST_KEY_BACKSPACE 269
+#define BIFROST_KEY_PAD_ENTER 270
+
+#define BIFROST_KEY_SPACE ' '
+
+#define BIFROST_KEY_A     'A'
+#define BIFROST_KEY_B     'B'
+#define BIFROST_KEY_C     'C'
+#define BIFROST_KEY_D     'D'
+#define BIFROST_KEY_E     'E'
+#define BIFROST_KEY_F     'F'
+#define BIFROST_KEY_G     'G'
+#define BIFROST_KEY_H     'H'
+#define BIFROST_KEY_I     'I'
+#define BIFROST_KEY_J     'J'
+#define BIFROST_KEY_K     'K'
+#define BIFROST_KEY_L     'L'
+#define BIFROST_KEY_M     'M'
+#define BIFROST_KEY_N     'N'
+#define BIFROST_KEY_O     'O'
+#define BIFROST_KEY_P     'P'
+#define BIFROST_KEY_Q     'Q'
+#define BIFROST_KEY_R     'R'
+#define BIFROST_KEY_S     'S'
+#define BIFROST_KEY_T     'T'
+#define BIFROST_KEY_U     'U'
+#define BIFROST_KEY_V     'V'
+#define BIFROST_KEY_W     'W'
+#define BIFROST_KEY_X     'X'
+#define BIFROST_KEY_Y     'Y'
+#define BIFROST_KEY_Z     'Z'
+
+#define k_KeyCodeMax      BIFROST_KEY_PAD_ENTER
+
+// clang-format on
 
 #if __cplusplus
 extern "C" {
@@ -328,6 +349,6 @@ BIFROST_PLATFORM_API bfWindowEvent      bfWindowEvent_make(int width, int height
 BIFROST_PLATFORM_API struct bfEvent_t   bfEvent_makeImpl(bfEventType type, uint8_t flags, const void* data, size_t data_size);
 
 #define bfEvent_make(type, flags, data) \
-  bfEvent_makeImpl((type), (flags), &data, sizeof(data))
+  bfEvent_makeImpl((type), (flags), &data, sizeof(data))  // NOLINT(bugprone-macro-parentheses)
 
 #endif /* BIFROST_PLATFORM_EVENT_H */

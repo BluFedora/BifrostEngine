@@ -265,7 +265,7 @@ namespace bifrost
         m_Children.back().destroy();
       }
 
-      setParent(nullptr);
+      detachFromParent();
 
       gc::removeEntity(*this);
     }

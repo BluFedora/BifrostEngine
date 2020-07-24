@@ -257,16 +257,9 @@ namespace bifrost
         continue;
       }
 
-      const Vector3f u = (*p1) - (*p0);
-      const Vector3f v = (*p2) - (*p0);
-
-      const Vector3f face_normal =
-       {
-        u.y * v.z - u.z * v.y,
-        u.z * v.x - u.x * v.z,
-        u.x * v.y - u.y * v.x,
-        0.0f,
-       };
+      const Vector3f u           = (*p1) - (*p0);
+      const Vector3f v           = (*p2) - (*p0);
+      const Vector3f face_normal = vec::faceNormal(*p0, *p1, *p2);
 
       // [http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/]
 

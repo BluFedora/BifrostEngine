@@ -105,6 +105,29 @@ namespace bifrost
     }
   }
 
+  void ISerializer::serialize(StringRange key, Rect2f& value)
+  {
+    if (pushObject(key))
+    {
+      float x = value.left();
+      float y = value.top();
+      float w = value.width();
+      float h = value.height();
+
+      serialize("x", x);
+      serialize("y", y);
+      serialize("width", w);
+      serialize("height",h);
+
+      value.setX(x);
+      value.setY(y);
+      value.setWidth(w);
+      value.setHeight(h);
+
+      popObject();
+    }
+  }
+
   void ISerializer::serialize(StringRange key, BifrostUUIDNumber& value)
   {
     static constexpr int k_AsStringSize = sizeof(BifrostUUIDString) - 1;

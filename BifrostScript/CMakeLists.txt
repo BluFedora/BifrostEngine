@@ -66,9 +66,12 @@ include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/include)
 add_library(
   BifrostScript STATIC
   ${BIFROST_SCRIPT_SOURCE_FILES}
-  "../BifrostRuntime/src/data_structures/bifrost_array_t.c"
-  "../BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
-  "../BifrostRuntime/src/data_structures/bifrost_hash_map.c"
+)
+
+target_link_libraries(
+  BifrostScript
+  PRIVATE
+    BifrostDataStructuresC_static
 )
 
 target_include_directories(
@@ -99,9 +102,6 @@ if(NOT EMSCRIPTEN)
   add_library(
     BifrostScript_shared SHARED
     ${BIFROST_SCRIPT_SOURCE_FILES}
-    "../BifrostRuntime/src/data_structures/bifrost_array_t.c"
-    "../BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
-    "../BifrostRuntime/src/data_structures/bifrost_hash_map.c"
   )
   
   target_include_directories(BifrostScript_shared
@@ -109,6 +109,12 @@ if(NOT EMSCRIPTEN)
         ${PROJECT_SOURCE_DIR}/include
       PRIVATE
         ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
+  )
+
+  target_link_libraries(
+    BifrostScript_shared
+    PRIVATE
+      BifrostDataStructuresC_static
   )
   
   target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
@@ -128,6 +134,7 @@ target_link_libraries(
   BifrostScript_cli 
   PRIVATE 
     BifrostScript
+    BifrostDataStructuresCxx
 )
 
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)

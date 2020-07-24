@@ -141,6 +141,7 @@ namespace bifrost
     virtual void serialize(StringRange key, Quaternionf& value);
     virtual void serialize(StringRange key, bfColor4f& value);
     virtual void serialize(StringRange key, bfColor4u& value);
+    virtual void serialize(StringRange key, Rect2f& value);
     virtual void serialize(StringRange key, String& value) = 0;
     virtual void serialize(StringRange key, BifrostUUIDNumber& value);
     virtual void serialize(StringRange key, BifrostUUID& value)     = 0;

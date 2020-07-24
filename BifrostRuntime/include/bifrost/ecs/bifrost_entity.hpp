@@ -73,7 +73,7 @@ namespace bifrost
     static constexpr std::uint8_t IS_ACTIVE              = bfBit(3);  //!<
     static constexpr std::uint8_t IS_SERIALIZABLE        = bfBit(4);  //!<
 
-   private:
+   // private:
     Scene&                  m_OwningScene;              //!<
     String                  m_Name;                     //!<
     BifrostTransformID      m_Transform;                //!<

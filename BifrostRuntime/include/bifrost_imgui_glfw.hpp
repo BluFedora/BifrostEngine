@@ -4,12 +4,9 @@
 #include "bifrost/graphics/bifrost_gfx_handle.h"
 #include "bifrost/platform/bifrost_platform_fwd.h"
 
-struct bfEvent_t;
-typedef struct bfEvent_t bfEvent;
-
 namespace bifrost
 {
-  using Event = struct ::bfEvent_t;
+  using Event = bfEvent;
 
   class StandardRenderer;
 

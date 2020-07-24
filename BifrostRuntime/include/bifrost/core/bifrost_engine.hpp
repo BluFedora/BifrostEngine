@@ -1,6 +1,8 @@
 #ifndef BIFROST_ENGINE_HPP
 #define BIFROST_ENGINE_HPP
 
+#define USE_CRT_HEAP 1
+
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
@@ -12,14 +14,21 @@
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
 
-// ReSharper disable once CppUnusedIncludeDirective
+#if USE_CRT_HEAP
 #include "bifrost/memory/bifrost_c_allocator.hpp"
-// ReSharper disable once CppUnusedIncludeDirective
+#else
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#endif
 
 #include <utility>
 
 using BifrostEngineCreateParams = bfGfxContextCreateParams;
+
+#if USE_CRT_HEAP
+using MainHeap = bifrost::CAllocator;
+#else
+using MainHeap = bifrost::FreeListAllocator;
+#endif
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -126,14 +135,6 @@ namespace bifrost
 
 using namespace bifrost;
 
-#define USE_CRT_HEAP 0
-
-#if USE_CRT_HEAP
-using MainHeap = CAllocator;
-#else
-using MainHeap = FreeListAllocator;
-#endif
-
 class Engine : private bfNonCopyMoveable<Engine>
 {
  private:
@@ -203,7 +204,9 @@ class Engine : private bfNonCopyMoveable<Engine>
   template<typename T>
   void addECSSystem()
   {
-    m_Systems.push(m_MainMemory.allocateT<T>());
+    T* const sys = m_MainMemory.allocateT<T>();
+    m_Systems.push(sys);
+    sys->onInit(*this);
   }
 
   void               init(const BifrostEngineCreateParams& params, BifrostWindow* main_window);

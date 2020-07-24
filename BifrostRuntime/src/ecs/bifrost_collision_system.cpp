@@ -25,8 +25,4 @@ namespace bifrost
   void CollisionSystem::onFrameEnd(Engine& engine, float dt)
   {
   }
-
-  void CollisionSystem::onFrameDraw(Engine& engine, float alpha)
-  {
-  }
 }

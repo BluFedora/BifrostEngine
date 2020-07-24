@@ -137,7 +137,11 @@ target_link_libraries(
     "${BIFROST_PLATFORM_LIB_FILES}"
 )
 
-target_compile_definitions(BifrostPlatform_static PRIVATE BIFROST_PLATFORM_EXPORT_STATIC)
+target_compile_definitions(
+  BifrostPlatform_static
+  PUBLIC 
+    BIFROST_PLATFORM_EXPORT_STATIC
+)
 
 set_target_properties(BifrostPlatform_static PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(BifrostPlatform_static PROPERTIES PUBLIC_HEADER include/bifrost/platform/bifrost_platform.h)

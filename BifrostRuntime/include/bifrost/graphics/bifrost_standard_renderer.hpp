@@ -274,6 +274,139 @@ namespace bifrost
   };
 
   //
+  // T - Vertex Type
+  //
+  template<typename T, std::size_t NumVerticesPerBatch>
+  struct TransientVertexBuffer final
+  {
+    using TArray = T[NumVerticesPerBatch];
+
+    struct Link final
+    {
+      MultiBuffer<TArray> gpu_buffer;
+      Link*               next;
+      int                 vertices_left;
+
+      T* currentVertex()
+      {
+        return &(*gpu_buffer.currentElement())[numVertices()];
+      }
+
+      int numVertices() const
+      {
+        return NumVerticesPerBatch - vertices_left;
+      }
+
+      void bind(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info)
+      {
+        const bfBufferSize offset = gpu_buffer.offset(frame_info);
+
+        bfGfxCmdList_bindVertexBuffers(command_list, 0, &gpu_buffer.handle(), 1, &offset);
+      }
+    };
+
+    bfGfxDeviceHandle gfx_device;
+    Link*             free_list;
+    Array<Link*>      used_buffers;
+
+    explicit TransientVertexBuffer(IMemoryManager& memory_manager) :
+      gfx_device{nullptr},
+      free_list{nullptr},
+      used_buffers{memory_manager}
+    {
+    }
+
+    void init(bfGfxDeviceHandle device)
+    {
+      gfx_device = device;
+    }
+
+    void clear()
+    {
+      for (Link* const link : used_buffers)
+      {
+        link->next = free_list;
+        free_list  = link;
+      }
+
+      used_buffers.clear();
+    }
+
+    // Pointer and offset is returned.
+    std::pair<T*, int> requestVertices(const bfGfxFrameInfo& frame_info, int vertices)
+    {
+      assert(vertices < NumVerticesPerBatch && "Could not handle this amount of vetices in one batch.");
+
+      if (used_buffers.isEmpty() || used_buffers.back()->vertices_left < vertices)
+      {
+        Link* new_link = grabFreeLink(gfx_device, frame_info);
+
+        used_buffers.push(new_link);
+
+        bfBuffer_map(new_link->gpu_buffer.handle(), new_link->gpu_buffer.offset(frame_info), new_link->gpu_buffer.elementAlignedSize());
+      }
+
+      Link* buffer_link = used_buffers.back();
+
+      T* data = buffer_link->currentVertex();
+
+      const int offset = buffer_link->numVertices();
+
+      buffer_link->vertices_left -= vertices;
+
+      return {data, offset};
+    }
+
+    Link* currentLink() const
+    {
+      return used_buffers.back();
+    }
+
+    void deinit()
+    {
+      clear();
+
+      while (free_list)
+      {
+        Link* const next = free_list->next;
+        free_list->gpu_buffer.destroy(gfx_device);
+        memory().deallocateT(free_list);
+        free_list = next;
+      }
+    }
+
+   private:
+    Link* grabFreeLink(bfGfxDeviceHandle gfx_device, const bfGfxFrameInfo& frame_info)
+    {
+      Link* result = free_list;
+
+      if (!result)
+      {
+        result = memory().allocateT<Link>();
+        result->gpu_buffer.create(
+         gfx_device,
+         BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER,
+         frame_info,
+         alignof(T));
+      }
+      else
+      {
+        free_list = free_list->next;
+      }
+
+      result->vertices_left = NumVerticesPerBatch;
+      result->next          = nullptr;
+
+      return result;
+    }
+
+    IMemoryManager& memory() const
+    {
+      return used_buffers.memory();
+    }
+  };
+
+  //
   // Main Renderer
   //
 
@@ -355,6 +488,7 @@ namespace bifrost
     bfGfxCommandListHandle  mainCommandList() const { return m_MainCmdList; }
     bfTextureHandle         surface() const { return m_MainSurface; }
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
+    bfGfxFrameInfo          frameInfo() const { return m_FrameInfo; }
 
     void               init(const bfGfxContextCreateParams& gfx_create_params, BifrostWindow* main_window);
     [[nodiscard]] bool frameBegin();
@@ -417,6 +551,20 @@ namespace bifrost
      bfShaderModuleHandle fragment_module,
      const char*          debug_name = nullptr);
   }  // namespace gfx
+
+  //
+  // Shader UBO Bindings
+  //
+  namespace bindings
+  {
+    void addObject(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addMaterial(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addCamera(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addSSAOInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addSSAOBlurInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addLightingInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addLightBuffer(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+  }  // namespace bindings
 }  // namespace bifrost
 
 #endif /* BIFROST_STANDARD_RENDERER_HPP */

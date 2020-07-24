@@ -100,7 +100,7 @@ namespace bifrost::meta
     };
 
     //
-    // TODO: Add constexpr index to this version for for each....
+    // TODO: Add constexpr index to this version of for each....
     //
 
     template<std::size_t N>

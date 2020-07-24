@@ -79,8 +79,10 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
-  set(CMAKE_CXX_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-  set(CMAKE_C_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
+  # [https://docs.microsoft.com/en-us/cpp/build/reference/vmb-vmg-representation-method?redirectedfrom=MSDN&view=vs-2019]
+  #
+  set(CMAKE_CXX_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812 /permissive- /vmg")
+  set(CMAKE_C_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812 /permissive- /vmg")
 endif()
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
@@ -94,7 +96,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_common.c"
 
   # Experiments
-  "BifrostExperiments/src/*.cpp"
   "BifrostExperiments/src/*.c"
 
   # Bifrost Asset Module
@@ -103,12 +104,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Core Module
   "BifrostRuntime/src/core/bifrost_game_state_machine.cpp"
   "BifrostRuntime/src/core/bifrost_igame_state_layer.cpp"
-
-  # Bifrost Datastructures Module
-  "BifrostRuntime/src/data_structures/bifrost_array_t.c"
-  "BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
-  "BifrostRuntime/src/data_structures/bifrost_hash_map.c"
-  "BifrostRuntime/src/data_structures/bifrost_string.cpp"
 
   # Bifrost Debug Module
   "BifrostRuntime/src/debug/bifrost_dbg_logger.c"
@@ -121,13 +116,14 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Editor Module
   "include/bifrost/editor/*.hpp"
   "BifrostRuntime/src/editor/bifrost_editor_build.cpp"
+  "BifrostRuntime/src/bifrost_imgui_glfw.cpp"
 
   # Bifrost Graphics Module
   "BifrostRuntime/src/graphics/bifrost_standard_renderer.cpp"
   "BifrostRuntime/src/graphics/bifrost_glsl_compiler.cpp"
 
   # Bifrost Math Module
-  "BifrostMath/src/bifrost_rect2.cpp"
+  "Bifrost/Math/src/bifrost_rect2.cpp"
 
   # Bifrost Meta Module
   "BifrostRuntime/src/meta/bifrost_meta_runtime.cpp"
@@ -136,9 +132,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "BifrostRuntime/src/utility/bifrost_hash.cpp"
   "BifrostRuntime/src/utility/bifrost_json.cpp"
   "BifrostRuntime/src/utility/bifrost_uuid.c"
-
-  # Editor
-  "BifrostRuntime/src/bifrost_imgui_glfw.cpp"
 
   # Physics
   "BifrostRuntime/src/bifrost/physics/bifrost_particle.cpp"
@@ -180,7 +173,8 @@ add_executable(
   # 'Game' Code
  "DemoApp/src/camera_controller.cpp"
 
-)
+ "BifrostRuntime/src/graphics/bifrost_component_renderer.cpp"
+ )
 
 # Bifrost Engine Submodules
 
@@ -193,11 +187,13 @@ target_include_directories(
 target_link_libraries(
   BifrostEngine
   PRIVATE
+    BifrostDataStructuresCxx
     BifrostScript_shared
     BifrostMath_shared
     BifrostMemory
     BifrostPlatform_shared
     BifrostGraphics_shared
+    BifrostAnimation2D_static
 )
 
 set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
@@ -321,11 +317,12 @@ add_custom_command(TARGET BifrostEngine POST_BUILD
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
+add_subdirectory(Bifrost/DataStructures)
+add_subdirectory(Bifrost/Math)
+add_subdirectory(Bifrost/Memory)
+
 add_subdirectory(BifrostExperiments)
 add_subdirectory(BifrostGraphics)
-add_subdirectory(BifrostMath)
-add_subdirectory(BifrostMemory)
 add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
-
-add_subdirectory(BuildTimeAnalyzerGUI)
+add_subdirectory(BifrostAnimation2D)
