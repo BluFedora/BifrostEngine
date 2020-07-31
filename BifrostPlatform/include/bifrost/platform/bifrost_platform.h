@@ -135,9 +135,6 @@ extern "C"
     bfWindowEventFn event_fn;
     bfWindowFrameFn frame_fn;
 
-    // SDL needs this.
-    void* gl_context;
-
   } BifrostWindow;
 
   /*!

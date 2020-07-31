@@ -1,11 +1,12 @@
 #include "bifrost/editor/bifrost_editor_scene.hpp"
+
 #include "bifrost/memory/bifrost_stl_allocator.hpp"
 
 #include <list>
 
 namespace bifrost::editor
 {
-  static const float k_SceneViewPadding = 1.0f;
+  static const float k_SceneViewPadding = 2.0f;
   static const float k_InvalidMousePos  = -1.0f;
 
   SceneView::SceneView() :
@@ -16,7 +17,8 @@ namespace bifrost::editor
     m_MousePos{k_InvalidMousePos, k_InvalidMousePos},
     m_IsDraggingMouse{false},
     m_MouseLookSpeed{0.01f},
-    m_Editor{nullptr}
+    m_Editor{nullptr},
+    m_OldWindowPadding{}
   {
   }
 
@@ -30,8 +32,8 @@ namespace bifrost::editor
 
   void SceneView::onPreDrawGUI(EditorOverlay& editor)
   {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    m_OldWindowPadding = ImGui::GetStyle().WindowPadding;
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_SceneViewPadding, k_SceneViewPadding));
   }
 
@@ -50,12 +52,13 @@ namespace bifrost::editor
 
     if (!m_Camera)
     {
-      ImGui::PopStyleVar(3);
       return;
     }
 
     if (open_project)
     {
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, m_OldWindowPadding);
+
       if (ImGui::BeginMenuBar())
       {
         if (ImGui::BeginMenu("Camera"))
@@ -74,6 +77,8 @@ namespace bifrost::editor
 
         ImGui::EndMenuBar();
       }
+
+      ImGui::PopStyleVar(1);
 
       const auto           color_buffer        = m_Camera->gpu_camera.composite_buffer;
       const auto           color_buffer_width  = bfTexture_width(color_buffer);
@@ -112,19 +117,16 @@ namespace bifrost::editor
     }
     else
     {
-      static const char* s_StrNoProjectOpen = "No Project Open";
-      static const char* s_StrNewProject    = "  New Project  ";
-      static const char* s_StrOpenProject   = "  Open Project ";
+      static const char* s_StrNewProject    = " New  Project ";
+      static const char* s_StrOpenProject   = " Open Project ";
 
-      const auto text_size  = ImGui::CalcTextSize(s_StrNoProjectOpen);
-      const auto mid_screen = (ImGui::GetWindowSize() - text_size) * 0.5f;
+      const auto text_size  = ImGui::CalcTextSize(s_StrNewProject);
+      auto       mid_screen = (ImGui::GetWindowSize() - text_size) * 0.5f;
 
-      ImGui::SetCursorPos(
-       (ImGui::GetWindowSize() - text_size) * 0.5f);
+      mid_screen.x = std::round(mid_screen.x);
+      mid_screen.y = std::round(mid_screen.y);
 
-      ImGui::Text("%s", s_StrNoProjectOpen);
-
-      ImGui::SetCursorPosX(mid_screen.x);
+      ImGui::SetCursorPos(mid_screen);
 
       editor.buttonAction({&editor}, "File.New.Project", s_StrNewProject);
 
@@ -136,7 +138,7 @@ namespace bifrost::editor
 
   void SceneView::onPostDrawGUI(EditorOverlay& editor)
   {
-    ImGui::PopStyleVar(3);
+    ImGui::PopStyleVar(1);
   }
 
   // TODO(SR): This should be in a public header along with other std:: data structure typedefs.

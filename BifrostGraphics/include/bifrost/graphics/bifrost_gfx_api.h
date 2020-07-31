@@ -274,7 +274,6 @@ typedef struct
 BIFROST_GFX_API bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 BIFROST_GFX_API bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
 BIFROST_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window);
-BIFROST_GFX_API void                   bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 BIFROST_GFX_API void                   bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 BIFROST_GFX_API bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window);
 BIFROST_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self);
@@ -600,6 +599,17 @@ BIFROST_GFX_API char* LoadFileIntoMemory(const char* filename, long* out_size);
 
 #if __cplusplus
 }
+#endif
+
+#if __cplusplus
+
+template<typename T>
+static constexpr inline BifrostIndexType bfIndexTypeFromT()
+{
+  static_assert((sizeof(T) == 2 || sizeof(T) == 4), "An index type must either be a uint16 or a uint32");
+  return sizeof(T) == 2 ? BIFROST_INDEX_TYPE_UINT16 : BIFROST_INDEX_TYPE_UINT32;
+}
+
 #endif
 
 #endif /* BIFROST_GFX_API_H */

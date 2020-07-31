@@ -4,6 +4,7 @@
 #include "bifrost/math/bifrost_mat4x4.h"
 #include "bifrost/platform/bifrost_platform.h"
 #include "bifrost/platform/bifrost_platform_event.h"
+#include "bifrost\editor\bf_editor_icons.hpp"
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove, but still needed for Cursors, Clipboard, and monitors.
 #include <imgui/imgui.h>
@@ -17,15 +18,15 @@ namespace bifrost::imgui
 
   struct UIFrameData
   {
-    bfBufferHandle vertex_buffer;
-    bfBufferHandle index_buffer;
-    bfBufferHandle uniform_buffer;
+    bfBufferHandle vertex_buffer  = nullptr;
+    bfBufferHandle index_buffer   = nullptr;
+    bfBufferHandle uniform_buffer = nullptr;
 
     void create(bfGfxDeviceHandle device)
     {
       bfBufferCreateParams buffer_params;
       buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
-      buffer_params.allocation.size       = 0x100 * 2;
+      buffer_params.allocation.size       = 0x100;
       buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
 
       uniform_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
@@ -97,9 +98,11 @@ namespace bifrost::imgui
 
   struct UIRenderData final
   {
+   private:
     std::size_t                    num_buffers;
     std::unique_ptr<UIFrameData[]> buffers;
 
+   public:
     explicit UIRenderData(std::size_t num_buffers) :
       num_buffers{num_buffers},
       buffers{std::make_unique<UIFrameData[]>(num_buffers)}
@@ -109,20 +112,28 @@ namespace bifrost::imgui
       });
     }
 
+    UIFrameData& grabFrameData(const uint32_t index) const
+    {
+      assert(index < num_buffers);
+
+      return buffers[index];
+    }
+
+    ~UIRenderData()
+    {
+      forEachBuffer([](const UIFrameData& buffer) {
+        buffer.destroy(s_RenderData.device);
+      });
+    }
+
+   private:
     template<typename F>
-    void forEachBuffer(F&& fn)
+    void forEachBuffer(F&& fn) const
     {
       for (std::size_t i = 0; i < num_buffers; ++i)
       {
         fn(buffers[i]);
       }
-    }
-
-    ~UIRenderData()
-    {
-      forEachBuffer([](UIFrameData& buffer) {
-        buffer.destroy(s_RenderData.device);
-      });
     }
   };
 
@@ -213,7 +224,7 @@ namespace bifrost::imgui
     io.SetClipboardTextFn = GLFW_ClipboardSet;
     io.ClipboardUserData  = nullptr;
 
-    // Cursors
+    // Mouse Cursors
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     s_MouseCursors[ImGuiMouseCursor_Arrow]      = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
     s_MouseCursors[ImGuiMouseCursor_TextInput]  = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
@@ -313,11 +324,23 @@ namespace bifrost::imgui
 
     // Renderer Setup: Font Texture
 
+    const float font_size = 20.0f;
+
+    //io.Fonts->AddFontDefault();
+
     io.Fonts->AddFontFromFileTTF(
      "assets/fonts/Abel.ttf",
-     18.0f,
+     font_size,
      nullptr,
      nullptr);
+
+    ImFontConfig config;
+    config.MergeMode = true;
+    //config.PixelSnapH = true;
+    // config.GlyphMinAdvanceX = font_size;  // Use if you want to make the icon monospaced
+
+    const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, font_size - 5.0f, &config, icon_ranges);
 
     unsigned char* pixels;
     int            width, height, bytes_per_pixel;
@@ -435,10 +458,10 @@ namespace bifrost::imgui
     {
       if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
       {
-        ImGuiViewport* const main_viewport = ImGui::GetMainViewport();
+        ImGuiViewport* const   main_viewport = ImGui::GetMainViewport();
         BifrostWindow* const   window        = static_cast<BifrostWindow*>(main_viewport->PlatformHandle);
         GLFWwindow* const      glfw_window   = static_cast<GLFWwindow*>(window->handle);
-        const ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
+        const ImGuiMouseCursor imgui_cursor  = ImGui::GetMouseCursor();
 
         if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
         {
@@ -457,21 +480,19 @@ namespace bifrost::imgui
 
   static void frameResetState(bfGfxCommandListHandle command_list, UIFrameData& frame, int fb_width, int fb_height)
   {
-    uint64_t buffer_offset = 0;
+    uint64_t vertex_buffer_offset = 0;
 
     bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_NONE);
     bfGfxCmdList_setDynamicStates(command_list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
     bfGfxCmdList_bindVertexDesc(command_list, s_RenderData.vertex_layout);
-    bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame.vertex_buffer, 1, &buffer_offset);
-    // ReSharper disable CppUnreachableCode
-    bfGfxCmdList_bindIndexBuffer(command_list, frame.index_buffer, 0, sizeof(ImDrawIdx) == 2 ? BIFROST_INDEX_TYPE_UINT16 : BIFROST_INDEX_TYPE_UINT32);
-    // ReSharper restore CppUnreachableCode
+    bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame.vertex_buffer, 1, &vertex_buffer_offset);
+    bfGfxCmdList_bindIndexBuffer(command_list, frame.index_buffer, 0, bfIndexTypeFromT<ImDrawIdx>());
     bfGfxCmdList_bindProgram(command_list, s_RenderData.program);
     frame.setTexture(command_list, s_RenderData.font);
     bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);
   }
 
-  static void frameDraw(ImDrawData* draw_data, bfWindowSurfaceHandle window, UIFrameData* buffers)
+  static void frameDraw(ImDrawData* draw_data, bfWindowSurfaceHandle window, UIFrameData& frame)
   {
     if (draw_data)
     {
@@ -483,8 +504,6 @@ namespace bifrost::imgui
         return;
 
       const bfGfxFrameInfo info = bfGfxContext_getFrameInfo(s_RenderData.ctx);
-
-      UIFrameData& frame = buffers[info.frame_index];
 
       const size_t vertex_size = draw_data->TotalVtxCount * sizeof(ImDrawVert);
       const size_t index_size  = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
@@ -542,14 +561,7 @@ namespace bifrost::imgui
         {
           const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 
-          if (pcmd->TextureId)
-          {
-            frame.setTexture(command_list, (bfTextureHandle)pcmd->TextureId);
-          }
-          else
-          {
-            frame.setTexture(command_list, s_RenderData.font);
-          }
+          frame.setTexture(command_list, pcmd->TextureId ? (bfTextureHandle)pcmd->TextureId : s_RenderData.font);
 
           if (pcmd->UserCallback)
           {
@@ -600,9 +612,10 @@ namespace bifrost::imgui
   void endFrame()
   {
     ImGuiViewport* const main_viewport = ImGui::GetMainViewport();
+    const bfGfxFrameInfo info          = bfGfxContext_getFrameInfo(s_RenderData.ctx);
 
     ImGui::Render();
-    frameDraw(ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->buffers.get());
+    frameDraw(ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->grabFrameData(info.frame_index));
 
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -823,9 +836,10 @@ namespace bifrost::imgui
       if (bfGfxCmdList_begin(command_list))
       {
         const bfTextureHandle surface_tex = bfGfxDevice_requestSurface(surface);
+        const bfGfxFrameInfo  info        = bfGfxContext_getFrameInfo(s_RenderData.ctx);
 
         setupDefaultRenderPass(command_list, surface_tex);
-        frameDraw(vp->DrawData, surface, ui_render_data->buffers.get());
+        frameDraw(vp->DrawData, surface, ui_render_data->grabFrameData(info.frame_index));
         bfGfxCmdList_endRenderpass(command_list);
 
         bfGfxCmdList_end(command_list);

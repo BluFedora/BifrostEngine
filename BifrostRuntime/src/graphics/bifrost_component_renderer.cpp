@@ -35,9 +35,15 @@ namespace bifrost
 
     bfShaderProgram_compile(m_ShaderProgram);
 
-    m_SpriteVertexBuffer = engine.mainMemory().allocateT<VertexBuffer>(engine.mainMemory());
+    auto& memory = engine.mainMemory();
 
+    m_SpriteVertexBuffer = memory.allocateT<VertexBuffer>(memory);
     m_SpriteVertexBuffer->init(gfx_device);
+
+#if k_UseIndexBufferForSprites
+    m_SpriteIndexBuffer = memory.allocateT<IndexBuffer>(memory);
+    m_SpriteIndexBuffer->init(gfx_device);
+#endif
   }
 
   void ComponentRenderer::onFrameDraw(Engine& engine, CameraRender& camera, float alpha)
@@ -95,7 +101,9 @@ namespace bifrost
       if (sprite_list_size)
       {
         m_SpriteVertexBuffer->clear();
-
+#if k_UseIndexBufferForSprites
+        m_SpriteIndexBuffer->clear();
+#endif
         std::sort(
          sprite_list,
          sprite_list + sprite_list_size,
@@ -109,7 +117,12 @@ namespace bifrost
           int                 vertex_offset;
           int                 num_vertices;
           VertexBuffer::Link* vertex_buffer;
-          SpriteBatch*        next_batch;
+#if k_UseIndexBufferForSprites
+          int                index_offset;
+          int                num_indices;
+          IndexBuffer::Link* index_buffer;
+#endif
+          SpriteBatch* next_batch;
         };
 
         SpriteBatch* batches    = nullptr;
@@ -119,10 +132,13 @@ namespace bifrost
         {
           SpriteRenderer&                       sprite          = *sprite_list[i];
           Material* const                       sprite_mat      = &*sprite.material();
-          const std::pair<StandardVertex*, int> vertices_offset = m_SpriteVertexBuffer->requestVertices(frame_info, 6);
-          StandardVertex* const                 vertices        = vertices_offset.first;
-          const Vector2f&                       sprite_size     = sprite.size();
-          const bfColor4u&                      sprite_color    = sprite.color();
+          const std::pair<StandardVertex*, int> vertices_offset = m_SpriteVertexBuffer->requestVertices(frame_info, k_NumVerticesPerSprite);
+#if k_UseIndexBufferForSprites
+          const std::pair<SpriteIndexType*, int> index_offset = m_SpriteIndexBuffer->requestVertices(frame_info, k_NumIndicesPerSprite);
+#endif
+          StandardVertex* const vertices     = vertices_offset.first;
+          const Vector2f&       sprite_size  = sprite.size();
+          const bfColor4u&      sprite_color = sprite.color();
 
           if (!last_batch || last_batch->material != sprite_mat)
           {
@@ -131,8 +147,13 @@ namespace bifrost
             last_batch->vertex_offset = vertices_offset.second;
             last_batch->num_vertices  = 0;
             last_batch->vertex_buffer = m_SpriteVertexBuffer->currentLink();
-            last_batch->next_batch    = batches;
-            batches                   = last_batch;
+#if k_UseIndexBufferForSprites
+            last_batch->num_indices  = 0;
+            last_batch->index_offset = index_offset.second;
+            last_batch->index_buffer = m_SpriteIndexBuffer->currentLink();
+#endif
+            last_batch->next_batch = batches;
+            batches                = last_batch;
           }
 
           const BifrostTransform& transform     = sprite.owner().transform();
@@ -181,21 +202,38 @@ namespace bifrost
             };
           };
 
-          // TODO(Shareef): Use an index buffer.
+#if k_UseIndexBufferForSprites
+          const SpriteIndexType index_vertex_offset = last_batch->vertex_offset;
+          SpriteIndexType*      indices             = index_offset.first;
 
+          addVertex(positions[0], uvs[0]);
+          addVertex(positions[1], uvs[1]);
+          addVertex(positions[2], uvs[2]);
+          addVertex(positions[3], uvs[3]);
+
+          indices[0] = index_vertex_offset + 0;
+          indices[1] = index_vertex_offset + 1;
+          indices[2] = index_vertex_offset + 2;
+          indices[3] = index_vertex_offset + 1;
+          indices[4] = index_vertex_offset + 3;
+          indices[5] = index_vertex_offset + 2;
+
+          last_batch->num_indices += k_NumIndicesPerSprite;
+#else
           for (int index : {0, 1, 2, 1, 3, 2})
           {
             addVertex(positions[index], uvs[index]);
           }
+#endif
 
-          last_batch->num_vertices += 6;
+          last_batch->num_vertices += k_NumVerticesPerSprite;
         }
 
-        for (VertexBuffer::Link* const link : m_SpriteVertexBuffer->used_buffers)
-        {
-          link->gpu_buffer.flushCurrent(frame_info);
-          bfBuffer_unMap(link->gpu_buffer.handle());
-        }
+        m_SpriteVertexBuffer->flushLinks(frame_info);
+
+#if k_UseIndexBufferForSprites
+        m_SpriteIndexBuffer->flushLinks(frame_info);
+#endif
 
         bfGfxCmdList_setCullFace(cmd_list, BIFROST_CULL_FACE_NONE);
         bfGfxCmdList_bindProgram(cmd_list, m_ShaderProgram);
@@ -203,20 +241,24 @@ namespace bifrost
 
         camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
 
-        VertexBuffer::Link* last_link     = nullptr;
-        Material*           last_material = nullptr;
+        VertexBuffer::Link* last_vertex_buffer = nullptr;
+        Material*           last_material      = nullptr;
+
+#if k_UseIndexBufferForSprites
+        IndexBuffer::Link* last_index_buffer = nullptr;
+#endif
 
         while (batches)
         {
           if (batches->num_vertices)
           {
-            if (batches->vertex_buffer != last_link)
+            if (batches->vertex_buffer != last_vertex_buffer)
             {
-              last_link = batches->vertex_buffer;
+              last_vertex_buffer = batches->vertex_buffer;
 
-              const bfBufferSize offset = last_link->gpu_buffer.offset(frame_info);
+              const bfBufferSize offset = last_vertex_buffer->gpu_buffer.offset(frame_info);
 
-              bfGfxCmdList_bindVertexBuffers(cmd_list, 0, &last_link->gpu_buffer.handle(), 1, &offset);
+              bfGfxCmdList_bindVertexBuffers(cmd_list, 0, &last_vertex_buffer->gpu_buffer.handle(), 1, &offset);
             }
 
             if (batches->material != last_material)
@@ -226,7 +268,21 @@ namespace bifrost
               engine_renderer.bindMaterial(cmd_list, *last_material);
             }
 
+#if k_UseIndexBufferForSprites
+
+            if (last_index_buffer != batches->index_buffer)
+            {
+              last_index_buffer = batches->index_buffer;
+
+              const bfBufferSize offset = last_index_buffer->gpu_buffer.offset(frame_info);
+
+              bfGfxCmdList_bindIndexBuffer(cmd_list, last_index_buffer->gpu_buffer.handle(), offset, k_SpriteIndexType);
+            }
+
+            bfGfxCmdList_drawIndexed(cmd_list, batches->num_indices, batches->index_offset, 0);
+#else
             bfGfxCmdList_draw(cmd_list, batches->vertex_offset, batches->num_vertices);
+#endif
           }
 
           batches = batches->next_batch;
@@ -240,12 +296,18 @@ namespace bifrost
   void ComponentRenderer::onDeinit(Engine& engine)
   {
     const auto& gfx_device = engine.renderer().device();
+    auto&       memory     = engine.mainMemory();
 
     bfGfxDevice_release(gfx_device, m_ShaderModules[0]);
     bfGfxDevice_release(gfx_device, m_ShaderModules[1]);
     bfGfxDevice_release(gfx_device, m_ShaderProgram);
 
+#if k_UseIndexBufferForSprites
+    m_SpriteIndexBuffer->deinit();
+    memory.deallocateT(m_SpriteIndexBuffer);
+#endif
+
     m_SpriteVertexBuffer->deinit();
-    engine.mainMemory().deallocateT(m_SpriteVertexBuffer);
+    memory.deallocateT(m_SpriteVertexBuffer);
   }
 }  // namespace bifrost

@@ -20,7 +20,7 @@
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #endif
 
-#include <utility>
+#include <utility>  // pair
 
 using BifrostEngineCreateParams = bfGfxContextCreateParams;
 
@@ -59,6 +59,8 @@ namespace bifrost::detail
 namespace bifrost
 {
   static constexpr int k_MaxNumCamera = 16;
+  
+  struct Gfx2DPainter;
 
   struct CameraRenderCreateParams final
   {
@@ -150,6 +152,7 @@ class Engine : private bfNonCopyMoveable<Engine>
   VM                      m_Scripting;
   StandardRenderer        m_Renderer;
   DebugRenderer           m_DebugRenderer;
+  Gfx2DPainter*           m_Renderer2D;
   Array<AssetSceneHandle> m_SceneStack;
   Assets                  m_Assets;
   Array<IECSSystem*>      m_Systems;
@@ -171,6 +174,7 @@ class Engine : private bfNonCopyMoveable<Engine>
   VM&               scripting() { return m_Scripting; }
   StandardRenderer& renderer() { return m_Renderer; }
   DebugRenderer&    debugDraw() { return m_DebugRenderer; }
+  Gfx2DPainter&     renderer2D() { return *m_Renderer2D; }
   Assets&           assets() { return m_Assets; }
   AssetSceneHandle  currentScene() const;
   EngineState       state() const { return m_State; }
@@ -215,7 +219,7 @@ class Engine : private bfNonCopyMoveable<Engine>
   void               fixedUpdate(float delta_time);
   void               update(float delta_time);
   void               drawBegin(float render_alpha);
-  void               drawEnd() const;
+  void               drawEnd();
   void               endFrame();
   void               deinit();
 

@@ -2424,7 +2424,7 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
   glDrawElements(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode),
                  num_indices,
                  self->index_type == BIFROST_INDEX_TYPE_UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-                 (const void*)(uintptr_t(index_offset * index_size)));
+                 (const void*)(uintptr_t(index_offset * index_size) + self->index_offset));
 
   if (vertex_offset != 0)
   {

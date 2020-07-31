@@ -51,7 +51,7 @@ namespace bifrost
       return ptr;
     }
 
-    // throw std::bad_alloc();
+     throw std::bad_alloc();
     return nullptr;
   }
 

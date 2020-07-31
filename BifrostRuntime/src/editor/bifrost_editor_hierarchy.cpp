@@ -1,5 +1,6 @@
 #include "bifrost/editor/bifrost_editor_hierarchy.hpp"
 
+#include "bifrost/editor/bf_editor_icons.hpp"
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
@@ -33,7 +34,7 @@ namespace bifrost::editor
 
         ImGui::Separator();
 
-        imgui_ext::inspect("###SearchBar", "Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
+        imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH " Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
 
         if (!m_SearchQuery.isEmpty())
         {
@@ -85,9 +86,9 @@ namespace bifrost::editor
     Selection&                  selection       = editor.selection();
     const bool                  has_children    = !entity->children().isEmpty();
     const bool                  is_selected     = editor.selection().contains(entity);
-    ImGuiTreeNodeFlags          tree_node_flags = ImGuiTreeNodeFlags_OpenOnArrow;
     std::pair<Entity*, Entity*> parent_to       = {nullptr, nullptr}; /* {parent, child} */
     const bool                  is_active       = entity->isActive();
+    ImGuiTreeNodeFlags          tree_node_flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
     ImGui::PushID(entity);
 
@@ -106,7 +107,15 @@ namespace bifrost::editor
       ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
     }
 
-    const bool is_opened = ImGui::TreeNodeEx(entity->name().c_str(), tree_node_flags);
+    bool is_opened;
+
+    {
+      LinearAllocator&     tmp_alloc = editor.engine().tempMemory();
+      LinearAllocatorScope scope     = tmp_alloc;
+
+      char* tree_node_name = string_utils::fmtAlloc(tmp_alloc, nullptr, "%s %s", ICON_FA_DICE_D6, entity->name().c_str());
+      is_opened            = ImGui::TreeNodeEx(tree_node_name, tree_node_flags);
+    }
 
     if (!is_active)
     {

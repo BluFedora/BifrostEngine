@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_memory_utils.c
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -9,6 +10,7 @@
  * 
  * @copyright Copyright (c) 2020
  */
+/******************************************************************************/
 #include "bifrost/memory/bifrost_memory_utils.h"
 
 #include <assert.h> /* assert */
@@ -27,12 +29,16 @@ size_t bfAlignUpSize(size_t size, size_t required_alignment)
 
 void* bfAlignUpPointer(const void* ptr, size_t required_alignment)
 {
+  assert(required_alignment > 0 && (required_alignment & (required_alignment - 1)) == 0 && "bfAlignUpPointer:: The alignment must be a non-zero power of two.");
+
   const size_t required_alignment_minus_one = required_alignment - 1;
 
   return bfCast(bfCast(ptr, uintptr_t) + required_alignment_minus_one & ~required_alignment_minus_one, void*);
 }
 
-/* Good read on the various implementations and performance. [https://github.com/KabukiStarship/KabukiToolkit/wiki/Fastest-Method-to-Align-Pointers#21-proof-by-example] */
+/* Good read on the various implementations and performance. 
+  [https://github.com/KabukiStarship/KabukiToolkit/wiki/Fastest-Method-to-Align-Pointers#21-proof-by-example] 
+*/
 void* bfStdAlign(size_t alignment, size_t size, void** ptr, size_t* space)
 {
   assert(alignment > 0 && (alignment & (alignment - 1)) == 0 && "bfStdAlign:: The alignment must be a non-zero power of two.");

@@ -267,11 +267,6 @@ bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct 
   return surface;
 }
 
-void bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
-{
-  // gfxDestroySwapchain(self, *window_handle);
-}
-
 void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
 {
   window_handle->swapchain_needs_creation = bfFalse;
@@ -315,9 +310,6 @@ static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
 
       return true;
     }
-
-      return true;
-
   }
 
   return false;
@@ -327,8 +319,6 @@ void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window)
 {
   if (!window.swapchain_needs_creation)
   {
-    //bfGfxDevice_flush(self->logical_device);
-
     window.swapchain_needs_deletion = bfTrue;
     window.swapchain_needs_creation = bfTrue;
   }

@@ -18,6 +18,7 @@
 #include "bifrost_vec3.h" /* Vec3f        */
 
 #include <algorithm> /* min, max */
+#include <cmath>     /* acos     */
 #include <cstdint>   /* uint32_t */
 
 namespace bifrost
@@ -46,6 +47,11 @@ namespace bifrost
     template<>
     struct Vec2T<float> : public Vec2f
     {
+      Vec2T(float xy) :
+        Vec2f{xy, xy}
+      {
+      }
+
       Vec2T(float x, float y) :
         Vec2f{x, y}
       {
@@ -125,7 +131,7 @@ namespace bifrost
     template<typename T>
     bool operator!=(const Vec2T<T>& lhs, const Vec2T<T>& rhs)
     {
-      return lhs.x != rhs.x && lhs.y != rhs.y;
+      return lhs.x != rhs.x || lhs.y != rhs.y;
     }
 
     // Vector3
@@ -483,6 +489,31 @@ namespace bifrost
 
   namespace vec
   {
+    // Vec2
+
+    static inline Vector2f normalized(Vector2f a)
+    {
+      Vec2f_normalize(&a);
+      return a;
+    }
+
+    static inline float angleBetween0ToPI(const Vector2f& a, const Vector2f& b)
+    {
+      return std::acos(Vec2f_dot(&a, &b) / (Vec2f_len(&a) * Vec2f_len(&b)));
+    }
+
+#if 0
+    // Range is from [-2pi, 2pi]
+    // Relative angle of b to a.
+    // http://www.euclideanspace.com/maths/algebra/vectors/angleBetween/issues/index.htm
+    static inline float angleBetween0ToPI(const Vector2f& a, const Vector2f& b)
+    {
+      return atan2(b.y, b.x) - atan2(a.y, a.x);
+    }
+#endif
+
+    // Vec3
+
     static Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
     {
       Vector3f result;

@@ -23,7 +23,7 @@ namespace bifrost
 
   class DebugRenderer final
   {
-    using VertexBuffer = TransientVertexBuffer<VertexDebugLine, k_DebugRendererLineBatchSize>;
+    // using VertexBuffer = TransientVertexBuffer<VertexDebugLine, k_DebugRendererLineBatchSize, BIFROST_BUF_VERTEX_BUFFER>;
 
     using DebugVertexBuffer = VertexDebugLine[k_DebugRendererLineBatchSize];
 

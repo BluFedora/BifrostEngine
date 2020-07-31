@@ -17,6 +17,7 @@
 #include <imgui/imgui_internal.h>  // Must appear after '<imgui/imgui.h>'
 
 #include <utility>
+
 /////////////////////////////////////////////////////////////////////////////////////
 
 struct CanvasTransform final  // NOLINT(hicpp-member-init)
@@ -754,7 +755,7 @@ namespace bifrost::editor
     colors[ImGuiCol_WindowBg]           = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
     colors[ImGuiCol_FrameBg]            = ImVec4(0.06f, 0.06f, 0.07f, 0.54f);
     colors[ImGuiCol_TitleBgActive]      = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_Border]             = ImVec4(0.09f, 0.05f, 0.11f, 0.38f);
+    colors[ImGuiCol_Border]             = ImVec4(0.09f, 0.05f, 0.11f, 0.73f);
     colors[ImGuiCol_TitleBg]            = ImVec4(0.19f, 0.19f, 0.19f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed]   = ImVec4(0.00f, 0.00f, 0.00f, 0.66f);
     colors[ImGuiCol_CheckMark]          = ImVec4(0.87f, 0.87f, 0.87f, 1.00f);
@@ -785,6 +786,7 @@ namespace bifrost::editor
     colors[ImGuiCol_TextSelectedBg]     = ImVec4(0.44f, 0.58f, 0.61f, 0.35f);
     colors[ImGuiCol_DragDropTarget]     = ImVec4(0.52f, 0.56f, 0.63f, 0.90f);
 
+
     m_Actions.emplace("File.New.Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
     m_Actions.emplace("File.Open.Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
     m_Actions.emplace("File.Save.Project", ActionPtr(make<ASaveProject>()));
@@ -792,6 +794,7 @@ namespace bifrost::editor
     m_Actions.emplace("Asset.Refresh", ActionPtr(make<ARefreshAsset>()));
     m_Actions.emplace("View.AddInspector", ActionPtr(make<MemberAction<void>>(&EditorOverlay::viewAddInspector)));
     m_Actions.emplace("View.HierarchyView", ActionPtr(make<MemberAction<HierarchyView&>>(&EditorOverlay::getWindow<HierarchyView>)));
+    m_Actions.emplace("View.GameView", ActionPtr(make<MemberAction<GameView&>>(&EditorOverlay::getWindow<GameView>)));
 
     addMenuItem("File/New/Project", "File.New.Project");
     addMenuItem("File/Open/Project", "File.Open.Project");
@@ -801,6 +804,7 @@ namespace bifrost::editor
     addMenuItem("Assets/Refresh", "Asset.Refresh");
     addMenuItem("Window/Inspector View", "View.AddInspector");
     addMenuItem("Window/Hierarchy View", "View.HierarchyView");
+    addMenuItem("Window/Game View", "View.GameView");
 
     //*
     InspectorRegistry::overrideInspector<MeshRenderer>(
@@ -879,8 +883,6 @@ namespace bifrost::editor
     {
       static bool s_ShowFPS = true;
 
-      // menu_bar_height = ImGui::GetWindowSize().y;
-
       m_MainMenu.doAction(action_ctx);
 
       m_FpsTimer -= delta_time;
@@ -917,7 +919,7 @@ namespace bifrost::editor
 
     // Dock Space
     {
-      static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+      static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
 
       ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
       ImGuiViewport*   viewport     = ImGui::GetMainViewport();
@@ -925,6 +927,7 @@ namespace bifrost::editor
       ImGui::SetNextWindowPos(viewport->GetWorkPos());
       ImGui::SetNextWindowSize(viewport->GetWorkSize());
       ImGui::SetNextWindowViewport(viewport->ID);
+
       ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
       ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -936,6 +939,8 @@ namespace bifrost::editor
         window_flags |= ImGuiWindowFlags_NoBackground;
 
       ImGui::Begin("Main DockSpace", nullptr, window_flags);
+
+      ImGui::PopStyleVar(3);
 
       const ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 
@@ -954,10 +959,12 @@ namespace bifrost::editor
         const ImGuiID  dock_id_right       = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
         HierarchyView& hierarchy_window    = getWindow<HierarchyView>();
         Inspector&     inspector_window    = getWindow<Inspector>(allocator());
+        GameView&      game_window         = getWindow<GameView>();
 
         ImGui::DockBuilderDockWindow("Project View", dock_id_left_top);
         ImGui::DockBuilderDockWindow(hierarchy_window.fullImGuiTitle(engine.tempMemory()), dock_id_left_bottom);
         ImGui::DockBuilderDockWindow(inspector_window.fullImGuiTitle(engine.tempMemory()), dock_id_right);
+        ImGui::DockBuilderDockWindow(game_window.fullImGuiTitle(engine.tempMemory()), dock_main_id);
 
         ImGui::DockBuilderFinish(dockspace_id);
       }
@@ -966,14 +973,10 @@ namespace bifrost::editor
 
       ImGui::End();
 
-      ImGui::PopStyleVar(3);
-
       SceneView& scene_window = getWindow<SceneView>();
 
       ImGui::DockBuilderDockWindow(scene_window.fullImGuiTitle(engine.tempMemory()), dockspace_id);
     }
-
-    getWindow<GameView>();
 
     if (m_OpenProject)
     {
@@ -994,21 +997,6 @@ namespace bifrost::editor
       ImGui::End();
     }
 
-    if (ImGui::Begin("Easing Test"))
-    {
-      static constexpr int k_PlotDensity = 100;
-
-      ImGui::PlotLines(
-       "Linear", [](void* data, int idx) -> float {
-         return (float(idx) / float(k_PlotDensity - 1)) * 100;
-       },
-       nullptr,
-       k_PlotDensity,
-       0);
-
-      ImGui::End();
-    }
-
     // TODO(SR): These two loops can probably be combined.
     for (BaseEditorWindowPtr& window : m_OpenWindows)
     {
@@ -1020,11 +1008,12 @@ namespace bifrost::editor
       window->uiShow(*this);
     }
 
+    auto       open_windows_bgn = m_OpenWindows.begin();
     const auto open_windows_end = m_OpenWindows.end();
 
     // TODO(SR): Actually check if any windows want to be closed. This is very pessimistic.
     const auto split = std::partition(
-     m_OpenWindows.begin(),
+     open_windows_bgn,
      open_windows_end,
      [](const BaseEditorWindowPtr& window) {
        return window->isOpen();
@@ -1035,7 +1024,7 @@ namespace bifrost::editor
       (*closed_window)->onDestroy(*this);
     }
 
-    m_OpenWindows.resize(split - m_OpenWindows.begin());
+    m_OpenWindows.resize(split - open_windows_bgn);
 
     /*
     if (ImGui::Begin("Command Palette"))

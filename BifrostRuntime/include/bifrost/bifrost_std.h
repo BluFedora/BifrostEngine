@@ -66,16 +66,23 @@ T bfClamp(T min_value, T value, T max_value)
 #define bfBit(index) (1ULL << (index))
 #endif
 
+/*!
+ * @brief 
+ *   This will retrieve the conatianing object from one of it's members.
+*/
+#define bfObjectFromMember(ptr, type, member) ((type*)((char*)(ptr)-offsetof(type, member)))
+
 #if __cplusplus
 extern "C" {
 #endif
+
 typedef uint32_t bfBool32;
 typedef float    bfFloat32;
 typedef double   bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
 
-/**
+/*!
  * @brief
  *   A non-owning reference to a string.
 */
@@ -108,7 +115,8 @@ constexpr
 #if __cplusplus
 constexpr
 #endif
- static inline bfStringRange bfMakeStringRangeC(const char* str)
+ static inline bfStringRange
+ bfMakeStringRangeC(const char* str)
 {
   const char* end = str;
 

@@ -16,6 +16,7 @@ namespace bifrost::editor
     bool           m_IsDraggingMouse;
     float          m_MouseLookSpeed;
     EditorOverlay* m_Editor;
+    ImVec2         m_OldWindowPadding;
 
    public:
     explicit SceneView();

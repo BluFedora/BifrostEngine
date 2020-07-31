@@ -1,8 +1,8 @@
 #include "bifrost/platform/bifrost_platform.h"
 
 #include "bifrost/platform/bifrost_platform_event.h"
-#include "bifrost/platform/bifrost_platform_vulkan.h"
 #include "bifrost/platform/bifrost_platform_gl.h"
+#include "bifrost/platform/bifrost_platform_vulkan.h"
 
 #include <sdl/SDL.h>        /* SDL_* */
 #include <sdl/SDL_vulkan.h> /* SDL_Vulkan_CreateSurface */
@@ -21,13 +21,15 @@ typedef SDL_Window* NativeWindowHandle;
 extern bfPlatformInitParams g_BifrostPlatform;
 
 #if BIFROST_PLATFORM_EMSCRIPTEN
-/*static*/EMSCRIPTEN_WEBGL_CONTEXT_HANDLE g_CanvasContext = 0;
+/*static*/ EMSCRIPTEN_WEBGL_CONTEXT_HANDLE g_CanvasContext = 0;
 #endif
 
 #ifndef bfTrue
 #define bfTrue 1
 #define bfFalse 0
 #endif
+
+static const char* const k_bfWindowUserStorageID = "bf.BifrostWindowSDL";
 
 // TODO(SR):
 //   - SDL_GL_CreateContext
@@ -36,6 +38,19 @@ extern bfPlatformInitParams g_BifrostPlatform;
 //   - SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 //   - SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 //   - SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+
+typedef struct
+{
+  BifrostWindow super;
+  void*         gl_context;
+  int           wants_to_close;
+
+} BifrostWindowSDL;
+
+static BifrostWindowSDL* windowCast(BifrostWindow* window)
+{
+  return (BifrostWindowSDL*)window;
+}
 
 int bfPlatformInit(bfPlatformInitParams params)
 {
@@ -72,23 +87,37 @@ void bfPlatformPumpEvents(void)
   {
     switch (evt.type)
     {
-      case SDL_KEYDOWN:
+      case SDL_WINDOWEVENT:
       {
-        printf("KEY DOWN EVENT (%i)\n", evt.key.keysym.sym);
+        SDL_WindowEvent*        window_close_evt = &evt.window;
+        SDL_Window* const       sdl_window       = SDL_GetWindowFromID(window_close_evt->windowID);
+        BifrostWindowSDL* const bf_window        = SDL_GetWindowData(sdl_window, k_bfWindowUserStorageID);
+
+        // [https://wiki.libsdl.org/SDL_WindowEvent]
+        switch (window_close_evt->event)
+        {
+          case SDL_WINDOWEVENT_CLOSE:
+          {
+            bf_window->wants_to_close = bfTrue;
+            break;
+          }
+        }
+
         break;
       }
-    }
 
-    if (evt.type == SDL_QUIT)
-    {
-      //quit = true;
+      case SDL_KEYDOWN:
+      {
+        printf("(%s). KEY DOWN EVENT (%i)\n", evt.key.repeat ? "repeat" : "first", evt.key.keysym.sym);
+        break;
+      }
     }
   }
 }
 
 BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags)
 {
-  BifrostWindow* const window = bfPlatformAlloc(sizeof(BifrostWindow));
+  BifrostWindowSDL* const window = bfPlatformAlloc(sizeof(BifrostWindowSDL));
 
   if (window)
   {
@@ -119,7 +148,7 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
 
     if (!g_CanvasContext)
     {
-      bfPlatformFree(window, sizeof(BifrostWindow));
+      bfPlatformFree(window, sizeof(BifrostWindowSDL));
       return NULL;
     }
 
@@ -129,28 +158,31 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
 #else
 #endif
 
-    window->handle        = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL);
-    window->event_fn      = NULL;
-    window->frame_fn      = NULL;
-    window->user_data     = NULL;
-    window->renderer_data = NULL;
-    window->gl_context    = NULL;
+    Uint32 window_flags = bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_VUlKAN ? SDL_WINDOW_VULKAN : SDL_WINDOW_OPENGL;
 
-   // SDL_SetWindowData(window->handle, "GL_CONTEXT", )
+    window->super.handle        = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, window_flags);
+    window->super.event_fn      = NULL;
+    window->super.frame_fn      = NULL;
+    window->super.user_data     = NULL;
+    window->super.renderer_data = NULL;
+    window->gl_context          = NULL;
+    window->wants_to_close      = bfFalse;
 
-    if (!window->handle)
+    if (!window->super.handle)
     {
-      bfPlatformFree(window, sizeof(BifrostWindow));
+      bfPlatformFree(window, sizeof(BifrostWindowSDL));
       return NULL;
     }
+
+    SDL_SetWindowData(window->super.handle, k_bfWindowUserStorageID, window);
   }
 
-  return window;
+  return window ? &window->super : NULL;
 }
 
 int bfWindow_wantsToClose(BifrostWindow* self)
 {
-  return self == NULL;
+  return windowCast(self)->wants_to_close;
 }
 
 void bfWindow_getPos(BifrostWindow* self, int* x, int* y);
@@ -166,7 +198,7 @@ void bfWindow_setSize(BifrostWindow* self, int x, int y);
 void bfPlatformDestroyWindow(BifrostWindow* window)
 {
   SDL_DestroyWindow((NativeWindowHandle)window->handle);
-  bfPlatformFree(window, sizeof(BifrostWindow));
+  bfPlatformFree(window, sizeof(BifrostWindowSDL));
 }
 
 void bfPlatformQuit(void)
@@ -183,9 +215,11 @@ int bfWindow_createVulkanSurface(BifrostWindow* self, VkInstance instance, VkSur
 
 void bfWindow_makeGLContextCurrent(BifrostWindow* self)
 {
-  if (self->gl_context)
+  BifrostWindowSDL* const self_t = windowCast(self);
+
+  if (self_t->gl_context)
   {
-    SDL_GL_MakeCurrent(self->handle, self->gl_context);
+    SDL_GL_MakeCurrent(self->handle, self_t->gl_context);
   }
 }
 

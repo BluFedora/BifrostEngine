@@ -31,12 +31,14 @@ typedef struct bfColor4u_t
 
 } bfColor4u;
 
-static inline uint32_t bfColor4u_toUint32(bfColor4u color)
+typedef uint32_t bfColor32u;
+
+static inline bfColor32u bfColor4u_toUint32(bfColor4u color)
 {
   return (color.r << 0) | (color.g << 8) | (color.b << 16) | (color.a << 24);
 }
 
-static inline bfColor4u bfColor4u_fromUint32(uint32_t color)
+static inline bfColor4u bfColor4u_fromUint32(bfColor32u color)
 {
   bfColor4u ret;
 
@@ -60,7 +62,7 @@ static inline float bfMathLerpf(float a, float b, float t)
 
 static inline float bfMathInvLerpf(float min, float max, float value)
 {
-  return (value - min) / (max - value);
+  return (value - min) / (max - min);
 }
 
 static inline float bfMathRemapf(float old_min, float old_max, float new_min, float new_max, float value)

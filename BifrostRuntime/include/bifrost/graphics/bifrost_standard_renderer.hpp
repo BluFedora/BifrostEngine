@@ -34,23 +34,6 @@ namespace bifrost
   class Material;
   class Entity;
 
-  struct VertexPos2D final
-  {
-    Vec2f pos;
-  };
-
-  struct VertexPos2DUV final
-  {
-    Vec2f pos;
-    Vec2f uv;
-  };
-
-  struct VertexPos3DColor4u final
-  {
-    Vector3f  pos;
-    bfColor4u color;
-  };
-
   struct StandardVertex final
   {
     Vector3f  pos;
@@ -213,6 +196,7 @@ namespace bifrost
     void deinit(bfGfxDeviceHandle device);
   };
 
+  // This class if good for non resizing allocations that need to be safe across frames.
   struct BaseMultiBuffer
   {
     bfBufferHandle handle;
@@ -273,11 +257,13 @@ namespace bifrost
     void destroy(bfGfxDeviceHandle device) const;
   };
 
+  // This class is good for largely varying growing buffers with out the need to realloc a buffer.
+  // The cost of doing it this way is batching becomes more complex since this is a linked list of separate buffers.
   //
   // T - Vertex Type
   //
-  template<typename T, std::size_t NumVerticesPerBatch>
-  struct TransientVertexBuffer final
+  template<typename T, std::size_t NumVerticesPerBatch, bfBufferUsageBits k_Usage>
+  struct GfxLinkedBuffer final
   {
     using TArray = T[NumVerticesPerBatch];
 
@@ -309,7 +295,7 @@ namespace bifrost
     Link*             free_list;
     Array<Link*>      used_buffers;
 
-    explicit TransientVertexBuffer(IMemoryManager& memory_manager) :
+    explicit GfxLinkedBuffer(IMemoryManager& memory_manager) :
       gfx_device{nullptr},
       free_list{nullptr},
       used_buffers{memory_manager}
@@ -362,6 +348,15 @@ namespace bifrost
       return used_buffers.back();
     }
 
+    void flushLinks(const bfGfxFrameInfo& frame_info)
+    {
+      for (Link* const link : used_buffers)
+      {
+        link->gpu_buffer.flushCurrent(frame_info);
+        bfBuffer_unMap(link->gpu_buffer.handle());
+      }
+    }
+
     void deinit()
     {
       clear();
@@ -385,7 +380,7 @@ namespace bifrost
         result = memory().allocateT<Link>();
         result->gpu_buffer.create(
          gfx_device,
-         BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER,
+         BIFROST_BUF_TRANSFER_DST | k_Usage,
          frame_info,
          alignof(T));
       }

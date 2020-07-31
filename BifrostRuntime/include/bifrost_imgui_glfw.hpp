@@ -8,8 +8,6 @@ namespace bifrost
 {
   using Event = bfEvent;
 
-  class StandardRenderer;
-
   namespace imgui
   {
     void startup(bfGfxContextHandle graphics, BifrostWindow* window);

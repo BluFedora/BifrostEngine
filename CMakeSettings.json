@@ -71,7 +71,7 @@
       "variables": []
     },
     {
-      "name": "x64-Debug-SDL [Broken]",
+      "name": "x64 SDL-Vk (Debug)",
       "generator": "Ninja",
       "configurationType": "Debug",
       "buildRoot": "C:/Users/rshar/Documents/BifrostEngine/build/cmake",

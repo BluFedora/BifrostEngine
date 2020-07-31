@@ -58,6 +58,16 @@ elseif(APPLE)
   set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/macOS)
 endif()
 
+if (WIN32)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+     set(BIFROST_PLATFORM_LIB ${PROJECT_SOURCE_DIR}/lib/win64)
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+     set(BIFROST_PLATFORM_LIB ${PROJECT_SOURCE_DIR}/lib/win32)
+  endif()
+elseif(APPLE)
+  set(BIFROST_PLATFORM_LIB ${PROJECT_SOURCE_DIR}/lib/macOS)
+endif()
+
 set(BIFROST_PLATFORM_SOURCE_FILES "src/bifrost_platform.c")
 set(BIFROST_PLATFORM_LIB_FILES "")
 
@@ -67,18 +77,18 @@ if(BIFROST_PLATFORM_GLFW)
     "src/bifrost_platform_glfw.c"
   )
 
-  if(NOT EMSCRIPTEN)
-    if (WIN32)
-      set(BIFROST_PLATFORM_LIB_FILES
-        ${BIFROST_PLATFORM_LIB_FILES}
-        "${BIFROST_PLATFORM_LIB_DIR}/glfw3dll.lib"
-      )
-    elseif(APPLE)
-      set(BIFROST_PLATFORM_LIB_FILES
-        ${BIFROST_PLATFORM_LIB_FILES}
-        "${BIFROST_PLATFORM_LIB_DIR}/libglfw.3.dylib"
-      )
-    endif()
+  if(EMSCRIPTEN)
+    # TODO(SR): Add Compiler flags here.
+  elseif (WIN32)
+    set(BIFROST_PLATFORM_LIB_FILES
+      ${BIFROST_PLATFORM_LIB_FILES}
+      "${BIFROST_PLATFORM_LIB_DIR}/glfw3dll.lib"
+    )
+  elseif(APPLE)
+    set(BIFROST_PLATFORM_LIB_FILES
+      ${BIFROST_PLATFORM_LIB_FILES}
+      "${BIFROST_PLATFORM_LIB_DIR}/libglfw.3.dylib"
+    )
   endif()
 
 elseif(BIFROST_PLATFORM_SDL)
@@ -86,6 +96,20 @@ elseif(BIFROST_PLATFORM_SDL)
     ${BIFROST_PLATFORM_SOURCE_FILES}
     "src/bifrost_platform_sdl.c"
   )
+
+  if(EMSCRIPTEN)
+  elseif (WIN32)
+    set(BIFROST_PLATFORM_LIB_FILES
+      ${BIFROST_PLATFORM_LIB_FILES}
+      "${BIFROST_PLATFORM_LIB}/SDL2.lib"
+    )
+  elseif(APPLE)
+    set(BIFROST_PLATFORM_LIB_FILES
+      ${BIFROST_PLATFORM_LIB_FILES}
+      # "${BIFROST_PLATFORM_LIB_DIR}/libglfw.3.dylib"
+    )
+  endif()
+
 elseif(BIFROST_PLATFORM_QT)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}

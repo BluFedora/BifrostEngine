@@ -6,6 +6,8 @@
 #include <bifrost/memory/bifrost_memory_utils.h>  // bfMegabytes
 #include <bifrost_imgui_glfw.hpp>
 
+#include "bifrost/bf_painter.hpp"  // Gfx2DPainter
+
 #include "main_demo.hpp"
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
@@ -356,6 +358,8 @@ static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
 float current_time;
 float time_accumulator;
 
+static Vector2f mouse_pos;
+
 #define MainQuit(code, label) \
   err_code = (code);          \
   goto label
@@ -468,13 +472,14 @@ int main(int argc, char* argv[])
         main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
           Engine* const engine = (Engine*)window->user_data;
 
-          if (event->isType(BIFROST_EVT_ON_WINDOW_RESIZE))
-          {
-            bfGfxWindow_markResized(engine->renderer().context(), (bfWindowSurfaceHandle)window->renderer_data);
-          }
-
           imgui::onEvent(window, *event);
           engine->onEvent(*event);
+
+          if (event->type == BIFROST_EVT_ON_MOUSE_MOVE)
+          {
+            mouse_pos.x = float(event->mouse.x);
+            mouse_pos.y = float(event->mouse.y);
+          }
         };
 
         main_window->frame_fn = [](BifrostWindow* window) {
@@ -529,6 +534,46 @@ int main(int argc, char* argv[])
 
             engine->drawBegin(render_alpha);
             imgui::endFrame();
+
+            auto& painter = engine->renderer2D();
+
+            int w, h;
+            bfWindow_getSize(window, &w, &h);
+
+            const float angle_map   = bfMathRemapf(0.0f, float(w), 0.0f, k_TwoPI, mouse_pos.x);
+            const float rounded_map = bfMathRemapf(0.0f, float(w), 2.0f, 100.0f, mouse_pos.x);
+            const float thick_map   = bfMathRemapf(0.0f, float(w), 5.0f, 40.0f, mouse_pos.x);
+
+            painter.pushRect(mouse_pos, 100, 100, BIFROST_COLOR_ROYALBLUE);
+            painter.pushFilledCircle(mouse_pos + Vector2f{200.0f, 0.0f}, 55.0f, BIFROST_COLOR_SALMON);
+            painter.pushFilledArc(mouse_pos + Vector2f{260.0f, 100.0f}, 22.0f, 0.0f, angle_map, BIFROST_COLOR_NAVY);
+            painter.pushFillRoundedRect(Vector2f{500.0f, 200.0f} - Vector2f{5.0f}, 310.0f, 230.0f, rounded_map, BIFROST_COLOR_LIGHTYELLOW);
+            painter.pushFillRoundedRect({500.0f, 200.0f}, 300.0f, 220.0f, rounded_map, BIFROST_COLOR_LIME);
+
+            Vector2f points[] = {
+             {20.0f, 20.0f},
+             {200.0f, 20.0f},
+             {300.0f, 600.0f},
+             {800.0f, 500.0f},
+             mouse_pos,
+            };
+
+            painter.pushPolyline(points, UIIndexType(bfCArraySize(points)), thick_map, PolylineJoinStyle::BEVEL, PolylineEndStyle::ROUND, BIFROST_COLOR_OLIVE & 0x55FFFFFF, false);
+
+            painter.pushLinedArc(mouse_pos + Vector2f{-260.0f, 100.0f}, thick_map * 2.0f, 0.3f, angle_map * 1.2f, BIFROST_COLOR_SALMON);
+
+            Vector2f sine_wave[800];
+
+            for (int i = 0; i < int(bfCArraySize(sine_wave)); ++i)
+            {
+              const float percent = float(i) / (float(bfCArraySize(sine_wave)) - 1.0f);
+
+              sine_wave[i] = Vector2f{percent * float(w), 300 + 20.0f * std::sin(percent * k_TwoPI * 30)};
+            }
+
+            painter.pushPolyline(sine_wave, UIIndexType(bfCArraySize(sine_wave)), 2.0f, PolylineJoinStyle::ROUND, PolylineEndStyle::ROUND, BIFROST_COLOR_MOCCASIN, false);
+
+
             engine->drawEnd();
             engine->endFrame();
           }

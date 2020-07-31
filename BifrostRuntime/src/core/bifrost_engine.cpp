@@ -1,7 +1,8 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
-#include "bifrost/debug/bifrost_dbg_logger.h"  // bfLog*
-#include "bifrost/ecs/bifrost_behavior.hpp"
+#include "bifrost/bf_painter.hpp"                           // Gfx2DPainter
+#include "bifrost/debug/bifrost_dbg_logger.h"               // bfLog*
+#include "bifrost/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bifrost/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
 #include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
 #include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
@@ -22,6 +23,7 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* 
   m_Scripting{},
   m_Renderer{m_MainMemory},
   m_DebugRenderer{m_MainMemory},
+  m_Renderer2D{nullptr},
   m_SceneStack{m_MainMemory},
   m_Assets{*this, m_MainMemory},
   m_Systems{m_MainMemory},
@@ -51,7 +53,7 @@ void Engine::resizeCamera(CameraRender* camera, int width, int height)
   camera->new_width  = width;
   camera->new_height = height;
 
-  // If not already on the list.
+  // If not already on the resize list.
   if (!camera->resize_list_next)
   {
     camera->resize_list_next = m_CameraResizeList;
@@ -151,12 +153,13 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
 
   bfLogger_init(&logger_config);
 
-  bfLogPush("Engine Init of App: %s", params.app_name);
+  bfLogPush("Engine Init of App: '%s'", params.app_name);
 
   gc::init(m_MainMemory);
 
   m_Renderer.init(params, main_window);
   m_DebugRenderer.init(m_Renderer);
+  m_Renderer2D = m_MainMemory.allocateT<Gfx2DPainter>(m_MainMemory, m_Renderer.glslCompiler(), m_Renderer.context());
 
   VMParams vm_params{};
   vm_params.error_fn = &userErrorFn;
@@ -201,6 +204,7 @@ bool Engine::beginFrame()
   deleteCameras();
   resizeCameras();
   m_StateMachine.purgeStates();
+  renderer2D().reset();
 
   return m_Renderer.frameBegin();
 }
@@ -221,8 +225,11 @@ void Engine::fixedUpdate(float delta_time)
   }
 }
 
-void Engine::drawEnd() const
+void Engine::drawEnd()
 {
+  bfTextureHandle main_surface = renderer().surface();
+
+  renderer2D().render(renderer().mainCommandList(), bfTexture_width(main_surface), bfTexture_height(main_surface));
   m_Renderer.endPass(m_Renderer.mainCommandList());
   m_Renderer.drawEnd();
 }
@@ -247,21 +254,20 @@ void Engine::deinit()
   m_Assets.clearDirtyList();
   m_Assets.setRootPath(nullptr);
 
-  m_DebugRenderer.deinit();
-
   assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
   deleteCameras();
 
-  // Must happen before 'm_Renderer.deinit' since ECS systems may want to use renderer resources.
+  // Must happen before 'm_Renderer.deinit' since ECS systems use renderer resources.
   for (auto& system : m_Systems)
   {
     system->onDeinit(*this);
     m_MainMemory.deallocateT(system);
   }
-
-  m_Renderer.deinit();
-
   m_Systems.clear();
+
+  m_MainMemory.deallocateT(m_Renderer2D);
+  m_DebugRenderer.deinit();
+  m_Renderer.deinit();
 
   gc::quit();
 
@@ -390,13 +396,13 @@ void Engine::deleteCameras()
   }
 }
 
-namespace bifrost
+namespace bifrost::detail
 {
-  void detail::CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
+  void CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
   {
     (void)engine;
 
     // This is the bottom most layer so just accept the event.
     event.accept();
   }
-}  // namespace bifrost
+}  // namespace bifrost::detail

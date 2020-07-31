@@ -15,10 +15,11 @@
 
 namespace bifrost
 {
-  static constexpr float    k_PI       = 3.14159265359f;
+  static constexpr float    k_PI       = 3.14159265358979323846f;
   static constexpr float    k_TwoPI    = k_PI * 2.0f;
-  static constexpr float    k_RadToDeg = 57.2957795131f;
-  static constexpr float    k_DegToRad = 0.01745329251f;
+  static constexpr float    k_HalfPI   = k_PI * 0.5f;
+  static constexpr float    k_RadToDeg = 180.0f / k_PI;
+  static constexpr float    k_DegToRad = k_PI / 180.0f;
   static constexpr float    k_Epsilon  = 1.0e-4f;
   static constexpr Vector3f k_XAxis3f  = {1.0f, 0.0f, 0.0f, 0.0f};
   static constexpr Vector3f k_YAxis3f  = {0.0f, 1.0f, 0.0f, 0.0f};

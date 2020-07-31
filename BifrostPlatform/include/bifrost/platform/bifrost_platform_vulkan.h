@@ -22,6 +22,9 @@ extern "C" {
 
 VK_DEFINE_HANDLE(VkInstance)
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSurfaceKHR)
+
+#undef VK_DEFINE_NON_DISPATCHABLE_HANDLE
+#undef VK_DEFINE_HANDLE
 #endif
 
  // return non 0 on success

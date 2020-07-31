@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  BifrostWindow* const main_window = bfPlatformCreateWindow("Reefy Web Game Dev", 1920, 1080, BIFROST_WINDOW_FLAGS_DEFAULT);
+  BifrostWindow* const main_window = bfPlatformCreateWindow("Reefy Web Game Dev", int(1920 / 2 * 1.5), int(1080 / 2 * 1.5), BIFROST_WINDOW_FLAGS_DEFAULT & ~BIFROST_WINDOW_FLAG_IS_MAXIMIZED);
 
   if (!main_window)
   {
