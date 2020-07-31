@@ -17,7 +17,7 @@
 
 #include <cstdint>
 
-namespace bifrost
+namespace bf
 {
 #define bfCastByte(arr) ((unsigned char*)(arr))
 

@@ -23,7 +23,7 @@
 #include "bifrost/memory/bifrost_linear_allocator.hpp"
 #include "bifrost/script/bifrost_script_behavior.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   static constexpr int   s_MaxDigitsUInt64 = 20;
   static constexpr float s_DragSpeed       = 0.05f;

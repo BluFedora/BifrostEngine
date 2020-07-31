@@ -15,7 +15,7 @@
 #include "bifrost_dense_map_handle.hpp" /* Handle<T> */
 #include <utility>                      /* move      */
 
-namespace bifrost
+namespace bf
 {
   /*!
    * @brief

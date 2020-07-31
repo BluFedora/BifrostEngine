@@ -17,7 +17,7 @@
 
 #include "bifrost_imemory_manager.hpp" /* IMemoryManager */
 
-namespace bifrost
+namespace bf
 {
   class ProxyAllocator final : public IMemoryManager
   {

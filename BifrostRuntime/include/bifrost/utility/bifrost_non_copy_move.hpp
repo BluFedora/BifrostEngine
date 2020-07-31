@@ -1,7 +1,7 @@
 #ifndef BIFROST_NON_COPY_MOVE_HPP
 #define BIFROST_NON_COPY_MOVE_HPP
 
-namespace bifrost
+namespace bf
 {
   template<typename T>
   class bfNonCopyable  // NOLINT(hicpp-special-member-functions)

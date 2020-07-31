@@ -28,7 +28,7 @@
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
   class Light;
   class Material;

@@ -18,7 +18,7 @@
 #include "bifrost/script/bifrost_vm.h"               /* bfValueHandle */
 #include "bifrost/script/bifrost_vm.hpp"             /* VMView        */
 
-namespace bifrost
+namespace bf
 {
   class Script final : public BaseObject<Script>
   {

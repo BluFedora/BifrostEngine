@@ -16,7 +16,7 @@
 #include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/ecs/bifrost_renderer_component.hpp"  // MeshRenderer
 
-namespace bifrost
+namespace bf
 {
   void ComponentRenderer::onInit(Engine& engine)
   {

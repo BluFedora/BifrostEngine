@@ -22,7 +22,7 @@
 #include "bifrost/data_structures/bifrost_string.hpp"    /* StringRange   */
 #include "bifrost/meta/bifrost_meta_function_traits.hpp" /* ParameterPack */
 
-namespace bifrost
+namespace bf
 {
   //
   // @EngineComponentRegister

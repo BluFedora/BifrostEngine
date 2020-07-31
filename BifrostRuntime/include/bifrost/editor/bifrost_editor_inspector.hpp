@@ -17,7 +17,7 @@
 #include "bifrost_editor_serializer.hpp"  // ImGuiSerializer
 #include "bifrost_editor_window.hpp"      // EditorWindow
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class Inspector final : public EditorWindow<Inspector>
   {

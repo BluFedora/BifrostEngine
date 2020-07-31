@@ -5,7 +5,7 @@
 
 #include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyable<T>, bfNonCopyMoveable<t> */
 
-namespace bifrost::intrusive
+namespace bf::intrusive
 {
   template<typename T>
   class ListView;
@@ -200,7 +200,7 @@ namespace bifrost::intrusive
 
 #include "bifrost/memory/bifrost_imemory_manager.hpp"
 
-namespace bifrost
+namespace bf
 {
   // Memory Owning List
   template<typename T>

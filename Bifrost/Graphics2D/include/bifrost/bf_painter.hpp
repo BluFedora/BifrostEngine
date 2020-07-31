@@ -5,7 +5,7 @@
 #include "bifrost/memory/bifrost_linear_allocator.hpp"     // LinearAllocator
 #include "bifrost/memory/bifrost_memory_utils.h"           // bfMegabytes
 
-namespace bifrost
+namespace bf
 {
   struct UIVertex2D final
   {

@@ -8,7 +8,7 @@
 
 #include <array>
 
-namespace bifrost::meta
+namespace bf::meta
 {
   template<typename MemberConcept>
   class PropertyMetaInfo : public BasePropertyMetaInfo

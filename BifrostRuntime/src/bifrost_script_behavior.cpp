@@ -14,7 +14,7 @@
 #include "bifrost/asset_io/bifrost_file.hpp" /* File   */
 #include "bifrost/core/bifrost_engine.hpp"   /* Engine */
 
-namespace bifrost
+namespace bf
 {
   static constexpr std::size_t k_CallIndex = 0;
 

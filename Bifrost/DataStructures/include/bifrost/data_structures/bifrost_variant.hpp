@@ -20,7 +20,7 @@
 #include <typeinfo> /* bad_cast                                     */
 #endif
 
-namespace bifrost
+namespace bf
 {
   namespace detail
   {

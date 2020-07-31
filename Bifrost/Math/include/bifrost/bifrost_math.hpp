@@ -13,7 +13,7 @@
 
 #include <cmath> /* std::fma */
 
-namespace bifrost
+namespace bf
 {
   static constexpr float    k_PI       = 3.14159265358979323846f;
   static constexpr float    k_TwoPI    = k_PI * 2.0f;
@@ -26,7 +26,7 @@ namespace bifrost
   static constexpr Vector3f k_ZAxis3f  = {0.0f, 0.0f, 1.0f, 0.0f};
 }  // namespace bifrost
 
-namespace bifrost::math
+namespace bf::math
 {
   // NOTE(Shareef):
   //   For safe floating point comparisons.

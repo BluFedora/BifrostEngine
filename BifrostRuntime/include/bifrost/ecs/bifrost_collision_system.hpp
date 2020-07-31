@@ -26,7 +26,7 @@
 #include <cfloat>   // FLT_MAX
 #include <cstdint>  // uint16_t
 
-namespace bifrost
+namespace bf
 {
   struct AABB final
   {

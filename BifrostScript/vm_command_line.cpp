@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 
   MemoryUsageTracker mem_tracker{0, 0};
 
-  bifrost::VMParams params{};
+  bf::VMParams params{};
   params.error_fn  = &errorHandler;
   params.print_fn  = &printHandler;
   params.module_fn = &moduleHandler;
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   params.user_data = &mem_tracker;
 
   {
-    bifrost::VM vm{params};
+    bf::VM vm{params};
 
     BifrostVMModuleLookUp load_file;
 

@@ -29,7 +29,7 @@
 #define BIFROST_GFX_RENDER_GRAPH_TEST 1
 #include "bifrost_gfx_api.h"
 
-namespace bifrost
+namespace bf
 {
   // What 64 Characters look like:
   //   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -1177,7 +1177,7 @@ namespace bifrost
 int main()
 {
   using namespace std;
-  using namespace bifrost;
+  using namespace bf;
 
   RenderGraph graph;
 

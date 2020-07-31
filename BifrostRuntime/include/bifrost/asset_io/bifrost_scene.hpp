@@ -22,7 +22,7 @@
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
   class BaseBehavior;
   class DebugRenderer;
@@ -179,7 +179,7 @@ BIFROST_META_REGISTER(bifrost::Scene){
    BIFROST_META_END()}
 */
 
-BIFROST_META_REGISTER(bifrost::AssetSceneInfo){
+BIFROST_META_REGISTER(bf::AssetSceneInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetSceneInfo>("AssetSceneInfo"),  //

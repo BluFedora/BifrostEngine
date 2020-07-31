@@ -19,7 +19,7 @@
 
 #include <cassert> /* assert */
 
-namespace bifrost
+namespace bf
 {
   template<typename T>
   class Array final

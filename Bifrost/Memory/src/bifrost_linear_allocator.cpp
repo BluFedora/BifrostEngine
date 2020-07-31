@@ -17,7 +17,7 @@
 
 // #include <new>    /* bad_alloc  */
 
-namespace bifrost
+namespace bf
 {
   const char* linear_allocator_free::what() const noexcept
   {

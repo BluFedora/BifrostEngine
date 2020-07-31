@@ -4,7 +4,7 @@
 #include "bifrost/data_structures/bifrost_string.hpp"  // String
 #include "bifrost_editor_window.hpp"                   // EditorWindow
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class HierarchyView final : public EditorWindow<HierarchyView>
   {

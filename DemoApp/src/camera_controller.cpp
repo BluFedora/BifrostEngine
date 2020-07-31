@@ -4,7 +4,7 @@
 #include "bifrost/ecs/bifrost_behavior.hpp"
 #include "bifrost/ecs/bifrost_entity.hpp"
 
-using namespace bifrost;
+using namespace bf;
 
 class CameraController final : public Behavior<CameraController>
 {

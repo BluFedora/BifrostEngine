@@ -4,7 +4,7 @@
 #include "bifrost/graphics/bifrost_gfx_handle.h"
 #include "bifrost/platform/bifrost_platform_fwd.h"
 
-namespace bifrost
+namespace bf
 {
   using Event = bfEvent;
 

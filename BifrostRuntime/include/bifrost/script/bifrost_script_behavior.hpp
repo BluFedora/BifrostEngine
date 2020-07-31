@@ -16,7 +16,7 @@
 #include "bifrost/ecs/bifrost_behavior.hpp"    /* Behavior<T>       */
 #include "bifrost/script/bifrost_vm.hpp"       /* Scripting API     */
 
-namespace bifrost
+namespace bf
 {
   class ScriptBehavior final : public Behavior<ScriptBehavior>
   {
@@ -45,6 +45,6 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-bfRegisterBehavior(bifrost::ScriptBehavior);
+bfRegisterBehavior(bf::ScriptBehavior);
 
 #endif /* BIFROST_SCRIPT_BEHAVIOR_HPP */

@@ -2,7 +2,7 @@
 
 #include <cassert> /* assert */
 
-namespace bifrost
+namespace bf
 {
   bool Particle::hasFiniteMass() const
   {

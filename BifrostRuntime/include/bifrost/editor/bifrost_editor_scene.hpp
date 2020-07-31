@@ -3,7 +3,7 @@
 
 #include "bifrost_editor_window.hpp"  // EditorWindow
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class SceneView final : public EditorWindow<SceneView>
   {

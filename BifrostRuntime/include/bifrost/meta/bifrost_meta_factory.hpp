@@ -3,7 +3,7 @@
 
 #include "bifrost_meta_runtime_impl.hpp" /* TypeInfo<T> */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   template<typename BaseT>
   class Factory

@@ -14,7 +14,7 @@
 #include "bifrost/asset_io/bifrost_scene.hpp" /* Scene  */
 #include "bifrost/ecs/bifrost_entity.hpp"     /* Entity */
 
-namespace bifrost
+namespace bf
 {
   BaseComponent::BaseComponent(Entity& owner) :
     m_Owner{&owner}

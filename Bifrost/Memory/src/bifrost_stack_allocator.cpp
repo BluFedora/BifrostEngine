@@ -18,7 +18,7 @@
 #include <cassert> /* assert */
 #include <memory>  /* align  */
 
-namespace bifrost
+namespace bf
 {
   StackAllocator::StackAllocator(char* const memory_block, const std::size_t memory_size) :
     MemoryManager(memory_block, memory_size),

@@ -14,7 +14,7 @@
 #include <cstdint> /* uint32_t, uint16_t */
 #include <limits>  /* numeric_limits<T>  */
 
-namespace bifrost
+namespace bf
 {
   namespace dense_map
   {

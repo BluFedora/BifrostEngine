@@ -15,7 +15,7 @@
 #include "bifrost/asset_io/bifrost_material.hpp" /* AssetMaterialHandle */
 #include "bifrost_base_component.hpp"            /* BaseComponent       */
 
-namespace bifrost
+namespace bf
 {
   class MeshRenderer : public Component<MeshRenderer>
   {
@@ -107,7 +107,7 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-BIFROST_META_REGISTER(bifrost::MeshRenderer){
+BIFROST_META_REGISTER(bf::MeshRenderer){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<MeshRenderer>("MeshRenderer"),                         //
@@ -117,7 +117,7 @@ BIFROST_META_REGISTER(bifrost::MeshRenderer){
    )
    BIFROST_META_END()}
 
-BIFROST_META_REGISTER(bifrost::SpriteRenderer)
+BIFROST_META_REGISTER(bf::SpriteRenderer)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(

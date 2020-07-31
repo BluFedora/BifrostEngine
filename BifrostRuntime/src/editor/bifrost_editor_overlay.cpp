@@ -53,7 +53,7 @@ void ZoomAroundPoint(CanvasTransform& canvas, float zoom_level, const ImVec2& sc
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-namespace bifrost::editor
+namespace bf::editor
 {
   StringPoolRef::StringPoolRef(const StringPoolRef& rhs) noexcept :
     pool{rhs.pool},
@@ -250,7 +250,7 @@ class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<Bl
   }
 };
 
-namespace bifrost::editor
+namespace bf::editor
 {
   using namespace intrusive;
 

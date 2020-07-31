@@ -13,7 +13,7 @@
 int main(int argc, char* argv[])
 {
   using namespace std::chrono_literals;
-  using namespace bifrost;
+  using namespace bf;
 
   static constexpr float                    k_NanoSecToSec = 1.0f / 1000000000.0f;
   static constexpr std::chrono::nanoseconds k_TimeStep     = 16ms;

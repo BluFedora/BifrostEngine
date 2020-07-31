@@ -17,7 +17,7 @@
 #include "bifrost/data_structures/bifrost_array.hpp" /* Array<T>     */
 #include "bifrost_editor_memory.hpp"                 /* UniquePtr<T> */
 
-namespace bifrost::editor
+namespace bf::editor
 {
   struct IUndoRedoCommand
   {

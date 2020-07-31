@@ -16,7 +16,7 @@
 
 #include <cstdlib> /* calloc, malloc, free */
 
-namespace bifrost
+namespace bf
 {
   CAllocator::CAllocator() :
     IMemoryManager()

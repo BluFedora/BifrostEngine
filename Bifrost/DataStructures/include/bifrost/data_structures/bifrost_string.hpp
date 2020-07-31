@@ -22,7 +22,7 @@
 #include <limits>    /* numeric_limits */
 #include <stdexcept> /* runtime_error  */
 
-namespace bifrost
+namespace bf
 {
   static constexpr std::size_t k_StringNPos = std::numeric_limits<std::size_t>::max();
 
@@ -431,18 +431,18 @@ namespace bifrost
 namespace std
 {
   template<>
-  struct hash<bifrost::String>
+  struct hash<bf::String>
   {
-    std::size_t operator()(bifrost::String const& s) const noexcept
+    std::size_t operator()(bf::String const& s) const noexcept
     {
       return s.hash();
     }
   };
 
   template<>
-  struct hash<bifrost::StringRange>
+  struct hash<bf::StringRange>
   {
-    std::size_t operator()(bifrost::StringRange const& s) const noexcept
+    std::size_t operator()(bf::StringRange const& s) const noexcept
     {
       // ReSharper disable CppUnreachableCode
       if constexpr (sizeof(std::size_t) == 4)
@@ -458,7 +458,7 @@ namespace std
   };
 }  // namespace std
 
-namespace bifrost::string_utils
+namespace bf::string_utils
 {
   // Helper Structs //
 

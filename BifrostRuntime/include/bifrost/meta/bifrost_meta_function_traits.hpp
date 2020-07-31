@@ -19,7 +19,7 @@
 #include <tuple>       /* tuple, tuple_element, apply                      */
 #include <type_traits> /* decay_t, invoke_result_t, is_nothrow_invocable_v */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   //
   // 'tuple_type_raw' is for the arguments of a member function / pointer without the class as the first argument

@@ -34,7 +34,7 @@
 
 #include "bifrost/core/bifrost_engine.hpp"  // THIS HAS A GLFW HEADER WHICH FUCKS WITH WINDOWS.h
 
-namespace bifrost
+namespace bf
 {
   namespace files = std::filesystem;
 

@@ -18,7 +18,7 @@
 
 #include "bifrost_imemory_manager.hpp"
 
-namespace bifrost
+namespace bf
 {
   class CAllocator final : public IMemoryManager
   {

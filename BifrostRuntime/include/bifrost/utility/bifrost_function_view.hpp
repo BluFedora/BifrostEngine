@@ -4,7 +4,7 @@
 
 #include <optional> /* optional<T>  */
 
-namespace bifrost
+namespace bf
 {
   template<typename>
   class FunctionView; /* undefined */

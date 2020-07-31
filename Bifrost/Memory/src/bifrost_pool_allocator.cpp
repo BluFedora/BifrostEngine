@@ -20,7 +20,7 @@
 #include <cassert>   /* assert  */
 #include <cstdint>   /* uint8_t */
 
-namespace bifrost
+namespace bf
 {
   PoolAllocatorImpl::PoolAllocatorImpl(char* memory_block, std::size_t memory_block_size, std::size_t sizeof_block, std::size_t alignof_block) :
     MemoryManager(memory_block, memory_block_size),

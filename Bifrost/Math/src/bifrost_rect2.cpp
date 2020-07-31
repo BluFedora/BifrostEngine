@@ -13,7 +13,7 @@
 /******************************************************************************/
 #include "bifrost/math/bifrost_rect2.hpp"
 
-namespace bifrost
+namespace bf
 {
   Rect2i rect::aspectRatioDrawRegion(std::uint32_t aspect_w, std::uint32_t aspect_h, std::uint32_t window_w, std::uint32_t window_h)
   {

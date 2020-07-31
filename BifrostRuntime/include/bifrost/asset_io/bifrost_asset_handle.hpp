@@ -29,7 +29,7 @@
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp" /* meta::TypeInfo<T> */
 #include "bifrost_base_asset_handle.hpp"              /* BaseAssetHandle   */
 
-namespace bifrost
+namespace bf
 {
   //
   // This class MUST not have a size different from 'BaseAssetHandle'.

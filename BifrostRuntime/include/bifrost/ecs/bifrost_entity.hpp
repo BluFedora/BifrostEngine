@@ -24,7 +24,7 @@
 
 #include <atomic>  // std::atomic_uint32_t
 
-namespace bifrost::meta
+namespace bf::meta
 {
   template<>
   inline const auto& Meta::registerMembers<BifrostTransform>()
@@ -42,7 +42,7 @@ namespace bifrost::meta
   }
 }  // namespace bifrost::meta
 
-namespace bifrost
+namespace bf
 {
   class BaseBehavior;
   class ISerializer;
@@ -338,7 +338,7 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-BIFROST_META_REGISTER(bifrost::Entity)
+BIFROST_META_REGISTER(bf::Entity)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(

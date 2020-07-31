@@ -17,7 +17,7 @@
 
 #include "bifrost_imemory_manager.hpp"
 
-namespace bifrost
+namespace bf
 {
   namespace detail
   {

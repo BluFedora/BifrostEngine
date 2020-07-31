@@ -396,7 +396,7 @@ void Engine::deleteCameras()
   }
 }
 
-namespace bifrost::detail
+namespace bf::detail
 {
   void CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
   {

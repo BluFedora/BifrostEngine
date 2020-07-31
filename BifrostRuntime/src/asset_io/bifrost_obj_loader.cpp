@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstdlib>  // atoi
 
-namespace bifrost
+namespace bf
 {
   static void skip_line(const char *data, std::size_t *pointer, std::size_t file_length)
   {

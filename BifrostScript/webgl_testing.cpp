@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   main_window->renderer_data = main_surface;
 
   main_window->event_fn = [](BifrostWindow* window, bfEvent* evt) {
-    bifrost::imgui::onEvent(window, *evt);
+    bf::imgui::onEvent(window, *evt);
   };
 
   main_window->frame_fn = [](BifrostWindow* window) {
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 
         bfWindow_getSize(window, &window_width, &window_height);
 
-        bifrost::imgui::beginFrame(
+        bf::imgui::beginFrame(
          main_surface_tex,
          float(window_width),
          float(window_height),
@@ -95,8 +95,8 @@ int main(int argc, char* argv[])
         }
         ImGui::End();
 
-        bifrost::imgui::setupDefaultRenderPass(main_command_list, main_surface_tex);
-        bifrost::imgui::endFrame();
+        bf::imgui::setupDefaultRenderPass(main_command_list, main_surface_tex);
+        bf::imgui::endFrame();
 
         bfGfxCmdList_end(main_command_list);
         bfGfxCmdList_submit(main_command_list);
@@ -106,11 +106,11 @@ int main(int argc, char* argv[])
     }
   };
 
-  bifrost::imgui::startup(gfx_ctx, main_window);
+  bf::imgui::startup(gfx_ctx, main_window);
 
   bfPlatformDoMainLoop(main_window);
 
-  bifrost::imgui::shutdown();
+  bf::imgui::shutdown();
   bfGfxContext_destroyWindow(gfx_ctx, main_surface);
   bfGfxContext_delete(gfx_ctx);
   bfPlatformDestroyWindow(main_window);

@@ -25,7 +25,7 @@
 #include <cstddef> /* byte                                                                     */
 #include <cstdint> /* uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   class BaseClassMetaInfo;
 
@@ -270,7 +270,7 @@ namespace bifrost::meta
 
     if (value.valid())
     {
-      bifrost::visit_all(ov, value);
+      bf::visit_all(ov, value);
     }
 
     if constexpr (std::is_reference_v<T>)
@@ -396,7 +396,7 @@ namespace bifrost::meta
 
     if (value.valid())
     {
-      bifrost::visit_all(ov, value);
+      bf::visit_all(ov, value);
     }
 
     return found_match;

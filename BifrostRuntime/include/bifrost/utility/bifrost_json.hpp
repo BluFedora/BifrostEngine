@@ -21,14 +21,14 @@
 
 #include <initializer_list> /* initializer_list */
 
-namespace bifrost::json
+namespace bf::json
 {
   class Value;
 
   using Pair    = std::pair<String, Value>;
   using Object  = HashTable<String, Value, 16>;
-  using Array   = ::bifrost::Array<Value>;
-  using String  = ::bifrost::String;
+  using Array   = ::bf::Array<Value>;
+  using String  = ::bf::String;
   using Number  = double;
   using Boolean = bool;
 

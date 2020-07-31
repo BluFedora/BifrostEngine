@@ -22,7 +22,7 @@
 #include "bifrost_editor_selection.hpp"  // Selection
 #include "bifrost_editor_undo_redo.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class EditorOverlay;
 

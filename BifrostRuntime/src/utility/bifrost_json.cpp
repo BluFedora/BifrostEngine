@@ -16,7 +16,7 @@
 #include "bifrost/memory/bifrost_c_allocator.hpp" /* CAllocator       */
 #include "bifrost/utility/bifrost_json.h"         /* Bifrost Json API */
 
-namespace bifrost::json
+namespace bf::json
 {
   static CAllocator s_ArrayAllocator = {}; // TODO(SR): Think about this allocation scheme a bit more??
 

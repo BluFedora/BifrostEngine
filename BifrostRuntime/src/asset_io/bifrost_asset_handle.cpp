@@ -31,7 +31,7 @@
 #include "bifrost/core/bifrost_engine.hpp" /* Engine */
 #include "bifrost/utility/bifrost_json.hpp"
 
-namespace bifrost
+namespace bf
 {
   static constexpr int         k_MaxDigitsUInt64 = 20;
   static constexpr StringRange k_EnumValueKey    = "__EnumValue__";

@@ -22,7 +22,7 @@
 
 #define cast(o, T) reinterpret_cast<T>((o))
 
-namespace bifrost
+namespace bf
 {
   FreeListAllocator::FreeListAllocator(char* memory_block, const std::size_t memory_block_size) :
     MemoryManager(memory_block, memory_block_size),

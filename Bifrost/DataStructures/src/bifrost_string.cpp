@@ -5,7 +5,7 @@
 #include <cstdarg>  // va_list
 #include <cstdio>   // vsnprintf
 
-namespace bifrost
+namespace bf
 {
   StringLink::StringLink(StringRange data, StringLink*& head, StringLink*& tail) :
     string{data},
@@ -27,7 +27,7 @@ namespace bifrost
   }
 }  // namespace bifrost
 
-namespace bifrost::string_utils
+namespace bf::string_utils
 {
   char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...)
   {

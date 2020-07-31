@@ -3,7 +3,7 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/ecs/bifrost_behavior.hpp"
 
-namespace bifrost
+namespace bf
 {
   void BehaviorSystem::onFrameUpdate(Engine& engine, float dt)
   {

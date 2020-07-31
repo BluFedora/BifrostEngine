@@ -16,7 +16,7 @@
 
 #include <string_view> /* string_view */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   class BaseClassMetaInfo;
 

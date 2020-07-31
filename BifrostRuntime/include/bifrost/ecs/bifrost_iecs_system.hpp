@@ -15,7 +15,7 @@
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
   struct CameraRender;
 

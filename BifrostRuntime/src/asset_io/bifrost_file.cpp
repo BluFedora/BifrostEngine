@@ -17,7 +17,7 @@
 
 #include <cstring> /* strlen */
 
-namespace bifrost
+namespace bf
 {
   namespace file
   {

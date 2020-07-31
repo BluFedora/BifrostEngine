@@ -1,6 +1,6 @@
 #include "bifrost/editor/bifrost_editor_window.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   EditorWindowID BaseEditorWindow::s_TypeIDCounter = 0;
 

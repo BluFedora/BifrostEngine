@@ -4,7 +4,7 @@
 
 #include <list>
 
-namespace bifrost::editor
+namespace bf::editor
 {
   static const float k_SceneViewPadding = 2.0f;
   static const float k_InvalidMousePos  = -1.0f;

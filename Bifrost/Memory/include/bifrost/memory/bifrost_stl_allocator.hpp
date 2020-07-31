@@ -25,7 +25,7 @@
 
 #include <limits> /* numeric_limits<T> */
 
-namespace bifrost
+namespace bf
 {
   namespace detail
   {

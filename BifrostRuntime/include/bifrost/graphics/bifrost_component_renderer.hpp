@@ -19,7 +19,7 @@
 
 #define k_UseIndexBufferForSprites 1
 
-namespace bifrost
+namespace bf
 {
 #if k_UseIndexBufferForSprites
   static constexpr std::size_t k_NumVerticesPerSprite = 4;

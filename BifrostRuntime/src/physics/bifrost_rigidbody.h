@@ -7,7 +7,7 @@
 
 using namespace prism;
 
-namespace bifrost
+namespace bf
 {
   class RigidBody
   {

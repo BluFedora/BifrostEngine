@@ -20,7 +20,7 @@
 
 #include <regex>
 
-namespace bifrost
+namespace bf
 {
   GLSLCompiler::GLSLCompiler(IMemoryManager& memory) :
     m_LoadedFiles{},

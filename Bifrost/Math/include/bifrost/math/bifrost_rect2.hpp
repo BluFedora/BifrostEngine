@@ -21,7 +21,7 @@
 #include <cmath>     /* acos     */
 #include <cstdint>   /* uint32_t */
 
-namespace bifrost
+namespace bf
 {
   namespace math
   {

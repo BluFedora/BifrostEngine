@@ -18,7 +18,7 @@
 
 #include <memory> /* unique_ptr<T> */
 
-namespace bifrost::editor
+namespace bf::editor
 {
   IMemoryManager& allocator();
 

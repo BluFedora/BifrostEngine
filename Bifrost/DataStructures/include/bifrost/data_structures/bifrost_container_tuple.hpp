@@ -6,7 +6,7 @@
 #include <tuple>       /* size_t, tuple     */
 #include <type_traits> /* aligned_storage_t */
 
-namespace bifrost
+namespace bf
 {
   namespace detail
   {

@@ -21,7 +21,7 @@
 
 #include "bifrost_imemory_manager.hpp" /* MemoryManager */
 
-namespace bifrost
+namespace bf
 {
   class FreeListAllocator final : public MemoryManager
   {

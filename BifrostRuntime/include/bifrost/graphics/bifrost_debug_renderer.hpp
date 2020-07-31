@@ -3,7 +3,7 @@
 #include "bifrost/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
 #include "bifrost_standard_renderer.hpp" 
 
-namespace bifrost
+namespace bf
 {
   struct CameraRender;
 

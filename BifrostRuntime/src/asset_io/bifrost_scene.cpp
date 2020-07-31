@@ -19,7 +19,7 @@
 #include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
 #include "bifrost/utility/bifrost_json.hpp"             /* json::Value          */
 
-namespace bifrost
+namespace bf
 {
 #define ID_TO_INDEX(id) ((id)-1)
 

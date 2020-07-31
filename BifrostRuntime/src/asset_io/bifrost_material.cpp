@@ -17,7 +17,7 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
-namespace bifrost
+namespace bf
 {
   ShaderModule::ShaderModule(bfGfxDeviceHandle device) :
     BaseT(device)

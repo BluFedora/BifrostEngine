@@ -100,12 +100,12 @@ struct ComparebfFramebufferState
   }
 };
 
-using GfxRenderpassCache     = bifrost::ObjectHashCache<bfRenderpass, bfRenderpassInfo>;
-using VulkanDescSetCache     = bifrost::ObjectHashCache<bfDescriptorSet, bfDescriptorSetInfo, ComparebfDescriptorSetInfo>;
-using VulkanPipelineCache    = bifrost::ObjectHashCache<bfPipeline, bfPipelineCache, ComparebfPipelineCache>;
-using VulkanFramebufferCache = bifrost::ObjectHashCache<bfFramebuffer, bfFramebufferState, ComparebfFramebufferState>;
+using GfxRenderpassCache     = bf::ObjectHashCache<bfRenderpass, bfRenderpassInfo>;
+using VulkanDescSetCache     = bf::ObjectHashCache<bfDescriptorSet, bfDescriptorSetInfo, ComparebfDescriptorSetInfo>;
+using VulkanPipelineCache    = bf::ObjectHashCache<bfPipeline, bfPipelineCache, ComparebfPipelineCache>;
+using VulkanFramebufferCache = bf::ObjectHashCache<bfFramebuffer, bfFramebufferState, ComparebfFramebufferState>;
 
-namespace bifrost
+namespace bf
 {
   namespace gfx_hash
   {

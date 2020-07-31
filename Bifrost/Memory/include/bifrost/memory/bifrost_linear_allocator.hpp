@@ -20,7 +20,7 @@
 
 #include <exception> /* exception */
 
-namespace bifrost
+namespace bf
 {
   class LinearAllocatorScope;
 

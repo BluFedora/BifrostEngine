@@ -35,7 +35,7 @@ typedef struct Quaternionf_t Quaternionf;
 typedef struct bfColor4f_t   bfColor4f;
 typedef struct bfColor4u_t   bfColor4u;
 
-namespace bifrost
+namespace bf
 {
   class IBaseObject;
   class BaseAssetInfo;

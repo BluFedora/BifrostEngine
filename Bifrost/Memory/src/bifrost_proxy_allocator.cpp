@@ -14,7 +14,7 @@
 /******************************************************************************/
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"
 
-namespace bifrost
+namespace bf
 {
   ProxyAllocator::ProxyAllocator(IMemoryManager& real_allocator) :
     m_Impl(real_allocator)

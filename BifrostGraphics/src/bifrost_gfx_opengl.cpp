@@ -304,7 +304,7 @@ void         bfWebGL_handleResize(void);
 #define glBindBufferRange bfWebGL_bindBufferRange
 #endif
 
-using namespace bifrost;
+using namespace bf;
 
 //
 // Memory

@@ -18,7 +18,7 @@
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
   class bfPureInterface(IBaseObject)
   {

@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-namespace bifrost
+namespace bf
 {
   DebugRenderer::DebugRenderer(IMemoryManager& memory) :
     m_Gfx{nullptr},

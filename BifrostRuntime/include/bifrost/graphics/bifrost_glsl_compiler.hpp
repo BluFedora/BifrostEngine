@@ -19,7 +19,7 @@
 #include "bifrost/graphics/bifrost_gfx_api.h"              // BifrostShaderType
 #include "bifrost/utility/bifrost_non_copy_move.hpp"       // bfNonCopyMoveable
 
-namespace bifrost
+namespace bf
 {
   // Only create one per process.
   class GLSLCompiler : private bfNonCopyMoveable<GLSLCompiler>

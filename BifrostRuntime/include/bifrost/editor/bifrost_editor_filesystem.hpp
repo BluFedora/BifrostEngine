@@ -17,7 +17,7 @@
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // Node
 #include "bifrost/data_structures/bifrost_string.hpp"          // String
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class EditorOverlay;
 

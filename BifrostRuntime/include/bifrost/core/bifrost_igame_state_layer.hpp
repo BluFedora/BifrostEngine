@@ -20,7 +20,7 @@ class Engine;
 struct bfEvent_t;
 typedef struct bfEvent_t bfEvent;
 
-namespace bifrost
+namespace bf
 {
   using Event = ::bfEvent;
 

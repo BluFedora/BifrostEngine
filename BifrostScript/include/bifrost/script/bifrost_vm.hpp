@@ -28,7 +28,7 @@
 #include <tuple>       /* tuple                    */
 #include <type_traits> /* decay_t, is_arithmetic_v */
 
-namespace bifrost
+namespace bf
 {
   namespace detail
   {

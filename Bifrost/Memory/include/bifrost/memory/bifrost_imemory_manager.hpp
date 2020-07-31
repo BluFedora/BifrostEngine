@@ -29,7 +29,7 @@
 #define BIFROST_MEMORY_DEBUG_ALIGNMENT_PAD 0xFE
 #endif /* BIFROST_MEMORY_DEBUG_WIPE_MEMORY */
 
-namespace bifrost
+namespace bf
 {
   /*!
    * @brief

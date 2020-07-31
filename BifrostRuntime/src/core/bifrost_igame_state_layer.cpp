@@ -1,6 +1,6 @@
 #include "bifrost/core/bifrost_igame_state_layer.hpp"
 
-namespace bifrost
+namespace bf
 {
   IGameStateLayer::IGameStateLayer():
     m_Prev{nullptr},

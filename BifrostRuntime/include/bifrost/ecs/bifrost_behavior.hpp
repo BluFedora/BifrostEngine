@@ -16,7 +16,7 @@
 #include "bifrost/utility/bifrost_non_copy_move.hpp"  // bfNonCopyMoveable<T>
 #include "bifrost_base_component.hpp"                 // BaseComponent, Entity
 
-namespace bifrost
+namespace bf
 {
   class ISerializer;
 
@@ -129,19 +129,19 @@ namespace bifrost
     ~Behavior() override {}
   };
 
-#define bfRegisterBehavior(T)                                               \
-  BIFROST_META_REGISTER(T)                                                  \
-  {                                                                         \
-    BIFROST_META_BEGIN()                                                    \
-      BIFROST_META_MEMBERS(class_info<T, bifrost::IBehavior>(#T), ctor<>()) \
-    BIFROST_META_END()                                                      \
+#define bfRegisterBehavior(T)                                          \
+  BIFROST_META_REGISTER(T)                                             \
+  {                                                                    \
+    BIFROST_META_BEGIN()                                               \
+      BIFROST_META_MEMBERS(class_info<T, bf::IBehavior>(#T), ctor<>()) \
+    BIFROST_META_END()                                                 \
   }
-}  // namespace bifrost
+}  // namespace bf
 
-BIFROST_META_REGISTER(bifrost::IBehavior)
+BIFROST_META_REGISTER(bf::IBehavior)
 {
   BIFROST_META_BEGIN()
-    BIFROST_META_MEMBERS(class_info<bifrost::IBehavior>("bifrost::IBehavior"))
+    BIFROST_META_MEMBERS(class_info<bf::IBehavior>("bifrost::IBehavior"))
   BIFROST_META_END()
 }
 
@@ -149,7 +149,7 @@ BIFROST_META_REGISTER(bifrost::IBehavior)
 // Example of how to declare/define and register a C++ gameplay behavior.
 namespace game
 {
-  class ExampleBehavior : public bifrost::Behavior<ExampleBehavior>
+  class ExampleBehavior : public bf::Behavior<ExampleBehavior>
   {
    public:
     float time = 0.0f;

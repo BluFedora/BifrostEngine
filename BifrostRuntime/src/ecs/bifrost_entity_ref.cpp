@@ -16,7 +16,7 @@
 #include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/utility/bifrost_uuid.hpp"
 
-namespace bifrost
+namespace bf
 {
   EntityRef::EntityRef(Entity* object) noexcept :
     m_ID{bfUUID_makeEmpty().as_number},

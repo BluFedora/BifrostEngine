@@ -137,7 +137,7 @@ void bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle 
 
 void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info)
 {
-  const uint64_t hash_code = bifrost::gfx_hash::hash(0x0, renderpass_info);
+  const uint64_t hash_code = bf::gfx_hash::hash(0x0, renderpass_info);
 
   bfRenderpassHandle rp = self->parent->cache_renderpass.find(hash_code, *renderpass_info);
 
@@ -167,7 +167,7 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClear
 void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments)
 {
   const uint32_t num_attachments = self->pipeline_state.renderpass->info.num_attachments;
-  const uint64_t hash_code       = bifrost::vk::hash(0x0, attachments, num_attachments);
+  const uint64_t hash_code       = bf::vk::hash(0x0, attachments, num_attachments);
 
   bfFramebufferState fb_state;
   fb_state.num_attachments = num_attachments;
@@ -649,7 +649,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
   assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
 
-  const std::uint64_t   hash_code = bifrost::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
+  const std::uint64_t   hash_code = bf::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
   bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code, *desc_set_info);
 
   if (!desc_set)
@@ -709,7 +709,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
 static void flushPipeline(bfGfxCommandListHandle self)
 {
-  const uint64_t hash_code = bifrost::vk::hash(0x0, &self->pipeline_state);
+  const uint64_t hash_code = bf::vk::hash(0x0, &self->pipeline_state);
 
   bfPipelineHandle pl = self->parent->cache_pipeline.find(hash_code, self->pipeline_state);
 
@@ -1207,9 +1207,9 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 // TODO(SR): Make a new file
 #include "bifrost/utility/bifrost_hash.hpp"
 
-namespace bifrost::vk
+namespace bf::vk
 {
-  using namespace bifrost::gfx_hash;
+  using namespace bf::gfx_hash;
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {

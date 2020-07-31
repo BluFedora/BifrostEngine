@@ -22,7 +22,7 @@
 #include <initializer_list> /* initializer_list */
 // #include <utility>          /* */
 
-namespace bifrost
+namespace bf
 {
   static constexpr std::size_t MAX_PROBES = 16u;
 

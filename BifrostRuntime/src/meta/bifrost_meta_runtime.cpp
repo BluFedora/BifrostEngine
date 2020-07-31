@@ -7,7 +7,7 @@ namespace
   char s_Storage[32768];
 }  // namespace
 
-namespace bifrost::meta
+namespace bf::meta
 {
   RttiAllocatorBackingType& gRttiMemoryBacking()
   {

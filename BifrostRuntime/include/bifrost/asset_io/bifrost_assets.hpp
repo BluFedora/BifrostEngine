@@ -26,7 +26,7 @@
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
   namespace json
   {

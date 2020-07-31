@@ -4,7 +4,7 @@
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   HierarchyView::HierarchyView() :
     m_SearchQuery{""}  // Filled with initial data for ImGui since ImGui functions do not accept nullptr as an input string.

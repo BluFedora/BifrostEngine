@@ -9,7 +9,7 @@
 #include <cstring>     /* memset                */
 #include <type_traits> /* is_trivially_copyable */
 
-namespace bifrost
+namespace bf
 {
   template<typename T>
   struct MemCompare

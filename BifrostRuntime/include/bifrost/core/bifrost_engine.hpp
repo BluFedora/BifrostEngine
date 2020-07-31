@@ -25,7 +25,7 @@
 using BifrostEngineCreateParams = bfGfxContextCreateParams;
 
 #if USE_CRT_HEAP
-using MainHeap = bifrost::CAllocator;
+using MainHeap = bf::CAllocator;
 #else
 using MainHeap = bifrost::FreeListAllocator;
 #endif
@@ -44,7 +44,7 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
   }
 }
 
-namespace bifrost::detail
+namespace bf::detail
 {
   class CoreEngineGameStateLayer final : public IGameStateLayer
   {
@@ -56,7 +56,7 @@ namespace bifrost::detail
   };
 }  // namespace bifrost::detail
 
-namespace bifrost
+namespace bf
 {
   static constexpr int k_MaxNumCamera = 16;
   
@@ -135,7 +135,7 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-using namespace bifrost;
+using namespace bf;
 
 class Engine : private bfNonCopyMoveable<Engine>
 {

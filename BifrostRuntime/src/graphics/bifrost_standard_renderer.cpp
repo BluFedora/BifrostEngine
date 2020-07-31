@@ -21,7 +21,7 @@
 
 #include "bifrost/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
 
-namespace bifrost
+namespace bf
 {
   static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);

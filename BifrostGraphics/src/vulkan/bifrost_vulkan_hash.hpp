@@ -9,7 +9,7 @@
 struct bfDescriptorSetLayoutInfo_t;
 typedef struct bfDescriptorSetLayoutInfo_t bfDescriptorSetLayoutInfo;
 
-namespace bifrost::vk
+namespace bf::vk
 {
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline);
   std::uint64_t hash(std::uint64_t self, bfTextureHandle* attachments, std::size_t num_attachments);

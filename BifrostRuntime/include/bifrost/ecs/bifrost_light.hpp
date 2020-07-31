@@ -15,7 +15,7 @@
 #include "bifrost/math/bifrost_rect2.hpp" /* Vector3f, clamp */
 #include "bifrost_base_component.hpp"     /* BaseComponent   */
 
-namespace bifrost
+namespace bf
 {
   enum class LightType
   {
@@ -109,7 +109,7 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-BIFROST_META_REGISTER(bifrost::Light)
+BIFROST_META_REGISTER(bf::Light)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(

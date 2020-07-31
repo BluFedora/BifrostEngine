@@ -15,7 +15,7 @@
 #include "bifrost/core/bifrost_engine.hpp"   /* Engine */
 #include "bifrost/script/bifrost_vm.hpp"     /* VMView */
 
-namespace bifrost
+namespace bf
 {
   Script::Script(VMView& vm) :
     m_VM{vm},

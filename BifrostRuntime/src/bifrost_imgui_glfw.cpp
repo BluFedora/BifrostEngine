@@ -12,9 +12,9 @@
 #include <algorithm>
 #include <memory>  // unique_ptr
 
-namespace bifrost::imgui
+namespace bf::imgui
 {
-  using namespace bifrost;
+  using namespace bf;
 
   struct UIFrameData
   {

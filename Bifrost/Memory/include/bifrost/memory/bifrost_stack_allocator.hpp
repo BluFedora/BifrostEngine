@@ -18,7 +18,7 @@
 
 #include "bifrost_imemory_manager.hpp" /* MemoryManager */
 
-namespace bifrost
+namespace bf
 {
   class StackAllocator final : public MemoryManager
   {

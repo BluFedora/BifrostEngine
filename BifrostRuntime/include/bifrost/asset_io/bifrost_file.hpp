@@ -9,7 +9,7 @@
 #include <algorithm> /* reverse      */
 #include <fstream>   /* fstream, ios */
 
-namespace bifrost
+namespace bf
 {
   namespace file
   {

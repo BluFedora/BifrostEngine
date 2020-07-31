@@ -19,7 +19,7 @@
 #include "bifrost/debug/bifrost_dbg_logger.h"
 #include "bifrost/ecs/bifrost_behavior.hpp"
 
-namespace bifrost
+namespace bf
 {
   static constexpr StringRange k_SerializeComponentActiveKey   = "__Active__";
   static constexpr StringRange k_SerializeBehaviorClassNameKey = "__BehaviorClass__";

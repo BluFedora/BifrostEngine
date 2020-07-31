@@ -12,7 +12,7 @@
 /******************************************************************************/
 #include "bifrost/ecs/bifrost_collision_system.hpp"
 
-namespace bifrost
+namespace bf
 {
   void CollisionSystem::onFrameBegin(Engine& engine, float dt)
   {
