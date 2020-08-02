@@ -12,8 +12,8 @@
  */
 /******************************************************************************/
 
-#include <bifrost/graphics/bifrost_gfx_api.h>  /* Graphics API */
-#include <bifrost/platform/bifrost_platform.h> /* Platform API */
+#include "bf/Platform.h"                      /* Platform API */
+#include <bifrost/graphics/bifrost_gfx_api.h> /* Graphics API */
 
 #include <bifrost_imgui_glfw.hpp> /* bifrost::imgui::*      */
 #include <imgui/imgui.h>          /* ImGui::* */
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  BifrostWindow* const main_window = bfPlatformCreateWindow("Reefy Web Game Dev", int(1920 / 2 * 1.5), int(1080 / 2 * 1.5), BIFROST_WINDOW_FLAGS_DEFAULT & ~BIFROST_WINDOW_FLAG_IS_MAXIMIZED);
+  bfWindow* const main_window = bfPlatformCreateWindow("Reefy Web Game Dev", int(1920 / 2 * 1.5), int(1080 / 2 * 1.5), BIFROST_WINDOW_FLAGS_DEFAULT & ~BIFROST_WINDOW_FLAG_IS_MAXIMIZED);
 
   if (!main_window)
   {
@@ -56,11 +56,11 @@ int main(int argc, char* argv[])
   main_window->user_data     = &app;
   main_window->renderer_data = main_surface;
 
-  main_window->event_fn = [](BifrostWindow* window, bfEvent* evt) {
+  main_window->event_fn = [](bfWindow* window, bfEvent* evt) {
     bf::imgui::onEvent(window, *evt);
   };
 
-  main_window->frame_fn = [](BifrostWindow* window) {
+  main_window->frame_fn = [](bfWindow* window) {
     Application* const app        = static_cast<Application*>(window->user_data);
     const float        delta_time = 1.0f / 60.0f;
 
@@ -84,11 +84,10 @@ int main(int argc, char* argv[])
 
         if (ImGui::Begin("First Window"))
         {
-          ImGui::Text("Come On Just Work"); 
+          ImGui::Text("Come On Just Work");
         }
         ImGui::End();
 
-        
         if (ImGui::Begin("Another One"))
         {
           ImGui::Text("Some more text my dude.");

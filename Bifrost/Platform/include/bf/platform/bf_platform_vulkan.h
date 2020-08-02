@@ -1,7 +1,7 @@
 #ifndef BIFROST_PLATFORM_VULKAN_H
 #define BIFROST_PLATFORM_VULKAN_H
 
-#include "bifrost_platform.h"
+#include "bf_platform.h"
 
 #if !defined(VULKAN_H_)
 #include <stdint.h> /* uint64_t */
@@ -28,7 +28,7 @@ VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSurfaceKHR)
 #endif
 
  // return non 0 on success
-BIFROST_PLATFORM_API int bfWindow_createVulkanSurface(BifrostWindow* self, VkInstance instance, VkSurfaceKHR* out);
+BIFROST_PLATFORM_API int bfWindow_createVulkanSurface(bfWindow* self, VkInstance instance, VkSurfaceKHR* out);
 
 #if __cplusplus
 }

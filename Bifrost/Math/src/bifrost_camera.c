@@ -129,6 +129,52 @@ void Camera_update(BifrostCamera* cam)
   }
 }
 
+void bfCamera_openGLProjection(const BifrostCamera* cam, Mat4x4* out_projection)
+{
+  switch (cam->camera_mode.mode)
+  {
+    case BIFROST_CAMERA_MODE_ORTHOGRAPHIC:
+    {
+      Mat4x4_ortho(out_projection,
+                   cam->camera_mode.orthographic_bounds.min[0],
+                   cam->camera_mode.orthographic_bounds.max[0],
+                   cam->camera_mode.orthographic_bounds.max[1],
+                   cam->camera_mode.orthographic_bounds.min[1],
+                   cam->camera_mode.near_plane,
+                   cam->camera_mode.far_plane);
+      break;
+    }
+    case BIFROST_CAMERA_MODE_FRUSTRUM:
+    {
+      Mat4x4_frustum(out_projection,
+                     cam->camera_mode.orthographic_bounds.min[0],
+                     cam->camera_mode.orthographic_bounds.max[0],
+                     cam->camera_mode.orthographic_bounds.max[1],
+                     cam->camera_mode.orthographic_bounds.min[1],
+                     cam->camera_mode.near_plane,
+                     cam->camera_mode.far_plane);
+      break;
+    }
+    case BIFROST_CAMERA_MODE_PRESPECTIVE:
+    {
+      Mat4x4_perspective(out_projection,
+                         cam->camera_mode.field_of_view_y,
+                         cam->camera_mode.aspect_ratio,
+                         cam->camera_mode.near_plane,
+                         cam->camera_mode.far_plane);
+      break;
+    }
+    case BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY:
+    {
+      Mat4x4_perspectiveInfinity(out_projection,
+                                 cam->camera_mode.field_of_view_y,
+                                 cam->camera_mode.aspect_ratio,
+                                 cam->camera_mode.near_plane);
+      break;
+    }
+  }
+}
+
 void Camera_move(BifrostCamera* cam, const Vec3f* dir, float amt)
 {
   Vec3f_addScaled(&cam->position, dir, amt);

@@ -1,9 +1,22 @@
 #ifndef BF_PAINTER_HPP
 #define BF_PAINTER_HPP
 
+//
+// Adds a check to see if all vertices requested in Gfx2DPainter are written to.
+// *warning: There is a good amount of overhead both CPU and memory wise when this is checked on*
+//
+#define bfGfx2DSafeVertexIndexing 0
+
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics
 #include "bifrost/memory/bifrost_linear_allocator.hpp"     // LinearAllocator
 #include "bifrost/memory/bifrost_memory_utils.h"           // bfMegabytes
+
+#if bfGfx2DSafeVertexIndexing
+#include "bifrost/memory/bifrost_proxy_allocator.hpp"
+#include "bifrost/memory/bifrost_stl_allocator.hpp"
+
+#include <vector>
+#endif
 
 namespace bf
 {
@@ -14,15 +27,27 @@ namespace bf
     bfColor4u color;
   };
 
+  struct DropShadowVertex final
+  {
+    Vector2f  pos;
+    float     shadow_sigma;
+    float     corner_radius;
+    Rect2f    box;
+    bfColor4u color;
+  };
+
   using UIIndexType = std::uint32_t;
 
   struct Gfx2DPerFrameRenderData final
   {
-    bfBufferHandle vertex_buffer = nullptr;
-    bfBufferHandle index_buffer  = nullptr;
+    bfBufferHandle vertex_buffer        = nullptr;
+    bfBufferHandle index_buffer         = nullptr;
+    bfBufferHandle vertex_shadow_buffer = nullptr;
+    bfBufferHandle index_shadow_buffer  = nullptr;
 
     // Size measured in number of bytes
     void reserve(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size);
+    void reserveShadow(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size);
   };
 
   struct Gfx2DUnifromData final
@@ -35,10 +60,13 @@ namespace bf
     IMemoryManager&               memory;
     bfGfxContextHandle            ctx;
     bfGfxDeviceHandle             device;
-    bfVertexLayoutSetHandle       vertex_layout;
+    bfVertexLayoutSetHandle       vertex_layouts[2];
     bfShaderModuleHandle          vertex_shader;
     bfShaderModuleHandle          fragment_shader;
     bfShaderProgramHandle         shader_program;
+    bfShaderModuleHandle          shadow_modules[3];
+    bfShaderProgramHandle         rect_shadow_program;
+    bfShaderProgramHandle         rounded_rect_shadow_program;
     bfTextureHandle               white_texture;
     int                           num_frame_datas;
     Gfx2DPerFrameRenderData*      frame_datas;
@@ -48,13 +76,15 @@ namespace bf
 
     // Size measured in number of items.
     void reserve(int index, size_t vertex_size, size_t indices_size) const;
+    void reserveShadow(int index, size_t vertex_size, size_t indices_size) const;
+
     ~Gfx2DRenderData();
 
    private:
     template<typename F>
     void forEachBuffer(F&& fn) const
     {
-      for (std::size_t i = 0; i < num_frame_datas; ++i)
+      for (int i = 0; i < num_frame_datas; ++i)
       {
         fn(frame_datas[i]);
       }
@@ -81,17 +111,20 @@ namespace bf
     static const UIIndexType k_TempMemorySize = bfMegabytes(2);
 
     // private:
-    Gfx2DRenderData    render_data;                           //!< GPU Data
-    Array<UIVertex2D>  vertices;                              //!< CPU Vertices
-    Array<UIIndexType> indices;                               //!< CPU Index Buffer
-    char               tmp_memory_backing[k_TempMemorySize];  //!< Memory pool for Gfx2DPainter::tmp_memory_backing
-    LinearAllocator    tmp_memory;                            //!< The allocator interface
+    Gfx2DRenderData         render_data;                           //!< GPU Data
+    Array<UIVertex2D>       vertices;                              //!< CPU Vertices
+    Array<UIIndexType>      indices;                               //!< CPU Index Buffer
+    Array<DropShadowVertex> shadow_vertices;                       //!< CPU Vertices
+    Array<UIIndexType>      shadow_indices;                        //!< CPU Index Buffer
+    char                    tmp_memory_backing[k_TempMemorySize];  //!< Memory pool for Gfx2DPainter::tmp_memory_backing
+    LinearAllocator         tmp_memory;                            //!< The allocator interface
 
     // public:
     explicit Gfx2DPainter(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
 
     void reset();
 
+    void pushRectShadow(float shadow_sigma, const Vector2f& pos, float width, float height, float border_radius, bfColor32u color);
     void pushRect(const Vector2f& pos, float width, float height, bfColor4u color);
     void pushRect(const Vector2f& pos, float width, float height, bfColor32u color = BIFROST_COLOR_PINK);
     void pushFillRoundedRect(const Vector2f& pos, float width, float height, float border_radius, bfColor32u color);
@@ -105,21 +138,66 @@ namespace bf
 
    private:
     // Small helper type to make sure no mistakes happen when writing vertices.
+    template<typename T>
     struct SafeVertexIndexer final
     {
-      UIIndexType num_verts;
-      UIVertex2D* verts;
+#if bfGfx2DSafeVertexIndexing
+      static inline char            s_TmpMemoryBacking[bfKilobytes(50)];
+      static inline LinearAllocator s_TmpMemory{s_TmpMemoryBacking, sizeof(s_TmpMemoryBacking)};
+#endif
 
-      UIVertex2D& operator[](UIIndexType index) const
+     public:
+      UIIndexType num_verts;
+      T*          verts;
+
+#if bfGfx2DSafeVertexIndexing
+      LinearAllocatorScope mem_scope;
+      mutable bool*        used_vertices;
+
+      SafeVertexIndexer(UIIndexType size, T* verts) :
+        num_verts{size},
+        verts{verts},
+        mem_scope{s_TmpMemory},
+        used_vertices(static_cast<bool*>(s_TmpMemory.allocate(sizeof(bool) * size)))
+      {
+      }
+
+      SafeVertexIndexer(SafeVertexIndexer&& rhs) noexcept :
+        num_verts{std::exchange(rhs.num_verts, 0)},
+        verts{std::exchange(rhs.verts, nullptr)},
+        mem_scope {std::move(rhs.mem_scope)},
+        used_vertices(std::exchange(rhs.used_vertices, nullptr))
+      {
+      }
+#endif
+
+      T& operator[](UIIndexType index) const
       {
         assert(index < num_verts);
+
+#if bfGfx2DSafeVertexIndexing
+        used_vertices[index] = true;
+#endif
+
         return verts[index];
       }
+
+#if bfGfx2DSafeVertexIndexing
+      ~SafeVertexIndexer()
+      {
+        for (UIIndexType i = 0; i < num_verts; ++i)
+        {
+          assert(used_vertices[i] && "There was an unused vertex at slot i");
+        }
+      }
+#endif
     };
 
-    std::pair<UIIndexType, SafeVertexIndexer> requestVertices(UIIndexType num_verts);
-    void                                      pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2);
+    std::pair<UIIndexType, SafeVertexIndexer<UIVertex2D>>       requestVertices(UIIndexType num_verts);
+    void                                                        pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2);
+    std::pair<UIIndexType, SafeVertexIndexer<DropShadowVertex>> requestVertices2(UIIndexType num_verts);
+    void                                                        pushTriIndex2(UIIndexType index0, UIIndexType index1, UIIndexType index2);
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif  // BF_PAINTER_HPP

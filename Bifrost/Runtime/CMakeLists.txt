@@ -122,4 +122,6 @@ target_sources(
    # HAcky Hacks
 
    "${PROJECT_SOURCE_DIR}/../../BifrostExperiments/src/bifrost_json.c"
+
+   "${PROJECT_SOURCE_DIR}/../../Bifrost/Graphics2D/src/bf_painter.cpp"
 )

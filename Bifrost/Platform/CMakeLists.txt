@@ -1,9 +1,9 @@
 ﻿################################################################################
 #                                                                              #
-#                          BIFROST PLATFORM PROJECT                            #
+#                             BF PLATFORM PROJECT                              #
 #                                                                              #
 ################################################################################
-###  CMakeList.txt : Bifrost Platform Sub Project of the Bifrost Engine      ###
+###          CMakeList.txt : Platform Sub Project of the Engine              ###
 ################################################################################
 
 cmake_minimum_required(VERSION 3.8)
@@ -68,13 +68,13 @@ elseif(APPLE)
   set(BIFROST_PLATFORM_LIB ${PROJECT_SOURCE_DIR}/lib/macOS)
 endif()
 
-set(BIFROST_PLATFORM_SOURCE_FILES "src/bifrost_platform.c")
+set(BIFROST_PLATFORM_SOURCE_FILES "src/bf_platform.c")
 set(BIFROST_PLATFORM_LIB_FILES "")
 
 if(BIFROST_PLATFORM_GLFW)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}
-    "src/bifrost_platform_glfw.c"
+    "src/bf_platform_glfw.c"
   )
 
   if(EMSCRIPTEN)
@@ -94,7 +94,7 @@ if(BIFROST_PLATFORM_GLFW)
 elseif(BIFROST_PLATFORM_SDL)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}
-    "src/bifrost_platform_sdl.c"
+    "src/bf_platform_sdl.c"
   )
 
   if(EMSCRIPTEN)
@@ -113,7 +113,7 @@ elseif(BIFROST_PLATFORM_SDL)
 elseif(BIFROST_PLATFORM_QT)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}
-    "src/bifrost_platform_qt.c"
+    "src/bf_platform_qt.c"
   )
 else()
 endif()

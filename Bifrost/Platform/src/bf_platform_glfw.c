@@ -1,8 +1,8 @@
-#include "bifrost/platform/bifrost_platform.h"
+#include "bf/platform/bf_platform.h"
 
-#include "bifrost/platform/bifrost_platform_event.h"
-#include "bifrost/platform/bifrost_platform_gl.h"
-#include "bifrost/platform/bifrost_platform_vulkan.h"
+#include "bf/platform/bf_platform_event.h"
+#include "bf/platform/bf_platform_gl.h"
+#include "bf/platform/bf_platform_vulkan.h"
 
 #include <glfw/glfw3.h>
 
@@ -15,7 +15,7 @@
 
 extern bfPlatformInitParams g_BifrostPlatform;
 
-static BifrostWindow* s_MainWindow = NULL;
+static bfWindow* s_MainWindow = NULL;
 
 int bfPlatformInit(bfPlatformInitParams params)
 {
@@ -84,12 +84,12 @@ static void GLFW_errorCallback(int errorCode, const char* message)
 }
 #endif
 
-static BifrostWindow* getWindow(GLFWwindow* window)
+static bfWindow* getWindow(GLFWwindow* window)
 {
-  return (BifrostWindow*)glfwGetWindowUserPointer(window);
+  return (bfWindow*)glfwGetWindowUserPointer(window);
 }
 
-static void dispatchEvent(BifrostWindow* window, bfEvent event)
+static void dispatchEvent(bfWindow* window, bfEvent event)
 {
   if (window->event_fn)
   {
@@ -163,7 +163,7 @@ static int convertKey(int key)
     case GLFW_KEY_PAGE_UP: return BIFROST_KEY_PAGE_UP;
     case GLFW_KEY_PAGE_DOWN: return BIFROST_KEY_PAGE_DOWN;
     case GLFW_KEY_HOME: return BIFROST_KEY_HOME;
-    case GLFW_KEY_END: return BIFROST_KEY_END ;
+    case GLFW_KEY_END: return BIFROST_KEY_END;
     case GLFW_KEY_INSERT: return BIFROST_KEY_INSERT;
     case GLFW_KEY_DELETE: return BIFROST_KEY_DELETE;
     case GLFW_KEY_BACKSPACE: return BIFROST_KEY_BACKSPACE;
@@ -197,7 +197,7 @@ static int convertKey(int key)
     case GLFW_KEY_X: return BIFROST_KEY_X;
     case GLFW_KEY_Y: return BIFROST_KEY_Y;
     case GLFW_KEY_Z: return BIFROST_KEY_Z;
-    
+
     default: return key;
   }
 }
@@ -241,15 +241,15 @@ static void GLFW_onKeyChanged(GLFWwindow* window, int key, int scan_code, int ac
 
 static void GLFW_onMousePosChanged(GLFWwindow* window, double x_pos, double y_pos)
 {
-  BifrostWindow* const w        = getWindow(window);
-  bfMouseEvent         evt_data = bfMouseEvent_make((int)(x_pos), (int)(y_pos), BIFROST_BUTTON_NONE, convertButtonState(window));
+  bfWindow* const w        = getWindow(window);
+  bfMouseEvent    evt_data = bfMouseEvent_make((int)(x_pos), (int)(y_pos), BIFROST_BUTTON_NONE, convertButtonState(window));
 
   dispatchEvent(w, bfEvent_make(BIFROST_EVT_ON_MOUSE_MOVE, 0x0, evt_data));
 }
 
 static void GLFW_onMouseButtonChanged(GLFWwindow* window, int button, int action, int mods)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   double x_pos, y_pos;
   glfwGetCursorPos(window, &x_pos, &y_pos);
@@ -339,7 +339,7 @@ void GLFW_onWindowFileDropped(GLFWwindow* window, int count, const char** paths)
 
 static void GLFW_onWindowSizeChanged(GLFWwindow* window, int width, int height)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   bfWindowEvent evt_data = bfWindowEvent_make(width, height, BIFROST_WINDOW_IS_NONE);
 
@@ -348,7 +348,7 @@ static void GLFW_onWindowSizeChanged(GLFWwindow* window, int width, int height)
 
 static void GLFW_onWindowRefresh(GLFWwindow* window)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   if (w->frame_fn)
   {
@@ -358,7 +358,7 @@ static void GLFW_onWindowRefresh(GLFWwindow* window)
 
 static void GLFW_onWindowCharacterInput(GLFWwindow* window, unsigned int codepoint)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   bfKeyboardEvent evt_data = bfKeyboardEvent_makeCodepoint(codepoint);
 
@@ -367,7 +367,7 @@ static void GLFW_onWindowCharacterInput(GLFWwindow* window, unsigned int codepoi
 
 static void GLFW_onScrollWheel(GLFWwindow* window, double x_offset, double y_offset)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   bfScrollWheelEvent evt_data = bfScrollWheelEvent_make(x_offset, y_offset);
 
@@ -376,7 +376,7 @@ static void GLFW_onScrollWheel(GLFWwindow* window, double x_offset, double y_off
 
 static void GLFW_onWindowIconify(GLFWwindow* window, int iconified)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
@@ -388,7 +388,7 @@ static void GLFW_onWindowIconify(GLFWwindow* window, int iconified)
 
 void GLFW_onWindowFocusChanged(GLFWwindow* window, int focused)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
@@ -400,7 +400,7 @@ void GLFW_onWindowFocusChanged(GLFWwindow* window, int focused)
 
 static void GLFW_onWindowClose(GLFWwindow* window)
 {
-  BifrostWindow* const w = getWindow(window);
+  bfWindow* const w = getWindow(window);
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
@@ -412,9 +412,9 @@ static void GLFW_onWindowClose(GLFWwindow* window)
   // glfwSetWindowShouldClose(window, GLFW_FALSE);
 }
 
-BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags)
+bfWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags)
 {
-  BifrostWindow* const window = bfPlatformAlloc(sizeof(BifrostWindow));
+  bfWindow* const window = bfPlatformAlloc(sizeof(bfWindow));
 
   if (window)
   {
@@ -459,27 +459,27 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
   return window;
 }
 
-int bfWindow_wantsToClose(BifrostWindow* self)
+int bfWindow_wantsToClose(bfWindow* self)
 {
   return glfwWindowShouldClose(self->handle);
 }
 
-void bfWindow_show(BifrostWindow* self)
+void bfWindow_show(bfWindow* self)
 {
   glfwShowWindow(self->handle);
 }
 
-void bfWindow_getPos(BifrostWindow* self, int* x, int* y)
+void bfWindow_getPos(bfWindow* self, int* x, int* y)
 {
   glfwGetWindowPos(self->handle, x, y);
 }
 
-void bfWindow_setPos(BifrostWindow* self, int x, int y)
+void bfWindow_setPos(bfWindow* self, int x, int y)
 {
   glfwSetWindowPos(self->handle, x, y);
 }
 
-void bfWindow_getSize(BifrostWindow* self, int* x, int* y)
+void bfWindow_getSize(bfWindow* self, int* x, int* y)
 {
 #if BIFROST_PLATFORM_EMSCRIPTEN
   double w, h;
@@ -492,47 +492,47 @@ void bfWindow_getSize(BifrostWindow* self, int* x, int* y)
 #endif
 }
 
-void bfWindow_setSize(BifrostWindow* self, int x, int y)
+void bfWindow_setSize(bfWindow* self, int x, int y)
 {
   glfwSetWindowSize(self->handle, x, y);
 }
 
-void bfWindow_focus(BifrostWindow* self)
+void bfWindow_focus(bfWindow* self)
 {
   glfwFocusWindow(self->handle);
 }
 
-int bfWindow_isFocused(BifrostWindow* self)
+int bfWindow_isFocused(bfWindow* self)
 {
   return glfwGetWindowAttrib(self->handle, GLFW_FOCUSED) != 0;
 }
 
-int bfWindow_isMinimized(BifrostWindow* self)
+int bfWindow_isMinimized(bfWindow* self)
 {
   return glfwGetWindowAttrib(self->handle, GLFW_ICONIFIED) != 0;
 }
 
-int bfWindow_isHovered(BifrostWindow* self)
+int bfWindow_isHovered(bfWindow* self)
 {
   return glfwGetWindowAttrib(self->handle, GLFW_HOVERED) != 0;
 }
 
-void bfWindow_setTitle(BifrostWindow* self, const char* title)
+void bfWindow_setTitle(bfWindow* self, const char* title)
 {
   glfwSetWindowTitle(self->handle, title);
 }
 
-void bfWindow_setAlpha(BifrostWindow* self, float value)
+void bfWindow_setAlpha(bfWindow* self, float value)
 {
 #ifndef __EMSCRIPTEN__  // (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300)
   // glfwSetWindowOpacity(self->handle, value);
 #endif
 }
 
-void bfPlatformDestroyWindow(BifrostWindow* window)
+void bfPlatformDestroyWindow(bfWindow* window)
 {
   glfwDestroyWindow(window->handle);
-  bfPlatformFree(window, sizeof(BifrostWindow));
+  bfPlatformFree(window, sizeof(bfWindow));
 }
 
 void bfPlatformQuit(void)
@@ -541,13 +541,13 @@ void bfPlatformQuit(void)
 }
 
 #if GLFW_INCLUDE_VULKAN
-int bfWindow_createVulkanSurface(BifrostWindow* self, VkInstance instance, VkSurfaceKHR* out)
+int bfWindow_createVulkanSurface(bfWindow* self, VkInstance instance, VkSurfaceKHR* out)
 {
   return glfwCreateWindowSurface(instance, self->handle, NULL, out) == VK_SUCCESS;
 }
 #endif
 
-void bfWindow_makeGLContextCurrent(BifrostWindow* self)
+void bfWindow_makeGLContextCurrent(bfWindow* self)
 {
   glfwMakeContextCurrent(self->handle);
 }
@@ -557,7 +557,7 @@ GLADloadproc bfPlatformGetProcAddress(void)
   return (GLADloadproc)glfwGetProcAddress;
 }
 
-void bfWindowGL_swapBuffers(BifrostWindow* self)
+void bfWindowGL_swapBuffers(bfWindow* self)
 {
   glfwSwapBuffers(self->handle);
 }

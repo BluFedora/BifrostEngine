@@ -1,6 +1,6 @@
-#include "bifrost/platform/bifrost_platform.h"
+#include "bf/platform/bf_platform.h"
 
-#include "bifrost/platform/bifrost_platform_event.h"
+#include "bf/platform/bf_platform_event.h"
 
 #if BIFROST_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
@@ -78,7 +78,7 @@ void bfPlatformFree(void* ptr, size_t old_size)
 
 static void bfPlatformDoMainLoopImpl(void* arg)
 {
-  BifrostWindow* main_window = (BifrostWindow*)arg;
+  bfWindow* main_window = (bfWindow*)arg;
 
   bfPlatformPumpEvents();
 
@@ -94,7 +94,7 @@ static void bfPlatformDoMainLoopImpl(void* arg)
 #endif
 }
 
-void bfPlatformDoMainLoop(BifrostWindow* main_window)
+void bfPlatformDoMainLoop(bfWindow* main_window)
 {
 #if BIFROST_PLATFORM_EMSCRIPTEN
   emscripten_set_main_loop_arg(&bfPlatformDoMainLoopImpl, main_window, 0 /* could also be 60fps */, 1);

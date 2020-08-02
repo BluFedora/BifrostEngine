@@ -21,7 +21,7 @@
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
 #include "bifrost/memory/bifrost_linear_allocator.hpp"   /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"         //
-#include "bifrost/platform/bifrost_platform.h"           //
+#include "bf/Platform.h"
 
 #include <filesystem> /* filesystem::* */
 

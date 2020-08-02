@@ -383,7 +383,7 @@ int main(int argc, char* argv[])
   }
 
   {
-    BifrostWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
+    bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
 
     if (!main_window)
     {
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
 
         main_window->user_data = &engine;
 
-        main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
+        main_window->event_fn = [](bfWindow* window, bfEvent* event) {
           Engine* const engine = (Engine*)window->user_data;
 
           imgui::onEvent(window, *event);
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
           }
         };
 
-        main_window->frame_fn = [](BifrostWindow* window) {
+        main_window->frame_fn = [](bfWindow* window) {
           Engine* const engine = (Engine*)window->user_data;
 
           const auto CurrentTimeSeconds = []() -> float {
@@ -535,6 +535,7 @@ int main(int argc, char* argv[])
             engine->drawBegin(render_alpha);
             imgui::endFrame();
 
+#if 0
             auto& painter = engine->renderer2D();
 
             int w, h;
@@ -544,7 +545,23 @@ int main(int argc, char* argv[])
             const float rounded_map = bfMathRemapf(0.0f, float(w), 2.0f, 100.0f, mouse_pos.x);
             const float thick_map   = bfMathRemapf(0.0f, float(w), 5.0f, 40.0f, mouse_pos.x);
 
-            painter.pushRect(mouse_pos, 100, 100, BIFROST_COLOR_ROYALBLUE);
+            for (int y = 0; y < 8; ++y)
+            {
+              const float offset_y = 150.0f * float(y);
+
+              for (int x = 0; x < 8; ++x)
+              {
+                const float    offset_x      = 150.0f * float(x);
+                const Vector2f box_pos       = mouse_pos + Vector2f{20.0f, 0.0f} + Vector2f{offset_x, offset_y};
+                const float    blur_amount   = (float(x + y * 8) / 64.0f) * 25.0f;
+                const float    border_radius = std::min(rounded_map, 50.0f);
+
+                painter.pushRectShadow(blur_amount, box_pos, 100, 100, border_radius, BIFROST_COLOR_BLACK);
+                painter.pushFillRoundedRect(box_pos, 100, 100, border_radius, BIFROST_COLOR_ROYALBLUE);
+              }
+            }
+
+            // painter.pushRect(mouse_pos, 100, 100, BIFROST_COLOR_ROYALBLUE);
             painter.pushFilledCircle(mouse_pos + Vector2f{200.0f, 0.0f}, 55.0f, BIFROST_COLOR_SALMON);
             painter.pushFilledArc(mouse_pos + Vector2f{260.0f, 100.0f}, 22.0f, 0.0f, angle_map, BIFROST_COLOR_NAVY);
             painter.pushFillRoundedRect(Vector2f{500.0f, 200.0f} - Vector2f{5.0f}, 310.0f, 230.0f, rounded_map, BIFROST_COLOR_LIGHTYELLOW);
@@ -572,18 +589,14 @@ int main(int argc, char* argv[])
             }
 
             painter.pushPolyline(sine_wave, UIIndexType(bfCArraySize(sine_wave)), 2.0f, PolylineJoinStyle::ROUND, PolylineEndStyle::ROUND, BIFROST_COLOR_MOCCASIN, false);
-
+#endif
 
             engine->drawEnd();
             engine->endFrame();
           }
         };
 
-        while (!bfWindow_wantsToClose(main_window))
-        {
-          bfPlatformPumpEvents();
-          main_window->frame_fn(main_window);
-        }
+        bfPlatformDoMainLoop(main_window);
 
         vm.stackDestroyHandle(update_fn);
         imgui::shutdown();

@@ -1,10 +1,9 @@
 #include "bifrost_imgui_glfw.hpp"
 
+#include "bf/Platform.h"
+#include "bifrost/editor/bf_editor_icons.hpp"
 #include "bifrost/graphics/bifrost_gfx_api.h"
 #include "bifrost/math/bifrost_mat4x4.h"
-#include "bifrost/platform/bifrost_platform.h"
-#include "bifrost/platform/bifrost_platform_event.h"
-#include "bifrost\editor\bf_editor_icons.hpp"
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove, but still needed for Cursors, Clipboard, and monitors.
 #include <imgui/imgui.h>
@@ -182,7 +181,7 @@ namespace bf::imgui
   static void   ImGui_RendererSetWindowSize(ImGuiViewport* vp, ImVec2 size);
   static void   ImGui_RendererRenderWindow(ImGuiViewport* vp, void* render_arg);
 
-  void startup(bfGfxContextHandle graphics, BifrostWindow* window)
+  void startup(bfGfxContextHandle graphics, bfWindow* window)
   {
     ImGui::CreateContext(nullptr);
 
@@ -356,7 +355,7 @@ namespace bf::imgui
     bfTexture_setSampler(s_RenderData.font, &sampler);
   }
 
-  void onEvent(BifrostWindow* target_window, Event& evt)
+  void onEvent(bfWindow* target_window, Event& evt)
   {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -459,7 +458,7 @@ namespace bf::imgui
       if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
       {
         ImGuiViewport* const   main_viewport = ImGui::GetMainViewport();
-        BifrostWindow* const   window        = static_cast<BifrostWindow*>(main_viewport->PlatformHandle);
+        bfWindow* const   window        = static_cast<bfWindow*>(main_viewport->PlatformHandle);
         GLFWwindow* const      glfw_window   = static_cast<GLFWwindow*>(window->handle);
         const ImGuiMouseCursor imgui_cursor  = ImGui::GetMouseCursor();
 
@@ -696,18 +695,18 @@ namespace bf::imgui
 
   static void ImGui_PlatformCreateWindow(ImGuiViewport* vp)
   {
-    BifrostWindow* const window = bfPlatformCreateWindow(
+    bfWindow* const window = bfPlatformCreateWindow(
      "__Untitled__",
      (int)vp->Size.x,
      (int)vp->Size.y,
      (vp->Flags & ImGuiViewportFlags_NoDecoration ? 0x0 : BIFROST_WINDOW_FLAG_IS_DECORATED) |
       convertVpFlag(vp, ImGuiViewportFlags_TopMost, BIFROST_WINDOW_FLAG_IS_FLOATING));
 
-    window->event_fn = [](struct BifrostWindow_t* window, bfEvent* event) {
+    window->event_fn = [](struct bfWindow_t* window, bfEvent* event) {
       onEvent(window, *event);
     };
 
-    window->frame_fn = [](struct BifrostWindow_t* window) {
+    window->frame_fn = [](struct bfWindow_t* window) {
       ImGuiViewport* vp = ImGui::FindViewportByPlatformHandle(window->user_data);
 
       if (vp)
@@ -727,7 +726,7 @@ namespace bf::imgui
   {
     if (ImGui::GetMainViewport() != vp)
     {
-      bfPlatformDestroyWindow((BifrostWindow*)vp->PlatformHandle);
+      bfPlatformDestroyWindow((bfWindow*)vp->PlatformHandle);
     }
 
     vp->PlatformHandle = NULL;
@@ -735,61 +734,61 @@ namespace bf::imgui
 
   static void ImGui_PlatformShowWindow(ImGuiViewport* vp)
   {
-    bfWindow_show((BifrostWindow*)vp->PlatformHandle);
+    bfWindow_show((bfWindow*)vp->PlatformHandle);
   }
 
   static void ImGui_PlatformSetWindowPos(ImGuiViewport* vp, ImVec2 pos)
   {
-    bfWindow_setPos((BifrostWindow*)vp->PlatformHandle, (int)pos.x, (int)pos.y);
+    bfWindow_setPos((bfWindow*)vp->PlatformHandle, (int)pos.x, (int)pos.y);
   }
 
   static ImVec2 ImGui_PlatformGetWindowPos(ImGuiViewport* vp)
   {
     int x, y;
-    bfWindow_getPos((BifrostWindow*)vp->PlatformHandle, &x, &y);
+    bfWindow_getPos((bfWindow*)vp->PlatformHandle, &x, &y);
     return {(float)x, float(y)};
   }
 
   static void ImGui_PlatformSetWindowSize(ImGuiViewport* vp, ImVec2 size)
   {
-    bfWindow_setSize((BifrostWindow*)vp->PlatformHandle, (int)size.x, (int)size.y);
+    bfWindow_setSize((bfWindow*)vp->PlatformHandle, (int)size.x, (int)size.y);
   }
 
   static ImVec2 ImGui_PlatformGetWindowSize(ImGuiViewport* vp)
   {
     int x, y;
-    bfWindow_getSize((BifrostWindow*)vp->PlatformHandle, &x, &y);
+    bfWindow_getSize((bfWindow*)vp->PlatformHandle, &x, &y);
     return {(float)x, float(y)};
   }
 
   static void ImGui_PlatformSetWindowFocus(ImGuiViewport* vp)
   {
-    bfWindow_focus((BifrostWindow*)vp->PlatformHandle);
+    bfWindow_focus((bfWindow*)vp->PlatformHandle);
   }
 
   static bool ImGui_PlatformGetWindowFocus(ImGuiViewport* vp)
   {
-    return bfWindow_isFocused((BifrostWindow*)vp->PlatformHandle);
+    return bfWindow_isFocused((bfWindow*)vp->PlatformHandle);
   }
 
   static bool ImGui_PlatformGetWindowMinimized(ImGuiViewport* vp)
   {
-    return bfWindow_isMinimized((BifrostWindow*)vp->PlatformHandle);
+    return bfWindow_isMinimized((bfWindow*)vp->PlatformHandle);
   }
 
   static void ImGui_PlatformSetWindowTitle(ImGuiViewport* vp, const char* str)
   {
-    bfWindow_setTitle((BifrostWindow*)vp->PlatformHandle, str);
+    bfWindow_setTitle((bfWindow*)vp->PlatformHandle, str);
   }
 
   static void ImGui_PlatformSetWindowAlpha(ImGuiViewport* vp, float alpha)
   {
-    bfWindow_setAlpha((BifrostWindow*)vp->PlatformHandle, alpha);
+    bfWindow_setAlpha((bfWindow*)vp->PlatformHandle, alpha);
   }
 
   static void ImGui_RendererCreateWindow(ImGuiViewport* vp)
   {
-    BifrostWindow* const        bf_window      = (BifrostWindow*)vp->PlatformHandle;
+    bfWindow* const        bf_window      = (bfWindow*)vp->PlatformHandle;
     const bfWindowSurfaceHandle surface        = bfGfxContext_createWindow(s_RenderData.ctx, bf_window);
     const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo(s_RenderData.ctx);
     UIRenderData* const         ui_render_data = new UIRenderData(info.num_frame_indices);
@@ -847,4 +846,4 @@ namespace bf::imgui
       }
     }
   }
-}  // namespace bifrost::imgui
+}  // namespace bf::imgui

@@ -137,10 +137,11 @@ BIFROST_MATH_API void bfTransform_setOrigin(BifrostTransform* self, const Vec3f*
 BIFROST_MATH_API void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value);
 BIFROST_MATH_API void bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value);
 BIFROST_MATH_API void bfTransform_setScale(BifrostTransform* self, const Vec3f* value);
-BIFROST_MATH_API void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value);
-BIFROST_MATH_API void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value); /* Copies over the local values, parent relationships are unchanged. */
-BIFROST_MATH_API void bfTransform_flushChanges(BifrostTransform* self);
-BIFROST_MATH_API void bfTransform_dtor(BifrostTransform* self);
+BIFROST_MATH_API BifrostTransform* bfTransform_parent(const BifrostTransform* self);
+BIFROST_MATH_API void              bfTransform_setParent(BifrostTransform* self, BifrostTransform* value);
+BIFROST_MATH_API void              bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value); /* Copies over the local values, parent relationships are unchanged. */
+BIFROST_MATH_API void              bfTransform_flushChanges(BifrostTransform* self);
+BIFROST_MATH_API void              bfTransform_dtor(BifrostTransform* self);
 
 struct IBifrostTransformSystem_t
 {

@@ -91,6 +91,7 @@ typedef struct BifrostCamera_t
 
 BIFROST_MATH_API void  Camera_init(BifrostCamera* cam, const Vec3f* pos, const Vec3f* world_up, float yaw, float pitch);
 BIFROST_MATH_API void  Camera_update(BifrostCamera* cam);
+BIFROST_MATH_API void  bfCamera_openGLProjection(const BifrostCamera* cam, Mat4x4* out_projection);
 BIFROST_MATH_API void  Camera_move(BifrostCamera* cam, const Vec3f* dir, float amt);
 BIFROST_MATH_API void  Camera_moveLeft(BifrostCamera* cam, float amt);
 BIFROST_MATH_API void  Camera_moveRight(BifrostCamera* cam, float amt);

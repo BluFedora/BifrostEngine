@@ -391,6 +391,11 @@ void bfTransform_setScale(BifrostTransform* self, const Vec3f* value)
   bfTransform_flushChanges(self);
 }
 
+BifrostTransform* bfTransform_parent(const BifrostTransform* self)
+{
+  return bfTransformParent(self);
+}
+
 void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value)
 {
   assert((!value || self->system == value->system) && "Both transforms must be part of the same system.");

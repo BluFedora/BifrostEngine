@@ -396,7 +396,7 @@ BIFROST_DEFINE_HANDLE(Pipeline)
 
 BIFROST_DEFINE_HANDLE(WindowSurface)
 {
-  struct BifrostWindow_t* window;
+  struct bfWindow_t* window;
   bfGfxCommandListHandle  current_cmd_list;
   bfTexture               surface_dummy;
 };
@@ -625,7 +625,7 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
   return self->logical_device;
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window)
+bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window)
 {
   (void)self;
 

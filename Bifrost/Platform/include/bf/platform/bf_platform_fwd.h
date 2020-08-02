@@ -8,8 +8,8 @@ extern "C" {
 struct bfEvent_t;
 typedef struct bfEvent_t bfEvent;
 
-struct BifrostWindow_t;
-typedef struct BifrostWindow_t BifrostWindow;
+struct bfWindow_t;
+typedef struct bfWindow_t bfWindow;
 #if __cplusplus
 }
 #endif

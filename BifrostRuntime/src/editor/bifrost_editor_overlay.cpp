@@ -16,6 +16,8 @@
 
 #include <imgui/imgui_internal.h>  // Must appear after '<imgui/imgui.h>'
 
+#include <ImGuizmo/ImGuizmo.h>
+
 #include <utility>
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -878,6 +880,8 @@ namespace bf::editor
     // ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
+
+    ImGuizmo::BeginFrame();
 
     if (m_MainMenu.beginItem(action_ctx))
     {
@@ -2019,7 +2023,7 @@ namespace bf::editor
     m_Serializer.endDocument();
   }
 
-  void Inspector::guiDrawSelection(Engine& engine, Selectable& selectable)
+  void Inspector::guiDrawSelection(Engine& engine, const Selectable& selectable)
   {
     AssetSceneHandle current_scene = engine.currentScene();
 
@@ -2038,7 +2042,7 @@ namespace bf::editor
           engine.assets().markDirty(current_scene);
         }
       },
-      [this, &engine](auto& asset_handle) {
+      [this, &engine](const auto& asset_handle) {
         if (asset_handle)
         {
           m_Serializer.beginChangeCheck();

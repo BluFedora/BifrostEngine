@@ -51,7 +51,7 @@ namespace bf
       return ptr;
     }
 
-     throw std::bad_alloc();
+    throw std::bad_alloc();
     return nullptr;
   }
 
@@ -66,13 +66,22 @@ namespace bf
   }
 
   LinearAllocatorScope::LinearAllocatorScope(LinearAllocator& allocator) :
-    m_Allocator(allocator),
+    m_Allocator(&allocator),
     m_OldOffset(allocator.m_MemoryOffset)
+  {
+  }
+
+  LinearAllocatorScope::LinearAllocatorScope(LinearAllocatorScope&& rhs) noexcept :
+    m_Allocator{std::exchange(rhs.m_Allocator, nullptr)},
+    m_OldOffset{rhs.m_OldOffset}
   {
   }
 
   LinearAllocatorScope::~LinearAllocatorScope()
   {
-    m_Allocator.m_MemoryOffset = m_OldOffset;
+    if (m_Allocator)
+    {
+      m_Allocator->m_MemoryOffset = m_OldOffset;
+    }
   }
-}  // namespace bifrost
+}  // namespace bf

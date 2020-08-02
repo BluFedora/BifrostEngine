@@ -270,7 +270,7 @@ void Array_delete(void* const self)
 #undef PRISM_ASSERT
 #endif
 
- ///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -298,7 +298,19 @@ typedef struct
 // Helpers
 static void*              alignUpPtr(uintptr_t element_size, uintptr_t element_alignment);
 static AllocationOffset_t grabOffset(const void** self);
-static ArrayHeader*       grabHeader(void** self);
+
+// NOTE(Shareef): Made this into a macro to improve debug build performance.
+#define grabHeader(self_) ((ArrayHeader*)(bfCastByte(*(self_)) - grabOffset((const void**)(self_)) - sizeof(ArrayHeader)))
+
+#if 0
+static ArrayHeader* grabHeader(void** self)
+{
+  const AllocationOffset_t offset       = grabOffset((const void**)self);
+  void*                    actual_array = *self;
+
+  return (ArrayHeader*)(bfCastByte(actual_array) - offset - sizeof(ArrayHeader));
+}
+#endif
 
 // API
 
@@ -363,13 +375,18 @@ void* bfArray_begin(void** self)
   return *self;
 }
 
+static void* bfArray_endImpl(const ArrayHeader* header, void** self)
+{
+  return bfCastByte(*self) + header->size * header->stride;
+}
+
 void* bfArray_end(void** self)
 {
   // NOTE(Shareef): This function doesn't use 'bfArray_at' since we check the index at size is technically out of bounds.
 
-  ArrayHeader* header = grabHeader(self);
+  const ArrayHeader* const header = grabHeader(self);
 
-  return bfCastByte(*self) + header->size * header->stride;
+  return bfArray_endImpl(header, self);
 }
 
 void* bfArray_back(void** self)
@@ -510,7 +527,7 @@ void* bfArray_emplaceN(void** self, size_t num_elements)
     header = grabHeader(self);
   }
 
-  void* elements_start = bfArray_end(self);
+  void* elements_start = bfArray_endImpl(header, self);
 
   header->size += num_elements;
   return elements_start;
@@ -657,12 +674,4 @@ static void* alignUpPtr(uintptr_t element_size, uintptr_t element_alignment)
 static AllocationOffset_t grabOffset(const void** self)
 {
   return ((const AllocationOffset_t*)*self)[-1];
-}
-
-static ArrayHeader* grabHeader(void** self)
-{
-  const AllocationOffset_t offset       = grabOffset((const void**)self);
-  void*                    actual_array = *self;
-
-  return (ArrayHeader*)(bfCastByte(actual_array) - offset - sizeof(ArrayHeader));
 }

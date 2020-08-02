@@ -2,7 +2,7 @@
 #define BIFROST_IMGUI_GLFW
 
 #include "bifrost/graphics/bifrost_gfx_handle.h"
-#include "bifrost/platform/bifrost_platform_fwd.h"
+#include "bf/PlatformFwd.h"
 
 namespace bf
 {
@@ -10,8 +10,8 @@ namespace bf
 
   namespace imgui
   {
-    void startup(bfGfxContextHandle graphics, BifrostWindow* window);
-    void onEvent(BifrostWindow* target_window, Event& evt);
+    void startup(bfGfxContextHandle graphics, bfWindow* window);
+    void onEvent(bfWindow* target_window, Event& evt);
     void beginFrame(bfTextureHandle surface, float window_width, float window_height, float delta_time);
     void endFrame();
     void shutdown();

@@ -2,9 +2,9 @@
 // main.cpp
 //
 
+#include "bf/Platform.h"                         /* Platform API */
 #include <bifrost/core/bifrost_engine.hpp>       /* Runtime API  */
 #include <bifrost/memory/bifrost_memory_utils.h> /* bfMegabytes  */
-#include <bifrost/platform/bifrost_platform.h>   /* Platform API */
 
 #include <chrono> /* chrono     */
 #include <cstdio> /* printf     */
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
   }
 
   const auto           window_flags = BIFROST_WINDOW_FLAG_IS_VISIBLE | BIFROST_WINDOW_FLAG_IS_DECORATED | BIFROST_WINDOW_FLAG_IS_FOCUSED_ON_SHOW;
-  BifrostWindow* const main_window  = bfPlatformCreateWindow(k_AppName, 320, 568, window_flags);
+  bfWindow* const main_window  = bfPlatformCreateWindow(k_AppName, 320, 568, window_flags);
 
   if (!main_window)
   {
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 
   engine->init(engine_init_params, main_window);
 
-  main_window->event_fn = [](BifrostWindow* window, bfEvent* evt) {
+  main_window->event_fn = [](bfWindow* window, bfEvent* evt) {
     Engine* const engine = static_cast<Engine*>(window->user_data);
 
     engine->onEvent(*evt);
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
   static std::chrono::nanoseconds s_TimeStepLag = 0ns;
   static auto                     s_CurrentTime = clock::now();
 
-  main_window->frame_fn = [](BifrostWindow* window) {
+  main_window->frame_fn = [](bfWindow* window) {
     Engine* const engine = static_cast<Engine*>(window->user_data);
 
     auto delta_time = clock::now() - s_CurrentTime;

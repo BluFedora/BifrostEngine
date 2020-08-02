@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
 
-#include "bifrost/platform/bifrost_platform_vulkan.h"
+#include "bf/platform/bf_platform_vulkan.h"
 #include "vulkan/bifrost_vulkan_conversions.h"
 #include "vulkan/bifrost_vulkan_logical_device.h"
 #include "vulkan/bifrost_vulkan_material_pool.h"
@@ -245,7 +245,7 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
   return self->logical_device;
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window)
+bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window)
 {
   bfWindowSurfaceHandle surface = new bfWindowSurface();
 

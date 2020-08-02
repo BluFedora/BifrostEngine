@@ -19,14 +19,52 @@ namespace bf::editor
    public:
     explicit Selection(IMemoryManager& memory);
 
-    // const Array<Selectable>& selectables() const { return m_Selectables; }
+    const Array<Selectable>& selectables() const { return m_Selectables; }
 
-    Array<Selectable>& selectables() { return m_Selectables; }
+    template<typename T>
+    bool hasType() const
+    {
+      for (const Selectable& selectable : m_Selectables)
+      {
+        if (selectable.is<T>())
+        {
+          return true;
+        }
+      }
+
+      return false;
+    }
 
     template<typename T, typename F>
-    void forEachOfType(F&& callback)
+    void firstOfType(F&& callback) const
     {
-      for (Selectable& selectable : m_Selectables)
+      for (const Selectable& selectable : m_Selectables)
+      {
+        if (selectable.is<T>())
+        {
+          callback(selectable.as<T>());
+          break;
+        }
+      }
+    }
+
+    template<typename T, typename F>
+    void lastOfType(F&& callback) const
+    {
+      for (const Selectable& selectable : ReverseLoop(m_Selectables))
+      {
+        if (selectable.is<T>())
+        {
+          callback(selectable.as<T>());
+          break;
+        }
+      }
+    }
+
+    template<typename T, typename F>
+    void forEachOfType(F&& callback) const
+    {
+      for (const Selectable& selectable : m_Selectables)
       {
         if (selectable.is<T>())
         {
@@ -48,6 +86,6 @@ namespace bf::editor
     bool findListener(const SelectionOnChangeFn& callback, std::size_t& out_index);
     void notifyOnChange();
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_SELECTION_HPP */

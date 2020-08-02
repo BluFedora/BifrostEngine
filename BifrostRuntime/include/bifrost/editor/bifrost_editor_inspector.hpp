@@ -34,7 +34,7 @@ namespace bf::editor
     void        onDrawGUI(EditorOverlay& editor) override;
 
    private:
-    void guiDrawSelection(Engine& engine, Selectable& selectable);
+    void guiDrawSelection(Engine& engine, const Selectable& selectable);
   };
 }  // namespace bifrost::editor
 

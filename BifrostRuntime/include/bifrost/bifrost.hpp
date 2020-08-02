@@ -49,6 +49,6 @@
 #include "utility/bifrost_non_copy_move.hpp"
 
 // Platform
-#include "bifrost/platform/bifrost_platform.h"
+#include <bf/Platform.h>
 
 #endif /* BIFROST_HPP */

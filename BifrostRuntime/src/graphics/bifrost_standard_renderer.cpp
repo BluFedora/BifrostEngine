@@ -9,12 +9,12 @@
 */
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
 
+#include "bf/Platform.h"  // BifrostWindow
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/data_structures/bifrost_string.hpp"
 #include "bifrost/ecs/bifrost_entity.hpp"  // Entity
 #include "bifrost/ecs/bifrost_light.hpp"   // LightType
 #include "bifrost/memory/bifrost_memory_utils.h"
-#include "bifrost/platform/bifrost_platform.h"  // BifrostWindow
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */
@@ -377,7 +377,7 @@ namespace bf
   {
   }
 
-  void StandardRenderer::init(const bfGfxContextCreateParams& gfx_create_params, BifrostWindow* main_window)
+  void StandardRenderer::init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window)
   {
     m_GfxBackend               = bfGfxContext_new(&gfx_create_params);
     m_GfxDevice                = bfGfxContext_device(m_GfxBackend);
@@ -1009,14 +1009,6 @@ namespace bf
     m_LightShaders[LightShaders::POINT] = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, point_light_frag_module, "P Light Shader");
     m_LightShaders[LightShaders::SPOT]  = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, spot_light_frag_module, "S Light Shader");
 
-    bfShaderProgram_link(m_GBufferShader);
-    bfShaderProgram_link(m_SSAOBufferShader);
-    bfShaderProgram_link(m_SSAOBlurShader);
-    bfShaderProgram_link(m_AmbientLighting);
-    bfShaderProgram_link(m_LightShaders[LightShaders::DIR]);
-    bfShaderProgram_link(m_LightShaders[LightShaders::POINT]);
-    bfShaderProgram_link(m_LightShaders[LightShaders::SPOT]);
-
     bindings::addObject(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
     bindings::addMaterial(m_GBufferShader, BIFROST_SHADER_STAGE_FRAGMENT);
     bindings::addCamera(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
@@ -1120,7 +1112,9 @@ namespace bf
       bfShaderProgram_addModule(shader, vertex_module);
       bfShaderProgram_addModule(shader, fragment_module);
 
+      bfShaderProgram_link(shader);
+
       return shader;
     }
   }  // namespace gfx
-}  // namespace bifrost
+}  // namespace bf

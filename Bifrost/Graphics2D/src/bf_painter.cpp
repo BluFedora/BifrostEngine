@@ -1,7 +1,8 @@
 #include "bifrost/bf_painter.hpp"
 
-#include "bifrost/platform/bifrost_platform.h"
+#include "bf/Platform.h"  // bfPlatformGetGfxAPI
 
+#include "bifrost/memory/bifrost_proxy_allocator.hpp"
 #include <cmath>
 
 namespace bf
@@ -36,44 +37,85 @@ namespace bf
     }
   }
 
+  void Gfx2DPerFrameRenderData::reserveShadow(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size)
+  {
+    if (!vertex_shadow_buffer || bfBuffer_size(vertex_shadow_buffer) < vertex_size)
+    {
+      bfGfxDevice_release(device, vertex_shadow_buffer);
+
+      bfBufferCreateParams buffer_params;
+      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.size       = vertex_size;
+      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+
+      vertex_shadow_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
+    }
+
+    if (!index_shadow_buffer || bfBuffer_size(index_shadow_buffer) < indices_size)
+    {
+      bfGfxDevice_release(device, index_shadow_buffer);
+
+      bfBufferCreateParams buffer_params;
+      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.size       = indices_size;
+      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
+
+      index_shadow_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
+    }
+  }
+
   Gfx2DRenderData::Gfx2DRenderData(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics) :
     memory{memory},
     ctx{graphics},
     device{bfGfxContext_device(graphics)},
-    vertex_layout{nullptr},
+    vertex_layouts{nullptr, nullptr},
     vertex_shader{nullptr},
     fragment_shader{nullptr},
     shader_program{nullptr},
+    shadow_modules{nullptr, nullptr, nullptr},
+    rect_shadow_program{nullptr},
+    rounded_rect_shadow_program{nullptr},
     white_texture{nullptr},
     num_frame_datas{0},
     frame_datas{nullptr},
     uniform{}
   {
     // Vertex Layout
-    vertex_layout = bfVertexLayout_new();
-    bfVertexLayout_addVertexBinding(vertex_layout, 0, sizeof(UIVertex2D));
-    bfVertexLayout_addVertexLayout(vertex_layout, 0, BIFROST_VFA_FLOAT32_2, offsetof(UIVertex2D, pos));
-    bfVertexLayout_addVertexLayout(vertex_layout, 0, BIFROST_VFA_FLOAT32_2, offsetof(UIVertex2D, uv));
-    bfVertexLayout_addVertexLayout(vertex_layout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(UIVertex2D, color));
+    vertex_layouts[0] = bfVertexLayout_new();
+    bfVertexLayout_addVertexBinding(vertex_layouts[0], 0, sizeof(UIVertex2D));
+    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BIFROST_VFA_FLOAT32_2, offsetof(UIVertex2D, pos));
+    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BIFROST_VFA_FLOAT32_2, offsetof(UIVertex2D, uv));
+    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(UIVertex2D, color));
+
+    vertex_layouts[1] = bfVertexLayout_new();
+    bfVertexLayout_addVertexBinding(vertex_layouts[1], 0, sizeof(DropShadowVertex));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_2, offsetof(DropShadowVertex, pos));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_1, offsetof(DropShadowVertex, shadow_sigma));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_1, offsetof(DropShadowVertex, corner_radius));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_4, offsetof(DropShadowVertex, box));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(DropShadowVertex, color));
 
     // Shaders
-    bfShaderProgramCreateParams create_shader;
-    create_shader.debug_name    = "Graphics2D.Painter";
-    create_shader.num_desc_sets = 1;
-
     vertex_shader   = glsl_compiler.createModule(device, "assets/shaders/gfx2D/textured.vert.glsl");
     fragment_shader = glsl_compiler.createModule(device, "assets/shaders/gfx2D/textured.frag.glsl");
-    shader_program  = bfGfxDevice_newShaderProgram(device, &create_shader);
-
-    bfShaderProgram_addModule(shader_program, vertex_shader);
-    bfShaderProgram_addModule(shader_program, fragment_shader);
-
-    bfShaderProgram_link(shader_program);
+    shader_program  = gfx::createShaderProgram(device, 2, vertex_shader, fragment_shader, "Graphics2D.Painter");
 
     bfShaderProgram_addImageSampler(shader_program, "u_Texture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
     bfShaderProgram_addUniformBuffer(shader_program, "u_Set0", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(shader_program);
+
+    shadow_modules[0]           = glsl_compiler.createModule(device, "assets/shaders/gfx2D/drop_shadow.vert.glsl");
+    shadow_modules[1]           = glsl_compiler.createModule(device, "assets/shaders/gfx2D/drop_shadow_rect.frag.glsl");
+    shadow_modules[2]           = glsl_compiler.createModule(device, "assets/shaders/gfx2D/drop_shadow_rounded_rect.frag.glsl");
+    rect_shadow_program         = gfx::createShaderProgram(device, 1, shadow_modules[0], shadow_modules[1], "Graphics2D.ShadowRect");
+    rounded_rect_shadow_program = gfx::createShaderProgram(device, 1, shadow_modules[0], shadow_modules[2], "Graphics2D.ShadowRoundedRect");
+
+    bfShaderProgram_addUniformBuffer(rect_shadow_program, "u_Set0", 0, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addUniformBuffer(rounded_rect_shadow_program, "u_Set0", 0, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
+
+    bfShaderProgram_compile(rect_shadow_program);
+    bfShaderProgram_compile(rounded_rect_shadow_program);
 
     // White Texture
     white_texture = gfx::createTexture(device, bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
@@ -99,6 +141,15 @@ namespace bf
     frame_data.reserve(device, vertex_size * sizeof(UIVertex2D), indices_size * sizeof(UIIndexType));
   }
 
+  void Gfx2DRenderData::reserveShadow(int index, size_t vertex_size, size_t indices_size) const
+  {
+    assert(index < num_frame_datas);
+
+    Gfx2DPerFrameRenderData& frame_data = frame_datas[index];
+
+    frame_data.reserveShadow(device, vertex_size * sizeof(DropShadowVertex), indices_size * sizeof(UIIndexType));
+  }
+
   Gfx2DRenderData::~Gfx2DRenderData()
   {
     uniform.destroy(device);
@@ -106,19 +157,31 @@ namespace bf
     forEachBuffer([this](Gfx2DPerFrameRenderData& data) {
       bfGfxDevice_release(device, data.vertex_buffer);
       bfGfxDevice_release(device, data.index_buffer);
+      bfGfxDevice_release(device, data.vertex_shadow_buffer);
+      bfGfxDevice_release(device, data.index_shadow_buffer);
     });
 
     bfGfxDevice_release(device, white_texture);
+
+    bfGfxDevice_release(device, rounded_rect_shadow_program);
+    bfGfxDevice_release(device, rect_shadow_program);
+    bfGfxDevice_release(device, shadow_modules[2]);
+    bfGfxDevice_release(device, shadow_modules[1]);
+    bfGfxDevice_release(device, shadow_modules[0]);
+
     bfGfxDevice_release(device, shader_program);
     bfGfxDevice_release(device, fragment_shader);
     bfGfxDevice_release(device, vertex_shader);
-    bfVertexLayout_delete(vertex_layout);
+    bfVertexLayout_delete(vertex_layouts[1]);
+    bfVertexLayout_delete(vertex_layouts[0]);
   }
 
   Gfx2DPainter::Gfx2DPainter(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics) :
     render_data{memory, glsl_compiler, graphics},
     vertices{memory},
     indices{memory},
+    shadow_vertices{memory},
+    shadow_indices{memory},
     tmp_memory_backing{},
     tmp_memory{tmp_memory_backing, sizeof(tmp_memory_backing)}
   {
@@ -126,8 +189,33 @@ namespace bf
 
   void Gfx2DPainter::reset()
   {
+#if bfGfx2DSafeVertexIndexing
+    SafeVertexIndexer<UIVertex2D>::s_TmpMemory.clear();
+    SafeVertexIndexer<DropShadowVertex>::s_TmpMemory.clear();
+#endif
+
     vertices.clear();
     indices.clear();
+    shadow_vertices.clear();
+    shadow_indices.clear();
+  }
+
+  void Gfx2DPainter::pushRectShadow(float shadow_sigma, const Vector2f& pos, float width, float height, float border_radius, bfColor32u color)
+  {
+    const auto [vertex_id, verts] = requestVertices2(4);
+
+    const float    shadow_border_size  = shadow_sigma * 3.0f;
+    const Vector2f shadow_border_size2 = Vector2f{shadow_border_size};
+    const Rect2f   box                 = {pos.x, pos.y, width, height};
+    const auto     color_4u            = bfColor4u_fromUint32(color);
+
+    verts[0] = {box.topLeft() - shadow_border_size2, shadow_sigma, border_radius, box, color_4u};
+    verts[1] = {box.topRight() + Vector2f{shadow_border_size, -shadow_border_size}, shadow_sigma, border_radius, box, color_4u};
+    verts[2] = {box.bottomRight() + shadow_border_size2, shadow_sigma, border_radius, box, color_4u};
+    verts[3] = {box.bottomLeft() + Vector2f{-shadow_border_size, shadow_border_size}, shadow_sigma, border_radius, box, color_4u};
+
+    pushTriIndex2(vertex_id + 0, vertex_id + 1, vertex_id + 2);
+    pushTriIndex2(vertex_id + 0, vertex_id + 2, vertex_id + 3);
   }
 
   void Gfx2DPainter::pushRect(const Vector2f& pos, float width, float height, bfColor4u color)
@@ -154,7 +242,7 @@ namespace bf
 
   void Gfx2DPainter::pushFillRoundedRect(const Vector2f& pos, float width, float height, float border_radius, bfColor32u color)
   {
-    border_radius = std::min({border_radius, width, height});
+    border_radius = std::min({border_radius, width * 0.5f, height * 0.5f});
 
     const auto     color_4u              = bfColor4u_fromUint32(color);
     const float    two_x_border_radius   = 2.0f * border_radius;
@@ -181,6 +269,8 @@ namespace bf
     pushFilledArc(br_corner_pos, border_radius, 0.0f, k_HalfPI, color);
   }
 
+  static constexpr float k_ArcSmoothingFactor = 5.0f;
+
   // Clockwise Winding.
 
   void Gfx2DPainter::pushFilledArc(const Vector2f& pos, float radius, float start_angle, float arc_angle, bfColor32u color)
@@ -199,7 +289,7 @@ namespace bf
     assert(arc_angle > 0.0f);
 
     // const bool  not_full_circle   = arc_angle < k_TwoPI;
-    const auto  num_segments      = UIIndexType(20.0f * std::sqrt(radius));
+    const auto  num_segments      = UIIndexType(k_ArcSmoothingFactor * std::sqrt(radius));
     const float theta             = arc_angle / float(num_segments);
     const float tangential_factor = std::tan(theta);
     const float radial_factor     = std::cos(theta);
@@ -261,14 +351,16 @@ namespace bf
       arc_angle = k_TwoPI;
     }
 
-    const bool      not_full_circle   = arc_angle < k_TwoPI;
-    const auto      num_segments      = UIIndexType(20.0f * std::sqrt(radius));
-    const float     theta             = arc_angle / float(num_segments);
-    const float     tangential_factor = std::tan(theta);
-    const float     radial_factor     = std::cos(theta);
-    float           x                 = std::cos(start_angle) * radius;
-    float           y                 = std::sin(start_angle) * radius;
-    Array<Vector2f> points            = Array<Vector2f>{render_data.memory};
+    const bool           not_full_circle   = arc_angle < k_TwoPI;
+    const auto           num_segments      = UIIndexType(k_ArcSmoothingFactor * std::sqrt(radius));
+    const float          theta             = arc_angle / float(num_segments);
+    const float          tangential_factor = std::tan(theta);
+    const float          radial_factor     = std::cos(theta);
+    float                x                 = std::cos(start_angle) * radius;
+    float                y                 = std::sin(start_angle) * radius;
+    LinearAllocatorScope mem_scope         = tmp_memory;
+    NoFreeAllocator      no_free           = tmp_memory;
+    Array<Vector2f>      points            = Array<Vector2f>{no_free};
 
     points.reserve(num_segments + 2 * not_full_circle);
 
@@ -741,10 +833,10 @@ namespace bf
       return;
     }
 
-    uint64_t vertex_buffer_offset = 0;
-
-    const auto&              frame_info = bfGfxContext_getFrameInfo(render_data.ctx);
-    Gfx2DPerFrameRenderData& frame_data = render_data.frame_datas[frame_info.frame_index];
+    const bool               has_shadow           = !shadow_vertices.isEmpty() && !shadow_indices.isEmpty();
+    uint64_t                 vertex_buffer_offset = 0;
+    const auto&              frame_info           = bfGfxContext_getFrameInfo(render_data.ctx);
+    Gfx2DPerFrameRenderData& frame_data           = render_data.frame_datas[frame_info.frame_index];
 
     {
       render_data.reserve(frame_info.frame_index, vertices.size(), indices.size());
@@ -776,9 +868,41 @@ namespace bf
     bfGfxCmdList_setFrontFace(command_list, BIFROST_FRONT_FACE_CW);
     bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_BACK);
     bfGfxCmdList_setDynamicStates(command_list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
-    bfGfxCmdList_bindVertexDesc(command_list, render_data.vertex_layout);
-    bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame_data.vertex_buffer, 1, &vertex_buffer_offset);
-    bfGfxCmdList_bindIndexBuffer(command_list, frame_data.index_buffer, 0, bfIndexTypeFromT<UIIndexType>());
+    bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);
+    bfGfxCmdList_setScissorRect(command_list, 0, 0, fb_width, fb_height);
+
+    if (has_shadow)
+    {
+      render_data.reserveShadow(frame_info.frame_index, shadow_vertices.size(), shadow_indices.size());
+
+      DropShadowVertex* vertex_buffer_ptr = static_cast<DropShadowVertex*>(bfBuffer_map(frame_data.vertex_shadow_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
+      UIIndexType*      index_buffer_ptr  = static_cast<UIIndexType*>(bfBuffer_map(frame_data.index_shadow_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
+
+      std::memcpy(vertex_buffer_ptr, shadow_vertices.data(), shadow_vertices.size() * sizeof(DropShadowVertex));
+      std::memcpy(index_buffer_ptr, shadow_indices.data(), shadow_indices.size() * sizeof(UIIndexType));
+
+      bfBuffer_unMap(frame_data.vertex_shadow_buffer);
+      bfBuffer_unMap(frame_data.index_shadow_buffer);
+
+      bfGfxCmdList_bindVertexDesc(command_list, render_data.vertex_layouts[1]);
+      bfGfxCmdList_bindProgram(command_list, render_data.rounded_rect_shadow_program);
+
+      {
+        bfBufferSize ubo_offset = render_data.uniform.offset(frame_info);
+        bfBufferSize ubo_sizes  = sizeof(Gfx2DUnifromData);
+
+        bfDescriptorSetInfo desc_set = bfDescriptorSetInfo_make();
+        bfDescriptorSetInfo_addUniform(&desc_set, 0, 0, &ubo_offset, &ubo_sizes, &render_data.uniform.handle(), 1);
+
+        bfGfxCmdList_bindDescriptorSet(command_list, 0, &desc_set);
+      }
+
+      bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame_data.vertex_shadow_buffer, 1, &vertex_buffer_offset);
+      bfGfxCmdList_bindIndexBuffer(command_list, frame_data.index_shadow_buffer, 0, bfIndexTypeFromT<UIIndexType>());
+      bfGfxCmdList_drawIndexed(command_list, UIIndexType(shadow_indices.size()), 0u, 0u);
+    }
+
+    bfGfxCmdList_bindVertexDesc(command_list, render_data.vertex_layouts[0]);
     bfGfxCmdList_bindProgram(command_list, render_data.shader_program);
 
     {
@@ -792,20 +916,18 @@ namespace bf
       bfGfxCmdList_bindDescriptorSet(command_list, 0, &desc_set);
     }
 
-    bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);
-    bfGfxCmdList_setScissorRect(command_list, 0, 0, fb_width, fb_height);
-
+    bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame_data.vertex_buffer, 1, &vertex_buffer_offset);
+    bfGfxCmdList_bindIndexBuffer(command_list, frame_data.index_buffer, 0, bfIndexTypeFromT<UIIndexType>());
     bfGfxCmdList_drawIndexed(command_list, UIIndexType(indices.size()), 0u, 0u);
   }
 
-  std::pair<UIIndexType, Gfx2DPainter::SafeVertexIndexer> Gfx2DPainter::requestVertices(UIIndexType num_verts)
+  std::pair<UIIndexType, Gfx2DPainter::SafeVertexIndexer<UIVertex2D>> Gfx2DPainter::requestVertices(UIIndexType num_verts)
   {
     const UIIndexType start_id = UIIndexType(vertices.size());
 
     vertices.resize(std::size_t(start_id) + num_verts);
 
-    return {
-     start_id, {num_verts, vertices.data() + start_id}};
+    return {start_id, SafeVertexIndexer<UIVertex2D>{num_verts, vertices.data() + start_id}};
   }
 
   void Gfx2DPainter::pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2)
@@ -817,4 +939,23 @@ namespace bf
     indices.push(index1);
     indices.push(index2);
   }
-}  // namespace bifrost
+
+  std::pair<UIIndexType, Gfx2DPainter::SafeVertexIndexer<DropShadowVertex>> Gfx2DPainter::requestVertices2(UIIndexType num_verts)
+  {
+    const UIIndexType start_id = UIIndexType(shadow_vertices.size());
+
+    shadow_vertices.resize(std::size_t(start_id) + num_verts);
+
+    return {start_id, SafeVertexIndexer<DropShadowVertex>{num_verts, shadow_vertices.data() + start_id}};
+  }
+
+  void Gfx2DPainter::pushTriIndex2(UIIndexType index0, UIIndexType index1, UIIndexType index2)
+  {
+    assert(index0 < shadow_vertices.size() && index0 < shadow_vertices.size() && index2 < shadow_vertices.size());
+
+    shadow_indices.reserve(shadow_indices.size() + 3);
+    shadow_indices.push(index0);
+    shadow_indices.push(index1);
+    shadow_indices.push(index2);
+  }
+}  // namespace bf

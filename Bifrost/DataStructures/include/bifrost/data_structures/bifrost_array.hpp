@@ -104,6 +104,10 @@ namespace bf
     [[nodiscard]] const T*    begin() const { return static_cast<const T*>(::bfArray_begin(rawData())); }
     [[nodiscard]] T*          end() { return static_cast<T*>(::bfArray_end(rawData())); }
     [[nodiscard]] const T*    end() const { return static_cast<const T*>(::bfArray_end(rawData())); }
+    [[nodiscard]] T*          rbegin() { return &back(); }
+    [[nodiscard]] const T*    rbegin() const { return &back(); }
+    [[nodiscard]] T*          rend() { return begin() - 1; }
+    [[nodiscard]] const T*    rend() const { return begin() - 1; }
     [[nodiscard]] T&          back() { return *static_cast<T*>(::bfArray_back(rawData())); }
     [[nodiscard]] const T&    back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }
     [[nodiscard]] std::size_t size() const { return ::bfArray_size(rawData()); }
@@ -334,6 +338,75 @@ namespace bf
       return data + data_size;
     }
   };
-}  // namespace bifrost
+
+  template<typename T>
+  struct ReverseLoop final
+  {
+    T& container;
+
+    explicit ReverseLoop(T& container) :
+      container(container)
+    {
+    }
+
+    decltype(auto) begin() const
+    {
+      return container.rbegin();
+    }
+
+    decltype(auto) end() const
+    {
+      return container.rend();
+    }
+  };
+
+  template<typename T>
+  struct ReverseLoopWithIndex final
+  {
+    struct iterator
+    {
+      typename T::reverse_iterator iter;
+      std::size_t                  index;
+
+      auto operator*()
+      {
+        return std::pair(*iter, index);
+      }
+
+      void operator++()
+      {
+        ++iter;
+        --index;
+      }
+
+      bool operator==(const iterator& other) const
+      {
+        return iter == other.iter;
+      }
+
+      bool operator!=(const iterator& other) const
+      {
+        return iter != other.iter;
+      }
+    };
+
+    T& container;
+
+    explicit ReverseLoopWithIndex(T& container) :
+      container(container)
+    {
+    }
+
+    iterator begin()
+    {
+      return {container.rbegin(), container.size() - 1};
+    }
+
+    iterator end()
+    {
+      return {container.rend(), 0};
+    }
+  };
+}  // namespace bf
 
 #endif /* BIFROST_ARRAY_HPP */

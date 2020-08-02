@@ -13,9 +13,9 @@
 #ifndef BIFROST_EDITOR_OVERLAY_HPP
 #define BIFROST_EDITOR_OVERLAY_HPP
 
+#include "bf/Platform.h"
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/bifrost.hpp"
-#include "bifrost/platform/bifrost_platform_event.h"
 #include "bifrost_editor_filesystem.hpp"
 #include "bifrost_editor_inspector.hpp"
 #include "bifrost_editor_memory.hpp"
@@ -417,6 +417,6 @@ namespace bf::editor
     void selectableAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
     void addMenuItem(const StringRange& menu_path, const char* action_name);
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_OVERLAY_HPP */

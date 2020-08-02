@@ -1,5 +1,5 @@
 /*!
- * @file   bifrost_platform_event.h
+ * @file   bf_platform_event.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  * @version 0.0.1
@@ -10,7 +10,7 @@
 #ifndef BIFROST_PLATFORM_EVENT_H
 #define BIFROST_PLATFORM_EVENT_H
 
-#include "bifrost_platform_export.h"
+#include "bf_platform_export.h"
 
 #include <stdint.h> /* uint8_t */
 

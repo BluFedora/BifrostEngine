@@ -1,7 +1,7 @@
 #ifndef BIFROST_ENGINE_HPP
 #define BIFROST_ENGINE_HPP
 
-#define USE_CRT_HEAP 1
+#define USE_CRT_HEAP 0
 
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
@@ -27,7 +27,7 @@ using BifrostEngineCreateParams = bfGfxContextCreateParams;
 #if USE_CRT_HEAP
 using MainHeap = bf::CAllocator;
 #else
-using MainHeap = bifrost::FreeListAllocator;
+using MainHeap = bf::FreeListAllocator;
 #endif
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
@@ -213,7 +213,7 @@ class Engine : private bfNonCopyMoveable<Engine>
     sys->onInit(*this);
   }
 
-  void               init(const BifrostEngineCreateParams& params, BifrostWindow* main_window);
+  void               init(const BifrostEngineCreateParams& params, bfWindow* main_window);
   [[nodiscard]] bool beginFrame();
   void               onEvent(Event& evt);
   void               fixedUpdate(float delta_time);

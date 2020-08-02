@@ -1,13 +1,12 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
+#include "bf/Platform.h"                                    // BifrostWindow
 #include "bifrost/bf_painter.hpp"                           // Gfx2DPainter
 #include "bifrost/debug/bifrost_dbg_logger.h"               // bfLog*
 #include "bifrost/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bifrost/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
 #include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
 #include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
-#include "bifrost/platform/bifrost_platform.h"              // BifrostWindow
-#include "bifrost/platform/bifrost_platform_event.h"        // bfEvent
 
 Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
   bfNonCopyMoveable<Engine>{},
@@ -128,7 +127,7 @@ EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
   return EntityRef{entity};
 }
 
-void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_window)
+void Engine::init(const BifrostEngineCreateParams& params, bfWindow* main_window)
 {
   IBifrostDbgLogger logger_config{
    nullptr,
@@ -405,4 +404,4 @@ namespace bf::detail
     // This is the bottom most layer so just accept the event.
     event.accept();
   }
-}  // namespace bifrost::detail
+}  // namespace bf::detail

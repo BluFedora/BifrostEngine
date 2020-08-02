@@ -56,19 +56,19 @@ namespace bf
   class LinearAllocatorScope final
   {
    private:
-    LinearAllocator& m_Allocator;
+    LinearAllocator* m_Allocator;
     std::size_t      m_OldOffset;
 
    public:
     LinearAllocatorScope(LinearAllocator& allocator);
+    LinearAllocatorScope(LinearAllocatorScope&& rhs) noexcept;
 
     LinearAllocatorScope(const LinearAllocatorScope& rhs) = delete;
-    LinearAllocatorScope(LinearAllocatorScope&& rhs)      = delete;
     LinearAllocatorScope& operator=(const LinearAllocatorScope& rhs) = delete;
-    LinearAllocatorScope& operator=(LinearAllocatorScope&& rhs) = delete;
+    LinearAllocatorScope& operator=(LinearAllocatorScope&& rhs) noexcept = delete;
 
     ~LinearAllocatorScope();
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_LINEAR_ALLOCATOR_HPP */

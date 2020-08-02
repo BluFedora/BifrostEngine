@@ -1,8 +1,8 @@
-#include "bifrost/platform/bifrost_platform.h"
+#include "bf/platform/bf_platform.h"
 
-#include "bifrost/platform/bifrost_platform_event.h"
-#include "bifrost/platform/bifrost_platform_gl.h"
-#include "bifrost/platform/bifrost_platform_vulkan.h"
+#include "bf/platform/bf_platform_event.h"
+#include "bf/platform/bf_platform_gl.h"
+#include "bf/platform/bf_platform_vulkan.h"
 
 #include <sdl/SDL.h>        /* SDL_* */
 #include <sdl/SDL_vulkan.h> /* SDL_Vulkan_CreateSurface */
@@ -41,13 +41,13 @@ static const char* const k_bfWindowUserStorageID = "bf.BifrostWindowSDL";
 
 typedef struct
 {
-  BifrostWindow super;
+  bfWindow super;
   void*         gl_context;
   int           wants_to_close;
 
 } BifrostWindowSDL;
 
-static BifrostWindowSDL* windowCast(BifrostWindow* window)
+static BifrostWindowSDL* windowCast(bfWindow* window)
 {
   return (BifrostWindowSDL*)window;
 }
@@ -71,7 +71,7 @@ int bfPlatformInit(bfPlatformInitParams params)
 
 #include <stdio.h>
 
-static void dispatchEvent(BifrostWindow* window, bfEvent event)
+static void dispatchEvent(bfWindow* window, bfEvent event)
 {
   if (window->event_fn)
   {
@@ -115,7 +115,7 @@ void bfPlatformPumpEvents(void)
   }
 }
 
-BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags)
+bfWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint32_t flags)
 {
   BifrostWindowSDL* const window = bfPlatformAlloc(sizeof(BifrostWindowSDL));
 
@@ -180,22 +180,22 @@ BifrostWindow* bfPlatformCreateWindow(const char* title, int width, int height, 
   return window ? &window->super : NULL;
 }
 
-int bfWindow_wantsToClose(BifrostWindow* self)
+int bfWindow_wantsToClose(bfWindow* self)
 {
   return windowCast(self)->wants_to_close;
 }
 
-void bfWindow_getPos(BifrostWindow* self, int* x, int* y);
-void bfWindow_setPos(BifrostWindow* self, int x, int y);
+void bfWindow_getPos(bfWindow* self, int* x, int* y);
+void bfWindow_setPos(bfWindow* self, int x, int y);
 
-void bfWindow_getSize(BifrostWindow* self, int* x, int* y)
+void bfWindow_getSize(bfWindow* self, int* x, int* y)
 {
   SDL_GetWindowSize((NativeWindowHandle)self->handle, x, y);
 }
 
-void bfWindow_setSize(BifrostWindow* self, int x, int y);
+void bfWindow_setSize(bfWindow* self, int x, int y);
 
-void bfPlatformDestroyWindow(BifrostWindow* window)
+void bfPlatformDestroyWindow(bfWindow* window)
 {
   SDL_DestroyWindow((NativeWindowHandle)window->handle);
   bfPlatformFree(window, sizeof(BifrostWindowSDL));
@@ -208,12 +208,12 @@ void bfPlatformQuit(void)
 
 // Platform Extensions
 
-int bfWindow_createVulkanSurface(BifrostWindow* self, VkInstance instance, VkSurfaceKHR* out)
+int bfWindow_createVulkanSurface(bfWindow* self, VkInstance instance, VkSurfaceKHR* out)
 {
   return SDL_Vulkan_CreateSurface(self->handle, instance, out) == SDL_TRUE;
 }
 
-void bfWindow_makeGLContextCurrent(BifrostWindow* self)
+void bfWindow_makeGLContextCurrent(bfWindow* self)
 {
   BifrostWindowSDL* const self_t = windowCast(self);
 
@@ -228,7 +228,7 @@ GLADloadproc bfPlatformGetProcAddress(void)
   return (GLADloadproc)SDL_GL_GetProcAddress;
 }
 
-void bfWindowGL_swapBuffers(BifrostWindow* self)
+void bfWindowGL_swapBuffers(bfWindow* self)
 {
   SDL_GL_SwapWindow(self->handle);
 }

@@ -42,12 +42,28 @@ namespace bf
     {
       T x;
       T y;
+
+      // NOTE(SR):
+      //   This leaves the base 'Vec2T' uninitialized for performance reasons (cannot be constexpr).
+      Vec2T() = default;
+
+      explicit Vec2T(T xy) :
+        x{xy},
+        y{xy}
+      {
+      }
+
+      Vec2T(T x, T y) :
+        x{x},
+        y{y}
+      {
+      }
     };
 
     template<>
     struct Vec2T<float> : public Vec2f
     {
-      Vec2T(float xy) :
+      explicit Vec2T(float xy) :
         Vec2f{xy, xy}
       {
       }
@@ -62,6 +78,8 @@ namespace bf
       {
       }
 
+      // NOTE(SR):
+      //   This leaves the base 'Vec2f' uninitialized for performance reasons (cannot be constexpr).
       Vec2T() = default;
     };
 
@@ -70,6 +88,15 @@ namespace bf
     {
       Vec2T(int x, int y) :
         Vec2i{x, y}
+      {
+      }
+
+      // NOTE(SR):
+      //   This leaves the base 'Vec2i' uninitialized for performance reasons (cannot be constexpr).
+      Vec2T() = default;
+
+      explicit Vec2T(int xy) :
+        Vec2i{xy, xy}
       {
       }
     };
@@ -252,11 +279,11 @@ namespace bf
       VectorT m_Max;
 
      public:
-      // TODO(SR):
-      //   I don't like how this constrcutor defaults to all zeros.
-      //   By design you should have to be explicit or allow uninitialized for cheaper constuction (Similar to Vector3T).
-      //   This constructor allows for Rect2{0.0f} which looks ambiguous to all hell.
-      Rect2T(T x = T(0), T y = T(0), T width = T(0), T height = T(0)) :
+      // NOTE(SR):
+      //   This leaves the base 'Rect2T' uninitialized for performance reasons (cannot be constexpr).
+      Rect2T() = default;
+
+      Rect2T(T x, T y, T width, T height) :
         m_Min{x, y},
         m_Max{x + width, y + height}
       {
@@ -560,6 +587,6 @@ namespace bf
     }
   }  // namespace vec
 
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_RECT2_HPP */

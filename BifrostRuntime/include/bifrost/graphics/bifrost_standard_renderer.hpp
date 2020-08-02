@@ -19,11 +19,11 @@
 #ifndef BIFROST_STANDARD_RENDERER_HPP
 #define BIFROST_STANDARD_RENDERER_HPP
 
+#include "bf/PlatformFwd.h"                                   /* BifrostWindow           */
 #include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
 #include "bifrost/data_structures/bifrost_array.hpp"          /* Array<T>                */
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
 #include "bifrost/graphics/bifrost_gfx_api.h"                 /* Bifrost C Gfx API       */
-#include "bifrost/platform/bifrost_platform_fwd.h"            /* BifrostWindow           */
 #include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
 class Engine;
@@ -485,7 +485,7 @@ namespace bf
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
     bfGfxFrameInfo          frameInfo() const { return m_FrameInfo; }
 
-    void               init(const bfGfxContextCreateParams& gfx_create_params, BifrostWindow* main_window);
+    void               init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
     [[nodiscard]] bool frameBegin();
     void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
     void               bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
@@ -560,6 +560,6 @@ namespace bf
     void addLightingInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
     void addLightBuffer(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
   }  // namespace bindings
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_STANDARD_RENDERER_HPP */

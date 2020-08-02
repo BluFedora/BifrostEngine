@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 /* Forward Declarations */
-struct BifrostWindow_t;
+struct bfWindow_t;
 
 typedef uint64_t bfBufferSize;
 
@@ -273,7 +273,7 @@ typedef struct
 /* Context */
 BIFROST_GFX_API bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 BIFROST_GFX_API bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
-BIFROST_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window);
+BIFROST_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window);
 BIFROST_GFX_API void                   bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 BIFROST_GFX_API bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window);
 BIFROST_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self);

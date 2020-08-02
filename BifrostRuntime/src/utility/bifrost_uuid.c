@@ -13,7 +13,7 @@
 /******************************************************************************/
 #include "bifrost/utility/bifrost_uuid.h"
 
-#include "bifrost/platform/bifrost_platform.h" /* BIFROST_PLATFORM_* */
+#include "bf/platform/bf_platform.h" /* BIFROST_PLATFORM_* */
 
 #include <stdio.h>  /* sprintf        */
 #include <string.h> /* strcpy, memcpy */
