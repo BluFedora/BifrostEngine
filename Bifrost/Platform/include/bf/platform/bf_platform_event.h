@@ -7,8 +7,8 @@
  *
  * @copyright Copyright (c) 2019-2020
  */
-#ifndef BIFROST_PLATFORM_EVENT_H
-#define BIFROST_PLATFORM_EVENT_H
+#ifndef BF_PLATFORM_EVENT_H
+#define BF_PLATFORM_EVENT_H
 
 #include "bf_platform_export.h"
 
@@ -351,4 +351,4 @@ BIFROST_PLATFORM_API struct bfEvent_t   bfEvent_makeImpl(bfEventType type, uint8
 #define bfEvent_make(type, flags, data) \
   bfEvent_makeImpl((type), (flags), &data, sizeof(data))  // NOLINT(bugprone-macro-parentheses)
 
-#endif /* BIFROST_PLATFORM_EVENT_H */
+#endif /* BF_PLATFORM_EVENT_H */

@@ -187,30 +187,27 @@ namespace bf
     friend class BaseAssetHandle;
 
    protected:
-    String                   m_Path;      //!< A path relative to the project to the actual asset file.
-    BifrostUUID              m_UUID;      //!< Uniquely identifies the asset.
-    std::uint16_t            m_RefCount;  //!< How many live references in the engine.
-    AssetTagList             m_Tags;      //!< Tags associated with this asset.
-    bool                     m_IsDirty;   //!< This asset wants to be saved.
-    meta::BaseClassMetaInfo* m_TypeInfo;  //!< The type info for the subclasses.
+    String                   m_FilePathAbs;  //!< The full path to an asset.
+    StringRange              m_FilePathRel;  //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
+    BifrostUUID              m_UUID;         //!< Uniquely identifies the asset.
+    std::uint16_t            m_RefCount;     //!< How many live references in the engine.
+    AssetTagList             m_Tags;         //!< Tags associated with this asset.
+    bool                     m_IsDirty;      //!< This asset wants to be saved.
+    meta::BaseClassMetaInfo* m_TypeInfo;     //!< The type info for the subclasses.
 
    protected:
-    BaseAssetInfo(const StringRange path, BifrostUUID uuid) :
-      bfNonCopyMoveable<BaseAssetInfo>(),
-      m_Path{path},
-      m_UUID{uuid},
-      m_RefCount{0u},
-      m_Tags{},
-      m_IsDirty{false},
-      m_TypeInfo{nullptr}
-    {
-    }
+    BaseAssetInfo(const String& full_path, const size_t length_of_root_path, const BifrostUUID& uuid);
 
    public:
-    const String&              path() const { return m_Path; }
     const BifrostUUID&         uuid() const { return m_UUID; }
     std::uint16_t              refCount() const { return m_RefCount; }
     meta::BaseClassMetaInfoPtr typeInfo() const { return m_TypeInfo; }
+
+    // Path Helpers
+
+    const String& filePathAbs() const { return m_FilePathAbs; }
+    StringRange   filePathExtenstion() const;
+    StringRange   filePathRel() const { return m_FilePathRel; }
 
     // Implemented by AssetInfo<T, TPayload> //
 
@@ -265,8 +262,8 @@ namespace bf
     Optional<TPayload> m_Payload;
 
    public:
-    AssetInfo(const StringRange path, const BifrostUUID uuid) :
-      BaseAssetInfo(path, uuid)
+    AssetInfo(const String& full_path, const size_t length_of_root_path, const BifrostUUID& uuid) :
+      BaseAssetInfo(full_path, length_of_root_path, uuid)
     {
       static_assert(std::is_base_of<IBaseObject, TPayload>::value, "Only reflect-able types should be used as a payload.");
 
@@ -292,6 +289,6 @@ namespace bf
 
   template<typename TPayload, typename TInfo>
   meta::BaseClassMetaInfo* AssetInfo<TPayload, TInfo>::s_IsRegistered = registerImpl();
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_ASSET_INFO_HPP */

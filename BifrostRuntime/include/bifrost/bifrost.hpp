@@ -12,43 +12,22 @@
 #ifndef BIFROST_HPP
 #define BIFROST_HPP
 
-// AssetIO
+#include "bf/Platform.h"
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_file.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
-
-// Core
+#include "bifrost/bifrost_math.h"
+#include "bifrost/data_structures/bifrost_array_t.h"
+#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bifrost/script/bifrost_vm.hpp"
 #include "core/bifrost_base_object.hpp"
 #include "core/bifrost_engine.hpp"
 #include "core/bifrost_game_state_machine.hpp"
 #include "core/bifrost_igame_state_layer.hpp"
-
-// Data Structures
-#include "bifrost/data_structures/bifrost_array_t.h"
-
-// Debug
 #include "debug/bifrost_dbg_logger.h"
-
-// ECS
 #include "ecs/bifrost_entity.hpp"
-
-// Graphics
-#include "bifrost/graphics/bifrost_gfx_api.h"
-
-// Math
-#include "bifrost/bifrost_math.h"
-
-// Meta
 #include "meta/bifrost_meta_runtime.hpp"
-
-// Script
-#include "bifrost/script/bifrost_vm.hpp"
-
-// Utility
 #include "utility/bifrost_non_copy_move.hpp"
-
-// Platform
-#include <bf/Platform.h>
 
 #endif /* BIFROST_HPP */

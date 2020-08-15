@@ -102,7 +102,8 @@ namespace bf
     m_ActiveBehaviors{m_Memory},
     m_BVHTree{m_Memory},
     m_TransformSystem{m_Memory},
-    m_Camera{}
+    m_Camera{},
+    m_AnimationScene{nullptr}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
   }
@@ -138,7 +139,7 @@ namespace bf
     }
 
     m_BVHTree.endFrame(temp, true);
-
+    #if 0
     m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
       // Don't draw inactive entities.
       if (bvh_node::isLeaf(node))
@@ -156,6 +157,9 @@ namespace bf
        Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
        bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
     });
+    #else
+    (void)dbg_renderer;
+    #endif
   }
 
   void Scene::markEntityTransformDirty(Entity* entity)
@@ -220,14 +224,16 @@ namespace bf
     while (!m_RootEntities.isEmpty())
     {
       m_RootEntities.back()->destroy();
-      m_RootEntities.pop();
+
+      // Entity::destroy detaches from parent.
+      // m_RootEntities.pop();
     }
   }
 
   bool AssetSceneInfo::load(Engine& engine)
   {
     Assets&      assets    = engine.assets();
-    const String full_path = assets.fullPath(*this);
+    const String full_path = filePathAbs();
     File         file_in   = {full_path, file::FILE_MODE_READ};
 
     if (file_in)

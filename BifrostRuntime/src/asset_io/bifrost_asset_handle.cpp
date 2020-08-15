@@ -276,7 +276,7 @@ namespace bf
 
   bool BaseAssetInfo::defaultLoad(Engine& engine)
   {
-    const String full_path = engine.assets().fullPath(*this);
+    const String full_path = filePathAbs();
 
     File file{full_path, file::FILE_MODE_READ};
 

@@ -28,4 +28,5 @@ cloc-1.76 --by-file --csv --exclude-dir=lib ^
 ..\BifrostRuntime\ ^
 ..\BifrostScript\ ^
 ..\BifrostUtility\ ^
+..\Bifrost\ ^
 -out=code_count_bifrost_total.csv

@@ -10,8 +10,8 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_IECS_SYSTEM_HPP
-#define BIFROST_IECS_SYSTEM_HPP
+#ifndef BF_IECS_SYSTEM_HPP
+#define BF_IECS_SYSTEM_HPP
 
 class Engine;
 
@@ -47,4 +47,4 @@ namespace bf
   };
 }  // namespace bifrost
 
-#endif /* BIFROST_IECS_SYSTEM_HPP */
+#endif /* BF_IECS_SYSTEM_HPP */

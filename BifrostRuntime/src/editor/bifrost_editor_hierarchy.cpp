@@ -20,7 +20,9 @@ namespace bf::editor
     {
       if (ImGui::BeginMenuBar())
       {
-        if (ImGui::BeginMenu("+ Entity"))
+        ImGui::Separator();
+
+        if (ImGui::BeginMenu(ICON_FA_PLUS))
         {
           if (ImGui::MenuItem("Create Empty"))
           {
@@ -49,6 +51,7 @@ namespace bf::editor
         ImGui::EndMenuBar();
       }
 
+#if 0
       if (ImGui::Selectable("Undo", false, editor.undoRedo().canUndo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))
       {
         editor.undoRedo().undo();
@@ -58,6 +61,7 @@ namespace bf::editor
       {
         editor.undoRedo().redo();
       }
+#endif
 
       const ImVec2 old_item_spacing = ImGui::GetStyle().ItemSpacing;
 
@@ -230,4 +234,4 @@ namespace bf::editor
 
     bfTransform_flushChanges(&entity->transform());
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor

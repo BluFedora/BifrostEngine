@@ -11,13 +11,13 @@ Most of the Engine is separated into separate libraries that must be compiled an
 The base Module that you should start with [BifrostPlatform](#Platform) for basic windowing and other low level platform specifics.
 
 ```cpp
-#include <bifrost/platform/bifrost_platform.h> /* Platform API */
+#include <bf/Platform.h> /* Platform API */
 
 #include <cstdio> /* printf */
 
 int main(int argc, char* argv[])
 {
-  bfPlatformAllocator allocator       = nullptr; // Use the default malloc and free, will be assigned to 'bfPlatformDefaultAllocator'.
+  bfPlatformAllocator allocator       = nullptr; // Use the default realloc and free, will be assigned to 'bfPlatformDefaultAllocator'.
   void*               global_userdata = nullptr; // Could be anything you want globally accessible.
 
   if (!bfPlatformInit({argc, argv, allocator, global_userdata}))
@@ -102,7 +102,7 @@ Build Requirements:
     - The source is embedded so not a hard requirement.
   - Compiler
     - C99
-    - C++17 (Optional helpers for easier binding)
+    - C++17 (Optional helper header for easier binding)
 
 ## External Libraries
 
@@ -120,6 +120,7 @@ Build Requirements:
 - SDL
 - SOL2
 - stb_image.h
+- stb_truetype.h
 - D3D12 Extension Library (d3dx12.h)
 
 ---

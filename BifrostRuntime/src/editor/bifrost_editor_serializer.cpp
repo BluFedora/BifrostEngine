@@ -301,7 +301,7 @@ namespace bf::editor
       ImGui::SameLine();
     }
 
-    const char* const preview_name  = value ? value.info()->path().c_str() : "<null>";
+    const char* const preview_name  = value ? value.info()->filePathRel().begin() : "<null>";
     BaseAssetInfo*    assigned_info = nullptr;
 
     if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightLargest))
@@ -314,7 +314,7 @@ namespace bf::editor
         {
           const bool is_selected = asset_info == value.info();
 
-          if (ImGui::Selectable(asset_info->path().cstr(), is_selected, ImGuiSelectableFlags_None))
+          if (ImGui::Selectable(asset_info->filePathRel().begin(), is_selected, ImGuiSelectableFlags_None))
           {
             if (!is_selected)
             {
@@ -733,14 +733,14 @@ namespace bf::editor
 
         if (asset_info->typeInfo() == script_class_info)
         {
-          const auto& path  = asset_info->path();
-          char*       label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add (%.*s) Script", int(path.length()), path.data());
+          const auto& path  = asset_info->filePathRel();
+          char*       label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add (%.*s) Script", int(path.length()), path.begin());
 
           if (ImGui::Selectable(label))
           {
             ScriptBehavior* const behav = entity.addBehavior<ScriptBehavior>();
 
-            behav->setScriptPath(asset_info->path());
+            behav->setScriptPath(asset_info->filePathRel());
           }
         }
       }

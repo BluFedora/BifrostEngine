@@ -1,14 +1,17 @@
-#include "bifrost/bf_painter.hpp"
+#include "bf/gfx2D/bf_painter.hpp"
 
 #include "bf/Platform.h"  // bfPlatformGetGfxAPI
+#include "bf/Text.hpp"    // CodePoint, Font
 
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"
+
 #include <cmath>
 
 namespace bf
 {
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
+  static constexpr float                  k_ArcSmoothingFactor        = 3.5f; /*!< This is just about the minimum before quality of the curves degrade. */
 
   void Gfx2DPerFrameRenderData::reserve(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size)
   {
@@ -176,6 +179,23 @@ namespace bf
     bfVertexLayout_delete(vertex_layouts[0]);
   }
 
+  PainterFont::PainterFont(IMemoryManager& memory, const char* filename, float size) :
+    font{makeFont(memory, filename, size)},
+    gpu_atlas{}
+  {
+    for (auto& texture : gpu_atlas)
+    {
+      texture.handle       = nullptr;
+      texture.needs_upload = false;
+      texture.needs_resize = false;
+    }
+  }
+
+  PainterFont::~PainterFont()
+  {
+    destroyFont(font);
+  }
+
   Gfx2DPainter::Gfx2DPainter(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics) :
     render_data{memory, glsl_compiler, graphics},
     vertices{memory},
@@ -183,7 +203,8 @@ namespace bf
     shadow_vertices{memory},
     shadow_indices{memory},
     tmp_memory_backing{},
-    tmp_memory{tmp_memory_backing, sizeof(tmp_memory_backing)}
+    tmp_memory{tmp_memory_backing, sizeof(tmp_memory_backing)},
+    draw_commands{memory}
   {
   }
 
@@ -198,6 +219,21 @@ namespace bf
     indices.clear();
     shadow_vertices.clear();
     shadow_indices.clear();
+    draw_commands.clear();
+    draw_commands.emplace(render_data.white_texture);
+  }
+
+  void Gfx2DPainter::bindTexture(bfTextureHandle texture)
+  {
+    if (!texture)
+    {
+      texture = render_data.white_texture;
+    }
+
+    if (texture != currentDrawCommand().texture)
+    {
+      draw_commands.emplace(texture).first_index = UIIndexType(indices.size());
+    }
   }
 
   void Gfx2DPainter::pushRectShadow(float shadow_sigma, const Vector2f& pos, float width, float height, float border_radius, bfColor32u color)
@@ -268,8 +304,6 @@ namespace bf
     pushFilledArc(bl_corner_pos, border_radius, k_HalfPI, k_HalfPI, color);
     pushFilledArc(br_corner_pos, border_radius, 0.0f, k_HalfPI, color);
   }
-
-  static constexpr float k_ArcSmoothingFactor = 5.0f;
 
   // Clockwise Winding.
 
@@ -826,6 +860,131 @@ namespace bf
     pushPolyline(points.data, UIIndexType(points.data_size), thickness, join_style, end_style, color);
   }
 
+  void Gfx2DPainter::pushText(const Vector2f& pos, const char* utf8_text, PainterFont* font)
+  {
+    const bfColor4u color           = bfColor4u_fromUint32(BIFROST_COLOR_SALMON);
+    float           x               = pos.x;
+    float           y               = pos.y;  // TODO(SR): Handle New line
+    int             num_characters  = 0;
+    UIIndexType     start_vertex_id = 0;
+
+    while (*utf8_text)
+    {
+      const bool is_backslash_r = *utf8_text == '\r';
+
+      if (is_backslash_r || *utf8_text == '\n')
+      {
+        x = pos.x;
+        y += fontNewlineHeight(font->font);
+
+        ++utf8_text;
+
+        // Handle Window's '\r\n'
+        if (is_backslash_r && *utf8_text == '\n')
+        {
+          ++utf8_text;
+        }
+
+        continue;
+      }
+
+      const auto       res          = utf8Codepoint(utf8_text);
+      const CodePoint  codepoint    = res.codepoint;
+      const GlyphInfo& glyph        = fontGetGlyphInfo(font->font, codepoint);
+      const auto [vertex_id, verts] = requestVertices(4);
+
+      // First time through the loop
+      if (!num_characters)
+      {
+        start_vertex_id = vertex_id;
+      }
+
+      const Vector2f p       = Vector2f{x, y} + Vector2f{glyph.offset[0], glyph.offset[1]};
+      const Vector2f size_x  = {float(glyph.bmp_box[1].x), 0.0f};
+      const Vector2f size_y  = {0.0f, float(glyph.bmp_box[1].y)};
+      const Vector2f size_xy = {size_x.x, size_y.y};
+      const Vector2f p0      = p;
+      const Vector2f p1      = p + size_x;
+      const Vector2f p2      = p + size_xy;
+      const Vector2f p3      = p + size_y;
+
+      verts[0] = {p0, {glyph.uvs[0], glyph.uvs[1]}, color};
+      verts[1] = {p1, {glyph.uvs[2], glyph.uvs[1]}, color};
+      verts[2] = {p2, {glyph.uvs[2], glyph.uvs[3]}, color};
+      verts[3] = {p3, {glyph.uvs[0], glyph.uvs[3]}, color};
+
+      utf8_text = res.endpos;
+      x += glyph.advance_x;
+
+      // Not at the end
+      if (*utf8_text)
+      {
+        x += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
+      }
+
+      ++num_characters;
+    }
+
+    const auto&   frame_info    = bfGfxContext_getFrameInfo(render_data.ctx);
+    DynamicAtlas& current_atlas = font->gpu_atlas[frame_info.frame_index];
+
+    for (DynamicAtlas& atlas : font->gpu_atlas)
+    {
+      atlas.needs_upload = atlas.needs_upload || fontAtlasNeedsUpload(font->font);
+      atlas.needs_resize = atlas.needs_resize || fontAtlasHasResized(font->font);
+    }
+
+    fontResetAtlasStatus(font->font);
+
+    if (current_atlas.needs_upload)
+    {
+      if (current_atlas.needs_resize)
+      {
+        bfGfxDevice_release(render_data.device, current_atlas.handle);
+        current_atlas.handle = nullptr;
+
+        current_atlas.needs_resize = false;
+      }
+
+      const auto* const pixmap = fontPixelMap(font->font);
+
+      if (!current_atlas.handle)
+      {
+        current_atlas.handle =
+         gfx::createTexture(
+          render_data.device,
+          bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, pixmap->width, pixmap->height),
+          k_SamplerNearestClampToEdge,
+          pixmap->pixels,
+          pixmap->sizeInBytes());
+      }
+      else
+      {
+        const int32_t  offset[3] = {0, 0, 0};
+        const uint32_t sizes[3]  = {pixmap->width, pixmap->height, 0};
+
+        bfTexture_loadDataRange(
+         current_atlas.handle,
+         pixmap->pixels,
+         pixmap->sizeInBytes(),
+         offset,
+         sizes);
+      }
+
+      current_atlas.needs_upload = false;
+    }
+
+    bindTexture(current_atlas.handle);
+
+    for (int i = 0; i < num_characters; ++i)
+    {
+      const UIIndexType vertex_id = start_vertex_id + i * 4;
+
+      pushTriIndex(vertex_id + 0, vertex_id + 1, vertex_id + 2);
+      pushTriIndex(vertex_id + 0, vertex_id + 2, vertex_id + 3);
+    }
+  }
+
   void Gfx2DPainter::render(bfGfxCommandListHandle command_list, int fb_width, int fb_height)
   {
     if (vertices.isEmpty() || indices.isEmpty())
@@ -904,21 +1063,21 @@ namespace bf
 
     bfGfxCmdList_bindVertexDesc(command_list, render_data.vertex_layouts[0]);
     bfGfxCmdList_bindProgram(command_list, render_data.shader_program);
+    bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame_data.vertex_buffer, 1, &vertex_buffer_offset);
+    bfGfxCmdList_bindIndexBuffer(command_list, frame_data.index_buffer, 0, bfIndexTypeFromT<UIIndexType>());
 
+    for (auto& draw_cmd : draw_commands)
     {
       bfBufferSize ubo_offset = render_data.uniform.offset(frame_info);
       bfBufferSize ubo_sizes  = sizeof(Gfx2DUnifromData);
 
       bfDescriptorSetInfo desc_set = bfDescriptorSetInfo_make();
-      bfDescriptorSetInfo_addTexture(&desc_set, 0, 0, &render_data.white_texture, 1);
+      bfDescriptorSetInfo_addTexture(&desc_set, 0, 0, &draw_cmd.texture, 1);
       bfDescriptorSetInfo_addUniform(&desc_set, 1, 0, &ubo_offset, &ubo_sizes, &render_data.uniform.handle(), 1);
 
       bfGfxCmdList_bindDescriptorSet(command_list, 0, &desc_set);
+      bfGfxCmdList_drawIndexed(command_list, draw_cmd.num_indices, draw_cmd.first_index, 0u);
     }
-
-    bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame_data.vertex_buffer, 1, &vertex_buffer_offset);
-    bfGfxCmdList_bindIndexBuffer(command_list, frame_data.index_buffer, 0, bfIndexTypeFromT<UIIndexType>());
-    bfGfxCmdList_drawIndexed(command_list, UIIndexType(indices.size()), 0u, 0u);
   }
 
   std::pair<UIIndexType, Gfx2DPainter::SafeVertexIndexer<UIVertex2D>> Gfx2DPainter::requestVertices(UIIndexType num_verts)
@@ -932,12 +1091,14 @@ namespace bf
 
   void Gfx2DPainter::pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2)
   {
-    assert(index0 < vertices.size() && index0 < vertices.size() && index2 < vertices.size());
+    assert(index0 < vertices.size() && index1 < vertices.size() && index2 < vertices.size());
 
     indices.reserve(indices.size() + 3);
     indices.push(index0);
     indices.push(index1);
     indices.push(index2);
+
+    currentDrawCommand().num_indices += 3;
   }
 
   std::pair<UIIndexType, Gfx2DPainter::SafeVertexIndexer<DropShadowVertex>> Gfx2DPainter::requestVertices2(UIIndexType num_verts)
@@ -951,7 +1112,7 @@ namespace bf
 
   void Gfx2DPainter::pushTriIndex2(UIIndexType index0, UIIndexType index1, UIIndexType index2)
   {
-    assert(index0 < shadow_vertices.size() && index0 < shadow_vertices.size() && index2 < shadow_vertices.size());
+    assert(index0 < shadow_vertices.size() && index1 < shadow_vertices.size() && index2 < shadow_vertices.size());
 
     shadow_indices.reserve(shadow_indices.size() + 3);
     shadow_indices.push(index0);

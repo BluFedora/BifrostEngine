@@ -140,7 +140,7 @@ static bfButtonFlags convertButtonState(GLFWwindow* window)
 
   for (int i = GLFW_MOUSE_BUTTON_1; i <= GLFW_MOUSE_BUTTON_LAST; ++i)
   {
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    if (glfwGetMouseButton(window, i) == GLFW_PRESS)
     {
       result |= (1 << i);
     }

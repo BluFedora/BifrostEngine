@@ -77,7 +77,7 @@ struct ReceiveResult final
   Address                  source_address      = {};                                                       //!< Where the message came from.
   detail::SocketLengthImpl source_address_size = static_cast<detail::SocketLengthImpl>(sizeof(sockaddr));  //!< The size of the 'ReceiveResult::source_address' field.
   char*                    received_bytes      = nullptr;                                                  //!< The bytes array that was written to.
-  detail::BytesCountImpl   received_bytes_size = 0;                                                        //!< The number of bytes written to 'ReceiveResult::received_bytes' or '-1' if the non blocking call is still waiting.
+  detail::BytesCountImpl   received_bytes_size = 0;                                                        //!< The number of bytes written to 'ReceiveResult::received_bytes' or '-1' if the non blocking call is still waiting, -2 if the connection was disconencted.
 };
 
 /*!
@@ -103,7 +103,7 @@ class Socket final
   Socket& operator=(Socket&&) = delete;
 
   void                   bindTo(const Address& address) const;
-  void                   connectTo(const Address& address) const;
+  bool                   connectTo(const Address& address) const;
   void                   makeNonBlocking() const;
   detail::BytesCountImpl sendDataTo(const Address& address, const char* data, int data_size, SendToFlags::type flags = SendToFlags::NONE) const;
   ReceiveResult          receiveDataFrom(char* data, int data_size, ReceiveFromFlags::type flags = ReceiveFromFlags::NONE) const;

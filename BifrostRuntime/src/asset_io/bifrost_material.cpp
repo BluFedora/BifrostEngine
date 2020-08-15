@@ -28,7 +28,7 @@ namespace bf
   {
     const bfGfxDeviceHandle device        = bfGfxContext_device(engine.renderer().context());
     ShaderModule&           shader_module = m_Payload.set<ShaderModule>(device);
-    const String&           full_path     = engine.assets().fullPath(*this);
+    const String&           full_path     = filePathAbs();
     shader_module.m_Handle                = bfGfxDevice_newShaderModule(device, m_Type);
 
     return bfShaderModule_loadFile(shader_module.m_Handle, full_path.cstr());
@@ -142,7 +142,7 @@ namespace bf
 
     LinearAllocatorScope scope{engine.tempMemory()};
     {
-      const String& full_path = engine.assets().fullPath(*this);
+      const String& full_path = filePathAbs();
 
       long  file_data_size;
       char* file_data = LoadFileIntoMemory(full_path.cstr(), &file_data_size);

@@ -15,6 +15,8 @@
 #include "bifrost/asset_io/bifrost_material.hpp" /* AssetMaterialHandle */
 #include "bifrost_base_component.hpp"            /* BaseComponent       */
 
+#include "bf/Animation2D.h"  // bfAnim2DSpriteHandle
+
 namespace bf
 {
   class MeshRenderer : public Component<MeshRenderer>
@@ -73,6 +75,21 @@ namespace bf
     Rect2f&              uvRect() { return m_UVRect; }
     bfColor4u&           color() { return m_Color; }
     SpriteRendererFlags& flags() { return m_Flags; }
+
+    void onEnable(Engine& engine);
+  };
+
+  class SpriteAnimator : public Component<SpriteAnimator>
+  {
+   private:
+    bfAnim2DSpriteHandle m_SpriteHandle;
+
+   public:
+    explicit SpriteAnimator(Entity& owner) :
+      Base(owner),
+      m_SpriteHandle{bfAnim2DSprite_invalidHandle()}
+    {
+    }
   };
 
   using ParticleEmitterFlags = std::uint8_t;
@@ -105,7 +122,7 @@ namespace bf
     {
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 BIFROST_META_REGISTER(bf::MeshRenderer){
  BIFROST_META_BEGIN()

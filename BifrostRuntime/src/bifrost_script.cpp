@@ -31,7 +31,7 @@ namespace bf
   bool AssetScriptInfo::load(Engine& engine)
   {
     Assets&      assets    = engine.assets();
-    const String full_path = assets.fullPath(*this);
+    const String full_path = filePathAbs();
     File         file      = {full_path, file::FILE_MODE_READ};
 
     if (file)

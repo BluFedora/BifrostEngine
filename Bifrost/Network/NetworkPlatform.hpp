@@ -19,16 +19,14 @@
 
 #if defined(_WIN32)
 
+// Windows.h has a list of defines for making it smaller in it at the top.
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#define VC_EXTRALEAN
+#define WINDOWS_EXTRA_LEAN
+
 #include <WS2tcpip.h> /* inet_pton,                                                                                */
 #include <WinSock2.h> /* u_short, sockaddr, sockaddr_in, SOCKET, WSADATA, WSAStartup, socket, recvfrom, WSACleanup */
-
-#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
-// Link against 'ws2_32' from the command line.
-#elif defined(_MSC_VER)
-  #pragma comment(lib, "ws2_32.lib")  // Ws2_32.dll
-#else
-  #error Unsupported compiler remove this error if you can link against 'ws2_32.lib'.
-#endif
 
 #else
 
@@ -87,6 +85,7 @@ namespace detail
   int               toNative(SocketType socket_type);
   int               toNative(SocketShutdownAction socket_shutdown_action);
   bool              isWaiting(int error_code);
+  bool              isConnectionClosed(int error_code);
   int               getLastError();
   const char*       errorToString(int error_code, APIFunction function);
 }  // namespace detail

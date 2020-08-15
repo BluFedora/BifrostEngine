@@ -51,7 +51,7 @@ namespace bf
 
     // These functions assumes a canonical path by the calling of 'canonicalizePath'.
     StringRange directoryOfFile(const StringRange& path);  // In canonical style.
-    StringRange extensionOfFile(const StringRange& path);  // Includes the '.ext', if no extension a null path is returned.
+    StringRange extensionOfFile(const StringRange& path);  // Includes the (dot) e.g '.ext', if no extension a null path is returned.
     StringRange fileNameOfPath(const StringRange& path);   // 'filename.ext'
 
   }  // namespace file

@@ -1,7 +1,8 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
+#include "bf/Gfx2DPainter.hpp"                              // Gfx2DPainter
 #include "bf/Platform.h"                                    // BifrostWindow
-#include "bifrost/bf_painter.hpp"                           // Gfx2DPainter
+#include "bf/anim2D/bf_animation_system.hpp"                // AnimationSystem
 #include "bifrost/debug/bifrost_dbg_logger.h"               // bfLog*
 #include "bifrost/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bifrost/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
@@ -20,16 +21,20 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* 
   m_TempAdapter{m_TempMemory},
   m_StateMachine{*this, m_MainMemory},
   m_Scripting{},
+  m_Assets{*this, m_MainMemory},
+  m_SceneStack{m_MainMemory},
   m_Renderer{m_MainMemory},
   m_DebugRenderer{m_MainMemory},
   m_Renderer2D{nullptr},
-  m_SceneStack{m_MainMemory},
-  m_Assets{*this, m_MainMemory},
-  m_Systems{m_MainMemory},
   m_CameraMemory{},
   m_CameraList{nullptr},
   m_CameraResizeList{nullptr},
   m_CameraDeleteList{nullptr},
+  m_Systems{m_MainMemory},
+  m_AnimationSystem{nullptr},
+  m_CollisionSystem{nullptr},
+  m_ComponentRenderer{nullptr},
+  m_BehaviorSystem{nullptr},
   m_State{EngineState::RUNTIME_PLAYING}
 {
 #if USE_CRT_HEAP
@@ -112,7 +117,11 @@ void Engine::returnCamera(CameraRender* camera)
 void Engine::openScene(const AssetSceneHandle& scene)
 {
   m_SceneStack.clear();  // TODO: Scene Stacking.
-  m_SceneStack.push(scene);
+
+  if (scene)
+  {
+    m_SceneStack.push(scene);
+  }
 }
 
 EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
@@ -188,9 +197,10 @@ void Engine::init(const BifrostEngineCreateParams& params, bfWindow* main_window
 
   m_Scripting.stackStore(0, behavior_clz_bindings);
 
-  addECSSystem<BehaviorSystem>();
-  addECSSystem<CollisionSystem>();
-  addECSSystem<ComponentRenderer>();
+  m_CollisionSystem   = addECSSystem<CollisionSystem>();
+  m_BehaviorSystem    = addECSSystem<BehaviorSystem>();
+  m_AnimationSystem   = addECSSystem<AnimationSystem>();
+  m_ComponentRenderer = addECSSystem<ComponentRenderer>();
 
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
 
@@ -222,59 +232,6 @@ void Engine::fixedUpdate(float delta_time)
   {
     state.onFixedUpdate(*this, delta_time);
   }
-}
-
-void Engine::drawEnd()
-{
-  bfTextureHandle main_surface = renderer().surface();
-
-  renderer2D().render(renderer().mainCommandList(), bfTexture_width(main_surface), bfTexture_height(main_surface));
-  m_Renderer.endPass(m_Renderer.mainCommandList());
-  m_Renderer.drawEnd();
-}
-
-void Engine::endFrame()
-{
-  m_Renderer.frameEnd();
-
-  gc::collect(m_MainMemory);
-}
-
-void Engine::deinit()
-{
-  bfGfxDevice_flush(m_Renderer.device());
-
-  // Released any resources from the game states.
-  m_StateMachine.removeAll();
-
-  // Must be cleared before the Asset System destruction since it contains handles to scenes.
-  m_SceneStack.clear();
-
-  m_Assets.clearDirtyList();
-  m_Assets.setRootPath(nullptr);
-
-  assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
-  deleteCameras();
-
-  // Must happen before 'm_Renderer.deinit' since ECS systems use renderer resources.
-  for (auto& system : m_Systems)
-  {
-    system->onDeinit(*this);
-    m_MainMemory.deallocateT(system);
-  }
-  m_Systems.clear();
-
-  m_MainMemory.deallocateT(m_Renderer2D);
-  m_DebugRenderer.deinit();
-  m_Renderer.deinit();
-
-  gc::quit();
-
-  // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
-  m_Scripting.destroy();
-
-  // Shutdown last since there could be errors logged on shutdown if any failures happen.
-  bfLogger_deinit();
 }
 
 void Engine::update(float delta_time)
@@ -355,6 +312,66 @@ void Engine::drawBegin(float render_alpha)
   });
 
   m_Renderer.beginScreenPass(m_Renderer.mainCommandList());
+}
+
+void Engine::drawEnd()
+{
+  const bfTextureHandle main_surface = renderer().surface();
+  auto* const           cmd_list     = renderer().mainCommandList();
+
+  for (auto& state : m_StateMachine)
+  {
+    state.onDraw2D(*this, renderer2D());
+  }
+
+  renderer2D().render(cmd_list, bfTexture_width(main_surface), bfTexture_height(main_surface));
+
+  m_Renderer.endPass(cmd_list);
+  m_Renderer.drawEnd();
+}
+
+void Engine::endFrame()
+{
+  m_Renderer.frameEnd();
+
+  gc::collect(m_MainMemory);
+}
+
+void Engine::deinit()
+{
+  bfGfxDevice_flush(m_Renderer.device());
+
+  // Released any resources from the game states.
+  m_StateMachine.removeAll();
+
+  // Must be cleared before the Asset System destruction since it contains handles to scenes.
+  m_SceneStack.clear();
+
+  m_Assets.clearDirtyList();
+  m_Assets.setRootPath(nullptr);
+
+  assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
+  deleteCameras();
+
+  // Must happen before 'm_Renderer.deinit' since ECS systems use renderer resources.
+  for (auto& system : m_Systems)
+  {
+    system->onDeinit(*this);
+    m_MainMemory.deallocateT(system);
+  }
+  m_Systems.clear();
+
+  m_MainMemory.deallocateT(m_Renderer2D);
+  m_DebugRenderer.deinit();
+  m_Renderer.deinit();
+
+  gc::quit();
+
+  // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
+  m_Scripting.destroy();
+
+  // Shutdown last since there could be errors logged on shutdown if any failures happen.
+  bfLogger_deinit();
 }
 
 void Engine::resizeCameras()

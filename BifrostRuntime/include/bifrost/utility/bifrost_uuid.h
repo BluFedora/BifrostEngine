@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+enum
+{
+  k_bfUUIDStringCapacity = 37,
+};
+
 typedef struct BifrostUUIDNumber_t
 {
   char data[16]; /*!< The number as a string. */
@@ -26,20 +31,20 @@ typedef struct BifrostUUIDNumber_t
 
 typedef struct BifrostUUIDString_t
 {
-  char data[37]; /*!< Nul terminated string. '00000000-0000-0000-0000-000000000000\0' */
+  char data[k_bfUUIDStringCapacity]; /*!< Nul terminated string. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\0' */
 
 } BifrostUUIDString;
 
 typedef struct BifrostUUID_t
 {
   BifrostUUIDNumber as_number; /*!< The number as a string.                                         */
-  BifrostUUIDString as_string; /*!< Nul terminated string. '00000000-0000-0000-0000-000000000000\0' */
+  BifrostUUIDString as_string; /*!< Nul terminated string. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\0' */
 
 } BifrostUUID;
 
 BifrostUUID bfUUID_makeEmpty(void);
 BifrostUUID bfUUID_generate(void);
-BifrostUUID bfUUID_fromString(const char source[37]);  // Expects a string in the format: '00000000-0000-0000-0000-000000000000' (Note lack of curly braces)
+BifrostUUID bfUUID_fromString(const char source[k_bfUUIDStringCapacity]);  // Expects a string in the format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' (Note lack of curly braces)
 int         bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs);
 int         bfUUID_isEmpty(const BifrostUUID* self);
 void        bfUUID_numberToString(const char number[16], char out_string[37]);

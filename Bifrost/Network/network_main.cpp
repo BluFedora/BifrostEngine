@@ -19,17 +19,11 @@
 #include <cassert>             // assert
 #include <cstdio>              // printf
 #include <cstring>             // strlen, memcpy
-// #include <string>         // string
-#include <cctype>   // tolower
-#include <cstdlib>  // strtol
-#include <vector>   // vector<T>
+#include <utility>
+#include <vector>  // vector<T>
 
-#undef min
-#undef max
-
-static constexpr int               MESSAGE_BUFFER_SIZE = 256;
-static constexpr unsigned short    PORT                = 80;
-static constexpr const char* const PORT_STR            = "80";
+static constexpr int            MESSAGE_BUFFER_SIZE = 256;
+static constexpr unsigned short k_SRSMServerPort    = 4512;
 
 struct BufferPage final
 {
@@ -65,7 +59,7 @@ class MessageBuffer final
 
     while (page)
     {
-      BufferPage* next = page->next;
+      BufferPage* const next = page->next;
       fn(page);
       page = next;
     }
@@ -105,8 +99,6 @@ class MessageBuffer final
 // TODO: Move to core lib.
 namespace cs260
 {
-  static constexpr std::size_t ADDRESS_BUFFER_SIZE = std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN);
-
   enum class HttpRequestMethod
   {
     POST,
@@ -202,77 +194,8 @@ namespace cs260
     }
   };
 
-  struct RequestURL final
-  {
-    static RequestURL create(std::string url, const char* port)
-    {
-      const auto double_slash = std::find(url.begin(), url.end(), '/');
-
-      if (double_slash < url.end() && double_slash + 1 < url.end())
-      {
-        if (double_slash[1] == '/')
-        {
-          url = url.substr(double_slash - url.begin() + 2);
-        }
-      }
-
-      const auto last_slash = std::find(url.begin(), url.end(), '/');
-
-      auto        host    = url;
-      std::string request = "/";
-
-      if (last_slash != url.end())
-      {
-        host    = host.substr(0u, last_slash - url.begin());
-        request = std::string(&*last_slash, url.end() - last_slash);
-      }
-
-      return {host, request, port};
-    }
-
-    std::string host;
-    std::string request;
-    char        ip_address[ADDRESS_BUFFER_SIZE];
-
-   private:
-    RequestURL(std::string host_, std::string request_, const char* port) :
-      host{host_},
-      request{request_},
-      ip_address{'\0'}
-    {
-      addrinfo hint;                // NOLINT(hicpp-member-init)
-      hint.ai_flags     = 0x0;      // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
-      hint.ai_family    = AF_INET;  // AF_UNSPEC; // Accepts both IPv4 and IPv6
-      hint.ai_socktype  = 0;        // Accepts any socket type.
-      hint.ai_protocol  = 0;        // Accepts any protocol.
-      hint.ai_addrlen   = 0;        // Required to be 0 by standard.
-      hint.ai_canonname = nullptr;  // Required to be nullptr by standard.
-      hint.ai_addr      = nullptr;  // Required to be nullptr by standard.
-      hint.ai_next      = nullptr;  // Required to be nullptr by standard.
-
-      addrinfo* result;
-      const int err = getaddrinfo(host.c_str(), port, &hint, &result);
-
-      if (err)
-      {
-        const char* error_str = gai_strerror(err);
-        std::printf("getaddrinfo(%s:%s): %s\n", host.c_str(), port, error_str);
-        throw NetworkError(NetworkErrorCode::FAILED_TO_CREATE_ADDRESS_FROM_URL, error_str);
-      }
-
-      for (addrinfo* link = result; link; link = link->ai_next)
-      {
-        sockaddr_in*      remote = reinterpret_cast<struct sockaddr_in*>(link->ai_addr);
-        const void* const addr   = &remote->sin_addr;
-
-        inet_ntop(link->ai_family, addr, ip_address, ADDRESS_BUFFER_SIZE);
-      }
-
-      freeaddrinfo(result);
-    }
-  };
-
-  std::vector<std::string> split(std::string source, const std::string delimiters = "\r\n")
+#if 0
+  std::vector<std::string> split(std::string source, const std::string& delimiters = "\r\n")
   {
     std::vector<std::string> results = {};
     const char*              first   = source.data();
@@ -293,12 +216,8 @@ namespace cs260
 
     return results;
   }
+#endif
 }  // namespace cs260
-
-static bool comp_casei(const char a, const char b)
-{
-  return std::tolower(a) == std::tolower(b);
-}
 
 int main(int argc, const char* argv[])
 {
@@ -306,16 +225,65 @@ int main(int argc, const char* argv[])
 
   try
   {
-    const char* const          url            = argv[1];
+    const char* const          url            = "localhost";
     const NetworkContextHandle network_ctx    = NetworkContext::create();
-    const RequestURL           request_url    = RequestURL::create(url, PORT_STR);
-    const NetworkFamily        network_family = NetworkFamily::LOCAL;
+    const RequestURL           request_url    = RequestURL::create(url, k_SRSMServerPort);
+    const NetworkFamily        network_family = NetworkFamily::IPv4;
     const SocketHandle         socket         = network_ctx->createSocket(network_family, SocketType::TCP);
-    const Address              address        = network_ctx->makeAddress(network_family, request_url.ip_address, PORT);
+    const Address              address        = network_ctx->makeAddress(network_family, request_url.ip_address, k_SRSMServerPort);
 
+    if (!socket)
+    {
+      printf("Failed to create socket\n");
+      return -1;
+    }
 
+    while (!socket->connectTo(address))
+    {
+      std::printf("Waiting on server...\n");
+    }
 
+#if 0
+  retry:
+    try
+    {
+      socket->connectTo(address);
+    }
+    catch (const NetworkError& e)
+    {
+      (void)e;
+      std::printf("Waiting on server...\n");
+      goto retry;
+    }
+#endif
 
+    const int num_bytes_sent = socket->sendDataTo(address, "Hello", 5, SendToFlags::NONE);
+
+    assert(num_bytes_sent == 5);
+
+    //socket->shutdown(SocketShutdownAction::SEND);
+
+    char read_buffer[MESSAGE_BUFFER_SIZE];
+
+    while (true)
+    {
+      const auto received_data = socket->receiveDataFrom(read_buffer, MESSAGE_BUFFER_SIZE);
+
+      if (received_data.received_bytes_size == -2)
+      {
+        break;
+      }
+
+      if (received_data.received_bytes_size == 0)
+      {
+        break;
+      }
+
+      if (received_data.received_bytes_size > 0)
+      {
+        std::printf("Got '%.*s' from the server\n", received_data.received_bytes_size, read_buffer);
+      }
+    }
   }
   catch (const NetworkError& e)
   {

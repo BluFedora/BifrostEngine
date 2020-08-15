@@ -226,7 +226,7 @@ namespace bf
   };
 
   using AssetModelHandle = AssetHandle<Model>;
-}  // namespace bifrost
+}  // namespace bf
 
 BIFROST_META_REGISTER(BifrostShaderType){
  BIFROST_META_BEGIN()
@@ -256,7 +256,7 @@ BIFROST_META_REGISTER(bf::AssetTextureInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetTextureInfo>("AssetTextureInfo"),  //
-   ctor<StringRange, BifrostUUID>()                   //
+   ctor<String, std::size_t, BifrostUUID>()           //
    )
    BIFROST_META_END()}
 
@@ -264,7 +264,7 @@ BIFROST_META_REGISTER(bf::AssetShaderModuleInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetShaderModuleInfo>("AssetShaderModuleInfo"),  //
-   ctor<StringRange, BifrostUUID>(),
+   ctor<String, std::size_t, BifrostUUID>(),
    field("m_Type", &AssetShaderModuleInfo::m_Type))
    BIFROST_META_END()}
 
@@ -283,7 +283,7 @@ BIFROST_META_REGISTER(bf::AssetShaderProgramInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetShaderModuleInfo>("AssetShaderProgramInfo"),  //
-   ctor<StringRange, BifrostUUID>())
+   ctor<String, std::size_t, BifrostUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(bf::Material){
@@ -303,7 +303,7 @@ BIFROST_META_REGISTER(bf::AssetMaterialInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetMaterialInfo>("AssetMaterialInfo"),  //
-   ctor<StringRange, BifrostUUID>())
+   ctor<String, std::size_t, BifrostUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(bf::Model){
@@ -320,7 +320,7 @@ BIFROST_META_REGISTER(bf::AssetModelInfo)
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
      class_info<AssetModelInfo>("AssetModelInfo"),  //
-     ctor<StringRange, BifrostUUID>()               //
+     ctor<String, std::size_t, BifrostUUID>()       //
     )
   BIFROST_META_END()
 }

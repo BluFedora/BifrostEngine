@@ -24,21 +24,21 @@ target_include_directories(
 target_sources(
   BifrostMemory
   INTERFACE
-    "src/bifrost_c_allocator.cpp"
-    "src/bifrost_freelist_allocator.cpp"
-    "src/bifrost_imemory_manager.cpp"
-    "src/bifrost_linear_allocator.cpp"
-    "src/bifrost_memory_utils.c"
-    "src/bifrost_pool_allocator.cpp"
-    "src/bifrost_proxy_allocator.cpp"
-    "src/bifrost_stack_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_c_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_freelist_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_imemory_manager.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_linear_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_memory_utils.c"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_pool_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_proxy_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bifrost_stack_allocator.cpp"
 )
 
-set_target_properties(
-  BifrostMemory 
-  PROPERTIES
-    PUBLIC_HEADER include/bifrost/memory/bifrost_imemory_manager.hpp
-)
+# set_target_properties(
+#   BifrostMemory 
+#   PROPERTIES
+#     PUBLIC_HEADER include/bifrost/memory/bifrost_imemory_manager.hpp
+# )
 
 target_compile_features(
   BifrostMemory

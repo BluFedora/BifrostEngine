@@ -100,17 +100,18 @@ namespace bf
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
     template<typename T>
-    BifrostUUID indexAsset(StringRange relative_path)  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
+    BifrostUUID indexAsset(StringRange abs_path)  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
     {
       auto* const       type_info = meta::TypeInfo<T>::get();
       bool              create_new;
-      const BifrostUUID uuid = indexAssetImpl(relative_path, create_new, type_info);
+      const BifrostUUID uuid = indexAssetImpl(abs_path, create_new, type_info);
 
       if (create_new)
       {
-        T* const asset_handle = m_Memory.allocateT<T>(relative_path, uuid);
-        m_AssetMap.emplace(uuid, asset_handle);
+        T* const asset_handle    = m_Memory.allocateT<T>(abs_path, String_length(m_RootPath), uuid);
         asset_handle->m_TypeInfo = type_info;
+
+        m_AssetMap.emplace(uuid, asset_handle);
         markDirty(makeHandle(*asset_handle));
       }
 
@@ -140,7 +141,6 @@ namespace bf
       return handle;
     }
 
-    String     fullPath(const BaseAssetInfo& info) const;
     String     fullPath(const StringRange& relative_path) const;
     char*      metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
     TempBuffer metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const;
@@ -159,7 +159,7 @@ namespace bf
     Engine&           engine() const { return m_Engine; }
 
    private:
-    BifrostUUID indexAssetImpl(StringRange relative_path, bool& create_new, meta::BaseClassMetaInfo* type_info);
+    BifrostUUID indexAssetImpl(StringRange abs_path, bool& create_new, meta::BaseClassMetaInfo* type_info);
   };
 }  // namespace bifrost
 

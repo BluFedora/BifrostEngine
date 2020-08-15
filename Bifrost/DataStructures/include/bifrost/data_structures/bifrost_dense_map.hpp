@@ -13,7 +13,8 @@
 
 #include "bifrost_array.hpp"            /* Array<T>  */
 #include "bifrost_dense_map_handle.hpp" /* Handle<T> */
-#include <utility>                      /* move      */
+
+#include <utility> /* move */
 
 namespace bf
 {
@@ -81,12 +82,10 @@ namespace bf
 
      protected:
       Proxy* m_Position;
-      Proxy* m_End;
 
      public:
-      explicit iterator(Proxy* pos, Proxy* end) :
-        m_Position{pos},
-        m_End{end}
+      explicit iterator(Proxy* pos) :
+        m_Position{pos}
       {
       }
 
@@ -108,6 +107,11 @@ namespace bf
       {
         ++m_Position;
         return *this;
+      }
+
+      friend iterator operator+(const iterator& lhs, std::size_t offset)
+      {
+        return iterator(lhs.m_Position + offset);
       }
 
       bool operator==(const iterator& rhs) const
@@ -132,7 +136,7 @@ namespace bf
 
       pointer operator->()
       {
-        return &*m_Position;
+        return &**m_Position;
       }
 
       reference operator*()
@@ -288,15 +292,15 @@ namespace bf
 
     // NOTE(Shareef): STL Standard Container Functions
 
-    iterator                  begin() { return iterator(m_DenseArray.data(), m_DenseArray.data() + size()); }
-    const_iterator            begin() const { return iterator(m_DenseArray.data(), m_DenseArray.data() + size()); }
+    iterator                  begin() { return iterator(m_DenseArray.data()); }
+    const_iterator            begin() const { return iterator(m_DenseArray.data()); }
     TObject&                  at(const std::size_t index) { return m_DenseArray.at(index); }
     const TObject&            at(const std::size_t index) const { return m_DenseArray.at(index); }
     [[nodiscard]] std::size_t size() const { return m_DenseArray.size(); }
     TObject&                  operator[](const std::size_t index) { return m_DenseArray[index]; }
     const TObject&            operator[](const std::size_t index) const { return m_DenseArray[index]; }
-    iterator                  end() { return iterator(m_DenseArray.data() + size(), m_DenseArray.data() + size()); }
-    const_iterator            end() const { return iterator(m_DenseArray.data() + size(), m_DenseArray.data() + size()); }
+    iterator                  end() { return iterator(m_DenseArray.data() + size()); }
+    const_iterator            end() const { return iterator(m_DenseArray.data() + size()); }
     void                      reserve(std::size_t size) { m_DenseArray.reserve(size); }
     Proxy*                    data() { return m_DenseArray.data(); }
     const Proxy*              data() const { return m_DenseArray.data(); }
@@ -313,6 +317,6 @@ namespace bf
       return m_SparseIndices[this->m_NextSparse];
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_DENSE_MAP_HPP */

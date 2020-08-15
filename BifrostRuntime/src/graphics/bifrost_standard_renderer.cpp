@@ -1070,7 +1070,7 @@ namespace bf
      BIFROST_TEXTURE_UNKNOWN_SIZE,
      BIFROST_TEXTURE_UNKNOWN_SIZE);
 
-    const String full_path = engine.assets().fullPath(*this);
+    const String full_path = filePathAbs();
     Texture&     texture   = m_Payload.set<Texture>(device);
 
     texture.m_Handle = bfGfxDevice_newTexture(device, &create_params);

@@ -30,18 +30,21 @@ void Socket::bindTo(const Address& address) const
 
   if (err != 0)
   {
-    throw NetworkError(detail::APIFunction::FN_BIND); 
+    throw NetworkError(detail::APIFunction::FN_BIND);
   }
 }
 
-void Socket::connectTo(const Address& address) const
+bool Socket::connectTo(const Address& address) const
 {
   const int err = connect(m_Socket, &address.handle(), static_cast<detail::SocketLengthImpl>(sizeof(sockaddr)));
 
   if (err == SOCKET_ERROR)
   {
-    throw NetworkError(detail::APIFunction::FN_CONNECT); 
+    //throw NetworkError(detail::APIFunction::FN_CONNECT);
+    return false;
   }
+
+  return true;
 }
 
 void Socket::makeNonBlocking() const
@@ -52,12 +55,12 @@ void Socket::makeNonBlocking() const
 detail::BytesCountImpl Socket::sendDataTo(const Address& address, const char* data, int data_size, SendToFlags::type flags) const
 {
   const detail::BytesCountImpl num_bytes_sent = sendto(
-    m_Socket,
-    data,
-    data_size,
-    flags,
-    &address.handle(),
-    static_cast<detail::SocketLengthImpl>(sizeof(sockaddr)));
+   m_Socket,
+   data,
+   data_size,
+   flags,
+   &address.handle(),
+   static_cast<detail::SocketLengthImpl>(sizeof(sockaddr)));
 
   if (num_bytes_sent < 0)
   {
@@ -76,12 +79,12 @@ ReceiveResult Socket::receiveDataFrom(char* data, int data_size, ReceiveFromFlag
   if (m_Type == SocketType::UDP)
   {
     result.received_bytes_size = recvfrom(
-      m_Socket,
-      result.received_bytes,
-      data_size,
-      flags,
-      &result.source_address.handle(),
-      &result.source_address_size);
+     m_Socket,
+     result.received_bytes,
+     data_size,
+     flags,
+     &result.source_address.handle(),
+     &result.source_address_size);
   }
   else
   {
@@ -94,7 +97,14 @@ ReceiveResult Socket::receiveDataFrom(char* data, int data_size, ReceiveFromFlag
 
     if (!detail::isWaiting(error_code))
     {
-      throw NetworkError(detail::APIFunction::FN_RECVFROM);
+      if (detail::isConnectionClosed(error_code))
+      {
+        result.received_bytes_size = -2;
+      }
+      else
+      {
+        throw NetworkError(detail::APIFunction::FN_RECVFROM);
+      }
     }
   }
 

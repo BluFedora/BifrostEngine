@@ -11,6 +11,8 @@
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
+#include "bf/asset_io/bf_path_manip.hpp"  // path::*
+
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
 
@@ -131,7 +133,7 @@ namespace bf::editor
   {
     clear();
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -599,15 +601,14 @@ namespace bf::editor
       {
         if (enter_hit || ImGui::Button("Create"))
         {
-          const StringRange rel_dir_path       = ctx.editor->fileSystem().relativePath(m_FileEntry);
-          Assets&           assets             = ctx.editor->engine().assets();
-          const String      file_name          = "/" + (m_AssetName + m_Extension);
-          const String      relative_file_path = rel_dir_path + file_name;
-          const json::Value empty_object       = json::Object{};
+          Assets&           assets        = ctx.editor->engine().assets();
+          const String      file_name     = "/" + (m_AssetName + m_Extension);
+          const String      abs_file_path = m_FileEntry.full_path + file_name;
+          const json::Value empty_object  = json::Object{};
 
-          if (assets.writeJsonToFile(assets.fullPath(relative_file_path), empty_object))
+          if (assets.writeJsonToFile(assets.fullPath(abs_file_path), empty_object))
           {
-            assets.indexAsset<TAssetInfo>(relative_file_path);
+            assets.indexAsset<TAssetInfo>(abs_file_path);
             assets.saveAssets();
             ctx.editor->assetRefresh();
           }
@@ -788,7 +789,6 @@ namespace bf::editor
     colors[ImGuiCol_TextSelectedBg]     = ImVec4(0.44f, 0.58f, 0.61f, 0.35f);
     colors[ImGuiCol_DragDropTarget]     = ImVec4(0.52f, 0.56f, 0.63f, 0.90f);
 
-
     m_Actions.emplace("File.New.Project", ActionPtr(make<ShowDialogAction<NewProjectDialog>>()));
     m_Actions.emplace("File.Open.Project", ActionPtr(make<MemberAction<bool>>(&EditorOverlay::openProjectDialog)));
     m_Actions.emplace("File.Save.Project", ActionPtr(make<ASaveProject>()));
@@ -877,7 +877,7 @@ namespace bf::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    // ImGui::ShowDemoWindow();
+    ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
 
@@ -1290,7 +1290,7 @@ namespace bf::editor
 
     if (project_file)
     {
-      LinearAllocatorScope temp_mem_scope = {m_Engine->tempMemory()};
+      LinearAllocatorScope temp_mem_scope = m_Engine->tempMemory();
 
       if (currentlyOpenProject())
       {
@@ -1305,10 +1305,12 @@ namespace bf::editor
 
       const TempBuffer project_json_str = project_file.readAll(m_Engine->tempMemoryNoFree());
 
+#if 0
       bfLogPush("Open This Project:");
       bfLogPrint("Directory(%.*s)", int(project_dir.length()), project_dir.bgn);
       bfLogPrint("%.*s", int(project_json_str.size()), project_json_str.buffer());
       bfLogPop();
+#endif
 
       const AssetError err = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
 
@@ -1394,7 +1396,7 @@ namespace bf::editor
 
   struct FileExtensionHandler final
   {
-    using Callback = BifrostUUID (*)(Assets& engine, StringRange relative_path);
+    using Callback = BifrostUUID (*)(Assets& engine, StringRange full_path);
 
     StringRange ext;
     Callback    handler;
@@ -1413,9 +1415,9 @@ namespace bf::editor
   };
 
   template<typename T>
-  static BifrostUUID fileExtensionHandlerImpl(Assets& assets, StringRange relative_path)
+  static BifrostUUID fileExtensionHandlerImpl(Assets& assets, StringRange full_path)
   {
-    return assets.indexAsset<T>(relative_path);
+    return assets.indexAsset<T>(full_path);
   }
 
   static const FileExtensionHandler s_AssetHandlers[] =
@@ -1471,7 +1473,7 @@ namespace bf::editor
             bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
             bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
 
-            meta.entry->uuid = handler->handler(m_Engine->assets(), relative_path);
+            meta.entry->uuid = handler->handler(m_Engine->assets(), meta.file_name);
           }
           bfLogPop();
         }
@@ -1686,18 +1688,6 @@ namespace bf::editor
     }
   }
 
-  StringRange FileSystem::relativePath(const FileEntry& entry) const
-  {
-    static constexpr std::size_t OFFSET_FROM_SLASH = 1;
-
-    const std::size_t root_path_length = root().full_path.length();
-    const std::size_t full_path_length = entry.full_path.length();
-    const char* const path_bgn         = entry.full_path.cstr() + root_path_length + OFFSET_FROM_SLASH;
-    const char* const path_end         = path_bgn + (full_path_length - root_path_length - OFFSET_FROM_SLASH);
-
-    return {path_bgn, path_end};
-  }
-
   static StringRange bufferToStr(const TempBuffer& buffer)
   {
     return {buffer.buffer(), buffer.size()};
@@ -1712,7 +1702,7 @@ namespace bf::editor
     {
       Assets&              assets               = engine.assets();
       LinearAllocatorScope mem_scope            = engine.tempMemory();
-      const StringRange    old_rel_path         = relativePath(entry);
+      const StringRange    old_rel_path         = path::relative(root().full_path, entry.full_path);
       std::size_t          old_meta_name_length = 0;
       const char*          old_meta_name        = assets.metaFileName(tmp_no_free, old_rel_path, old_meta_name_length);
       const TempBuffer     old_meta_path        = assets.metaFullPath(tmp_no_free, old_meta_name);
@@ -2060,4 +2050,4 @@ namespace bf::editor
      },
      selectable);
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor

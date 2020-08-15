@@ -51,7 +51,6 @@ namespace bf::editor
 
     void        clear(String&& name, const String& path);
     FileEntry&  makeNode(String&& name, const String& path, bool is_file);
-    StringRange relativePath(const FileEntry& entry) const;
     void        rename(EditorOverlay& editor, FileEntry& entry, const StringRange& new_name) const;
     void        remove(FileEntry& entry);
     void        uiShow(EditorOverlay& editor);

@@ -14,6 +14,8 @@
 #include "bifrost/asset_io/bifrost_scene.hpp" /* Scene  */
 #include "bifrost/ecs/bifrost_entity.hpp"     /* Entity */
 
+#include <bifrost/debug/bifrost_dbg_logger.h>
+
 namespace bf
 {
   BaseComponent::BaseComponent(Entity& owner) :
@@ -39,5 +41,10 @@ namespace bf
   Engine& BaseComponent::engine() const
   {
     return scene().engine();
+  }
+
+  void bf::SpriteRenderer::onEnable(Engine& engine)
+  {
+    bfLogPrint("void bf::SpriteRenderer::onEnable(Engine& engine)");
   }
 }  // namespace bifrost

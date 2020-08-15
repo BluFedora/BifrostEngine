@@ -75,7 +75,7 @@ Address NetworkContext::makeAddress(NetworkFamily family, const char* address, u
 
     if (error != 1)
     {
-      std::printf("E: %s", address);
+      std::printf("NetworkContext::makeAddress: %s\n", address);
       throw NetworkError(detail::APIFunction::FN_INET_PTON);
     }
   }

@@ -25,7 +25,7 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/docs/bifrost_version.h.in"
   "${PROJECT_BINARY_DIR}/bifrost/bifrost_version.h"
 )
-include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/include)
+include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/include ${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include)
 
 # NOTE(Shareef): Print out some CMake Info.
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
@@ -153,6 +153,7 @@ include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
 include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/DemoApp/include)
+include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include)
 
 add_executable(
   BifrostEngineOLD
@@ -176,8 +177,9 @@ add_executable(
 
  "BifrostRuntime/src/graphics/bifrost_component_renderer.cpp"
 
- "${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/src/bf_painter.cpp"
- )
+ "${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/src/bf_painter.cpp" 
+ "${PROJECT_SOURCE_DIR}/Bifrost/Runtime/src/anim2D/bf_animation_system.cpp" 
+ "${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include/bf/asset_io/bf_spritesheet_asset.hpp" "Bifrost/Runtime/src/asset_io/bf_spritesheet_asset.cpp" "Bifrost/Runtime/src/asset_io/bf_asset_info.cpp" "Bifrost/Runtime/include/bf/asset_io/bf_path_manip.hpp" "Bifrost/Runtime/src/asset_io/bf_path_manip.cpp")
 
 # Bifrost Engine Submodules
 
@@ -197,7 +199,8 @@ target_link_libraries(
     BifrostMemory
     BifrostPlatform_shared
     BifrostGraphics_shared
-    BifrostAnimation2D_static
+    bfAnimation2D_shared
+    BF_Text_static
 )
 
 set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)
@@ -321,18 +324,19 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
+add_subdirectory(Bifrost/Anim2D)
 add_subdirectory(Bifrost/DataStructures)
 add_subdirectory(Bifrost/Math)
 add_subdirectory(Bifrost/Memory)
 add_subdirectory(Bifrost/Network)
 add_subdirectory(Bifrost/Platform)
 add_subdirectory(Bifrost/Runtime)
+add_subdirectory(Bifrost/Text)
 
 add_subdirectory(Games/DungeonSwiper)
 
 add_subdirectory(BifrostExperiments)
 add_subdirectory(BifrostGraphics)
 add_subdirectory(BifrostScript)
-add_subdirectory(BifrostAnimation2D)
 
 add_subdirectory(BuildTimeAnalyzerGUI)

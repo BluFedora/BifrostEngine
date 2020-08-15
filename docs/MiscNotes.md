@@ -19,6 +19,14 @@ There are various methods for IPC.
 - Win32: WinSock
 - Posix: Berkely API
 
+### Ports
+
+- They are 16bit so the range is 0 - 65535
+- Use Port 0 for the OS to choose.
+- Port #s 0 - 1000 are reserved for services.
+  - Ex: HTTP: 80, HTTPS: 443, SSH: 22
+- Ports we can use ( 1,000 to 6,535)
+
 ## Named Pipes
 
 > Pipes work on the same PC or across the network.

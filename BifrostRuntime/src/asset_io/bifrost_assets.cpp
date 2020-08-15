@@ -21,6 +21,8 @@
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
 #include "bifrost/memory/bifrost_linear_allocator.hpp"   /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"         //
+
+#include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/Platform.h"
 
 #include <filesystem> /* filesystem::* */
@@ -218,8 +220,9 @@ namespace bf
   {
   }
 
-  BifrostUUID Assets::indexAssetImpl(const StringRange relative_path, bool& create_new, meta::BaseClassMetaInfo* type_info)
+  BifrostUUID Assets::indexAssetImpl(const StringRange abs_path, bool& create_new, meta::BaseClassMetaInfo* type_info)
   {
+    const StringRange relative_path = path::relative(m_RootPath, abs_path);
     const auto it_name = m_NameToGUID.find(relative_path);
 
     if (it_name != m_NameToGUID.end())
@@ -268,11 +271,6 @@ namespace bf
   BaseAssetHandle Assets::makeHandle(BaseAssetInfo& info) const
   {
     return BaseAssetHandle(m_Engine, &info, info.payloadType());
-  }
-
-  String Assets::fullPath(const BaseAssetInfo& info) const
-  {
-    return fullPath(info.path());
   }
 
   String Assets::fullPath(const StringRange& relative_path) const
@@ -344,7 +342,7 @@ namespace bf
         return;
       }
 
-      const meta::MetaVariant asset_handle   = type_info->instantiate(m_Memory, StringRange(path), uuid);
+      const meta::MetaVariant asset_handle   = type_info->instantiate(m_Memory, path, String_length(m_RootPath), uuid);
       BaseAssetInfo*          asset_handle_p = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
       asset_handle_p->m_TypeInfo             = type_info;
 
@@ -475,7 +473,7 @@ namespace bf
       const LinearAllocatorScope asset_mem_scope       = {temp_alloc};
       BaseAssetInfo* const       info                  = asset.info();
       std::size_t                meta_file_name_length = 0u;
-      char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->path(), meta_file_name_length);
+      char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->filePathRel(), meta_file_name_length);
       const TempBuffer           meta_file_path        = metaFullPath(temp_alloc_no_free, {meta_file_name, meta_file_name + meta_file_name_length});
 
       {
@@ -488,9 +486,7 @@ namespace bf
 
         if (is_engine_asset)
         {
-          const String full_path = fullPath(*info);
-
-          writeJsonToFile(full_path, json_writer.document());
+          writeJsonToFile(info->filePathAbs(), json_writer.document());
         }
       }
       {
@@ -501,8 +497,10 @@ namespace bf
         info->serialize(m_Engine, json_writer);
 
         String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
+        String path_as_str    = info->filePathRel();
 
-        json_writer.serialize("Path", const_cast<String&>(info->path()));
+
+        json_writer.serialize("Path", path_as_str);
         json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
         json_writer.serialize("Type", type_info_name);
 

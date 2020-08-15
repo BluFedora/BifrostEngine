@@ -19,7 +19,17 @@
 #include "NetworkError.hpp" /* NetworkError                        */
 #include "Socket.hpp"       /* NetworkFamily, SocketShutdownAction */
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+
+#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
+// Link against 'ws2_32' from the command line.
+#elif defined(_MSC_VER)
+#pragma comment(lib, "ws2_32.lib")  // Ws2_32.dll
+#else
+#error Unsupported compiler remove this error if you can link against 'ws2_32.lib'.
+#endif
+
+#else
 
 #include <sys/ioctl.h>  // ioctl, FIONBIO
 #include <unistd.h>     // close
@@ -79,9 +89,9 @@ namespace detail
 
     const int err = ioctlsocket(socket, FIONBIO, &mode);
 
-    if (err != NO_ERROR) 
-    { 
-      throw NetworkError(APIFunction::FN_IO_CTL_SOCKET); 
+    if (err != NO_ERROR)
+    {
+      throw NetworkError(APIFunction::FN_IO_CTL_SOCKET);
     }
 #else
     char mode = 1;
@@ -108,7 +118,7 @@ namespace detail
   {
     switch (family)
     {
-      case NetworkFamily::LOCAL: return AF_UNIX;
+      case NetworkFamily::LOCAL: return AF_UNIX; // NOT ACTUALLY SUPPORTED BY WINDOWS.
       case NetworkFamily::IPv4: return AF_INET;
       case NetworkFamily::IPv6: return AF_INET6;
 
@@ -127,7 +137,7 @@ namespace detail
     {
       case SocketType::UDP: return SOCK_DGRAM;
       case SocketType::TCP: return SOCK_STREAM;
-      default:              return -1;
+      default: return -1;
     }
   }
 
@@ -136,15 +146,15 @@ namespace detail
     switch (socket_shutdown_action)
     {
 #if defined(_WIN32)
-      case SocketShutdownAction::RECEIVE:      return SD_RECEIVE;
-      case SocketShutdownAction::SEND:         return SD_SEND;
+      case SocketShutdownAction::RECEIVE: return SD_RECEIVE;
+      case SocketShutdownAction::SEND: return SD_SEND;
       case SocketShutdownAction::RECEIVE_SEND: return SD_BOTH;
 #else
-      case SocketShutdownAction::RECEIVE:      return SHUT_RD;
-      case SocketShutdownAction::SEND:         return SHUT_WR;
+      case SocketShutdownAction::RECEIVE: return SHUT_RD;
+      case SocketShutdownAction::SEND: return SHUT_WR;
       case SocketShutdownAction::RECEIVE_SEND: return SHUT_RDWR;
 #endif
-      default:                                 return -1;
+      default: return -1;
     }
   }
 
@@ -154,6 +164,15 @@ namespace detail
     return error_code == WSAEWOULDBLOCK;
 #else
     return (error_code == EAGAIN) || (error_code == EWOULDBLOCK);
+#endif
+  }
+
+  bool isConnectionClosed(int error_code)
+  {
+#if defined(_WIN32)
+    return error_code == WSAECONNRESET;
+#else
+    return error_code == ECONNREFUSED);
 #endif
   }
 

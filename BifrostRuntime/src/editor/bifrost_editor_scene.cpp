@@ -82,6 +82,10 @@ namespace bf::editor
 
       ImGui::PopStyleVar(1);
 
+      if (ImGui::Button(ICON_FA_ARROWS_ALT))
+      {
+      }
+
       const auto           color_buffer        = m_Camera->gpu_camera.composite_buffer;
       const auto           color_buffer_width  = bfTexture_width(color_buffer);
       const auto           color_buffer_height = bfTexture_height(color_buffer);
@@ -236,7 +240,7 @@ namespace bf::editor
       {
         m_MousePos = {float(mouse_evt.x), float(mouse_evt.y)};
 
-        if (m_IsDraggingMouse && mouse_evt.button_state & BIFROST_BUTTON_LEFT)
+        if (m_IsDraggingMouse && mouse_evt.button_state & BIFROST_BUTTON_MIDDLE)
         {
           const float newx = float(mouse_evt.x);
           const float newy = float(mouse_evt.y);
@@ -253,10 +257,10 @@ namespace bf::editor
 
           if (m_Camera)
           {
-            Camera_mouse(
-             &m_Camera->cpu_camera,
-             (newx - m_OldMousePos.x) * m_MouseLookSpeed,
-             (newy - m_OldMousePos.y) * -m_MouseLookSpeed);
+             Camera_mouse(
+              &m_Camera->cpu_camera,
+              (newx - m_OldMousePos.x) * m_MouseLookSpeed,
+              (newy - m_OldMousePos.y) * -m_MouseLookSpeed);
           }
 
           m_OldMousePos.x = newx;
@@ -275,58 +279,63 @@ namespace bf::editor
   {
     if (m_Camera)
     {
-      auto&       engine       = editor.engine();
-      auto&       io           = ImGui::GetIO();
-      const auto& window_mouse = io.MousePos;
-      Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+      auto& engine      = editor.engine();
+      auto& dbg_rendrer = engine.debugDraw();
 
-      if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+      if (m_IsSceneViewHovered)
       {
-        ImGuiViewport* const main_vp = ImGui::GetMainViewport();
+        auto&       io           = ImGui::GetIO();
+        const auto& window_mouse = io.MousePos;
+        Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
 
-        local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
-      }
-
-      local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
-
-      bfRay3D ray = bfRay3D_make(
-       m_Camera->cpu_camera.position,
-       Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
-
-      const auto scene = engine.currentScene();
-
-      if (scene)
-      {
-        ClickResult highlighted_node = {nullptr, {}};
-
-        scene->bvh().traverseConditionally([&ray, &highlighted_node](const BVHNode& node) {
-          Vec3f aabb_min;
-          Vec3f aabb_max;
-
-          memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
-          memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
-
-          const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
-
-          if (ray_cast_result.did_hit && bvh_node::isLeaf(node) && ray_cast_result.min_time > 0.0f && (!highlighted_node.first || highlighted_node.second.min_time > ray_cast_result.min_time))
-          {
-            highlighted_node.first  = &node;
-            highlighted_node.second = ray_cast_result;
-          }
-
-          return ray_cast_result.did_hit;
-        });
-
-        if (highlighted_node.first)
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
-          const BVHNode& node = *highlighted_node.first;
+          ImGuiViewport* const main_vp = ImGui::GetMainViewport();
 
-          engine.debugDraw().addAABB(
-           (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
-           Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
-           bfColor4u_fromUint32(BIFROST_COLOR_FIREBRICK),
-           0.0f,
-           true);
+          local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
+        }
+
+        local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
+
+        bfRay3D ray = bfRay3D_make(
+         m_Camera->cpu_camera.position,
+         Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
+
+        const auto scene = engine.currentScene();
+
+        if (scene)
+        {
+          ClickResult highlighted_node = {nullptr, {}};
+
+          scene->bvh().traverseConditionally([&ray, &highlighted_node](const BVHNode& node) {
+            Vec3f aabb_min;
+            Vec3f aabb_max;
+
+            memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
+            memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
+
+            const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
+
+            if (ray_cast_result.did_hit && bvh_node::isLeaf(node) && ray_cast_result.min_time > 0.0f && (!highlighted_node.first || highlighted_node.second.min_time > ray_cast_result.min_time))
+            {
+              highlighted_node.first  = &node;
+              highlighted_node.second = ray_cast_result;
+            }
+
+            return ray_cast_result.did_hit;
+          });
+
+          if (highlighted_node.first)
+          {
+            const BVHNode& node = *highlighted_node.first;
+
+            engine.debugDraw().addAABB(
+             (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
+             Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
+             bfColor4u_fromUint32(BIFROST_COLOR_FIREBRICK),
+             0.0f,
+             true);
+          }
         }
       }
 
@@ -362,9 +371,9 @@ namespace bf::editor
         {
           ImGuizmo::SetRect(float(m_SceneViewViewport.left()), float(m_SceneViewViewport.top()), float(m_SceneViewViewport.width()), float(m_SceneViewViewport.height()));
 
-          const ImGuizmo::OPERATION gizmo_op    = ImGuizmo::TRANSLATE;
-          auto&                     dbg_rendrer = engine.debugDraw();
-          Mat4x4                    delta_mat;
+          const ImGuizmo::OPERATION gizmo_op = ImGuizmo::TRANSLATE;
+
+          Mat4x4 delta_mat;
 
           selection.lastOfType<Entity*>([this, gizmo_op, &delta_mat](Entity* entity) {
             auto&  cam              = m_Camera->cpu_camera;

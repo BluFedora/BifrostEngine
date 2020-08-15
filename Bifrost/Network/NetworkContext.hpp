@@ -112,4 +112,83 @@ class NetworkContext final
   NetworkContext();
 };
 
+#include <string>
+
+struct RequestURL final
+{
+  static constexpr std::size_t ADDRESS_BUFFER_SIZE = std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN);
+
+  static RequestURL create(std::string url, unsigned short port)
+  {
+    const auto double_slash = std::find(url.begin(), url.end(), '/');
+
+    if (double_slash < url.end() && double_slash + 1 < url.end())
+    {
+      if (double_slash[1] == '/')
+      {
+        url = url.substr(double_slash - url.begin() + 2);
+      }
+    }
+
+    const auto last_slash = std::find(url.begin(), url.end(), '/');
+
+    auto        host    = url;
+    std::string request = "/";
+
+    if (last_slash != url.end())
+    {
+      host    = host.substr(0u, last_slash - url.begin());
+      request = std::string(&*last_slash, url.end() - last_slash);
+    }
+
+    return {host, request, port};
+  }
+
+  std::string host;
+  std::string request;
+  char        ip_address[ADDRESS_BUFFER_SIZE];
+
+ private:
+  RequestURL(std::string host_, std::string request_, unsigned short port_) :
+    host{std::move(host_)},
+    request{std::move(request_)},
+    ip_address{'\0'}
+  {
+    addrinfo hint;                // NOLINT(hicpp-member-init)
+    hint.ai_flags     = 0x0;      // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
+    hint.ai_family    = AF_INET;  // AF_UNSPEC; // Accepts both IPv4 and IPv6
+    hint.ai_socktype  = 0;        // Accepts any socket type.
+    hint.ai_protocol  = 0;        // Accepts any protocol.
+    hint.ai_addrlen   = 0;        // Required to be 0 by standard.
+    hint.ai_canonname = nullptr;  // Required to be nullptr by standard.
+    hint.ai_addr      = nullptr;  // Required to be nullptr by standard.
+    hint.ai_next      = nullptr;  // Required to be nullptr by standard.
+
+    char port[5 + 1];
+    std::snprintf(port, 5, "%u", port_);
+    port[5] = '\0';
+
+    addrinfo* result;
+    const int err = getaddrinfo(host.c_str(), port, &hint, &result);
+
+    if (err)
+    {
+      const char* error_str = gai_strerror(err);
+      std::printf("getaddrinfo(%s:%s): %s\n", host.c_str(), port, error_str);
+      // TODO(SR): throw NetworkError(NetworkErrorCode::FAILED_TO_CREATE_ADDRESS_FROM_URL, error_str);
+      return;
+    }
+
+    for (addrinfo* link = result; link; link = link->ai_next)
+    {
+      sockaddr_in*      remote = reinterpret_cast<struct sockaddr_in*>(link->ai_addr);
+      const void* const addr   = &remote->sin_addr;
+
+      inet_ntop(link->ai_family, addr, ip_address, ADDRESS_BUFFER_SIZE);
+    }
+
+    freeaddrinfo(result);
+  }
+};
+
 #endif /* NETWORK_CONTEXT_HPP */

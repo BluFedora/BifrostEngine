@@ -81,16 +81,17 @@ namespace bf
     friend class BaseBehavior;
 
    private:
-    Engine&                     m_Engine;
-    IMemoryManager&             m_Memory;
-    Array<Entity*>              m_RootEntities;
-    EntityList                  m_Entities;
-    ComponentStorage            m_ActiveComponents;
-    ComponentStorage            m_InactiveComponents;
-    Array<BaseBehavior*>        m_ActiveBehaviors;
-    BVH                         m_BVHTree;
-    SceneTransformSystem        m_TransformSystem;
-    Camera                      m_Camera;
+    Engine&              m_Engine;
+    IMemoryManager&      m_Memory;
+    Array<Entity*>       m_RootEntities;
+    EntityList           m_Entities;
+    ComponentStorage     m_ActiveComponents;
+    ComponentStorage     m_InactiveComponents;
+    Array<BaseBehavior*> m_ActiveBehaviors;
+    BVH                  m_BVHTree;
+    SceneTransformSystem m_TransformSystem;
+    Camera               m_Camera;
+    bfAnim2DScene*       m_AnimationScene;
 
    public:
     explicit Scene(Engine& engine);
@@ -154,7 +155,7 @@ namespace bf
   };
 
   using AssetSceneHandle = AssetHandle<Scene>;
-}  // namespace bifrost
+}  // namespace bf
 
 BIFROST_META_REGISTER(Quaternionf){
  BIFROST_META_BEGIN()
@@ -168,22 +169,18 @@ BIFROST_META_REGISTER(Quaternionf){
    )
    BIFROST_META_END()}
 
-/* This uses custom serialization cuz reasons.
-BIFROST_META_REGISTER(bifrost::Scene){
+BIFROST_META_REGISTER(bf::Scene){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   class_info<Scene>("Scene"),                               //
-   ctor<IMemoryManager&>(),                                  //
-   field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
+   class_info<Scene>("Scene")  //
    )
    BIFROST_META_END()}
-*/
 
 BIFROST_META_REGISTER(bf::AssetSceneInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetSceneInfo>("AssetSceneInfo"),  //
-   ctor<StringRange, BifrostUUID>())
+   ctor<String, std::size_t, BifrostUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(Vec3f)

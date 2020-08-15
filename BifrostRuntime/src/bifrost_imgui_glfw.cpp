@@ -13,8 +13,6 @@
 
 namespace bf::imgui
 {
-  using namespace bf;
-
   struct UIFrameData
   {
     bfBufferHandle vertex_buffer  = nullptr;
@@ -194,6 +192,7 @@ namespace bf::imgui
     io.BackendRendererName               = "Bifrost Graphics";
     io.IniFilename                       = nullptr;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
+    io.ConfigDockingAlwaysTabBar         = true;
 
     // Keyboard Setup
     io.KeyMap[ImGuiKey_Tab]         = BIFROST_KEY_TAB;
@@ -323,7 +322,7 @@ namespace bf::imgui
 
     // Renderer Setup: Font Texture
 
-    const float font_size = 20.0f;
+    const float font_size = 18.0f;
 
     //io.Fonts->AddFontDefault();
 
@@ -335,10 +334,11 @@ namespace bf::imgui
 
     ImFontConfig config;
     config.MergeMode = true;
-    //config.PixelSnapH = true;
+    // config.PixelSnapH = true;
     // config.GlyphMinAdvanceX = font_size;  // Use if you want to make the icon monospaced
 
-    const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    // THis is static sine ImGui says the data must persist as long as the font is alive (based on a comment in ImFontConfig::GlyphRanges)
+    static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
     io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, font_size - 5.0f, &config, icon_ranges);
 
     unsigned char* pixels;
@@ -453,27 +453,6 @@ namespace bf::imgui
 
     io.DeltaTime = delta_time;
 
-    if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange))
-    {
-      if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-      {
-        ImGuiViewport* const   main_viewport = ImGui::GetMainViewport();
-        bfWindow* const   window        = static_cast<bfWindow*>(main_viewport->PlatformHandle);
-        GLFWwindow* const      glfw_window   = static_cast<GLFWwindow*>(window->handle);
-        const ImGuiMouseCursor imgui_cursor  = ImGui::GetMouseCursor();
-
-        if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
-        {
-          glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        }
-        else
-        {
-          glfwSetCursor(glfw_window, s_MouseCursors[imgui_cursor] ? s_MouseCursors[imgui_cursor] : s_MouseCursors[ImGuiMouseCursor_Arrow]);
-          glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-      }
-    }
-
     ImGui::NewFrame();
   }
 
@@ -491,10 +470,33 @@ namespace bf::imgui
     bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);
   }
 
-  static void frameDraw(ImDrawData* draw_data, bfWindowSurfaceHandle window, UIFrameData& frame)
+  static void frameDraw(ImGuiViewport* viewport, ImDrawData* draw_data, bfWindowSurfaceHandle window, UIFrameData& frame)
   {
     if (draw_data)
     {
+      auto& io = ImGui::GetIO();
+
+      if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange))
+      {
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+          //ImGuiViewport* const   main_viewport = ImGui::GetMainViewport();
+          bfWindow* const        window        = static_cast<bfWindow*>(viewport->PlatformHandle);
+          GLFWwindow* const      glfw_window   = static_cast<GLFWwindow*>(window->handle);
+          const ImGuiMouseCursor imgui_cursor  = ImGui::GetMouseCursor();
+
+          if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
+          {
+            glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+          }
+          else
+          {
+            glfwSetCursor(glfw_window, s_MouseCursors[imgui_cursor] ? s_MouseCursors[imgui_cursor] : s_MouseCursors[ImGuiMouseCursor_Arrow]);
+            glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+          }
+        }
+      }
+
       const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(s_RenderData.ctx, window, 0u);
       const int                    fb_width     = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
       const int                    fb_height    = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
@@ -614,7 +616,7 @@ namespace bf::imgui
     const bfGfxFrameInfo info          = bfGfxContext_getFrameInfo(s_RenderData.ctx);
 
     ImGui::Render();
-    frameDraw(ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->grabFrameData(info.frame_index));
+    frameDraw(main_viewport, ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->grabFrameData(info.frame_index));
 
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -838,7 +840,7 @@ namespace bf::imgui
         const bfGfxFrameInfo  info        = bfGfxContext_getFrameInfo(s_RenderData.ctx);
 
         setupDefaultRenderPass(command_list, surface_tex);
-        frameDraw(vp->DrawData, surface, ui_render_data->grabFrameData(info.frame_index));
+        frameDraw(vp, vp->DrawData, surface, ui_render_data->grabFrameData(info.frame_index));
         bfGfxCmdList_endRenderpass(command_list);
 
         bfGfxCmdList_end(command_list);
