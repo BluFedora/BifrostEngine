@@ -1,14 +1,12 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 
+#include "bf/Gfx2DPainter.hpp"
+#include "main_demo.hpp"
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
 #include <bifrost/memory/bifrost_memory_utils.h>  // bfMegabytes
 #include <bifrost_imgui_glfw.hpp>
-
-#include "bifrost/bf_painter.hpp"  // Gfx2DPainter
-
-#include "main_demo.hpp"
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
@@ -482,6 +480,8 @@ int main(int argc, char* argv[])
           }
         };
 
+        static PainterFont* TEST_FONT = nullptr;
+
         main_window->frame_fn = [](bfWindow* window) {
           Engine* const engine = (Engine*)window->user_data;
 
@@ -515,7 +515,6 @@ int main(int argc, char* argv[])
           }
         }
 #endif
-
             imgui::beginFrame(
              renderer.surface(),
              float(window_width),
@@ -535,8 +534,13 @@ int main(int argc, char* argv[])
             engine->drawBegin(render_alpha);
             imgui::endFrame();
 
-#if 0
+#if 1
             auto& painter = engine->renderer2D();
+
+            if (!TEST_FONT)
+            {
+              TEST_FONT = new PainterFont(engine->mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
+            }
 
             int w, h;
             bfWindow_getSize(window, &w, &h);
@@ -589,6 +593,11 @@ int main(int argc, char* argv[])
             }
 
             painter.pushPolyline(sine_wave, UIIndexType(bfCArraySize(sine_wave)), 2.0f, PolylineJoinStyle::ROUND, PolylineEndStyle::ROUND, BIFROST_COLOR_MOCCASIN, false);
+
+            painter.pushText(
+             Vector2f{100.0f, 100.0f},
+             u8"Hello this is\nsome Test\nText ;)∑𒄨Ö",
+             TEST_FONT);
 #endif
 
             engine->drawEnd();
@@ -597,6 +606,8 @@ int main(int argc, char* argv[])
         };
 
         bfPlatformDoMainLoop(main_window);
+
+        delete TEST_FONT;
 
         vm.stackDestroyHandle(update_fn);
         imgui::shutdown();
