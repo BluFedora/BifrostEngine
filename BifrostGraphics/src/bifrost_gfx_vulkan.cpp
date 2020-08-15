@@ -1406,7 +1406,8 @@ namespace
   {
     if (buffers)
     {
-      bfGfxDeviceHandle logical_device = self->logical_device;
+      const bfGfxDeviceHandle logical_device = self->logical_device;
+
       vkFreeCommandBuffers(logical_device->handle, self->command_pools[0], num_buffers, buffers);
 
       if (free_array)
@@ -2235,6 +2236,11 @@ static void bfTexture__setLayout(bfTextureHandle self, BifrostImageLayout layout
 
 static void bfTexture__createImage(bfTextureHandle self)
 {
+  if (self->tex_image)
+  {
+    return;
+  }
+
   VkImageCreateInfo create_image;
   create_image.sType                 = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
   create_image.pNext                 = nullptr;
@@ -2307,6 +2313,11 @@ static void bfTexture__createImage(bfTextureHandle self)
 
 static void bfTexture__allocMemory(bfTextureHandle self)
 {
+  if (self->tex_memory)
+  {
+    return;
+  }
+
   // TODO: Switch to Pool Allocator?
 
   VkMemoryRequirements memRequirements;
@@ -2345,7 +2356,48 @@ bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
   return bfFalse;
 }
 
-void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
+bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3])
+{
+  const bool is_indefinite =
+   self->image_width == BIFROST_TEXTURE_UNKNOWN_SIZE ||
+   self->image_height == BIFROST_TEXTURE_UNKNOWN_SIZE ||
+   self->image_depth == BIFROST_TEXTURE_UNKNOWN_SIZE;
+
+  assert(!is_indefinite && "Texture_setData: The texture dimensions should be defined by this point.");
+
+  self->image_miplevels = self->image_miplevels ? 1 + uint32_t(std::floor(std::log2(float(std::max(std::max(self->image_width, self->image_height), self->image_depth))))) : 1;
+
+  bfTexture__createImage(self);
+  bfTexture__allocMemory(self);
+
+  if (!self->tex_view)
+  {
+    self->tex_view = bfCreateImageView2D(self->parent->handle, self->tex_image, self->tex_format, bfTexture__aspect(self), self->image_miplevels);
+  }
+
+  if (pixels)
+  {
+    // TODO(SR): This should not be creating a local temp buffer, rather this staging buffer should be some kind of reused resoruce.
+
+    bfBufferCreateParams buffer_params;
+    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+    buffer_params.allocation.size       = pixels_length;
+    buffer_params.usage                 = BIFROST_BUF_TRANSFER_SRC;
+
+    const bfBufferHandle staging_buffer = bfGfxDevice_newBuffer(self->parent, &buffer_params);
+
+    bfBuffer_map(staging_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+    bfBuffer_copyCPU(staging_buffer, 0, pixels, pixels_length);
+    bfBuffer_unMap(staging_buffer);
+
+    bfTexture_loadBuffer(self, staging_buffer, offset, sizes);
+    bfGfxDevice_release(self->parent, staging_buffer);
+  }
+
+  return bfTrue;
+}
+
+void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3])
 {
   bfTexture__setLayout(self, BIFROST_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
@@ -2360,11 +2412,8 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount     = 1;
 
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {
-     uint32_t(self->image_width),
-     uint32_t(self->image_height),
-     uint32_t(self->image_depth)};
+    region.imageOffset = {offset[0], offset[1], offset[2]};
+    region.imageExtent = {sizes[0], sizes[1], sizes[2]};
 
     vkCmdCopyBufferToImage(
      transient_cmd.handle,
@@ -2378,8 +2427,8 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
 
   if (self->image_miplevels > 1)
   {
-    int32_t mip_width  = int32_t(self->image_width);
-    int32_t mip_height = int32_t(self->image_height);
+    int32_t mip_width  = self->image_width;
+    int32_t mip_height = self->image_height;
 
     const auto copy_cmds = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
     {
@@ -2491,41 +2540,6 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer)
   {
     bfTexture__setLayout(self, BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
   }
-}
-
-bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length)
-{
-  const bool is_indefinite =
-   self->image_width == BIFROST_TEXTURE_UNKNOWN_SIZE ||
-   self->image_height == BIFROST_TEXTURE_UNKNOWN_SIZE ||
-   self->image_depth == BIFROST_TEXTURE_UNKNOWN_SIZE;
-
-  assert(!is_indefinite && "Texture_setData: The texture dimensions should be defined by this point.");
-
-  self->image_miplevels = self->image_miplevels ? 1 + uint32_t(std::floor(std::log2(float(std::max(std::max(self->image_width, self->image_height), self->image_depth))))) : 1;
-
-  bfTexture__createImage(self);
-  bfTexture__allocMemory(self);
-  self->tex_view = bfCreateImageView2D(self->parent->handle, self->tex_image, self->tex_format, bfTexture__aspect(self), self->image_miplevels);
-
-  if (pixels)
-  {
-    bfBufferCreateParams buffer_params;
-    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
-    buffer_params.allocation.size       = pixels_length;
-    buffer_params.usage                 = BIFROST_BUF_TRANSFER_SRC;
-
-    const bfBufferHandle staging_buffer = bfGfxDevice_newBuffer(self->parent, &buffer_params);
-
-    bfBuffer_map(staging_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
-    bfBuffer_copyCPU(staging_buffer, 0, pixels, pixels_length);
-    bfBuffer_unMap(staging_buffer);
-
-    bfTexture_loadBuffer(self, staging_buffer);
-    bfGfxDevice_release(self->parent, staging_buffer);
-  }
-
-  return bfTrue;
 }
 
 void bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties)

@@ -90,6 +90,14 @@ bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
   return bfFalse;
 }
 
+bfBool32 bfTexture_loadData(bfTextureHandle self, const void* pixels, size_t pixels_length)
+{
+  const int32_t  offset[3] = {0u, 0u, 0u};
+  const uint32_t sizes[3]  = {bfTexture_width(self), bfTexture_height(self), bfTexture_depth(self)};
+
+  return bfTexture_loadDataRange(self, pixels, pixels_length, offset, sizes);
+}
+
 bfRenderpassInfo bfRenderpassInfo_init(uint16_t num_subpasses)
 {
   assert(num_subpasses < BIFROST_GFX_RENDERPASS_MAX_SUBPASSES);

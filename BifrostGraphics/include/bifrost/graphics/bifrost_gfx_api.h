@@ -30,6 +30,13 @@
 #if __cplusplus
 extern "C" {
 #endif
+/* Constants */
+
+enum
+{
+  k_bfGfxMaxFramesDelay = 3, /*!< The max number of frames the CPU and GPU can be out of synce by. */
+};
+
 /* Forward Declarations */
 struct bfWindow_t;
 
@@ -326,7 +333,16 @@ BIFROST_GFX_API bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHa
 BIFROST_GFX_API bfTextureHandle       bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
 BIFROST_GFX_API bfTextureHandle       bfGfxDevice_requestSurface(bfWindowSurfaceHandle window);
 BIFROST_GFX_API bfDeviceLimits        bfGfxDevice_limits(bfGfxDeviceHandle self);
-BIFROST_GFX_API void                  bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
+
+/*!
+ * @brief
+ *   Freeing a null handle is valid.
+ *
+ * @param self 
+ * @param resource 
+ * @return 
+*/
+BIFROST_GFX_API void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
 /* Buffer */
 BIFROST_GFX_API bfBufferSize bfBuffer_size(bfBufferHandle self);
@@ -474,8 +490,9 @@ BIFROST_GFX_API uint32_t           bfTexture_depth(bfTextureHandle self);
 BIFROST_GFX_API uint32_t           bfTexture_numMipLevels(bfTextureHandle self);
 BIFROST_GFX_API BifrostImageLayout bfTexture_layout(bfTextureHandle self);
 BIFROST_GFX_API bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
-BIFROST_GFX_API void               bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
-BIFROST_GFX_API bfBool32           bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length);
+BIFROST_GFX_API bfBool32           bfTexture_loadData(bfTextureHandle self, const void* pixels, size_t pixels_length);
+BIFROST_GFX_API bfBool32           bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3]);
+BIFROST_GFX_API void               bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3]);
 BIFROST_GFX_API void               bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties);
 
 /* CommandList */
