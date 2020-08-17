@@ -15,4 +15,14 @@ namespace bf::path
 
     return StringRange();
   }
+
+  String append(StringRange directory, StringRange rel_path)
+  {
+    String ret = directory;
+
+    ret.append('/');
+    ret.append(rel_path);
+
+    return ret;
+  }
 }  // namespace bf::path

@@ -601,12 +601,11 @@ namespace bf::editor
       {
         if (enter_hit || ImGui::Button("Create"))
         {
-          Assets&           assets        = ctx.editor->engine().assets();
-          const String      file_name     = "/" + (m_AssetName + m_Extension);
-          const String      abs_file_path = m_FileEntry.full_path + file_name;
-          const json::Value empty_object  = json::Object{};
+          Assets&      assets        = ctx.editor->engine().assets();
+          const String file_name     = "/" + (m_AssetName + m_Extension);
+          const String abs_file_path = m_FileEntry.full_path + file_name;
 
-          if (assets.writeJsonToFile(assets.fullPath(abs_file_path), empty_object))
+          if (assets.writeJsonToFile(abs_file_path, json::Object{}))
           {
             assets.indexAsset<TAssetInfo>(abs_file_path);
             assets.saveAssets();
@@ -1972,7 +1971,7 @@ namespace bf::editor
       ImGui::EndMenuBar();
     }
 
-    auto&             selection      = m_IsLocked ? m_LockedSelection : editor.selection().selectables();
+    const auto&       selection      = m_IsLocked ? m_LockedSelection : editor.selection().selectables();
     const std::size_t selection_size = selection.size();
 
     m_Serializer.beginDocument(false);

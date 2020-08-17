@@ -22,8 +22,8 @@
 #include "bifrost/memory/bifrost_linear_allocator.hpp"   /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"         //
 
-#include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/Platform.h"
+#include "bf/asset_io/bf_path_manip.hpp"
 
 #include <filesystem> /* filesystem::* */
 
@@ -223,7 +223,7 @@ namespace bf
   BifrostUUID Assets::indexAssetImpl(const StringRange abs_path, bool& create_new, meta::BaseClassMetaInfo* type_info)
   {
     const StringRange relative_path = path::relative(m_RootPath, abs_path);
-    const auto it_name = m_NameToGUID.find(relative_path);
+    const auto        it_name       = m_NameToGUID.find(relative_path);
 
     if (it_name != m_NameToGUID.end())
     {
@@ -273,18 +273,6 @@ namespace bf
     return BaseAssetHandle(m_Engine, &info, info.payloadType());
   }
 
-  String Assets::fullPath(const StringRange& relative_path) const
-  {
-    String full_path = {m_RootPath, String_length(m_RootPath)};
-
-    full_path.reserve(full_path.size() + 1 + relative_path.length());
-
-    full_path.append('/');
-    full_path.append(relative_path);
-
-    return full_path;
-  }
-
   char* Assets::metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const
   {
     char* const buffer     = string_utils::fmtAlloc(allocator, &out_string_length, "%.*s%s", int(relative_path.length()), relative_path.begin(), META_FILE_EXTENSION);
@@ -323,7 +311,7 @@ namespace bf
 
       m_Memory.deallocate(buffer);
 
-      const String             path      = loaded_data.get<String>("Path");
+      const String             rel_path  = loaded_data.get<String>("Path");
       const String             uuid_str  = loaded_data.get<String>("UUID");
       const String             type      = loaded_data.get<String>("Type");
       meta::BaseClassMetaInfo* type_info = meta::TypeInfoFromName(std::string_view{type.begin(), type.length()});
@@ -339,22 +327,20 @@ namespace bf
       if (bfUUID_isEmpty(&uuid))
       {
         std::printf("[Assets::loadMeta]: WARNING failed to load UUID.");
+
+        // bfLogError()
         return;
       }
 
-      const meta::MetaVariant asset_handle   = type_info->instantiate(m_Memory, path, String_length(m_RootPath), uuid);
+      //const String rel_path = metaPathToRelPath(meta_file_name);
+      const String abs_path = relPathToAbsPath(rel_path);
+
+      const meta::MetaVariant asset_handle   = type_info->instantiate(m_Memory, abs_path, String_length(m_RootPath), uuid);
       BaseAssetInfo*          asset_handle_p = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
       asset_handle_p->m_TypeInfo             = type_info;
 
-#if 0
-      if (std::strlen(asset_handle_p->uuid().as_string.data) < 36)
-      {
-        __debugbreak();
-      }
-#endif
-
       m_AssetMap.emplace(uuid, asset_handle_p);
-      m_NameToGUID.emplace(path.c_str(), uuid);
+      m_NameToGUID.emplace(rel_path, uuid);
 
       JsonSerializerReader reader{*this, m_Memory, loaded_data};
 
@@ -408,7 +394,6 @@ namespace bf
       m_RootPath[path_length++] = static_cast<char>(path_char);
     }
 
-    
     const std::size_t new_root_path_length = file::canonicalizePath(m_RootPath);
     String_resize(&m_RootPath, new_root_path_length);
 
@@ -499,7 +484,6 @@ namespace bf
         String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
         String path_as_str    = info->filePathRel();
 
-
         json_writer.serialize("Path", path_as_str);
         json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
         json_writer.serialize("Type", type_info_name);
@@ -525,6 +509,24 @@ namespace bf
     m_DirtyAssetList.clear();
   }
 
+  String Assets::relPathToAbsPath(const StringRange& rel_path) const
+  {
+    return path::append({m_RootPath, String_length(m_RootPath)}, rel_path);
+  }
+
+#if 0 // TODO(SR): This function cannot work as intended since it does not know the diff between a '.' for a dir separator vs in the actual file name...
+  String Assets::metaPathToRelPath(const StringRange& meta_path)
+  {
+    String rel_path = {meta_path.begin(), meta_path.length() - sizeof(META_FILE_EXTENSION) + 1};  // The + 1 accounts for the nul terminator.
+
+    std::transform(rel_path.begin(), rel_path.end(), rel_path.begin(), [](const char character) {
+      return character == '.' ? '/' : character;
+    });
+
+    return rel_path;
+  }
+#endif
+
   Assets::~Assets()
   {
     if (m_RootPath)
@@ -532,4 +534,4 @@ namespace bf
       String_delete(m_RootPath);
     }
   }
-}  // namespace bifrost
+}  // namespace bf

@@ -1,8 +1,0 @@
-{
-    "UUID" : "EB721EFA-1BE4-4BA9-BF6A-75C0D56E6E60",
-    "Path" : "/Shaders/basic_material.vert.spv",
-    "m_Type" : {
-        "__EnumValue__" : 0
-    },
-    "Type" : "AssetShaderModuleInfo"
-}

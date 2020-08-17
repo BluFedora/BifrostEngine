@@ -147,6 +147,8 @@ namespace bf
       long  file_data_size;
       char* file_data = LoadFileIntoMemory(full_path.cstr(), &file_data_size);
 
+      // TODO: Check file_data for null lol
+
       Array<StandardVertex> vertices{engine.tempMemoryNoFree()};
       loadObj(engine.tempMemoryNoFree(), vertices, file_data, file_data_size);
 

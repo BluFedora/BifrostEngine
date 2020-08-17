@@ -5,7 +5,7 @@
 #include <bifrost/memory/bifrost_freelist_allocator.hpp>
 #include <bifrost/memory/bifrost_stl_allocator.hpp>
 
-#include <bifrost/platform/bifrost_platform_gl.h>
+#include <bf/platform/bf_platform_gl.h>
 
 #include <stb/stb_image.h>
 
@@ -1465,7 +1465,7 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
   {
     glBindTexture(GL_TEXTURE_2D, self->tex_image);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self->image_width, self->image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexSubImage(GL_TEXTURE_2D, offset[2], offset[0], offset[1], sizes[0], sizes[1], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexSubImage2D(GL_TEXTURE_2D, offset[2], offset[0], offset[1], sizes[0], sizes[1], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     if (self->image_miplevels > 1)
     {

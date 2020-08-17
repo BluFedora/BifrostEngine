@@ -318,10 +318,11 @@ void Engine::drawEnd()
 {
   const bfTextureHandle main_surface = renderer().surface();
   auto* const           cmd_list     = renderer().mainCommandList();
+  auto&                 painter      = renderer2D();
 
   for (auto& state : m_StateMachine)
   {
-    state.onDraw2D(*this, renderer2D());
+    state.onDraw2D(*this, painter);
   }
 
   renderer2D().render(cmd_list, bfTexture_width(main_surface), bfTexture_height(main_surface));

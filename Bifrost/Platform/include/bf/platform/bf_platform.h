@@ -165,6 +165,7 @@ BIFROST_PLATFORM_API void             bfWindow_setTitle(bfWindow* self, const ch
 BIFROST_PLATFORM_API void             bfWindow_setAlpha(bfWindow* self, float value);
 BIFROST_PLATFORM_API void             bfPlatformDestroyWindow(bfWindow* window);
 BIFROST_PLATFORM_API void             bfPlatformQuit(void);
+BIFROST_PLATFORM_API float            bfPlatformGetDPIScale(void); // TODO(SR): Bad API
 BIFROST_PLATFORM_API bfPlatformGfxAPI bfPlatformGetGfxAPI(void);
 BIFROST_PLATFORM_API void*            bfPlatformDefaultAllocator(void* ptr, size_t old_size, size_t new_size, void* user_data);
 BIFROST_PLATFORM_API void*            bfPlatformAlloc(size_t size);

@@ -9,13 +9,13 @@
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
-                        "uuid" : "F48C66CD-CF62-40E9-B1C6-B2D922444E84"
+                        "uuid" : "BD36C35C-DB03-46D5-A079-018D70A8EEAE"
                     },
                     "m_EntityRef" : {
                         "uuid" : "261362FE-4497-479E-B128-31D707FEB3B0"
                     },
                     "m_Model" : {
-                        "uuid" : "EA6126CB-EB42-4407-8C33-90E558A0F9B8"
+                        "uuid" : "BBFF69EC-85DF-4670-A8E3-1E7878F01B3D"
                     },
                     "__Active__" : true
                 }

@@ -241,6 +241,16 @@ namespace bf
       ::String_resize(&m_Handle, new_size);
     }
 
+    char* begin()
+    {
+      return m_Handle;
+    }
+
+    char* end()
+    {
+      return m_Handle + length();
+    }
+
     const char* begin() const
     {
       return m_Handle;
@@ -426,7 +436,7 @@ namespace bf
     StringLink* tail;
     std::size_t size;
   };
-}  // namespace bifrost
+}  // namespace bf
 
 namespace std
 {
@@ -532,6 +542,6 @@ namespace bf::string_utils
   // Caller is responsible for freeing memory from this.
   // TODO(SR) FIX-ME: This is a bad abstraction since it returns a const view into a string that is OWNED by that view.
   StringRange clone(IMemoryManager& allocator, const StringRange& string);
-}  // namespace bifrost::string_utils
+}  // namespace bf::string_utils
 
 #endif /* BIFROST_STRING_HPP */

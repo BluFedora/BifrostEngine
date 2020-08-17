@@ -1,0 +1,8 @@
+{
+    "UUID" : "82616B1E-2DB5-40EC-B5B8-EDB855902FEE",
+    "Path" : "Shaders/basic_material.frag.spv",
+    "m_Type" : {
+        "__EnumValue__" : 0
+    },
+    "Type" : "AssetShaderModuleInfo"
+}

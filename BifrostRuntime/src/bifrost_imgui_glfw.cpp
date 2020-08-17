@@ -183,7 +183,8 @@ namespace bf::imgui
   {
     ImGui::CreateContext(nullptr);
 
-    ImGuiIO& io = ImGui::GetIO();
+    const float dpi_scale_factor = bfPlatformGetDPIScale();
+    ImGuiIO&    io               = ImGui::GetIO();
 
     // io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset;
 
@@ -322,8 +323,10 @@ namespace bf::imgui
 
     // Renderer Setup: Font Texture
 
-    const float font_size = 18.0f;
+    const float font_size = 18.0f * dpi_scale_factor;
 
+    ImGui::GetStyle().ScaleAllSizes(dpi_scale_factor);
+    
     //io.Fonts->AddFontDefault();
 
     io.Fonts->AddFontFromFileTTF(
@@ -481,9 +484,9 @@ namespace bf::imgui
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
           //ImGuiViewport* const   main_viewport = ImGui::GetMainViewport();
-          bfWindow* const        window        = static_cast<bfWindow*>(viewport->PlatformHandle);
-          GLFWwindow* const      glfw_window   = static_cast<GLFWwindow*>(window->handle);
-          const ImGuiMouseCursor imgui_cursor  = ImGui::GetMouseCursor();
+          bfWindow* const        window       = static_cast<bfWindow*>(viewport->PlatformHandle);
+          GLFWwindow* const      glfw_window  = static_cast<GLFWwindow*>(window->handle);
+          const ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
 
           if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
           {
@@ -790,7 +793,7 @@ namespace bf::imgui
 
   static void ImGui_RendererCreateWindow(ImGuiViewport* vp)
   {
-    bfWindow* const        bf_window      = (bfWindow*)vp->PlatformHandle;
+    bfWindow* const             bf_window      = (bfWindow*)vp->PlatformHandle;
     const bfWindowSurfaceHandle surface        = bfGfxContext_createWindow(s_RenderData.ctx, bf_window);
     const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo(s_RenderData.ctx);
     UIRenderData* const         ui_render_data = new UIRenderData(info.num_frame_indices);

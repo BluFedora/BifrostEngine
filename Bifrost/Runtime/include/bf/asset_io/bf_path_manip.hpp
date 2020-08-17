@@ -5,7 +5,12 @@
 
 namespace bf::path
 {
+  //
+  // All of these functions assume a 'canonocalized' path
+  //
+
   StringRange relative(StringRange abs_root_path, StringRange abs_sub_path);
+  String      append(StringRange directory, StringRange rel_path);
 }
 
 #endif /*  */

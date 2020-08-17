@@ -429,6 +429,12 @@ bfWindow* bfPlatformCreateWindow(const char* title, int width, int height, uint3
     glfwWindowHint(GLFW_FOCUSED, flags & BIFROST_WINDOW_FLAG_IS_FOCUSED ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, flags & BIFROST_WINDOW_FLAG_IS_FOCUSED_ON_SHOW ? GLFW_TRUE : GLFW_FALSE);
 
+#if _WIN32
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+#elif __APPLE__
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+#endif
+
     GLFWwindow* const glfw_handle = glfwCreateWindow(width, height, title, NULL, is_opengl && s_MainWindow ? s_MainWindow->handle : NULL);
 
     window->handle        = glfw_handle;
@@ -538,6 +544,23 @@ void bfPlatformDestroyWindow(bfWindow* window)
 void bfPlatformQuit(void)
 {
   glfwTerminate();
+}
+
+float bfPlatformGetDPIScale(void)
+{
+  float        result  = 1.0f;
+  GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+  float        xscale, yscale;
+
+  glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+
+  if (xscale > 1.0f || yscale > 1.0f)
+  {
+    result = xscale;
+    // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+  }
+
+  return result;
 }
 
 #if GLFW_INCLUDE_VULKAN

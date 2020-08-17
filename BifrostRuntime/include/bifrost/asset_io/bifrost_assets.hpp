@@ -141,7 +141,6 @@ namespace bf
       return handle;
     }
 
-    String     fullPath(const StringRange& relative_path) const;
     char*      metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
     TempBuffer metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const;
     void       loadMeta(StringRange meta_file_name);
@@ -151,6 +150,11 @@ namespace bf
     bool       writeJsonToFile(const StringRange& path, const json::Value& value) const;
     void       saveAssets();
     void       clearDirtyList();
+
+    // Path Conversions
+
+    String relPathToAbsPath(const StringRange& rel_path) const;
+    // String metaPathToRelPath(const StringRange& meta_path);
 
     ~Assets();
 
