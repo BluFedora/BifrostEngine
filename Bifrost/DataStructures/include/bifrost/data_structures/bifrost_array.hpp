@@ -17,7 +17,8 @@
 #include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
 #include "bifrost_array_t.h"                          /* bfArray_*            */
 
-#include <cassert> /* assert */
+#include <iterator> /* reverse_iterator */
+#include <cassert>  /* assert           */
 
 namespace bf
 {
@@ -100,21 +101,35 @@ namespace bf
       return *static_cast<IMemoryManager*>(bfArray_userData(rawData()));
     }
 
-    [[nodiscard]] T*          begin() { return static_cast<T*>(::bfArray_begin(rawData())); }
-    [[nodiscard]] const T*    begin() const { return static_cast<const T*>(::bfArray_begin(rawData())); }
-    [[nodiscard]] T*          end() { return static_cast<T*>(::bfArray_end(rawData())); }
-    [[nodiscard]] const T*    end() const { return static_cast<const T*>(::bfArray_end(rawData())); }
-    [[nodiscard]] T*          rbegin() { return &back(); }
-    [[nodiscard]] const T*    rbegin() const { return &back(); }
-    [[nodiscard]] T*          rend() { return begin() - 1; }
-    [[nodiscard]] const T*    rend() const { return begin() - 1; }
-    [[nodiscard]] T&          back() { return *static_cast<T*>(::bfArray_back(rawData())); }
-    [[nodiscard]] const T&    back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }
-    [[nodiscard]] std::size_t size() const { return ::bfArray_size(rawData()); }
-    [[nodiscard]] std::size_t capacity() const { return ::bfArray_capacity(rawData()); }
-    [[nodiscard]] T*          data() { return begin(); }
-    [[nodiscard]] const T*    data() const { return begin(); }
-    [[nodiscard]] bool        isEmpty() const { return size() == 0u; }
+    using iterator               = T*;
+    using const_iterator         = const T*;
+    using reverse_iterator       = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using reference              = T&;
+    using const_reference        = const T&;
+    using pointer                = T*;
+    using const_pointer          = const T*;
+
+    [[nodiscard]] iterator               begin() { return static_cast<T*>(::bfArray_begin(rawData())); }
+    [[nodiscard]] iterator               end() { return static_cast<T*>(::bfArray_end(rawData())); }
+    [[nodiscard]] const_iterator         begin() const { return static_cast<T*>(::bfArray_begin(rawData())); }
+    [[nodiscard]] const_iterator         end() const { return static_cast<T*>(::bfArray_end(rawData())); }
+    [[nodiscard]] const_iterator         cbegin() const { return static_cast<const T*>(::bfArray_begin(rawData())); }
+    [[nodiscard]] const_iterator         cend() const { return static_cast<const T*>(::bfArray_end(rawData())); }
+    [[nodiscard]] reverse_iterator       rbegin() { return std::make_reverse_iterator(end()); }
+    [[nodiscard]] reverse_iterator       rend() { return std::make_reverse_iterator(begin()); }
+    [[nodiscard]] const_reverse_iterator rbegin() const { return std::make_reverse_iterator(end()); }
+    [[nodiscard]] const_reverse_iterator rend() const { return std::make_reverse_iterator(begin()); }
+    [[nodiscard]] const_reverse_iterator crbegin() const { std::make_reverse_iterator(end()); }
+    [[nodiscard]] const_reverse_iterator crend() const { return std::make_reverse_iterator(begin()); }
+    [[nodiscard]] reference              back() { return *static_cast<T*>(::bfArray_back(rawData())); }
+    [[nodiscard]] const_reference        back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }
+    [[nodiscard]] std::size_t            size() const { return ::bfArray_size(rawData()); }
+    [[nodiscard]] std::size_t            capacity() const { return ::bfArray_capacity(rawData()); }
+    [[nodiscard]] pointer                data() { return begin(); }
+    [[nodiscard]] const_pointer          data() const { return begin(); }
+    [[nodiscard]] const_pointer          cdata() const { return begin(); }
+    [[nodiscard]] bool                   isEmpty() const { return size() == 0u; }
 
     /*
     void copy(Array<T>& src, std::size_t num_elements)

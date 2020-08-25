@@ -89,7 +89,7 @@ namespace bf
 
   bfValueHandle ScriptBehavior::loadVmValueHandleFromModule(VMView& vm, const char* name)
   {
-    // Assumptions:
+    // Preconditions:
     //   - The module exists in slot 0
     //   - Stack space has already been resized to 2.
 

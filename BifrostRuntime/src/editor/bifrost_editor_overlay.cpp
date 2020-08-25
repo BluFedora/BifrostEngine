@@ -1,5 +1,6 @@
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 
+#include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/asset_io/bifrost_script.hpp"
@@ -807,7 +808,6 @@ namespace bf::editor
     addMenuItem("Window/Hierarchy View", "View.HierarchyView");
     addMenuItem("Window/Game View", "View.GameView");
 
-    //*
     InspectorRegistry::overrideInspector<MeshRenderer>(
      [](ImGuiSerializer& serializer, meta::MetaVariant& object, void* user_data) {
        MeshRenderer* mesh_renderer = meta::variantToCompatibleT<MeshRenderer*>(object);
@@ -818,7 +818,54 @@ namespace bf::editor
 
        ImGui::Text("This is a custom Mesh Renderer Callback");
      });
-    //*/
+
+    InspectorRegistry::overrideInspector<SpriteAnimator>([](ImGuiSerializer& serializer, meta::MetaVariant& object, void* user_data) {
+      SpriteAnimator* sprite_animator = meta::variantToCompatibleT<SpriteAnimator*>(object);
+
+      serializer.serializeT(sprite_animator);
+
+      AssetSpritesheetHandle sheet = sprite_animator->spritesheet();
+
+      if (sheet)
+      {
+        bfSpritesheet* const ss            = sheet->spritesheet();
+        const auto           sprite_handle = sprite_animator->animatedSprite();
+        const char*          preview_str   = "No Animation Selected";
+
+        bfAnim2DSpriteState sprite_state;
+
+        if (bfAnim2DSprite_grabState(sprite_handle, &sprite_state))
+        {
+          preview_str = sprite_state.animation->name.str;
+        }
+
+        if (ImGui::BeginCombo("Animations", preview_str, ImGuiComboFlags_None))
+        {
+          for (uint32_t i = 0; i < ss->num_animations; ++i)
+          {
+            const bfAnimation* const anim = ss->animations + i;
+
+            if (ImGui::Selectable(anim->name.str))
+            {
+              bfAnim2DSprite_setSpritesheet(sprite_handle, ss);
+
+              bfAnim2DPlayExOptions play_options;
+
+              play_options.animation         = anim;
+              play_options.playback_speed    = 1.0f;
+              play_options.start_frame       = 0;
+              play_options.is_looping        = true;
+              play_options.does_ping_ponging = false;
+              play_options.force_restart     = false;
+
+              bfAnim2DSprite_playAnimationEx(sprite_handle, &play_options);
+            }
+          }
+
+          ImGui::EndCombo();
+        }
+      }
+    });
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -876,7 +923,7 @@ namespace bf::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
 
@@ -1435,6 +1482,7 @@ namespace bf::editor
     {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
     {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
+    {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}
 
     // {".gltf", &fileExtensionHandlerImpl<>},
     // {".glsl", &fileExtensionHandlerImpl<>},
@@ -1614,7 +1662,7 @@ namespace bf::editor
 
   static const FileExtensionHandler* assetFindHandler(StringRange relative_path)
   {
-    const StringRange file_ext = file::extensionOfFile(relative_path);
+    const StringRange file_ext = path::extensionEx(relative_path);
 
     for (const auto& handler : s_AssetHandlers)
     {

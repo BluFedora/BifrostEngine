@@ -44,6 +44,11 @@ namespace bf
   {
   }
 
+  Engine& Entity::engine() const
+  {
+    return scene().engine();
+  }
+
   BifrostTransform& Entity::transform() const
   {
     IBifrostTransformSystem& transform_system = scene().m_TransformSystem;

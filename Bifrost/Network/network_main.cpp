@@ -257,11 +257,25 @@ int main(int argc, const char* argv[])
     }
 #endif
 
-    const int num_bytes_sent = socket->sendDataTo(address, "Hello", 5, SendToFlags::NONE);
+    char large_buffer[1500 * 3];
 
-    assert(num_bytes_sent == 5);
+    for (auto& b : large_buffer)
+    {
+      b = '$';
+    }
+
+    memcpy(large_buffer, "Hello", 5);
+
+    large_buffer[sizeof(large_buffer) - 1] = '\0';
+
+    const int num_bytes_sent = socket->sendDataTo(address, large_buffer, sizeof(large_buffer), SendToFlags::NONE);
+
+    //assert(num_bytes_sent == 5);
 
     //socket->shutdown(SocketShutdownAction::SEND);
+
+
+    socket->makeNonBlocking();
 
     char read_buffer[MESSAGE_BUFFER_SIZE];
 
@@ -272,6 +286,12 @@ int main(int argc, const char* argv[])
       if (received_data.received_bytes_size == -2)
       {
         break;
+      }
+
+      if (received_data.received_bytes_size == -1)
+      {
+        std::printf("Waiting on message ;)\n");
+        continue;
       }
 
       if (received_data.received_bytes_size == 0)

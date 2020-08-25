@@ -12,9 +12,9 @@
 #ifndef BIFROST_BEHAVIOR_HPP
 #define BIFROST_BEHAVIOR_HPP
 
+#include "bf/ecs/bf_base_component.hpp"               // BaseComponent, Entity
 #include "bifrost/core/bifrost_base_object.hpp"       // BaseObject<T>
 #include "bifrost/utility/bifrost_non_copy_move.hpp"  // bfNonCopyMoveable<T>
-#include "bifrost_base_component.hpp"                 // BaseComponent, Entity
 
 namespace bf
 {

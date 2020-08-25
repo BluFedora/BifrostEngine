@@ -19,6 +19,8 @@
 #include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
 #include "bifrost/utility/bifrost_json.hpp"             /* json::Value          */
 
+#include "bf/anim2D/bf_animation_system.hpp"
+
 namespace bf
 {
 #define ID_TO_INDEX(id) ((id)-1)
@@ -103,7 +105,7 @@ namespace bf
     m_BVHTree{m_Memory},
     m_TransformSystem{m_Memory},
     m_Camera{},
-    m_AnimationScene{nullptr}
+    m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
   }
@@ -129,6 +131,17 @@ namespace bf
   void Scene::removeEntity(Entity* entity)
   {
     m_RootEntities.removeAt(m_RootEntities.find(entity));
+  }
+
+  void Scene::removeAllEntities()
+  {
+    while (!m_RootEntities.isEmpty())
+    {
+      m_RootEntities.back()->destroy();
+
+      // Entity::destroy detaches from parent.
+      // m_RootEntities.pop();
+    }
   }
 
   void Scene::update(LinearAllocator& temp, DebugRenderer& dbg_renderer)
@@ -221,13 +234,9 @@ namespace bf
 
   Scene::~Scene()
   {
-    while (!m_RootEntities.isEmpty())
-    {
-      m_RootEntities.back()->destroy();
+    bfAnimation2D_destroyScene(m_Engine.animationSys().anim2DCtx(), m_AnimationScene);
 
-      // Entity::destroy detaches from parent.
-      // m_RootEntities.pop();
-    }
+    removeAllEntities();
   }
 
   bool AssetSceneInfo::load(Engine& engine)

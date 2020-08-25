@@ -97,6 +97,16 @@ namespace bf
       return bfStringRange::end;
     }
 
+    auto rbegin() const
+    {
+      return std::make_reverse_iterator(end());
+    }
+
+    auto rend() const
+    {
+      return std::make_reverse_iterator(begin());
+    }
+
     std::size_t find(char character, std::size_t pos = 0) const
     {
       const std::size_t len = length();

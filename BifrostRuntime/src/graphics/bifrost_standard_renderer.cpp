@@ -1063,22 +1063,39 @@ namespace bf
 
   bool AssetTextureInfo::load(Engine& engine)
   {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
+    return loadImpl(engine, m_Payload.set<Texture>(bfGfxContext_device(engine.renderer().context())));
+  }
 
+  bool AssetTextureInfo::reload(Engine& engine)
+  {
+    const bfGfxDeviceHandle device  = bfGfxContext_device(engine.renderer().context());
+    Texture&                texture = m_Payload;
+
+    bfGfxDevice_flush(device);
+    bfGfxDevice_release(device, texture.m_Handle);
+
+    return loadImpl(engine, m_Payload);
+  }
+
+  bool AssetTextureInfo::loadImpl(Engine& engine, Texture& texture)
+  {
+    const bfGfxDeviceHandle     device        = bfGfxContext_device(engine.renderer().context());
+    const String&               full_path     = filePathAbs();
     const bfTextureCreateParams create_params = bfTextureCreateParams_init2D(
      BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM,
      BIFROST_TEXTURE_UNKNOWN_SIZE,
      BIFROST_TEXTURE_UNKNOWN_SIZE);
 
-    const String full_path = filePathAbs();
-    Texture&     texture   = m_Payload.set<Texture>(device);
-
     texture.m_Handle = bfGfxDevice_newTexture(device, &create_params);
 
-    bfTexture_loadFile(texture.m_Handle, full_path.c_str());
-    bfTexture_setSampler(texture.m_Handle, &k_SamplerNearestRepeat);
+    if (bfTexture_loadFile(texture.m_Handle, full_path.c_str()))
+    {
+      bfTexture_setSampler(texture.m_Handle, &k_SamplerNearestRepeat);
 
-    return true;
+      return true;
+    }
+
+    return false;
   }
 
   namespace gfx
@@ -1098,6 +1115,16 @@ namespace bf
       const bfTextureHandle texture = bfGfxDevice_newTexture(device, &create_params);
 
       bfTexture_loadData(texture, reinterpret_cast<const char*>(data), data_size);
+      bfTexture_setSampler(texture, &sampler);
+
+      return texture;
+    }
+
+    bfTextureHandle createTexturePNG(bfGfxDeviceHandle device, const bfTextureCreateParams& create_params, const bfTextureSamplerProperties& sampler, const void* data, std::size_t data_size)
+    {
+      const bfTextureHandle texture = bfGfxDevice_newTexture(device, &create_params);
+
+      bfTexture_loadPNG(texture, reinterpret_cast<const char*>(data), data_size);
       bfTexture_setSampler(texture, &sampler);
 
       return texture;

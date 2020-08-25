@@ -12,10 +12,9 @@
 #ifndef BIFROST_RENDERER_COMPONENT_HPP
 #define BIFROST_RENDERER_COMPONENT_HPP
 
+#include "bf/asset_io/bf_spritesheet_asset.hpp"  // bfSpritesheet, bfAnim2DSpriteHandle
+#include "bf/ecs/bf_base_component.hpp"          /* BaseComponent       */
 #include "bifrost/asset_io/bifrost_material.hpp" /* AssetMaterialHandle */
-#include "bifrost_base_component.hpp"            /* BaseComponent       */
-
-#include "bf/Animation2D.h"  // bfAnim2DSpriteHandle
 
 namespace bf
 {
@@ -81,15 +80,26 @@ namespace bf
 
   class SpriteAnimator : public Component<SpriteAnimator>
   {
+    BIFROST_META_FRIEND;
+    friend class AnimationSystem;
+
    private:
-    bfAnim2DSpriteHandle m_SpriteHandle;
+    AssetSpritesheetHandle m_Spritesheet;
+    bfAnim2DSpriteHandle   m_SpriteHandle;
 
    public:
     explicit SpriteAnimator(Entity& owner) :
       Base(owner),
+      m_Spritesheet{nullptr},
       m_SpriteHandle{bfAnim2DSprite_invalidHandle()}
     {
     }
+
+    AssetSpritesheetHandle spritesheet() const { return m_Spritesheet; }
+    bfAnim2DSpriteHandle   animatedSprite() const { return m_SpriteHandle; }
+
+    void onEnable(Engine& engine);
+    void onDisable(Engine& engine);
   };
 
   using ParticleEmitterFlags = std::uint8_t;
@@ -134,16 +144,24 @@ BIFROST_META_REGISTER(bf::MeshRenderer){
    )
    BIFROST_META_END()}
 
-BIFROST_META_REGISTER(bf::SpriteRenderer)
+BIFROST_META_REGISTER(bf::SpriteRenderer){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<SpriteRenderer>("SpriteRenderer"),                       //
+   field<BaseAssetHandle>("m_Material", &SpriteRenderer::m_Material),  //
+   field("m_Size", &SpriteRenderer::m_Size),                           //
+   field("m_UVRect", &SpriteRenderer::m_UVRect),                       //
+   field("m_Color", &SpriteRenderer::m_Color),                         //
+   field("m_Flags", &SpriteRenderer::m_Flags)                          //
+   )
+   BIFROST_META_END()}
+
+BIFROST_META_REGISTER(bf::SpriteAnimator)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<SpriteRenderer>("SpriteRenderer"),                       //
-     field<BaseAssetHandle>("m_Material", &SpriteRenderer::m_Material),  //
-     field("m_Size", &SpriteRenderer::m_Size),                           //
-     field("m_UVRect", &SpriteRenderer::m_UVRect),                       //
-     field("m_Color", &SpriteRenderer::m_Color),                         //
-     field("m_Flags", &SpriteRenderer::m_Flags)                          //
+     class_info<SpriteAnimator>("SpriteAnimator"),                            //
+     field<BaseAssetHandle>("m_Spritesheet", &SpriteAnimator::m_Spritesheet)  //
     )
   BIFROST_META_END()
 }

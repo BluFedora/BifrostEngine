@@ -1415,6 +1415,27 @@ bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
   return bfFalse;
 }
 
+bfBool32 bfTexture_loadPNG(bfTextureHandle self, const void* png_bytes, size_t png_bytes_length)
+{
+  static const size_t k_NumReqComps = 4;
+
+  int      num_components = 0;
+  stbi_uc* texture_data   = stbi_load_from_memory((const stbi_uc*)png_bytes, int(png_bytes_length), &self->image_width, &self->image_height, &num_components, STBI_rgb_alpha);
+
+  if (texture_data)
+  {
+    const size_t num_req_bytes = (size_t)(self->image_width) * (size_t)(self->image_height) * k_NumReqComps * sizeof(char);
+
+    bfTexture_loadData(self, (const char*)texture_data, num_req_bytes);
+
+    stbi_image_free(texture_data);
+
+    return bfTrue;
+  }
+
+  return bfFalse;
+}
+
 void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
 
 bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3])

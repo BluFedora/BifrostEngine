@@ -40,8 +40,10 @@ bool Socket::connectTo(const Address& address) const
 
   if (err == SOCKET_ERROR)
   {
+    const int error_code = detail::getLastError();
+
     //throw NetworkError(detail::APIFunction::FN_CONNECT);
-    return false;
+    return detail::isAlreadyConnected(error_code);
   }
 
   return true;

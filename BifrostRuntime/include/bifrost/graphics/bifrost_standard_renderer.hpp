@@ -539,6 +539,12 @@ namespace bf
      const bfTextureSamplerProperties& sampler,
      const void*                       data,
      std::size_t                       data_size);
+    bfTextureHandle createTexturePNG(
+     bfGfxDeviceHandle                 device,
+     const bfTextureCreateParams&      create_params,
+     const bfTextureSamplerProperties& sampler,
+     const void*                       data,
+     std::size_t                       data_size);
     bfShaderProgramHandle createShaderProgram(
      bfGfxDeviceHandle    device,
      std::uint32_t        num_desc_sets,

@@ -182,10 +182,10 @@ namespace bf
 
           const Vector2f uvs[] =
            {
-            uv_rect.topLeft(),
-            uv_rect.topRight(),
             uv_rect.bottomLeft(),
             uv_rect.bottomRight(),
+            uv_rect.topLeft(),
+            uv_rect.topRight(),
            };
 
           const auto& sprite_normal = vec::faceNormal(positions[0], positions[1], positions[2]);

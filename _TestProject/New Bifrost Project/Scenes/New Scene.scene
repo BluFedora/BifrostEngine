@@ -412,13 +412,21 @@
             ],
             "m_Name" : "Player",
             "m_Components" : {
+                "SpriteAnimator" : {
+                    "__Active__" : true,
+                    "m_Spritesheet" : {
+                        "uuid" : "C75D6F10-A6FA-44F0-83FC-1013ABDF6FCF"
+                    }
+                },
                 "SpriteRenderer" : {
-                    "m_Material" : null,
+                    "m_Material" : {
+                        "uuid" : "0184A37B-A7BF-48B9-A745-B4FAB85198B0"
+                    },
                     "m_UVRect" : {
-                        "height" : 5,
+                        "height" : 1,
                         "y" : 0,
                         "x" : 0,
-                        "width" : 10
+                        "width" : 1
                     },
                     "m_Color" : {
                         "r" : 51,
@@ -454,10 +462,10 @@
                     "z" : 1
                 },
                 "Rotation" : {
-                    "y" : -0.0847303,
-                    "w" : 0.972864,
-                    "x" : -0.165202,
-                    "z" : -0.138073
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
                 }
             },
             "m_Flags" : 24,

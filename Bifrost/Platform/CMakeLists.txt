@@ -125,8 +125,10 @@ add_library(
 
 target_include_directories(
   BifrostPlatform_static
-   INTERFACE ${PROJECT_SOURCE_DIR}/include
-   PRIVATE   ${PROJECT_SOURCE_DIR}/include
+  PUBLIC 
+    "${PROJECT_SOURCE_DIR}/include"
+  PRIVATE
+    "${PROJECT_SOURCE_DIR}/lib/include"
 )
 
 if(BIFROST_OPT_GRAPHICS_VULKAN)
@@ -181,8 +183,10 @@ if(NOT EMSCRIPTEN)
 
   target_include_directories(
       BifrostPlatform_shared
-      INTERFACE ${PROJECT_SOURCE_DIR}/include
-      PRIVATE   ${PROJECT_SOURCE_DIR}/include
+      PUBLIC 
+        "${PROJECT_SOURCE_DIR}/include"
+      PRIVATE
+        "${PROJECT_SOURCE_DIR}/lib/include"
   )
 
   target_link_libraries(

@@ -86,6 +86,7 @@ namespace detail
   int               toNative(SocketShutdownAction socket_shutdown_action);
   bool              isWaiting(int error_code);
   bool              isConnectionClosed(int error_code);
+  bool              isAlreadyConnected(int error_code);
   int               getLastError();
   const char*       errorToString(int error_code, APIFunction function);
 }  // namespace detail

@@ -4,7 +4,7 @@
 #include "bf/Animation2D.h"   // bfSpritesheet
 #include "bf/BaseObject.hpp"  // BaseObject
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp" /* AssetHandle<T> */
+#include "bifrost/asset_io/bifrost_asset_handle.hpp" /* AssetHandle<T>    */
 #include "bifrost/asset_io/bifrost_asset_info.hpp"   /* AssetInfo<T1, T2> */
 
 namespace bf
@@ -14,7 +14,7 @@ namespace bf
     friend class AssetSpritesheetInfo;
 
    private:
-    bfSpritesheet*  m_Anim2DSpritesheet;
+    bfSpritesheet* m_Anim2DSpritesheet;
 
    public:
     Spritesheet() :
@@ -22,6 +22,8 @@ namespace bf
       m_Anim2DSpritesheet{nullptr}
     {
     }
+
+    bfSpritesheet* spritesheet() const { return m_Anim2DSpritesheet; }
   };
 
   class AssetSpritesheetInfo final : public AssetInfo<Spritesheet, AssetSpritesheetInfo>
@@ -33,6 +35,7 @@ namespace bf
     using BaseT::BaseT;
 
     bool load(Engine& engine) override;
+    void onAssetUnload(Engine& engine) override;
   };
 
   using AssetSpritesheetHandle = AssetHandle<Spritesheet>;

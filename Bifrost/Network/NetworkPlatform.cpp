@@ -176,6 +176,15 @@ namespace detail
 #endif
   }
 
+  bool isAlreadyConnected(int error_code)
+  {
+#if defined(_WIN32)
+    return error_code == WSAEISCONN;
+#else
+    return error_code == EISCONN;
+#endif
+  }
+
   int getLastError()
   {
 #if defined(_WIN32)

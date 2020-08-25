@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_asset_info.hpp
+ * @file   bf_asset_info.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *  // TODO: Make this header leaner
@@ -11,8 +11,8 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#ifndef BIFROST_ASSET_INFO_HPP
-#define BIFROST_ASSET_INFO_HPP
+#ifndef BF_ASSET_INFO_HPP
+#define BF_ASSET_INFO_HPP
 
 #include "bifrost/data_structures/bifrost_dynamic_string.h" /* BifrostString        */
 #include "bifrost/data_structures/bifrost_string.hpp"       /* StringRange          */
@@ -22,9 +22,7 @@
 #include "bifrost/utility/bifrost_non_copy_move.hpp"        /* bfNonCopyMoveable<T> */
 #include "bifrost/utility/bifrost_uuid.h"                   /* BifrostUUID          */
 
-#include <cstdint> /* uint16_t    */
-
-class Engine;
+#include <cstdint> /* uint16_t */
 
 typedef struct Vec2f_t       Vec2f;
 typedef struct Vec3f_t       Vec3f;
@@ -32,9 +30,10 @@ typedef struct Quaternionf_t Quaternionf;
 typedef struct bfColor4f_t   bfColor4f;
 typedef struct bfColor4u_t   bfColor4u;
 
+class Engine;
+
 namespace bf
 {
-  class Any;
   class IBaseObject;
 
   namespace meta
@@ -56,16 +55,13 @@ namespace bf
     {
     }
 
-    BifrostString* begin()
-    {
-      return m_Tags;
-    }
+    BifrostString* begin() { return m_Tags; }
 
     BifrostString* end()
     {
       BifrostString* i;
 
-      for (i = m_Tags + 3; i != m_Tags; --i)
+      for (i = m_Tags + 3; i != begin(); --i)
       {
         if (*i)
         {
@@ -190,24 +186,27 @@ namespace bf
     String                   m_FilePathAbs;  //!< The full path to an asset.
     StringRange              m_FilePathRel;  //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
     BifrostUUID              m_UUID;         //!< Uniquely identifies the asset.
-    std::uint16_t            m_RefCount;     //!< How many live references in the engine.
+    std::uint16_t            m_RefCount;     //!< How many live references in the engine. TODO(SR): If I multithread things, see if this needs to be atomic.
     AssetTagList             m_Tags;         //!< Tags associated with this asset.
     bool                     m_IsDirty;      //!< This asset wants to be saved.
     meta::BaseClassMetaInfo* m_TypeInfo;     //!< The type info for the subclasses.
 
    protected:
-    BaseAssetInfo(const String& full_path, const size_t length_of_root_path, const BifrostUUID& uuid);
+    BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const BifrostUUID& uuid);
 
    public:
+    // Accessors
+
     const BifrostUUID&         uuid() const { return m_UUID; }
     std::uint16_t              refCount() const { return m_RefCount; }
     meta::BaseClassMetaInfoPtr typeInfo() const { return m_TypeInfo; }
 
-    // Path Helpers
+    // Path Accessors
 
     const String& filePathAbs() const { return m_FilePathAbs; }
     StringRange   filePathExtenstion() const;
     StringRange   filePathRel() const { return m_FilePathRel; }
+    StringRange   fileName() const;
 
     // Implemented by AssetInfo<T, TPayload> //
 
@@ -222,6 +221,33 @@ namespace bf
     {
       (void)engine;
       return false;
+    }
+
+    // Called when we want
+
+    /*!
+     * @brief 
+     *   Called when the asset want to be reloaded from disc.
+     *   This allows for implementations to make optimized 
+     *   decisions since the asset is not unloaded when this is called.
+     * 
+     * @param engine 
+     *   The engine that this asset is apart of.
+     * 
+     * @return 
+     *   Return true if the asset was successfully reloaded
+     *   otherwise return false for any failures.
+     */
+    virtual bool reload(Engine& engine)
+    {
+      (void)engine;
+      return false;
+    }
+
+    // Called right before the asset is destroyed
+    virtual void onAssetUnload(Engine& engine)
+    {
+      (void)engine;
     }
 
     // Serializing of Asset Content
@@ -241,6 +267,7 @@ namespace bf
     }
 
     // Helpers //
+
     bool defaultLoad(Engine& engine);
 
     virtual ~BaseAssetInfo() = default;
@@ -265,30 +292,20 @@ namespace bf
     AssetInfo(const String& full_path, const size_t length_of_root_path, const BifrostUUID& uuid) :
       BaseAssetInfo(full_path, length_of_root_path, uuid)
     {
-      static_assert(std::is_base_of<IBaseObject, TPayload>::value, "Only reflect-able types should be used as a payload.");
+      static_assert(std::is_base_of<IBaseObject, TPayload>::value, "Only reflect-able types can be used as a payload.");
 
-      // Force the Compiler to register the type.
-      (void)s_IsRegistered;
+      (void)s_IsRegistered;  // Force the Compiler to register the type.
     }
 
-    IBaseObject* payload() override final
-    {
-      return m_Payload.template is<TPayload>() ? &m_Payload.template as<TPayload>() : nullptr;
-    }
-
-    meta::BaseClassMetaInfo* payloadType() const override final
-    {
-      return s_IsRegistered;
-    }
-
-    void unload() override final
-    {
-      m_Payload.destroy();
-    }
+    TPayload*                payloadT() { return m_Payload.template is<TPayload>() ? &m_Payload.template as<TPayload>() : nullptr; }
+    const TPayload*          payloadT() const { return m_Payload.template is<TPayload>() ? &m_Payload.template as<TPayload>() : nullptr; }
+    IBaseObject*             payload() override final { return m_Payload.template is<TPayload>() ? &m_Payload.template as<TPayload>() : nullptr; }
+    meta::BaseClassMetaInfo* payloadType() const override final { return s_IsRegistered; }
+    void                     unload() override final { m_Payload.destroy(); }
   };
 
   template<typename TPayload, typename TInfo>
   meta::BaseClassMetaInfo* AssetInfo<TPayload, TInfo>::s_IsRegistered = registerImpl();
 }  // namespace bf
 
-#endif /* BIFROST_ASSET_INFO_HPP */
+#endif /* BF_ASSET_INFO_HPP */

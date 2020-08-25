@@ -53,6 +53,7 @@ set(
 set(
   BIFROST_GRAPHICS_INCLUDE_DIRS
   "${PROJECT_SOURCE_DIR}/include"
+  "${PROJECT_SOURCE_DIR}/lib/include"
   "${CMAKE_SOURCE_DIR}/BifrostRuntime/include"
 )
 

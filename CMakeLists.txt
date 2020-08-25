@@ -110,7 +110,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost ECS Module
   "BifrostRuntime/src/ecs/bifrost_entity.cpp"
-  "BifrostRuntime/src/ecs/bifrost_base_component.cpp"
+  "Bifrost/Runtime/src/ecs/bf_base_component.cpp"
   "BifrostRuntime/src/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
@@ -149,12 +149,6 @@ endif()
 # find_package(OpenGL REQUIRED)
 find_package(OpenCL)
 
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/DemoApp/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include)
-
 add_executable(
   BifrostEngineOLD
   ${BIFROST_ENGINE_SOURCE_FILES}
@@ -180,6 +174,18 @@ add_executable(
  "${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/src/bf_painter.cpp" 
  "${PROJECT_SOURCE_DIR}/Bifrost/Runtime/src/anim2D/bf_animation_system.cpp" 
  "${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include/bf/asset_io/bf_spritesheet_asset.hpp" "Bifrost/Runtime/src/asset_io/bf_spritesheet_asset.cpp" "Bifrost/Runtime/src/asset_io/bf_asset_info.cpp" "Bifrost/Runtime/include/bf/asset_io/bf_path_manip.hpp" "Bifrost/Runtime/src/asset_io/bf_path_manip.cpp")
+
+target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/lib/include)
+target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
+target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/DemoApp/include)
+target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include)
+target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/Bifrost/Platform/lib/include)
+
+# if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+#   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")
+#   target_link_options(BifrostEngineOLD PRIVATE "/SAFESEH:NO")
+# endif()
 
 # Bifrost Engine Submodules
 

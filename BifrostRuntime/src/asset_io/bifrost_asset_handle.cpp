@@ -276,9 +276,7 @@ namespace bf
 
   bool BaseAssetInfo::defaultLoad(Engine& engine)
   {
-    const String full_path = filePathAbs();
-
-    File file{full_path, file::FILE_MODE_READ};
+    File file{filePathAbs(), file::FILE_MODE_READ};
 
     if (file)
     {
@@ -373,6 +371,7 @@ namespace bf
     {
       if (--m_Info->m_RefCount == 0)
       {
+        m_Info->onAssetUnload(*m_Engine);
         m_Info->unload();
       }
 

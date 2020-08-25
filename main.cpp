@@ -3,10 +3,10 @@
 #include "bf/Gfx2DPainter.hpp"
 #include "main_demo.hpp"
 #include <bifrost/bifrost.hpp>
+#include <bifrost/bifrost_imgui_glfw.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
 #include <bifrost/memory/bifrost_memory_utils.h>  // bfMegabytes
-#include <bifrost_imgui_glfw.hpp>
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
@@ -504,16 +504,16 @@ int main(int argc, char* argv[])
             StandardRenderer& renderer = engine->renderer();
 
 #if 0
-        if (update_fn)
-        {
-          vm.stackResize(1);
-          vm.stackLoadHandle(0, update_fn);
+            if (update_fn)
+            {
+              vm.stackResize(1);
+              vm.stackLoadHandle(0, update_fn);
 
-          if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-          {
-            vm.call(0, delta_time);
-          }
-        }
+              if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+              {
+                vm.call(0, delta_time);
+              }
+            }
 #endif
             imgui::beginFrame(
              renderer.surface(),
@@ -534,7 +534,7 @@ int main(int argc, char* argv[])
             engine->drawBegin(render_alpha);
             imgui::endFrame();
 
-#if 1
+#if 0
             auto& painter = engine->renderer2D();
 
             if (!TEST_FONT)

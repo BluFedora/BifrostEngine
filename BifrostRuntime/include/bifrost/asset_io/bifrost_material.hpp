@@ -55,7 +55,13 @@ namespace bf
       }
 
      public:
-      THandle handle() const { return m_Handle; }
+      bfGfxDeviceHandle gfxDevice() const { return m_GraphicsDevice; }
+      THandle           handle() const { return m_Handle; }
+
+      void setHandle(THandle h)
+      {
+        m_Handle = h;
+      }
     };
   }  // namespace detail
 
@@ -72,6 +78,8 @@ namespace bf
     {
     }
 
+    using BaseT::destroyHandle;
+
     std::uint32_t width() const { return m_Handle ? bfTexture_width(m_Handle) : 0u; }
     std::uint32_t height() const { return m_Handle ? bfTexture_height(m_Handle) : 0u; }
   };
@@ -85,6 +93,10 @@ namespace bf
     using BaseT::BaseT;
 
     bool load(Engine& engine) override;
+    bool reload(Engine& engine) override;
+
+   private:
+    bool loadImpl(Engine& engine, Texture& texture);
   };
 
   using AssetTextureHandle = AssetHandle<Texture>;

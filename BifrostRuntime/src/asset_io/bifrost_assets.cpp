@@ -344,9 +344,11 @@ namespace bf
 
       JsonSerializerReader reader{*this, m_Memory, loaded_data};
 
-      reader.beginDocument(false);
-      asset_handle_p->serialize(m_Engine, reader);
-      reader.endDocument();
+      if (reader.beginDocument(false))
+      {
+        asset_handle_p->serialize(m_Engine, reader);
+        reader.endDocument();
+      }
 
       project_file.close();
     }
@@ -461,36 +463,43 @@ namespace bf
       char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->filePathRel(), meta_file_name_length);
       const TempBuffer           meta_file_path        = metaFullPath(temp_alloc_no_free, {meta_file_name, meta_file_name + meta_file_name_length});
 
+      // Save Engine Asset
       {
         const LinearAllocatorScope json_writer_scope = {temp_alloc};
         JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
 
-        json_writer.beginDocument(false);
-        const bool is_engine_asset = info->save(m_Engine, json_writer);
-        json_writer.endDocument();
-
-        if (is_engine_asset)
+        if (json_writer.beginDocument(false))
         {
-          writeJsonToFile(info->filePathAbs(), json_writer.document());
+          const bool is_engine_asset = info->save(m_Engine, json_writer);
+          json_writer.endDocument();
+
+          if (is_engine_asset)
+          {
+            writeJsonToFile(info->filePathAbs(), json_writer.document());
+          }
         }
       }
+
+      // Save Meta Info
       {
         const LinearAllocatorScope json_writer_scope = {temp_alloc};
         JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
 
-        json_writer.beginDocument(false);
-        info->serialize(m_Engine, json_writer);
+        if (json_writer.beginDocument(false))
+        {
+          info->serialize(m_Engine, json_writer);
 
-        String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
-        String path_as_str    = info->filePathRel();
+          String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
+          String path_as_str    = info->filePathRel();
 
-        json_writer.serialize("Path", path_as_str);
-        json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
-        json_writer.serialize("Type", type_info_name);
+          json_writer.serialize("Path", path_as_str);
+          json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
+          json_writer.serialize("Type", type_info_name);
 
-        json_writer.endDocument();
+          json_writer.endDocument();
 
-        writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
+          writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
+        }
       }
     }
 
@@ -514,7 +523,7 @@ namespace bf
     return path::append({m_RootPath, String_length(m_RootPath)}, rel_path);
   }
 
-#if 0 // TODO(SR): This function cannot work as intended since it does not know the diff between a '.' for a dir separator vs in the actual file name...
+#if 0  // TODO(SR): This function cannot work as intended since it does not know the diff between a '.' for a dir separator vs in the actual file name...
   String Assets::metaPathToRelPath(const StringRange& meta_path)
   {
     String rel_path = {meta_path.begin(), meta_path.length() - sizeof(META_FILE_EXTENSION) + 1};  // The + 1 accounts for the nul terminator.

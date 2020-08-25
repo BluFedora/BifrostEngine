@@ -13,12 +13,12 @@
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
-#include "bifrost/bifrost_math.h"               /* Vec3f, Mat4x4     */
-#include "bifrost/core/bifrost_base_object.hpp" /* BaseObject<T>     */
-#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
-#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH               */
-#include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
-#include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
+#include "bifrost/bifrost_math.h"                              /* Vec3f, Mat4x4     */
+#include "bifrost/core/bifrost_base_object.hpp"                /* BaseObject<T>     */
+#include "bifrost/data_structures/bifrost_intrusive_list.hpp"  //
+#include "bifrost/ecs/bifrost_collision_system.hpp"            /* BVH               */
+#include "bifrost/ecs/bifrost_component_storage.hpp"           /* ComponentStorage  */
+#include "bifrost_asset_handle.hpp"                            /* AssetInfo<T1, T2> */
 
 class Engine;
 
@@ -98,9 +98,10 @@ namespace bf
 
     // Accessors
 
-    Engine&       engine() const { return m_Engine; }
-    const Camera& camera() const { return m_Camera; }
-    Camera&       camera() { return m_Camera; }
+    Engine&        engine() const { return m_Engine; }
+    const Camera&  camera() const { return m_Camera; }
+    Camera&        camera() { return m_Camera; }
+    bfAnim2DScene* anim2DScene() const { return m_AnimationScene; }
 
     // Entity Management
 
@@ -109,6 +110,7 @@ namespace bf
     EntityRef             addEntity(const StringRange& name = "Untitled");
     EntityRef             findEntity(const StringRange& name) const;
     void                  removeEntity(Entity* entity);
+    void                  removeAllEntities();
 
     BVH& bvh() { return m_BVHTree; }
 
@@ -140,6 +142,8 @@ namespace bf
     void serialize(ISerializer& serializer);
 
     ~Scene();
+
+   private:
   };
 
   class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>

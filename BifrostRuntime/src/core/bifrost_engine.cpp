@@ -345,6 +345,16 @@ void Engine::deinit()
   // Released any resources from the game states.
   m_StateMachine.removeAll();
 
+  // This must happen before the Entity GC so that they are all ready to be collected.
+
+  for (auto& scene : m_SceneStack)
+  {
+    scene->removeAllEntities();
+  }
+
+  // Entity Garbage Must be collected before 'm_SceneStack' is cleared.
+  gc::collect(m_MainMemory);
+
   // Must be cleared before the Asset System destruction since it contains handles to scenes.
   m_SceneStack.clear();
 

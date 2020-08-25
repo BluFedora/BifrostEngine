@@ -1,4 +1,4 @@
-#include "bifrost_imgui_glfw.hpp"
+#include "bifrost/bifrost_imgui_glfw.hpp"
 
 #include "bf/Platform.h"
 #include "bifrost/editor/bf_editor_icons.hpp"

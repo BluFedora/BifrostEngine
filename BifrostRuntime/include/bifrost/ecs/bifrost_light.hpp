@@ -11,9 +11,9 @@
 #ifndef BIFROST_LIGHT_HPP
 #define BIFROST_LIGHT_HPP
 
+#include "bf/ecs/bf_base_component.hpp"          /* BaseComponent   */
 #include "bifrost/bifrost_math.hpp"       /* bfColor4f       */
 #include "bifrost/math/bifrost_rect2.hpp" /* Vector3f, clamp */
-#include "bifrost_base_component.hpp"     /* BaseComponent   */
 
 namespace bf
 {
@@ -107,7 +107,7 @@ namespace bf
     float outerAngleDeg() const { return outerAngleRad() * k_RadToDeg; }
     void  setOuterAngleDeg(float value) { setOuterAngleRad(value * k_DegToRad); }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 BIFROST_META_REGISTER(bf::Light)
 {

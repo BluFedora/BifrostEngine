@@ -490,6 +490,7 @@ BIFROST_GFX_API uint32_t           bfTexture_depth(bfTextureHandle self);
 BIFROST_GFX_API uint32_t           bfTexture_numMipLevels(bfTextureHandle self);
 BIFROST_GFX_API BifrostImageLayout bfTexture_layout(bfTextureHandle self);
 BIFROST_GFX_API bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
+BIFROST_GFX_API bfBool32           bfTexture_loadPNG(bfTextureHandle self, const void* png_bytes, size_t png_bytes_length);
 BIFROST_GFX_API bfBool32           bfTexture_loadData(bfTextureHandle self, const void* pixels, size_t pixels_length);
 BIFROST_GFX_API bfBool32           bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3]);
 BIFROST_GFX_API void               bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3]);

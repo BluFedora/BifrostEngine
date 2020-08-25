@@ -1,11 +1,11 @@
 #include "bifrost/asset_io/bifrost_asset_info.hpp"
 
 #include "bf/asset_io/bf_file.hpp"
-// #include "bf/asset_io/bf_path_manip.hpp"
+#include "bf/asset_io/bf_path_manip.hpp"
 
 namespace bf
 {
-  BaseAssetInfo::BaseAssetInfo(const String& full_path, const size_t length_of_root_path, const BifrostUUID& uuid) :
+  BaseAssetInfo::BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const BifrostUUID& uuid) :
     bfNonCopyMoveable<BaseAssetInfo>(),
     m_FilePathAbs{full_path},
     m_FilePathRel{m_FilePathAbs.begin() + length_of_root_path + 1, m_FilePathAbs.end()},  // The plus one accouns for the '/'
@@ -20,5 +20,10 @@ namespace bf
   StringRange BaseAssetInfo::filePathExtenstion() const
   {
     return file::extensionOfFile(m_FilePathAbs);
+  }
+
+  StringRange BaseAssetInfo::fileName() const
+  {
+    return path::name(filePathRel());
   }
 }  // namespace bf

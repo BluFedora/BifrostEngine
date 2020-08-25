@@ -297,7 +297,7 @@ namespace bf
       return as<T>();
     }
 
-    template<typename T, std::enable_if_t<contains<T, Ts...>::value> = 0>
+    template<typename T>
     operator T&() noexcept
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");

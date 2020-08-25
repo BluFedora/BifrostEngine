@@ -76,8 +76,13 @@ uint16_t bfBytesReadUint16LE(const char* bytes)
 
 uint32_t bfBytesReadUint32LE(const char* bytes)
 {
-  return (bfCast(bytes[0], uint32_t) << 0) | (bfCast(bytes[1], uint32_t) << 8) |
-         (bfCast(bytes[2], uint32_t) << 16) | (bfCast(bytes[3], uint32_t) << 24);
+  const uint32_t b0     = (bfCast(bytes[0], uint32_t) & 0xFF) << 0;
+  const uint32_t b1     = (bfCast(bytes[1], uint32_t) & 0xFF) << 8;
+  const uint32_t b2     = (bfCast(bytes[2], uint32_t) & 0xFF) << 16;
+  const uint32_t b3     = (bfCast(bytes[3], uint32_t) & 0xFF) << 24;
+  const uint32_t result = b0 | b1 | b2 | b3;
+
+  return result;
 }
 
 uint64_t bfBytesReadUint64LE(const char* bytes)
