@@ -191,7 +191,7 @@ if (EMSCRIPTEN)
     BifrostWeb 
     PRIVATE 
       BifrostScript
-      BifrostPlatform_static
+      BF_Platform_static
       BifrostMemory
       BifrostMath_static
       BifrostGraphics_static
@@ -201,7 +201,7 @@ target_link_libraries(
   BifrostWeb 
   PRIVATE 
     BifrostScript
-    BifrostPlatform_shared
+    BF_Platform_shared
     BifrostMemory
     BifrostMath_shared
     BifrostGraphics_shared

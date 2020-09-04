@@ -9,7 +9,7 @@
   # NOTE(Shareef): This sets the minimum version of CMake that must be used
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostEngine VERSION 1.0)
+project(BluFedoraEngine VERSION 1.0)
 
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)
@@ -25,7 +25,6 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/docs/bifrost_version.h.in"
   "${PROJECT_BINARY_DIR}/bifrost/bifrost_version.h"
 )
-include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/include ${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include)
 
 # NOTE(Shareef): Print out some CMake Info.
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
@@ -110,7 +109,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Bifrost ECS Module
   "BifrostRuntime/src/ecs/bifrost_entity.cpp"
-  "Bifrost/Runtime/src/ecs/bf_base_component.cpp"
+  "Engine/Runtime/src/ecs/bf_base_component.cpp"
   "BifrostRuntime/src/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
@@ -123,7 +122,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "BifrostRuntime/src/graphics/bifrost_glsl_compiler.cpp"
 
   # Bifrost Math Module
-  "Bifrost/Math/src/bifrost_rect2.cpp"
+  "Engine/Math/src/bifrost_rect2.cpp"
 
   # Bifrost Meta Module
   "BifrostRuntime/src/meta/bifrost_meta_runtime.cpp"
@@ -164,23 +163,20 @@ add_executable(
 
   "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script_behavior.cpp"
   "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script.cpp"
-  "${PROJECT_SOURCE_DIR}/Bifrost/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
+  "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code
  "DemoApp/src/camera_controller.cpp"
 
  "BifrostRuntime/src/graphics/bifrost_component_renderer.cpp"
 
- "${PROJECT_SOURCE_DIR}/Bifrost/Graphics2D/src/bf_painter.cpp" 
- "${PROJECT_SOURCE_DIR}/Bifrost/Runtime/src/anim2D/bf_animation_system.cpp" 
- "${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include/bf/asset_io/bf_spritesheet_asset.hpp" "Bifrost/Runtime/src/asset_io/bf_spritesheet_asset.cpp" "Bifrost/Runtime/src/asset_io/bf_asset_info.cpp" "Bifrost/Runtime/include/bf/asset_io/bf_path_manip.hpp" "Bifrost/Runtime/src/asset_io/bf_path_manip.cpp")
-
-target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/lib/include)
-target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
-target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/DemoApp/include)
-target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/Bifrost/Runtime/include)
-target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/Bifrost/Platform/lib/include)
+ "${PROJECT_SOURCE_DIR}/Engine/Graphics2D/src/bf_painter.cpp" 
+ "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
+ "${PROJECT_SOURCE_DIR}/Engine/Runtime/include/bf/asset_io/bf_spritesheet_asset.hpp" 
+ "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
+ "Engine/Runtime/src/asset_io/bf_asset_info.cpp" 
+ "Engine/Runtime/include/bf/asset_io/bf_path_manip.hpp" 
+ "Engine/Runtime/src/asset_io/bf_path_manip.cpp")
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")
@@ -192,21 +188,32 @@ target_include_directories(BifrostEngineOLD PRIVATE ${PROJECT_SOURCE_DIR}/Bifros
 target_include_directories(
   BifrostEngineOLD
   PRIVATE
+    ${PROJECT_SOURCE_DIR}/lib/include
     ${PROJECT_SOURCE_DIR}/BifrostRuntime/include
-    ${PROJECT_SOURCE_DIR}/Bifrost/Editor/lib/include
+    ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/BifrostExperiments/include
+    ${PROJECT_SOURCE_DIR}/DemoApp/include
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
+    ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
+    ${PROJECT_BINARY_DIR} # For the cmake version file
+    ${PROJECT_SOURCE_DIR}/Engine/Graphics2D/include 
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
 )
 
 target_link_libraries(
   BifrostEngineOLD
   PRIVATE
+    BF_Platform_shared
+    BF_Text_static
+
     BifrostDataStructuresCxx
     BifrostScript_shared
     BifrostMath_shared
     BifrostMemory
-    BifrostPlatform_shared
-    BifrostGraphics_shared
     bfAnimation2D_shared
-    BF_Text_static
+
+    BifrostGraphics_shared
 )
 
 set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)
@@ -307,7 +314,7 @@ endif()
   # NOTE(Shareef): Automatically copy the needed dlls to the output directory
 
 if (WIN32)
-  configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
+  # configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostPlatform_shared.dll"   COPYONLY)
@@ -330,14 +337,16 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
-add_subdirectory(Bifrost/Anim2D)
-add_subdirectory(Bifrost/DataStructures)
-add_subdirectory(Bifrost/Math)
-add_subdirectory(Bifrost/Memory)
-add_subdirectory(Bifrost/Network)
-add_subdirectory(Bifrost/Platform)
-add_subdirectory(Bifrost/Runtime)
-add_subdirectory(Bifrost/Text)
+add_subdirectory(Engine/Anim2D)
+add_subdirectory(Engine/DataStructures)
+add_subdirectory(Engine/Dispatch)
+add_subdirectory(Engine/Math)
+add_subdirectory(Engine/Memory)
+add_subdirectory(Engine/Network)
+add_subdirectory(Engine/Platform)
+add_subdirectory(Engine/Runtime)
+add_subdirectory(Engine/Text)
+add_subdirectory(Engine/Job)
 
 add_subdirectory(Games/DungeonSwiper)
 

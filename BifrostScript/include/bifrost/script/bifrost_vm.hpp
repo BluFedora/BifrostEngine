@@ -18,11 +18,11 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
-#include "bifrost/data_structures/bifrost_string.hpp"    /* String                   */
-#include "bifrost/meta/bifrost_meta_function_traits.hpp" /* function_traits          */
-#include "bifrost/meta/bifrost_meta_utils.hpp"           /* for_each                 */
-#include "bifrost/utility/bifrost_non_copy_move.hpp"     /* bfNonCopyMoveable        */
-#include "bifrost_vm.h"                                  /* bfVM_*                   */
+#include "bifrost/data_structures/bifrost_string.hpp" /* String                   */
+#include "bifrost/meta/bf_meta_function_traits.hpp"   /* function_traits          */
+#include "bifrost/meta/bifrost_meta_utils.hpp"        /* for_each                 */
+#include "bifrost/utility/bifrost_non_copy_move.hpp"  /* bfNonCopyMoveable        */
+#include "bifrost_vm.h"                               /* bfVM_*                   */
 
 #include <string>      /* string                   */
 #include <tuple>       /* tuple                    */
@@ -672,6 +672,6 @@ namespace bf
       destroy();
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_VM_HPP */

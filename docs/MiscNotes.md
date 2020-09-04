@@ -1,11 +1,75 @@
-# IPC (Inter-Process Commication)
+# C++ and C
 
-There are various methods for IPC.
+## Optimizations C++ has over C
+
+- `std::sort` > `qsort`
+  - The comparator can be inlined since `std::sort` is a templated function.
+- `std::copy` > `memcpy`
+  - Has the potential to be faster since the compiler has more information on the types because it's templated also the call to `std::copy` may be inlined while the CRT lib has to come from a DLL.
+  - Technically `std::copy` is more like `memmove` since overlapping ranges is allowed.
+
+## Optimizations C has over C++
+
+- pthreads / Win32 threads vs `std::thread`
+  - `std::thread` jas a more expensive startup / creation expense because it allows passing of parameters (namely more than a single `void*`) to the threaded functions.
+
+---
+
+# Mathematics
+
+## Linear Algebra
+
+### Matrix
+
+> The normal of an object must be transformed by the transposed inverse of the model to world matrix.
+
+```glsl
+mat4 NormalMatrix      = transpose(inverse(ModelMatrix));
+vec4 TransformedNormal = NormalMatrix * ObjectNormal;
+```
+> The TBN matrix can be calculated in this way:
+
+```glsl
+vertex inputs:
+  vec3 in_Tangent;
+  vec3 in_Normal;
+
+// Gram–Schmidt Orthonormalization
+
+vec3 T   = normalize(mat3(NormalMatrix) * in_Tangent);
+vec3 N   = normalize(mat3(NormalMatrix) * in_Normal);
+T        = normalize(T - dot(T, N) * N);
+vec3 B   = cross(N, T);
+mat3 TBN = transpose(mat3(T, B, N));
+```
+
+---
+
+# Graphics
+
+## Vulkan
+
+### Misc Good Things To Know
+
+- A buffer memory barrier is just a more specific version of a Memory barrier.
+- The Image Layout indicates to the GPU how to compress the image.
+  - If you need to change the layout often (~3+ times) then just use the GENERAL layout.
+- Framebuffer Local : ONLY the same sample / pixel is used in multiple sub-passes rather than sampling.
+- Semaphores are for syncing of queues.
+- Renderpasses are synchronized with external subpass dependencies.
+- Transitioning to a subpass with automatically transition an image to the correct layout for you.
+
+
+
+---
+
+# IPC (Inter-Process Communication)
 
 ## Shared Memory
 
-> This may be the fastest solution to IPC
-> Must two processes be on the same PC.
+> This may be the fastest solution to IPC.
+
+> The two processes must be on the same PC.
 
 - Win32: [https://docs.microsoft.com/en-us/windows/win32/memory/creating-named-shared-memory]
 	- CreateFileMapping, MapViewOfFile, UnMapViewOfFile, CloseHandle.
@@ -14,6 +78,7 @@ There are various methods for IPC.
 ## UDP / TCP Sockets
 
 > For both Win32 and Posix the API is basically the same.
+
 > This is networking so works across computer.
 
 - Win32: WinSock
@@ -30,6 +95,7 @@ There are various methods for IPC.
 ## Named Pipes
 
 > Pipes work on the same PC or across the network.
+
 > There are also anon pipes, they are one way (parent -> child).
 
 - Win32:
@@ -41,14 +107,50 @@ There are various methods for IPC.
 ## WM_COPY_DATA / SendMessage (Win32)
 
 > Handle the 'WM_COPY_DATA' message in the WinProc function.
+
 > Server calls 'SendMessage' with some data.
+
 > Must two processes be on the same PC.
 
 ## Mailslot (Win32)
 
 > Works only for really small data sizes.
+
 > One way, client -> server.
+
 > Works across network.
+
+---
+
+# UI
+
+- Animation speeds should span 200 - 500ms, sub 100ms animations feel instantaneous to the human brain.
+
+
+| Very Fast        | Fast  | Normal              | Slow  | Very Slow |
+|------------------|-------|---------------------|-------|-----------|
+| 100ms            | 200ms | 300ms               | 400ms | 500ms     |
+
+* 100ms - 200ms should be used for hover fx and fades.
+* 300ms - 500ms for larger, more complex transitions.
+
+- While phones should have effects in the 200 - 300ms range you can increase or decrease that amount by ~30% depending on the screen size and platform.
+  - Users are accustomed to websites opening quickly
+  - Tablets have larger screens so increase the time it takes.
+  - Smart watches have such a small screen so the time should be very short. 
+
+> Large objects should move slower than smaller ones.
+
+- When displaying a list of items each item should only take 20-25ms to appear.
+- List items should appear from top to bottom while a grid should start in the top-left and go to the bottom right (diagonal movement)
+
+- When you have to animate a lot of items try to have a central object to have be the focus and have the rest of the items be subordinate to it.
+
+- When moving an object that changes size as well then if the size change is disproportionate (square => rectangle) then the movement of the object should go along an arc according to _Material Design_.
+
+- Objects at the same z-level should never intersect each other while animating.
+
+---
 
 # Compilers
 
@@ -93,3 +195,37 @@ Most are covered by the links below but I wanted to just give you as feel of wha
 "Principles of Compiler Design." and
 "Compilers: Principles, Techniques, and Tools"
 - Considered the go to for compilers but pretty hard to read as it includes all these mathematical proofs on language design but it will teach pretty much all of compiler design.
+
+---
+
+# C++ Property System Sketch
+
+```cpp
+namespace bf
+{
+  // Property Storage Policies
+  //
+  // * Inline / Owned - The data in held by the property itself.
+  // * Virtual        - A pair of getter and setter functions.
+  // * Reference      - Only holds a reference to a piece of data.
+  // 
+
+  //
+  // Problem Space
+  //
+  // - Should provide a way to have automatically disconnecting 'Connections'
+  // - While a slot is being signaled any other slots may be disconnected
+  //   so safe iteration over slots is something to think about.
+  // - Some libraries handle threading, I don't believe this is a real problem.
+  //   - Well designed un-synchronized APIs with no global state can be externally synchronized.
+  // - Lifetimes
+  //   - What if the `property` outlives the `connection(s)`.  (Not a problem)
+  //   - What if the `connection(s)` outlives the property(s). (Is a problem)
+  //
+
+  class property
+  {
+
+  };
+}
+```

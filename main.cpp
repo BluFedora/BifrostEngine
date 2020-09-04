@@ -162,15 +162,6 @@ class Camera_
   }
 };
 
-#ifdef _WIN32
-#include <intsafe.h> /* DWORD */
-
-extern "C" {
-__declspec(dllexport) DWORD NvOptimusEnablement                = 0x00000001;
-__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif  //  _WIN32
-
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -336,27 +327,26 @@ static void TestMetaSystem()
 
 static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &TestApplyReturningVoid, &TestMetaSystem};
 
-namespace Error
+namespace ReturnCode
 {
   static constexpr int SUCCESS                          = 0;
   static constexpr int FAILED_TO_INITIALIZE_PLATFORM    = 1;
   static constexpr int FAILED_TO_CREATE_MAIN_WINDOW     = 2;
   static constexpr int FAILED_TO_ALLOCATE_ENGINE_MEMORY = 3;
-}  // namespace Error
+}  // namespace ReturnCode
 
 extern void toggleFs();
-
-GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
 
 static constexpr float frame_rate       = 60.0f;
 static constexpr float min_frame_rate   = 4.0f;
 static constexpr float time_step_ms     = 1.0f / frame_rate;
 static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
 
-float current_time;
-float time_accumulator;
-
-static Vector2f mouse_pos;
+GLFWwindow*         g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
+float               current_time;
+float               time_accumulator;
+static PainterFont* TEST_FONT = nullptr;
+static Vector2f     mouse_pos;
 
 #define MainQuit(code, label) \
   err_code = (code);          \
@@ -364,20 +354,18 @@ static Vector2f mouse_pos;
 
 int main(int argc, char* argv[])
 {
-  static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
-
-  int err_code = Error::SUCCESS;
+  static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<float>::is_iec559, "Use IEEE754, you weirdo.");
 
   for (const auto& test_fn : s_Test)
   {
     test_fn();
   }
 
-  namespace bfmeta = meta;
+  int err_code = ReturnCode::SUCCESS;
 
   if (!bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
-    MainQuit(Error::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
+    MainQuit(ReturnCode::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
   }
 
   {
@@ -385,7 +373,7 @@ int main(int argc, char* argv[])
 
     if (!main_window)
     {
-      MainQuit(Error::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
+      MainQuit(ReturnCode::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
     }
 
     bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
@@ -409,6 +397,8 @@ int main(int argc, char* argv[])
         const BifrostEngineCreateParams params = {argv[0], 0};
 
         engine.init(params, main_window);
+
+        main_window->user_data = &engine;
 
         imgui::startup(engine.renderer().context(), main_window);
 
@@ -465,8 +455,6 @@ int main(int argc, char* argv[])
         current_time     = float(glfwGetTime());
         time_accumulator = 0.0f;
 
-        main_window->user_data = &engine;
-
         main_window->event_fn = [](bfWindow* window, bfEvent* event) {
           Engine* const engine = (Engine*)window->user_data;
 
@@ -479,8 +467,6 @@ int main(int argc, char* argv[])
             mouse_pos.y = float(event->mouse.y);
           }
         };
-
-        static PainterFont* TEST_FONT = nullptr;
 
         main_window->frame_fn = [](bfWindow* window) {
           Engine* const engine = (Engine*)window->user_data;
@@ -533,7 +519,6 @@ int main(int argc, char* argv[])
 
             engine->drawBegin(render_alpha);
             imgui::endFrame();
-
 #if 0
             auto& painter = engine->renderer2D();
 
@@ -615,7 +600,7 @@ int main(int argc, char* argv[])
       }
       catch (std::bad_alloc&)
       {
-        MainQuit(Error::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
+        MainQuit(ReturnCode::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
       }
     }
 

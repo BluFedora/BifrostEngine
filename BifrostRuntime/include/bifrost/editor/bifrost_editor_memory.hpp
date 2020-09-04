@@ -13,8 +13,8 @@
 #ifndef BIFROST_EDITOR_MEMORY_HPP
 #define BIFROST_EDITOR_MEMORY_HPP
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp"    /* IMemoryManager            */
-#include "bifrost/meta/bifrost_meta_function_traits.hpp" /*  meta::function_caller<F> */
+#include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager            */
+#include "bifrost/meta/bf_meta_function_traits.hpp"   /*  meta::function_caller<F> */
 
 #include <memory> /* unique_ptr<T> */
 
@@ -36,6 +36,6 @@ namespace bf::editor
 
   template<typename T>
   using UniquePtr = std::unique_ptr<T, meta::function_caller<&deallocateT<T>>>;
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_MEMORY_HPP */
