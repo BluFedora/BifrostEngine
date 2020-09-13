@@ -851,8 +851,8 @@ bfAnim2DPacketSpritesheetChanged bfAnim2DPacketSpritesheetChanged_read(const cha
   bfAnim2DPacketSpritesheetChanged self;
 
   self.header          = bfAnim2DPacketHeader_read(bytes);
-  self.atlas_data_size = bfBytesReadUint32LE((const bfByte*)bytes + k_bfAnim2DHeaderSize + k_bfAnim2DGUIDSize);
-  self.atlas_data      = (const uint8_t*)bytes + k_bfAnim2DHeaderSize + k_bfAnim2DGUIDSize + sizeof(std::uint32_t);
+  self.atlas_data_size = bfBytesReadUint32LE((const bfByte*)bytes + k_bfAnim2DTotalHeaderSize);
+  self.atlas_data      = (const uint8_t*)bytes + k_bfAnim2DTotalHeaderSize + sizeof(std::uint32_t);
 
   return self;
 }
@@ -862,8 +862,8 @@ bfAnim2DPacketTextureChanged bfAnim2DPacketTextureChanged_read(const char* bytes
   bfAnim2DPacketTextureChanged self;
 
   self.header            = bfAnim2DPacketHeader_read(bytes);
-  self.texture_data_size = bfBytesReadUint32LE((const bfByte*)bytes + k_bfAnim2DHeaderSize + k_bfAnim2DGUIDSize);
-  self.texture_data      = bytes + k_bfAnim2DHeaderSize + k_bfAnim2DGUIDSize + sizeof(std::uint32_t);
+  self.texture_data_size = bfBytesReadUint32LE((const bfByte*)bytes + k_bfAnim2DTotalHeaderSize);
+  self.texture_data      = bytes + k_bfAnim2DTotalHeaderSize + sizeof(std::uint32_t);
 
   return self;
 }
@@ -875,9 +875,8 @@ void NetworkingData::readPackets(bfAnimation2DCtx* self)
     return;
   }
 
-  const auto total_header_size       = k_bfAnim2DHeaderSize + k_bfAnim2DGUIDSize;
   const auto old_current_packet_size = current_packet.size();
-  const bool is_beginning_of_packet  = old_current_packet_size < total_header_size;
+  const bool is_beginning_of_packet  = old_current_packet_size < k_bfAnim2DTotalHeaderSize;
   const auto received_data           = socket->receiveDataFrom(read_buffer, sizeof(read_buffer));
 
   // Connection Ended
@@ -897,9 +896,10 @@ void NetworkingData::readPackets(bfAnimation2DCtx* self)
 
   const auto new_current_packet_size = current_packet.size();
 
-  if (new_current_packet_size >= total_header_size)
+  if (new_current_packet_size >= k_bfAnim2DTotalHeaderSize)
   {
-    if (old_current_packet_size < total_header_size)
+    // We have enough data now but before we did not.
+    if (old_current_packet_size < k_bfAnim2DTotalHeaderSize)
     {
       current_packet_header = bfAnim2DPacketHeader_read(current_packet.data());
     }
@@ -990,7 +990,7 @@ void NetworkingData::readPackets(bfAnimation2DCtx* self)
 
         current_packet.resize(num_bytes_left);
 
-        if (num_bytes_left >= total_header_size)
+        if (num_bytes_left >= k_bfAnim2DTotalHeaderSize)
         {
           current_packet_header = bfAnim2DPacketHeader_read(current_packet.data());
         }

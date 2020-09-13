@@ -28,7 +28,7 @@ using MainHeap = bf::CAllocator;
 using MainHeap = bf::FreeListAllocator;
 #endif
 
-using BifrostEngineCreateParams = bfGfxContextCreateParams;
+using bfEngineCreateParams = bfGfxContextCreateParams;
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -66,13 +66,13 @@ namespace bf
   class BehaviorSystem;
   struct Gfx2DPainter;
 
-  struct CameraRenderCreateParams final
+  struct CameraRenderCreateParams
   {
     int width;
     int height;
   };
 
-  struct CameraRender final
+  struct CameraRender
   {
     friend class ::Engine;
 
@@ -131,6 +131,33 @@ namespace bf
     }
   };
 
+  // using Window      = bfWindow;
+  using ButtonFlags = std::uint8_t;
+
+  struct MouseInputState
+  {
+    Vector2i    current_pos  = {0, 0};
+    Vector2i    delta_pos    = {0, 0};
+    ButtonFlags button_state = 0x00000000;
+  };
+
+  class Input : bfNonCopyMoveable<Input>
+  {
+    friend class ::Engine;
+
+   private:
+    MouseInputState m_MouseState = {};
+
+   private:
+    void onEvent(Event& evt);
+    void frameEnd();
+
+   public:
+    const MouseInputState& mouseState() const { return m_MouseState; }
+    Vector2i               mousePos() const { return mouseState().current_pos; }
+    Vector2i               mousePosDelta() const { return mouseState().delta_pos; }
+  };
+
   enum class EngineState : std::uint8_t
   {
     RUNTIME_PLAYING,
@@ -164,6 +191,7 @@ class Engine : private bfNonCopyMoveable<Engine>
   VM                      m_Scripting;
   Assets                  m_Assets;
   Array<AssetSceneHandle> m_SceneStack;
+  Input                   m_Input;
 
   // Rendering
 
@@ -201,6 +229,7 @@ class Engine : private bfNonCopyMoveable<Engine>
   DebugRenderer&     debugDraw() { return m_DebugRenderer; }
   Gfx2DPainter&      renderer2D() const { return *m_Renderer2D; }
   Assets&            assets() { return m_Assets; }
+  Input&             input() { return m_Input; }
   AnimationSystem&   animationSys() const { return *m_AnimationSystem; }
   CollisionSystem&   collisionSys() const { return *m_CollisionSystem; }
   ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
@@ -244,9 +273,9 @@ class Engine : private bfNonCopyMoveable<Engine>
     return sys;
   }
 
-  void               init(const BifrostEngineCreateParams& params, bfWindow* main_window);
+  void               init(const bfEngineCreateParams& params, bfWindow* main_window);
   [[nodiscard]] bool beginFrame();
-  void               onEvent(Event& evt);
+  void               onEvent(bfWindow* window, Event& evt);
   void               fixedUpdate(float delta_time);
   void               update(float delta_time);
   void               drawBegin(float render_alpha);

@@ -13,7 +13,9 @@ namespace bf
     m_RefCount{0u},
     m_Tags{},
     m_IsDirty{false},
-    m_TypeInfo{nullptr}
+    m_TypeInfo{nullptr},
+    m_SubAssets{&BaseAssetInfo::m_SubAssetListNode},
+    m_SubAssetListNode{}
   {
   }
 
@@ -25,5 +27,15 @@ namespace bf
   StringRange BaseAssetInfo::fileName() const
   {
     return path::name(filePathRel());
+  }
+
+  void BaseAssetInfo::addSubAsset(BaseAssetInfo* asset)
+  {
+    m_SubAssets.pushBack(*asset);
+  }
+
+  void BaseAssetInfo::removeSubAsset(BaseAssetInfo* asset)
+  {
+    m_SubAssets.erase(m_SubAssets.makeIterator(*asset));
   }
 }  // namespace bf

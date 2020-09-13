@@ -11,7 +11,7 @@ namespace bf::intrusive
   class ListView;
 
   template<typename T>
-  struct Node final : private bfNonCopyable<Node<T>>
+  struct Node : private bfNonCopyable<Node<T>>
   {
     Node<T>* prev;
     T*       next;
@@ -22,6 +22,9 @@ namespace bf::intrusive
     {
     }
   };
+
+  template<typename T>
+  using ListNode = Node<T>;
 
   template<typename T>
   class ListIterator final
@@ -194,7 +197,7 @@ namespace bf::intrusive
       clear();
     }
   };
-}  // namespace bifrost::intrusive
+}  // namespace bf::intrusive
 
 // TODO: Make a new file for this
 
@@ -356,8 +359,8 @@ namespace bf
     template<typename... Args>
     T& insert(iterator pos, Args&&... args)
     {
-      Node* node      = m_Memory.allocateT<Node>();
-      T*    node_data = new (&node->data_storage) T(std::forward<Args>(args)...);
+      Node* const node      = m_Memory.allocateT<Node>();
+      T* const    node_data = new (&node->data_storage) T(std::forward<Args>(args)...);
 
       m_InternalList.insert(pos.m_Current, *node);
 
@@ -405,6 +408,6 @@ namespace bf
       return reinterpret_cast<Node&>(element);
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_INTRUSIVE_LIST_HPP */

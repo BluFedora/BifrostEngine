@@ -2443,6 +2443,8 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
     }
   }
 
+  // glDrawElementsBaseVertex
+
   glDrawElements(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode),
                  num_indices,
                  self->index_type == BIFROST_INDEX_TYPE_UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,

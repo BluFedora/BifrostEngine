@@ -14,8 +14,8 @@
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#ifndef BIFROST_ASSETS_HPP
-#define BIFROST_ASSETS_HPP
+#ifndef BF_ASSETS_HPP
+#define BF_ASSETS_HPP
 
 #include "bifrost/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
@@ -35,6 +35,8 @@ namespace bf
 
   class BaseAssetInfo;
   class BaseAssetHandle;
+  class JsonSerializerWriter;
+  class JsonSerializerReader;
 
   using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
@@ -45,16 +47,9 @@ namespace bf
     PATH_DOES_NOT_EXIST,
   };
 
-  /*!
-   * @brief
-   *  Basic abstraction over a path.
-   *
-   *  Glorified string utilities with some extras to make
-   *  working with paths cross-platform and less painful.
-   */
   namespace path
   {
-    static constexpr std::size_t MAX_LENGTH = 512;
+    static constexpr std::size_t MAX_LENGTH = 512; // TODO(SR): This needs be be deprecated.
 
     struct DirectoryEntry;
 
@@ -71,7 +66,7 @@ namespace bf
     void            closeDirectory(DirectoryEntry* entry);
 
     bool renameFile(const StringRange& old_name, const StringRange& new_name);  // ex: renameFile("path/to/my/file.txt", "new_path/to/file2.txt")
-  }  // namespace path
+  }                                                                             // namespace path
 
   namespace detail
   {
@@ -99,22 +94,25 @@ namespace bf
    public:
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
-    template<typename T>
-    BifrostUUID indexAsset(StringRange abs_path)  // Relative Path to Asset in reference to the Root path. Ex: "Textures/whatever.png"
+    template<typename AssetTInfo>
+    BifrostUUID indexAsset(StringRange abs_path)
     {
-      auto* const       type_info = meta::TypeInfo<T>::get();
-      bool              create_new;
-      const BifrostUUID uuid = indexAssetImpl(abs_path, create_new, type_info);
+      const auto [uuid, create_new] = indexAssetImpl(abs_path);
 
       if (create_new)
       {
-        T* const asset_handle    = m_Memory.allocateT<T>(abs_path, String_length(m_RootPath), uuid);
-        asset_handle->m_TypeInfo = type_info;
-
-        m_AssetMap.emplace(uuid, asset_handle);
-        markDirty(makeHandle(*asset_handle));
+        saveAssetInfo(m_Engine, createAssetInfo<AssetTInfo>(abs_path, String_length(m_RootPath), uuid));
       }
 
+      return uuid;
+    }
+
+    template<typename AssetTInfo>
+    BifrostUUID indexAsset(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path)
+    {
+      const auto uuid = bfUUID_generate();
+
+      addSubAssetTo(parent_asset, createAssetInfo<AssetTInfo>(sub_asset_name_path, 0u, uuid));
       return uuid;
     }
 
@@ -141,7 +139,7 @@ namespace bf
       return handle;
     }
 
-    char*      metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::free_fmt
+    char*      metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const;  // Free the buffer with string_utils::fmtFree
     TempBuffer metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const;
     void       loadMeta(StringRange meta_file_name);
     AssetError setRootPath(std::string_view path);  // TODO(Shareef): Use 'StringRange'.
@@ -149,22 +147,36 @@ namespace bf
     void       markDirty(const BaseAssetHandle& asset);
     bool       writeJsonToFile(const StringRange& path, const json::Value& value) const;
     void       saveAssets();
+    void       saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, BaseAssetInfo* info);
+    void       saveAssetInfo(Engine& engine, BaseAssetInfo* info);
     void       clearDirtyList();
 
     // Path Conversions
 
     String relPathToAbsPath(const StringRange& rel_path) const;
-    // String metaPathToRelPath(const StringRange& meta_path);
 
     ~Assets();
 
-    // TODO: Remove these
+    // TODO: Remove This
     detail::AssetMap& assetMap() { return m_AssetMap; }
-    Engine&           engine() const { return m_Engine; }
 
    private:
-    BifrostUUID indexAssetImpl(StringRange abs_path, bool& create_new, meta::BaseClassMetaInfo* type_info);
-  };
-}  // namespace bifrost
+    template<typename AssetTInfo>
+    AssetTInfo* createAssetInfo(StringRange abs_path, std::size_t root_length, const BifrostUUID& uuid)
+    {
+      AssetTInfo* const asset_info = m_Memory.allocateT<AssetTInfo>(abs_path, root_length, uuid);
+      asset_info->m_TypeInfo       = meta::TypeInfo<AssetTInfo>::get();
 
-#endif /* BIFROST_ASSETS_HPP */
+      m_AssetMap.emplace(uuid, asset_info);
+
+      return asset_info;
+    }
+
+    std::pair<BifrostUUID, bool> indexAssetImpl(StringRange abs_path);
+    static void                  addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset);
+    void                         writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info);
+    BaseAssetInfo*               readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset = false);
+  };
+}  // namespace bf
+
+#endif /* BF_ASSETS_HPP */

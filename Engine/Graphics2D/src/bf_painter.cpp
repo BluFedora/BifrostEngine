@@ -862,7 +862,7 @@ namespace bf
 
   void Gfx2DPainter::pushText(const Vector2f& pos, const char* utf8_text, PainterFont* font)
   {
-    const bfColor4u color           = bfColor4u_fromUint32(BIFROST_COLOR_SALMON);
+    const bfColor4u color           = bfColor4u_fromUint32(BIFROST_COLOR_BLACK);  // bfColor4u_fromUint32(BIFROST_COLOR_SALMON);
     float           x               = pos.x;
     float           y               = pos.y;  // TODO(SR): Handle New line
     int             num_characters  = 0;
@@ -974,6 +974,8 @@ namespace bf
       current_atlas.needs_upload = false;
     }
 
+    const auto old_texture = currentDrawCommand().texture;
+
     bindTexture(current_atlas.handle);
 
     for (int i = 0; i < num_characters; ++i)
@@ -983,6 +985,8 @@ namespace bf
       pushTriIndex(vertex_id + 0, vertex_id + 1, vertex_id + 2);
       pushTriIndex(vertex_id + 0, vertex_id + 2, vertex_id + 3);
     }
+
+    bindTexture(old_texture);
   }
 
   void Gfx2DPainter::render(bfGfxCommandListHandle command_list, int fb_width, int fb_height)

@@ -219,10 +219,11 @@ namespace bf
     using BaseT = BaseGraphicsResource<Model, bfBufferHandle>;
 
    private:
-    std::uint32_t m_NumVertices;
+    std::uint32_t              m_NumVertices;
+    Array<AssetMaterialHandle> m_EmbeddedMaterials;
 
    public:
-    explicit Model(bfGfxDeviceHandle device);
+    explicit Model(IMemoryManager& memory, bfGfxDeviceHandle device);
 
     void draw(bfGfxCommandListHandle cmd_list);
   };
@@ -322,7 +323,7 @@ BIFROST_META_REGISTER(bf::Model){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<Model>("Model"),                             //
-   ctor<bfGfxDeviceHandle>(),                              //
+   // ctor<bfGfxDeviceHandle>(),                              //
    field_readonly("m_NumVertices", &Model::m_NumVertices)  //
    )
    BIFROST_META_END()}

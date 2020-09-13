@@ -17,8 +17,8 @@
 #ifndef BIFROST_COLLISION_SYSTEM
 #define BIFROST_COLLISION_SYSTEM
 
+#include "bf/Core.h"                                    // bfInvalidDefaultCase
 #include "bifrost/bifrost_math.hpp"                     // isAlmostEqual
-#include "bifrost/bifrost_std.h"                        // bfInvalidDefaultCase
 #include "bifrost/data_structures/bifrost_array.hpp"    // Array<T>
 #include "bifrost/memory/bifrost_linear_allocator.hpp"  // LinearAllocator
 #include "bifrost_iecs_system.hpp"                      // IECSSystem
@@ -294,7 +294,7 @@ namespace bf
         // Stage 2: Add the Object as normal
         const BVHNodeOffset sibling    = nodeToIndex(*current_node);
         const BVHNodeOffset old_parent = current_node->parent;
-        const BVHNodeOffset old_depth = current_node->depth;
+        const BVHNodeOffset old_depth  = current_node->depth;
         const BVHNodeOffset new_parent = createNode(nullptr, aabb::mergeBounds(object_bounds, current_node->bounds));
         const BVHNodeOffset new_leaf   = createNode(user_data, object_bounds);
 
@@ -792,6 +792,6 @@ namespace bf
     void onFrameUpdate(Engine& engine, float dt) override;
     void onFrameEnd(Engine& engine, float dt) override;
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_COLLISION_SYSTEM */

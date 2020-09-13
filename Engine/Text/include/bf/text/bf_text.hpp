@@ -190,7 +190,7 @@ namespace bf
      */
     std::size_t sizeInBytes() const
     {
-      return width * height * sizeof(Pixel);
+      return std::size_t(width) * std::size_t(height) * sizeof(Pixel);
     }
   };
 

@@ -40,7 +40,7 @@ namespace bf
    protected:
     IGameStateLayer();
 
-   public:  // TODO: This isn't right.
+   private:
     virtual void onCreate(Engine& engine);
     virtual void onLoad(Engine& engine);
     virtual void onEvent(Engine& engine, bfEvent& event);

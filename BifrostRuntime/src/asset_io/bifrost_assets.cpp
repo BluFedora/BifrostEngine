@@ -14,8 +14,6 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
-// #include "bifrost/ecs/bifrost_entity.hpp"
-
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
 #include "bifrost/asset_io/bifrost_file.hpp"             // File
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
@@ -98,8 +96,8 @@ namespace bf
 
     DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path)
     {
-      char        null_terminated_path[MAX_LENGTH] = {'\0'};
-      std::size_t null_terminated_path_length      = std::min(path.length(), bfCArraySize(null_terminated_path));
+      char        null_terminated_path[path::k_MaxLength] = {'\0'};
+      std::size_t null_terminated_path_length             = std::min(path.length(), bfCArraySize(null_terminated_path) - 3);
 
       std::strncpy(null_terminated_path, path.bgn, null_terminated_path_length);
 
@@ -119,7 +117,7 @@ namespace bf
         return nullptr;
       }
 #else
-      DIR* const     file_handle = opendir(null_terminated_path);
+      DIR* const file_handle = opendir(null_terminated_path);
 
       if (!file_handle)
       {
@@ -220,31 +218,6 @@ namespace bf
   {
   }
 
-  BifrostUUID Assets::indexAssetImpl(const StringRange abs_path, bool& create_new, meta::BaseClassMetaInfo* type_info)
-  {
-    const StringRange relative_path = path::relative(m_RootPath, abs_path);
-    const auto        it_name       = m_NameToGUID.find(relative_path);
-
-    if (it_name != m_NameToGUID.end())
-    {
-      const auto it_asset = m_AssetMap.find(it_name->value());
-
-      if (it_asset != m_AssetMap.end())
-      {
-        // Do Updates?
-        create_new = false;
-        return it_name->value();
-      }
-    }
-
-    const BifrostUUID uuid = bfUUID_generate();
-
-    m_NameToGUID.emplace(relative_path, uuid);
-
-    create_new = true;
-    return uuid;
-  }
-
   BaseAssetInfo* Assets::findAssetInfo(const BifrostUUID& uuid)
   {
     const auto it = m_AssetMap.find(uuid);
@@ -311,42 +284,12 @@ namespace bf
 
       m_Memory.deallocate(buffer);
 
-      const String             rel_path  = loaded_data.get<String>("Path");
-      const String             uuid_str  = loaded_data.get<String>("UUID");
-      const String             type      = loaded_data.get<String>("Type");
-      meta::BaseClassMetaInfo* type_info = meta::TypeInfoFromName(std::string_view{type.begin(), type.length()});
-
-      if (!type_info || uuid_str.isEmpty())
-      {
-        std::printf("[Assets::loadMeta]: WARNING could not find asset datatype: %s\n", type.c_str());
-        return;
-      }
-
-      BifrostUUID uuid = bfUUID_fromString(uuid_str.c_str());
-
-      if (bfUUID_isEmpty(&uuid))
-      {
-        std::printf("[Assets::loadMeta]: WARNING failed to load UUID.");
-
-        // bfLogError()
-        return;
-      }
-
-      //const String rel_path = metaPathToRelPath(meta_file_name);
-      const String abs_path = relPathToAbsPath(rel_path);
-
-      const meta::MetaVariant asset_handle   = type_info->instantiate(m_Memory, abs_path, String_length(m_RootPath), uuid);
-      BaseAssetInfo*          asset_handle_p = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
-      asset_handle_p->m_TypeInfo             = type_info;
-
-      m_AssetMap.emplace(uuid, asset_handle_p);
-      m_NameToGUID.emplace(rel_path, uuid);
-
       JsonSerializerReader reader{*this, m_Memory, loaded_data};
 
       if (reader.beginDocument(false))
       {
-        asset_handle_p->serialize(m_Engine, reader);
+        readMetaInfo(reader);
+
         reader.endDocument();
       }
 
@@ -457,53 +400,54 @@ namespace bf
 
     for (const auto& asset : m_DirtyAssetList)
     {
-      const LinearAllocatorScope asset_mem_scope       = {temp_alloc};
-      BaseAssetInfo* const       info                  = asset.info();
-      std::size_t                meta_file_name_length = 0u;
-      char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->filePathRel(), meta_file_name_length);
-      const TempBuffer           meta_file_path        = metaFullPath(temp_alloc_no_free, {meta_file_name, meta_file_name + meta_file_name_length});
+      saveAssetInfo(temp_alloc, temp_alloc_no_free, asset.info());
+    }
 
-      // Save Engine Asset
+    clearDirtyList();
+  }
+
+  void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, BaseAssetInfo* info)
+  {
+    const LinearAllocatorScope asset_mem_scope       = {temp_alloc};
+    std::size_t                meta_file_name_length = 0u;
+    char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->filePathRel(), meta_file_name_length);
+    const TempBuffer           meta_file_path        = metaFullPath(temp_alloc_no_free, {meta_file_name, meta_file_name + meta_file_name_length});
+
+    // Save Engine Asset
+    {
+      const LinearAllocatorScope json_writer_scope = {temp_alloc};
+      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+
+      if (json_writer.beginDocument(false))
       {
-        const LinearAllocatorScope json_writer_scope = {temp_alloc};
-        JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+        const bool is_engine_asset = info->save(m_Engine, json_writer);
+        json_writer.endDocument();
 
-        if (json_writer.beginDocument(false))
+        if (is_engine_asset)
         {
-          const bool is_engine_asset = info->save(m_Engine, json_writer);
-          json_writer.endDocument();
-
-          if (is_engine_asset)
-          {
-            writeJsonToFile(info->filePathAbs(), json_writer.document());
-          }
-        }
-      }
-
-      // Save Meta Info
-      {
-        const LinearAllocatorScope json_writer_scope = {temp_alloc};
-        JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
-
-        if (json_writer.beginDocument(false))
-        {
-          info->serialize(m_Engine, json_writer);
-
-          String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
-          String path_as_str    = info->filePathRel();
-
-          json_writer.serialize("Path", path_as_str);
-          json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
-          json_writer.serialize("Type", type_info_name);
-
-          json_writer.endDocument();
-
-          writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
+          writeJsonToFile(info->filePathAbs(), json_writer.document());
         }
       }
     }
 
-    clearDirtyList();
+    // Save Meta Info
+    {
+      const LinearAllocatorScope json_writer_scope = {temp_alloc};
+      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+
+      if (json_writer.beginDocument(false))
+      {
+        writeMetaInfo(json_writer, info);
+        json_writer.endDocument();
+
+        writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
+      }
+    }
+  }
+
+  void Assets::saveAssetInfo(Engine& engine, BaseAssetInfo* info)
+  {
+    saveAssetInfo(engine.tempMemory(), engine.tempMemoryNoFree(), info);
   }
 
   void Assets::clearDirtyList()
@@ -542,5 +486,127 @@ namespace bf
     {
       String_delete(m_RootPath);
     }
+  }
+
+  std::pair<BifrostUUID, bool> Assets::indexAssetImpl(const StringRange abs_path)
+  {
+    const StringRange relative_path = path::relative(m_RootPath, abs_path);
+    const auto        it_name       = m_NameToGUID.find(relative_path);
+
+    if (it_name != m_NameToGUID.end())
+    {
+      const auto it_asset = m_AssetMap.find(it_name->value());
+
+      if (it_asset != m_AssetMap.end())
+      {
+        return {it_name->value(), false};
+      }
+    }
+
+    const BifrostUUID uuid = bfUUID_generate();
+
+    m_NameToGUID.emplace(relative_path, uuid);
+
+    return {uuid, true};
+  }
+
+  void Assets::addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset)
+  {
+    parent_asset->addSubAsset(child_asset);
+  }
+
+  void Assets::writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info)
+  {
+    info->serialize(m_Engine, json_writer);
+
+    String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
+    String path_as_str    = info->filePathRel();
+
+    json_writer.serialize("Path", path_as_str);
+    json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
+    json_writer.serialize("Type", type_info_name);
+
+    std::size_t num_sub_assets;
+
+    if (json_writer.pushArray("m_SubAssets", num_sub_assets))
+    {
+      for (BaseAssetInfo& sub_asset : info->m_SubAssets)
+      {
+        if (json_writer.pushObject(nullptr))
+        {
+          writeMetaInfo(json_writer, &sub_asset);
+
+          json_writer.popObject();
+        }
+      }
+
+      json_writer.popArray();
+    }
+  }
+
+  BaseAssetInfo* Assets::readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset)
+  {
+    String rel_path;
+    String uuid_str;
+    String type;
+
+    reader.serialize("Path", rel_path);
+    reader.serialize("UUID", uuid_str);
+    reader.serialize("Type", type);
+
+    meta::BaseClassMetaInfo* type_info = meta::TypeInfoFromName(std::string_view{type.begin(), type.length()});
+
+    if (!type_info || uuid_str.isEmpty())
+    {
+      std::printf("[Assets::loadMeta]: WARNING could not find asset datatype: %s\n", type.c_str());
+      return nullptr;
+    }
+
+    BifrostUUID uuid = bfUUID_fromString(uuid_str.c_str());
+
+    if (bfUUID_isEmpty(&uuid))
+    {
+      std::printf("[Assets::loadMeta]: WARNING failed to load UUID.");
+      return nullptr;
+    }
+
+    const String            abs_path         = is_sub_asset ? rel_path : relPathToAbsPath(rel_path);
+    const std::size_t       root_path_length = is_sub_asset ? 0u : String_length(m_RootPath);
+    const meta::MetaVariant asset_handle     = type_info->instantiate(m_Memory, abs_path, root_path_length, uuid);
+    BaseAssetInfo*          asset_handle_p   = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
+
+    if (asset_handle_p)
+    {
+      asset_handle_p->m_TypeInfo = type_info;
+
+      asset_handle_p->serialize(m_Engine, reader);
+
+      m_AssetMap.emplace(uuid, asset_handle_p);
+      m_NameToGUID.emplace(rel_path, uuid);
+
+      std::size_t num_sub_assets = 0u;
+
+      if (reader.pushArray("m_SubAssets", num_sub_assets))
+      {
+        for (std::size_t i = 0; i < num_sub_assets; ++i)
+        {
+          if (reader.pushObject(nullptr))
+          {
+            BaseAssetInfo* const sub_asset = readMetaInfo(reader, true);
+
+            if (sub_asset)
+            {
+              asset_handle_p->addSubAsset(sub_asset);
+            }
+
+            reader.popObject();
+          }
+        }
+
+        reader.popArray();
+      }
+    }
+
+    return asset_handle_p;
   }
 }  // namespace bf

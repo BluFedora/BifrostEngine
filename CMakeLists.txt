@@ -1,6 +1,6 @@
 ﻿################################################################################
 #                                                                              #
-#                            BIFROST CMAKE PROJECT                             #
+#                               BF CMAKE PROJECT                               #
 #                                                                              #
 ################################################################################
 ###  CMakeList.txt : Top-level CMake project file, for global configuration  ###
@@ -11,10 +11,10 @@ cmake_minimum_required(VERSION 3.8)
 
 project(BluFedoraEngine VERSION 1.0)
 
-  # NOTE(Shareef): Bifrost Engine Version
-set(BIFROST_ENGINE_VERSION_MAJOR 1)
-set(BIFROST_ENGINE_VERSION_MINOR 3)
-set(BIFROST_ENGINE_VERSION_PATCH 0)
+  # NOTE(Shareef): Engine Version
+set(BF_ENGINE_VERSION_MAJOR 1)
+set(BF_ENGINE_VERSION_MINOR 3)
+set(BF_ENGINE_VERSION_PATCH 0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -176,7 +176,8 @@ add_executable(
  "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
  "Engine/Runtime/src/asset_io/bf_asset_info.cpp" 
  "Engine/Runtime/include/bf/asset_io/bf_path_manip.hpp" 
- "Engine/Runtime/src/asset_io/bf_path_manip.cpp")
+ "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
+ )
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")
@@ -204,6 +205,8 @@ target_include_directories(
 target_link_libraries(
   BifrostEngineOLD
   PRIVATE
+    BF_AssetIO_static
+    BF_Core_static
     BF_Platform_shared
     BF_Text_static
 
@@ -338,6 +341,8 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
 endif()
 
 add_subdirectory(Engine/Anim2D)
+add_subdirectory(Engine/AssetIO)
+add_subdirectory(Engine/Core)
 add_subdirectory(Engine/DataStructures)
 add_subdirectory(Engine/Dispatch)
 add_subdirectory(Engine/Math)

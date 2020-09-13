@@ -16,7 +16,7 @@
 #ifndef BIFROST_JSON_H
 #define BIFROST_JSON_H
 
-#include "bifrost/bifrost_std.h" /* size_t, bfBool32, bfStringRange */
+#include "bf/Core.h" /* size_t, bfBool32, bfStringRange */
 
 #if __cplusplus
 extern "C" {

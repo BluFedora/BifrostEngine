@@ -14,8 +14,9 @@
 #ifndef BIFROST_VM_LEXER_H
 #define BIFROST_VM_LEXER_H
 
-#include "bifrost/bifrost_std.h" /* bfBool32, bfFloat64 */
-#include <stddef.h>              /* size_t              */
+#include "bf/Core.h" /* bfBool32, bfFloat64 */
+
+#include <stddef.h> /* size_t */
 
 #if __cplusplus
 extern "C" {

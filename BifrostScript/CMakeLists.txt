@@ -72,12 +72,14 @@ target_link_libraries(
   BifrostScript
   PRIVATE
     BifrostDataStructuresC_static
+    BF_Core_static
 )
 
 target_include_directories(
   BifrostScript 
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
-  ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
+  PUBLIC 
+    ${PROJECT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
 )
 
 set_property(
@@ -115,10 +117,15 @@ if(NOT EMSCRIPTEN)
     BifrostScript_shared
     PRIVATE
       BifrostDataStructuresC_static
+      BF_Core_static
   )
   
   target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
-  set_target_properties(BifrostScript_shared PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
+  set_target_properties(
+    BifrostScript_shared 
+    PROPERTIES 
+      PUBLIC_HEADER include/bifrost/script/bifrost_vm.h
+      OUTPUT_NAME   bf.ScriptDLL)
 endif()
 
 # Command Line Interface

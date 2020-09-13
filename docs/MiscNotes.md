@@ -1,5 +1,15 @@
 # C++ and C
 
+## Reserved Identifiers
+
+- At global scope all `_[lower-case-letters]`
+- Always reserved are `__` and `_[capital-letter]`
+- C++: Anything in the `std` namespace but you are allowed to make template specializations.
+
+## Move Semantics
+
+- The only valid operations that can be performed on a moved objects are being destructed, copy assigned to, or move assigned to.
+
 ## Optimizations C++ has over C
 
 - `std::sort` > `qsort`
@@ -30,7 +40,7 @@ vec4 TransformedNormal = NormalMatrix * ObjectNormal;
 > The TBN matrix can be calculated in this way:
 
 ```glsl
-vertex inputs:
+vertex-inputs:
   vec3 in_Tangent;
   vec3 in_Normal;
 
@@ -86,11 +96,11 @@ mat3 TBN = transpose(mat3(T, B, N));
 
 ### Ports
 
-- They are 16bit so the range is 0 - 65535
+- They are 16bit so the 'full' range is 0 - 65535
 - Use Port 0 for the OS to choose.
 - Port #s 0 - 1000 are reserved for services.
   - Ex: HTTP: 80, HTTPS: 443, SSH: 22
-- Ports we can use ( 1,000 to 6,535)
+- Ports we can use (1,000 to 6,535)
 
 ## Named Pipes
 
@@ -124,6 +134,8 @@ mat3 TBN = transpose(mat3(T, B, N));
 
 # UI
 
+## Animation Speeds
+
 - Animation speeds should span 200 - 500ms, sub 100ms animations feel instantaneous to the human brain.
 
 
@@ -149,6 +161,41 @@ mat3 TBN = transpose(mat3(T, B, N));
 - When moving an object that changes size as well then if the size change is disproportionate (square => rectangle) then the movement of the object should go along an arc according to _Material Design_.
 
 - Objects at the same z-level should never intersect each other while animating.
+
+## DPI (Dots Per Inch) & Scaling
+
+- To correctly handle HiDPI displays you should handle it per window, per monitor.
+
+> Default DPI Per Platform
+
+- Windows : 96
+-   macOS : 72
+
+> Windows
+
+Each window is allowed to have a 'DPI Awareness' level declaring how it handles DPI.
+This can be set either though a manifest file or at runtime programmatically.
+
+*If you set DPI awareness programmatically you must set it before any windows (`HWND`s) are created*
+
+- `SetProcessDpiAwarenessContext` (Windows 10)
+  - `SetProcessDpiAwareness` (Windows 8.1)
+  - `SetProcessDpiAware` (Windows Vista)
+- `GetDpiForWindow`
+
+- DPI_AWARENESS_UNAWARE
+  - The default value indicating Windows will lie to you and will scale up your app automatically.
+  - This leads to blurry text and graphics since this is just a dumb bilinear scaling.
+- DPI_AWARENESS_SYSTEM_AWARE
+  - The window is correct for the main monitor but doesn't handle changing to a monitor with a different DPI.
+- DPI_AWARENESS_PER_MONITOR_AWARE
+  - The window is a rockstar and handles dpi scaling changes through the WM_DPICHANGE event.
+
+> Apple
+
+Can only be set through the app manifest.
+
+On macOS set the `NSHighResolutionCapable` flag to `TRUE`.
 
 ---
 
@@ -223,9 +270,69 @@ namespace bf
   //   - What if the `connection(s)` outlives the property(s). (Is a problem)
   //
 
+  template<typename T>
+  struct InlinePropertyStorage
+  {
+    T data;
+  };
+
+  template<typename T>
+  struct RefPropertyStorage
+  {
+    T* data;
+  };
+
+  template<
+    typename T, 
+    typename TGetter = std::function<T ()>, 
+    typename TSetter = std::function<void (T value)>
+  >
+  struct VirtualPropertyStorage
+  {
+    TGetter getter;
+    TSetter setter;
+  };
+
+  template<typename T, template<typename> TStorage>
   class property
   {
+    TStorage<T> storage;
 
   };
 }
 ```
+
+---
+
+# True Misc
+
+# An Imported Model Has
+
+- A List of Meshes
+  - Each mesh has a list of bones
+  - Each mesh has either one material or less.
+  - List of vertices
+- A List of Embedded Materials
+  - Each Material has a list of properties and texture types.
+  - Each texture type can have multiple textures.
+
+
+# Assimp Data
+
+- Scene
+  - Mesh[] meshes;
+
+
+
+
+
+
+# Rand Notes On Rendering Metrics
+
+- Aim for ~thousands of draw calls or less (1000 - 2300 max).
+
+
+# Text Notes
+
+  - [Making a Win32 Text Editor](http://www.catch22.net/tuts/neatpad/neatpad-overview#)
+  - [http://utf8everywhere.org/](http://utf8everywhere.org/)

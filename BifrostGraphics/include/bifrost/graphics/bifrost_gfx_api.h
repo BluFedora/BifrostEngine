@@ -18,7 +18,7 @@
 #ifndef BIFROST_GFX_API_H
 #define BIFROST_GFX_API_H
 
-#include "bifrost/bifrost_std.h"        /* bfBool32 */
+#include "bf/Core.h"                    /* bfBool32 */
 #include "bifrost_gfx_export.h"         /* BIFROST_GFX_API */
 #include "bifrost_gfx_handle.h"         /* */
 #include "bifrost_gfx_limits.h"         /* */

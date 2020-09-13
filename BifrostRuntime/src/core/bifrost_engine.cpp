@@ -9,6 +9,42 @@
 #include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
 #include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
 
+namespace bf
+{
+  void Input::onEvent(Event& evt)
+  {
+    if (evt.isMouseEvent())
+    {
+      const auto& mouse_evt = evt.mouse;
+
+      m_MouseState.button_state = mouse_evt.button_state;
+    }
+
+    switch (evt.type)
+    {
+      case BIFROST_EVT_ON_MOUSE_MOVE:
+      {
+        const auto& mouse_evt = evt.mouse;
+
+        const Vector2i old_mouse_pos = m_MouseState.current_pos;
+
+        m_MouseState.current_pos = {mouse_evt.x, mouse_evt.y};
+        m_MouseState.delta_pos   = m_MouseState.current_pos - old_mouse_pos;
+
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
+  void Input::frameEnd()
+  {
+    m_MouseState.delta_pos = {0, 0};
+  }
+}  // namespace bf
+
 Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
   bfNonCopyMoveable<Engine>{},
   m_CmdlineArgs{argc, argv},
@@ -23,6 +59,7 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* 
   m_Scripting{},
   m_Assets{*this, m_MainMemory},
   m_SceneStack{m_MainMemory},
+  m_Input{},
   m_Renderer{m_MainMemory},
   m_DebugRenderer{m_MainMemory},
   m_Renderer2D{nullptr},
@@ -136,7 +173,7 @@ EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
   return EntityRef{entity};
 }
 
-void Engine::init(const BifrostEngineCreateParams& params, bfWindow* main_window)
+void Engine::init(const bfEngineCreateParams& params, bfWindow* main_window)
 {
   IBifrostDbgLogger logger_config{
    nullptr,
@@ -218,8 +255,12 @@ bool Engine::beginFrame()
   return m_Renderer.frameBegin();
 }
 
-void Engine::onEvent(Event& evt)
+void Engine::onEvent(bfWindow* window, Event& evt)
 {
+  (void)window;
+
+  m_Input.onEvent(evt);
+
   for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != m_StateMachine.rend(); ++it)
   {
     it->onEvent(*this, evt);
@@ -333,6 +374,7 @@ void Engine::drawEnd()
 
 void Engine::endFrame()
 {
+  m_Input.frameEnd();
   m_Renderer.frameEnd();
 
   gc::collect(m_MainMemory);

@@ -14,9 +14,11 @@
 #ifndef BIFROST_STRING_HPP
 #define BIFROST_STRING_HPP
 
-#include "bifrost/bifrost_std.h"    /* bfStringRange      */
 #include "bifrost_dynamic_string.h" /* ConstBifrostString */
 
+#include "bf/StringRange.h" /* bfStringRange */
+
+#include <cstdarg>   /* va_list        */
 #include <cstddef>   /* size_t         */
 #include <cstring>   /* strncmp        */
 #include <limits>    /* numeric_limits */
@@ -30,43 +32,43 @@ namespace bf
 
   struct StringRange : public bfStringRange
   {
-    constexpr StringRange(const bfStringRange& rhs) :
+    constexpr StringRange(const bfStringRange& rhs) noexcept :
       bfStringRange{rhs}
     {
     }
 
-    constexpr StringRange(const char* bgn, const char* end) :
+    constexpr StringRange(const char* bgn, const char* end) noexcept :
       bfStringRange{bgn, end}
     {
     }
 
-    constexpr StringRange(const char* bgn, std::size_t length) :
+    constexpr StringRange(const char* bgn, std::size_t length) noexcept :
       bfStringRange{bgn, bgn + length}
     {
     }
 
-    constexpr StringRange(const char* cstring) :
+    constexpr StringRange(const char* cstring) noexcept :
       bfStringRange{bfMakeStringRangeC(cstring)}
     {
     }
 
-    constexpr StringRange() :
+    constexpr StringRange() noexcept :
       StringRange{nullptr, nullptr}
     {
     }
 
-    constexpr StringRange(std::nullptr_t) :
+    constexpr StringRange(std::nullptr_t) noexcept :
       StringRange{nullptr, nullptr}
     {
     }
 
-    [[nodiscard]] std::size_t length() const
+    [[nodiscard]] std::size_t length() const noexcept
     {
       // bfStringRange_length();
       return bfStringRange::end - bgn;
     }
 
-    [[nodiscard]] bool operator==(const StringRange& rhs) const
+    [[nodiscard]] bool operator==(const StringRange& rhs) const noexcept
     {
       const std::size_t lhs_length = length();
       const std::size_t rhs_length = rhs.length();
@@ -75,39 +77,39 @@ namespace bf
     }
 
     // Assumes a nul terminated string. If you only want to compare with a piece then use StringRange.
-    [[nodiscard]] bool operator==(const char* rhs) const
+    [[nodiscard]] bool operator==(const char* rhs) const noexcept
     {
       const std::size_t lhs_length = length();
 
       return std::strncmp(bgn, rhs, lhs_length) == 0 && rhs[lhs_length] == '\0';
     }
 
-    [[nodiscard]] bool operator!=(const StringRange& rhs) const
+    [[nodiscard]] bool operator!=(const StringRange& rhs) const noexcept
     {
       return !(*this == rhs);
     }
 
-    const char* begin() const
+    const char* begin() const noexcept
     {
       return bgn;
     }
 
-    const char* end() const
+    const char* end() const noexcept
     {
       return bfStringRange::end;
     }
 
-    auto rbegin() const
+    auto rbegin() const noexcept
     {
       return std::make_reverse_iterator(end());
     }
 
-    auto rend() const
+    auto rend() const noexcept
     {
       return std::make_reverse_iterator(begin());
     }
 
-    std::size_t find(char character, std::size_t pos = 0) const
+    std::size_t find(char character, std::size_t pos = 0) const noexcept
     {
       const std::size_t len = length();
 
@@ -503,6 +505,7 @@ namespace bf::string_utils
   // The caller is responsible for freeing any memory this allocates.
   // Use 'fmtFree' to deallocate memory.
   char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...);
+  char* fmtAllocV(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, std::va_list args); // caller is resposible for va_start / va_end
   // Deallocates memory from 'fmtAlloc'
   void fmtFree(IMemoryManager& allocator, char* ptr);
   // Uses the passed in buffer for the formatting.

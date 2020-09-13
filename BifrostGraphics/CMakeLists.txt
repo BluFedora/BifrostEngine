@@ -34,6 +34,7 @@ set(
 set(
   BIFROST_GRAPHICS_LIBRARIES
   BifrostDataStructuresCxx
+  BF_Core_static
 )
 
 if (BIFROST_OPT_GRAPHICS_VULKAN)
@@ -153,3 +154,6 @@ target_link_libraries(
   PRIVATE
     "${BIFROST_GRAPHICS_LIBRARIES}"
 )
+
+add_library("${PROJECT_NAME}_static" ALIAS BifrostGraphics_static)
+add_library("${PROJECT_NAME}_shared" ALIAS BifrostGraphics_shared)

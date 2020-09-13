@@ -7,6 +7,10 @@ project(BF_Text VERSION 1.0.0 DESCRIPTION "Handles unicode text encoding and fon
 add_library(
   "${PROJECT_NAME}_static"
   STATIC
+    # Headers
+    "${PROJECT_SOURCE_DIR}/include/bf/Text.hpp"
+    "${PROJECT_SOURCE_DIR}/include/bf/Font.hpp"
+    # Sources
     "${PROJECT_SOURCE_DIR}/src/bf_text.cpp"
 )
 
@@ -14,7 +18,6 @@ target_include_directories(
   "${PROJECT_NAME}_static"
   PUBLIC 
     "${PROJECT_SOURCE_DIR}/include"
-
   PRIVATE
     "${PROJECT_SOURCE_DIR}/lib"
 )
@@ -28,7 +31,7 @@ target_compile_features(
 target_link_libraries(
   "${PROJECT_NAME}_static"
   PRIVATE
-    BifrostMemory
+    BF_Memory_interface
 )
 
 set_target_properties(

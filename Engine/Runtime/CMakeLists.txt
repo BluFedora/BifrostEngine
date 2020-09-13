@@ -13,6 +13,8 @@ target_include_directories(
   INTERFACE 
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/../../BifrostRuntime/include # TODO(SR): This is a hack to bootstrap the new project layout.
+    ${PROJECT_SOURCE_DIR}/../../Engine/Graphics2D/include
+    ${PROJECT_SOURCE_DIR}/../../BifrostExperiments/include
 )
 
 target_link_libraries(
@@ -121,9 +123,20 @@ target_sources(
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}utility/bifrost_json.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}utility/bifrost_uuid.c"
 
+   
+
    # HAcky Hacks
 
    "${PROJECT_SOURCE_DIR}/../../BifrostExperiments/src/bifrost_json.c"
 
    "${PROJECT_SOURCE_DIR}/../../Engine/Graphics2D/src/bf_painter.cpp"
+
+   # Mostly Correct
+
+   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_path_manip.hpp"
+
+   "${PROJECT_SOURCE_DIR}/src/anim2D/bf_animation_system.cpp"
+   "${PROJECT_SOURCE_DIR}/src/asset_io/bf_asset_info.cpp"
+   "${PROJECT_SOURCE_DIR}/src/asset_io/bf_path_manip.cpp"
+   "${PROJECT_SOURCE_DIR}/src/asset_io/bf_spritesheet_asset.cpp"
 )

@@ -2,7 +2,7 @@
 
 #include "bifrost/memory/bifrost_imemory_manager.hpp"  // IMemoryManager
 
-#include <cstdarg>  // va_list
+#include <cassert>  // assert
 #include <cstdio>   // vsnprintf
 
 namespace bf
@@ -25,21 +25,32 @@ namespace bf
       tail = this;
     }
   }
-}  // namespace bifrost
+}  // namespace bf
 
 namespace bf::string_utils
 {
   char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...)
   {
-    // TIDE_ASSERT(fmt != nullptr, "A null format is not allowed.");
+    assert(fmt != nullptr && "A null format is not allowed.");
 
-    std::va_list args, args_cpy;
-    char*        buffer = nullptr;
+    std::va_list args;
 
     va_start(args, fmt);
+    char* buffer = fmtAllocV(allocator, out_size, fmt, args);
+    va_end(args);
+
+    return buffer;
+  }
+
+  char* fmtAllocV(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, std::va_list args)
+  {
+    assert(fmt != nullptr && "A null format is not allowed.");
+
+    char*        buffer = nullptr;
+    std::va_list args_cpy;
+
     va_copy(args_cpy, args);
     const int string_len = std::vsnprintf(nullptr, 0, fmt, args);
-    va_end(args);
 
     if (string_len > 0)
     {
@@ -119,4 +130,4 @@ namespace bf::string_utils
 
     return {buffer, length};
   }
-}  // namespace bifrost::string_utils
+}  // namespace bf::string_utils

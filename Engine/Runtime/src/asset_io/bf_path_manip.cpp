@@ -1,11 +1,15 @@
 #include "bf/asset_io/bf_path_manip.hpp"
 
-#include "bf/asset_io/bf_file.hpp"
+#include "bf/asset_io/bf_file.hpp"  // File, file::directoryOfFile
+
+#include <cassert>  // assert
 
 namespace bf::path
 {
   StringRange relative(StringRange abs_root_path, StringRange abs_sub_path)
   {
+    assert(abs_root_path.length() <= abs_sub_path.length());
+
     static constexpr std::size_t k_OffsetFromSlash = 1;
 
     const std::size_t root_path_length = abs_root_path.length();
@@ -14,18 +18,46 @@ namespace bf::path
     const char* const path_end         = path_bgn + (full_path_length - root_path_length - k_OffsetFromSlash);
 
     return {path_bgn, path_end};
-
-    return StringRange();
   }
 
   String append(StringRange directory, StringRange rel_path)
   {
     String ret = directory;
 
-    ret.append('/');
+    ret.append(k_Separator);
     ret.append(rel_path);
 
     return ret;
+  }
+
+  std::size_t append(char* const out_path, std::size_t out_path_size, StringRange directory, StringRange file_name)
+  {
+    assert(out_path_size >= 1);
+
+    const std::size_t out_path_usable_size = out_path_size - 1;
+    const std::size_t dir_bytes_to_write   = std::min(out_path_usable_size, directory.length());
+    char*             end_of_path          = out_path;
+
+    std::memcpy(end_of_path, directory.begin(), dir_bytes_to_write);
+
+    end_of_path += dir_bytes_to_write;
+
+    // This being a '<' rather than a '<=' allows for space for the '/'
+    if (dir_bytes_to_write < out_path_usable_size)
+    {
+      *end_of_path++ = k_Separator;
+
+      const std::size_t bytes_left_over     = out_path_usable_size - dir_bytes_to_write - 1;
+      const std::size_t file_bytes_to_write = std::min(bytes_left_over, file_name.length());
+
+      std::memcpy(end_of_path, file_name.begin(), file_bytes_to_write);
+
+      end_of_path += file_bytes_to_write;
+    }
+
+    end_of_path[0] = '\0';
+
+    return end_of_path - out_path;
   }
 
   StringRange directory(StringRange file_path)

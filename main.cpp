@@ -346,7 +346,6 @@ GLFWwindow*         g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscre
 float               current_time;
 float               time_accumulator;
 static PainterFont* TEST_FONT = nullptr;
-static Vector2f     mouse_pos;
 
 #define MainQuit(code, label) \
   err_code = (code);          \
@@ -377,7 +376,7 @@ int main(int argc, char* argv[])
     }
 
     bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
-    std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
+    std::printf("\n\n                 BlueFedora Engine v%s\n\n\n", BF_VERSION_STR);
     bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
     {
@@ -385,7 +384,7 @@ int main(int argc, char* argv[])
 
       try
       {
-        const std::size_t             engine_memory_size = bfMegabytes(50);
+        const std::size_t             engine_memory_size = bfMegabytes(300);
         const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
 
         Engine engine{engine_memory.get(), engine_memory_size, argc, argv};
@@ -394,7 +393,7 @@ int main(int argc, char* argv[])
 
         glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-        const BifrostEngineCreateParams params = {argv[0], 0};
+        const bfEngineCreateParams params = {argv[0], 0};
 
         engine.init(params, main_window);
 
@@ -459,13 +458,7 @@ int main(int argc, char* argv[])
           Engine* const engine = (Engine*)window->user_data;
 
           imgui::onEvent(window, *event);
-          engine->onEvent(*event);
-
-          if (event->type == BIFROST_EVT_ON_MOUSE_MOVE)
-          {
-            mouse_pos.x = float(event->mouse.x);
-            mouse_pos.y = float(event->mouse.y);
-          }
+          engine->onEvent(window, * event);
         };
 
         main_window->frame_fn = [](bfWindow* window) {
@@ -477,6 +470,7 @@ int main(int argc, char* argv[])
 
           const float new_time   = CurrentTimeSeconds();
           const float delta_time = std::min(new_time - current_time, max_time_step_ms);
+          const auto  mouse_pos  = Vector2f{(float)engine->input().mousePos().x, (float)engine->input().mousePos().y};
 
           time_accumulator += delta_time;
           current_time = new_time;

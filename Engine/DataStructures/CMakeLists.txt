@@ -1,6 +1,6 @@
 ﻿################################################################################
 #                                                                              #
-#                      BIFROST DataStructures PROJECT                          #
+#                         BF DataStructures PROJECT                            #
 #                                                                              #
 ################################################################################
 ###  CMakeList.txt :                                                         ###
@@ -8,14 +8,14 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostDataStructures VERSION 0.0.1 DESCRIPTION "" LANGUAGES C CXX)
+project(BF_DataStructures VERSION 0.0.1 DESCRIPTION "" LANGUAGES C CXX)
 
 add_library(
   BifrostDataStructuresC_static STATIC
   "src/bifrost_array_t.c"
   "src/bifrost_dynamic_string.c"
   "src/bifrost_hash_map.c"
- "include/bf/DenseMap.hpp" "include/bf/Array.hpp")
+ "include/bf/ListView.hpp" "include/bf/StringRange.hpp")
 
 target_include_directories(
   BifrostDataStructuresC_static
@@ -42,6 +42,8 @@ target_link_libraries(
   BifrostDataStructuresCxx 
 
   INTERFACE
-    BifrostMemory
+    BF_Core_static
+    BF_Memory_interface
+    
     BifrostDataStructuresC_static
 )

@@ -17,6 +17,9 @@
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
+#include "bf/asset_io/bf_model_loader.hpp"
+#include "bf/asset_io/bf_path_manip.hpp"
+
 namespace bf
 {
   ShaderModule::ShaderModule(bfGfxDeviceHandle device) :
@@ -122,9 +125,10 @@ namespace bf
 
   void loadObj(IMemoryManager& temp_allocator, Array<StandardVertex>& out, const char* obj_file_data, std::size_t obj_file_data_length);
 
-  Model::Model(bfGfxDeviceHandle device) :
+  Model::Model(IMemoryManager& memory, bfGfxDeviceHandle device) :
     BaseT(device),
-    m_NumVertices{0u}
+    m_NumVertices{0u},
+    m_EmbeddedMaterials{memory}
   {
   }
 
@@ -137,38 +141,60 @@ namespace bf
 
   bool AssetModelInfo::load(Engine& engine)
   {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
-    Model&                  model  = m_Payload.set<Model>(device);
+    LinearAllocatorScope    mem_scope0    = engine.tempMemory();
+    auto&                   no_free_alloc = engine.tempMemoryNoFree();
+    const bfGfxDeviceHandle device        = bfGfxContext_device(engine.renderer().context());
+    Model&                  model         = m_Payload.set<Model>(engine.mainMemory(), device);
+    const String&           full_path     = filePathAbs();
+    const StringRange       file_dir      = path::directory(full_path);
 
-    LinearAllocatorScope scope{engine.tempMemory()};
     {
-      const String& full_path = filePathAbs();
+      LinearAllocatorScope mem_scope1 = engine.tempMemory();
 
-      long  file_data_size;
-      char* file_data = LoadFileIntoMemory(full_path.cstr(), &file_data_size);
+      AssetModelLoadResult model_result = loadModel(AssetModelLoadSettings(full_path, no_free_alloc));
 
-      // TODO: Check file_data for null lol
+      if (model_result)
+      {
+        for (AssetPBRMaterial& src_mat : *model_result.materials)
+        {
+          char abs_texture_path[path::k_MaxLength] = {'\0'};
 
-      Array<StandardVertex> vertices{engine.tempMemoryNoFree()};
-      loadObj(engine.tempMemoryNoFree(), vertices, file_data, file_data_size);
+          if (src_mat.textures[PBRTextureType::DIFFUSE])
+          {
+            path::append(abs_texture_path, bfCArraySize(abs_texture_path), file_dir, StringRange(src_mat.textures[PBRTextureType::DIFFUSE]));
+          }
 
-      model.m_NumVertices = (uint32_t)vertices.size();
-
-      bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
-      buffer_params.allocation.size       = sizeof(StandardVertex) * model.m_NumVertices;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
-
-      model.m_Handle = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);
-
-      void* const vertex_buffer_ptr = bfBuffer_map(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
-
-      std::memcpy(vertex_buffer_ptr, vertices.data(), (size_t)buffer_params.allocation.size);
-
-      bfBuffer_flushRange(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
-      bfBuffer_unMap(model.m_Handle);
+          __debugbreak();
+        }
+      }
     }
+
+    long        file_data_size;
+    char* const file_data = LoadFileIntoMemory(full_path.cstr(), &file_data_size);
+
+    // TODO: Check file_data for null lol
+
+    Array<StandardVertex> vertices{no_free_alloc};
+    loadObj(no_free_alloc, vertices, file_data, file_data_size);
+
+    free(file_data);
+
+    model.m_NumVertices = (uint32_t)vertices.size();
+
+    bfBufferCreateParams buffer_params;
+    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
+    buffer_params.allocation.size       = sizeof(StandardVertex) * model.m_NumVertices;
+    buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+
+    model.m_Handle = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);
+
+    void* const vertex_buffer_ptr = bfBuffer_map(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
+
+    std::memcpy(vertex_buffer_ptr, vertices.data(), (size_t)buffer_params.allocation.size);
+
+    bfBuffer_flushRange(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
+    bfBuffer_unMap(model.m_Handle);
 
     return true;
   }
-}  // namespace bifrost
+}  // namespace bf

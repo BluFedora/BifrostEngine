@@ -22,6 +22,8 @@
 #include "bifrost/utility/bifrost_non_copy_move.hpp"        /* bfNonCopyMoveable<T> */
 #include "bifrost/utility/bifrost_uuid.h"                   /* BifrostUUID          */
 
+#include "bf/ListView.hpp" /* ListView<T> */
+
 #include <cstdint> /* uint16_t */
 
 typedef struct Vec2f_t       Vec2f;
@@ -183,13 +185,15 @@ namespace bf
     friend class BaseAssetHandle;
 
    protected:
-    String                   m_FilePathAbs;  //!< The full path to an asset.
-    StringRange              m_FilePathRel;  //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
-    BifrostUUID              m_UUID;         //!< Uniquely identifies the asset.
-    std::uint16_t            m_RefCount;     //!< How many live references in the engine. TODO(SR): If I multithread things, see if this needs to be atomic.
-    AssetTagList             m_Tags;         //!< Tags associated with this asset.
-    bool                     m_IsDirty;      //!< This asset wants to be saved.
-    meta::BaseClassMetaInfo* m_TypeInfo;     //!< The type info for the subclasses.
+    String                   m_FilePathAbs;       //!< The full path to an asset.
+    StringRange              m_FilePathRel;       //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
+    BifrostUUID              m_UUID;              //!< Uniquely identifies the asset.
+    std::uint16_t            m_RefCount;          //!< How many live references in the engine. TODO(SR): If I multithread things, see if this needs to be atomic.
+    AssetTagList             m_Tags;              //!< Tags associated with this asset.
+    bool                     m_IsDirty;           //!< This asset wants to be saved.
+    meta::BaseClassMetaInfo* m_TypeInfo;          //!< The type info for the subclasses.
+    ListView<BaseAssetInfo>  m_SubAssets;         //!< Assets from within this asset.
+    ListNode<BaseAssetInfo>  m_SubAssetListNode;  //!< Used with 'm_SubAssets' to make an intrusive non-owning linked list.
 
    protected:
     BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const BifrostUUID& uuid);
@@ -201,12 +205,18 @@ namespace bf
     std::uint16_t              refCount() const { return m_RefCount; }
     meta::BaseClassMetaInfoPtr typeInfo() const { return m_TypeInfo; }
 
+
     // Path Accessors
 
     const String& filePathAbs() const { return m_FilePathAbs; }
     StringRange   filePathExtenstion() const;
     StringRange   filePathRel() const { return m_FilePathRel; }
     StringRange   fileName() const;
+
+    // Sub Asset Management
+
+    void addSubAsset(BaseAssetInfo* asset);
+    void removeSubAsset(BaseAssetInfo* asset);
 
     // Implemented by AssetInfo<T, TPayload> //
 

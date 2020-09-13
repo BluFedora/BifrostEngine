@@ -143,9 +143,12 @@ namespace bf
 
     void clear()
     {
-      for (T& element : *this)
+      if constexpr (!std::is_trivially_destructible_v<T>)
       {
-        element.~T();
+        for (T& element : *this)
+        {
+          element.~T();
+        }
       }
 
       ::bfArray_clear(rawData());

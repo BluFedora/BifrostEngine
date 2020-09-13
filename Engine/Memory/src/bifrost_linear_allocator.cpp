@@ -17,6 +17,8 @@
 
 // #include <new>    /* bad_alloc  */
 
+#include <cassert> // assert
+
 namespace bf
 {
   const char* linear_allocator_free::what() const noexcept
@@ -43,7 +45,7 @@ namespace bf
 
   void* LinearAllocator::allocate(const std::size_t size)
   {
-    if (m_MemoryOffset < this->size())
+    if ((m_MemoryOffset + size) < this->size())
     {
       void* ptr = currentBlock();
 
@@ -51,7 +53,8 @@ namespace bf
       return ptr;
     }
 
-    throw std::bad_alloc();
+    assert(false);
+    // throw std::bad_alloc();
     return nullptr;
   }
 
