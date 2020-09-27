@@ -505,11 +505,18 @@ namespace bf::string_utils
   // The caller is responsible for freeing any memory this allocates.
   // Use 'fmtFree' to deallocate memory.
   char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...);
-  char* fmtAllocV(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, std::va_list args); // caller is resposible for va_start / va_end
+
+  // caller is resposible for va_start / va_end
+  char* fmtAllocV(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, std::va_list args);
+
   // Deallocates memory from 'fmtAlloc'
   void fmtFree(IMemoryManager& allocator, char* ptr);
+
   // Uses the passed in buffer for the formatting.
+  //
+  //   if the buffer is nullptr then this is a good way to get the size needed (excluding nul terminator.)
   // Returns true if the buffer was big enough.
+  //   if the buffer is too small nothing is written.
   bool fmtBuffer(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, ...);
 
   // String Tokenizing //

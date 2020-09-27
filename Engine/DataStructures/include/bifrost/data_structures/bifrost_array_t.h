@@ -3,7 +3,7 @@
  * @file   bifrost_array_t.h
  * @author Shareef Abdoul-Raheem
  * @brief
- *   Part of the "Bifrost Data Structures C Library"
+ *   Part of the "BluFedora Data Structures C Library"
  *   This is a generic dynamic array class.
  * 
  *   No dependencies besides the C Standard Library.
@@ -21,11 +21,12 @@
  *     To be compliant you must:
  *       > Act as malloc  when ptr == NULL, size == number of bytes to alloc.
  *       > Act as free    when ptr != NULL, size == number of bytes given back.
- * @copyright Copyright (c) 2019
+ * 
+ * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#ifndef BIFROST_DATA_STRUCTURES_ARRAY_H
-#define BIFROST_DATA_STRUCTURES_ARRAY_H
+#ifndef BF_DATA_STRUCTURES_ARRAY_H
+#define BF_DATA_STRUCTURES_ARRAY_H
 
 #include <stddef.h> /* size_t */
 
@@ -37,32 +38,23 @@
 #else
 #define OLD_bfArray_newA(arr, initial_size) _ArrayT_new(sizeof((arr)[0]), (initial_size))
 #endif
-#define Array_new(T, initial_size) OLD_bfArray_newT(T, initial_size)
+
 #if __cplusplus
 extern "C" {
 #endif
-typedef unsigned char* BifrostArray;
-typedef int(/*__cdecl*/ *ArraySortCompare)(const void*, const void*);
-typedef int(/*__cdecl*/ *ArrayFindCompare)(const void*, const void*);
+typedef int(*ArrayFindCompare)(const void*, const void*);
+#define Array_new(T, initial_size) OLD_bfArray_newT(T, initial_size)
 void*  _ArrayT_new(const size_t stride, const size_t initial_size);
-void*  Array_begin(const void* const self);
-void*  Array_end(const void* const self);
 size_t Array_size(const void* const self);
-size_t Array_capacity(const void* const self);
-void   Array_copy(const void* const self, BifrostArray* dst);
-void   Array_clear(void* const self);
-void   Array_reserve(void* const self, const size_t num_elements);
+void*  Array_at(const void* const self, const size_t index);
 void   Array_resize(void* const self, const size_t size);
-void   Array_push(void* const self, const void* const data);
 void*  Array_emplace(void* const self);
 void*  Array_emplaceN(void* const self, const size_t num_elements);
-void*  Array_findFromSorted(const void* const self, const void* const key, const size_t index, const size_t size, ArrayFindCompare compare);
-void*  Array_findSorted(const void* const self, const void* const key, ArrayFindCompare compare);
-size_t Array_find(const void* const self, const void* key, ArrayFindCompare compare);
-void*  Array_at(const void* const self, const size_t index);
 void*  Array_pop(void* const self);
 void*  Array_back(const void* const self);
-void   Array_sort(void* const self, ArraySortCompare compare);
+void   Array_clear(void* const self);
+size_t Array_find(const void* const self, const void* key, ArrayFindCompare compare);
+void   Array_push(void* const self, const void* const data);
 void   Array_delete(void* const self);
 #if __cplusplus
 }
@@ -92,8 +84,7 @@ typedef int(/*__cdecl*/ *bfArrayFindCompare)(const void*, const void*);
 #define bfArray_newA(arr, alloc, user_data) bfArray_new((arr)[0], alloc, user_data)
 #endif
 
-// A 'BifrostArray' can be used anywhere a 'normal' C array can be used.
-// For all functions pass a pointer to the array.
+// For all functions pass a pointer to the array since some function may reallocate.
 
 void*  bfArray_mallocator(void* user_data, void* ptr, size_t size);                                                         // Default allocator uses C-Libs 'malloc' and 'free'.
 void*  bfArray_new_(bfArrayAllocator allocator, size_t element_size, size_t element_alignment, void* allocator_user_data);  // if allocator == NULL then allocator = bfArray_mallocator;
@@ -130,4 +121,4 @@ void   bfArray_delete(void** self);
 }
 #endif
 
-#endif /* BIFROST_DATA_STRUCTURES_ARRAY_H */
+#endif /* BF_DATA_STRUCTURES_ARRAY_H */

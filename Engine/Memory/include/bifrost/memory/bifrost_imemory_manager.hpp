@@ -11,8 +11,8 @@
 * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#ifndef BIFROST_IMEMORY_MANAGER_HPP
-#define BIFROST_IMEMORY_MANAGER_HPP
+#ifndef BF_IMEMORY_MANAGER_HPP
+#define BF_IMEMORY_MANAGER_HPP
 
 #include <cstddef>     /* size_t                       */
 #include <cstring>     /* memcpy                       */
@@ -45,6 +45,7 @@ namespace bf
     struct ArrayHeader final
     {
       std::size_t size;
+      std::size_t alignment;
     };
 
    protected:
@@ -83,15 +84,17 @@ namespace bf
     virtual void* allocate(std::size_t size) = 0;
 
     /*!
-     * @brief
+     * @brief 
      *   Frees the memory pointer to by \p ptr.
-     *
+     * 
      * @param ptr
-     *   The pointer to free memory from.
-     *   Must not be a nullptr.
-     *   Must have been allocated with 'IMemoryManager::allocate'.
-     */
-    virtual void deallocate(void* ptr) = 0;
+     *   A non null pointer to memeory allcoated with 'IMemoryManager::allocate'.
+     *   The pointer is invalid after this call returns.
+     * 
+     * @param num_bytes
+     *   The size the pointer was allocated with.
+    */
+    virtual void deallocate(void* ptr, std::size_t num_bytes) = 0;
 
     //-------------------------------------------------------------------------------------//
     // Aligned Allocations API
@@ -110,7 +113,7 @@ namespace bf
      *   Must be a power of two.
      *
      * @return void*
-     *   The begginning to the allocated block.
+     *   The beginning to the allocated block.
      *   nullptr if the request could not be fulfilled.
      */
     void* allocateAligned(std::size_t size, std::size_t alignment);
@@ -124,7 +127,7 @@ namespace bf
      *   Freeing a nullptr is safe.
      *   Must have been allocated with 'IMemoryManager::allocateAligned'.
      */
-    void deallocateAligned(void* ptr);
+    void deallocateAligned(void* ptr, std::size_t size, std::size_t alignment);
 
     //-------------------------------------------------------------------------------------//
     // Templated API
@@ -178,7 +181,7 @@ namespace bf
       if (ptr)
       {
         ptr->~T();
-        deallocate(ptr);
+        deallocate(ptr, sizeof(T));
       }
     }
 
@@ -261,6 +264,7 @@ namespace bf
         {
           ArrayHeader* header = static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), array_data));
           header->size        = num_elements;
+          header->alignment   = array_alignment;
         }
 
         return array_data;
@@ -290,6 +294,29 @@ namespace bf
     static std::size_t arraySize(const T* const ptr)
     {
       return static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), const_cast<T*>(ptr)))->size;
+    }
+
+    /*!
+     * @brief
+     *   Returns alignment of the array.
+     *
+     * @tparam T
+     *   The type of the array.
+     *
+     * @param ptr
+     *   The array to get the size of.
+     *   Must have been allocated with
+     *     'IMemoryManager::allocateArray'        or
+     *     'IMemoryManager::allocateArrayTrivial' or
+     *     'IMemoryManager::arrayResize'.
+     *
+     * @return std::size_t
+     *   The number of elements the array has.
+     */
+    template<typename T>
+    static std::size_t arrayAlignment(const T* const ptr)
+    {
+      return static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), const_cast<T*>(ptr)))->alignment;
     }
 
     /*!
@@ -393,20 +420,19 @@ namespace bf
           ++elements;
         }
 
-        deallocateAligned(sizeof(ArrayHeader), ptr);
+        deallocateAligned(sizeof(ArrayHeader), ptr, header->size * sizeof(T), header->alignment);
       }
     }
 
    private:
     void*        allocateAligned(std::size_t header_size, std::size_t size, std::size_t alignment);
     static void* grabHeader(std::size_t header_size, void* ptr);
-    void         deallocateAligned(std::size_t header_size, void* ptr);
+    void         deallocateAligned(std::size_t header_size, void* ptr, std::size_t size, std::size_t alignment);
   };
 
   /*!
    * @brief
-   *   This is a base class with some useful sizing functionality.
-   *   This is still Abstract as it does not implement ant of the methods.
+   *   This is an abstact base class with some useful bounds checking functionality.
    */
   class MemoryManager : public IMemoryManager
   {
@@ -448,7 +474,7 @@ namespace bf
 
    public:
     // Make sure the passed in 'buffer' was allocated from 'allocator'.
-    TempBuffer(IMemoryManager& allocator, char* buffer, std::size_t size) :
+    TempBuffer(IMemoryManager& allocator, char* buffer, std::size_t size) noexcept :
       m_Allocator{&allocator},
       m_Buffer{buffer},
       m_Size{size}
@@ -483,18 +509,18 @@ namespace bf
       return *this;
     }
 
-    [[nodiscard]] IMemoryManager& allocator() const { return *m_Allocator; }
-    [[nodiscard]] char*           buffer() const { return m_Buffer; }
-    [[nodiscard]] std::size_t     size() const { return m_Size; }
+    [[nodiscard]] IMemoryManager& allocator() const noexcept { return *m_Allocator; }
+    [[nodiscard]] char*           buffer() const noexcept { return m_Buffer; }
+    [[nodiscard]] std::size_t     size() const noexcept { return m_Size; }
 
-    ~TempBuffer()
+    ~TempBuffer() noexcept
     {
       if (m_Allocator)
       {
-        m_Allocator->deallocate(m_Buffer);
+        m_Allocator->deallocate(m_Buffer, m_Size);
       }
     }
   };
 }  // namespace bf
 
-#endif /* BIFROST_IMEMORY_MANAGER_HPP */
+#endif /* BF_IMEMORY_MANAGER_HPP */

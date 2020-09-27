@@ -29,7 +29,7 @@ namespace bf
 
    public:
     void* allocate(std::size_t size) override;
-    void  deallocate(void* ptr) override;
+    void  deallocate(void* ptr, std::size_t num_bytes) override;
 
    public:
     static constexpr std::size_t header_size = 0u;
@@ -45,7 +45,7 @@ namespace bf
 
    public:
     void* allocate(std::size_t size) override;
-    void  deallocate(void* ptr) override;
+    void  deallocate(void* ptr, std::size_t num_bytes) override;
 
    public:
     static constexpr std::size_t header_size = 0u;

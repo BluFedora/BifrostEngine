@@ -49,11 +49,13 @@ namespace bf
     return nullptr;
   }
 
-  void PoolAllocatorImpl::deallocate(void* ptr)
+  void PoolAllocatorImpl::deallocate(void* ptr, std::size_t num_bytes)
   {
     checkPointer(ptr);
 
     PoolHeader* const header = reinterpret_cast<PoolHeader*>(ptr);
+
+    assert(num_bytes == m_BlockSize);
 
 #ifdef BIFROST_MEMORY_DEBUG_WIPE_MEMORY
     std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, m_BlockSize);

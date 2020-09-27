@@ -17,8 +17,8 @@
 #include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
 #include "bifrost_array_t.h"                          /* bfArray_*            */
 
-#include <iterator> /* reverse_iterator */
 #include <cassert>  /* assert           */
+#include <iterator> /* reverse_iterator */
 
 namespace bf
 {
@@ -26,18 +26,18 @@ namespace bf
   class Array final
   {
    private:
-    static void* allocate(void* user_data, void* ptr, std::size_t new_size)
+    static void* allocate(void* user_data, void* ptr, std::size_t size)
     {
       auto* const allocator = static_cast<IMemoryManager*>(user_data);
 
       if (ptr)
       {
-        allocator->deallocate(ptr);
+        allocator->deallocate(ptr, size);
         ptr = nullptr;
       }
       else
       {
-        ptr = allocator->allocate(new_size);
+        ptr = allocator->allocate(size);
       }
 
       return ptr;
@@ -231,13 +231,15 @@ namespace bf
     T& operator[](std::size_t index)
     {
       // TODO: Only use Array::at in debug mode.
-      return at(index);  // return m_Data[index];
+      return at(index);
+      // return m_Data[index];
     }
 
     const T& operator[](std::size_t index) const
     {
       // TODO: Only use Array::at in debug mode.
-      return at(index);  // return m_Data[index];
+      return at(index);
+      // return m_Data[index];
     }
 
     T* binarySearchRange(std::size_t bgn, std::size_t end, const T& key, bfArrayFindCompare compare = nullptr)
@@ -284,13 +286,13 @@ namespace bf
       ::bfArray_pop(rawData());
     }
 
-    void sortRange(size_t bgn, size_t end, ArraySortCompare compare)
+    void sortRange(size_t bgn, size_t end, bfArraySortCompare compare)
     {
       // TODO(SR): This only works if T is "trivially relocatable".
       ::bfArray_sortRange(rawData(), bgn, end, compare);
     }
 
-    void sort(ArraySortCompare compare)
+    void sort(bfArraySortCompare compare)
     {
       // TODO(SR): This only works if T is "trivially relocatable".
       ::bfArray_sort(rawData(), compare);

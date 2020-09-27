@@ -50,13 +50,15 @@ namespace bf
     return nullptr;
   }
 
-  void StackAllocator::deallocate(void* ptr)
+  void StackAllocator::deallocate(void* ptr, std::size_t num_bytes)
   {
     checkPointer(ptr);
 
     StackHeader* header      = reinterpret_cast<StackHeader*>(static_cast<char*>(ptr) - sizeof(StackHeader));
     const auto   full_size   = (header->block_size + header->align_size);
     const auto   block_start = reinterpret_cast<char*>(header) - header->align_size;
+
+    assert(header->block_size == num_bytes);
 
     assert((block_start + full_size) == m_StackPtr &&
            "StackAllocator::dealloc : For this type of allocator you MUST deallocate in the reverse order of allocation.");

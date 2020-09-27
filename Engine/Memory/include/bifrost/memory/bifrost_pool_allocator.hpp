@@ -48,7 +48,7 @@ namespace bf
     PoolAllocatorImpl(char* memory_block, std::size_t memory_block_size, std::size_t sizeof_block, std::size_t alignof_block);
 
     void*       allocate(std::size_t size) override;
-    void        deallocate(void* ptr) override;
+    void        deallocate(void* ptr, std::size_t num_bytes) override;
     std::size_t indexOf(const void* ptr);
     void*       fromIndex(std::size_t index); // The index must have been from 'indexOf'
     void        reset();

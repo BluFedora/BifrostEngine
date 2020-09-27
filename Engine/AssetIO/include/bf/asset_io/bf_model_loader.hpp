@@ -10,16 +10,19 @@
 
 namespace bf
 {
+  static constexpr std::size_t k_MaxVertexBones = 4;
+  static constexpr std::size_t k_MaxBones       = 128;
+
   struct AssetModelLoadResult;
   struct AssetModelLoadSettings;
 
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept;
 
-  // Lovely Simple Datastructues that lend themselves to a linear allocator.
+  // Lovely Simple Datastructures that lend themselves to a linear allocator.
 
   //
   // Due to this using a 'Variable Length Member' anytime you store an object of
-  // this type it should be a pointer as it always needs to be dynamically allcoated.
+  // this type it should be a pointer as it always needs to be dynamically allocated.
   // T must be default constructable.
   //
   template<typename T>
@@ -34,21 +37,35 @@ namespace bf
 
   // using AssetTempString = AssetTempArray<char>;
 
+  template<std::size_t kSize>
   struct AssetTempString
   {
     std::size_t length;
-    char        data[1024];
+    char        data[kSize];
 
-    operator bfStringRange()
+    operator bfStringRange() const noexcept
     {
       return {data, data + length};
     }
 
-    operator bool()
+    operator bool() const noexcept
     {
       return length != 0;
     }
+
+    void copyOverString(const char* src, std::size_t src_length)
+    {
+      src_length = std::min(kSize - 1, src_length);
+
+      std::memcpy(data, src, src_length);
+
+      length           = src_length;
+      data[src_length] = '\0';
+    }
   };
+
+  using AssetTempLargeString = AssetTempString<1024>;
+  using AssetTempSmallString = AssetTempString<256>;
 
   template<typename T>
   AssetTempArray<T>* allocateTempArray(IMemoryManager& mem, std::size_t num_elements, T default_value = T()) noexcept
@@ -62,7 +79,7 @@ namespace bf
 #if 0
     for (T& item : *result)
     {
-      new (&item) T();
+      new (&item) T(default_value);
     }
 #else
     std::uninitialized_fill_n(result->data, num_elements, default_value);
@@ -124,12 +141,14 @@ namespace bf
 
   struct AssetModelVertex
   {
-    float position[3];
-    float normal[3];
-    float tangent[3];
-    float bitangent[3];
-    float color[4];
-    float uv[2];
+    float        position[3];
+    float        normal[3];
+    float        tangent[3];
+    float        bitangent[3];
+    float        color[4];
+    float        uv[2];
+    float        bone_weights[k_MaxVertexBones];
+    std::uint8_t bone_indices[k_MaxVertexBones];
   };
 
   using AssetIndexType = std::uint32_t;
@@ -151,7 +170,7 @@ namespace bf
       void operator()(T* ptr) const noexcept
       {
         ptr->~T();
-        memory->deallocate(ptr);
+        memory->deallocate(ptr, sizeof(T));
       }
     };
 
@@ -167,18 +186,76 @@ namespace bf
     template<typename T>
     Ptr<AssetTempArray<T>> makeUniqueTempArray(IMemoryManager& mem, std::size_t num_elements, T default_value = T())
     {
-      return makeUnique(
-       allocateTempArray(mem, num_elements, default_value),
-       &mem);
+      return makeUnique(allocateTempArray(mem, num_elements, default_value), &mem);
     }
+
+    //
+    // This pointer nulls itself out when moved.
+    //
+    template<typename T>
+    struct MovablePtr
+    {
+      T* ptr = nullptr;
+
+      MovablePtr() = default;
+
+      MovablePtr(MovablePtr&& rhs) noexcept :
+        ptr{std::exchange(rhs.ptr, nullptr)}
+      {
+      }
+
+      MovablePtr& operator=(MovablePtr&& rhs) noexcept = delete;
+
+      MovablePtr& operator=(T* rhs) noexcept
+      {
+        // assert(!ptr);
+        ptr = rhs;
+
+        return *this;
+      }
+
+      T& operator[](int i)
+      {
+        return ptr[i];
+      }
+
+      const T& operator[](int i) const
+      {
+        return ptr[i];
+      }
+
+      operator T*() const
+      {
+        return ptr;
+      }
+    };
   }  // namespace detail
 
   struct AssetPBRMaterial
   {
-    AssetTempString textures[PBRTextureType::MAX];
-    float           diffuse_color[4];
+    AssetTempLargeString textures[PBRTextureType::MAX];
+    float                diffuse_color[4];
 
     bool isOpaque() const { return diffuse_color[3] == 0.0f; }
+  };
+
+  using Matrix4x4 = float[16];
+
+  struct AssetNode
+  {
+    AssetTempSmallString name              = {};
+    Matrix4x4            transform         = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    std::uint8_t         model_to_bone_idx = static_cast<std::uint8_t>(-1);
+    unsigned int         first_child       = static_cast<unsigned int>(-1);
+    unsigned int         num_children      = 0;
+  };
+
+  struct ModelSkeleton
+  {
+    Matrix4x4                     global_inv_transform;
+    unsigned int                  num_nodes;
+    detail::MovablePtr<AssetNode> nodes;
+    Matrix4x4                     bones[k_MaxBones];
   };
 
   using AssetMeshArray     = AssetTempArray<AssetMeshPrototype>;
@@ -193,9 +270,11 @@ namespace bf
     detail::Ptr<AssetVertexArray>   vertices     = nullptr;
     detail::Ptr<AssetIndexArray>    indices      = nullptr;
     detail::Ptr<AssetMaterialArray> materials    = nullptr;
+    ModelSkeleton                   skeleton     = {};
     bfStringRange                   error        = {nullptr, nullptr};
     std::array<char, 128>           error_buffer = {'\0'};  //!< Private Do not use. Read from 'AssetModelLoadResult::error' instead.
 
+    AssetModelLoadResult()                                         = default;
     AssetModelLoadResult(const AssetModelLoadResult& rhs) noexcept = delete;
     AssetModelLoadResult(AssetModelLoadResult&& rhs) noexcept      = default;
     AssetModelLoadResult& operator=(const AssetModelLoadResult& rhs) noexcept = delete;
@@ -209,6 +288,15 @@ namespace bf
     // Private API
 
     void setError(const char* err_message) noexcept;
+
+    ~AssetModelLoadResult()
+    {
+      if (skeleton.nodes)
+      {
+        memory->deallocateArray<AssetNode>(skeleton.nodes);
+        // skeleton.nodes = nullptr;
+      }
+    }
   };
 }  // namespace bf
 

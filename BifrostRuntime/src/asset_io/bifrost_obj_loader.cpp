@@ -1,7 +1,8 @@
 #include "bifrost/data_structures/bifrost_array.hpp"
-#include "bifrost/math/bifrost_vec3.h"
 
+#include "bifrost/math/bifrost_vec3.h"
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
+
 #include <cctype>  // isdigit
 #include <cstdint>
 #include <cstdlib>  // atoi
@@ -310,4 +311,4 @@ namespace bf
       }
     }
   }
-}  // namespace bifrost
+}  // namespace bf

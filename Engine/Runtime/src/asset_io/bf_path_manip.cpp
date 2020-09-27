@@ -30,9 +30,12 @@ namespace bf::path
     return ret;
   }
 
-  std::size_t append(char* const out_path, std::size_t out_path_size, StringRange directory, StringRange file_name)
+  AppendResult append(char* const out_path, std::size_t out_path_size, StringRange directory, StringRange file_name)
   {
+    const std::size_t total_length = directory.length() + file_name.length();
+
     assert(out_path_size >= 1);
+    assert(total_length > std::max(directory.length(), file_name.length()) && "Length overflow detection.");
 
     const std::size_t out_path_usable_size = out_path_size - 1;
     const std::size_t dir_bytes_to_write   = std::min(out_path_usable_size, directory.length());
@@ -47,7 +50,7 @@ namespace bf::path
     {
       *end_of_path++ = k_Separator;
 
-      const std::size_t bytes_left_over     = out_path_usable_size - dir_bytes_to_write - 1;
+      const std::size_t bytes_left_over     = out_path_usable_size - dir_bytes_to_write - 1; // Minus one for the 'k_Separator'
       const std::size_t file_bytes_to_write = std::min(bytes_left_over, file_name.length());
 
       std::memcpy(end_of_path, file_name.begin(), file_bytes_to_write);
@@ -57,7 +60,7 @@ namespace bf::path
 
     end_of_path[0] = '\0';
 
-    return end_of_path - out_path;
+    return {std::size_t(end_of_path - out_path), (total_length + std::size_t(1)) > out_path_usable_size};  // Plus one for the k_Separator
   }
 
   StringRange directory(StringRange file_path)

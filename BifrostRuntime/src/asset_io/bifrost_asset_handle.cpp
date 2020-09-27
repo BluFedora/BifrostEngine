@@ -360,11 +360,6 @@ namespace bf
     return *this;
   }
 
-  bool BaseAssetHandle::isValid() const
-  {
-    return m_Info != nullptr;
-  }
-
   void BaseAssetHandle::release()
   {
     if (m_Info)

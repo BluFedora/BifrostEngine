@@ -2,9 +2,12 @@
 
 ## Reserved Identifiers
 
+[Stack Overflow](https://stackoverflow.com/questions/228783/what-are-the-rules-about-using-an-underscore-in-a-c-identifier/228797#228797)
+
 - At global scope all `_[lower-case-letters]`
 - Always reserved are `__` and `_[capital-letter]`
 - C++: Anything in the `std` namespace but you are allowed to make template specializations.
+- Cannot use adjacent underscores "__" anywhere in the identifier.
 
 ## Move Semantics
 
@@ -22,6 +25,16 @@
 
 - pthreads / Win32 threads vs `std::thread`
   - `std::thread` jas a more expensive startup / creation expense because it allows passing of parameters (namely more than a single `void*`) to the threaded functions.
+
+## C++ Standard Library ("STL")
+
+- As of C++17 `std::vector`, `std::list`, `std::forward_list` can be template instantiated with an incomplete type:
+
+## TODO: C++ Design Patterns
+
+- Policy Based Design: https://en.wikipedia.org/wiki/Modern_C%2B%2B_Design#Policy-based_design
+  - Works well with a 'compressed_pair' for EBO
+
 
 ---
 
@@ -306,6 +319,8 @@ namespace bf
 
 # True Misc
 
+Coefficients for rgb are 0.2, 0.7, 0.1 
+
 # An Imported Model Has
 
 - A List of Meshes
@@ -319,12 +334,50 @@ namespace bf
 
 # Assimp Data
 
-- Scene
-  - Mesh[] meshes;
+- There may be more Nodes than Bones.
+- Each mesh has an array of bones.
+- Each mesh vertex needs some bone data (weight:float, bone_index:int)
+- Each animation 'track' has which bone is affects + all the frame datas.
+- A bone is associated with one aiNode, but an aiNode may not have a bone.
+- Per Mesh Bone Data
+  - Mat4x4 OffsetMatrix;
+  - Node*  NodeToChange;
+  - Per Vertex Data
+    - Uint8 BoneIndex
+    - Float BoneWeight
 
+- Model Specific Data
+  - Mat4x4       GlobalInverseTransform = scene->mRootNode->mTransformation.Inverse()
+  - Node[]       Nodes;
+  - BoneInput[]  BonesOffset
 
+- Model Instance Data
+  - BoneOutput[] BonesFinalTransformation
 
+- Node
+  - Mat4x4 Transform;
+  - Int    FirstChild;
+  - Int    NumChildren;
+  - Int!   BoneIndex;
 
+- Anim Specific Data
+  - String      Name
+  - AnimTrack[] Tracks
+  
+- AnimTrack
+  - String NodeName;
+  - Vec3[] TranslationKeys;
+  - Quat[] RotationKeys;
+  - Vec3[] ScaleKeys;
+
+- BoneInput
+  - Mat4x4 MeshToBoneSpace;
+
+- BoneOutput
+  - Mat4x4 FinalTransformation;
+
+- <Model, Anim> Specific Data
+  - AnimTrack*[] BoneToTrack
 
 
 # Rand Notes On Rendering Metrics
@@ -336,3 +389,6 @@ namespace bf
 
   - [Making a Win32 Text Editor](http://www.catch22.net/tuts/neatpad/neatpad-overview#)
   - [http://utf8everywhere.org/](http://utf8everywhere.org/)
+
+# (Un/Re)do
+

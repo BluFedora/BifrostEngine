@@ -367,7 +367,7 @@ void String_sprintf(BifrostString* self, const char* format, ...)
   //#pragma clang diagnostic push
   //#pragma clang diagnostic ignored "-Wformat-nonliteral"
   va_copy(args_cpy, args);
-  const int num_chars = vsnprintf(NULL, 0, format, args_cpy);
+  const size_t num_chars = (size_t)vsnprintf(NULL, 0, format, args_cpy);
   va_end(args_cpy);
   //#pragma clang diagnostic pop
 

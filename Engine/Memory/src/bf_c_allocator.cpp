@@ -32,7 +32,7 @@ namespace bf
 #endif
   }
 
-  void CAllocator::deallocate(void* ptr)
+  void CAllocator::deallocate(void* ptr, std::size_t /* num_bytes */)
   {
     std::free(ptr);
   }

@@ -77,7 +77,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "D:/emsdk/fastcomp/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "cmakeToolchain": "D:/Dev/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "inheritEnvironments": [ "clang_cl_x86" ],
       "variables": [
         {
@@ -121,7 +121,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "D:/emsdk/fastcomp/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "cmakeToolchain": "D:/Dev/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "inheritEnvironments": [ "clang_cl_x86" ],
       "variables": [
         {

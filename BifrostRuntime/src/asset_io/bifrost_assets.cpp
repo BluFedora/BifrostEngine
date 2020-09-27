@@ -282,7 +282,7 @@ namespace bf
 
       json::Value loaded_data = json::fromString(buffer, buffer_size);
 
-      m_Memory.deallocate(buffer);
+      m_Memory.deallocate(buffer, buffer_size);
 
       JsonSerializerReader reader{*this, m_Memory, loaded_data};
 

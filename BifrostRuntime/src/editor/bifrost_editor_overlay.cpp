@@ -117,7 +117,7 @@ namespace bf::editor
         if (--pool->m_EntryStorage[entry_idx].ref_count == 0)
         {
           pool->m_Table.remove(pool->m_EntryStorage[entry_idx].data);
-          pool->m_EntryStorage.memory().deallocate(const_cast<char*>(pool->m_EntryStorage[entry_idx].data.bgn));
+          pool->m_EntryStorage.memory().deallocate(const_cast<char*>(pool->m_EntryStorage[entry_idx].data.bgn), length() + 1);
           pool->m_EntryStorage[entry_idx].free_list_next = pool->m_EntryStorageFreeList;
           pool->m_EntryStorageFreeList                   = entry_idx;
         }
@@ -1481,6 +1481,7 @@ namespace bf::editor
     {".material", &fileExtensionHandlerImpl<AssetMaterialInfo>},
     {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
     {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
+    {".fbx", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
     {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}
 

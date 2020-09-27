@@ -26,14 +26,19 @@ namespace bf
     return static_cast<const std::uint8_t*>(self)[-1];
   }
 
+  static std::size_t alignedAllocationSize(std::size_t header_size, std::size_t size, std::size_t alignment)
+  {
+    return header_size + sizeof(std::uint8_t) + size + (alignment - 1);
+  }
+
   void* IMemoryManager::allocateAligned(std::size_t size, std::size_t alignment)
   {
     return allocateAligned(0, size, alignment);
   }
 
-  void IMemoryManager::deallocateAligned(void* ptr)
+  void IMemoryManager::deallocateAligned(void* ptr, std::size_t size, std::size_t alignment)
   {
-    deallocateAligned(0, ptr);
+    deallocateAligned(0, ptr, size, alignment);
   }
 
   void* IMemoryManager::allocateAligned(std::size_t header_size, std::size_t size, std::size_t alignment)
@@ -43,7 +48,7 @@ namespace bf
       return nullptr;
     }
 
-    const std::size_t allocation_size = header_size + sizeof(std::uint8_t) + size + (alignment - 1);
+    const std::size_t allocation_size = alignedAllocationSize(header_size, size, alignment);
     void* const       allocation      = allocate(allocation_size);
 
     if (allocation)
@@ -71,9 +76,9 @@ namespace bf
     return bfCastByte(ptr) - grabOffset(ptr) - header_size;
   }
 
-  void IMemoryManager::deallocateAligned(std::size_t header_size, void* ptr)
+  void IMemoryManager::deallocateAligned(std::size_t header_size, void* ptr, std::size_t size, std::size_t alignment)
   {
-    deallocate(grabHeader(header_size, ptr));
+    deallocate(grabHeader(header_size, ptr), alignedAllocationSize(header_size, size, alignment));
   }
 
   MemoryManager::MemoryManager(char* memory_block, const std::size_t memory_block_size) :

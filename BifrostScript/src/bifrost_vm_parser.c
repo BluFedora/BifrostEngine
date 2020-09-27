@@ -354,8 +354,8 @@ static inline bfBool32 bfParser_is(BifrostParser* self, bfTokenType type)
 
 static inline GrammarRule typeToRule(bfTokenType type)
 {
-  assert((size_t)type < bfCArraySize(s_Rules) && "Invalid token type.");
-  return s_Rules[type];
+  assert(((size_t)type < bfCArraySize(s_Rules)) && "Invalid token type.");
+  return s_Rules[(size_t)type];
 }
 
 #define builder() self->fn_builder

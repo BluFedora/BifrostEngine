@@ -136,6 +136,10 @@ namespace bf
 
     static constexpr std::size_t k_TaskPaddingDataSize = k_ExpectedTaskSize - sizeof(BaseTask);
 
+    /*!
+     * @brief 
+     *   An Opaque handle to a single 'Job'.
+     */
     struct Task : public BaseTask
     {
       using Padding = std::aligned_storage_t<k_TaskPaddingDataSize>;  // std::array<std::uint8_t, k_TaskPaddingDataSize>;
@@ -199,10 +203,10 @@ namespace bf
     {
       using WorkerThreadStorage = std::array<char, k_MaxThreadsSupported * sizeof(ThreadWorker)>;
 
-      static JobSystem                      s_JobCtx                                   = {};
-      static AtomicInt32                    s_NextThreadLocalIndex                     = 0;
-      static thread_local std::int_fast32_t s_ThreadLocalIndex                         = 0x7FFFFFFF;
-      static WorkerThreadStorage            s_ThreadWorkerMemory alignas(ThreadWorker) = {};
+      static JobSystem                 s_JobCtx                                   = {};
+      static AtomicInt32               s_NextThreadLocalIndex                     = 0;
+      static thread_local std::int32_t s_ThreadLocalIndex                         = 0x7FFFFFFF;
+      static WorkerThreadStorage       s_ThreadWorkerMemory alignas(ThreadWorker) = {};
     }  // namespace
 
     // Helper Declarations
@@ -490,7 +494,7 @@ namespace bf
 
       const WorkerID worker_id = currentWorker();
 
-      assert(worker_id < numWorkers() && "This thread was not created by the jpb system.");
+      assert(worker_id < numWorkers() && "This thread was not created by the job system.");
       assert(task->owning_worker == worker_id && "You may only call this function with atask created on the current 'Worker'.");
 
       ThreadWorker* worker = s_JobCtx.workers + worker_id;
@@ -554,7 +558,7 @@ namespace bf
     {
       // IMPORTANT: make sure to store the result in a local variable and use that for comparing against zero later.
       // otherwise, the code contains a data race because other child tasks could change m_UnFinishedJobs in the meantime.
-      const auto num_jobs_left = --num_unfinished_tasks;
+      const std::int32_t num_jobs_left = --num_unfinished_tasks;
 
       if (num_jobs_left == 0)
       {

@@ -37,7 +37,7 @@ namespace bf
 
    public:
     void* allocate(std::size_t size) override;
-    void  deallocate(void* ptr) override;
+    void  deallocate(void* ptr, std::size_t num_bytes) override;
 
    private:
     struct AllocationHeader

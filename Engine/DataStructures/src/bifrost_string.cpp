@@ -36,7 +36,7 @@ namespace bf::string_utils
     std::va_list args;
 
     va_start(args, fmt);
-    char* buffer = fmtAllocV(allocator, out_size, fmt, args);
+    char* const buffer = fmtAllocV(allocator, out_size, fmt, args);
     va_end(args);
 
     return buffer;
@@ -76,7 +76,8 @@ namespace bf::string_utils
 
   void fmtFree(IMemoryManager& allocator, char* ptr)
   {
-    allocator.deallocate(ptr);
+    // TODO(SR): I don't like this strlen here but this is for nice API.
+    allocator.deallocate(ptr, std::strlen(ptr) + 1u);
   }
 
   bool fmtBuffer(char* buffer, const size_t buffer_size, std::size_t* out_size, const char* fmt, ...)
@@ -115,7 +116,7 @@ namespace bf::string_utils
     {
       StringLink* const next = link_head->next;
 
-      allocator.deallocate(link_head);
+      allocator.deallocateT(link_head);
       link_head = next;
     }
   }

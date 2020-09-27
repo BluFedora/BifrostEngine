@@ -21,17 +21,33 @@ set(BF_ASSETIO_LIBS "")
 
 if (WIN32)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-     set(
-       BF_ASSETIO_LIBS
-       "${BF_ASSETIO_LIBS}"
-       "${PROJECT_SOURCE_DIR}/lib/win64/assimp-vc142-mt.lib"
-     )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(
+        BF_ASSETIO_LIBS
+        "${BF_ASSETIO_LIBS}"
+        "${PROJECT_SOURCE_DIR}/lib/win64/assimp-vc142-mtd.lib"
+      )
+    else()
+      set(
+        BF_ASSETIO_LIBS
+        "${BF_ASSETIO_LIBS}"
+        "${PROJECT_SOURCE_DIR}/lib/win64/assimp-vc142-mt.lib"
+      )
+    endif()
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-     set(
-       BF_ASSETIO_LIBS
-       "${BF_ASSETIO_LIBS}"
-       "${PROJECT_SOURCE_DIR}/lib/win32/assimp-vc142-mt.lib"
-     )
+     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(
+        BF_ASSETIO_LIBS
+        "${BF_ASSETIO_LIBS}"
+        "${PROJECT_SOURCE_DIR}/lib/win32/assimp-vc142-mtd.lib"
+      )
+    else()
+      set(
+        BF_ASSETIO_LIBS
+        "${BF_ASSETIO_LIBS}"
+        "${PROJECT_SOURCE_DIR}/lib/win32/assimp-vc142-mt.lib"
+      )
+    endif()
   endif()
 elseif(APPLE)
   message(SEND_ERROR "MacOS needs a build of the Assimp Model Loading Library.")

@@ -31,7 +31,7 @@ namespace bf
 
     std::size_t usedMemory() const { return size() - m_MemoryLeft; }
     void*       allocate(std::size_t size) override;
-    void        deallocate(void* ptr) override;
+    void        deallocate(void* ptr, std::size_t num_bytes) override;
 
    private:
     class StackHeader

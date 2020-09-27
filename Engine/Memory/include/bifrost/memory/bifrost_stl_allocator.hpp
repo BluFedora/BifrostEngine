@@ -85,7 +85,7 @@ namespace bf
     const_pointer address(const_reference x) const { return &x; }
     // pointer          allocate(size_type s, void const * /* hint */ = nullptr) { return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr; }
     pointer          allocate(size_type s) { return s ? reinterpret_cast<pointer>(m_MemoryBackend.allocate(s * sizeof(T))) : nullptr; }
-    void             deallocate(pointer p, size_type) { m_MemoryBackend.deallocate(p); }
+    void             deallocate(pointer p, size_type s) { m_MemoryBackend.deallocate(p, s * sizeof(T)); }
     static size_type max_size() noexcept { return std::numeric_limits<size_t>::max() / sizeof(value_type); }
 
     template<class U, class... Args>

@@ -20,6 +20,8 @@
 
 #include <memory> /* memset */
 
+#include <cassert> /* assert */
+
 #define cast(o, T) reinterpret_cast<T>((o))
 
 namespace bf
@@ -81,12 +83,15 @@ namespace bf
     return nullptr;
   }
 
-  void FreeListAllocator::deallocate(void* ptr)
+  void FreeListAllocator::deallocate(void* ptr, std::size_t num_bytes)
   {
     checkPointer(ptr);
 
     AllocationHeader* const header = reinterpret_cast<AllocationHeader*>(reinterpret_cast<char*>(ptr) - header_size);
     FreeListNode* const     node   = static_cast<FreeListNode*>(header);
+
+    // The freelist allocator can give out blocks larger than the requested size.
+    assert(num_bytes <= header->size);
 
 #if BIFROST_MEMORY_DEBUG_WIPE_MEMORY
     std::memset(ptr, BIFROST_MEMORY_DEBUG_SIGNATURE, header->size);

@@ -32,16 +32,8 @@ namespace bf
   {
     // Fwd Declarations
 
-    /*!
-     * @brief 
-     *   An Opaque handle to a single 'Job'.
-     */
     struct Task;
 
-    /*!
-     * @brief 
-     *   The priority that you want a task to run at.
-     */
     enum class QueueType : std::uint16_t;
 
     // Private
@@ -59,9 +51,13 @@ namespace bf
 
     // Enums
 
+    /*!
+     * @brief 
+     *   The priority that you want a task to run at.
+     */
     enum class QueueType : std::uint16_t
     {
-      MAIN       = 0,  //!< Use this value when you need a certain task to be run by the main thread.
+      MAIN       = 0,  //!< Use this value when you need a certain task to be run specifically by the main thread.
       HIGH       = 1,  //!< Normally you will want tasks to go into this queue.
       NORMAL     = 2,  //!< Slightly lower priority than 'QueueType::HIGH'.
       BACKGROUND = 3,  //!< Lowest priority, good for asset loading.
@@ -151,7 +147,9 @@ namespace bf
     /*!
      * @brief 
      *   This will deallocate any memory used by the system
-     *   and shutdown any threads created by 'bf::job::initialize';
+     *   and shutdown any threads created by 'bf::job::initialize'.
+     * 
+     *   This function may only be called by the main thread.
      */
     void shutdown() noexcept;
 
@@ -353,7 +351,7 @@ namespace bf
         Closure& function = taskDataAs<Closure>(task);
         function(task);
         function.~Closure();
-      });
+      }, parent);
 
       taskEmplaceData<Closure>(task, std::forward<Closure>(function));
 

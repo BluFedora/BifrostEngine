@@ -26,9 +26,9 @@ namespace bf
     return m_Impl.allocate(size);
   }
 
-  void ProxyAllocator::deallocate(void* ptr)
+  void ProxyAllocator::deallocate(void* ptr, std::size_t num_bytes)
   {
-    m_Impl.deallocate(ptr);
+    m_Impl.deallocate(ptr, num_bytes);
   }
 
   NoFreeAllocator::NoFreeAllocator(IMemoryManager& real_allocator) :
@@ -41,9 +41,10 @@ namespace bf
     return m_Impl.allocate(size);
   }
 
-  void NoFreeAllocator::deallocate(void* ptr)
+  void NoFreeAllocator::deallocate(void* ptr, std::size_t num_bytes)
   {
     (void)ptr;
+    (void)num_bytes;
     // m_Impl.dealloc(ptr);
   }
 }

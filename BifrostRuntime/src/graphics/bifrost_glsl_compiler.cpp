@@ -413,7 +413,7 @@ namespace bf
 
     if (!program.link(messages))
     {
-      bfLogPrint("%s", source.c_str());
+      bfLogPrint("\n\n%s\n\n", source.c_str());
       bfLogPush("Shader Link Error:");
       bfLogError("Info Log       : %s", shader.getInfoLog());
       bfLogError("Info Debug Log : %s", shader.getInfoDebugLog());

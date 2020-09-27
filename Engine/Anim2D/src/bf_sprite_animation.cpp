@@ -37,26 +37,14 @@ struct CallbackAllocator final : public bf::IMemoryManager
   {
   }
 
-  // TODO(SR):
-  //   The size storing is a kinda redundant
-  //   for most allocators but the 'IMemoryManager' is incompatible
-  //   with the 'bfAnimation2DAllocator' interface without this glue code
-  //   to guarantee storing the old size.
-
   virtual void* allocate(std::size_t size) override
   {
-    std::size_t* const allocation = (std::size_t*)alloc_fn(nullptr, 0u, sizeof(std::size_t) + size, user_data);
-
-    allocation[0] = size;
-
-    return allocation + 1;
+    return alloc_fn(nullptr, 0u, size, user_data);
   }
 
-  virtual void deallocate(void* ptr) override
+  virtual void deallocate(void* ptr, std::size_t old_size) override
   {
-    std::size_t* const allocation = (std::size_t*)ptr - 1;
-
-    alloc_fn(allocation, allocation[0] + sizeof(std::size_t), 0u, user_data);
+    alloc_fn(ptr, old_size, 0u, user_data);
   }
 };
 

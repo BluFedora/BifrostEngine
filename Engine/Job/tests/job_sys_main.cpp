@@ -13,7 +13,7 @@ int main()
 
 #define DATA_SIZE 100000
 
-  int data[DATA_SIZE];
+  static int data[DATA_SIZE] = {};
 
   for (int i = 0; i < DATA_SIZE; ++i)
   {

@@ -139,6 +139,33 @@ namespace bf
     bfGfxCmdList_draw(cmd_list, 0, m_NumVertices);
   }
 
+  static bool makeTexturePath(char (&abs_texture_path)[path::k_MaxLength], StringRange root_dir, AssetPBRMaterial& src_mat, int type)
+  {
+    const auto& texture = src_mat.textures[type];
+
+    if (texture)
+    {
+      const auto [path_length, is_truncated] = path::append(abs_texture_path, bfCArraySize(abs_texture_path), root_dir, StringRange(texture));
+
+      return !is_truncated;
+    }
+
+    return false;
+  }
+
+  static AssetTextureHandle getTetxureAssetHandle(Assets& assets, StringRange file_path)
+  {
+    const auto           uuid       = assets.indexAsset<AssetTextureInfo>(file_path);
+    BaseAssetInfo* const asset_info = assets.findAssetInfo(uuid);
+
+    if (asset_info)
+    {
+      return assets.makeHandleT<AssetTextureHandle>(*asset_info);
+    }
+
+    return nullptr;
+  }
+
   bool AssetModelInfo::load(Engine& engine)
   {
     LinearAllocatorScope    mem_scope0    = engine.tempMemory();
@@ -155,16 +182,17 @@ namespace bf
 
       if (model_result)
       {
+        char abs_texture_path[path::k_MaxLength] = {'\0'};
+
         for (AssetPBRMaterial& src_mat : *model_result.materials)
         {
-          char abs_texture_path[path::k_MaxLength] = {'\0'};
-
-          if (src_mat.textures[PBRTextureType::DIFFUSE])
+          // TOOD(SR): Make this function also return the length so that the call to 'getTetxureAssetHandle' doesnt have to recalc length.
+          if (makeTexturePath(abs_texture_path, file_dir, src_mat, PBRTextureType::DIFFUSE))
           {
-            path::append(abs_texture_path, bfCArraySize(abs_texture_path), file_dir, StringRange(src_mat.textures[PBRTextureType::DIFFUSE]));
-          }
+            //auto texture_handle = getTetxureAssetHandle(engine.assets(), abs_texture_path);
 
-          __debugbreak();
+            //__debugbreak();
+          }
         }
       }
     }

@@ -396,6 +396,7 @@ namespace bf
   {
     IMemoryManager* memory;               //
     unsigned char*  font_data;            //
+    long            font_data_size;       //
     stbtt_fontinfo  font_info;            //
     float           size;                 // In Pixels
     float           scale_size;           //
@@ -411,6 +412,7 @@ namespace bf
     explicit Font(IMemoryManager& memory) :
       memory(&memory),
       font_data(nullptr),
+      font_data_size(0),
       font_info(),
       size(0),
       scale_size(0),
@@ -450,7 +452,6 @@ namespace bf
 
     if (self)
     {
-      long            ttf_info_size;
       stbtt_fontinfo& font_info = self->font_info;
       int             ascent;
       int             descent;
@@ -458,7 +459,7 @@ namespace bf
 
       // self->memory = &memory; Initialized in ctor
 
-      std::tie(self->font_data, ttf_info_size) = loadFileIntoMemory(memory, filename);
+      std::tie(self->font_data, self->font_data_size) = loadFileIntoMemory(memory, filename);
 
       const int err = stbtt_InitFont(&font_info, self->font_data, stbtt_GetFontOffsetForIndex(self->font_data, 0));
 
@@ -760,7 +761,7 @@ namespace bf
       }
     }
 
-    font->memory->deallocate(font->font_data);
+    font->memory->deallocate(font->font_data, font->font_data_size);
     font->memory->deallocateT(font);
   }
 
@@ -949,7 +950,8 @@ namespace bf
         // Rasterize the packed glyphs into the correct locations
 
         PixelMap::Pixel*     pixels         = font.atlas->pixels;
-        unsigned char* const aux_bmp_buffer = (unsigned char*)memory.allocate(largest_bmp.x * largest_bmp.y * sizeof(aux_bmp_buffer[0]));
+        const auto           aux_bmp_buffer_length = largest_bmp.x * largest_bmp.y * sizeof(unsigned char);
+        unsigned char* const aux_bmp_buffer = (unsigned char*)memory.allocate(aux_bmp_buffer_length);
 
         for (auto& info : self->glyphs)
         {
@@ -996,7 +998,7 @@ namespace bf
           }
         }
 
-        memory.deallocate(aux_bmp_buffer);
+        memory.deallocate(aux_bmp_buffer, aux_bmp_buffer_length);
       }
 
       return self;

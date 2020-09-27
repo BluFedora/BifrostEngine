@@ -42,6 +42,8 @@ typedef struct Quaternionf_t
 
 } Quaternionf;
 
+typedef Quaternionf bfQuaternionf;
+
 BIFROST_MATH_API Quaternionf bfQuaternionf_init(float x, float y, float z, float w);
 BIFROST_MATH_API Quaternionf bfQuaternionf_identity();
 BIFROST_MATH_API Quaternionf bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle);

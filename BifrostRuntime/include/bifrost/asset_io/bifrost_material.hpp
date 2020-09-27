@@ -13,10 +13,12 @@
 #ifndef BIFROST_MATERIAL_HPP
 #define BIFROST_MATERIAL_HPP
 
-#include "bifrost/core/bifrost_base_object.hpp"  // BaseObject<TSelf>
-#include "bifrost/graphics/bifrost_gfx_api.h"    //
-#include "bifrost_asset_handle.hpp"              // AssetHandle<T>
-#include "bifrost_asset_info.hpp"                // AssetInfo<T>
+#include "bifrost/graphics/bifrost_gfx_api.h"  //
+#include "bifrost_asset_handle.hpp"            // AssetHandle<T>
+#include "bifrost_asset_info.hpp"              // AssetInfo<T>
+
+#include "bf/BaseObject.hpp"  // BaseObject<TSelf>
+#include "bf/Quaternion.h"    // bfQuaternionf
 
 namespace bf
 {
@@ -209,7 +211,106 @@ namespace bf
 
   using AssetMaterialHandle = AssetHandle<Material>;
 
-  class Model : public detail::BaseGraphicsResource<Model, bfBufferHandle>
+  class Animation3D final : public BaseObject<Animation3D>
+  {
+    template<typename T>
+    struct Track
+    {
+      T* keys;
+
+      std::size_t numKeys(IMemoryManager& mem) const
+      {
+        return mem.arraySize(keys);
+      }
+
+      T* create(IMemoryManager& mem, std::size_t num_keys)
+      {
+        keys = mem.allocateArrayTrivial<T>(num_keys);
+        return keys;
+      }
+
+      void destroy(IMemoryManager& mem)
+      {
+        mem.deallocateArray(keys);
+      }
+    };
+
+    struct TripleTrack
+    {
+      Track<float> x;
+      Track<float> y;
+      Track<float> z;
+
+      void create(IMemoryManager& mem, std::size_t num_keys_x, std::size_t num_keys_y, std::size_t num_keys_z)
+      {
+        x.create(mem, num_keys_x);
+        y.create(mem, num_keys_y);
+        z.create(mem, num_keys_z);
+      }
+
+      void destroy(IMemoryManager& mem)
+      {
+        x.destroy(mem);
+        y.destroy(mem);
+        z.destroy(mem);
+      }
+    };
+
+    struct Channel
+    {
+      Track<bfQuaternionf> rotation;
+      TripleTrack          translation;
+      TripleTrack          scale;
+
+      void create(
+       IMemoryManager& mem,
+       std::size_t     num_rot_keys,
+       std::size_t     num_translate_x_keys,
+       std::size_t     num_translate_y_keys,
+       std::size_t     num_translate_z_keys,
+       std::size_t     num_scale_x_keys,
+       std::size_t     num_scale_y_keys,
+       std::size_t     num_scale_z_keys)
+      {
+        rotation.create(mem, num_rot_keys);
+        translation.create(mem, num_translate_x_keys, num_translate_y_keys, num_translate_z_keys);
+        scale.create(mem, num_scale_x_keys, num_scale_y_keys, num_scale_z_keys);
+      }
+
+      void destroy(IMemoryManager& mem)
+      {
+        rotation.destroy(mem);
+        translation.destroy(mem);
+        scale.destroy(mem);
+      }
+    };
+
+   private:
+    IMemoryManager&                 m_Memory;
+    float                           m_Duration;
+    float                           m_TicksPerSecond;
+    std::uint32_t                   m_NumChannels;  // This can be a smaller datatype.
+    Channel*                        m_Channels;
+    HashTable<String, std::uint8_t> m_NameToChannel;
+
+   public:
+    Animation3D(IMemoryManager& memory, std::uint8_t num_bones) :
+      m_Memory{memory},
+      m_Duration{0.0f},
+      m_TicksPerSecond{0.0f},
+      m_NumChannels{num_bones},
+      m_Channels{static_cast<Channel*>(memory.allocate(num_bones * sizeof(Channel)))},
+      m_NameToChannel{}
+    {
+    }
+
+    ~Animation3D()
+    {
+      m_Memory.deallocate(m_Channels, m_NumChannels * sizeof(Channel));
+    }
+  };
+
+  class Model final : public detail::BaseGraphicsResource<Model, bfBufferHandle>
   {
     BIFROST_META_FRIEND;
 
@@ -322,7 +423,7 @@ BIFROST_META_REGISTER(bf::AssetMaterialInfo){
 BIFROST_META_REGISTER(bf::Model){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   class_info<Model>("Model"),                             //
+   class_info<Model>("Model"),  //
    // ctor<bfGfxDeviceHandle>(),                              //
    field_readonly("m_NumVertices", &Model::m_NumVertices)  //
    )

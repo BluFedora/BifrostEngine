@@ -58,7 +58,7 @@ namespace bf
     return nullptr;
   }
 
-  void LinearAllocator::deallocate(void*)
+  void LinearAllocator::deallocate(void*, std::size_t)
   {
     throw linear_allocator_free();
   }

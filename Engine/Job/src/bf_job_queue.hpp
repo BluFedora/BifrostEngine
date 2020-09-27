@@ -13,10 +13,8 @@
 #ifndef BF_JOB_QUEUE_HPP
 #define BF_JOB_QUEUE_HPP
 
-#include <atomic>  /* atomic_int32_t     */
-#include <cstring> /* memset            */
-#include <mutex>   /* mutex, lock_guard */
-#include <thread>  /* thread            */
+#include <atomic>  /* atomic_int32_t, atomic_signal_fence, atomic_thread_fence */
+#include <mutex>   /* mutex, lock_guard                                        */
 
 // NOTE(Shareef):
 //   Prevents reordering of statements by the compiler.
@@ -118,7 +116,7 @@ namespace bf
   // NOTE(Shareef):
   //   kSize must be a Power of Two.
   //   T should be a pointer type.
-  template<std::size_t kSize, typename T = Job*>
+  template<std::size_t kSize, typename T>
   class JobQueueA
   {
    private:
@@ -138,7 +136,6 @@ namespace bf
       m_Bottom(0),
       m_Top(0)
     {
-      std::memset(m_Queue.data(), 0x0, sizeof(m_Queue));
     }
 
     inline int size() const

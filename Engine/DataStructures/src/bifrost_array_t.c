@@ -1,18 +1,29 @@
 /******************************************************************************/
 /*!
-   @file   bifrost_array_t.c
-   @author Shareef Abdoul-Raheem
-   @par    email: shareef.a\@digipen.edu
-   @brief
-     Part of the "Bifrost Data Structures C Library"
-     This is a generic dynamic array class the growing algorithm is based
-     off of the one used with Python.
-     No dependencies besides the C Standard Library.
-     Random Access - O(1)
-     Pop           - O(1)
-     Push, Emplace - O(1) best O(n) worst (when we need to grow)
-     Clear         - O(1)
- */
+ * @file   bifrost_array_t.c
+ * @author Shareef Abdoul-Raheem
+ * @brief
+ *   Part of the "BluFedora Data Structures C Library"
+ *   This is a generic dynamic array class.
+ * 
+ *   No dependencies besides the C Standard Library.
+ *   Random Access - O(1)
+ *   Pop           - O(1)
+ *   Push, Emplace - O(1) best O(n) worst (when we need to grow)
+ *   Clear         - O(1)
+ * 
+ *   The memory layout:
+ *     [ArrayHeader (capacity | size | stride)][alignment-padding][allocation-offset]^[array-data (uint8_t*)]
+ *     The '^' symbol indicates the pointer you are handed back from the 'bfArray_new' function.
+ * 
+ *   Memory Allocation Customization:
+ *     To use your own allocator pass an allocation function to the array.
+ *     To be compliant you must:
+ *       > Act as malloc  when ptr == NULL, size == number of bytes to alloc.
+ *       > Act as free    when ptr != NULL, size == number of bytes given back.
+ * 
+ * @copyright Copyright (c) 2019-2020
+*/
 /******************************************************************************/
 #include "bifrost/data_structures/bifrost_array_t.h"
 
@@ -30,7 +41,7 @@ typedef struct
 
 #if 1
 #define PRISM_ASSERT(arg, msg) assert((arg) && (msg))
-#define SELF_CAST(s) ((BifrostArray*)(s))
+#define SELF_CAST(s) ((unsigned char**)(s))
 #define BIFROST_MALLOC(size, align) malloc((size))
 #define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
 #define BIFROST_FREE(ptr) free((ptr))
@@ -44,7 +55,7 @@ typedef struct
 
 } BifrostArrayHeader;
 
-static BifrostArrayHeader* Array_getHeader(BifrostArray self)
+static BifrostArrayHeader* Array_getHeader(unsigned char* self)
 {
   return (BifrostArrayHeader*)(self - sizeof(BifrostArrayHeader));
 }
@@ -73,11 +84,7 @@ void* _ArrayT_new(const size_t stride, const size_t initial_size)
   return (uint8_t*)self + sizeof(BifrostArrayHeader);
 }
 
-void* Array_begin(const void* const self)
-{
-  return (*SELF_CAST(self));
-}
-
+// Array_push
 void* Array_end(const void* const self)
 {
   BifrostArrayHeader* const header = Array_getHeader(*SELF_CAST(self));
@@ -87,22 +94,6 @@ void* Array_end(const void* const self)
 size_t Array_size(const void* const self)
 {
   return Array_getHeader(*SELF_CAST(self))->size;
-}
-
-size_t Array_capacity(const void* const self)
-{
-  return Array_getHeader(*(BifrostArray*)self)->capacity;
-}
-
-void Array_copy(const void* const self, BifrostArray* dst)
-{
-  const size_t size   = Array_size(SELF_CAST(self));
-  const size_t stride = Array_getHeader(*SELF_CAST(self))->stride;
-
-  Array_getHeader(*dst)->stride = stride;
-  Array_getHeader(*dst)->size   = size;
-  Array_reserve(dst, size);
-  memcpy((*dst), (*SELF_CAST(self)), size * stride);
 }
 
 void Array_clear(void* const self)
@@ -168,18 +159,6 @@ void* Array_emplaceN(void* const self, const size_t num_elements)
   memset(new_element, 0x0, header->stride * num_elements);
   header->size += num_elements;
   return new_element;
-}
-
-void* Array_findFromSorted(const void* const self, const void* const key, const size_t index, const size_t size, ArrayFindCompare compare)
-{
-  const size_t stride = Array_getHeader(*SELF_CAST(self))->size;
-
-  return bsearch(key, (char*)Array_begin(self) + (index * stride), size, stride, compare);
-}
-
-void* Array_findSorted(const void* const self, const void* const key, ArrayFindCompare compare)
-{
-  return Array_findFromSorted(self, key, 0, Array_size(self), compare);
 }
 
 static int Array_findDefaultCompare(const void* lhs, const void* rhs)
@@ -251,23 +230,11 @@ void* Array_back(const void* const self)
   return (char*)Array_end(self) - header->stride;
 }
 
-void Array_sort(void* const self, ArraySortCompare compare)
-{
-  BifrostArrayHeader* const header = Array_getHeader(*SELF_CAST(self));
-
-  if (header->size >= 2)
-  {
-    qsort(Array_begin(self), header->size, header->stride, compare);
-  }
-}
-
 void Array_delete(void* const self)
 {
   BIFROST_FREE(Array_getHeader(*SELF_CAST(self)));
 }
 
-#undef SELF_CAST
-#undef PRISM_ASSERT
 #endif
 
 ///////////////////////////////////////////////////////////////////////////

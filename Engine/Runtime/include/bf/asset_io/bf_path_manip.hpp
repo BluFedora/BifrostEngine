@@ -16,15 +16,31 @@ namespace bf::path
   static constexpr char        k_Separator = '/';
 
   //
-  // All of these functions assume a 'canonicalized' path
+  // All of these functions assume a 'canonicalized' paths
   //
 
   StringRange relative(StringRange abs_root_path, StringRange abs_sub_path);
   String      append(StringRange directory, StringRange rel_path);
 
-  /// `out_path_size` must be at least 1.
-  std::size_t append(char* out_path, std::size_t out_path_size, StringRange directory, StringRange file_name);  // Out will always be nul terminated wven if we were not able to fit.
-  StringRange directory(StringRange file_path);
+  /*!
+   * @brief
+   *   Bundle of infomation from a call to append.
+   */
+  struct AppendResult
+  {
+    std::size_t path_length;   //!< The length of the path not including the nul terminator.
+    bool        is_truncated;  //!< Whether or not the full path was not able to fit within the 'out_path' buffer.
+  };
+
+  /// Preconditions:
+  ///   The lengths of `directory` and `file_name` added together must not overflow.
+  ///   Both `directory` and `file_name` must be of non zero size.
+  ///   `out_path_size` must be at least 1.
+  ///
+  /// Out will always be nul terminated even if truncated.
+  ///
+  AppendResult append(char* out_path, std::size_t out_path_size, StringRange directory, StringRange file_name);
+  StringRange  directory(StringRange file_path);
 
   /*!
    * @brief
