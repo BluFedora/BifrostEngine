@@ -3,8 +3,8 @@
 
 // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 
+#include "bf/TempBuffer.hpp"                          /* TempBuffer          */
 #include "bifrost/data_structures/bifrost_string.hpp" /* String, StringRange */
-#include "bifrost/memory/bifrost_imemory_manager.hpp" /* TenmBuffer          */
 
 #include <algorithm> /* reverse      */
 #include <fstream>   /* fstream, ios */
@@ -160,6 +160,6 @@ namespace bf
   {
     return readBytes(reinterpret_cast<char*>(&data), sizeof(T));
   }
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_FILE_HPP */

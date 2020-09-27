@@ -9,12 +9,12 @@
 */
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
 
+#include "bf/MemoryUtils.h"
 #include "bf/Platform.h"  // BifrostWindow
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/data_structures/bifrost_string.hpp"
 #include "bifrost/ecs/bifrost_entity.hpp"  // Entity
 #include "bifrost/ecs/bifrost_light.hpp"   // LightType
-#include "bifrost/memory/bifrost_memory_utils.h"
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */

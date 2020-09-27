@@ -515,14 +515,15 @@ void bfGfxDevice_flush(bfGfxDeviceHandle self)
 
 bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index)
 {
-  (void)thread_index;
+  assert(thread_index == 0);
+  assert(thread_index < bfCArraySize(window->cmd_list_memory));
 
   if (window->current_cmd_list)
   {
     return window->current_cmd_list;
   }
 
-  bfGfxCommandListHandle list = new bfGfxCommandList();
+  bfGfxCommandListHandle list = window->cmd_list_memory + thread_index;
 
   list->context        = self;
   list->parent         = self->logical_device;

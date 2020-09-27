@@ -1,5 +1,6 @@
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 
+#include "bf/FreeListAllocator.hpp"
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_material.hpp"
@@ -9,7 +10,6 @@
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"
 #include "bifrost/editor/bifrost_editor_inspector.hpp"
 #include "bifrost/editor/bifrost_editor_scene.hpp"
-#include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*

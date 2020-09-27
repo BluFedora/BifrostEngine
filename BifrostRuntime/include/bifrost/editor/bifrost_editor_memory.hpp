@@ -13,8 +13,8 @@
 #ifndef BIFROST_EDITOR_MEMORY_HPP
 #define BIFROST_EDITOR_MEMORY_HPP
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager            */
-#include "bifrost/meta/bf_meta_function_traits.hpp"   /*  meta::function_caller<F> */
+#include "bf/IMemoryManager.hpp"                    /* IMemoryManager            */
+#include "bifrost/meta/bf_meta_function_traits.hpp" /*  meta::function_caller<F> */
 
 #include <memory> /* unique_ptr<T> */
 

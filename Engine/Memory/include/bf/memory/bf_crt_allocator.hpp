@@ -13,10 +13,10 @@
 * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#ifndef BIFROST_C_ALLOCATOR_HPP
-#define BIFROST_C_ALLOCATOR_HPP
+#ifndef BF_CRT_ALLOCATOR_HPP
+#define BF_CRT_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp"
+#include "bf_imemory_manager.hpp"
 
 namespace bf
 {
@@ -35,4 +35,4 @@ namespace bf
   using CRTAllocator = CAllocator;
 }  // namespace bifrost
 
-#endif  /* BIFROST_C_ALLOCATOR_HPP */
+#endif  /* BF_C_ALLOCATOR_HPP */

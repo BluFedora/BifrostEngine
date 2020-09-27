@@ -16,7 +16,7 @@
 * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#include "bf/memory/bf_freelist_allocator.hpp"
 
 #include <memory> /* memset */
 

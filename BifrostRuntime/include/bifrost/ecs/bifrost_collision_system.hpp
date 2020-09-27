@@ -17,11 +17,11 @@
 #ifndef BIFROST_COLLISION_SYSTEM
 #define BIFROST_COLLISION_SYSTEM
 
-#include "bf/Core.h"                                    // bfInvalidDefaultCase
-#include "bifrost/bifrost_math.hpp"                     // isAlmostEqual
-#include "bifrost/data_structures/bifrost_array.hpp"    // Array<T>
-#include "bifrost/memory/bifrost_linear_allocator.hpp"  // LinearAllocator
-#include "bifrost_iecs_system.hpp"                      // IECSSystem
+#include "bf/Core.h"                                  // bfInvalidDefaultCase
+#include "bf/LinearAllocator.hpp"                     // LinearAllocator
+#include "bifrost/bifrost_math.hpp"                   // isAlmostEqual
+#include "bifrost/data_structures/bifrost_array.hpp"  // Array<T>
+#include "bifrost_iecs_system.hpp"                    // IECSSystem
 
 #include <cfloat>   // FLT_MAX
 #include <cstdint>  // uint16_t

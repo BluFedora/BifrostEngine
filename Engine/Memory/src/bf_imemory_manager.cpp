@@ -11,9 +11,9 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_imemory_manager.hpp"
+#include "bf/memory/bf_imemory_manager.hpp"
 
-#include "bifrost/memory/bifrost_memory_utils.h" /* bfAlignUpPointer */
+#include "bf/memory/bf_memory_utils.h" /* bfAlignUpPointer */
 
 #include <cstdint>
 

@@ -1,13 +1,13 @@
 #ifndef BIFROST_ENGINE_HPP
 #define BIFROST_ENGINE_HPP
 
+#include "bf/LinearAllocator.hpp"
+#include "bf/PoolAllocator.hpp"
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
 #include "bifrost/graphics/bifrost_debug_renderer.hpp"
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
-#include "bifrost/memory/bifrost_pool_allocator.hpp"
 #include "bifrost/script/bifrost_vm.hpp"
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
@@ -17,13 +17,13 @@
 #define USE_CRT_HEAP 0
 
 #if USE_CRT_HEAP
-#include "bifrost/memory/bifrost_c_allocator.hpp"
+#include "bifrost/memory/bf_crt_allocator.hpp"
 #else
-#include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#include "bf/FreeListAllocator.hpp"
 #endif
 
 #if USE_CRT_HEAP
-using MainHeap = bf::CAllocator;
+using MainHeap = bf::CRTAllocator;
 #else
 using MainHeap = bf::FreeListAllocator;
 #endif

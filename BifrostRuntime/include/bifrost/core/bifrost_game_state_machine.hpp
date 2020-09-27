@@ -12,8 +12,8 @@
 #ifndef BIFROST_GAME_STATE_MACHINE_HPP
 #define BIFROST_GAME_STATE_MACHINE_HPP
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
-#include "bifrost/utility/bifrost_non_copy_move.hpp"  /* bfNonCopyMoveable<T> */
+#include "bf/IMemoryManager.hpp"                     /* IMemoryManager       */
+#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
 
 class Engine;
 
@@ -138,7 +138,7 @@ namespace bf
     [[nodiscard]] static iterator find(iterator it_bgn, iterator it_end, IGameStateLayer* state);
 
    private:
-    Engine&   m_Engine;
+    Engine&          m_Engine;
     IMemoryManager&  m_Memory;
     IGameStateLayer* m_LayerHead;
     IGameStateLayer* m_LayerTail;
@@ -180,8 +180,8 @@ namespace bf
 
     ~GameStateMachine();
 
-   // TODO: private:
-  public:
+    // TODO: private:
+   public:
     void purgeStates();
     void pushImpl(IGameStateLayer* state);
     void pushAfterImpl(IGameStateLayer& after, IGameStateLayer* state);
@@ -233,6 +233,6 @@ namespace bf
     addOverlayImpl(state);
     return state;
   }
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_GAME_STATE_MACHINE_HPP */

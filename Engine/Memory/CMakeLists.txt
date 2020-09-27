@@ -24,7 +24,7 @@ target_include_directories(
 target_sources(
   "${PROJECT_NAME}_interface"
   INTERFACE
-    "${PROJECT_SOURCE_DIR}/src/bf_c_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bf_crt_allocator.cpp"
     "${PROJECT_SOURCE_DIR}/src/bf_freelist_allocator.cpp"
     "${PROJECT_SOURCE_DIR}/src/bf_imemory_manager.cpp"
     "${PROJECT_SOURCE_DIR}/src/bf_linear_allocator.cpp"

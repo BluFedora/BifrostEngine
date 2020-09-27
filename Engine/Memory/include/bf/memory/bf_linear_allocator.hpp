@@ -16,7 +16,7 @@
 #ifndef BIFROST_LINEAR_ALLOCATOR_HPP
 #define BIFROST_LINEAR_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp" /* MemoryManager */
+#include "bf_imemory_manager.hpp" /* MemoryManager */
 
 #include <exception> /* exception */
 

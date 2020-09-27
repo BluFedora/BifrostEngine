@@ -11,7 +11,7 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_memory_utils.h"
+#include "bf/memory/bf_memory_utils.h"
 
 #include <assert.h> /* assert */
 #include <string.h> /* memcpy */

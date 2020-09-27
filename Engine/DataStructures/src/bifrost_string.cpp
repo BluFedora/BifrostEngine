@@ -1,6 +1,6 @@
 #include "bifrost/data_structures/bifrost_string.hpp"
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp"  // IMemoryManager
+#include "bf/IMemoryManager.hpp"  // IMemoryManager
 
 #include <cassert>  // assert
 #include <cstdio>   // vsnprintf

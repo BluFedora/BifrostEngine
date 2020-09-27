@@ -7,9 +7,9 @@
 //
 #define bfGfx2DSafeVertexIndexing 0
 
+#include "bf/LinearAllocator.hpp"                          // LinearAllocator
+#include "bf/MemoryUtils.h"                                // bfMegabytes
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics
-#include "bifrost/memory/bifrost_linear_allocator.hpp"     // LinearAllocator
-#include "bifrost/memory/bifrost_memory_utils.h"           // bfMegabytes
 
 #if bfGfx2DSafeVertexIndexing
 #include "bifrost/memory/bifrost_proxy_allocator.hpp"

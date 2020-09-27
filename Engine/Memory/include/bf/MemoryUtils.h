@@ -1,2 +1,2 @@
 
-#include "bifrost/memory/bifrost_memory_utils.h"
+#include "bf/memory/bf_memory_utils.h"

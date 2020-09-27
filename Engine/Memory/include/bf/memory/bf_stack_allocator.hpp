@@ -16,7 +16,7 @@
 #ifndef BIFROST_STACK_ALLOCATOR_HPP
 #define BIFROST_STACK_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp" /* MemoryManager */
+#include "bf_imemory_manager.hpp" /* MemoryManager */
 
 namespace bf
 {

@@ -1,9 +1,8 @@
 #include "bf/gfx2D/bf_painter.hpp"
 
-#include "bf/Platform.h"  // bfPlatformGetGfxAPI
-#include "bf/Text.hpp"    // CodePoint, Font
-
-#include "bifrost/memory/bifrost_proxy_allocator.hpp"
+#include "bf/NoFreeAllocator.hpp"  // NoFreeAllocator
+#include "bf/Platform.h"           // bfPlatformGetGfxAPI
+#include "bf/Text.hpp"             // CodePoint, Font
 
 #include <cmath>
 

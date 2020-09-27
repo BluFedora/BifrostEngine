@@ -1,12 +1,13 @@
 ﻿#define NOMINMAX
 
 #include "bf/Gfx2DPainter.hpp"
+#include "bf/MemoryUtils.h"  // bfMegabytes
 #include "main_demo.hpp"
+
 #include <bifrost/bifrost.hpp>
 #include <bifrost/bifrost_imgui_glfw.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
-#include <bifrost/memory/bifrost_memory_utils.h>  // bfMegabytes
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
@@ -458,7 +459,7 @@ int main(int argc, char* argv[])
           Engine* const engine = (Engine*)window->user_data;
 
           imgui::onEvent(window, *event);
-          engine->onEvent(window, * event);
+          engine->onEvent(window, *event);
         };
 
         main_window->frame_fn = [](bfWindow* window) {

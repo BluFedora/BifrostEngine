@@ -13,7 +13,7 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
+#include "bf/memory/bf_linear_allocator.hpp"
 
 // #include <new>    /* bad_alloc  */
 

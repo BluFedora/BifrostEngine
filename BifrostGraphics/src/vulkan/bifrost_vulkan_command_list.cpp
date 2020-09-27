@@ -1201,7 +1201,6 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
   }
 
   window.current_cmd_list = nullptr;
-  delete self;
 }
 
 // TODO(SR): Make a new file

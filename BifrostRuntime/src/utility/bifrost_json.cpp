@@ -13,12 +13,12 @@
 /******************************************************************************/
 #include "bifrost/utility/bifrost_json.hpp"
 
-#include "bifrost/memory/bifrost_c_allocator.hpp" /* CAllocator       */
-#include "bifrost/utility/bifrost_json.h"         /* Bifrost Json API */
+#include "bf/CRTAllocator.hpp"            /* CRTAllocator */
+#include "bifrost/utility/bifrost_json.h" /* Json API     */
 
 namespace bf::json
 {
-  static CAllocator s_ArrayAllocator = {}; // TODO(SR): Think about this allocation scheme a bit more??
+  static CRTAllocator s_ArrayAllocator = {};  // TODO(SR): Think about this allocation scheme a bit more??
 
   static Value** readStorage(bfJsonParserContext* ctx)
   {
@@ -395,4 +395,4 @@ namespace bf::json
       *this = value;
     }
   }
-}  // namespace bifrost::json
+}  // namespace bf::json

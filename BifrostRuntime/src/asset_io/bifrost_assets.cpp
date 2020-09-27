@@ -14,10 +14,10 @@
  */
 #include "bifrost/asset_io/bifrost_assets.hpp"
 
+#include "bf/LinearAllocator.hpp"                        // LinearAllocator
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
 #include "bifrost/asset_io/bifrost_file.hpp"             // File
 #include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
-#include "bifrost/memory/bifrost_linear_allocator.hpp"   /* LinearAllocator */
 #include "bifrost/meta/bifrost_meta_runtime.hpp"         //
 
 #include "bf/Platform.h"
@@ -117,7 +117,7 @@ namespace bf
         return nullptr;
       }
 #else
-      DIR* const file_handle = opendir(null_terminated_path);
+      DIR* const     file_handle = opendir(null_terminated_path);
 
       if (!file_handle)
       {

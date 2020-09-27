@@ -19,7 +19,7 @@
 #ifndef BIFROST_FREELIST_ALLOCATOR_HPP
 #define BIFROST_FREELIST_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp" /* MemoryManager */
+#include "bf_imemory_manager.hpp" /* MemoryManager */
 
 namespace bf
 {
@@ -42,7 +42,7 @@ namespace bf
    private:
     struct AllocationHeader
     {
-      std::size_t size; //!< size does not include the size of the header itself, rather it is the size of the writable region of memory.
+      std::size_t size;  //!< size does not include the size of the header itself, rather it is the size of the writable region of memory.
     };
 
     struct FreeListNode final : public AllocationHeader
@@ -51,7 +51,7 @@ namespace bf
       // When size is used here it includes the memory taken up by FreeListNode::next.
       //
 
-      FreeListNode* next; //!< Next free block.
+      FreeListNode* next;  //!< Next free block.
 
       unsigned char* begin() const { return reinterpret_cast<unsigned char*>(const_cast<FreeListNode*>(this)); }
       unsigned char* end() const { return begin() + header_size + size; }
@@ -60,6 +60,6 @@ namespace bf
    public:
     static constexpr std::size_t header_size = sizeof(AllocationHeader);
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_FREELIST_ALLOCATOR_HPP */

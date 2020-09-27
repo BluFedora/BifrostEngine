@@ -201,7 +201,7 @@ namespace bf::intrusive
 
 // TODO: Make a new file for this
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp"
+#include "bf/IMemoryManager.hpp"
 
 namespace bf
 {

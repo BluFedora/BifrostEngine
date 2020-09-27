@@ -12,9 +12,9 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_pool_allocator.hpp"
+#include "bf/memory/bf_pool_allocator.hpp"
 
-#include "bifrost/memory/bifrost_memory_utils.h" /* bfAlignUpSize */
+#include "bf/memory/bf_memory_utils.h" /* bfAlignUpSize */
 
 #include <algorithm> /* max     */
 #include <cassert>   /* assert  */

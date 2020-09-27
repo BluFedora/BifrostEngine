@@ -12,7 +12,7 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_proxy_allocator.hpp"
+#include "bf/memory/bf_proxy_allocator.hpp"
 
 namespace bf
 {

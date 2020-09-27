@@ -13,7 +13,7 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bifrost/memory/bifrost_stack_allocator.hpp"
+#include "bf/memory/bf_stack_allocator.hpp"
 
 #include <cassert> /* assert */
 #include <memory>  /* align  */

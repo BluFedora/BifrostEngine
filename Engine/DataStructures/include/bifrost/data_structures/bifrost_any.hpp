@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_any.hpp
+ * @file   bf_any.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *    This class can hold any C++ type with a small buffer optimization
@@ -8,13 +8,13 @@
  *    Anything other class is on the heap.
  *
  * @version 0.0.1
- * @date 2019-12-27
+ * @date    2019-12-27
  *
  * @copyright Copyright (c) 2019
  */
 /******************************************************************************/
-#ifndef BIFROST_ANY_HPP
-#define BIFROST_ANY_HPP
+#ifndef BF_ANY_HPP
+#define BF_ANY_HPP
 
 #include <algorithm> /* swap, max                                                                */
 #include <cstdint>   /* int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t */
@@ -426,4 +426,4 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-#endif /* BIFROST_ANY_HPP */
+#endif /* BF_ANY_HPP */

@@ -14,8 +14,8 @@
 #ifndef BIFROST_ARRAY_HPP
 #define BIFROST_ARRAY_HPP
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMemoryManager       */
-#include "bifrost_array_t.h"                          /* bfArray_*            */
+#include "bf/IMemoryManager.hpp" /* IMemoryManager       */
+#include "bifrost_array_t.h"     /* bfArray_*            */
 
 #include <cassert>  /* assert           */
 #include <iterator> /* reverse_iterator */

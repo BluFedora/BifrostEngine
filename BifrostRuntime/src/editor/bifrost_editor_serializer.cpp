@@ -12,6 +12,7 @@
 /******************************************************************************/
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
+#include "bf/LinearAllocator.hpp"  // LinearAllocator
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_script.hpp"
 #include "bifrost/bifrost_math.h"
@@ -20,7 +21,6 @@
 #include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/math/bifrost_vec2.h"
 #include "bifrost/math/bifrost_vec3.h"
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
 #include "bifrost/script/bifrost_script_behavior.hpp"
 
 namespace bf::editor
@@ -776,4 +776,4 @@ namespace bf::editor
 
     return 0;
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor

@@ -30,6 +30,11 @@
 
 - As of C++17 `std::vector`, `std::list`, `std::forward_list` can be template instantiated with an incomplete type:
 
+## Memory
+
+- (C++) The free store is the term for the memory where dynamic object allocations live. (new / delete) 
+- (C) The heap is the term for the memory where dynamic memory allocations live. (malloc / free) 
+
 ## TODO: C++ Design Patterns
 
 - Policy Based Design: https://en.wikipedia.org/wiki/Modern_C%2B%2B_Design#Policy-based_design

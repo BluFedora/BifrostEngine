@@ -15,7 +15,7 @@
 #ifndef BF_POOL_ALLOCATOR_HPP
 #define BF_POOL_ALLOCATOR_HPP
 
-#include "bifrost_imemory_manager.hpp"
+#include "bf_imemory_manager.hpp"
 
 namespace bf
 {
