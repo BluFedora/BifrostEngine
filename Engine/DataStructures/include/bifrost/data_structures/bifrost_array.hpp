@@ -201,11 +201,11 @@ namespace bf
     template<typename... Args>
     T* emplaceN(std::size_t num_elements, Args&&... args)
     {
-      T* elements = ::bfArray_emplaceN(rawData(), num_elements);
+      T* const elements = static_cast<T*>(::bfArray_emplaceN(rawData(), num_elements));
 
       for (std::size_t i = 0; i < num_elements; ++i)
       {
-        new (elements) T(std::forward<Args>(args)...);
+        new (elements + i) T(std::forward<Args>(args)...);
       }
 
       return elements;

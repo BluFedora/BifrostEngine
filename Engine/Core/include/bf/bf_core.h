@@ -1,5 +1,5 @@
-#ifndef BIFROST_STD_H
-#define BIFROST_STD_H
+#ifndef BF_CORE_H
+#define BF_CORE_H
 
 #include <stddef.h> /* size_t             */
 #include <stdint.h> /* uint32_t, uint64_t */
@@ -142,4 +142,4 @@ constexpr
 }
 #endif
 
-#endif /* BIFROST_STD_H */
+#endif /* BF_CORE_H */

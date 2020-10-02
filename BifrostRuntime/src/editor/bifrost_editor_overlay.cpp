@@ -1,7 +1,9 @@
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 
 #include "bf/FreeListAllocator.hpp"
+#include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
+
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_material.hpp"
 #include "bifrost/asset_io/bifrost_script.hpp"
@@ -12,8 +14,6 @@
 #include "bifrost/editor/bifrost_editor_scene.hpp"
 #include "bifrost/utility/bifrost_json.hpp"
 
-#include "bf/asset_io/bf_path_manip.hpp"  // path::*
-
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */
 
@@ -22,41 +22,6 @@
 #include <ImGuizmo/ImGuizmo.h>
 
 #include <utility>
-
-/////////////////////////////////////////////////////////////////////////////////////
-
-struct CanvasTransform final  // NOLINT(hicpp-member-init)
-{
-  ImVec2 position;
-  float  scale;
-};
-
-ImVec2 WorldToScreen(const CanvasTransform& canvas, const ImVec2& world)
-{
-  return {
-   ((world.x - canvas.position.x) * canvas.scale),
-   ((world.y - canvas.position.y) * canvas.scale),
-  };
-}
-
-ImVec2 ScreenToWorld(const CanvasTransform& canvas, const ImVec2& screen)
-{
-  return {
-   screen.x / canvas.scale + canvas.position.x,
-   screen.y / canvas.scale + canvas.position.y,
-  };
-}
-
-void ZoomAroundPoint(CanvasTransform& canvas, float zoom_level, const ImVec2& screen_point = {0.0f, 0.0f})
-{
-  const ImVec2 point_before_zoom = ScreenToWorld(canvas, screen_point);
-  canvas.scale                   = zoom_level;
-  const ImVec2 point_after_zoom  = ScreenToWorld(canvas, screen_point);
-
-  canvas.position = canvas.position + (point_before_zoom - point_after_zoom);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
 
 namespace bf::editor
 {
@@ -992,10 +957,9 @@ namespace bf::editor
 
       ImGui::PopStyleVar(3);
 
-      const ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+      const ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
 
-      // Initial layout
-      if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr)
+      if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr)  // Initial layout
       {
         LinearAllocatorScope mem_scope{engine.tempMemory()};
 
@@ -1003,18 +967,21 @@ namespace bf::editor
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);  // Add empty node
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
-        ImGuiID        dock_main_id        = dockspace_id;
-        ImGuiID        dock_id_left_top    = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
-        const ImGuiID  dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left_top, ImGuiDir_Down, 0.5f, nullptr, &dock_id_left_top);
-        const ImGuiID  dock_id_right       = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
-        HierarchyView& hierarchy_window    = getWindow<HierarchyView>();
-        Inspector&     inspector_window    = getWindow<Inspector>(allocator());
-        GameView&      game_window         = getWindow<GameView>();
+        ImGuiID       dock_main_id        = dockspace_id;
+        ImGuiID       dock_id_left_top    = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+        const ImGuiID dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left_top, ImGuiDir_Down, 0.5f, nullptr, &dock_id_left_top);
+        const ImGuiID dock_id_right       = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+
+        HierarchyView& hierarchy_window = getWindow<HierarchyView>();
+        Inspector&     inspector_window = getWindow<Inspector>(allocator());
+        GameView&      game_window      = getWindow<GameView>();
+        SceneView&     scene_window     = getWindow<SceneView>();
 
         ImGui::DockBuilderDockWindow("Project View", dock_id_left_top);
         ImGui::DockBuilderDockWindow(hierarchy_window.fullImGuiTitle(engine.tempMemory()), dock_id_left_bottom);
         ImGui::DockBuilderDockWindow(inspector_window.fullImGuiTitle(engine.tempMemory()), dock_id_right);
         ImGui::DockBuilderDockWindow(game_window.fullImGuiTitle(engine.tempMemory()), dock_main_id);
+        ImGui::DockBuilderDockWindow(scene_window.fullImGuiTitle(engine.tempMemory()), dock_main_id);
 
         ImGui::DockBuilderFinish(dockspace_id);
       }
@@ -1022,10 +989,6 @@ namespace bf::editor
       ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
       ImGui::End();
-
-      SceneView& scene_window = getWindow<SceneView>();
-
-      ImGui::DockBuilderDockWindow(scene_window.fullImGuiTitle(engine.tempMemory()), dockspace_id);
     }
 
     if (m_OpenProject)
@@ -1123,109 +1086,6 @@ namespace bf::editor
     }
     ImGui::End();
     //*/
-
-#if 0
-    if (ImGui::Begin("Node Editor Test"))
-    {
-      static constexpr float k_GridSize  = 20.0f;
-      static CanvasTransform s_Transform = {{0.0f, 0.0f}, 1.0f};
-
-      auto* const  window_draw        = ImGui::GetWindowDrawList();
-      const ImVec2 content_area_start = ImGui::GetWindowContentRegionMin();
-      const ImVec2 content_area       = ImGui::GetContentRegionAvail();
-      const ImVec2 window_pos         = ImGui::GetWindowPos();
-      const ImVec2 origin             = window_pos + content_area_start;
-
-      ImGui::DragFloat2("Position", &s_Transform.position.x, 0.4f);
-      float old_scale = s_Transform.scale;
-      if (ImGui::DragFloat("Scale", &old_scale, 0.1f, 0.05f, 10.0f))
-      {
-        ZoomAroundPoint(s_Transform, old_scale);
-      }
-
-      //
-      // How To Draw an 2D Infinite Grid
-      //
-
-      // Step 1:
-      //   Grab the bounds of the area in screen space.
-      //   Convert this screen space rectangle into a world space one.
-
-      const Rect2f screen           = {0.0, 0.0, content_area.x, content_area.y};
-      const ImVec2 screen_min_world = ScreenToWorld(s_Transform, ImVec2(screen.min().x, screen.min().y));
-      const ImVec2 screen_max_world = ScreenToWorld(s_Transform, ImVec2(screen.max().x, screen.max().y));
-      const Rect2f screen_world     = {{screen_min_world.x, screen_min_world.y}, {screen_max_world.x, screen_max_world.y}};
-
-      // Step 2:
-      //   Calculate the aligned bounds.
-      //   Make sure to give the larger size a bit of extra.
-
-      const float left   = math::alignf(screen_world.left(), k_GridSize);
-      const float right  = math::alignf(screen_world.right(), k_GridSize) + k_GridSize;
-      const float top    = math::alignf(screen_world.top(), k_GridSize);
-      const float bottom = math::alignf(screen_world.bottom(), k_GridSize) + k_GridSize;
-
-      /*
-      window_draw->AddRectFilled(
-       origin,
-       origin + content_area,
-       0xFF555555,
-       5.0f,
-       ImDrawCornerFlags_All);
-      */
-
-      const auto world_mouse = ScreenToWorld(s_Transform, ImVec2(m_MousePosition.x, m_MousePosition.y) - origin);
-
-      for (int i = 0; i < 10; ++i)
-      {
-        for (int j = 0; j < 10; ++j)
-        {
-          const auto base = ImVec2(20.0f * float(i), 40.0f * float(j));
-
-          const Rect2f bounds = {base.x, base.y, 10.0f, 10.0f};
-
-          window_draw->AddRectFilled(
-           origin + WorldToScreen(s_Transform, base),
-           origin + WorldToScreen(s_Transform, base + ImVec2(10.0f, 10.0f)),
-           bounds.intersects(Vector2f{world_mouse.x, world_mouse.y}) ? 0xFF00FFFF : 0xFFCDCDCD,
-           5.0f,
-           ImDrawCornerFlags_All);
-        }
-      }
-
-      // Step 3: Draw Lines
-
-      const int num_y_lines = int((bottom - top) / k_GridSize) + 1;
-      const int num_x_lines = int((right - left) / k_GridSize) + 1;
-
-      for (int i = 0; i < num_y_lines; ++i)
-      {
-        const float  y           = top + float(i) * k_GridSize;
-        const ImVec2 left_point  = ImVec2{left, y};
-        const ImVec2 right_point = ImVec2{right, y};
-
-        window_draw->AddLine(
-         origin + WorldToScreen(s_Transform, left_point),
-         origin + WorldToScreen(s_Transform, right_point),
-         0xFF111111,
-         1.0f);
-      }
-
-      for (int i = 0; i < num_x_lines; ++i)
-      {
-        const float  x            = left + float(i) * k_GridSize;
-        const ImVec2 top_point    = ImVec2{x, top};
-        const ImVec2 bottom_point = ImVec2{x, bottom};
-
-        window_draw->AddLine(
-         origin + WorldToScreen(s_Transform, top_point),
-         origin + WorldToScreen(s_Transform, bottom_point),
-         0xFF111111,
-         1.0f);
-      }
-    }
-    ImGui::End();
-#endif
 
     if (m_OpenNewDialog)
     {
@@ -1442,7 +1302,7 @@ namespace bf::editor
 
   struct FileExtensionHandler final
   {
-    using Callback = BifrostUUID (*)(Assets& engine, StringRange full_path);
+    using Callback = BaseAssetInfo* (*)(Assets& engine, StringRange full_path);
 
     StringRange ext;
     Callback    handler;
@@ -1461,9 +1321,9 @@ namespace bf::editor
   };
 
   template<typename T>
-  static BifrostUUID fileExtensionHandlerImpl(Assets& assets, StringRange full_path)
+  static BaseAssetInfo* fileExtensionHandlerImpl(Assets& assets, StringRange full_path)
   {
-    return assets.indexAsset<T>(full_path);
+    return assets.indexAsset<T>(full_path).info;
   }
 
   static const FileExtensionHandler s_AssetHandlers[] =
@@ -1482,9 +1342,10 @@ namespace bf::editor
     {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
     {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".fbx", &fileExtensionHandlerImpl<AssetModelInfo>},
+    {".md5mesh", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
     {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}
-
+   
     // {".gltf", &fileExtensionHandlerImpl<>},
     // {".glsl", &fileExtensionHandlerImpl<>},
     // {".frag", &fileExtensionHandlerImpl<>},
@@ -1521,7 +1382,7 @@ namespace bf::editor
             bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
             bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
 
-            meta.entry->uuid = handler->handler(m_Engine->assets(), meta.file_name);
+            meta.entry->asset_info = handler->handler(m_Engine->assets(), meta.file_name);
           }
           bfLogPop();
         }
@@ -1683,7 +1544,7 @@ namespace bf::editor
     full_path{full_path},
     file_extension{file::extensionOfFile(this->full_path)},
     is_file{is_file},
-    uuid{bfUUID_makeEmpty()},
+    asset_info{nullptr},
     children{&FileEntry::next},
     next{}
   {
@@ -1805,11 +1666,20 @@ namespace bf::editor
 
   void FileSystem::uiShowImpl(EditorOverlay& editor, FileEntry& entry)
   {
+    auto& assets = editor.engine().assets();
+
     ImGui::TableNextRow();
 
     if (entry.is_file)
     {
-      ImGui::TreeNodeEx(entry.name.cstr(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth);
+      ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen;
+
+      if (!entry.asset_info || entry.asset_info->subAssets().isEmpty())
+      {
+        tree_node_flags |= ImGuiTreeNodeFlags_Leaf;
+      }
+
+      const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
 
       // const StringRange rel_path = relativePath(entry);
 
@@ -1818,26 +1688,19 @@ namespace bf::editor
         // ImGui::SetTooltip("Name(%s)\nFullPath(%s)\nRelPath(%.*s)", entry.name.cstr(), entry.full_path.cstr(), int(rel_path.length()), rel_path.begin());
       }
 
-      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+      if (entry.asset_info)
       {
-        if (entry.file_extension == ".scene")
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
-          auto& assets = editor.engine().assets();
-
-          if (auto* info = assets.findAssetInfo(entry.uuid))
+          if (entry.file_extension == ".scene")
           {
-            editor.engine().openScene(assets.makeHandleT<AssetSceneHandle>(*info));
+            editor.engine().openScene(assets.makeHandleT<AssetSceneHandle>(*entry.asset_info));
           }
         }
-      }
 
-      if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
-      {
-        auto& assets = editor.engine().assets();
-
-        if (auto* info = assets.findAssetInfo(entry.uuid))
+        if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
         {
-          editor.select(assets.makeHandle(*info));
+          editor.select(assets.makeHandle(*entry.asset_info));
         }
       }
 
@@ -1847,10 +1710,10 @@ namespace bf::editor
       {
         if constexpr (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
         {
-          ImGui::Text("UUID %s", entry.uuid.as_string.data);
+          ImGui::Text("UUID %s", entry.asset_info->uuid().as_string.data);
         }
 
-        ImGui::SetDragDropPayload("Asset.UUID", &entry.uuid, sizeof(BifrostUUID));
+        ImGui::SetDragDropPayload("Asset.UUID", &entry.asset_info->uuid(), sizeof(BifrostUUID));
         ImGui::EndDragDropSource();
       }
 
@@ -1872,7 +1735,26 @@ namespace bf::editor
       ImGui::TableNextCell();
       ImGui::TextUnformatted("Asset");
 
-      ImGui::TreePop();
+      if (is_open)
+      {
+        if (entry.asset_info)
+        {
+          for (const BaseAssetInfo& sub_asset : entry.asset_info->subAssets())
+          {
+            ImGui::TableNextRow();
+
+            if (ImGui::TreeNodeEx(sub_asset.filePathAbs().cstr(), ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth))
+            {
+              ImGui::TreePop();
+            }
+
+            ImGui::TableNextCell();
+            ImGui::TextUnformatted("SubAsset");
+          }
+        }
+
+        ImGui::TreePop();
+      }
     }
     else
     {

@@ -22,6 +22,9 @@
 
 namespace bf
 {
+  using Matrix4x4f        = ::Mat4x4;
+  using AnimationTimeType = double;
+
   namespace detail
   {
     // clang-format off
@@ -34,6 +37,8 @@ namespace bf
       THandle           m_Handle;
 
      protected:
+      using Base = BaseGraphicsResource<TSelf, THandle>;
+
       explicit BaseGraphicsResource(bfGfxDeviceHandle device) :
         m_GraphicsDevice{device},
         m_Handle{nullptr}
@@ -116,7 +121,7 @@ namespace bf
 
   class AssetShaderModuleInfo final : public AssetInfo<ShaderModule, AssetShaderModuleInfo>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
 
    private:
     using BaseT = AssetInfo<ShaderModule, AssetShaderModuleInfo>;
@@ -135,7 +140,7 @@ namespace bf
 
   class ShaderProgram final : public detail::BaseGraphicsResource<ShaderProgram, bfShaderProgramHandle>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
     friend class AssetShaderProgramInfo;
 
    private:
@@ -158,10 +163,8 @@ namespace bf
 
   class AssetShaderProgramInfo final : public AssetInfo<ShaderProgram, AssetShaderProgramInfo>
   {
-    using BaseT = AssetInfo<ShaderProgram, AssetShaderProgramInfo>;
-
    public:
-    using BaseT::BaseT;
+    using Base::Base;
 
     bool load(Engine& engine) override;
     bool save(Engine& engine, ISerializer& serializer) override;
@@ -171,7 +174,8 @@ namespace bf
 
   class Material final : public BaseObject<Material>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
+    friend class AssetModelInfo;
 
    private:
     AssetTextureHandle m_AlbedoTexture;
@@ -200,10 +204,8 @@ namespace bf
 
   class AssetMaterialInfo final : public AssetInfo<Material, AssetMaterialInfo>
   {
-    using BaseT = AssetInfo<Material, AssetMaterialInfo>;
-
    public:
-    using BaseT::BaseT;
+    using Base::Base;
 
     bool load(Engine& engine) override;
     bool save(Engine& engine, ISerializer& serializer) override;
@@ -213,20 +215,44 @@ namespace bf
 
   class Animation3D final : public BaseObject<Animation3D>
   {
+    friend class AssetModelInfo;
+
+   public:
     template<typename T>
     struct Track
     {
-      T* keys;
-
-      std::size_t numKeys(IMemoryManager& mem) const
+      struct Key
       {
-        return mem.arraySize(keys);
+        AnimationTimeType time;
+        T                 value;
+      };
+
+      Key* keys = {};
+
+      std::size_t numKeys(IMemoryManager& mem) const noexcept { return mem.arraySize(keys); }
+
+      Key* create(IMemoryManager& mem, std::size_t num_keys)
+      {
+        return keys = mem.allocateArrayTrivial<Key>(num_keys);
       }
 
-      T* create(IMemoryManager& mem, std::size_t num_keys)
+      // Dont call this fuction wehn only one key exists
+      std::size_t findKey(AnimationTimeType time, IMemoryManager& mem) const
       {
-        keys = mem.allocateArrayTrivial<T>(num_keys);
-        return keys;
+        const std::size_t num_keys = numKeys(mem);
+
+        assert(num_keys > 1);
+
+        for (std::size_t i = 0; i < num_keys - 1; ++i)
+        {
+          if (time < keys[i + 1].time)
+          {
+            return i;
+          }
+        }
+
+        assert(!"Invalid time passed in.");
+        return -1;
       }
 
       void destroy(IMemoryManager& mem)
@@ -237,11 +263,15 @@ namespace bf
 
     struct TripleTrack
     {
-      Track<float> x;
-      Track<float> y;
-      Track<float> z;
+      Track<float> x = {};
+      Track<float> y = {};
+      Track<float> z = {};
 
-      void create(IMemoryManager& mem, std::size_t num_keys_x, std::size_t num_keys_y, std::size_t num_keys_z)
+      void create(
+       IMemoryManager& mem,
+       std::size_t     num_keys_x,
+       std::size_t     num_keys_y,
+       std::size_t     num_keys_z)
       {
         x.create(mem, num_keys_x);
         y.create(mem, num_keys_y);
@@ -285,56 +315,113 @@ namespace bf
       }
     };
 
-   private:
+   public:
     IMemoryManager&                 m_Memory;
-    float                           m_Duration;
-    float                           m_TicksPerSecond;
-    std::uint32_t                   m_NumChannels;  // This can be a smaller datatype.
+    AnimationTimeType               m_Duration;
+    AnimationTimeType               m_TicksPerSecond;
+    std::uint8_t                    m_NumChannels;
     Channel*                        m_Channels;
     HashTable<String, std::uint8_t> m_NameToChannel;
 
    public:
-    Animation3D(IMemoryManager& memory, std::uint8_t num_bones) :
+    Animation3D(IMemoryManager& memory) :
       m_Memory{memory},
       m_Duration{0.0f},
       m_TicksPerSecond{0.0f},
-      m_NumChannels{num_bones},
-      m_Channels{static_cast<Channel*>(memory.allocate(num_bones * sizeof(Channel)))},
+      m_NumChannels{0u},
+      m_Channels{nullptr},
       m_NameToChannel{}
     {
     }
 
+    void create(std::uint8_t num_bones)
+    {
+      m_NumChannels = num_bones;
+      m_Channels    = static_cast<Channel*>(m_Memory.allocate(num_bones * sizeof(Channel)));
+    }
+
     ~Animation3D()
     {
+      std::for_each_n(
+       m_Channels, m_NumChannels, [this](Channel& channel) {
+         channel.destroy(m_Memory);
+       });
+
       m_Memory.deallocate(m_Channels, m_NumChannels * sizeof(Channel));
     }
   };
 
+  class AssetAnimation3DInfo final : public AssetInfo<Animation3D, AssetAnimation3DInfo>
+  {
+   public:
+    using Base::Base;
+
+    bool load(Engine& engine) override;
+  };
+
+  using AssetAnimation3DHandle = AssetHandle<Animation3D>;
+
+  struct ModelSkeleton;
+
+  static constexpr std::uint8_t k_InvalidBoneID = static_cast<std::uint8_t>(-1);
+
   class Model final : public detail::BaseGraphicsResource<Model, bfBufferHandle>
   {
-    BIFROST_META_FRIEND;
-
+    BF_META_FRIEND;
     friend class AssetModelInfo;
 
-   private:
-    using BaseT = BaseGraphicsResource<Model, bfBufferHandle>;
+   public:
+    struct Mesh
+    {
+      std::uint32_t       index_offset;
+      std::uint32_t       num_indices;
+      AssetMaterialHandle material;
+    };
 
-   private:
-    std::uint32_t              m_NumVertices;
+    struct Node
+    {
+      String       name;
+      Matrix4x4f   transform;
+      std::uint8_t bone_idx;
+      unsigned int first_child;
+      unsigned int num_children;
+    };
+
+    struct NodeIDBone
+    {
+      unsigned int node_idx;
+      Matrix4x4f   transform;
+    };
+
+   public:
     Array<AssetMaterialHandle> m_EmbeddedMaterials;
+    Array<Mesh>                m_Meshes;
+    Array<Node>                m_Nodes;
+    Array<NodeIDBone>          m_BoneToModel;
+    bfBufferHandle             m_IndexBuffer;
+    bfBufferHandle             m_VertexBoneData;
+    Matrix4x4f                 m_GlobalInvTransform;
 
    public:
     explicit Model(IMemoryManager& memory, bfGfxDeviceHandle device);
 
+    void loadAssetSkeleton(const ModelSkeleton& skeleton);
+
     void draw(bfGfxCommandListHandle cmd_list);
+
+    ~Model()
+    {
+      bfGfxDevice_flush(m_GraphicsDevice);
+
+      bfGfxDevice_release(m_GraphicsDevice, m_IndexBuffer);
+      bfGfxDevice_release(m_GraphicsDevice, m_VertexBoneData);
+    }
   };
 
   class AssetModelInfo final : public AssetInfo<Model, AssetModelInfo>
   {
-    using BaseT = AssetInfo<Model, AssetModelInfo>;
-
    public:
-    using BaseT::BaseT;
+    using Base::Base;
 
     bool load(Engine& engine) override;
   };
@@ -423,9 +510,9 @@ BIFROST_META_REGISTER(bf::AssetMaterialInfo){
 BIFROST_META_REGISTER(bf::Model){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   class_info<Model>("Model"),  //
+   class_info<Model>("Model")  // ,  //
    // ctor<bfGfxDeviceHandle>(),                              //
-   field_readonly("m_NumVertices", &Model::m_NumVertices)  //
+   // field_readonly("m_NumVertices", &Model::m_NumVertices)  //
    )
    BIFROST_META_END()}
 

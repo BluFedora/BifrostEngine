@@ -78,7 +78,7 @@ keywords:    [engine, architecture, rising, tide, c++, game]
   - [Area][]
   - [File][]
   - [Assets][]
-  - [JsonParser][]]
+  - [JsonParser][]
   - [JsonValue](#jsonvalue-class)
   - [Resource][]
   - [TileMap](#tilemap-class)

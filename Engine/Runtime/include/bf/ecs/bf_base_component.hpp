@@ -15,7 +15,7 @@
 #ifndef BF_BASE_COMPONENT_HPP
 #define BF_BASE_COMPONENT_HPP
 
-#include <type_traits> /* false_type, void_t, declval */
+#include <type_traits> /* false_type, void_t, declval, is_base_of_v */
 
 class Engine;
 
@@ -23,35 +23,6 @@ namespace bf
 {
   class Entity;
   class Scene;
-
-  /*
-    Planned Component Types:
-      * AudioSource
-      * ParticleEmitter
-      * AIAgent
-      * Sprite
-      * Animator2D (SpriteAnimator)
-        > Needs Sprite
-      * Mesh
-      * Animator3D (MeshAnimator)
-        > Needs Mesh
-      * TimelineAnimator
-      * Tilemap
-      * Collider2D
-        > Needs: RigidBody2D
-      * Collider3D
-        > Needs: RigidBody3D
-      * RigidBody2D
-      * RigidBody3D
-      * LightSource
-      * GUI?
-        > Text, Button, Etc
-      * Combat/Health?
-
-    Built In Scripts:
-      * ParallaxBackground
-      * CameraTarget
-  */
 
   /*!
    * @brief
@@ -109,6 +80,7 @@ namespace bf
     explicit Component(Entity& owner) :
       BaseComponent(owner)
     {
+      static_assert(std::is_base_of_v<Base, TSelf>, "TSelf must be the same as the type deriving from this class.");
     }
 
    private:

@@ -89,6 +89,13 @@ namespace bf
     return result;
   }
 
+  template<typename T>
+  void deallocateTempArray(IMemoryManager& mem, AssetTempArray<T>* temp_array)
+  {
+    temp_array->~AssetTempArray<T>();
+    mem.deallocate(temp_array, offsetof(AssetTempArray<T>, data) + sizeof(T) * temp_array->length);
+  }
+
   // The Meats and Bones
 
   struct AssetModelLoadSettings
@@ -100,6 +107,7 @@ namespace bf
     bool            import_lights;
     bool            import_cameras;
     bool            smooth_normals;
+    bool            row_major;
     float           scale_factor;
 
    public:
@@ -113,6 +121,7 @@ namespace bf
       import_lights{false},
       import_cameras{false},
       smooth_normals{true},
+      row_major{false},
       scale_factor{1.0f}
     {
     }
@@ -169,8 +178,7 @@ namespace bf
 
       void operator()(T* ptr) const noexcept
       {
-        ptr->~T();
-        memory->deallocate(ptr, sizeof(T));
+        deallocateTempArray(*memory, ptr);
       }
     };
 
@@ -186,7 +194,7 @@ namespace bf
     template<typename T>
     Ptr<AssetTempArray<T>> makeUniqueTempArray(IMemoryManager& mem, std::size_t num_elements, T default_value = T())
     {
-      return makeUnique(allocateTempArray(mem, num_elements, default_value), &mem);
+      return makeUnique(allocateTempArray(mem, num_elements, std::move(default_value)), &mem);
     }
 
     //
@@ -239,6 +247,32 @@ namespace bf
     bool isOpaque() const { return diffuse_color[3] == 0.0f; }
   };
 
+  struct AnimationKey
+  {
+    double time;
+    float  data[4];
+  };
+
+  // all_keys = [pos, rot, scale]
+  struct ModelAnimationChannel
+  {
+    AssetTempSmallString          name                = {};
+    AssetTempArray<AnimationKey>* all_keys            = {};
+    std::uint32_t                 rotation_key_offset = 0u;
+    std::uint32_t                 scale_key_offset    = 0u;
+    std::uint32_t                 num_position_keys   = 0u;
+    std::uint32_t                 num_rotation_keys   = 0u;
+    std::uint32_t                 num_scale_keys      = 0u;
+  };
+
+  struct ModelAnimation
+  {
+    AssetTempSmallString                   name = {};
+    double                                 duration;          // Duration in ticks.
+    double                                 ticks_per_second;  // Ticks per second. 0 if not specified in the imported file
+    AssetTempArray<ModelAnimationChannel>* channels = {};
+  };
+
   using Matrix4x4 = float[16];
 
   struct AssetNode
@@ -252,27 +286,30 @@ namespace bf
 
   struct ModelSkeleton
   {
-    Matrix4x4                     global_inv_transform;
-    unsigned int                  num_nodes;
-    detail::MovablePtr<AssetNode> nodes;
-    Matrix4x4                     bones[k_MaxBones];
+    Matrix4x4                          global_inv_transform;
+    unsigned int                       num_nodes;
+    detail::MovablePtr<AssetNode>      nodes;
+    std::uint8_t                       num_bones;
+    std::pair<unsigned int, Matrix4x4> bones[k_MaxBones];  // <node index, transform>
   };
 
-  using AssetMeshArray     = AssetTempArray<AssetMeshPrototype>;
-  using AssetVertexArray   = AssetTempArray<AssetModelVertex>;
-  using AssetIndexArray    = AssetTempArray<AssetIndexType>;
-  using AssetMaterialArray = AssetTempArray<AssetPBRMaterial>;
+  using AssetMeshArray      = AssetTempArray<AssetMeshPrototype>;
+  using AssetVertexArray    = AssetTempArray<AssetModelVertex>;
+  using AssetIndexArray     = AssetTempArray<AssetIndexType>;
+  using AssetMaterialArray  = AssetTempArray<AssetPBRMaterial>;
+  using AssetAnimationArray = AssetTempArray<ModelAnimation>;
 
   struct AssetModelLoadResult
   {
-    IMemoryManager*                 memory       = nullptr;
-    detail::Ptr<AssetMeshArray>     mesh_list    = nullptr;
-    detail::Ptr<AssetVertexArray>   vertices     = nullptr;
-    detail::Ptr<AssetIndexArray>    indices      = nullptr;
-    detail::Ptr<AssetMaterialArray> materials    = nullptr;
-    ModelSkeleton                   skeleton     = {};
-    bfStringRange                   error        = {nullptr, nullptr};
-    std::array<char, 128>           error_buffer = {'\0'};  //!< Private Do not use. Read from 'AssetModelLoadResult::error' instead.
+    IMemoryManager*                  memory       = nullptr;
+    detail::Ptr<AssetMeshArray>      mesh_list    = nullptr;
+    detail::Ptr<AssetVertexArray>    vertices     = nullptr;
+    detail::Ptr<AssetIndexArray>     indices      = nullptr;
+    detail::Ptr<AssetMaterialArray>  materials    = nullptr;
+    detail::Ptr<AssetAnimationArray> animations   = nullptr;
+    ModelSkeleton                    skeleton     = {};
+    bfStringRange                    error        = {nullptr, nullptr};
+    std::array<char, 128>            error_buffer = {'\0'};  //!< Private Do not use. Read from 'AssetModelLoadResult::error' instead.
 
     AssetModelLoadResult()                                         = default;
     AssetModelLoadResult(const AssetModelLoadResult& rhs) noexcept = delete;
@@ -293,8 +330,17 @@ namespace bf
     {
       if (skeleton.nodes)
       {
+        for (ModelAnimation& animation : *animations)
+        {
+          for (ModelAnimationChannel& channel : *animation.channels)
+          {
+            deallocateTempArray(*memory, channel.all_keys);
+          }
+
+          deallocateTempArray(*memory, animation.channels);
+        }
+
         memory->deallocateArray<AssetNode>(skeleton.nodes);
-        // skeleton.nodes = nullptr;
       }
     }
   };

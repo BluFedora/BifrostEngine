@@ -28,23 +28,31 @@ namespace bf
 
   static void aiColor4DToArray(const aiColor4D* from, float to[4])
   {
-    // aiNodeAnim;
     to[0] = from->r;
     to[1] = from->g;
     to[2] = from->b;
     to[3] = from->a;
   }
 
-  static void aiMat4x4ToMatrix4x4(const aiMatrix4x4* from, float* to)
+  static void aiMat4x4ToMatrix4x4(const aiMatrix4x4* from_, float* to, bool is_row_major)
   {
-    static_assert(sizeof(*from) == sizeof(float) * 16, "Inccorect size of matrix from Assimp");
+    static_assert(sizeof(aiMatrix4x4) == sizeof(Matrix4x4), "Incorrect size of matrix from Assimp");
 
-    memcpy(to, from, sizeof(*from));
+    aiMatrix4x4 from = *from_;
+
+    if (!is_row_major)
+    {
+      from.Transpose();
+    }
+
+    memcpy(to, &from, sizeof(from));
   }
 
-  static unsigned findAssetNode(ModelSkeleton& skeleton, const AssetNode** nodes, unsigned& num_nodes, const aiString& name)
+  static unsigned findAssetNode(ModelSkeleton& skeleton, const AssetNode** nodes, const aiString& name)
   {
-    for (unsigned i = 0; i < num_nodes; ++i)
+    auto& num_bones = skeleton.num_bones;
+
+    for (std::uint8_t i = 0; i < num_bones; ++i)
     {
       if (std::strcmp(nodes[i]->name.data, name.data) == 0)
       {
@@ -56,10 +64,11 @@ namespace bf
     {
       if (std::strcmp(skeleton.nodes[i].name.data, name.data) == 0)
       {
-        const unsigned id = num_nodes++;
+        const unsigned id = num_bones++;
 
-        assert(num_nodes < k_MaxBones && "Too Many Bones");
+        assert(num_bones < k_MaxBones && "Too Many Bones");
 
+        skeleton.bones[id].first            = i;
         skeleton.nodes[i].model_to_bone_idx = id;
         nodes[id]                           = &skeleton.nodes[i];
 
@@ -67,6 +76,7 @@ namespace bf
       }
     }
 
+    assert(!"Could not find associated bone.");
     return -1;
   }
 
@@ -86,25 +96,27 @@ namespace bf
   }
 
   template<typename F>
-  static void recurseNodes(aiNode* parent_node, aiNode* node, F&& callback, int depth)
+  static void recurseNodes(aiNode* parent_node, aiNode* node, F&& callback, int depth, unsigned int parent_index, int& num_nodes)
   {
-#if 0 /* Depth */
+#if 0 /* Depth Order */
     callback(parent_node, node, depth);
 
     for (unsigned int i = 0; i < node->mNumChildren; ++i)
     {
       recurseNodes(node, node->mChildren[i], std::forward<F>(callback), depth + 1);
-      // callback(node, node->mChildren[i]);
     }
-#else /* Level */
+#else /* Level Order */
+    const int base_index = num_nodes;
+
     for (unsigned int i = 0; i < node->mNumChildren; ++i)
     {
-      callback(parent_node, node->mChildren[i], depth);
+      callback(parent_node, node->mChildren[i], depth, parent_index);
+      ++num_nodes;
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; ++i)
     {
-      recurseNodes(node, node->mChildren[i], std::forward<F>(callback), depth + 1);
+      recurseNodes(node, node->mChildren[i], callback, depth + 1, base_index + i, num_nodes);
     }
 #endif
   }
@@ -115,42 +127,57 @@ namespace bf
 #if 0 /* Depth */
     recurseNodes(nullptr, node, std::forward<F>(callback), 0);
 #else /* Level */
-    callback(nullptr, node, 0);
-    recurseNodes(nullptr, node, std::forward<F>(callback), 1);
+
+    int num_nodes = 0;
+
+    callback(nullptr, node, 0, -1);
+    ++num_nodes;
+
+    recurseNodes(nullptr, node, callback, 1, 0, num_nodes);
 #endif
   }
 
-  static void PrintAssetNode(AssetNode* base_array, AssetNode& node, int depth)
+  static void PrintAssetNode(AssetNode* base_array, AssetNode& node, int depth, int& count)
   {
     for (unsigned int i = 0; i < node.num_children; ++i)
     {
       auto& child = base_array[i + node.first_child];
 
-      for (int i = 0; i < depth * 2; ++i)
+      for (int j = 0; j < depth * 2; ++j)
       {
         std::printf(" ");
       }
 
-      std::printf("(depth:%i, %i) '%s'\n",
+      std::printf("(%i depth: %i, fc: %i, numc: %i) '%s'\n",
+                  count,
                   depth,
+                  child.first_child,
                   child.num_children,
                   child.name.data);
+
+      ++count;
     }
 
     for (unsigned int i = 0; i < node.num_children; ++i)
     {
-      PrintAssetNode(base_array, base_array[i + node.first_child], depth + 1);
+      PrintAssetNode(base_array, base_array[node.first_child + i], depth + 1, count);
     }
   }
 
   static void PrintAssetNode(AssetNode* base_array, AssetNode& node)
   {
-    std::printf("(depth:%i, %i) '%s'\n",
-                0,
+    int depth = 0;
+    int count = 0;
+
+    std::printf("(%i depth: %i, fc: %i, numc: %i) '%s'\n",
+                count,
+                depth,
+                node.first_child,
                 node.num_children,
                 node.name.data);
+    ++count;
 
-    PrintAssetNode(base_array, node, 1);
+    PrintAssetNode(base_array, node, depth + 1, count);
   }
 
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept
@@ -179,7 +206,7 @@ namespace bf
 
     // Error Checking
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
+    if (!scene /* || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE */)
     {
       result.setError(importer.GetErrorString());
       goto done;
@@ -193,7 +220,6 @@ namespace bf
       result.memory = &memory;
 
       const AssetNode* bone_to_node[k_MaxBones] = {nullptr};
-      unsigned         num_bone_to_node         = 0;
 
       // Process Nodes
       {
@@ -201,7 +227,7 @@ namespace bf
 
         recurseNodes(
          scene->mRootNode,
-         [&num_nodes](const aiNode* parent_node, const aiNode* node, int depth) {
+         [&num_nodes](const aiNode* parent_node, const aiNode* node, int depth, int parent_index) {
            for (int i = 0; i < depth * 2; ++i)
            {
              std::printf(" ");
@@ -221,20 +247,30 @@ namespace bf
           std::printf("-");
         std::printf("\n");
 
-        aiMat4x4ToMatrix4x4(&scene->mRootNode->mTransformation, result.skeleton.global_inv_transform);
+        auto global_inv = scene->mRootNode->mTransformation;
+        global_inv.Inverse();
+
+        aiMat4x4ToMatrix4x4(&global_inv, result.skeleton.global_inv_transform, load_settings.row_major);
         result.skeleton.num_nodes = num_nodes;
         result.skeleton.nodes     = memory.allocateArray<AssetNode>(num_nodes);
 
         recurseNodes(
          scene->mRootNode,
-         [&skeleton = result.skeleton, node_idx = 0](const aiNode* parent_node, const aiNode* node, int depth) mutable {
-           AssetNode& model_node = skeleton.nodes[node_idx++];
+         [&load_settings, &skeleton = result.skeleton, node_idx = 0](const aiNode* parent_node, const aiNode* node, int depth, unsigned int parent_index) mutable {
+           if (parent_index != static_cast<unsigned int>(-1) && skeleton.nodes[parent_index].first_child == static_cast<unsigned int>(-1))
+           {
+             skeleton.nodes[parent_index].first_child = node_idx;
+           }
 
-           aiMat4x4ToMatrix4x4(&node->mTransformation, model_node.transform);
+           AssetNode& model_node = skeleton.nodes[node_idx];
+
+           aiMat4x4ToMatrix4x4(&node->mTransformation, model_node.transform, load_settings.row_major);
            model_node.name.copyOverString(node->mName.data, node->mName.length);
-           model_node.first_child       = node_idx;
+           model_node.first_child       = -1;
            model_node.num_children      = node->mNumChildren;
            model_node.model_to_bone_idx = -1;
+
+           ++node_idx;
          });
 
         PrintAssetNode(result.skeleton.nodes, result.skeleton.nodes[0]);
@@ -278,8 +314,9 @@ namespace bf
 
       // Merging All Vertices Into One Buffer
       {
-        AssetIndexType index_offset  = 0;
-        AssetIndexType vertex_offset = 0;
+        AssetIndexType  index_offset  = 0;
+        AssetIndexType  vertex_offset = 0;
+        AssetIndexType* output_index  = result.indices->data;
 
         for (unsigned int i = 0; i < num_meshes; ++i)
         {
@@ -334,9 +371,8 @@ namespace bf
 
             for (unsigned int face_idx = 0; face_idx < face->mNumIndices; ++face_idx)
             {
-              AssetIndexType* const output_index = result.indices->data + index_offset + face_idx;
-
               *output_index = face->mIndices[face_idx] + vertex_offset;
+              ++output_index;
             }
           }
 
@@ -345,11 +381,11 @@ namespace bf
           for (unsigned int b = 0; b < mesh->mNumBones; ++b)
           {
             const aiBone* const bone       = mesh->mBones[b];
-            const unsigned      bone_index = findAssetNode(result.skeleton, bone_to_node, num_bone_to_node, bone->mName);
+            const unsigned      bone_index = findAssetNode(result.skeleton, bone_to_node, bone->mName);
 
             if (bone_index != -1)
             {
-              aiMat4x4ToMatrix4x4(&bone->mOffsetMatrix, result.skeleton.bones[bone_index]);
+              aiMat4x4ToMatrix4x4(&bone->mOffsetMatrix, result.skeleton.bones[bone_index].second, load_settings.row_major);
 
               for (unsigned int bw = 0; bw < bone->mNumWeights; ++bw)
               {
@@ -437,6 +473,79 @@ namespace bf
 
           out_material->textures[PBRTextureType::ROUGHNESS] = load_texture(material, aiTextureType_DIFFUSE_ROUGHNESS);
           out_material->textures[PBRTextureType::AO]        = load_texture(material, aiTextureType_AMBIENT_OCCLUSION);
+        }
+      }
+
+      // Animations
+      {
+        const unsigned int num_animations = scene->mNumAnimations;
+
+        result.animations = detail::makeUniqueTempArray<ModelAnimation>(memory, num_animations);
+
+        for (unsigned int i = 0; i < num_animations; ++i)
+        {
+          const aiAnimation* const src_animation = scene->mAnimations[i];
+          ModelAnimation&          dst_animation = result.animations->data[i];
+
+          dst_animation.name.copyOverString(src_animation->mName.data, src_animation->mName.length);
+          dst_animation.duration         = src_animation->mDuration;
+          dst_animation.ticks_per_second = src_animation->mTicksPerSecond;
+          dst_animation.channels         = allocateTempArray<ModelAnimationChannel>(memory, src_animation->mNumChannels);
+
+          for (unsigned int c = 0; c < src_animation->mNumChannels; ++c)
+          {
+            const aiNodeAnim* const src_channel    = src_animation->mChannels[c];
+            ModelAnimationChannel&  dst_channel    = dst_animation.channels->data[c];
+            const std::size_t       total_num_keys = std::size_t(src_channel->mNumPositionKeys) +
+                                               std::size_t(src_channel->mNumRotationKeys) +
+                                               std::size_t(src_channel->mNumScalingKeys);
+
+            dst_channel.name.copyOverString(src_channel->mNodeName.data, src_channel->mNodeName.length);
+            dst_channel.all_keys            = allocateTempArray<AnimationKey>(memory, total_num_keys);
+            dst_channel.rotation_key_offset = src_channel->mNumPositionKeys;
+            dst_channel.scale_key_offset    = dst_channel.rotation_key_offset + src_channel->mNumRotationKeys;
+            dst_channel.num_position_keys   = src_channel->mNumPositionKeys;
+            dst_channel.num_rotation_keys   = src_channel->mNumRotationKeys;
+            dst_channel.num_scale_keys      = src_channel->mNumScalingKeys;
+
+            unsigned int dst_key_idx = 0;
+
+            for (unsigned int k = 0; k < src_channel->mNumPositionKeys; ++k)
+            {
+              const aiVectorKey* const src_key = src_channel->mPositionKeys + k;
+              AnimationKey&            dst_key = dst_channel.all_keys->data[dst_key_idx++];
+
+              dst_key.time    = src_key->mTime;
+              dst_key.data[0] = src_key->mValue.x;
+              dst_key.data[1] = src_key->mValue.y;
+              dst_key.data[2] = src_key->mValue.z;
+              dst_key.data[3] = 1.0f;
+            }
+
+            for (unsigned int k = 0; k < src_channel->mNumRotationKeys; ++k)
+            {
+              const aiQuatKey* const src_key = src_channel->mRotationKeys + k;
+              AnimationKey&          dst_key = dst_channel.all_keys->data[dst_key_idx++];
+
+              dst_key.time    = src_key->mTime;
+              dst_key.data[0] = src_key->mValue.x;
+              dst_key.data[1] = src_key->mValue.y;
+              dst_key.data[2] = src_key->mValue.z;
+              dst_key.data[3] = src_key->mValue.w;
+            }
+
+            for (unsigned int k = 0; k < src_channel->mNumScalingKeys; ++k)
+            {
+              const aiVectorKey* const src_key = src_channel->mScalingKeys + k;
+              AnimationKey&            dst_key = dst_channel.all_keys->data[dst_key_idx++];
+
+              dst_key.time    = src_key->mTime;
+              dst_key.data[0] = src_key->mValue.x;
+              dst_key.data[1] = src_key->mValue.y;
+              dst_key.data[2] = src_key->mValue.z;
+              dst_key.data[3] = 0.0f;
+            }
+          }
         }
       }
     }

@@ -142,7 +142,7 @@ namespace bf
     }
 
     String(const char* bgn, std::size_t length) :
-      m_Handle{length ? String_newLen(bgn, length) : nullptr}
+      m_Handle{String_newLen(bgn, length)}
     {
     }
 

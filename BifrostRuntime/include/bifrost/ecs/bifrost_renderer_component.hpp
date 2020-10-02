@@ -1,16 +1,18 @@
+/******************************************************************************/
 /*!
- * @file   bifrost_renderer_component.hpp
+ * @file   bf_renderer_component.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   Contains the components that are drawn on screen.
+ *   Contains the definitions of components that are drawn on screen.
  *
  * @version 0.0.1
  * @date    2020-03-21
  *
  * @copyright Copyright (c) 2020
  */
-#ifndef BIFROST_RENDERER_COMPONENT_HPP
-#define BIFROST_RENDERER_COMPONENT_HPP
+/******************************************************************************/
+#ifndef BF_RENDERER_COMPONENT_HPP
+#define BF_RENDERER_COMPONENT_HPP
 
 #include "bf/asset_io/bf_spritesheet_asset.hpp"  // bfSpritesheet, bfAnim2DSpriteHandle
 #include "bf/ecs/bf_base_component.hpp"          /* BaseComponent       */
@@ -20,10 +22,10 @@ namespace bf
 {
   class MeshRenderer : public Component<MeshRenderer>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
 
    private:
-    AssetMaterialHandle m_Material;
+    AssetMaterialHandle m_Material;   // TODO(SR): Needs to be an array.
     EntityRef           m_EntityRef;  // TEMP CODE
     AssetModelHandle    m_Model;
 
@@ -40,16 +42,40 @@ namespace bf
     AssetModelHandle&    model() { return m_Model; }
   };
 
+  class SkinnedMeshRenderer : public Component<MeshRenderer>
+  {
+    BF_META_FRIEND;
+
+   public:
+    AssetMaterialHandle    m_Material;  // TODO(SR): Needs to be an array.
+    AssetModelHandle       m_Model;
+    AssetAnimation3DHandle m_Animation;
+    AnimationTimeType      m_CurrentTime;
+
+   public:
+    explicit SkinnedMeshRenderer(Entity& owner) :
+      Base(owner),
+      m_Material{nullptr},
+      m_Model{nullptr},
+      m_Animation{nullptr},
+      m_CurrentTime{AnimationTimeType(0)}
+    {
+    }
+
+    AssetMaterialHandle& material() { return m_Material; }
+    AssetModelHandle&    model() { return m_Model; }
+  };
+
   using SpriteRendererFlags = std::uint8_t;
 
   class SpriteRenderer : public Component<SpriteRenderer>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
 
    public:
+    static constexpr SpriteRendererFlags FLAG_DEFAULT = 0x0;
     static constexpr SpriteRendererFlags FLAG_FLIP_X  = bfBit(0);
     static constexpr SpriteRendererFlags FLAG_FLIP_Y  = bfBit(1);
-    static constexpr SpriteRendererFlags FLAG_DEFAULT = 0x0;
 
    private:
     AssetMaterialHandle m_Material;
@@ -80,7 +106,7 @@ namespace bf
 
   class SpriteAnimator : public Component<SpriteAnimator>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
     friend class AnimationSystem;
 
    private:
@@ -106,7 +132,7 @@ namespace bf
 
   class ParticleEmitter : public Component<ParticleEmitter>
   {
-    BIFROST_META_FRIEND;
+    BF_META_FRIEND;
 
    public:
     static constexpr ParticleEmitterFlags FLAG_IS_PLAYING = bfBit(0);
@@ -144,6 +170,16 @@ BIFROST_META_REGISTER(bf::MeshRenderer){
    )
    BIFROST_META_END()}
 
+BIFROST_META_REGISTER(bf::SkinnedMeshRenderer){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<MeshRenderer>("SkinnedMeshRenderer"),                         //
+   field<BaseAssetHandle>("m_Material", &SkinnedMeshRenderer::m_Material),  //
+   field<BaseAssetHandle>("m_Animation", &SkinnedMeshRenderer::m_Animation),  //
+   field<BaseAssetHandle>("m_Model", &SkinnedMeshRenderer::m_Model)         //
+   )
+   BIFROST_META_END()}
+
 BIFROST_META_REGISTER(bf::SpriteRenderer){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
@@ -166,4 +202,4 @@ BIFROST_META_REGISTER(bf::SpriteAnimator)
   BIFROST_META_END()
 }
 
-#endif /* BIFROST_RENDERER_COMPONENT_HPP */
+#endif /* BF_RENDERER_COMPONENT_HPP */

@@ -221,7 +221,7 @@ namespace bf
     TValue& operator[](const TKey& key);
 
     iterator begin();
-    iterator find(const TKey& key);
+    iterator find(const TKey& key) const;
     iterator end();
     iterator begin() const;
     iterator end() const;
@@ -433,7 +433,7 @@ namespace bf
   }
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
-  typename HashTable<TKey, TValue, initial_size, Hasher, TEqual>::iterator HashTable<TKey, TValue, initial_size, Hasher, TEqual>::find(const TKey& key)
+  typename HashTable<TKey, TValue, initial_size, Hasher, TEqual>::iterator HashTable<TKey, TValue, initial_size, Hasher, TEqual>::find(const TKey& key) const
   {
     auto* node = this->getNode(std::forward<decltype(key)>(key));
 
@@ -483,11 +483,7 @@ namespace bf
       ++hashCode;
     }
 
-    if (hashCode >= m_Capacity)
-    {
-      this->rehash();
-    }
-
+    rehash();
     return insert(key, value);
   }
 
@@ -511,11 +507,7 @@ namespace bf
       ++hashCode;
     }
 
-    if (hashCode >= m_Capacity)
-    {
-      this->rehash();
-    }
-
+    rehash();
     return insert(key, std::forward<TValue&&>(value));
   }
 

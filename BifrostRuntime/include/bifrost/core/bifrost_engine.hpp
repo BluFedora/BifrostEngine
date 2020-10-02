@@ -263,10 +263,10 @@ class Engine : private bfNonCopyMoveable<Engine>
 
   // "System" Functions to be called by the Application
 
-  template<typename T>
-  T* addECSSystem()
+  template<typename T, typename... Args>
+  T* addECSSystem(Args&&... args)
   {
-    T* const sys = m_MainMemory.allocateT<T>();
+    T* const sys = m_MainMemory.allocateT<T>(std::forward<Args>(args)...);
     m_Systems.push(sys);
     sys->onInit(*this);
 

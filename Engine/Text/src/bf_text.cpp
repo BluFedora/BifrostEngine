@@ -33,6 +33,12 @@
 #include "bf/MemoryUtils.h"
 #include "bf/StlAllocator.hpp"
 
+static void* STBTT_mallocImpl(std::size_t size, void* user_data);
+static void  STBTT_freeImpl(void* ptr, void* user_data);
+
+#define STBTT_malloc STBTT_mallocImpl
+#define STBTT_free STBTT_freeImpl
+
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb/stb_truetype.h"
@@ -40,10 +46,10 @@
 #undef STBTT_STATIC
 
 #include <algorithm>  // sort
-#include <cstdio>
-#include <tuple>    // tie
-#include <utility>  // pair
-#include <vector>   // vector<T>
+#include <cstdio>     // File IO
+#include <tuple>      // tie
+#include <utility>    // pair
+#include <vector>     // vector<T>
 
 namespace bf
 {
@@ -392,8 +398,17 @@ namespace bf
     GlyphSet* sets[k_NumGlyphSetPerPlane];
   };
 
+  struct Typeface
+  {
+    IMemoryManager* memory;          //
+    unsigned char*  font_data;       //
+    long            font_data_size;  //
+    stbtt_fontinfo  font_info;       //
+  };
+
   struct Font final
   {
+    Typeface*       type_face;            // TODO(SR): Shared data amoung fonts
     IMemoryManager* memory;               //
     unsigned char*  font_data;            //
     long            font_data_size;       //
@@ -459,6 +474,8 @@ namespace bf
 
       // self->memory = &memory; Initialized in ctor
 
+      font_info.userdata = &memory;
+
       std::tie(self->font_data, self->font_data_size) = loadFileIntoMemory(memory, filename);
 
       const int err = stbtt_InitFont(&font_info, self->font_data, stbtt_GetFontOffsetForIndex(self->font_data, 0));
@@ -506,20 +523,20 @@ namespace bf
 
   TextEncoding guessEncodingFromBOM(const char* bytes, std::size_t bytes_size) noexcept
   {
-    static constexpr auto k_UTF16_LE_BOM  = "\xFF\xFE";
-    static constexpr auto k_UTF16_BE_BOM  = "\xFE\xFF";
     static constexpr auto k_UTF_8_BOM     = "\xEF\xBB\xBF";
+    static constexpr auto k_UTF_16_LE_BOM = "\xFF\xFE";
+    static constexpr auto k_UTF_16_BE_BOM = "\xFE\xFF";
     static constexpr auto k_UTF_32_LE_BOM = "\xFF\xFE\x00\x00";
     static constexpr auto k_UTF_32_BE_BOM = "\x00\x00\xFE\xFF";
 
     if (bytes_size >= 2)
     {
-      if (memcmp(bytes, k_UTF16_LE_BOM, 2) == 0)
+      if (memcmp(bytes, k_UTF_16_LE_BOM, 2) == 0)
       {
         return TextEncoding::UTF16_LE;
       }
 
-      if (memcmp(bytes, k_UTF16_BE_BOM, 2) == 0)
+      if (memcmp(bytes, k_UTF_16_BE_BOM, 2) == 0)
       {
         return TextEncoding::UTF16_BE;
       }
@@ -780,7 +797,7 @@ namespace bf
         fseek(f, 0, SEEK_END);
         file_size = ftell(f);
         fseek(f, 0, SEEK_SET);  //same as rewind(f);
-        buffer = static_cast<unsigned char*>(memory.allocate(file_size + 1));
+        buffer = static_cast<unsigned char*>(memory.allocate(file_size + std::size_t(1)));
 
         if (buffer)
         {
@@ -949,9 +966,9 @@ namespace bf
 
         // Rasterize the packed glyphs into the correct locations
 
-        PixelMap::Pixel*     pixels         = font.atlas->pixels;
-        const auto           aux_bmp_buffer_length = largest_bmp.x * largest_bmp.y * sizeof(unsigned char);
-        unsigned char* const aux_bmp_buffer = (unsigned char*)memory.allocate(aux_bmp_buffer_length);
+        PixelMap::Pixel*     pixels                = font.atlas->pixels;
+        const auto           aux_bmp_buffer_length = std::size_t(largest_bmp.x) * largest_bmp.y * sizeof(unsigned char);
+        unsigned char* const aux_bmp_buffer        = (unsigned char*)memory.allocate(aux_bmp_buffer_length);
 
         for (auto& info : self->glyphs)
         {
@@ -990,9 +1007,10 @@ namespace bf
               const unsigned char*   src_alpha = aux_bmp_buffer + std::size_t(x) + y_src_offset;
               PixelMap::Pixel* const dst_pixel = pixels + (std::size_t(info.bmp_box[0].x) + x + k_HalfPadding) + y_dst_offset;
 
-              dst_pixel->rgba[0] = 0xFF;
-              dst_pixel->rgba[1] = 0xFF;
-              dst_pixel->rgba[2] = 0xFF;
+              // Memory initialized to 0xFF in 'makePixelMap'.
+              //   dst_pixel->rgba[0] = 0xFF;
+              //   dst_pixel->rgba[1] = 0xFF;
+              //   dst_pixel->rgba[2] = 0xFF;
               dst_pixel->rgba[3] = *src_alpha;
             }
           }
@@ -1013,7 +1031,7 @@ namespace bf
     {
       const std::size_t num_pixels  = std::size_t(width) * height;
       const std::size_t pixels_size = num_pixels * sizeof(PixelMap::Pixel);
-      PixelMap* const   self        = (PixelMap*)memory.allocate(sizeof(*self) + pixels_size - sizeof(PixelMap::Pixel));  // The minus sizeof(PixelMap::Pixel) accounts for the one in the PixelMap::pixels[1] declaration.
+      PixelMap* const   self        = (PixelMap*)memory.allocate(offsetof(PixelMap, pixels) + pixels_size);
 
       if (self)
       {
@@ -1031,7 +1049,7 @@ namespace bf
           pixels[i].rgba[3] = 0x00;
         }
 #else
-        std::memset(pixels, 0x00, pixels_size);
+        std::memset(pixels, 0xFF, pixels_size);
 #endif
       }
 
@@ -1044,3 +1062,21 @@ namespace bf
     }
   }  // namespace
 }  // namespace bf
+
+static void* STBTT_mallocImpl(std::size_t size, void* user_data)
+{
+  bf::IMemoryManager* const memory     = (bf::IMemoryManager*)user_data;
+  std::size_t* const        allocation = (std::size_t*)memory->allocate(sizeof(std::size_t) + size);
+
+  allocation[0] = size;
+
+  return allocation + 1u;
+}
+
+static void STBTT_freeImpl(void* ptr, void* user_data)
+{
+  bf::IMemoryManager* const memory     = (bf::IMemoryManager*)user_data;
+  std::size_t* const        allocation = (std::size_t*)ptr - 1u;
+
+  memory->deallocate(allocation, allocation[0]);
+}

@@ -71,7 +71,7 @@ add_library(
 target_link_libraries(
   BifrostScript
   PRIVATE
-    BifrostDataStructuresC_static
+    BF_DataStructuresC_static
     BF_Core_static
 )
 
@@ -116,7 +116,7 @@ if(NOT EMSCRIPTEN)
   target_link_libraries(
     BifrostScript_shared
     PRIVATE
-      BifrostDataStructuresC_static
+      BF_DataStructuresC_static
       BF_Core_static
   )
   
@@ -199,7 +199,7 @@ if (EMSCRIPTEN)
     PRIVATE 
       BifrostScript
       BF_Platform_static
-      BifrostMemory
+      BF_Memory_interface
       BifrostMath_static
       BifrostGraphics_static
   )
@@ -209,7 +209,7 @@ target_link_libraries(
   PRIVATE 
     BifrostScript
     BF_Platform_shared
-    BifrostMemory
+    BF_Memory_interface
     BifrostMath_shared
     BifrostGraphics_shared
 )

@@ -12,6 +12,7 @@
 /******************************************************************************/
 #include "bifrost/graphics/bifrost_component_renderer.hpp"
 
+#include "bf/anim2D/bf_animation_system.hpp"
 #include "bifrost/core/bifrost_engine.hpp"
 #include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/ecs/bifrost_renderer_component.hpp"  // MeshRenderer
@@ -68,6 +69,10 @@ namespace bf
       //     - [https://github.com/gametutorials/tutorials/blob/master/OpenGL/Frustum%20Culling/Frustum.cpp]
       //     - [http://www.rastertek.com/dx10tut16.html]
 
+      bfGfxCmdList_bindProgram(engine_renderer.m_MainCmdList, engine_renderer.m_GBufferShader);
+      bfGfxCmdList_bindVertexDesc(engine_renderer.m_MainCmdList, engine_renderer.m_StandardVertexLayout);
+      camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
+
       for (MeshRenderer& renderer : scene->components<MeshRenderer>())
       {
         if (renderer.material() && renderer.model())
@@ -75,6 +80,34 @@ namespace bf
           engine_renderer.bindMaterial(cmd_list, *renderer.material());
           engine_renderer.bindObject(cmd_list, camera.gpu_camera, renderer.owner());
           renderer.model()->draw(cmd_list);
+        }
+      }
+
+      auto& anim_sys = engine.animationSys();
+
+      bfGfxCmdList_bindProgram(engine_renderer.m_MainCmdList, engine_renderer.m_GBufferSkinnedShader);
+      bfGfxCmdList_bindVertexDesc(engine_renderer.m_MainCmdList, engine_renderer.m_SkinnedVertexLayout);
+      camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
+
+      for (SkinnedMeshRenderer& mesh : scene->components<SkinnedMeshRenderer>())
+      {
+        if (mesh.material() && mesh.model()/* && mesh.m_Animation*/)
+        {
+          engine_renderer.bindMaterial(cmd_list, *mesh.material());
+          engine_renderer.bindObject(cmd_list, camera.gpu_camera, mesh.owner());
+
+          auto& uniform_bone_data = anim_sys.getRenderable(engine_renderer, mesh.owner());
+
+          const bfBufferSize offset = uniform_bone_data.transform_uniform.offset(frame_info);
+          const bfBufferSize size   = sizeof(ObjectBoneData);
+
+          // TODO(SR): Optimize into an immutable DescriptorSet!
+          bfDescriptorSetInfo desc_set_object = engine_renderer.bindObject2(camera.gpu_camera, mesh.owner());
+
+          bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
+          bfGfxCmdList_bindDescriptorSet(cmd_list, k_GfxObjectSetIndex, &desc_set_object);
+
+          mesh.model()->draw(cmd_list);
         }
       }
 
@@ -310,4 +343,4 @@ namespace bf
     m_SpriteVertexBuffer->deinit();
     memory.deallocateT(m_SpriteVertexBuffer);
   }
-}  // namespace bifrost
+}  // namespace bf

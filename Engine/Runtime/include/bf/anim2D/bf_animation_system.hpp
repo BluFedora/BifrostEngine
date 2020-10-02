@@ -2,22 +2,39 @@
 #define BF_ANIMATION_SYSTEM
 
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
+#include "bifrost/graphics/bifrost_standard_renderer.hpp"
 
 #include "bf/Animation2D.h"
 
 namespace bf
 {
+  struct ObjectBoneData
+  {
+    Mat4x4 bones[k_GfxMaxTotalBones];
+  };
+
   class AnimationSystem final : public IECSSystem
   {
    private:
-    bfAnimation2DCtx* m_Anim2DCtx;
+    bfAnimation2DCtx*                               m_Anim2DCtx;
+    List<Renderable<ObjectBoneData>>                m_RenderablePool;  // TODO(SR): Per make this Scene.
+    HashTable<Entity*, Renderable<ObjectBoneData>*> m_Renderables;     // TODO(SR): Per make this Scene.
 
    public:
+    AnimationSystem(IMemoryManager& memory) :
+      m_Anim2DCtx{nullptr},
+      m_RenderablePool{memory},
+      m_Renderables{}
+    {
+    }
+
     bfAnimation2DCtx* anim2DCtx() const { return m_Anim2DCtx; }
 
     void onInit(Engine& engine) override;
     void onFrameUpdate(Engine& engine, float dt) override;
     void onDeinit(Engine& engine) override;
+
+    Renderable<ObjectBoneData>& getRenderable(StandardRenderer& renderer, Entity& entity);
   };
 }  // namespace bf
 

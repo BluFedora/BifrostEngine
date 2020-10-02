@@ -291,7 +291,7 @@ namespace bf
      *   The number of elements the array has.
      */
     template<typename T>
-    static std::size_t arraySize(const T* const ptr)
+    static std::size_t arraySize(const T* const ptr) noexcept
     {
       return static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), const_cast<T*>(ptr)))->size;
     }
@@ -314,7 +314,7 @@ namespace bf
      *   The number of elements the array has.
      */
     template<typename T>
-    static std::size_t arrayAlignment(const T* const ptr)
+    static std::size_t arrayAlignment(const T* const ptr) noexcept
     {
       return static_cast<ArrayHeader*>(grabHeader(sizeof(ArrayHeader), const_cast<T*>(ptr)))->alignment;
     }

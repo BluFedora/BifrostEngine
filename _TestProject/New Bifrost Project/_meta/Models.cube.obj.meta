@@ -1,5 +1,23 @@
 {
     "UUID" : "EB3BAC36-45CB-4389-9D8C-ADDEF3DA6A41",
     "Path" : "Models/cube.obj",
+    "m_SubAssets" : [
+        {
+            "UUID" : "32E21EC1-6690-489C-BDD6-A1E9A9B93567",
+            "Path" : "Material_#0",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "8F2D080E-9CF7-44D7-882F-089E615355E0",
+            "Path" : "Material_#1",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        }
+    ],
     "Type" : "AssetModelInfo"
 }

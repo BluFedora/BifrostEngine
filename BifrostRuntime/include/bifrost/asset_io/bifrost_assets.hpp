@@ -49,7 +49,7 @@ namespace bf
 
   namespace path
   {
-    static constexpr std::size_t MAX_LENGTH = 512; // TODO(SR): This needs be be deprecated.
+    static constexpr std::size_t MAX_LENGTH = 512;  // TODO(SR): This needs be be deprecated.
 
     struct DirectoryEntry;
 
@@ -73,6 +73,13 @@ namespace bf
     using AssetMap = HashTable<BifrostUUID, BaseAssetInfo*, 64, UUIDHasher, UUIDEqual>;
   }  // namespace detail
 
+  template<typename AssetTInfo>
+  struct AssetIndexResult
+  {
+    AssetTInfo* info;
+    bool        is_new;
+  };
+
   class Assets final : public bfNonCopyMoveable<Assets>
   {
    public:
@@ -95,25 +102,49 @@ namespace bf
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
     template<typename AssetTInfo>
-    BifrostUUID indexAsset(StringRange abs_path)
+    AssetIndexResult<AssetTInfo> indexAsset(StringRange abs_path)
     {
-      const auto [uuid, create_new] = indexAssetImpl(abs_path);
+      AssetIndexResult<AssetTInfo> result = {};
+      BaseAssetInfo*               info   = nullptr;
+      BifrostUUID                  uuid;
 
-      if (create_new)
+      std::tie(uuid, result.is_new, info) = indexAssetImpl(abs_path);
+
+      if (result.is_new)
       {
-        saveAssetInfo(m_Engine, createAssetInfo<AssetTInfo>(abs_path, String_length(m_RootPath), uuid));
+        result.info = createAssetInfo<AssetTInfo>(abs_path, String_length(m_RootPath), uuid);
+
+        saveAssetInfo(m_Engine, result.info);
+      }
+      else
+      {
+        result.info = static_cast<AssetTInfo*>(info);
       }
 
-      return uuid;
+      return result;
     }
 
     template<typename AssetTInfo>
-    BifrostUUID indexAsset(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path)
+    AssetIndexResult<AssetTInfo> indexAsset(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path)
     {
-      const auto uuid = bfUUID_generate();
+      AssetIndexResult<AssetTInfo> result = {};
+      BaseAssetInfo* const         info   = findSubAssetFrom(parent_asset, sub_asset_name_path);
 
-      addSubAssetTo(parent_asset, createAssetInfo<AssetTInfo>(sub_asset_name_path, 0u, uuid));
-      return uuid;
+      result.is_new = info == nullptr;
+
+      if (result.is_new)
+      {
+        result.info = createAssetInfo<AssetTInfo>(sub_asset_name_path, 0u, bfUUID_generate());
+
+        addSubAssetTo(parent_asset, result.info);
+        saveAssetInfo(m_Engine, parent_asset);
+      }
+      else
+      {
+        result.info = static_cast<AssetTInfo*>(info);
+      }
+
+      return result;
     }
 
     BaseAssetInfo*  findAssetInfo(const BifrostUUID& uuid);
@@ -121,20 +152,17 @@ namespace bf
     BaseAssetHandle makeHandle(BaseAssetInfo& info) const;
 
     template<typename T>
-    bool tryLoadAsset(BaseAssetHandle& handle, const StringRange& relative_path)
+    bool tryLoadAsset(BaseAssetHandle& handle, const StringRange& abs_path)
     {
-      const BifrostUUID    uuid = indexAsset<T>(relative_path);
-      BaseAssetInfo* const info = findAssetInfo(uuid);
-
-      return tryAssignHandle(handle, info);
+      return tryAssignHandle(handle, indexAsset<T>(abs_path).info);
     }
 
-    template<typename T>
-    T makeHandleT(BaseAssetInfo& info) const
+    template<typename TAssetHandle>
+    TAssetHandle makeHandleT(BaseAssetInfo& info) const
     {
-      static_assert(std::is_base_of_v<BaseAssetHandle, T>, "The type specified must derive from BaseAssetHandle.");
+      static_assert(std::is_base_of_v<BaseAssetHandle, TAssetHandle>, "The type specified must derive from BaseAssetHandle.");
 
-      T handle = nullptr;
+      TAssetHandle handle = nullptr;
       tryAssignHandle(handle, &info);
       return handle;
     }
@@ -160,6 +188,8 @@ namespace bf
     // TODO: Remove This
     detail::AssetMap& assetMap() { return m_AssetMap; }
 
+    IMemoryManager& memory() const { return m_Memory; }
+
    private:
     template<typename AssetTInfo>
     AssetTInfo* createAssetInfo(StringRange abs_path, std::size_t root_length, const BifrostUUID& uuid)
@@ -172,10 +202,11 @@ namespace bf
       return asset_info;
     }
 
-    std::pair<BifrostUUID, bool> indexAssetImpl(StringRange abs_path);
-    static void                  addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset);
-    void                         writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info);
-    BaseAssetInfo*               readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset = false);
+    std::tuple<BifrostUUID, bool, BaseAssetInfo*> indexAssetImpl(StringRange abs_path);
+    static BaseAssetInfo*                         findSubAssetFrom(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path);
+    static void                                   addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset);
+    void                                          writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info);
+    BaseAssetInfo*                                readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset = false);
   };
 }  // namespace bf
 

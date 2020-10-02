@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
 * @file   bifrost_light.hpp
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -8,6 +9,7 @@
 *
 * @copyright Copyright (c) 2020
 */
+/******************************************************************************/
 #ifndef BIFROST_LIGHT_HPP
 #define BIFROST_LIGHT_HPP
 

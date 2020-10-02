@@ -17,17 +17,19 @@
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp"  // Node
 #include "bifrost/data_structures/bifrost_string.hpp"          // String
 
+#include "bifrost/asset_io/bifrost_asset_info.hpp"
+
 namespace bf::editor
 {
   class EditorOverlay;
 
-  struct FileEntry final
+  struct FileEntry
   {
     String                         name;  // TODO: Make Name Just a StringRange into 'FileEntry::full_path'
     String                         full_path;
     StringRange                    file_extension;  //!< Backed by FileEntry::full_path.
     bool                           is_file;
-    BifrostUUID                    uuid;
+    BaseAssetInfo*                 asset_info;
     intrusive::ListView<FileEntry> children;
     intrusive::Node<FileEntry>     next;
 
@@ -49,11 +51,11 @@ namespace bf::editor
 
     FileEntry& root() const { return *m_Root; }
 
-    void        clear(String&& name, const String& path);
-    FileEntry&  makeNode(String&& name, const String& path, bool is_file);
-    void        rename(EditorOverlay& editor, FileEntry& entry, const StringRange& new_name) const;
-    void        remove(FileEntry& entry);
-    void        uiShow(EditorOverlay& editor);
+    void       clear(String&& name, const String& path);
+    FileEntry& makeNode(String&& name, const String& path, bool is_file);
+    void       rename(EditorOverlay& editor, FileEntry& entry, const StringRange& new_name) const;
+    void       remove(FileEntry& entry);
+    void       uiShow(EditorOverlay& editor);
 
     ~FileSystem();
 
@@ -61,6 +63,6 @@ namespace bf::editor
     void uiShowImpl(EditorOverlay& editor, FileEntry& entry);
     void clearImpl();
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_FILESYSTEM_HPP */

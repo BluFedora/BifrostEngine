@@ -324,6 +324,9 @@ namespace bf
 
 # True Misc
 
+__debugbreak()
+__builtin_trap()
+
 Coefficients for rgb are 0.2, 0.7, 0.1 
 
 # An Imported Model Has
@@ -397,3 +400,19 @@ Coefficients for rgb are 0.2, 0.7, 0.1
 
 # (Un/Re)do
 
+Ryan Renderer API
+```c
+R_CommandBuffer command_buffer = {0};
+R_BeginCommandBuffer(&command_buffer);
+{
+  R_PushRect(...);
+  R_PushFoo(...);
+  R_PushBlah(...);
+}
+R_EndCommandBuffer();
+
+// Push the commands to the main command buffer, in a different order with a deferred transform
+R_PushTransform(...);
+R_PushCommandBuffer(command_buffer);
+R_PopTransform();
+```

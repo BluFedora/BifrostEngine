@@ -117,7 +117,7 @@ namespace bf
       serialize("x", x);
       serialize("y", y);
       serialize("width", w);
-      serialize("height",h);
+      serialize("height", h);
 
       value.setX(x);
       value.setY(y);
@@ -276,29 +276,36 @@ namespace bf
 
   bool BaseAssetInfo::defaultLoad(Engine& engine)
   {
-    File file{filePathAbs(), file::FILE_MODE_READ};
-
-    if (file)
+    if (m_Flags & AssetInfoFlags::IS_SUB_ASSET)
     {
-      std::size_t buffer_size;
-      char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
-
-      json::Value json_value = json::fromString(buffer, buffer_size - 1);
-
-      JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
-
-      ISerializer& serializer = reader;
-
-      serializer.beginDocument(false);
-      serializer.serialize(*payload());
-      serializer.endDocument();
-
-      file.close();
-
       return true;
     }
+    else
+    {
+      File file{filePathAbs(), file::FILE_MODE_READ};
 
-    return false;
+      if (file)
+      {
+        std::size_t buffer_size;
+        char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
+
+        json::Value json_value = json::fromString(buffer, buffer_size - 1);
+
+        JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
+
+        ISerializer& serializer = reader;
+
+        serializer.beginDocument(false);
+        serializer.serialize(*payload());
+        serializer.endDocument();
+
+        file.close();
+
+        return true;
+      }
+
+      return false;
+    }
   }
 
   BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info) :
@@ -367,7 +374,11 @@ namespace bf
       if (--m_Info->m_RefCount == 0)
       {
         m_Info->onAssetUnload(*m_Engine);
-        m_Info->unload();
+
+        if (!(m_Info->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
+        {
+          m_Info->unload();
+        }
       }
 
       m_Engine = nullptr;
@@ -402,4 +413,4 @@ namespace bf
   {
     return m_Info ? m_Info->payload() : nullptr;
   }
-}  // namespace bifrost
+}  // namespace bf

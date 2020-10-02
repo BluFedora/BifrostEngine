@@ -26,6 +26,8 @@
 
 #include <cstdint> /* uint16_t */
 
+// bfBit
+
 typedef struct Vec2f_t       Vec2f;
 typedef struct Vec3f_t       Vec3f;
 typedef struct Quaternionf_t Quaternionf;
@@ -179,21 +181,33 @@ namespace bf
     virtual ~ISerializer() = default;
   };
 
+  namespace AssetInfoFlags
+  {
+    using type = std::uint8_t;
+
+    enum
+    {
+      DEFAULT      = 0x0,
+      IS_DIRTY     = bfBit(0),  //!< This asset wants to be saved.
+      IS_SUB_ASSET = bfBit(1),  //!< This asset only lives in memory.
+    };
+  }  // namespace AssetInfoFlags
+
   class BaseAssetInfo : private bfNonCopyMoveable<BaseAssetInfo>
   {
     friend class Assets;
     friend class BaseAssetHandle;
 
    protected:
-    String                   m_FilePathAbs;       //!< The full path to an asset.
-    StringRange              m_FilePathRel;       //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
-    BifrostUUID              m_UUID;              //!< Uniquely identifies the asset.
-    std::uint16_t            m_RefCount;          //!< How many live references in the engine. TODO(SR): If I multithread things, see if this needs to be atomic.
-    AssetTagList             m_Tags;              //!< Tags associated with this asset.
-    bool                     m_IsDirty;           //!< This asset wants to be saved.
-    meta::BaseClassMetaInfo* m_TypeInfo;          //!< The type info for the subclasses.
-    ListView<BaseAssetInfo>  m_SubAssets;         //!< Assets from within this asset.
-    ListNode<BaseAssetInfo>  m_SubAssetListNode;  //!< Used with 'm_SubAssets' to make an intrusive non-owning linked list.
+    String                        m_FilePathAbs;       //!< The full path to an asset.
+    StringRange                   m_FilePathRel;       //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
+    BifrostUUID                   m_UUID;              //!< Uniquely identifies the asset.
+    std::uint16_t                 m_RefCount;          //!< How many live references in the engine. TODO(SR): If I multithread things, see if this needs to be atomic.
+    AssetTagList                  m_Tags;              //!< Tags associated with this asset.
+    meta::BaseClassMetaInfo*      m_TypeInfo;          //!< The type info for the subclasses.
+    ListView<BaseAssetInfo>       m_SubAssets;         //!< Assets from within this asset.
+    ListNode<BaseAssetInfo>       m_SubAssetListNode;  //!< Used with 'm_SubAssets' to make an intrusive non-owning linked list.
+    typename AssetInfoFlags::type m_Flags;             //!<
 
    protected:
     BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const BifrostUUID& uuid);
@@ -201,10 +215,12 @@ namespace bf
    public:
     // Accessors
 
-    const BifrostUUID&         uuid() const { return m_UUID; }
-    std::uint16_t              refCount() const { return m_RefCount; }
-    meta::BaseClassMetaInfoPtr typeInfo() const { return m_TypeInfo; }
-
+    const BifrostUUID&             uuid() const { return m_UUID; }
+    std::uint16_t                  refCount() const { return m_RefCount; }
+    meta::BaseClassMetaInfoPtr     typeInfo() const { return m_TypeInfo; }
+    const ListView<BaseAssetInfo>& subAssets() const { return m_SubAssets; }
+    bool                           isDirty() const { return m_Flags & AssetInfoFlags::IS_DIRTY; }
+    void                           setDirty(bool value);
 
     // Path Accessors
 
@@ -294,6 +310,9 @@ namespace bf
       meta::TypeInfo<TInfo>::get();
       return meta::TypeInfo<TPayload>::get();
     }
+
+   protected:
+    using Base = AssetInfo<TPayload, TInfo>;
 
    protected:
     Optional<TPayload> m_Payload;

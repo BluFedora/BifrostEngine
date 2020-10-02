@@ -8,15 +8,27 @@ namespace bf
   BaseAssetInfo::BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const BifrostUUID& uuid) :
     bfNonCopyMoveable<BaseAssetInfo>(),
     m_FilePathAbs{full_path},
-    m_FilePathRel{m_FilePathAbs.begin() + length_of_root_path + 1, m_FilePathAbs.end()},  // The plus one accouns for the '/'
+    m_FilePathRel{m_FilePathAbs.begin() + (length_of_root_path ? length_of_root_path + 1u : 0u), m_FilePathAbs.end()},  // The plus one accounts for the '/'
     m_UUID{uuid},
     m_RefCount{0u},
     m_Tags{},
-    m_IsDirty{false},
     m_TypeInfo{nullptr},
     m_SubAssets{&BaseAssetInfo::m_SubAssetListNode},
-    m_SubAssetListNode{}
+    m_SubAssetListNode{},
+    m_Flags{AssetInfoFlags::DEFAULT}
   {
+  }
+
+  void BaseAssetInfo::setDirty(bool value)
+  {
+    if (value)
+    {
+      m_Flags |= AssetInfoFlags::IS_DIRTY;
+    }
+    else
+    {
+      m_Flags &= ~AssetInfoFlags::IS_DIRTY;
+    }
   }
 
   StringRange BaseAssetInfo::filePathExtenstion() const
@@ -31,11 +43,13 @@ namespace bf
 
   void BaseAssetInfo::addSubAsset(BaseAssetInfo* asset)
   {
+    asset->m_Flags |= AssetInfoFlags::IS_SUB_ASSET;
     m_SubAssets.pushBack(*asset);
   }
 
   void BaseAssetInfo::removeSubAsset(BaseAssetInfo* asset)
   {
+    asset->m_Flags &= ~AssetInfoFlags::IS_SUB_ASSET;
     m_SubAssets.erase(m_SubAssets.makeIterator(*asset));
   }
 }  // namespace bf

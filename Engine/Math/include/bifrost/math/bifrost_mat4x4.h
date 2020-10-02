@@ -50,26 +50,26 @@ typedef struct /*ALIGN_STRUCT(16)*/ Mat4x4_t
 //   |+0.0 +0.0 +1/2 +1/2|
 //   |+0.0 +0.0 +0.0 +1.0|
 
-BIFROST_MATH_API void  Mat4x4_identity(Mat4x4* self);
-BIFROST_MATH_API void  Mat4x4_initTranslatef(Mat4x4* self, float x, float y, float z);
-BIFROST_MATH_API void  Mat4x4_initScalef(Mat4x4* self, float x, float y, float z);
-BIFROST_MATH_API void  Mat4x4_initRotationf(Mat4x4* self, float x, float y, float z);
-BIFROST_MATH_API void  Mat4x4_ortho(Mat4x4* self, float left, float right, float bottom, float top, float near, float far);
-BIFROST_MATH_API void  Mat4x4_orthoVk(Mat4x4* self, float left, float right, float bottom, float top, float near, float far);
-BIFROST_MATH_API void  Mat4x4_perspective(Mat4x4* self, float fovDeg, float aspect, float near, float far);
-BIFROST_MATH_API void  Mat4x4_perspectiveVk(Mat4x4* self, float fovDeg, float aspect, float near, float far);
-BIFROST_MATH_API void  Mat4x4_frustum(Mat4x4* const self, float left, float right, float bottom, float top, float znear, float zfar);
-BIFROST_MATH_API void  Mat4x4_perspectiveInfinity(Mat4x4* const self, const float fovDeg, const float aspect, const float near);
-BIFROST_MATH_API void  Mat4x4_initLookAt(Mat4x4* self, const Vec3f* position, const Vec3f* target, const Vec3f* inUp);
-BIFROST_MATH_API void  Mat4x4_copy(const Mat4x4* self, Mat4x4* outCopy);
-BIFROST_MATH_API void  Mat4x4_transpose(Mat4x4* self);
-BIFROST_MATH_API int   Mat4x4_inverse(const Mat4x4* self, Mat4x4* outInverse);
-BIFROST_MATH_API float Mat4x4_det(const Mat4x4* self);
-BIFROST_MATH_API float Mat4x4_trace(const Mat4x4* self);
+BF_MATH_API void  Mat4x4_identity(Mat4x4* self);
+BF_MATH_API void  Mat4x4_initTranslatef(Mat4x4* self, float x, float y, float z);
+BF_MATH_API void  Mat4x4_initScalef(Mat4x4* self, float x, float y, float z);
+BF_MATH_API void  Mat4x4_initRotationf(Mat4x4* self, float x, float y, float z);
+BF_MATH_API void  Mat4x4_ortho(Mat4x4* self, float left, float right, float bottom, float top, float near, float far);
+BF_MATH_API void  Mat4x4_orthoVk(Mat4x4* self, float left, float right, float bottom, float top, float near, float far);
+BF_MATH_API void  Mat4x4_perspective(Mat4x4* self, float fovDeg, float aspect, float near, float far);
+BF_MATH_API void  Mat4x4_perspectiveVk(Mat4x4* self, float fovDeg, float aspect, float near, float far);
+BF_MATH_API void  Mat4x4_frustum(Mat4x4* const self, float left, float right, float bottom, float top, float znear, float zfar);
+BF_MATH_API void  Mat4x4_perspectiveInfinity(Mat4x4* const self, const float fovDeg, const float aspect, const float near);
+BF_MATH_API void  Mat4x4_initLookAt(Mat4x4* self, const Vec3f* position, const Vec3f* target, const Vec3f* inUp);
+BF_MATH_API void  Mat4x4_copy(const Mat4x4* self, Mat4x4* outCopy);
+BF_MATH_API void  Mat4x4_transpose(Mat4x4* self);
+BF_MATH_API int   Mat4x4_inverse(const Mat4x4* self, Mat4x4* outInverse);
+BF_MATH_API float Mat4x4_det(const Mat4x4* self);
+BF_MATH_API float Mat4x4_trace(const Mat4x4* self);
 // The order is [self * other] which means other happens 'first'.
 // Ex: 'out = self * other'
-BIFROST_MATH_API void Mat4x4_mult(const Mat4x4* self, const Mat4x4* other, Mat4x4* out);
-BIFROST_MATH_API void Mat4x4_multVec(const Mat4x4* self, const Vec3f* vec, Vec3f* outVec);
+BF_MATH_API void Mat4x4_mult(const Mat4x4* self, const Mat4x4* other, Mat4x4* out);
+BF_MATH_API void Mat4x4_multVec(const Mat4x4* self, const Vec3f* vec, Vec3f* outVec);
 
 #if __cplusplus
 }

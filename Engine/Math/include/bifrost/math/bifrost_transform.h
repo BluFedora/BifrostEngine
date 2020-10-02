@@ -44,30 +44,31 @@ typedef struct Quaternionf_t
 
 typedef Quaternionf bfQuaternionf;
 
-BIFROST_MATH_API Quaternionf bfQuaternionf_init(float x, float y, float z, float w);
-BIFROST_MATH_API Quaternionf bfQuaternionf_identity();
-BIFROST_MATH_API Quaternionf bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle);
-BIFROST_MATH_API Quaternionf bfQuaternionf_fromAxisAngleDeg(const Vec3f* axis, float angle);
-BIFROST_MATH_API Quaternionf bfQuaternionf_fromMatrix(const Mat4x4* rot_mat);
-BIFROST_MATH_API Quaternionf bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
-BIFROST_MATH_API Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
-BIFROST_MATH_API void        bfQuaternionf_multQ(Quaternionf* self, const Quaternionf* rhs);
-BIFROST_MATH_API void        bfQuaternionf_multV(Quaternionf* self, const Vec3f* rhs);
-BIFROST_MATH_API void        bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier);
-BIFROST_MATH_API void        bfQuaternionf_rotByVec(Quaternionf* self, const Vec3f* rhs);
-BIFROST_MATH_API Quaternionf bfQuaternionf_conjugate(const Quaternionf* self);
-BIFROST_MATH_API float       bfQuaternionf_length(const Quaternionf* self);
-BIFROST_MATH_API float       bfQuaternionf_lengthSq(const Quaternionf* self);
-BIFROST_MATH_API void        bfQuaternionf_normalize(Quaternionf* self);
-BIFROST_MATH_API void        bfQuaternionf_toMatrix(const Quaternionf* self, Mat4x4* out_rot_mat);
-BIFROST_MATH_API void        bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
-BIFROST_MATH_API void        bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
-BIFROST_MATH_API Vec3f       bfQuaternionf_upVec(const Quaternionf* self);
-BIFROST_MATH_API Vec3f       bfQuaternionf_downVec(const Quaternionf* self);
-BIFROST_MATH_API Vec3f       bfQuaternionf_leftVec(const Quaternionf* self);
-BIFROST_MATH_API Vec3f       bfQuaternionf_rightVec(const Quaternionf* self);
-BIFROST_MATH_API Vec3f       bfQuaternionf_forwardVec(const Quaternionf* self);
-BIFROST_MATH_API Vec3f       bfQuaternionf_backwardVec(const Quaternionf* self);
+BF_MATH_API Quaternionf   bfQuaternionf_init(float x, float y, float z, float w);
+BF_MATH_API Quaternionf   bfQuaternionf_identity();
+BF_MATH_API Quaternionf   bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle);
+BF_MATH_API Quaternionf   bfQuaternionf_fromAxisAngleDeg(const Vec3f* axis, float angle);
+BF_MATH_API Quaternionf   bfQuaternionf_fromMatrix(const Mat4x4* rot_mat);
+BF_MATH_API Quaternionf   bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
+BF_MATH_API Quaternionf   bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
+BF_MATH_API void          bfQuaternionf_multQ(Quaternionf* self, const Quaternionf* rhs);
+BF_MATH_API void          bfQuaternionf_multV(Quaternionf* self, const Vec3f* rhs);
+BF_MATH_API void          bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier);
+BF_MATH_API void          bfQuaternionf_rotByVec(Quaternionf* self, const Vec3f* rhs);
+BF_MATH_API Quaternionf   bfQuaternionf_conjugate(const Quaternionf* self);
+BF_MATH_API float         bfQuaternionf_length(const Quaternionf* self);
+BF_MATH_API float         bfQuaternionf_lengthSq(const Quaternionf* self);
+BF_MATH_API void          bfQuaternionf_normalize(Quaternionf* self);
+BF_MATH_API void          bfQuaternionf_toMatrix(Quaternionf self, Mat4x4* out_rot_mat);
+BF_MATH_API void          bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
+BF_MATH_API void          bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
+BF_MATH_API Vec3f         bfQuaternionf_upVec(const Quaternionf* self);
+BF_MATH_API Vec3f         bfQuaternionf_downVec(const Quaternionf* self);
+BF_MATH_API Vec3f         bfQuaternionf_leftVec(const Quaternionf* self);
+BF_MATH_API Vec3f         bfQuaternionf_rightVec(const Quaternionf* self);
+BF_MATH_API Vec3f         bfQuaternionf_forwardVec(const Quaternionf* self);
+BF_MATH_API Vec3f         bfQuaternionf_backwardVec(const Quaternionf* self);
+BF_MATH_API bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf* rhs, float factor);
 
 enum
 {
@@ -134,16 +135,16 @@ typedef struct BifrostTransform_t
 
 } BifrostTransform;
 
-BIFROST_MATH_API void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* system);
-BIFROST_MATH_API void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value);
-BIFROST_MATH_API void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value);
-BIFROST_MATH_API void bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value);
-BIFROST_MATH_API void bfTransform_setScale(BifrostTransform* self, const Vec3f* value);
-BIFROST_MATH_API BifrostTransform* bfTransform_parent(const BifrostTransform* self);
-BIFROST_MATH_API void              bfTransform_setParent(BifrostTransform* self, BifrostTransform* value);
-BIFROST_MATH_API void              bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value); /* Copies over the local values, parent relationships are unchanged. */
-BIFROST_MATH_API void              bfTransform_flushChanges(BifrostTransform* self);
-BIFROST_MATH_API void              bfTransform_dtor(BifrostTransform* self);
+BF_MATH_API void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* system);
+BF_MATH_API void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value);
+BF_MATH_API void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value);
+BF_MATH_API void bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value);
+BF_MATH_API void bfTransform_setScale(BifrostTransform* self, const Vec3f* value);
+BF_MATH_API BifrostTransform* bfTransform_parent(const BifrostTransform* self);
+BF_MATH_API void              bfTransform_setParent(BifrostTransform* self, BifrostTransform* value);
+BF_MATH_API void              bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value); /* Copies over the local values, parent relationships are unchanged. */
+BF_MATH_API void              bfTransform_flushChanges(BifrostTransform* self);
+BF_MATH_API void              bfTransform_dtor(BifrostTransform* self);
 
 struct IBifrostTransformSystem_t
 {

@@ -157,12 +157,12 @@ void Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix)
 
 #define MUL_AND_SHIFT(c, s) ((uint)((c)*255.0f) << (s))
 
-Color Vec3f_toColor(const Vec3f* self)
+Color Vec3f_toColor(Vec3f self)
 {
-  return MUL_AND_SHIFT(self->x, 0) |
-         MUL_AND_SHIFT(self->y, 8) |
-         MUL_AND_SHIFT(self->z, 16) |
-         MUL_AND_SHIFT(self->w, 24);
+  return MUL_AND_SHIFT(self.x, 0) |
+         MUL_AND_SHIFT(self.y, 8) |
+         MUL_AND_SHIFT(self.z, 16) |
+         MUL_AND_SHIFT(self.w, 24);
 }
 
 #undef MUL_AND_SHIFT

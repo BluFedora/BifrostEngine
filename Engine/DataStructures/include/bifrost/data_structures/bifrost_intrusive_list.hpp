@@ -126,8 +126,8 @@ namespace bf::intrusive
     using MemberAccessor = Node<T> T::*;
 
    private:
-    Node<T>        m_Head;
-    MemberAccessor m_Link;
+    mutable Node<T> m_Head; // TODO(SR): This is for the const versions begin and end, but maybe they should be actually const??
+    MemberAccessor  m_Link;
 
    public:
     explicit ListView(MemberAccessor link) :
@@ -138,6 +138,8 @@ namespace bf::intrusive
 
     ListIterator<T>    begin() { return ListIterator<T>(&m_Head, m_Link); }
     ListIterator<T>    end() { return ListIterator<T>(m_Head.prev, m_Link); }
+    ListIterator<T>    begin() const { return ListIterator<T>(&m_Head, m_Link); }
+    ListIterator<T>    end() const { return ListIterator<T>(m_Head.prev, m_Link); }
     T&                 front() { return *m_Head.next; }
     const T&           front() const { return *m_Head.next; }
     T&                 back() { return *(m_Head.prev->prev->next); }

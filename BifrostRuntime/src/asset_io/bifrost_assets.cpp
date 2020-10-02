@@ -354,9 +354,21 @@ namespace bf
   {
     m_NameToGUID.clear();
 
+    // All top level assets must be destroyed first so that they can be removed from the lists.
     for (const auto& entry : m_AssetMap)
     {
-      m_Memory.deallocateT(entry.value());
+      if (!(entry.value()->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
+      {
+        m_Memory.deallocateT(entry.value());
+      }
+    }
+
+    for (const auto& entry : m_AssetMap)
+    {
+      if ((entry.value()->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
+      {
+        m_Memory.deallocateT(entry.value());
+      }
     }
 
     m_AssetMap.clear();
@@ -369,10 +381,10 @@ namespace bf
 
   void Assets::markDirty(const BaseAssetHandle& asset)
   {
-    if (asset && !asset.info()->m_IsDirty)
+    if (asset && !asset.info()->isDirty())
     {
       m_DirtyAssetList.push(asset);
-      asset.info()->m_IsDirty = true;
+      asset.info()->setDirty(true);
     }
   }
 
@@ -456,7 +468,7 @@ namespace bf
     {
       BaseAssetInfo* const info = asset.info();
 
-      info->m_IsDirty = false;
+      info->setDirty(false);
     }
 
     m_DirtyAssetList.clear();
@@ -488,7 +500,7 @@ namespace bf
     }
   }
 
-  std::pair<BifrostUUID, bool> Assets::indexAssetImpl(const StringRange abs_path)
+  std::tuple<BifrostUUID, bool, BaseAssetInfo*> Assets::indexAssetImpl(const StringRange abs_path)
   {
     const StringRange relative_path = path::relative(m_RootPath, abs_path);
     const auto        it_name       = m_NameToGUID.find(relative_path);
@@ -499,7 +511,7 @@ namespace bf
 
       if (it_asset != m_AssetMap.end())
       {
-        return {it_name->value(), false};
+        return {it_name->value(), false, it_asset->value()};
       }
     }
 
@@ -507,7 +519,20 @@ namespace bf
 
     m_NameToGUID.emplace(relative_path, uuid);
 
-    return {uuid, true};
+    return {uuid, true, nullptr};
+  }
+
+  BaseAssetInfo* Assets::findSubAssetFrom(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path)
+  {
+    for (auto& sub_asset : parent_asset->m_SubAssets)
+    {
+      if (sub_asset.filePathAbs() == sub_asset_name_path)
+      {
+        return &sub_asset;
+      }
+    }
+
+    return nullptr;
   }
 
   void Assets::addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset)

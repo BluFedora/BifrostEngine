@@ -15,7 +15,9 @@ add_library(
   "src/bifrost_array_t.c"
   "src/bifrost_dynamic_string.c"
   "src/bifrost_hash_map.c"
- "include/bf/ListView.hpp" "include/bf/StringRange.hpp")
+)
+
+add_library(BF_DataStructuresC_static ALIAS BifrostDataStructuresC_static)
 
 target_include_directories(
   BifrostDataStructuresC_static

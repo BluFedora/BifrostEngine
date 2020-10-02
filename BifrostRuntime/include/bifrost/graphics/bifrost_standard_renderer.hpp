@@ -16,8 +16,8 @@
  *
  * @copyright Copyright (c) 2020
  */
-#ifndef BIFROST_STANDARD_RENDERER_HPP
-#define BIFROST_STANDARD_RENDERER_HPP
+#ifndef BF_STANDARD_RENDERER_HPP
+#define BF_STANDARD_RENDERER_HPP
 
 #include "bf/PlatformFwd.h"                                   /* BifrostWindow           */
 #include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
@@ -30,17 +30,50 @@ class Engine;
 
 namespace bf
 {
+  //
+  // Constants
+  //
+
+  static constexpr int         k_GfxCameraSetIndex               = 0;
+  static constexpr int         k_GfxLightSetIndex                = 1;
+  static constexpr int         k_GfxMaterialSetIndex             = 2;
+  static constexpr int         k_GfxObjectSetIndex               = 3;
+  static constexpr int         k_GfxNumGBufferAttachments        = 2;
+  static constexpr int         k_GfxNumSSAOBufferAttachments     = 2;
+  static constexpr int         k_GfxSSAOKernelSize               = 128; /* Matches the constant defined in "assets/shaders/standard/ssao.frag.glsl"                                    */
+  static constexpr int         k_GfxSSAONoiseTextureDim          = 4;   /* Matches the constant defined in "assets/shaders/standard/ssao_blur.frag.glsl"                               */
+  static constexpr int         k_GfxMaxPunctualLightsOnScreen    = 512; /* (Techincally x2 this value) Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls" */
+  static constexpr int         k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls"                             */
+  static constexpr int         k_GfxSSAONoiseTextureNumElements  = k_GfxSSAONoiseTextureDim * k_GfxSSAONoiseTextureDim;
+  static constexpr int         k_GfxMaxLightsOnScreen            = k_GfxMaxPunctualLightsOnScreen + k_GfxMaxDirectionalLightsOnScreen;
+  static constexpr std::size_t k_GfxMaxVertexBones               = 4;
+  static constexpr std::size_t k_GfxMaxTotalBones                = 128;
+
+  //
+  // Forward Declarations
+  //
+
   class Light;
   class Material;
   class Entity;
 
-  struct StandardVertex final
+  //
+  // Simple Structs
+  //
+
+  struct StandardVertex
   {
     Vector3f  pos;
     Vector3f  normal;
     Vector3f  tangent;
     bfColor4u color;
     Vec2f     uv;
+  };
+
+  struct VertexBoneData
+  {
+    std::uint8_t bone_idx[k_GfxMaxVertexBones];
+    float        bone_weights[k_GfxMaxVertexBones];
   };
 
   // -------------------------------------------------------- //
@@ -75,7 +108,7 @@ namespace bf
   // {                                                        //
   //   (binding = 0) mat4x4 u_ModelTransform;                 //
   //   (binding = 0) mat4x4 u_ModelView;                      //
-  //   (binding = 0) mat4x4 u_NormalModelView;                // transpose(M^-1) * Nobject
+  //   (binding = 0) mat4x4 u_NormalModelView;                //
   // }                                                        //
   //                                                          //
   // -------------------------------------------------------- //
@@ -96,24 +129,7 @@ namespace bf
   // -------------------------------------------------------- //
 
   //
-  // Constants
-  //
-
-  static constexpr int k_GfxCameraSetIndex               = 0;
-  static constexpr int k_GfxLightSetIndex                = 1;
-  static constexpr int k_GfxMaterialSetIndex             = 2;
-  static constexpr int k_GfxObjectSetIndex               = 3;
-  static constexpr int k_GfxNumGBufferAttachments        = 2;
-  static constexpr int k_GfxNumSSAOBufferAttachments     = 2;
-  static constexpr int k_GfxSSAOKernelSize               = 128; /* Matches the constant defined in "assets/shaders/standard/ssao.frag.glsl"                                    */
-  static constexpr int k_GfxSSAONoiseTextureDim          = 4;   /* Matches the constant defined in "assets/shaders/standard/ssao_blur.frag.glsl"                               */
-  static constexpr int k_GfxMaxPunctualLightsOnScreen    = 512; /* (Techincally x2 this value) Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls" */
-  static constexpr int k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls"                             */
-  static constexpr int k_GfxSSAONoiseTextureNumElements  = k_GfxSSAONoiseTextureDim * k_GfxSSAONoiseTextureDim;
-  static constexpr int k_GfxMaxLightsOnScreen            = k_GfxMaxPunctualLightsOnScreen + k_GfxMaxDirectionalLightsOnScreen;
-
-  //
-  // Struct Mappings
+  // Shader Struct Mappings
   //
 
   struct LightGPUData final
@@ -126,7 +142,7 @@ namespace bf
   };
 
   //
-  // Uniform Mappings
+  // Shader Uniform Mappings
   //
 
   struct CameraUniformData final
@@ -249,12 +265,22 @@ namespace bf
   // Misc
   //
 
+  template<typename TUniformData>
   struct Renderable final
   {
-    MultiBuffer<ObjectUniformData> transform_uniform;
+    MultiBuffer<TUniformData> transform_uniform;
 
-    void create(bfGfxDeviceHandle device, const bfGfxFrameInfo& info);
-    void destroy(bfGfxDeviceHandle device) const;
+    void create(bfGfxDeviceHandle device, const bfGfxFrameInfo& info)
+    {
+      const auto limits = bfGfxDevice_limits(device);
+
+      transform_uniform.create(device, BIFROST_BUF_UNIFORM_BUFFER, info, limits.uniform_buffer_offset_alignment);
+    }
+
+    void destroy(bfGfxDeviceHandle device) const
+    {
+      transform_uniform.destroy(device);
+    }
   };
 
   // This class is good for largely varying growing buffers with out the need to realloc a buffer.
@@ -451,28 +477,30 @@ namespace bf
    private:
     using CameraObjectPair = std::pair<const CameraGPUData*, Entity*>;
 
-   private:
-    GLSLCompiler                                              m_GLSLCompiler;
-    bfGfxContextHandle                                        m_GfxBackend;
-    bfGfxDeviceHandle                                         m_GfxDevice;
-    bfGfxFrameInfo                                            m_FrameInfo;
-    bfVertexLayoutSetHandle                                   m_StandardVertexLayout;
-    bfVertexLayoutSetHandle                                   m_EmptyVertexLayout;
-    bfGfxCommandListHandle                                    m_MainCmdList;
-    bfTextureHandle                                           m_MainSurface;
-    bfShaderProgramHandle                                     m_GBufferShader;
-    bfShaderProgramHandle                                     m_SSAOBufferShader;
-    bfShaderProgramHandle                                     m_SSAOBlurShader;
-    bfShaderProgramHandle                                     m_AmbientLighting;
-    bfShaderProgramHandle                                     m_LightShaders[LightShaders::MAX];
-    List<Renderable>                                          m_RenderablePool;
-    HashTable<CameraObjectPair, Renderable*, 64, StdPairHash> m_RenderableMapping;  // TODO: Make this per Scene.
-    Array<bfGfxBaseHandle>                                    m_AutoRelease;
-    bfTextureHandle                                           m_WhiteTexture;
-    MultiBuffer<DirectionalLightUniformData>                  m_DirectionalLightBuffer;
-    MultiBuffer<PunctualLightUniformData>                     m_PunctualLightBuffers[2];  // [Point, Spot]
-    float                                                     m_GlobalTime;
-    bfWindowSurfaceHandle                                     m_MainWindow;
+   public:
+    GLSLCompiler                                                                 m_GLSLCompiler;
+    bfGfxContextHandle                                                           m_GfxBackend;
+    bfGfxDeviceHandle                                                            m_GfxDevice;
+    bfGfxFrameInfo                                                               m_FrameInfo;
+    bfVertexLayoutSetHandle                                                      m_StandardVertexLayout;
+    bfVertexLayoutSetHandle                                                      m_SkinnedVertexLayout;
+    bfVertexLayoutSetHandle                                                      m_EmptyVertexLayout;
+    bfGfxCommandListHandle                                                       m_MainCmdList;
+    bfTextureHandle                                                              m_MainSurface;
+    bfShaderProgramHandle                                                        m_GBufferShader;
+    bfShaderProgramHandle                                                        m_GBufferSkinnedShader;
+    bfShaderProgramHandle                                                        m_SSAOBufferShader;
+    bfShaderProgramHandle                                                        m_SSAOBlurShader;
+    bfShaderProgramHandle                                                        m_AmbientLighting;
+    bfShaderProgramHandle                                                        m_LightShaders[LightShaders::MAX];
+    List<Renderable<ObjectUniformData>>                                          m_RenderablePool;
+    HashTable<CameraObjectPair, Renderable<ObjectUniformData>*, 64, StdPairHash> m_RenderableMapping;  // TODO: Make this per Scene.
+    Array<bfGfxBaseHandle>                                                       m_AutoRelease;
+    bfTextureHandle                                                              m_WhiteTexture;
+    MultiBuffer<DirectionalLightUniformData>                                     m_DirectionalLightBuffer;
+    MultiBuffer<PunctualLightUniformData>                                        m_PunctualLightBuffers[2];  // [Point, Spot]
+    float                                                                        m_GlobalTime;
+    bfWindowSurfaceHandle                                                        m_MainWindow;
 
    public:
     explicit StandardRenderer(IMemoryManager& memory);
@@ -485,19 +513,20 @@ namespace bf
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
     bfGfxFrameInfo          frameInfo() const { return m_FrameInfo; }
 
-    void               init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
-    [[nodiscard]] bool frameBegin();
-    void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
-    void               bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
-    void               addLight(Light& light);
-    void               beginGBufferPass(CameraGPUData& camera) const;
-    void               beginSSAOPass(CameraGPUData& camera) const;
-    void               beginLightingPass(CameraGPUData& camera);
-    void               beginScreenPass(bfGfxCommandListHandle command_list) const;
-    void               endPass(bfGfxCommandListHandle command_list) const;
-    void               drawEnd() const;
-    void               frameEnd() const;
-    void               deinit();
+    void                init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
+    [[nodiscard]] bool  frameBegin();
+    void                bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
+    void                bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
+    bfDescriptorSetInfo bindObject2(const CameraGPUData& camera, Entity& entity);
+    void                addLight(Light& light);
+    void                beginGBufferPass(CameraGPUData& camera) const;
+    void                beginSSAOPass(CameraGPUData& camera) const;
+    void                beginLightingPass(CameraGPUData& camera);
+    void                beginScreenPass(bfGfxCommandListHandle command_list) const;
+    void                endPass(bfGfxCommandListHandle command_list) const;
+    void                drawEnd() const;
+    void                frameEnd() const;
+    void                deinit();
 
     template<typename FGBufferPass, typename FLightOverlayPass>
     void renderCameraTo(BifrostCamera& camera, CameraGPUData& camera_gpu_data, FGBufferPass&& gbuffer_callback, FLightOverlayPass&& overlay_callback)
@@ -568,4 +597,4 @@ namespace bf
   }  // namespace bindings
 }  // namespace bf
 
-#endif /* BIFROST_STANDARD_RENDERER_HPP */
+#endif /* BF_STANDARD_RENDERER_HPP */

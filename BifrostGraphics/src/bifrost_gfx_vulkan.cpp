@@ -42,6 +42,7 @@
 #else
 #include "bifrost/debug/bifrost_dbg_logger.h"
 #endif
+
 // Memory Functions (To Be Replaced)
 
 // ReSharper disable CppZeroConstantCanBeReplacedWithNullptr

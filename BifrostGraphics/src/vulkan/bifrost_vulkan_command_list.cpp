@@ -583,7 +583,7 @@ void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetH
   self->pipeline_state.vertex_set_layout = vertex_set_layout;
 }
 
-void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
+void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
 {
   assert(num_buffers < BIFROST_GFX_BUFFERS_MAX_BINDING);
 
@@ -598,7 +598,7 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t bindin
 
   vkCmdBindVertexBuffers(
    self->handle,
-   binding,
+   first_binding,
    num_buffers,
    binded_buffers,
    binded_offsets);

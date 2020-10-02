@@ -236,7 +236,7 @@ void Engine::init(const bfEngineCreateParams& params, bfWindow* main_window)
 
   m_CollisionSystem   = addECSSystem<CollisionSystem>();
   m_BehaviorSystem    = addECSSystem<BehaviorSystem>();
-  m_AnimationSystem   = addECSSystem<AnimationSystem>();
+  m_AnimationSystem   = addECSSystem<AnimationSystem>(m_MainMemory);
   m_ComponentRenderer = addECSSystem<ComponentRenderer>();
 
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();

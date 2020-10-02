@@ -2,8 +2,8 @@
 
 #include "bifrost/graphics/bifrost_gfx_object_cache.hpp"
 
-#include <bifrost/memory/bifrost_freelist_allocator.hpp>
-#include <bifrost/memory/bifrost_stl_allocator.hpp>
+#include "bf/FreeListAllocator.hpp"
+#include "bf/StlAllocator.hpp"
 
 #include <bf/platform/bf_platform_gl.h>
 
@@ -2162,7 +2162,7 @@ void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetH
   self->pipeline_state.vertex_set_layout = vertex_set_layout;
 }
 
-void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
+void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
 {
   assert(num_buffers < BIFROST_GFX_BUFFERS_MAX_BINDING);
 

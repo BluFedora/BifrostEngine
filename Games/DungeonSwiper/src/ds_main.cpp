@@ -2,9 +2,9 @@
 // main.cpp
 //
 
+#include "bf/MemoryUtils.h"                      /* bfMegabytes */
 #include "bf/Platform.h"                         /* Platform API */
 #include <bifrost/core/bifrost_engine.hpp>       /* Runtime API  */
-#include <bifrost/memory/bifrost_memory_utils.h> /* bfMegabytes  */
 
 #include "bf/Font.hpp"          // Font
 #include "bf/Gfx2DPainter.hpp"  // Gfx2DPainter

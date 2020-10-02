@@ -214,28 +214,29 @@ void bfQuaternionf_normalize(Quaternionf* self)
   }
 }
 
-void bfQuaternionf_toMatrix(const Quaternionf* self, Mat4x4* out_rot_mat)
+void bfQuaternionf_toMatrix(Quaternionf self, Mat4x4* out_rot_mat)
 {
-  Quaternionf normalized_clone = *self;
-  bfQuaternionf_normalize(&normalized_clone);
+  // [https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm]
 
-  const float qx = normalized_clone.x;
-  const float qy = normalized_clone.y;
-  const float qz = normalized_clone.z;
-  const float qw = normalized_clone.w;
+  bfQuaternionf_normalize(&self);
+
+  const float qx = self.x;
+  const float qy = self.y;
+  const float qz = self.z;
+  const float qw = self.w;
 
   *Mat4x4_get(out_rot_mat, 0, 0) = 1.0f - 2.0f * qy * qy - 2.0f * qz * qz;
-  *Mat4x4_get(out_rot_mat, 0, 1) = 2.0f * qx * qy - 2.0f * qz * qw;
-  *Mat4x4_get(out_rot_mat, 0, 2) = 2.0f * qx * qz + 2.0f * qy * qw;
+  *Mat4x4_get(out_rot_mat, 0, 1) = 2.0f * qx * qy + 2.0f * qz * qw;
+  *Mat4x4_get(out_rot_mat, 0, 2) = 2.0f * qx * qz - 2.0f * qy * qw;
   *Mat4x4_get(out_rot_mat, 0, 3) = 0.0f;
 
-  *Mat4x4_get(out_rot_mat, 1, 0) = 2.0f * qx * qy + 2.0f * qz * qw;
+  *Mat4x4_get(out_rot_mat, 1, 0) = 2.0f * qx * qy - 2.0f * qz * qw;
   *Mat4x4_get(out_rot_mat, 1, 1) = 1.0f - 2.0f * qx * qx - 2.0f * qz * qz;
-  *Mat4x4_get(out_rot_mat, 1, 2) = 2.0f * qy * qz - 2.0f * qx * qw;
+  *Mat4x4_get(out_rot_mat, 1, 2) = 2.0f * qy * qz + 2.0f * qx * qw;
   *Mat4x4_get(out_rot_mat, 1, 3) = 0.0f;
 
-  *Mat4x4_get(out_rot_mat, 2, 0) = 2.0f * qx * qz - 2.0f * qy * qw;
-  *Mat4x4_get(out_rot_mat, 2, 1) = 2.0f * qy * qz + 2.0f * qx * qw;
+  *Mat4x4_get(out_rot_mat, 2, 0) = 2.0f * qx * qz + 2.0f * qy * qw;
+  *Mat4x4_get(out_rot_mat, 2, 1) = 2.0f * qy * qz - 2.0f * qx * qw;
   *Mat4x4_get(out_rot_mat, 2, 2) = 1.0f - 2.0f * qx * qx - 2.0f * qy * qy;
   *Mat4x4_get(out_rot_mat, 2, 3) = 0.0f;
 
@@ -330,6 +331,48 @@ Vec3f bfQuaternionf_backwardVec(const Quaternionf* self)
   Vec3f ret = bfQuaternionf_forwardVec(self);
   Vec3f_mul(&ret, -1.0f);
   return ret;
+}
+
+bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf* rhs, float factor)
+{
+  //
+  // Adopted from Assimp / gmtl
+  //
+
+  float cosom = lhs->x * rhs->x + lhs->y * rhs->y + lhs->z * rhs->z + lhs->w * rhs->w;
+
+  bfQuaternionf end = *rhs;
+
+  if (cosom < 0.0f)
+  {
+    cosom = -cosom;
+    end.x = -end.x;
+    end.y = -end.y;
+    end.z = -end.z;
+    end.w = -end.w;
+  }
+
+  float sclp, sclq;
+
+  if ((1.0f - cosom) > k_Epsilonf)
+  {
+    const float omega = (float)acos(cosom);
+    const float sinom = (float)sin(omega);
+
+    sclp = (float)sin((1.0f - factor) * omega) / sinom;
+    sclq = (float)sin(factor * omega) / sinom;
+  }
+  else
+  {
+    sclp = 1.0f - factor;
+    sclq = factor;
+  }
+
+  return bfQuaternionf_init(
+   sclp * lhs->x + sclq * end.x,
+   sclp * lhs->y + sclq * end.y,
+   sclp * lhs->z + sclq * end.z,
+   sclp * lhs->w + sclq * end.w);
 }
 
 // Transform
@@ -474,7 +517,7 @@ static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f
   Vec3f_add(&total_translation, &origin);
 
   Mat4x4_initTranslatef(&translation_mat, total_translation.x, total_translation.y, total_translation.z);
-  bfQuaternionf_toMatrix(&rotation, &rotation_mat);
+  bfQuaternionf_toMatrix(rotation, &rotation_mat);
   Mat4x4_initScalef(&scale_mat, scale.x, scale.y, scale.z);
   Mat4x4_initTranslatef(&origin_mat, -origin.x, -origin.y, -origin.z);
 

@@ -34,6 +34,7 @@ namespace bf
   class ParticleEmitter;
   class Light;
   class SpriteAnimator;
+  class SkinnedMeshRenderer;
 
   struct ComponentTypeInfo final
   {
@@ -49,7 +50,8 @@ namespace bf
    SpriteRenderer,
    ParticleEmitter,
    Light,
-   SpriteAnimator>;
+   SpriteAnimator,
+   SkinnedMeshRenderer>;
 
   //
   // @EngineComponentRegister
@@ -62,7 +64,7 @@ namespace bf
     {"ParticleEmitter"},
     {"Light"},
     {"SpriteAnimator"},
-  };
+    {"SkinnedMeshRenderer"}};
 }  // namespace bf
 
 #endif /* BIFROST_COMPONENT_LIST_HPP */

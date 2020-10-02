@@ -541,6 +541,7 @@ namespace bf::meta
 }  // namespace bifrost::meta
 
 #define BIFROST_META_FRIEND friend class ::bf::meta::Meta
+#define BF_META_FRIEND friend class ::bf::meta::Meta
 
 #define BIFROST_META_REGISTER(name) \
   template<>                        \
