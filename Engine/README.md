@@ -61,6 +61,6 @@ This layer consists of libraries which only rely on code within it's own source 
 
 <!-- Link Definitions -->
 
-[Memory]: Memory/README.md (Link to the BF Memory Library Documentation)
+[Memory]: https://github.com/BluFedora/BF-Memory (Link to the BF Memory Library Documentation)
 
 <!-- Link Definitions -->
