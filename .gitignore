@@ -340,11 +340,3 @@ build/Makefile
 
 !*.meta
 .DS_Store
-BuildTimeAnalyzerGUI/src/bta_main.cpp
-BuildTimeAnalyzerGUI/src/bta_dialog_win32.cpp
-BuildTimeAnalyzerGUI/lib/licenses/(ImPlot) 'LICENSE'.txt
-BuildTimeAnalyzerGUI/lib/include/implot/implot_demo.cpp
-BuildTimeAnalyzerGUI/lib/include/implot/implot.h
-BuildTimeAnalyzerGUI/lib/include/implot/implot.cpp
-BuildTimeAnalyzerGUI/include/bta_dialog.hpp
-BuildTimeAnalyzerGUI/CMakeLists.txt
