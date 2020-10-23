@@ -51,12 +51,12 @@
             "Type" : "AssetMaterialInfo"
         },
         {
-            "UUID" : "0A7FD4E2-DD52-4CB8-AAAB-C5DCC00A9A9C",
+            "UUID" : "612B2574-EBF4-4ACB-9F0A-31A1FE9CB188",
             "Path" : "",
             "m_SubAssets" : [
 
             ],
-            "Type" : "___NoTypeInfo___"
+            "Type" : "AssetAnimation3DInfo"
         }
     ],
     "Type" : "AssetModelInfo"

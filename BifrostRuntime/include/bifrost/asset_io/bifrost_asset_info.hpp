@@ -45,8 +45,9 @@ namespace bf
     class BaseClassMetaInfo;
   }
 
-  // TODO(Shareef): Remove the extra data in 'BaseAssetHandle' for non editor builds.
-  // TODO(Shareef): Make is so 'AssetTagList::m_Tags' does not own the string but rather just references a string pool or something.
+  // TODO(Shareef):
+  //   Remove the extra data in 'BaseAssetHandle' for non editor builds.
+  //   Make is so 'AssetTagList::m_Tags' does not own the string but rather just references a string pool or something.
 
   class AssetTagList
   {
@@ -187,7 +188,7 @@ namespace bf
 
     enum
     {
-      DEFAULT      = 0x0,
+      DEFAULT      = 0x0,       //!< No flags set.
       IS_DIRTY     = bfBit(0),  //!< This asset wants to be saved.
       IS_SUB_ASSET = bfBit(1),  //!< This asset only lives in memory.
     };
@@ -249,8 +250,6 @@ namespace bf
       return false;
     }
 
-    // Called when we want
-
     /*!
      * @brief 
      *   Called when the asset want to be reloaded from disc.
@@ -262,7 +261,8 @@ namespace bf
      * 
      * @return 
      *   Return true if the asset was successfully reloaded
-     *   otherwise return false for any failures.
+     *   otherwise 
+     *   Return false for any failures.
      */
     virtual bool reload(Engine& engine)
     {

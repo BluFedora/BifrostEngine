@@ -36,20 +36,41 @@ namespace bf::editor
 
         ImGui::Separator();
 
-        imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH " Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
-
-        if (!m_SearchQuery.isEmpty())
-        {
-          ImGui::SameLine();
-
-          if (ImGui::Button("clear"))
-          {
-            m_SearchQuery.clear();
-          }
-        }
-
         ImGui::EndMenuBar();
       }
+
+      if (ImGui::Button(" " ICON_FA_ARROWS_ALT " "))
+      {
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button(" " ICON_FA_UNDO " "))
+      {
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button(" " ICON_FA_EXPAND_ALT " "))
+      {
+      }
+
+      ImGui::SameLine();
+
+      imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH " Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
+
+      if (!m_SearchQuery.isEmpty())
+      {
+        ImGui::SameLine();
+
+        if (ImGui::Button("clear"))
+        {
+
+          m_SearchQuery.clear();
+        }
+      }
+
+      ImGui::Separator();
 
 #if 0
       if (ImGui::Selectable("Undo", false, editor.undoRedo().canUndo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))

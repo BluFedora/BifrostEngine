@@ -3,7 +3,8 @@
  * @file   bifrost_asset_handle.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *  Asset handle definitions.
+ *  Convienience wrapper for `BaseAssetHandle` reference counted asset 
+ *  handle for more type safety.
  *
  *  Types of Assets:
  *    > Shader Module

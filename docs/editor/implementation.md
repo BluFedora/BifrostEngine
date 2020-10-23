@@ -1,4 +1,4 @@
-# Bifrost Editor Implementation
+# Editor Implementation
 
 ## Undo Redo Commands
 

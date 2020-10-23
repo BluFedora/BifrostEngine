@@ -1672,20 +1672,18 @@ namespace bf::editor
 
     if (entry.is_file)
     {
-      ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen;
+      ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen;
 
       if (!entry.asset_info || entry.asset_info->subAssets().isEmpty())
       {
-        tree_node_flags |= ImGuiTreeNodeFlags_Leaf;
+        tree_node_flags |= ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_Leaf;
       }
 
       const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
 
-      // const StringRange rel_path = relativePath(entry);
-
       if (ImGui::IsItemHovered())
       {
-        // ImGui::SetTooltip("Name(%s)\nFullPath(%s)\nRelPath(%.*s)", entry.name.cstr(), entry.full_path.cstr(), int(rel_path.length()), rel_path.begin());
+        ImGui::SetTooltip("Asset(%s)", entry.asset_info ? entry.asset_info->uuid().as_string.data : "<null>");
       }
 
       if (entry.asset_info)

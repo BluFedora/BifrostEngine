@@ -6,6 +6,8 @@
 
 #include <cassert>  // assert
 
+#define DEBUG_PRINTOUT 0
+
 namespace bf
 {
   static char* stringRangeToString(IMemoryManager& memory, bfStringRange str) noexcept
@@ -45,7 +47,7 @@ namespace bf
       from.Transpose();
     }
 
-    memcpy(to, &from, sizeof(from));
+    std::memcpy(to, &from, sizeof(from));
   }
 
   static unsigned findAssetNode(ModelSkeleton& skeleton, const AssetNode** nodes, const aiString& name)
@@ -137,6 +139,7 @@ namespace bf
 #endif
   }
 
+#if DEBUG_PRINTOUT
   static void PrintAssetNode(AssetNode* base_array, AssetNode& node, int depth, int& count)
   {
     for (unsigned int i = 0; i < node.num_children; ++i)
@@ -179,6 +182,7 @@ namespace bf
 
     PrintAssetNode(base_array, node, depth + 1, count);
   }
+#endif
 
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept
   {
@@ -228,6 +232,8 @@ namespace bf
         recurseNodes(
          scene->mRootNode,
          [&num_nodes](const aiNode* parent_node, const aiNode* node, int depth, int parent_index) {
+
+#if DEBUG_PRINTOUT
            for (int i = 0; i < depth * 2; ++i)
            {
              std::printf(" ");
@@ -240,12 +246,16 @@ namespace bf
                        node->mNumChildren,
                        node->mName.data);
 
+#endif
+
            ++num_nodes;
          });
 
+#if DEBUG_PRINTOUT
         for (int i = 0; i < 80; ++i)
           std::printf("-");
         std::printf("\n");
+#endif
 
         auto global_inv = scene->mRootNode->mTransformation;
         global_inv.Inverse();
@@ -273,7 +283,9 @@ namespace bf
            ++node_idx;
          });
 
+#if DEBUG_PRINTOUT
         PrintAssetNode(result.skeleton.nodes, result.skeleton.nodes[0]);
+#endif
       }
 
       const unsigned int num_meshes = scene->mNumMeshes;
@@ -425,7 +437,7 @@ namespace bf
               AssetTempLargeString str;
 
               str.length = tex_path.length;
-              std::memcpy(str.data, tex_path.data, tex_path.length + 1);
+              std::memcpy(str.data, tex_path.data, std::size_t(tex_path.length) + 1);
 
               return str;
             }

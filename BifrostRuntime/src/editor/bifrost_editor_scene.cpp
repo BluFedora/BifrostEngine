@@ -82,10 +82,6 @@ namespace bf::editor
 
       ImGui::PopStyleVar(1);
 
-      if (ImGui::Button(ICON_FA_ARROWS_ALT))
-      {
-      }
-
       const auto           color_buffer        = m_Camera->gpu_camera.composite_buffer;
       const auto           color_buffer_width  = bfTexture_width(color_buffer);
       const auto           color_buffer_height = bfTexture_height(color_buffer);

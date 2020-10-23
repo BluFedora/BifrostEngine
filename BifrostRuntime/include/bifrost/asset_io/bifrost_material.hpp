@@ -10,8 +10,8 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_MATERIAL_HPP
-#define BIFROST_MATERIAL_HPP
+#ifndef BF_MATERIAL_HPP
+#define BF_MATERIAL_HPP
 
 #include "bifrost/graphics/bifrost_gfx_api.h"  //
 #include "bifrost_asset_handle.hpp"            // AssetHandle<T>
@@ -236,7 +236,7 @@ namespace bf
         return keys = mem.allocateArrayTrivial<Key>(num_keys);
       }
 
-      // Dont call this fuction wehn only one key exists
+      // Dont call this fuction when only one key exists
       std::size_t findKey(AnimationTimeType time, IMemoryManager& mem) const
       {
         const std::size_t num_keys = numKeys(mem);
@@ -507,6 +507,13 @@ BIFROST_META_REGISTER(bf::AssetMaterialInfo){
    ctor<String, std::size_t, BifrostUUID>())
    BIFROST_META_END()}
 
+BIFROST_META_REGISTER(bf::AssetAnimation3DInfo){
+ BIFROST_META_BEGIN()
+  BIFROST_META_MEMBERS(
+   class_info<AssetAnimation3DInfo>("AssetAnimation3DInfo"),  //
+   ctor<String, std::size_t, BifrostUUID>())
+   BIFROST_META_END()}
+
 BIFROST_META_REGISTER(bf::Model){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
@@ -526,4 +533,4 @@ BIFROST_META_REGISTER(bf::AssetModelInfo)
   BIFROST_META_END()
 }
 
-#endif /* BIFROST_MATERIAL_HPP */
+#endif /* BF_MATERIAL_HPP */

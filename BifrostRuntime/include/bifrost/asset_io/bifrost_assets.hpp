@@ -38,8 +38,6 @@ namespace bf
   class JsonSerializerWriter;
   class JsonSerializerReader;
 
-  using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
-
   enum class AssetError : std::uint8_t
   {
     NONE,
@@ -67,6 +65,8 @@ namespace bf
 
     bool renameFile(const StringRange& old_name, const StringRange& new_name);  // ex: renameFile("path/to/my/file.txt", "new_path/to/file2.txt")
   }                                                                             // namespace path
+
+  using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
 
   namespace detail
   {
