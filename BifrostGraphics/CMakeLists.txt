@@ -33,7 +33,7 @@ set(
 
 set(
   BIFROST_GRAPHICS_LIBRARIES
-  BifrostDataStructuresCxx
+  BF_DataStructuresC_static
   BF_Core_static
 )
 
@@ -94,7 +94,7 @@ elseif (BIFROST_OPT_GRAPHICS_OPENGL)
   set(
     BIFROST_GRAPHICS_LIBRARIES
     "${BIFROST_GRAPHICS_LIBRARIES}"
-    BifrostMemory
+    BF_Memory_interface
   )
 else()
   message(SEND_ERROR "Either 'BIFROST_OPT_GRAPHICS_VULKAN' or 'BIFROST_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")

@@ -15,6 +15,8 @@
 #if __cplusplus
 extern "C" {
 #endif
+struct BifrostVM_t;
+
 #define BIFROST_HASH_MAP_BUCKET_SIZE 128
 
 typedef void (*bfHashMapDtor)(void* key, void* value);
@@ -35,10 +37,11 @@ typedef struct
 
 typedef struct
 {
-  bfHashMapDtor dtor;
-  bfHashMapHash hash;
-  bfHashMapCmp  cmp;
-  size_t        value_size;
+  struct BifrostVM_t* vm;
+  bfHashMapDtor       dtor;
+  bfHashMapHash       hash;
+  bfHashMapCmp        cmp;
+  size_t              value_size;
 
 } BifrostHashMapParams;
 
@@ -59,7 +62,7 @@ typedef struct
 
       value_size - By default is the size of a pointer.
   */
-void bfHashMapParams_init(BifrostHashMapParams* self);
+void bfHashMapParams_init(BifrostHashMapParams* self, struct BifrostVM_t* vm);
 
 typedef struct
 {
@@ -69,19 +72,17 @@ typedef struct
 
 } BifrostHashMap;
 
-BifrostHashMap* bfHashMap_new(const BifrostHashMapParams* params);
-void            bfHashMap_ctor(BifrostHashMap* self, const BifrostHashMapParams* params);
-void            bfHashMap_set(BifrostHashMap* self, const void* key, void* value);
-int             bfHashMap_has(const BifrostHashMap* self, const void* key);
-void*           bfHashMap_get(BifrostHashMap* self, const void* key);
-int             bfHashMap_remove(BifrostHashMap* self, const void* key);
-int             bfHashMap_removeCmp(BifrostHashMap* self, const void* key, bfHashMapCmp cmp);  // 'key' is the first param for 'cmp'
-bfHashMapIter   bfHashMap_itBegin(const BifrostHashMap* self);
-int             bfHashMap_itHasNext(const bfHashMapIter* it);
-void            bfHashMap_itGetNext(const BifrostHashMap* self, bfHashMapIter* it);
-void            bfHashMap_clear(BifrostHashMap* self);
-void            bfHashMap_dtor(BifrostHashMap* self);
-void            bfHashMap_delete(BifrostHashMap* self);
+void          bfHashMap_ctor(BifrostHashMap* self, const BifrostHashMapParams* params);
+void          bfHashMap_set(BifrostHashMap* self, const void* key, void* value);
+int           bfHashMap_has(const BifrostHashMap* self, const void* key);
+void*         bfHashMap_get(BifrostHashMap* self, const void* key);
+int           bfHashMap_remove(BifrostHashMap* self, const void* key);
+int           bfHashMap_removeCmp(BifrostHashMap* self, const void* key, bfHashMapCmp cmp);  // 'key' is the first param for 'cmp'
+bfHashMapIter bfHashMap_itBegin(const BifrostHashMap* self);
+int           bfHashMap_itHasNext(const bfHashMapIter* it);
+void          bfHashMap_itGetNext(const BifrostHashMap* self, bfHashMapIter* it);
+void          bfHashMap_clear(BifrostHashMap* self);
+void          bfHashMap_dtor(BifrostHashMap* self);
 
 #define bfHashMapFor(it, map)                     \
   for (bfHashMapIter it = bfHashMap_itBegin(map); \

@@ -9,30 +9,6 @@
  *   A simple tracing garbage collector for the Bifrost Scripting Language.
  *   This uses a very basic mark and sweep algorithm.
  *
- *   NOTE(Shareef):
- *     The memory counted is exclusively what is allocated for objects and the VM
- *     struct itself.
- *     Ignored Allocations:
- *       > Any Array allocation from the Bifrost Array Data Structure.
- *       > Any HashMap allocation from the Bifrost Array Data Structure.
- *       > Any Dynamic String from the Bifrost Array Data Structure.
- *
- *     To fix this we need :
- *        > A unified memory model for both the scripting language
- *          and the data structures. The problem is that architectually the data
- *          structures are drop in libraries while the VM is a monolithic stateful
- *          object leading to different ways of customizing allcoations.
- *          If I do force the VM allocator on the data structures then if you
- *          use the Bifrost Scripting Language part of the Library you are forced.
- *          into it's memory model for the data structures.
- *
- *          (Maybe this is What Bifrost Needs??, Just one allocator for all.)
- *            (This once again leads to global state of storing the allocators.)
- *          (But then you a forced into the whole lib, that's the main problem.)
- *
- *        > To reimplement bare bone versions of the data structures just for the
- *          VM but not being allowed to reuse that code would be VERY inconvenient.
- *
  *   References:
  *     [http://journal.stuffwithstuff.com/2013/12/08/babys-first-garbage-collector/]
  *
@@ -47,7 +23,6 @@
 /******************************************************************************/
 #include "bifrost_vm_gc.h"
 
-#include "bifrost/data_structures/bifrost_array_t.h"  // Array_size
 #include "bifrost/script/bifrost_vm.h"                // BifrostVM_t
 #include "bifrost_vm_function_builder.h"              // BifrostVMFunctionBuilder
 #include "bifrost_vm_obj.h"                           // BifrostObj
@@ -85,14 +60,14 @@ extern uint32_t      bfVM_getSymbol(BifrostVM* self, bfStringRange name);
 
 void bfGCMarkObjects(struct BifrostVM_t* self)
 {
-  const size_t stack_size = Array_size(&self->stack);
+  const size_t stack_size = bfVMArray_size(&self->stack);
 
   for (size_t i = 0; i < stack_size; ++i)
   {
     bfGCMarkValue(self->stack[i], GC_MARK_REACHABLE);
   }
 
-  const size_t frames_size = Array_size(&self->frames);
+  const size_t frames_size = bfVMArray_size(&self->frames);
 
   // TODO(SR): Is this really needed?
   for (size_t i = 0; i < frames_size; ++i)
@@ -135,7 +110,7 @@ void bfGCMarkObjects(struct BifrostVM_t* self)
       bfGCMarkObj(&parsers->current_clz->super, GC_MARK_REACHABLE);
     }
 
-    const size_t num_builders = Array_size(&parsers->fn_builder_stack);
+    const size_t num_builders = bfVMArray_size(&parsers->fn_builder_stack);
 
     for (size_t i = 0; i < num_builders; ++i)
     {
@@ -201,11 +176,11 @@ size_t bfGCSweep(struct BifrostVM_t* self)
       BifrostObjClass* const    clz    = inst->clz;
       const uint32_t            symbol = bfVM_getSymbol(self, bfMakeStringRangeC("dtor"));
 
-      if (clz && symbol < Array_size(&clz->symbols))
+      if (clz && symbol < bfVMArray_size(&clz->symbols))
       {
         const bfVMValue value = clz->symbols[symbol].value;
 
-        if (bfVMValue_isPointer(value) && bfObjIsFunction(bfVmValue_asPointer(value)))
+        if (bfVMValue_isPointer(value) && bfObjIsFunction(bfVMValue_asPointer(value)))
         {
           bfGCMarkObj(g_cursor, GC_MARK_FINALIZE);
 
@@ -317,18 +292,12 @@ void* bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t n
 
 void* bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size_t new_size)
 {
-  if (new_size == 0u)
-  {
-    self->bytes_allocated -= old_size;
-  }
-  else
-  {
-    self->bytes_allocated += new_size;
+  self->bytes_allocated -= old_size;
+  self->bytes_allocated += new_size;
 
-    if (self->bytes_allocated >= self->params.heap_size)
-    {
-      bfVM_gc(self);
-    }
+  if (new_size > 0u && self->bytes_allocated >= self->params.heap_size)
+  {
+    bfVM_gc(self);
   }
 
   return (self->params.memory_fn)(self->params.user_data, ptr, old_size, new_size);
@@ -374,7 +343,7 @@ static void bfGCMarkValue(bfVMValue value, int mark_value)
 {
   if (bfVMValue_isPointer(value))
   {
-    void* const ptr = bfVmValue_asPointer(value);
+    void* const ptr = bfVMValue_asPointer(value);
 
     if (ptr)
     {
@@ -385,7 +354,7 @@ static void bfGCMarkValue(bfVMValue value, int mark_value)
 
 static void bfGCMarkValues(bfVMValue* values, int mark_value)
 {
-  bfGCMarkValuesN(values, Array_size(&values), mark_value);
+  bfGCMarkValuesN(values, bfVMArray_size(&values), mark_value);
 }
 
 static void bfGCMarkValuesN(bfVMValue* values, size_t size, int mark_value)
@@ -483,7 +452,7 @@ static void bfGCMarkObj(BifrostObj* obj, int mark_value)
 
 static void bfGCMarkSymbols(BifrostVMSymbol* symbols, int mark_value)
 {
-  const size_t size = Array_size(&symbols);
+  const size_t size = bfVMArray_size(&symbols);
 
   for (size_t i = 0; i < size; ++i)
   {

@@ -18,11 +18,10 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
-#include "bifrost/data_structures/bifrost_string.hpp" /* String                   */
-#include "bifrost/meta/bf_meta_function_traits.hpp"   /* function_traits          */
-#include "bifrost/meta/bifrost_meta_utils.hpp"        /* for_each                 */
-#include "bifrost/utility/bifrost_non_copy_move.hpp"  /* bfNonCopyMoveable        */
-#include "bifrost_vm.h"                               /* bfVM_*                   */
+#include "bifrost/meta/bf_meta_function_traits.hpp"  /* function_traits */
+#include "bifrost/meta/bifrost_meta_utils.hpp"       /* for_each        */
+#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyable   */
+#include "bifrost_vm.h"                              /* bfVM_*          */
 
 #include <string>      /* string                   */
 #include <tuple>       /* tuple                    */
@@ -30,6 +29,66 @@
 
 namespace bf
 {
+  namespace vm
+  {
+    template<typename T>
+    struct is_string_type;
+
+    template<typename T>
+    struct string_convert;
+
+    template<typename T>
+    struct is_string_type : std::false_type
+    {
+    };
+
+    //
+    // NOTE(SR):
+    //   If you want ot be able to to have you _string_ type be automatically
+    //   converted then specialize this template to inherit from `std::true_type`.
+    //   Your string must match this 'Concept':
+    //
+    //   ctor(const char* begin, const char* end)
+    //   .c_str()  const -> const char*
+    //   .length() const -> std::size_t
+    //
+    //                 OR
+    //
+    //  You may specialize `string_convert<T>` to convert in the way you want.
+    //
+
+    template<>
+    struct is_string_type<std::string> : std::true_type
+    {
+    };
+
+#if 0
+    template<>
+    struct is_string_type<StringRange> : std::true_type
+    {
+    };
+#endif
+
+    template<typename T>
+    struct string_convert
+    {
+      static T c_str(const char* begin, const char* end)
+      {
+        return T{begin, end};
+      }
+
+      static const char* c_str(const T& str)
+      {
+        return str.c_str();
+      }
+
+      static std::size_t length(const T& str)
+      {
+        return str.length();
+      }
+    };
+  }  // namespace vm
+
   namespace detail
   {
     template<typename...>
@@ -56,13 +115,15 @@ namespace bf
       {
         return bfVM_stackReadBool(self, slot);
       }
-      else if constexpr (std::is_same_v<T, String> || std::is_same_v<T, StringRange> || std::is_same_v<T, std::string>)
+      else if constexpr (/*std::is_same_v<T, String> || std::is_same_v<T, StringRange> || std::is_same_v<T, std::string>*/ vm::is_string_type<T>::value)
       {
         std::size_t       str_size;
         const char* const str = bfVM_stackReadString(self, slot, &str_size);
 
-        // NOTE(Shareef): 'String', 'StringRange' and 'std::string' have an iterator style ctor.
-        return {str, str + str_size};
+        // NOTE(Shareef): 'String', 'StringRange' and 'std::string' all have an iterator style ctor.
+        // return {str, str + str_size};
+
+        return vm::string_convert<T>::ctor(str, str + str_size);
       }
       else if constexpr (std::is_pointer_v<T>)
       {
@@ -93,6 +154,7 @@ namespace bf
 
       if constexpr (!std::is_same_v<RawT, RetainStack>)
       {
+#if 0
         if constexpr (std::is_same_v<RawT, std::string> || std::is_same_v<RawT, String>)
         {
           bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
@@ -100,6 +162,11 @@ namespace bf
         else if constexpr (std::is_same_v<RawT, StringRange> || std::is_same_v<RawT, bfStringRange>)
         {
           bfVM_stackSetStringLen(self, slot, value.bgn, value.end - value.bgn);
+        }
+#endif
+        if constexpr (vm::is_string_type<RawT>::value)
+        {
+          bfVM_stackSetStringLen(self, slot, vm::string_convert<RawT>::c_str(value), vm::string_convert<RawT>::length(value));
         }
         else if constexpr (std::is_same_v<RawT, char*> || std::is_same_v<RawT, const char*>)
         {
@@ -471,12 +538,12 @@ namespace bf
       return bfVM_stackReadInstance(self(), idx);
     }
 
-    [[nodiscard]] StringRange stackReadString(size_t idx) const noexcept
+    [[nodiscard]] std::pair<const char*, std::size_t> stackReadString(size_t idx) const noexcept
     {
       size_t      str_len;
       const char* str = bfVM_stackReadString(self(), idx, &str_len);
 
-      return bfMakeStringRangeLen(str, str_len);
+      return {str, str_len};
     }
 
     [[nodiscard]] bfFloat64 stackReadNumber(size_t idx) const noexcept
@@ -558,12 +625,14 @@ namespace bf
       return bfVM_errorString(self());
     }
 
+#if 0
     // TODO(SR): This should be part of the C-API as well.
     [[nodiscard]] StringRange errorStringRange() const noexcept
     {
       const char* err_str = bfVM_errorString(self());
       return {err_str, err_str + String_length(err_str)};
     }
+#endif
 
    private:
     template<typename Fn>

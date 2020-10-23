@@ -1714,6 +1714,7 @@ void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
   return self->alloc_info.mapped_ptr;
 }
 
+// TODO(SR): This allocation happens too frequently to be so recklesssssss.
 VkMappedMemoryRange* bfBuffer__makeRangesN(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges)
 {
   VkMappedMemoryRange* const ranges = allocN<VkMappedMemoryRange>(num_ranges);

@@ -24,6 +24,7 @@
 #include <stdlib.h> /* exit                               */
 #include <string.h> /* strlen, strcpy, strncmp, memmove   */
 
+#if 1
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)
 #endif
@@ -339,7 +340,7 @@ int String_cmp(ConstBifrostString self, ConstBifrostString other)
 #if STR_FAST_CMP
   return fast_strncmp(self, other, len1);
 #else
-  return strncmp(self, other, length);
+  return strncmp(self, other, len1);
 #endif
 }
 
@@ -409,7 +410,7 @@ static void string_append(BifrostString* self, size_t appended_size, const char*
 {
   const size_t self_size = String_length(*self);
 
-  assert(!doRangesOverlap(*self, self_size, str, appended_size) && "Cannot append a string to itself. Maybe the feature could be added in future versions but with how the code is rigth now it will not work.");
+  assert(!doRangesOverlap(*self, self_size, str, appended_size) && "Cannot append a string to itself. Maybe the feature could be added in future versions but with how the code is right now it will not work.");
 
   const size_t new_size  = self_size + appended_size;
 
@@ -438,3 +439,4 @@ static void string_insert(BifrostString* self, size_t index, size_t stringLength
   (*self)[newLength]              = '\0';
   String_getHeader(*self)->length = newLength;
 }
+#endif

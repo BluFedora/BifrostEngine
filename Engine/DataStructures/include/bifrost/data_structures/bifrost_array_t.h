@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_array_t.h
+ * @file   bf_array_t.h
  * @author Shareef Abdoul-Raheem
  * @brief
  *   Part of the "BluFedora Data Structures C Library"
@@ -30,42 +30,10 @@
 
 #include <stddef.h> /* size_t */
 
-// Old API with default allocator
-#define OLD_bfArray_newT(T, initial_size) (T*)_ArrayT_new(sizeof(T), (initial_size))
-#if __cplusplus
-#include <type_traits> /* remove_reference_t */
-#define OLD_bfArray_newA(arr, initial_size) (typename std::remove_reference_t<decltype((arr)[0])>*)_ArrayT_new(sizeof((arr)[0]), (initial_size))
-#else
-#define OLD_bfArray_newA(arr, initial_size) _ArrayT_new(sizeof((arr)[0]), (initial_size))
-#endif
-
 #if __cplusplus
 extern "C" {
 #endif
-typedef int(*ArrayFindCompare)(const void*, const void*);
-#define Array_new(T, initial_size) OLD_bfArray_newT(T, initial_size)
-void*  _ArrayT_new(const size_t stride, const size_t initial_size);
-size_t Array_size(const void* const self);
-void*  Array_at(const void* const self, const size_t index);
-void   Array_resize(void* const self, const size_t size);
-void*  Array_emplace(void* const self);
-void*  Array_emplaceN(void* const self, const size_t num_elements);
-void*  Array_pop(void* const self);
-void*  Array_back(const void* const self);
-void   Array_clear(void* const self);
-size_t Array_find(const void* const self, const void* key, ArrayFindCompare compare);
-void   Array_push(void* const self, const void* const data);
-void   Array_delete(void* const self);
-#if __cplusplus
-}
-#endif
-
-/* New allocator aware API */
-
-#if __cplusplus
-extern "C" {
-#endif
-#define BIFROST_ARRAY_INVALID_INDEX ((size_t)(-1))
+#define k_bfArrayInvalidIndex ((size_t)(-1))
 
 typedef void* (*bfArrayAllocator)(void* user_data, void* ptr, size_t size);
 

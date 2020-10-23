@@ -76,7 +76,7 @@ namespace bf
     explicit ContainerTuple(CtorArgs&&... args) noexcept :
       m_Impl{}
     {
-      meta::for_each_template<Args...>([this, &args...](auto t) {
+      forEachType([this, &args...](auto t) {
         using T = bfForEachTemplateT(t);
 
         new (&this->get<T>()) TContainer<T>(std::forward<CtorArgs>(args)...);
@@ -90,7 +90,7 @@ namespace bf
 
     ~ContainerTuple()
     {
-      meta::for_each_template<Args...>([this](auto t) {
+      forEachType([this](auto t) {
         using T             = bfForEachTemplateT(t);
         using ContainerType = TContainer<T>;
 

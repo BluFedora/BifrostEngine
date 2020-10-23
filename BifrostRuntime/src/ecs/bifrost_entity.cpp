@@ -218,7 +218,7 @@ namespace bf
   bool Entity::removeBehavior(IBehavior* behavior)
   {
     const std::size_t list_size = m_Behaviors.size();
-    std::size_t       index     = BIFROST_ARRAY_INVALID_INDEX;
+    std::size_t       index     = k_bfArrayInvalidIndex;
 
     for (std::size_t i = 0; i < list_size; ++i)
     {
@@ -231,7 +231,7 @@ namespace bf
       }
     }
 
-    const bool was_found = index != BIFROST_ARRAY_INVALID_INDEX;
+    const bool was_found = index != k_bfArrayInvalidIndex;
 
     if (was_found)
     {
@@ -514,7 +514,7 @@ namespace bf
   {
     const std::size_t index = findBehaviorIdxByType(type);
 
-    return index != BIFROST_ARRAY_INVALID_INDEX ? m_Behaviors[index] : nullptr;
+    return index != k_bfArrayInvalidIndex ? m_Behaviors[index] : nullptr;
   }
 
   std::size_t Entity::findBehaviorIdxByType(meta::BaseClassMetaInfoPtr type) const
@@ -531,14 +531,14 @@ namespace bf
       }
     }
 
-    return BIFROST_ARRAY_INVALID_INDEX;
+    return k_bfArrayInvalidIndex;
   }
 
   bool Entity::removeBehaviorFromList(meta::BaseClassMetaInfoPtr type)
   {
     const std::size_t index = findBehaviorIdxByType(type);
 
-    if (index != BIFROST_ARRAY_INVALID_INDEX)
+    if (index != k_bfArrayInvalidIndex)
     {
       deleteBehavior(m_Behaviors[index]);
       m_Behaviors.removeAt(index);

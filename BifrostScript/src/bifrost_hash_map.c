@@ -1,6 +1,20 @@
-#include "bifrost/data_structures/bifrost_hash_map.h"
+/*!
+ * @file bifrost_hash_map.c
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ * @version 0.0.1
+ * @date 2019-12-22
+ *
+ * @copyright Copyright (c) 2019
+ */
+#include "bifrost/script/bifrost_hash_map.h"
 
-// #include "bifrost_std.h" /* bfStructHack */
+#include "bifrost/script/bifrost_vm.h"  // VM Turn off GC
+#include "bifrost_vm_gc.h"              // Allocation Functions
+
+#include <assert.h> /* assert */
+#include <stdlib.h> /* NULL   */
+#include <string.h> /* strcmp */
 
 #ifndef bfStructHack
 #if __STDC_VERSION__ >= 199901L
@@ -12,10 +26,6 @@
 #endif
 #endif
 
-#include <assert.h> /* assert             */
-#include <stdlib.h> /* malloc, free, NULL */
-#include <string.h> /* strcmp             */
-
 struct bfHashNode_t
 {
   const void* key;
@@ -23,31 +33,20 @@ struct bfHashNode_t
   char        value[bfStructHack];
 };
 
-static bfHashNode* bfHashMap_newNode(const void* key, size_t value_size, void* value, bfHashNode* next);
+static bfHashNode* bfHashMap_newNode(struct BifrostVM_t* vm, const void* key, size_t value_size, void* value, bfHashNode* next);
 static bfHashNode* bfHashMap_getNode(const BifrostHashMap* self, const void* key, unsigned hash);
 static void        bfHashMap_deleteNode(const BifrostHashMap* self, bfHashNode* node);
 static void        bfHashMap_defaultDtor(void* key, void* value);
 static unsigned    bfHashMap_defaultHash(const void* key);
 static int         bfHashMap_defaultCmp(const void* lhs, const void* rhs);
 
-void bfHashMapParams_init(BifrostHashMapParams* self)
+void bfHashMapParams_init(BifrostHashMapParams* self, struct BifrostVM_t* vm)
 {
+  self->vm         = vm;
   self->dtor       = bfHashMap_defaultDtor;
   self->hash       = bfHashMap_defaultHash;
   self->cmp        = bfHashMap_defaultCmp;
   self->value_size = sizeof(void*);
-}
-
-BifrostHashMap* bfHashMap_new(const BifrostHashMapParams* params)
-{
-  BifrostHashMap* self = malloc(sizeof(BifrostHashMap));
-
-  if (self)
-  {
-    bfHashMap_ctor(self, params);
-  }
-
-  return self;
 }
 
 void bfHashMap_ctor(BifrostHashMap* self, const BifrostHashMapParams* params)
@@ -74,7 +73,7 @@ void bfHashMap_set(BifrostHashMap* self, const void* key, void* value)
   }
   else
   {
-    self->buckets[hash] = bfHashMap_newNode(key, self->params.value_size, value, self->buckets[hash]);
+    self->buckets[hash] = bfHashMap_newNode(self->params.vm, key, self->params.value_size, value, self->buckets[hash]);
   }
 }
 
@@ -203,15 +202,11 @@ void bfHashMap_dtor(BifrostHashMap* self)
   bfHashMap_clear(self);
 }
 
-void bfHashMap_delete(BifrostHashMap* self)
+static bfHashNode* bfHashMap_newNode(struct BifrostVM_t* vm, const void* key, size_t value_size, void* value, bfHashNode* next)
 {
-  bfHashMap_dtor(self);
-  free(self);
-}
+  vm->gc_is_running = bfTrue;
 
-static bfHashNode* bfHashMap_newNode(const void* key, size_t value_size, void* value, bfHashNode* next)
-{
-  bfHashNode* node = (bfHashNode*)malloc(sizeof(bfHashNode) + value_size);
+  bfHashNode* node = (bfHashNode*)bfGCAllocMemory(vm, NULL, 0u, sizeof(bfHashNode) + value_size);
 
   if (node)
   {
@@ -223,6 +218,8 @@ static bfHashNode* bfHashMap_newNode(const void* key, size_t value_size, void* v
   {
     assert(!"Failed to alloc memory for a bfHashNode.");
   }
+
+  vm->gc_is_running = bfFalse;
 
   return node;
 }
@@ -247,7 +244,7 @@ static bfHashNode* bfHashMap_getNode(const BifrostHashMap* self, const void* key
 static void bfHashMap_deleteNode(const BifrostHashMap* self, bfHashNode* node)
 {
   self->params.dtor((void*)node->key, node->value);
-  free(node);
+  bfGCAllocMemory(self->params.vm, node, sizeof(bfHashNode) + self->params.value_size, 0u);
 }
 
 static void bfHashMap_defaultDtor(void* key, void* value)

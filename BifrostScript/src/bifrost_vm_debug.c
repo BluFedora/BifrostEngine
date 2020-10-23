@@ -15,7 +15,8 @@
 #include "bifrost_vm_debug.h"
 
 #include "bifrost_vm_obj.h" /* */
-#include <stdio.h>          /* sprintf */
+
+#include <stdio.h> /* sprintf */
 
 static void bfDbgIndentPrint(int indent);
 
@@ -23,7 +24,7 @@ size_t bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size)
 {
   if (bfVMValue_isNumber(value))
   {
-    return (size_t)snprintf(buffer, buffer_size, "%g", bfVmValue_asNumber(value));
+    return (size_t)snprintf(buffer, buffer_size, "%g", bfVMValue_asNumber(value));
   }
 
   if (bfVMValue_isBool(value))
@@ -38,7 +39,7 @@ size_t bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size)
 
   if (bfVMValue_isPointer(value))
   {
-    const BifrostObj* const obj = bfVmValue_asPointer(value);
+    const BifrostObj* const obj = bfVMValue_asPointer(value);
 
     switch (obj->type)
     {
@@ -109,7 +110,7 @@ size_t bfDbgValueTypeToString(bfVMValue value, char* buffer, size_t buffer_size)
 
   if (bfVMValue_isPointer(value))
   {
-    const BifrostObj* const obj = bfVmValue_asPointer(value);
+    const BifrostObj* const obj = bfVMValue_asPointer(value);
 
     switch (obj->type)
     {
@@ -223,14 +224,14 @@ void bfDbgDisassembleInstructions(int indent, const bfInstruction* code, size_t 
 
 void bfDbgDisassembleFunction(int indent, BifrostObjFn* function)
 {
-  const size_t num_constants      = Array_size(&function->constants);
-  const size_t num_instructions   = Array_size(&function->instructions);
+  const size_t num_constants      = bfVMArray_size(&function->constants);
+  const size_t num_instructions   = bfVMArray_size(&function->instructions);
   const size_t needed_stack_space = function->needed_stack_space;
   char         temp_buffer[128];
 
   bfDbgIndentPrint(indent + 0);
   printf("Function(%s, arity = %i, stack_space = %i, module = '%s'):\n", function->name, function->arity, (int)needed_stack_space, function->module->name);
-  
+
   bfDbgIndentPrint(indent + 1);
   printf("Constants(%i):\n", (int)num_constants);
 

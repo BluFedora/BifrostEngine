@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_array_t.c
+ * @file   bf_array_t.c
  * @author Shareef Abdoul-Raheem
  * @brief
  *   Part of the "BluFedora Data Structures C Library"
@@ -27,10 +27,10 @@
 /******************************************************************************/
 #include "bifrost/data_structures/bifrost_array_t.h"
 
-#include <assert.h> /* assert         */
-#include <stdint.h> /* uint8_t        */
-#include <stdlib.h> /* qsort, bsearch */
-#include <string.h> /* memcpy         */
+#include <assert.h> /* assert             */
+#include <stdint.h> /* uint8_t, uintptr_t */
+#include <stdlib.h> /* qsort, bsearch     */
+#include <string.h> /* memcpy, memcmp     */
 
 typedef struct
 {
@@ -38,213 +38,6 @@ typedef struct
   const void* key;
 
 } ArrayDefaultCompareData;
-
-#if 1
-#define PRISM_ASSERT(arg, msg) assert((arg) && (msg))
-#define SELF_CAST(s) ((unsigned char**)(s))
-#define BIFROST_MALLOC(size, align) malloc((size))
-#define BIFROST_REALLOC(ptr, new_size, align) realloc((ptr), new_size)
-#define BIFROST_FREE(ptr) free((ptr))
-#define PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS 1  // Disable for a faster 'Array_at'.
-
-typedef struct
-{
-  size_t capacity;
-  size_t size;
-  size_t stride;
-
-} BifrostArrayHeader;
-
-static BifrostArrayHeader* Array_getHeader(unsigned char* self)
-{
-  return (BifrostArrayHeader*)(self - sizeof(BifrostArrayHeader));
-}
-
-void* _ArrayT_new(const size_t stride, const size_t initial_size)
-{
-  PRISM_ASSERT(stride, "_ArrayT_new:: The struct must be greater than 0.");
-  PRISM_ASSERT(initial_size * stride, "_ArrayT_new:: Please initialize the Array with a size greater than 0");
-
-  BifrostArrayHeader* const self = (BifrostArrayHeader*)
-   BIFROST_MALLOC(
-    sizeof(BifrostArrayHeader) + stride * initial_size,
-    0);
-
-  PRISM_ASSERT(self, "Array_new:: The Dynamic Array could not be allocated");
-
-  if (!self)
-  {
-    return NULL;
-  }
-
-  self->capacity = initial_size;
-  self->size     = 0;
-  self->stride   = stride;
-
-  return (uint8_t*)self + sizeof(BifrostArrayHeader);
-}
-
-// Array_push
-void* Array_end(const void* const self)
-{
-  BifrostArrayHeader* const header = Array_getHeader(*SELF_CAST(self));
-  return *(char**)self + (header->size * header->stride);
-}
-
-size_t Array_size(const void* const self)
-{
-  return Array_getHeader(*SELF_CAST(self))->size;
-}
-
-void Array_clear(void* const self)
-{
-  Array_getHeader(*SELF_CAST(self))->size = 0;
-}
-
-void Array_reserve(void* const self, const size_t num_elements)
-{
-  BifrostArrayHeader* header = Array_getHeader(*SELF_CAST(self));
-
-  if (header->capacity < num_elements)
-  {
-    size_t new_capacity = (header->capacity >> 3) + (header->capacity < 9 ? 3 : 6) + header->capacity;
-
-    if (new_capacity < num_elements)
-    {
-      new_capacity = num_elements;
-    }
-
-    BifrostArrayHeader* new_header = (BifrostArrayHeader*)BIFROST_REALLOC(header, sizeof(BifrostArrayHeader) + new_capacity * header->stride, 1);
-
-    if (new_header)
-    {
-      new_header->capacity = new_capacity;
-      *SELF_CAST(self)     = (unsigned char*)new_header + sizeof(BifrostArrayHeader);
-    }
-    else
-    {
-      Array_delete(self);
-      *SELF_CAST(self) = NULL;
-    }
-  }
-}
-
-void Array_resize(void* const self, const size_t size)
-{
-  Array_reserve(self, size);
-  Array_getHeader(*SELF_CAST(self))->size = size;
-}
-
-void Array_push(void* const self, const void* const data)
-{
-  const size_t stride = Array_getHeader(*SELF_CAST(self))->stride;
-
-  Array_reserve(self, Array_size(self) + 1);
-
-  memcpy(Array_end(self), data, stride);
-  ++Array_getHeader(*SELF_CAST(self))->size;
-}
-
-void* Array_emplace(void* const self)
-{
-  return Array_emplaceN(self, 1);
-}
-
-void* Array_emplaceN(void* const self, const size_t num_elements)
-{
-  const size_t old_size = Array_size(self);
-  Array_reserve(self, old_size + num_elements);
-  uint8_t* const      new_element = Array_end(self);
-  BifrostArrayHeader* header      = Array_getHeader(*SELF_CAST(self));
-  memset(new_element, 0x0, header->stride * num_elements);
-  header->size += num_elements;
-  return new_element;
-}
-
-static int Array_findDefaultCompare(const void* lhs, const void* rhs)
-{
-  ArrayDefaultCompareData* data = (ArrayDefaultCompareData*)lhs;
-  return memcmp(data->key, rhs, data->stride) == 0;
-}
-
-size_t Array_find(const void* const self, const void* key, ArrayFindCompare compare)
-{
-  const size_t len = Array_size(self);
-
-  if (compare)
-  {
-    for (size_t i = 0; i < len; ++i)
-    {
-      if (compare(key, Array_at(self, i)))
-      {
-        return i;
-      }
-    }
-  }
-  else
-  {
-    const size_t            stride = Array_getHeader(*SELF_CAST(self))->stride;
-    ArrayDefaultCompareData data   = {stride, key};
-
-    for (size_t i = 0; i < len; ++i)
-    {
-      if (Array_findDefaultCompare(&data, Array_at(self, i)))
-      {
-        return i;
-      }
-    }
-  }
-
-  return BIFROST_ARRAY_INVALID_INDEX;
-}
-
-void* Array_at(const void* const self, const size_t index)
-{
-#if PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS
-  const size_t size         = Array_size(self);
-  const int    is_in_bounds = index < size;
-
-  PRISM_ASSERT(is_in_bounds, "Array_at:: index array out of bounds error");
-#endif /* PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS */
-
-  return *(char**)self + (Array_getHeader(*SELF_CAST(self))->stride * index);
-}
-
-void* Array_pop(void* const self)
-{
-#if PRISM_DATA_STRUCTURES_ARRAY_CHECK_BOUNDS
-  PRISM_ASSERT(Array_size(self) != 0, "Array_pop:: attempt to pop empty array");
-#endif
-
-  BifrostArrayHeader* const header      = Array_getHeader(*SELF_CAST(self));
-  void* const               old_element = Array_at(self, header->size - 1);
-  --header->size;
-
-  return old_element;
-}
-
-void* Array_back(const void* const self)
-{
-  const BifrostArrayHeader* const header = Array_getHeader(*SELF_CAST(self));
-
-  return (char*)Array_end(self) - header->stride;
-}
-
-void Array_delete(void* const self)
-{
-  BIFROST_FREE(Array_getHeader(*SELF_CAST(self)));
-}
-
-#endif
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-
-// CRT Functions Used:
-//   assert, memcpy, memcmp, bsearch, qsort
-// STD Types Used:
-//   uint8_t, size_t, uintptr_t
 
 typedef uint8_t AllocationOffset_t;
 
@@ -266,9 +59,6 @@ typedef struct
 static void*              alignUpPtr(uintptr_t element_size, uintptr_t element_alignment);
 static AllocationOffset_t grabOffset(const void** self);
 
-// NOTE(Shareef): Made this into a macro to improve debug build performance.
-#define grabHeader(self_) ((ArrayHeader*)(bfCastByte(*(self_)) - grabOffset((const void**)(self_)) - sizeof(ArrayHeader)))
-
 #if 0
 static ArrayHeader* grabHeader(void** self)
 {
@@ -277,6 +67,9 @@ static ArrayHeader* grabHeader(void** self)
 
   return (ArrayHeader*)(bfCastByte(actual_array) - offset - sizeof(ArrayHeader));
 }
+#else
+// NOTE(Shareef): Made this into a macro to improve debug build performance.
+#define grabHeader(self_) ((ArrayHeader*)(bfCastByte(*(self_)) - grabOffset((const void**)(self_)) - sizeof(ArrayHeader)))
 #endif
 
 // API
@@ -465,18 +258,20 @@ void bfArray_insert(void** self, size_t index, const void* element)
 
 void* bfArray_insertEmplace(void** self, size_t index)
 {
-  ArrayHeader* header = grabHeader(self);
-  const size_t size   = header->size;
-  const size_t stride = header->stride;
-  ++header->size;
+  ArrayHeader* const header = grabHeader(self);
+  const size_t       size   = header->size;
+  const size_t       stride = header->stride;
 
   bfAssert(index <= size, "bfArray_insert:: index must be less than or equal to the size.");
 
-  bfArray_reserve(self, size + 1);
+  bfArray_resize(self, size + 1);
 
-  memmove(bfArray_at(self, index + 1), bfArray_at(self, index), stride * (size - index));
+  void* const move_dst = bfArray_at(self, index + 1);
+  void* const move_src = bfArray_at(self, index);
 
-  return bfArray_at(self, index);
+  memmove(move_dst, move_src, stride * (size - index));
+
+  return move_src;
 }
 
 void* bfArray_emplace(void** self)
@@ -553,7 +348,7 @@ size_t bfArray_findInRange(void** self, size_t bgn, size_t end, const void* key,
     }
   }
 
-  return BIFROST_ARRAY_INVALID_INDEX;
+  return k_bfArrayInvalidIndex;
 }
 
 size_t bfArray_find(void** self, const void* key, bfArrayFindCompare compare)

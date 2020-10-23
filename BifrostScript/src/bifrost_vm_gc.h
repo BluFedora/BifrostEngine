@@ -9,30 +9,6 @@
  *   A simple tracing garbage collector for the Bifrost Scripting Language.
  *   This uses a very basic mark and sweep algorithm.
  *
- *   NOTES:
- *     The memory counted is exclusively what is allocated for objects and the VM
- *     struct itself.
- *     Ignored Allocations:
- *       > Any Array allocation from the Bifrost Array Data Structure.
- *       > Any HashMap allocation from the Bifrost Array Data Structure.
- *       > Any Dynamic String from the Bifrost Array Data Structure.
- *
- *     To fix this we need :
- *        > A unified memory model for both the scripting language
- *          and the data structures. The problem is that architectually the data
- *          structures are drop in libraries while the VM is a monolithic stateful
- *          object leading to different ways of customizing allocations.
- *          If I do force the VM allocator on the data structures then if you
- *          use the Bifrost Scripting Language part of the Library you are forced.
- *          into it's memory model for the data structures.
- *
- *          (Maybe this is What Bifrost Needs??, Just one allocator for all.)
- *            (This once again leads to global state of storing the allocators.)
- *          (But then you a forced into the whole lib, that's the main problem.)
- *
- *        > To reimplement bare bone versions of the data structures just for the
- *          VM but not being allowed to reuse that code would be VERY inconvenient.
- *
  *   References:
  *     [http://journal.stuffwithstuff.com/2013/12/08/babys-first-garbage-collector/]
  *

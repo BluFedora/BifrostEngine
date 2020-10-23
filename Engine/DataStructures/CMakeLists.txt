@@ -12,9 +12,8 @@ project(BF_DataStructures VERSION 0.0.1 DESCRIPTION "" LANGUAGES C CXX)
 
 add_library(
   BifrostDataStructuresC_static STATIC
-  "src/bifrost_array_t.c"
-  "src/bifrost_dynamic_string.c"
-  "src/bifrost_hash_map.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_array_t.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_dynamic_string.c"
 )
 
 add_library(BF_DataStructuresC_static ALIAS BifrostDataStructuresC_static)
@@ -45,7 +44,6 @@ target_link_libraries(
 
   INTERFACE
     BF_Core_static
+    BF_DataStructuresC_static
     BF_Memory_interface
-    
-    BifrostDataStructuresC_static
 )
