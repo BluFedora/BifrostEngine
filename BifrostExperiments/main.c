@@ -62,66 +62,66 @@ static void myJsonEventHandler(bfJsonParserContext* ctx, bfJsonEvent event, void
 
   switch (event)
   {
-    case BIFROST_JSON_EVENT_BEGIN_ARRAY:
+    case BF_JSON_EVENT_BEGIN_ARRAY:
     {
       printf("[\n");
       break;
     }
-    case BIFROST_JSON_EVENT_END_ARRAY:
+    case BF_JSON_EVENT_END_ARRAY:
     {
       printf("]\n");
       break;
     }
-    case BIFROST_JSON_EVENT_BEGIN_OBJECT:
+    case BF_JSON_EVENT_BEGIN_OBJECT:
     {
       printf("{\n");
       break;
     }
-    case BIFROST_JSON_EVENT_END_OBJECT:
+    case BF_JSON_EVENT_END_OBJECT:
     {
       printf("}\n");
       break;
     }
-    case BIFROST_JSON_EVENT_PARSE_ERROR:
+    case BF_JSON_EVENT_PARSE_ERROR:
     {
       printf("Error: %s\n", bfJsonParser_errorMessage(ctx));
       break;
     }
-    case BIFROST_JSON_EVENT_BEGIN_DOCUMENT:
+    case BF_JSON_EVENT_BEGIN_DOCUMENT:
     {
       printf("DOCUMENT BEGIN\n");
 
       break;
     }
-    case BIFROST_JSON_EVENT_KEY:
+    case BF_JSON_EVENT_KEY:
     {
-      const bfStringRange key = bfJsonParser_asString(ctx);
+      const bfJsonString key = bfJsonParser_asString(ctx);
 
-      printf("Key(%.*s)\n", (int)(key.end - key.bgn), key.bgn);
+      printf("Key(%.*s)\n", (int)key.length, key.string);
       break;
     }
-    case BIFROST_JSON_EVENT_VALUE:
+    case BF_JSON_EVENT_VALUE:
     {
       switch (bfJsonParser_valueType(ctx))
       {
-        case BIFROST_JSON_VALUE_STRING:
+        case BF_JSON_VALUE_STRING:
         {
-          const bfStringRange value = bfJsonParser_asString(ctx);
+          const bfJsonString value = bfJsonParser_asString(ctx);
 
-          printf("Value(%.*s)\n", (int)(value.end - value.bgn), value.bgn);
+          printf("Value(%.*s)\n", (int)value.length, value.string);
           break;
         }
-        case BIFROST_JSON_VALUE_NUMBER:
+        case BF_JSON_VALUE_NUMBER:
         {
           printf("Value(%f)\n", bfJsonParser_asNumber(ctx));
           break;
         }
-        case BIFROST_JSON_VALUE_BOOLEAN:
+        case BF_JSON_VALUE_BOOLEAN:
         {
           printf("Value(%s)\n", bfJsonParser_asBoolean(ctx) ? "true" : "false");
           break;
         }
-        case BIFROST_JSON_VALUE_NULL:
+        case BF_JSON_VALUE_NULL:
         {
           printf("Value(null)\n");
           break;
@@ -131,7 +131,7 @@ static void myJsonEventHandler(bfJsonParserContext* ctx, bfJsonEvent event, void
 
       break;
     }
-    case BIFROST_JSON_EVENT_END_DOCUMENT:
+    case BF_JSON_EVENT_END_DOCUMENT:
     {
       printf("DOCUMENT END\n");
       break;
@@ -145,9 +145,9 @@ static void myJsonEventHandler(bfJsonParserContext* ctx, bfJsonEvent event, void
 
 static void printBlock(const bfJsonStringBlock* block, void* ud)
 {
-  bfStringRange string = bfJsonStringBlock_string(block);
+  bfJsonString string = bfJsonStringBlock_string(block);
 
-  printf("  Block(%.*s)\n", (int)(string.end - string.bgn), string.bgn);
+  printf("  Block(%.*s)\n", (int)string.length, string.string);
 }
 
 static void test_JsonParser(void)
@@ -170,13 +170,13 @@ static void test_JsonParser(void)
 
   printf("Json Writer\n");
 
-  BifrostJsonWriter* json_writer = bfJsonWriter_new(&malloc);
+  bfJsonWriter* json_writer = bfJsonWriter_newCRTAlloc();
   {
     bfJsonWriter_beginArray(json_writer);
     {
       bfJsonWriter_beginObject(json_writer);
       {
-        bfJsonWriter_key(json_writer, bfMakeStringRangeC("Test Key"));
+        bfJsonWriter_key(json_writer, (bfJsonString){"Test Key", sizeof("Test Key") - 1});
         bfJsonWriter_valueNumber(json_writer, 75.43);
       }
       bfJsonWriter_endObject(json_writer);
@@ -193,7 +193,7 @@ static void test_JsonParser(void)
 
     bfJsonWriter_forEachBlock(json_writer, &printBlock, NULL);
   }
-  bfJsonWriter_delete(json_writer, &free);
+  bfJsonWriter_deleteCRT(json_writer);
 }
 
 #pragma region Coroutine

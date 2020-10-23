@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-* @file   bifrost_json.h
+* @file   bf_json.h
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
 * @brief
 *   Basic Json parser with an Event (SAX) API.
@@ -13,40 +13,56 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_JSON_H
-#define BIFROST_JSON_H
+#ifndef BF_JSON_H
+#define BF_JSON_H
 
-#include "bf/Core.h" /* size_t, bfBool32, bfStringRange */
+#include <stdbool.h> /* bool, true, false */
+#include <stddef.h>  /* size_t   */
+#include <stdint.h>  /* uint32_t */
 
 #if __cplusplus
 extern "C" {
 #endif
 
-#define BIFROST_JSON_USER_STORAGE_SIZE 64
-#define BIFROST_JSON_STRING_BLOCK_SIZE 256
+/* Customizable Constants */
+
+enum
+{
+  k_bfJsonUserStorageSize = 64,
+  k_bfJsonStringBlockSize = 256,
+};
+
+/* String View */
+
+typedef struct
+{
+  const char* string;
+  size_t      length;
+
+} bfJsonString;
 
 /* Reader API (String -> Object) */
 
-typedef enum bfJsonEvent_t
+typedef enum
 {
-  BIFROST_JSON_EVENT_BEGIN_DOCUMENT,
-  BIFROST_JSON_EVENT_END_DOCUMENT,
-  BIFROST_JSON_EVENT_BEGIN_ARRAY,
-  BIFROST_JSON_EVENT_END_ARRAY,
-  BIFROST_JSON_EVENT_BEGIN_OBJECT,
-  BIFROST_JSON_EVENT_END_OBJECT,
-  BIFROST_JSON_EVENT_KEY,
-  BIFROST_JSON_EVENT_VALUE,
-  BIFROST_JSON_EVENT_PARSE_ERROR,
+  BF_JSON_EVENT_BEGIN_DOCUMENT,
+  BF_JSON_EVENT_END_DOCUMENT,
+  BF_JSON_EVENT_BEGIN_ARRAY,
+  BF_JSON_EVENT_END_ARRAY,
+  BF_JSON_EVENT_BEGIN_OBJECT,
+  BF_JSON_EVENT_END_OBJECT,
+  BF_JSON_EVENT_KEY,
+  BF_JSON_EVENT_VALUE,
+  BF_JSON_EVENT_PARSE_ERROR,
 
 } bfJsonEvent;
 
-typedef enum bfJsonType_t
+typedef enum
 {
-  BIFROST_JSON_VALUE_STRING,
-  BIFROST_JSON_VALUE_NUMBER,
-  BIFROST_JSON_VALUE_BOOLEAN,
-  BIFROST_JSON_VALUE_NULL,
+  BF_JSON_VALUE_STRING,
+  BF_JSON_VALUE_NUMBER,
+  BF_JSON_VALUE_BOOLEAN,
+  BF_JSON_VALUE_NULL,
 
 } bfJsonType;
 
@@ -55,48 +71,50 @@ typedef struct bfJsonParserContext_t bfJsonParserContext;
 
 typedef void (*bfJsonFn)(bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
 
-void          bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callback, void* user_data);
-const char*   bfJsonParser_errorMessage(const bfJsonParserContext* ctx);
-bfJsonType    bfJsonParser_valueType(const bfJsonParserContext* ctx);
-bfBool32      bfJsonParser_valueIs(const bfJsonParserContext* ctx, bfJsonType type);
-bfStringRange bfJsonParser_asString(const bfJsonParserContext* ctx);
-double        bfJsonParser_asNumber(const bfJsonParserContext* ctx);
-bfBool32      bfJsonParser_asBoolean(const bfJsonParserContext* ctx);
-void*         bfJsonParser_userStorage(const bfJsonParserContext* ctx);
-void*         bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
+void         bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callback, void* user_data);
+const char*  bfJsonParser_errorMessage(const bfJsonParserContext* ctx);
+bfJsonType   bfJsonParser_valueType(const bfJsonParserContext* ctx);
+bool         bfJsonParser_valueIs(const bfJsonParserContext* ctx, bfJsonType type);
+bfJsonString bfJsonParser_asString(const bfJsonParserContext* ctx);
+double       bfJsonParser_asNumber(const bfJsonParserContext* ctx);
+bool         bfJsonParser_asBoolean(const bfJsonParserContext* ctx);
+void*        bfJsonParser_userStorage(const bfJsonParserContext* ctx);
+void*        bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
 
 /* Writer API (Object -> String) */
 
 struct bfJsonWriter_t;
-typedef struct bfJsonWriter_t BifrostJsonWriter;
+typedef struct bfJsonWriter_t bfJsonWriter;
 
 struct bfJsonStringBlock_t;
 typedef struct bfJsonStringBlock_t bfJsonStringBlock;
 
-typedef void* (*bfJsonAllocFn)(size_t size); /* TODO: Add void* user_data parameter. */
-typedef void (*bfJsonFreeFn)(void* ptr);     /* TODO: Add void* user_data parameter. */
+typedef void* (*bfJsonAllocFn)(size_t size, void* user_data);
+typedef void (*bfJsonFreeFn)(void* ptr, void* user_data);
 typedef void (*bfJsonWriterForEachFn)(const bfJsonStringBlock* block, void* user_data);
 
-BifrostJsonWriter* bfJsonWriter_new(bfJsonAllocFn alloc_fn);
-size_t             bfJsonWriter_length(const BifrostJsonWriter* self);
-void               bfJsonWriter_beginArray(BifrostJsonWriter* self);
-void               bfJsonWriter_endArray(BifrostJsonWriter* self);
-void               bfJsonWriter_beginObject(BifrostJsonWriter* self);
-void               bfJsonWriter_key(BifrostJsonWriter* self, bfStringRange key);
-void               bfJsonWriter_valueString(BifrostJsonWriter* self, bfStringRange value);
-void               bfJsonWriter_valueNumber(BifrostJsonWriter* self, double value);
-void               bfJsonWriter_valueBoolean(BifrostJsonWriter* self, bfBool32 value);
-void               bfJsonWriter_valueNull(BifrostJsonWriter* self);
-void               bfJsonWriter_next(BifrostJsonWriter* self);
-void               bfJsonWriter_indent(BifrostJsonWriter* self, int num_spaces);
-void               bfJsonWriter_write(BifrostJsonWriter* self, const char* str, size_t length);
-void               bfJsonWriter_endObject(BifrostJsonWriter* self);
-void               bfJsonWriter_forEachBlock(const BifrostJsonWriter* self, bfJsonWriterForEachFn fn, void* user_data);
-void               bfJsonWriter_delete(BifrostJsonWriter* self, bfJsonFreeFn free_fn);
-bfStringRange      bfJsonStringBlock_string(const bfJsonStringBlock* block);
+bfJsonWriter* bfJsonWriter_new(bfJsonAllocFn alloc_fn, void* user_data);
+bfJsonWriter* bfJsonWriter_newCRTAlloc(void);
+size_t        bfJsonWriter_length(const bfJsonWriter* self);
+void          bfJsonWriter_beginArray(bfJsonWriter* self);
+void          bfJsonWriter_endArray(bfJsonWriter* self);
+void          bfJsonWriter_beginObject(bfJsonWriter* self);
+void          bfJsonWriter_key(bfJsonWriter* self, bfJsonString key);
+void          bfJsonWriter_valueString(bfJsonWriter* self, bfJsonString value);
+void          bfJsonWriter_valueNumber(bfJsonWriter* self, double value);
+void          bfJsonWriter_valueBoolean(bfJsonWriter* self, bool value);
+void          bfJsonWriter_valueNull(bfJsonWriter* self);
+void          bfJsonWriter_next(bfJsonWriter* self);
+void          bfJsonWriter_indent(bfJsonWriter* self, int num_spaces);
+void          bfJsonWriter_write(bfJsonWriter* self, const char* str, size_t length);
+void          bfJsonWriter_endObject(bfJsonWriter* self);
+void          bfJsonWriter_forEachBlock(const bfJsonWriter* self, bfJsonWriterForEachFn fn, void* user_data);
+void          bfJsonWriter_delete(bfJsonWriter* self, bfJsonFreeFn free_fn);
+void          bfJsonWriter_deleteCRT(bfJsonWriter* self);
+bfJsonString  bfJsonStringBlock_string(const bfJsonStringBlock* block);
 
 #if __cplusplus
 }
 #endif
 
-#endif /* BIFROST_JSON_H */
+#endif /* BF_JSON_H */
