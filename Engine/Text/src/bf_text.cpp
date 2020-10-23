@@ -61,7 +61,7 @@ namespace bf
   static constexpr std::uint32_t   k_NumCharsPerGlyphSet = 0xFF + 1;
   static constexpr ImageSizeCoords k_InitialImageSize    = 512;
   static constexpr ImageSizeCoords k_ImageGrowAmount     = 512;
-  static constexpr float           k_PtToPixels          = -1.3281472327365f;  //!< Negative since that is how em is signified in this lib
+  static constexpr float           k_PtToPixels          = -1.3281472327365f;  //!< Negative since that is how em is signified in this library.
   static constexpr float           k_ScaleFactorToPixels = 0.75292857248934f;  //!< This is the conversion from pixels -> pt.
 
   // Helper Structs
@@ -400,10 +400,13 @@ namespace bf
 
   struct Typeface
   {
-    IMemoryManager* memory;          //
-    unsigned char*  font_data;       //
-    long            font_data_size;  //
-    stbtt_fontinfo  font_info;       //
+    IMemoryManager* memory;          //!<
+    unsigned char*  font_data;       //!<
+    long            font_data_size;  //!<
+    stbtt_fontinfo  font_info;       //!<
+    int             ascent;          //!<
+    int             descent;         //!<
+    int             line_gap;        //!<
   };
 
   struct Font final
@@ -425,6 +428,7 @@ namespace bf
     bool            atlas_resized;        //
 
     explicit Font(IMemoryManager& memory) :
+      type_face{nullptr},
       memory(&memory),
       font_data(nullptr),
       font_data_size(0),
@@ -931,7 +935,7 @@ namespace bf
 
         // Sort from greatest to least height
 
-        std::sort(sorted_glyphs, sorted_glyphs + std::size(sorted_glyphs), [](GlyphInfo* a, GlyphInfo* b) {
+        std::sort(std::begin(sorted_glyphs), std::end(sorted_glyphs), [](GlyphInfo* a, GlyphInfo* b) {
           return a->bmp_box[1].y > b->bmp_box[1].y;
         });
 

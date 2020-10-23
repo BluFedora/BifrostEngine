@@ -18,5 +18,4 @@ target_link_libraries(
     BifrostGraphics_static
     BF_Platform_static
     BifrostRuntime
-    BF_Text_static
 )

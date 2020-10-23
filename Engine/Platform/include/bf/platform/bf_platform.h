@@ -118,6 +118,8 @@ struct bfWindow_t;
 typedef void (*bfWindowEventFn)(struct bfWindow_t* window, bfEvent* event);
 typedef void (*bfWindowFrameFn)(struct bfWindow_t* window);
 
+// TODO(SR): Rename and replace with enum.
+
 #define BIFROST_WINDOW_FLAG_IS_RESIZABLE (1 << 0)
 #define BIFROST_WINDOW_FLAG_IS_VISIBLE (1 << 1)
 #define BIFROST_WINDOW_FLAG_IS_DECORATED (1 << 2)
@@ -135,7 +137,7 @@ typedef struct bfWindow_t
   bfWindowEventFn event_fn;
   bfWindowFrameFn frame_fn;
 
-} bfWindow; /*!< Base class for the window, each backedn can extend it in various ways. */
+} bfWindow; /*!< Base class for the window, each backend can extend it in various ways. */
 
 /*!
  * @brief
@@ -173,6 +175,7 @@ BIFROST_PLATFORM_API void*            bfPlatformAlloc(size_t size);
 BIFROST_PLATFORM_API void*            bfPlatformRealloc(void* ptr, size_t old_size, size_t new_size);
 BIFROST_PLATFORM_API void             bfPlatformFree(void* ptr, size_t old_size);
 BIFROST_PLATFORM_API void             bfPlatformDoMainLoop(bfWindow* main_window);
+
 #if __cplusplus
 }
 #endif

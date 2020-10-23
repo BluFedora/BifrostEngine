@@ -20,9 +20,17 @@ target_include_directories(
 target_link_libraries(
   BifrostRuntime
   INTERFACE
-    BifrostMath_shared
+    BF_AssetIO_static
+    BF_Core_static
+    # BF_Platform_shared
+    BF_Text_static
+    BF_Memory_interface
+
+    BifrostDataStructuresCxx
     BifrostScript_shared
+    BifrostMath_shared
     bfAnimation2D_shared
+    # BifrostGraphics_shared
 )
 
 if (WIN32)

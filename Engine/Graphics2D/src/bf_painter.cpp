@@ -861,9 +861,9 @@ namespace bf
 
   void Gfx2DPainter::pushText(const Vector2f& pos, const char* utf8_text, PainterFont* font)
   {
-    const bfColor4u color           = bfColor4u_fromUint32(BIFROST_COLOR_BLACK);  // bfColor4u_fromUint32(BIFROST_COLOR_SALMON);
+    const bfColor4u color           = bfColor4u_fromUint32(BIFROST_COLOR_BLACK);
     float           x               = pos.x;
-    float           y               = pos.y;  // TODO(SR): Handle New line
+    float           y               = pos.y;
     int             num_characters  = 0;
     UIIndexType     start_vertex_id = 0;
 
@@ -893,7 +893,7 @@ namespace bf
       const auto [vertex_id, verts] = requestVertices(4);
 
       // First time through the loop
-      if (!num_characters)
+      if (num_characters == 0)
       {
         start_vertex_id = vertex_id;
       }
@@ -940,8 +940,7 @@ namespace bf
       if (current_atlas.needs_resize)
       {
         bfGfxDevice_release(render_data.device, current_atlas.handle);
-        current_atlas.handle = nullptr;
-
+        current_atlas.handle       = nullptr;
         current_atlas.needs_resize = false;
       }
 
@@ -1016,8 +1015,8 @@ namespace bf
     {
       auto&              ubo_buffer         = render_data.uniform;
       const bfBufferSize ubo_offset         = ubo_buffer.offset(frame_info);
-      const bfBufferSize ubo_size           = sizeof(Gfx2DUnifromData);
-      Gfx2DUnifromData*  uniform_buffer_ptr = static_cast<Gfx2DUnifromData*>(bfBuffer_map(ubo_buffer.handle(), ubo_offset, ubo_size));
+      const bfBufferSize ubo_size           = sizeof(Gfx2DUniformData);
+      Gfx2DUniformData*  uniform_buffer_ptr = static_cast<Gfx2DUniformData*>(bfBuffer_map(ubo_buffer.handle(), ubo_offset, ubo_size));
 
       static constexpr decltype(&Mat4x4_orthoVk) orthos_fns[] = {&Mat4x4_orthoVk, &Mat4x4_ortho};
 
@@ -1051,7 +1050,7 @@ namespace bf
 
       {
         bfBufferSize ubo_offset = render_data.uniform.offset(frame_info);
-        bfBufferSize ubo_sizes  = sizeof(Gfx2DUnifromData);
+        bfBufferSize ubo_sizes  = sizeof(Gfx2DUniformData);
 
         bfDescriptorSetInfo desc_set = bfDescriptorSetInfo_make();
         bfDescriptorSetInfo_addUniform(&desc_set, 0, 0, &ubo_offset, &ubo_sizes, &render_data.uniform.handle(), 1);
@@ -1072,7 +1071,7 @@ namespace bf
     for (auto& draw_cmd : draw_commands)
     {
       bfBufferSize ubo_offset = render_data.uniform.offset(frame_info);
-      bfBufferSize ubo_sizes  = sizeof(Gfx2DUnifromData);
+      bfBufferSize ubo_sizes  = sizeof(Gfx2DUniformData);
 
       bfDescriptorSetInfo desc_set = bfDescriptorSetInfo_make();
       bfDescriptorSetInfo_addTexture(&desc_set, 0, 0, &draw_cmd.texture, 1);

@@ -3,33 +3,37 @@
 
 //
 // Adds a check to see if all vertices requested in Gfx2DPainter are written to.
-// *warning: There is a good amount of overhead both CPU and memory wise when this is checked on*
+// *warning: There is a good amount of overhead both CPU and Memory when this is checked on*
 //
 #define bfGfx2DSafeVertexIndexing 0
 
-#include "bf/LinearAllocator.hpp"                          // LinearAllocator
-#include "bf/MemoryUtils.h"                                // bfMegabytes
+#include "bf/LinearAllocator.hpp"  // LinearAllocator
+#include "bf/MemoryUtils.h"        // bfMegabytes
+
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics
-
-#if bfGfx2DSafeVertexIndexing
-#include "bifrost/memory/bifrost_proxy_allocator.hpp"
-#include "bifrost/memory/bifrost_stl_allocator.hpp"
-
-#include <vector>
-#endif
 
 namespace bf
 {
+  //
+  // Forward Declarations
+  //
+
   struct Font;
 
-  struct UIVertex2D final
+  using UIIndexType = std::uint32_t;
+
+  //
+  // Vertex Definitions
+  //
+
+  struct UIVertex2D
   {
     Vector2f  pos;
     Vector2f  uv;
     bfColor4u color;
   };
 
-  struct DropShadowVertex final
+  struct DropShadowVertex
   {
     Vector2f  pos;
     float     shadow_sigma;
@@ -38,9 +42,20 @@ namespace bf
     bfColor4u color;
   };
 
-  using UIIndexType = std::uint32_t;
+  //
+  // Unform Data
+  //
 
-  struct Gfx2DPerFrameRenderData final
+  struct Gfx2DUniformData
+  {
+    Mat4x4 ortho_matrix;
+  };
+
+  //
+  // Low Level Graphics Definitions
+  //
+
+  struct Gfx2DPerFrameRenderData
   {
     bfBufferHandle vertex_buffer        = nullptr;
     bfBufferHandle index_buffer         = nullptr;
@@ -52,12 +67,7 @@ namespace bf
     void reserveShadow(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size);
   };
 
-  struct Gfx2DUnifromData final
-  {
-    Mat4x4 ortho_matrix;
-  };
-
-  struct Gfx2DRenderData final : private bfNonCopyMoveable<Gfx2DRenderData>
+  struct Gfx2DRenderData : private bfNonCopyMoveable<Gfx2DRenderData>
   {
     IMemoryManager&               memory;
     bfGfxContextHandle            ctx;
@@ -72,7 +82,7 @@ namespace bf
     bfTextureHandle               white_texture;
     int                           num_frame_datas;
     Gfx2DPerFrameRenderData*      frame_datas;
-    MultiBuffer<Gfx2DUnifromData> uniform;
+    MultiBuffer<Gfx2DUniformData> uniform;
 
     explicit Gfx2DRenderData(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
 
@@ -93,6 +103,10 @@ namespace bf
     }
   };
 
+  //
+  // High Level Graphics Definitions
+  //
+
   enum class PolylineJoinStyle : std::uint8_t
   {
     MITER,
@@ -108,7 +122,7 @@ namespace bf
     CONNECTED,
   };
 
-  struct Gfx2DDrawCommand final
+  struct Gfx2DDrawCommand
   {
     bfTextureHandle texture;
     UIIndexType     first_index;
@@ -122,14 +136,14 @@ namespace bf
     }
   };
 
-  struct DynamicAtlas final
+  struct DynamicAtlas
   {
     bfTextureHandle handle;
     bool            needs_upload;
     bool            needs_resize;
   };
 
-  struct PainterFont final : bfNonCopyMoveable<PainterFont>
+  struct PainterFont : bfNonCopyMoveable<PainterFont>
   {
     Font*        font;
     DynamicAtlas gpu_atlas[k_bfGfxMaxFramesDelay];
@@ -138,21 +152,21 @@ namespace bf
     ~PainterFont();
   };
 
-  struct Gfx2DPainter final : private bfNonCopyMoveable<Gfx2DPainter>
+  struct Gfx2DPainter : private bfNonCopyMoveable<Gfx2DPainter>
   {
     static const UIIndexType k_TempMemorySize = bfMegabytes(2);
 
-    // private:
+   private:
     Gfx2DRenderData         render_data;                           //!< GPU Data
     Array<UIVertex2D>       vertices;                              //!< CPU Vertices
     Array<UIIndexType>      indices;                               //!< CPU Index Buffer
     Array<DropShadowVertex> shadow_vertices;                       //!< CPU Vertices
     Array<UIIndexType>      shadow_indices;                        //!< CPU Index Buffer
-    char                    tmp_memory_backing[k_TempMemorySize];  //!< Memory pool for Gfx2DPainter::tmp_memory_backing
+    char                    tmp_memory_backing[k_TempMemorySize];  //!< Memory pool for `Gfx2DPainter::tmp_memory`
     LinearAllocator         tmp_memory;                            //!< The allocator interface
     Array<Gfx2DDrawCommand> draw_commands;                         //!< TODO(SR): A Pool Allocator would be better but whatevs
 
-    // public:
+   public:
     explicit Gfx2DPainter(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
 
     void reset();
@@ -228,13 +242,18 @@ namespace bf
           assert(used_vertices[i] && "There was an unused vertex at slot i");
         }
       }
+#else
+      ~SafeVertexIndexer() noexcept = default;
 #endif
     };
 
-    std::pair<UIIndexType, SafeVertexIndexer<UIVertex2D>>       requestVertices(UIIndexType num_verts);
-    void                                                        pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2);
-    std::pair<UIIndexType, SafeVertexIndexer<DropShadowVertex>> requestVertices2(UIIndexType num_verts);
-    void                                                        pushTriIndex2(UIIndexType index0, UIIndexType index1, UIIndexType index2);
+    template<typename VertexType>
+    using RequestVerticesResult = std::pair<UIIndexType, SafeVertexIndexer<VertexType>>;
+
+    RequestVerticesResult<UIVertex2D>       requestVertices(UIIndexType num_verts);
+    void                                    pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2);
+    RequestVerticesResult<DropShadowVertex> requestVertices2(UIIndexType num_verts);
+    void                                    pushTriIndex2(UIIndexType index0, UIIndexType index1, UIIndexType index2);
   };
 }  // namespace bf
 
