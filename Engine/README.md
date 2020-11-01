@@ -21,7 +21,7 @@ This layer consists of libraries which only rely on code within it's own source 
 
 - Anim2D          (Networking, Data Structures)
 - Data Structures (Core, [Memory][Memory], some ds are standalone)
-- Job             (internally [Memory][Memory])
+- [Job][Job]      (internally [Memory][Memory])
 - Script          (DataStructures)
 - Text            ([Memory][Memory])
 
@@ -52,6 +52,7 @@ This layer consists of libraries which only rely on code within it's own source 
 
 <!-- Link Definitions -->
 
-[Memory]: https://github.com/BluFedora/BF-Memory (Link to the BF Memory Library Documentation)
+[Memory]: https://github.com/BluFedora/BF-Memory     (Link to the BF Memory Library Documentation)
+[Job]:    https://github.com/BluFedora/BF-Job-System (Link to the BF Job Library Documentation)
 
 <!-- Link Definitions -->
