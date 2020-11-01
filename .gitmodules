@@ -1,3 +1,6 @@
 [submodule "Engine/Memory"]
 	path = Engine/Memory
 	url = https://github.com/BluFedora/BF-Memory.git
+[submodule "Engine/Job"]
+	path = Engine/Job
+	url = https://github.com/BluFedora/BF-Job-System.git
