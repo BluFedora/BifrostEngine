@@ -11,6 +11,8 @@ cmake_minimum_required(VERSION 3.8)
 
 project(BifrostEngine VERSION 1.0)
 
+set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "W3WPJFAACM")
+
   # NOTE(Shareef): Bifrost Engine Version
 set(BIFROST_ENGINE_VERSION_MAJOR 1)
 set(BIFROST_ENGINE_VERSION_MINOR 3)
@@ -328,4 +330,4 @@ add_subdirectory(BifrostMemory)
 add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
 
-add_subdirectory(BuildTimeAnalyzerGUI)
+# add_subdirectory(BuildTimeAnalyzerGUI)
