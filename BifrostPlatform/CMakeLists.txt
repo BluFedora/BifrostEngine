@@ -8,6 +8,8 @@
 
 cmake_minimum_required(VERSION 3.8)
 
+set(CMAKE_OSX_SYSROOT iphoneos)
+
 project(BifrostPlatform VERSION 0.0.2 DESCRIPTION "The platform abstraction layer sub project.")
 
 option(BIFROST_PLATFORM_GLFW       "This will use GLFW for windowing and system functions." ON)
@@ -55,7 +57,13 @@ if (WIN32)
      set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/win32)
   endif()
 elseif(APPLE)
-  set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/macOS)
+
+  if (DEFINED IOS_PLATFORM)
+    set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/iOS)
+  else()
+    set(BIFROST_PLATFORM_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/macOS)
+  endif()
+
 endif()
 
 set(BIFROST_PLATFORM_SOURCE_FILES "src/bifrost_platform.c")
@@ -86,6 +94,23 @@ elseif(BIFROST_PLATFORM_SDL)
     ${BIFROST_PLATFORM_SOURCE_FILES}
     "src/bifrost_platform_sdl.c"
   )
+
+  if(NOT EMSCRIPTEN)
+    if (WIN32)
+      set(BIFROST_PLATFORM_LIB_FILES
+        ${BIFROST_PLATFORM_LIB_FILES}
+        "${BIFROST_PLATFORM_LIB_DIR}/SDL2.lib"
+      )
+    elseif(APPLE)
+      set(CMAKE_SHARED_LINKER_FLAGS "-F${BIFROST_PLATFORM_LIB_DIR} ${CMAKE_SHARED_LINKER_FLAGS}")
+
+      set(BIFROST_PLATFORM_LIB_FILES
+        ${BIFROST_PLATFORM_LIB_FILES}
+        "-framework SDL2"
+      )
+    endif()
+  endif()
+
 elseif(BIFROST_PLATFORM_QT)
   set(BIFROST_PLATFORM_SOURCE_FILES
     ${BIFROST_PLATFORM_SOURCE_FILES}
@@ -99,6 +124,8 @@ add_library(
   ${BIFROST_PLATFORM_SOURCE_FILES}
 )
 
+install (TARGETS BifrostPlatform_static DESTINATION lib/bifrost)
+
 target_include_directories(
   BifrostPlatform_static
    INTERFACE ${PROJECT_SOURCE_DIR}/include
@@ -110,8 +137,8 @@ if(BIFROST_OPT_GRAPHICS_VULKAN)
 
   if(${Vulkan_FOUND})
     target_include_directories(
-      BifrostPlatform_static 
-      PRIVATE 
+      BifrostPlatform_static
+      PRIVATE
         "${Vulkan_INCLUDE_DIR}"
      )
   endif()
@@ -133,7 +160,7 @@ endif()
 
 target_link_libraries(
   BifrostPlatform_static
-  PUBLIC 
+  PUBLIC
     "${BIFROST_PLATFORM_LIB_FILES}"
 )
 
@@ -151,6 +178,8 @@ if(NOT EMSCRIPTEN)
       ${BIFROST_PLATFORM_SOURCE_FILES}
   )
 
+  install (TARGETS BifrostPlatform_shared DESTINATION lib/bifrost)
+
   target_include_directories(
       BifrostPlatform_shared
       INTERFACE ${PROJECT_SOURCE_DIR}/include
@@ -159,7 +188,7 @@ if(NOT EMSCRIPTEN)
 
   target_link_libraries(
       BifrostPlatform_shared
-      PUBLIC 
+      PUBLIC
         "${BIFROST_PLATFORM_LIB_FILES}"
   )
 
@@ -168,8 +197,8 @@ if(NOT EMSCRIPTEN)
 if(BIFROST_OPT_GRAPHICS_VULKAN)
   if(${Vulkan_FOUND})
     target_include_directories(
-      BifrostPlatform_shared 
-      PRIVATE 
+      BifrostPlatform_shared
+      PRIVATE
         "${Vulkan_INCLUDE_DIR}"
      )
   endif()
