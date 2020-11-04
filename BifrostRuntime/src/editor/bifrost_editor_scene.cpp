@@ -1,6 +1,6 @@
 #include "bifrost/editor/bifrost_editor_scene.hpp"
 
-#include "bf/StlAllocator.hpp" // StlAllocator
+#include "bf/StlAllocator.hpp"  // StlAllocator
 
 #include <ImGuizmo/ImGuizmo.h>
 
@@ -107,6 +107,15 @@ namespace bf::editor
         engine.resizeCamera(m_Camera, std::max(int(content_area.x), 1), std::max(int(content_area.y), 1));
       }
 
+#if 1
+      window_draw->AddImage(
+       color_buffer,
+       position_min,
+       position_max,
+       ImVec2(0.0f, 0.0f),
+       ImVec2(1.0f, 1.0f),
+       0xFFFFFFFF);
+#else
       window_draw->AddImageRounded(
        color_buffer,
        position_min,
@@ -116,6 +125,7 @@ namespace bf::editor
        0xFFFFFFFF,
        Rounding,
        ImDrawCornerFlags_All);
+#endif
     }
     else
     {
@@ -253,10 +263,10 @@ namespace bf::editor
 
           if (m_Camera)
           {
-             Camera_mouse(
-              &m_Camera->cpu_camera,
-              (newx - m_OldMousePos.x) * m_MouseLookSpeed,
-              (newy - m_OldMousePos.y) * -m_MouseLookSpeed);
+            Camera_mouse(
+             &m_Camera->cpu_camera,
+             (newx - m_OldMousePos.x) * m_MouseLookSpeed,
+             (newy - m_OldMousePos.y) * -m_MouseLookSpeed);
           }
 
           m_OldMousePos.x = newx;

@@ -1,10 +1,9 @@
-# Asset System
+# Asset System Outline
 
 ## Asset Types
 
 ```cpp
-// Built-in Asset Types
-enum AssetType
+enum AssetType // Built-in Asset Types
 {
   Script,
   Texture,
@@ -101,7 +100,7 @@ struct ModelAsset : public BaseAsset
 struct TypefaceAsset : public BaseAsset
 {
   Typeface*               typeface;
-  HashTable<float, Font*> font_cache; 
+  HashTable<float, Font*> font_cache;
 };
 
 struct SoundFxAsset : public BaseAsset

@@ -9,6 +9,10 @@
 #include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
 #include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
 
+using namespace std::chrono_literals;
+
+static constexpr float k_SecToMs = 1000.0f;
+
 namespace bf
 {
   void Input::onEvent(Event& evt)
@@ -72,6 +76,9 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* 
   m_CollisionSystem{nullptr},
   m_ComponentRenderer{nullptr},
   m_BehaviorSystem{nullptr},
+  m_TimeStep{},
+  m_TimeStepLag{0ns},
+  m_CurrentTime{},
   m_State{EngineState::RUNTIME_PLAYING}
 {
 #if USE_CRT_HEAP
@@ -173,7 +180,7 @@ EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
   return EntityRef{entity};
 }
 
-void Engine::init(const bfEngineCreateParams& params, bfWindow* main_window)
+void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
 {
   IBifrostDbgLogger logger_config{
    nullptr,
@@ -242,17 +249,9 @@ void Engine::init(const bfEngineCreateParams& params, bfWindow* main_window)
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
 
   bfLogPop();
-}
 
-bool Engine::beginFrame()
-{
-  tempMemory().clear();
-  deleteCameras();
-  resizeCameras();
-  m_StateMachine.purgeStates();
-  renderer2D().reset();
-
-  return m_Renderer.frameBegin();
+  m_TimeStep    = std::chrono::milliseconds(int((1.0f / float(params.fixed_frame_rate)) * k_SecToMs));
+  m_CurrentTime = UpdateLoopClock::now();
 }
 
 void Engine::onEvent(bfWindow* window, Event& evt)
@@ -265,6 +264,91 @@ void Engine::onEvent(bfWindow* window, Event& evt)
   {
     it->onEvent(*this, evt);
   }
+}
+
+void Engine::tick()
+{
+  static constexpr float k_NanoSecToSec = 1.0f / 1000000000.0f;
+
+  const UpdateLoopTimePoint      new_time   = UpdateLoopClock::now();
+  const std::chrono::nanoseconds delta_time = new_time - m_CurrentTime;
+
+  m_CurrentTime = new_time;
+  m_TimeStepLag += std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time);
+
+  if (beginFrame())
+  {
+    while (m_TimeStepLag >= m_TimeStep)
+    {
+      fixedUpdate(m_TimeStep.count() * k_NanoSecToSec);
+      m_TimeStepLag -= m_TimeStep;
+    }
+
+    const float dt_seconds   = std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time).count() * k_NanoSecToSec;
+    const float render_alpha = (float)m_TimeStepLag.count() / m_TimeStep.count();
+
+    update(dt_seconds);
+    draw(render_alpha);
+    endFrame();
+  }
+}
+
+void Engine::deinit()
+{
+  bfGfxDevice_flush(m_Renderer.device());
+
+  // Released any resources from the game states.
+  m_StateMachine.removeAll();
+
+  // This must happen before the Entity GC so that they are all ready to be collected.
+
+  for (auto& scene : m_SceneStack)
+  {
+    scene->removeAllEntities();
+  }
+
+  // Entity Garbage Must be collected before 'm_SceneStack' is cleared.
+  gc::collect(m_MainMemory);
+
+  // Must be cleared before the Asset System destruction since it contains handles to scenes.
+  m_SceneStack.clear();
+
+  m_Assets.clearDirtyList();
+  m_Assets.setRootPath(nullptr);
+
+  assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
+  deleteCameras();
+
+  // Must happen before 'm_Renderer.deinit' since ECS systems use renderer resources.
+  for (auto& system : m_Systems)
+  {
+    system->onDeinit(*this);
+    m_MainMemory.deallocateT(system);
+  }
+  m_Systems.clear();
+
+  m_MainMemory.deallocateT(m_Renderer2D);
+  m_DebugRenderer.deinit();
+  m_Renderer.deinit();
+
+  gc::quit();
+
+  // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
+  m_Scripting.destroy();
+
+  // Shutdown last since there could be errors logged on shutdown if any failures happen.
+  bfLogger_deinit();
+}
+
+bool Engine::beginFrame()
+{
+  tempMemory().clear();
+  deleteCameras();
+  resizeCameras();
+  m_StateMachine.purgeStates();
+  renderer2D().reset();
+
+  return m_Renderer.frameBegin();
 }
 
 void Engine::fixedUpdate(float delta_time)
@@ -317,7 +401,7 @@ void Engine::update(float delta_time)
   }
 }
 
-void Engine::drawBegin(float render_alpha)
+void Engine::draw(float render_alpha)
 {
   const auto cmd_list = m_Renderer.mainCommandList();
   auto       scene    = currentScene();
@@ -353,12 +437,10 @@ void Engine::drawBegin(float render_alpha)
   });
 
   m_Renderer.beginScreenPass(m_Renderer.mainCommandList());
-}
 
-void Engine::drawEnd()
-{
+  // Custom Fullscreen Drawing would go here...
+
   const bfTextureHandle main_surface = renderer().surface();
-  auto* const           cmd_list     = renderer().mainCommandList();
   auto&                 painter      = renderer2D();
 
   for (auto& state : m_StateMachine)
@@ -378,53 +460,6 @@ void Engine::endFrame()
   m_Renderer.frameEnd();
 
   gc::collect(m_MainMemory);
-}
-
-void Engine::deinit()
-{
-  bfGfxDevice_flush(m_Renderer.device());
-
-  // Released any resources from the game states.
-  m_StateMachine.removeAll();
-
-  // This must happen before the Entity GC so that they are all ready to be collected.
-
-  for (auto& scene : m_SceneStack)
-  {
-    scene->removeAllEntities();
-  }
-
-  // Entity Garbage Must be collected before 'm_SceneStack' is cleared.
-  gc::collect(m_MainMemory);
-
-  // Must be cleared before the Asset System destruction since it contains handles to scenes.
-  m_SceneStack.clear();
-
-  m_Assets.clearDirtyList();
-  m_Assets.setRootPath(nullptr);
-
-  assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
-  deleteCameras();
-
-  // Must happen before 'm_Renderer.deinit' since ECS systems use renderer resources.
-  for (auto& system : m_Systems)
-  {
-    system->onDeinit(*this);
-    m_MainMemory.deallocateT(system);
-  }
-  m_Systems.clear();
-
-  m_MainMemory.deallocateT(m_Renderer2D);
-  m_DebugRenderer.deinit();
-  m_Renderer.deinit();
-
-  gc::quit();
-
-  // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
-  m_Scripting.destroy();
-
-  // Shutdown last since there could be errors logged on shutdown if any failures happen.
-  bfLogger_deinit();
 }
 
 void Engine::resizeCameras()

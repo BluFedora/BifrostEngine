@@ -2,14 +2,13 @@
 // main.cpp
 //
 
-#include "bf/MemoryUtils.h"                      /* bfMegabytes */
-#include "bf/Platform.h"                         /* Platform API */
-#include <bifrost/core/bifrost_engine.hpp>       /* Runtime API  */
+#include "bf/MemoryUtils.h"                /* bfMegabytes */
+#include "bf/Platform.h"                   /* Platform API */
+#include <bifrost/core/bifrost_engine.hpp> /* Runtime API  */
 
 #include "bf/Font.hpp"          // Font
 #include "bf/Gfx2DPainter.hpp"  // Gfx2DPainter
 
-#include <chrono> /* chrono     */
 #include <cstdio> /* printf     */
 #include <memory> /* unique_ptr */
 
@@ -140,13 +139,9 @@ class Game : public bf::IGameStateLayer
 
 int main(int argc, char* argv[])
 {
-  using namespace std::chrono_literals;
   using namespace bf;
 
-  static constexpr float                    k_NanoSecToSec = 1.0f / 1000000000.0f;
-  static constexpr std::chrono::nanoseconds k_TimeStep     = 16ms;
-  static constexpr float                    k_TimeStepSec  = k_TimeStep.count() * k_NanoSecToSec;
-  static const char*                        k_AppName      = "Dungeon Swiper";
+  static const char* k_AppName = "Dungeon Swiper";
 
   bfPlatformAllocator allocator       = nullptr;
   void*               global_userdata = nullptr;
@@ -174,54 +169,14 @@ int main(int argc, char* argv[])
   main_window->user_data     = engine.get();
   main_window->renderer_data = nullptr;
 
-  const bfEngineCreateParams engine_init_params = {k_AppName, bfGfxMakeVersion(1, 0, 0)};
+  const EngineCreateParams engine_init_params = {k_AppName, bfGfxMakeVersion(1, 0, 0), 60};
 
   engine->init(engine_init_params, main_window);
 
   engine->stateMachine().push<Game>(main_window);
 
-  main_window->event_fn = [](bfWindow* window, bfEvent* evt) {
-    Engine* const engine = static_cast<Engine*>(window->user_data);
-
-    engine->onEvent(window, *evt);
-  };
-
-  using clock = std::chrono::high_resolution_clock;
-
-  static std::chrono::nanoseconds s_TimeStepLag = 0ns;
-  static auto                     s_CurrentTime = clock::now();
-
-  main_window->frame_fn = [](bfWindow* window) {
-    Engine* const engine = static_cast<Engine*>(window->user_data);
-
-    auto delta_time = clock::now() - s_CurrentTime;
-
-    s_CurrentTime = clock::now();
-    s_TimeStepLag += std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time);
-
-    if (engine->beginFrame())
-    {
-      while (s_TimeStepLag >= k_TimeStep)
-      {
-        engine->fixedUpdate(k_TimeStepSec);
-        s_TimeStepLag -= k_TimeStep;
-      }
-
-      const float dt_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time).count() * k_NanoSecToSec;
-
-      engine->update(dt_seconds);
-
-      const float render_alpha = (float)s_TimeStepLag.count() / k_TimeStep.count();
-
-      engine->drawBegin(render_alpha);
-
-      // Custom Drawing Here
-
-      engine->drawEnd();
-
-      engine->endFrame();
-    }
-  };
+  main_window->event_fn = [](bfWindow* window, bfEvent* evt) { static_cast<Engine*>(window->user_data)->onEvent(window, *evt); };
+  main_window->frame_fn = [](bfWindow* window) { static_cast<Engine*>(window->user_data)->tick(); };
 
   bfPlatformDoMainLoop(main_window);
 

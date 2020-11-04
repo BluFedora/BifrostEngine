@@ -75,6 +75,7 @@ static void dispatchEvent(bfWindow* window, bfEvent event)
 {
   if (window->event_fn)
   {
+    event.receiver = window;
     window->event_fn(window, &event);
   }
 }

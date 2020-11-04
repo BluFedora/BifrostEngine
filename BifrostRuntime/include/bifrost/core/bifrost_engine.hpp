@@ -28,7 +28,10 @@ using MainHeap = bf::CRTAllocator;
 using MainHeap = bf::FreeListAllocator;
 #endif
 
-using bfEngineCreateParams = bfGfxContextCreateParams;
+struct EngineCreateParams : public bfGfxContextCreateParams
+{
+  int fixed_frame_rate = 60;
+};
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -166,20 +169,24 @@ namespace bf
   };
 }  // namespace bf
 
+#include <chrono> /* high_resolution_clock */
+
 using namespace bf;
 
 class Engine : private bfNonCopyMoveable<Engine>
 {
  private:
-  using CommandLineArgs    = std::pair<int, char**>;
-  using CameraRenderMemory = PoolAllocator<CameraRender, k_MaxNumCamera>;
+  using CommandLineArgs     = std::pair<int, char**>;
+  using CameraRenderMemory  = PoolAllocator<CameraRender, k_MaxNumCamera>;
+  using UpdateLoopClock     = std::chrono::high_resolution_clock;
+  using UpdateLoopTimePoint = typename UpdateLoopClock::time_point;
 
  private:
-  // Config
+  // Configuration
 
   CommandLineArgs m_CmdlineArgs;
 
-  // Memory
+  // Memory Allocators
 
   MainHeap        m_MainMemory;
   LinearAllocator m_TempMemory;
@@ -211,12 +218,18 @@ class Engine : private bfNonCopyMoveable<Engine>
   ComponentRenderer* m_ComponentRenderer;
   BehaviorSystem*    m_BehaviorSystem;
 
+  // Update Loop
+
+  std::chrono::nanoseconds m_TimeStep;
+  std::chrono::nanoseconds m_TimeStepLag;
+  UpdateLoopTimePoint      m_CurrentTime;
+
   // Misc
 
   EngineState m_State;
 
  public:
-  explicit Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]);
+  explicit Engine(char* main_memory, std::size_t main_memory_size, int argc = 0, char* argv[] = nullptr);
 
   // Subsystem Accessors
 
@@ -273,15 +286,17 @@ class Engine : private bfNonCopyMoveable<Engine>
     return sys;
   }
 
-  void               init(const bfEngineCreateParams& params, bfWindow* main_window);
+  void init(const EngineCreateParams& params, bfWindow* main_window);
+  void onEvent(bfWindow* window, Event& evt);
+  void tick();
+  void deinit();
+
+ private:
   [[nodiscard]] bool beginFrame();
-  void               onEvent(bfWindow* window, Event& evt);
   void               fixedUpdate(float delta_time);
   void               update(float delta_time);
-  void               drawBegin(float render_alpha);
-  void               drawEnd();
+  void               draw(float render_alpha);
   void               endFrame();
-  void               deinit();
 
  private:
   void resizeCameras();

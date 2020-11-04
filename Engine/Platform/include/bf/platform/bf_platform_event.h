@@ -206,10 +206,13 @@ typedef struct bfWindowEvent_t
   };
 #endif
 
+struct bfWindow_t;
+
 struct bfEvent_t
 {
-  bfEventType type;
-  uint8_t     flags;
+  bfEventType        type;
+  uint8_t            flags;
+  struct bfWindow_t* receiver;
 
   union
   {

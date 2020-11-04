@@ -336,17 +336,19 @@ namespace bf::editor
     bool               m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
     Selection          m_Selection;
     UndoRedoStack      m_MainUndoStack;
+    bfWindow*          m_MainWindow;
 
    protected:
     void onCreate(Engine& engine) override;
     void onLoad(Engine& engine) override;
     void onEvent(Engine& engine, bfEvent& event) override;
     void onUpdate(Engine& engine, float delta_time) override;
+    void onDraw2D(Engine& engine, Gfx2DPainter& painter) override;
     void onUnload(Engine& engine) override;
     void onDestroy(Engine& engine) override;
 
    public:
-    EditorOverlay();
+    EditorOverlay(bfWindow* main_window);
 
     const char*       name() override { return "Bifrost Editor"; }
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }

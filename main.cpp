@@ -11,7 +11,6 @@
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
-#include <chrono>
 #include <functional>
 #include <iostream>
 #include <utility>
@@ -336,17 +335,7 @@ namespace ReturnCode
   static constexpr int FAILED_TO_ALLOCATE_ENGINE_MEMORY = 3;
 }  // namespace ReturnCode
 
-extern void toggleFs();
-
-static constexpr float frame_rate       = 60.0f;
-static constexpr float min_frame_rate   = 4.0f;
-static constexpr float time_step_ms     = 1.0f / frame_rate;
-static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
-
-GLFWwindow*         g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
-float               current_time;
-float               time_accumulator;
-static PainterFont* TEST_FONT = nullptr;
+GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
 
 #define MainQuit(code, label) \
   err_code = (code);          \
@@ -394,16 +383,17 @@ int main(int argc, char* argv[])
 
         glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-        const bfEngineCreateParams params = {argv[0], 0};
+        const EngineCreateParams params = {argv[0], 0, 60};
 
         engine.init(params, main_window);
 
         main_window->user_data = &engine;
 
+        // TODO(SR): Figure out how to put this in the editor overlay.
         imgui::startup(engine.renderer().context(), main_window);
 
         engine.stateMachine().push<MainDemoLayer>();
-        engine.stateMachine().addOverlay<editor::EditorOverlay>();
+        engine.stateMachine().addOverlay<editor::EditorOverlay>(main_window);
 
         VM& vm = engine.scripting();
 
@@ -452,145 +442,17 @@ int main(int argc, char* argv[])
           update_fn = vm.stackMakeHandle(0);
         }
 
-        current_time     = float(glfwGetTime());
-        time_accumulator = 0.0f;
-
         main_window->event_fn = [](bfWindow* window, bfEvent* event) {
-          Engine* const engine = (Engine*)window->user_data;
-
-          imgui::onEvent(window, *event);
-          engine->onEvent(window, *event);
+          static_cast<Engine*>(window->user_data)->onEvent(window, *event);
         };
 
         main_window->frame_fn = [](bfWindow* window) {
-          Engine* const engine = (Engine*)window->user_data;
-
-          const auto CurrentTimeSeconds = []() -> float {
-            return float(glfwGetTime());
-          };
-
-          const float new_time   = CurrentTimeSeconds();
-          const float delta_time = std::min(new_time - current_time, max_time_step_ms);
-          const auto  mouse_pos  = Vector2f{(float)engine->input().mousePos().x, (float)engine->input().mousePos().y};
-
-          time_accumulator += delta_time;
-          current_time = new_time;
-
-          int window_width;
-          int window_height;
-          bfWindow_getSize(window, &window_width, &window_height);
-
-          if (engine->beginFrame())
-          {
-            StandardRenderer& renderer = engine->renderer();
-
-#if 0
-            if (update_fn)
-            {
-              vm.stackResize(1);
-              vm.stackLoadHandle(0, update_fn);
-
-              if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-              {
-                vm.call(0, delta_time);
-              }
-            }
-#endif
-            imgui::beginFrame(
-             renderer.surface(),
-             float(window_width),
-             float(window_height),
-             delta_time);
-
-            while (time_accumulator >= time_step_ms)
-            {
-              engine->fixedUpdate(time_step_ms);
-              time_accumulator -= time_step_ms;
-            }
-
-            const float render_alpha = time_accumulator / time_step_ms;  // current_state * render_alpha + previous_state * (1.0f - render_alpha)
-
-            engine->update(delta_time);
-
-            engine->drawBegin(render_alpha);
-            imgui::endFrame();
-#if 0
-            auto& painter = engine->renderer2D();
-
-            if (!TEST_FONT)
-            {
-              TEST_FONT = new PainterFont(engine->mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
-            }
-
-            int w, h;
-            bfWindow_getSize(window, &w, &h);
-
-            const float angle_map   = bfMathRemapf(0.0f, float(w), 0.0f, k_TwoPI, mouse_pos.x);
-            const float rounded_map = bfMathRemapf(0.0f, float(w), 2.0f, 100.0f, mouse_pos.x);
-            const float thick_map   = bfMathRemapf(0.0f, float(w), 5.0f, 40.0f, mouse_pos.x);
-
-            for (int y = 0; y < 8; ++y)
-            {
-              const float offset_y = 150.0f * float(y);
-
-              for (int x = 0; x < 8; ++x)
-              {
-                const float    offset_x      = 150.0f * float(x);
-                const Vector2f box_pos       = mouse_pos + Vector2f{20.0f, 0.0f} + Vector2f{offset_x, offset_y};
-                const float    blur_amount   = (float(x + y * 8) / 64.0f) * 25.0f;
-                const float    border_radius = std::min(rounded_map, 50.0f);
-
-                painter.pushRectShadow(blur_amount, box_pos, 100, 100, border_radius, BIFROST_COLOR_BLACK);
-                painter.pushFillRoundedRect(box_pos, 100, 100, border_radius, BIFROST_COLOR_ROYALBLUE);
-              }
-            }
-
-            // painter.pushRect(mouse_pos, 100, 100, BIFROST_COLOR_ROYALBLUE);
-            painter.pushFilledCircle(mouse_pos + Vector2f{200.0f, 0.0f}, 55.0f, BIFROST_COLOR_SALMON);
-            painter.pushFilledArc(mouse_pos + Vector2f{260.0f, 100.0f}, 22.0f, 0.0f, angle_map, BIFROST_COLOR_NAVY);
-            painter.pushFillRoundedRect(Vector2f{500.0f, 200.0f} - Vector2f{5.0f}, 310.0f, 230.0f, rounded_map, BIFROST_COLOR_LIGHTYELLOW);
-            painter.pushFillRoundedRect({500.0f, 200.0f}, 300.0f, 220.0f, rounded_map, BIFROST_COLOR_LIME);
-
-            Vector2f points[] = {
-             {20.0f, 20.0f},
-             {200.0f, 20.0f},
-             {300.0f, 600.0f},
-             {800.0f, 500.0f},
-             mouse_pos,
-            };
-
-            painter.pushPolyline(points, UIIndexType(bfCArraySize(points)), thick_map, PolylineJoinStyle::BEVEL, PolylineEndStyle::ROUND, BIFROST_COLOR_OLIVE & 0x55FFFFFF, false);
-
-            painter.pushLinedArc(mouse_pos + Vector2f{-260.0f, 100.0f}, thick_map * 2.0f, 0.3f, angle_map * 1.2f, BIFROST_COLOR_SALMON);
-
-            Vector2f sine_wave[800];
-
-            for (int i = 0; i < int(bfCArraySize(sine_wave)); ++i)
-            {
-              const float percent = float(i) / (float(bfCArraySize(sine_wave)) - 1.0f);
-
-              sine_wave[i] = Vector2f{percent * float(w), 300 + 20.0f * std::sin(percent * k_TwoPI * 30)};
-            }
-
-            painter.pushPolyline(sine_wave, UIIndexType(bfCArraySize(sine_wave)), 2.0f, PolylineJoinStyle::ROUND, PolylineEndStyle::ROUND, BIFROST_COLOR_MOCCASIN, false);
-
-            painter.pushText(
-             Vector2f{100.0f, 100.0f},
-             u8"Hello this is\nsome Test\nText ;)∑𒄨Ö",
-             TEST_FONT);
-#endif
-
-            engine->drawEnd();
-            engine->endFrame();
-          }
+          static_cast<Engine*>(window->user_data)->tick();
         };
 
         bfPlatformDoMainLoop(main_window);
 
-        delete TEST_FONT;
-
         vm.stackDestroyHandle(update_fn);
-        imgui::shutdown();
         engine.deinit();
       }
       catch (std::bad_alloc&)
@@ -611,3 +473,16 @@ quit_main:
 }
 
 #undef MainQuit
+
+#if 0
+            if (update_fn)
+            {
+              vm.stackResize(1);
+              vm.stackLoadHandle(0, update_fn);
+
+              if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+              {
+                vm.call(0, delta_time);
+              }
+            }
+#endif

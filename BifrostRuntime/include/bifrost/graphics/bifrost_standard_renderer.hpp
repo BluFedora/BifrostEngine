@@ -67,7 +67,7 @@ namespace bf
     Vector3f  normal;
     Vector3f  tangent;
     bfColor4u color;
-    Vec2f     uv;
+    Vector2f  uv;
   };
 
   struct VertexBoneData
