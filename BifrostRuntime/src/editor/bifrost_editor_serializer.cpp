@@ -25,8 +25,9 @@
 
 namespace bf::editor
 {
-  static constexpr int   s_MaxDigitsUInt64 = 20;
-  static constexpr float s_DragSpeed       = 0.05f;
+  static constexpr int   s_MaxDigitsUInt64  = 20;
+  static constexpr float s_DragSpeed        = 0.05f;
+  static constexpr float k_SmallWindowWidth = 150.0f;
 
   namespace InspectorRegistry
   {
@@ -175,24 +176,39 @@ namespace bf::editor
     double value_d = double(value);
 
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
     value = value_d;
   }
 
   void ImGuiSerializer::serialize(StringRange key, Vec2f& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed);
+    hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
   }
 
   void ImGuiSerializer::serialize(StringRange key, Vec3f& value)
   {
+    const float available_width = ImGui::GetContentRegionAvail().x;
+
     setNameBuffer(key);
 
-    const bool did_change = ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed);
+    if (available_width <= k_SmallWindowWidth)
+    {
+      if (ImGui::TreeNodeEx(m_NameBuffer, ImGuiTreeNodeFlags_DefaultOpen))
+      {
+        serialize("x", value.x);
+        serialize("y", value.y);
+        serialize("z", value.z);
 
-    hasChangedTop() |= did_change;
+        ImGui::TreePop();
+      }
+    }
+    else
+    {
+      hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+    }
 
+#if 0
     if (did_change)
     {
       bfLogPrint("Editing: %s", m_NameBuffer);
@@ -208,6 +224,7 @@ namespace bf::editor
       bfLogPrint("%s", m_NameBuffer);
       bfLogPop();
     }
+#endif
   }
 
   void ImGuiSerializer::serialize(StringRange key, Quaternionf& value)
@@ -228,15 +245,35 @@ namespace bf::editor
 
   void ImGuiSerializer::serialize(StringRange key, bfColor4f& value)
   {
+    const float         available_width    = ImGui::GetContentRegionAvail().x;
+    ImGuiColorEditFlags color_picker_flags = ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueWheel;
+
+    if (available_width <= k_SmallWindowWidth)
+    {
+      color_picker_flags |= ImGuiColorEditFlags_NoInputs;
+
+      // TODO(SR): Also draw a Vec4 like vertical GUI?
+    }
+
     setNameBuffer(key);
 
-    hasChangedTop() |= ImGui::ColorEdit4(m_NameBuffer, &value.r, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueWheel);
+    hasChangedTop() |= ImGui::ColorEdit4(m_NameBuffer, &value.r, color_picker_flags);
   }
 
   void ImGuiSerializer::serialize(StringRange key, bfColor4u& value)
   {
     static constexpr float k_ToFloatingPoint = 1.0f / 255.0f;
     static constexpr float k_ToUint8Point    = 255.0f;
+
+    const float         available_width    = ImGui::GetContentRegionAvail().x;
+    ImGuiColorEditFlags color_picker_flags = ImGuiColorEditFlags__OptionsDefault;
+
+    if (available_width <= k_SmallWindowWidth)
+    {
+      color_picker_flags |= ImGuiColorEditFlags_NoInputs;
+
+      // TODO(SR): Also draw a Vec4 like vertical GUI?
+    }
 
     setNameBuffer(key);
 
@@ -248,7 +285,7 @@ namespace bf::editor
       float(value.a) * k_ToFloatingPoint,
      };
 
-    const bool has_changed = ImGui::ColorEdit4(m_NameBuffer, &value4f.r, ImGuiColorEditFlags__OptionsDefault);
+    const bool has_changed = ImGui::ColorEdit4(m_NameBuffer, &value4f.r, color_picker_flags);
 
     if (has_changed)
     {
@@ -268,7 +305,7 @@ namespace bf::editor
     hasChangedTop() |= imgui_ext::inspect(m_NameBuffer, value);
   }
 
-  void ImGuiSerializer::serialize(StringRange key, BifrostUUIDNumber& value)
+  void ImGuiSerializer::serialize(StringRange key, bfUUIDNumber& value)
   {
     setNameBuffer(key);
 
@@ -278,7 +315,7 @@ namespace bf::editor
     ImGui::Text("UUID <%s>", as_string);
   }
 
-  void ImGuiSerializer::serialize(StringRange key, BifrostUUID& value)
+  void ImGuiSerializer::serialize(StringRange key, bfUUID& value)
   {
     setNameBuffer(key);
     hasChangedTop() |= ImGui::InputText(m_NameBuffer, value.as_string.data, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
@@ -333,9 +370,9 @@ namespace bf::editor
 
       if (payload && payload->IsDataType("Asset.UUID"))
       {
-        const BifrostUUID* data = static_cast<const BifrostUUID*>(payload->Data);
+        const bfUUID* data = static_cast<const bfUUID*>(payload->Data);
 
-        assert(payload->DataSize == sizeof(BifrostUUID));
+        assert(payload->DataSize == sizeof(bfUUID));
 
         const auto info = m_Assets->findAssetInfo(*data);
 

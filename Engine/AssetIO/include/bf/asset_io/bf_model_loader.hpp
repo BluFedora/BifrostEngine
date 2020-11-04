@@ -2,6 +2,7 @@
 #define BF_ASSETIO_MODEL_LOADER_HPP
 
 #include "bf/IMemoryManager.hpp"  // IMemoryManager
+#include "bf/Math.hpp"            // Math Structs
 #include "bf/StringRange.h"       // bfStringRange
 
 #include <array>    // array
@@ -150,12 +151,12 @@ namespace bf
 
   struct AssetModelVertex
   {
-    float        position[3];
-    float        normal[3];
-    float        tangent[3];
-    float        bitangent[3];
-    float        color[4];
-    float        uv[2];
+    Vector3f     position;
+    Vector3f     normal;
+    Vector3f     tangent;
+    Vector3f     bitangent;
+    bfColor4f    color;
+    Vector2f     uv;
     float        bone_weights[k_MaxVertexBones];
     std::uint8_t bone_indices[k_MaxVertexBones];
   };
@@ -273,12 +274,12 @@ namespace bf
     AssetTempArray<ModelAnimationChannel>* channels = {};
   };
 
-  using Matrix4x4 = float[16];
+  using Matrix4x4f = ::Mat4x4;
 
   struct AssetNode
   {
     AssetTempSmallString name              = {};
-    Matrix4x4            transform         = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    Matrix4x4f           transform         = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
     std::uint8_t         model_to_bone_idx = static_cast<std::uint8_t>(-1);
     unsigned int         first_child       = static_cast<unsigned int>(-1);
     unsigned int         num_children      = 0;
@@ -286,11 +287,11 @@ namespace bf
 
   struct ModelSkeleton
   {
-    Matrix4x4                          global_inv_transform;
-    unsigned int                       num_nodes;
-    detail::MovablePtr<AssetNode>      nodes;
-    std::uint8_t                       num_bones;
-    std::pair<unsigned int, Matrix4x4> bones[k_MaxBones];  // <node index, transform>
+    Matrix4x4f                          global_inv_transform;
+    unsigned int                        num_nodes;
+    detail::MovablePtr<AssetNode>       nodes;
+    std::uint8_t                        num_bones;
+    std::pair<unsigned int, Matrix4x4f> bones[k_MaxBones];  // <node index, transform>
   };
 
   using AssetMeshArray      = AssetTempArray<AssetMeshPrototype>;

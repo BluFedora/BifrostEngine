@@ -125,7 +125,7 @@ namespace bf
 
   bool AssetAnimation3DInfo::load(Engine& engine)
   {
-    if (!m_Payload.is<Animation3D>()) 
+    if (!m_Payload.is<Animation3D>())
     {
       m_Payload.set<Animation3D>(engine.assets().memory());
     }
@@ -149,7 +149,7 @@ namespace bf
 
   void Model::loadAssetSkeleton(const ModelSkeleton& skeleton)
   {
-    std::memcpy(&m_GlobalInvTransform, &skeleton.global_inv_transform, sizeof(Matrix4x4));
+    m_GlobalInvTransform = skeleton.global_inv_transform;
 
     m_Nodes.reserve(skeleton.num_nodes);
     m_BoneToModel.reserve(skeleton.num_bones);
@@ -164,8 +164,8 @@ namespace bf
      [](const AssetNode& src_node) -> Node {
        Node dst_node;
 
-       dst_node.name = src_node.name.data;
-       std::memcpy(&dst_node.transform, &src_node.transform, sizeof(Matrix4x4));
+       dst_node.name         = src_node.name.data;
+       dst_node.transform    = src_node.transform;
        dst_node.bone_idx     = src_node.model_to_bone_idx;
        dst_node.first_child  = src_node.first_child;
        dst_node.num_children = src_node.num_children;
@@ -181,8 +181,7 @@ namespace bf
        NodeIDBone dst_bone;
 
        dst_bone.node_idx = src_bone.first;
-
-       std::memcpy(&dst_bone.transform, &src_bone.second, sizeof(Matrix4x4));
+       dst_bone.transform = src_bone.second;
 
        return dst_bone;
      });
@@ -378,11 +377,11 @@ namespace bf
        [write_bone_data = bone_vertices.data()](const AssetModelVertex& vertex) mutable -> StandardVertex {
          StandardVertex r /* = {}*/;
 
-         r.pos     = Vector3f{vertex.position[0], vertex.position[1], vertex.position[2], 1.0f};
-         r.normal  = Vector3f{vertex.normal[0], vertex.normal[1], vertex.normal[2], 0.0f};
-         r.tangent = Vector3f{vertex.tangent[0], vertex.tangent[1], vertex.tangent[2], 0.0f};
-         r.color   = bfColor4u_fromUint32(Vec3f_toColor(Vector3f{vertex.color[0], vertex.color[1], vertex.color[2], vertex.color[3]}));
-         r.uv      = Vec2f{vertex.uv[0], vertex.uv[1]};
+         r.pos     = vertex.position;
+         r.normal  = vertex.normal;
+         r.tangent = vertex.tangent;
+         r.color   = bfColor4u_fromUint32(Vec3f_toColor(Vector3f{vertex.color.r, vertex.color.g, vertex.color.b, vertex.color.a}));
+         r.uv      = vertex.uv;
 
          VertexBoneData& out_bone_data = *write_bone_data;
 

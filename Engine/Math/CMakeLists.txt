@@ -32,6 +32,7 @@ target_include_directories(
     "${PROJECT_SOURCE_DIR}/include"
 )
 
+
 target_compile_definitions(BifrostMath_static PRIVATE BIFROST_MATH_EXPORT_STATIC)
 
 set_target_properties(BifrostMath_static PROPERTIES OUTPUT_NAME bf.MathLib)
@@ -67,3 +68,6 @@ if(NOT EMSCRIPTEN)
   set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
   set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 endif()
+
+add_library(BF_Math_static ALIAS BifrostMath_static)
+add_library(BF_Math_shared ALIAS BifrostMath_shared)

@@ -61,6 +61,7 @@ target_link_libraries(
   PUBLIC
     BF_Memory_interface
     BF_Core_static
+    BF_Math_shared
 
   PRIVATE
     "${BF_ASSETIO_LIBS}"

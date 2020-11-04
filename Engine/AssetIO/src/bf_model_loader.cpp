@@ -21,24 +21,24 @@ namespace bf
     return nul_terminated_str;
   }
 
-  static void aiVector3ToArray(const aiVector3D* from, float to[3])
+  static void aiVector3ToArray(const aiVector3D* from, Vector3f& to)
   {
-    to[0] = from->x;
-    to[1] = from->y;
-    to[2] = from->z;
+    to.x = from->x;
+    to.y = from->y;
+    to.z = from->z;
   }
 
-  static void aiColor4DToArray(const aiColor4D* from, float to[4])
+  static void aiColor4DToArray(const aiColor4D* from, bfColor4f& to)
   {
-    to[0] = from->r;
-    to[1] = from->g;
-    to[2] = from->b;
-    to[3] = from->a;
+    to.r = from->r;
+    to.g = from->g;
+    to.b = from->b;
+    to.a = from->a;
   }
 
-  static void aiMat4x4ToMatrix4x4(const aiMatrix4x4* from_, float* to, bool is_row_major)
+  static void aiMat4x4ToMatrix4x4(const aiMatrix4x4* from_, Matrix4x4f& to, bool is_row_major)
   {
-    static_assert(sizeof(aiMatrix4x4) == sizeof(Matrix4x4), "Incorrect size of matrix from Assimp");
+    static_assert(sizeof(aiMatrix4x4) == sizeof(Matrix4x4f), "Incorrect size of matrix from Assimp");
 
     aiMatrix4x4 from = *from_;
 
@@ -47,7 +47,7 @@ namespace bf
       from.Transpose();
     }
 
-    std::memcpy(to, &from, sizeof(from));
+    std::memcpy(&to, &from, sizeof(from));
   }
 
   static unsigned findAssetNode(ModelSkeleton& skeleton, const AssetNode** nodes, const aiString& name)
@@ -369,8 +369,8 @@ namespace bf
             aiVector3ToArray(bitangent, output_vertex->bitangent);
             aiColor4DToArray(color, output_vertex->color);
 
-            output_vertex->uv[0] = uv->x;
-            output_vertex->uv[1] = uv->y;
+            output_vertex->uv.x = uv->x;
+            output_vertex->uv.y = uv->y;
           }
 
           // Faces

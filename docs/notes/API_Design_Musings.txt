@@ -20,12 +20,12 @@ To have animations be able to be undone after an interaction (press) we should a
 To "Undo" the goal is the starting value.
 
 
--------------------------------- Scripted Particles -------------------------------- 
+-------------------------------------------------------------------------------------
+-------------------------------- Scripted Particles ---------------------------------
+-------------------------------------------------------------------------------------
 
 To boot strap the first version an actual scripting language can be used with binding functions
 with the sole purpose of emitting a simple particle bytecode.
-
--------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------
 -------------------------------- Transform Hierarchy -------------------------------- 
@@ -59,8 +59,6 @@ Particles      -> postition: Vec3, scale: Vec3, rotation: Vec3, obj-world: Matri
 Physics        -> postition: Vec3, scale: Vec3, rotation: Vec3;
 Text Rendering -> obj-world: Matrix4x4;
 Gameplay       -> postition: Vec3, scale: Vec3, rotation: Vec3;
-
--------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------
 ---------------------------------- Prefabs and Meta --------------------------------- 
@@ -327,3 +325,44 @@ but then what you have left is an empty husk of a reference.
 
 // [https://blogs.unity3d.com/2014/05/16/custom-operator-should-we-keep-it/]
 // [https://jacx.net/2015/11/20/dont-use-equals-null-on-unity-objects.html]
+
+---------------------------
+-----    Graphics     -----
+---------------------------
+
+Overdraw Optimizations:
+- Opaque objects should be front to back sorted.
+  - Opaque UI elements being drawn frist has big wins if it takes up lots of screen.
+- Sprites an trade off between a tight sprite mesh or a full quad.
+  - This is a trade off between vertex count and overdraw.
+- Translucent objects must use painter's algo to be correct. after opaque pass.
+
+Transparency Handling:
+- Alpha test in shader. `if (clr.a < 0.5) discard;`
+- Draw Opqaue then transparent in painter algo order and pray a pathological case doesnt happen.
+- Split polys and d more work than worth to get it right 80% of the time.
+
+2D Graphics
+- 2D can be though of as layers rather than depth.
+  - Sorting by shader / texture helps less since layer order takes priority.
+  - So just minimize the number of textures used (spritesheets)
+- Simple rect culling can be used, because of this everything on screen
+  will mostlikely contribute to the final image.
+- For a hierarchy of widgets, object draw order can be reordered with its siblings
+  only if it doesnt overlap anyone.
+
+- When Batches Are Split
+  - Clip Rect Change
+  - Texture Change
+
+- When a separate Composite Layer is needed.
+  - parent has alpha that must propage to children.
+  - Any "filter" effect
+    - Drop Shadow
+    - Guassian Blur
+    - Glow
+    - Bevel
+    - Gradient Glow
+    - Gradient Bevel
+    - Color Adjust
+  - Any blending mode other than the _default_ source-over.
