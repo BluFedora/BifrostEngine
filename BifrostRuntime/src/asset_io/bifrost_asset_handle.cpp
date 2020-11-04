@@ -128,7 +128,7 @@ namespace bf
     }
   }
 
-  void ISerializer::serialize(StringRange key, BifrostUUIDNumber& value)
+  void ISerializer::serialize(StringRange key, bfUUIDNumber& value)
   {
     static constexpr int k_AsStringSize = sizeof(BifrostUUIDString) - 1;
 
@@ -147,7 +147,7 @@ namespace bf
       }
       else
       {
-        const BifrostUUID uuid = bfUUID_fromString(as_string.c_str());
+        const bfUUID uuid = bfUUID_fromString(as_string.c_str());
 
         value = uuid.as_number;
       }

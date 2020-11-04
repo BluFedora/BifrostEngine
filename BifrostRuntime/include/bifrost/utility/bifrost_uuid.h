@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_uuid.h
+ * @file   bf_uuid.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *   Platform abstraction for generating globally unique identifiers.
@@ -11,8 +11,8 @@
  * @copyright Copyright (c) 2019
  */
 /******************************************************************************/
-#ifndef BIFROST_UUID_H
-#define BIFROST_UUID_H
+#ifndef BF_UUID_H
+#define BF_UUID_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,11 +23,11 @@ enum
   k_bfUUIDStringCapacity = 37,
 };
 
-typedef struct BifrostUUIDNumber_t
+typedef struct
 {
   char data[16]; /*!< The number as a string. */
 
-} BifrostUUIDNumber;
+} bfUUIDNumber;
 
 typedef struct BifrostUUIDString_t
 {
@@ -35,25 +35,25 @@ typedef struct BifrostUUIDString_t
 
 } BifrostUUIDString;
 
-typedef struct BifrostUUID_t
+typedef struct
 {
-  BifrostUUIDNumber as_number; /*!< The number as a string.                                         */
+  bfUUIDNumber      as_number; /*!< The number as a string.                                         */
   BifrostUUIDString as_string; /*!< Nul terminated string. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\0' */
 
-} BifrostUUID;
+} bfUUID;
 
-BifrostUUID bfUUID_makeEmpty(void);
-BifrostUUID bfUUID_generate(void);
-BifrostUUID bfUUID_fromString(const char source[k_bfUUIDStringCapacity]);  // Expects a string in the format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' (Note lack of curly braces)
-int         bfUUID_isEqual(const BifrostUUID* lhs, const BifrostUUID* rhs);
-int         bfUUID_isEmpty(const BifrostUUID* self);
-void        bfUUID_numberToString(const char number[16], char out_string[37]);
-int         bfUUID_numberCmp(const BifrostUUIDNumber* lhs, const BifrostUUIDNumber* rhs);
-int         bfUUID_numberIsEmpty(const BifrostUUIDNumber* lhs);
-int         bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs);
+bfUUID bfUUID_makeEmpty(void);
+bfUUID bfUUID_generate(void);
+bfUUID bfUUID_fromString(const char source[k_bfUUIDStringCapacity]);  // Expects a string in the format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' (Note lack of curly braces)
+int    bfUUID_isEqual(const bfUUID* lhs, const bfUUID* rhs);
+int    bfUUID_isEmpty(const bfUUID* self);
+void   bfUUID_numberToString(const char number[16], char out_string[37]);
+int    bfUUID_numberCmp(const bfUUIDNumber* lhs, const bfUUIDNumber* rhs);
+int    bfUUID_numberIsEmpty(const bfUUIDNumber* lhs);
+int    bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BIFROST_UUID_H */
+#endif /* BF_UUID_H */

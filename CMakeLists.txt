@@ -130,6 +130,8 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Utility Module
   "BifrostRuntime/src/utility/bifrost_hash.cpp"
   "BifrostRuntime/src/utility/bifrost_json.cpp"
+
+  "BifrostRuntime/include/utility/bifrost_uuid.h"
   "BifrostRuntime/src/utility/bifrost_uuid.c"
 
   # Physics

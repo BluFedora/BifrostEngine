@@ -70,8 +70,8 @@ namespace bf::meta
    IBaseObject*,
    BaseAssetHandle,
    EntityRef,
-   BifrostUUIDNumber,
-   BifrostUUID>;
+   bfUUIDNumber,
+   bfUUID>;
 
   using MetaPrimitiveTypes = MetaValueTypes::extend<MetaObject>;
   using MetaVariant        = MetaPrimitiveTypes::apply<Variant>;

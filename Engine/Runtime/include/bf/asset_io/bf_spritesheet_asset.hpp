@@ -46,7 +46,7 @@ BIFROST_META_REGISTER(bf::AssetSpritesheetInfo)
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
      class_info<AssetSpritesheetInfo>("AssetSpritesheetInfo"),  //
-     ctor<String, std::size_t, BifrostUUID>())
+     ctor<String, std::size_t, bfUUID>())
   BIFROST_META_END()
 }
 

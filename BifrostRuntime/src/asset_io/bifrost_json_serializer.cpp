@@ -121,7 +121,7 @@ namespace bf
     currentObject().add(key, value);
   }
 
-  void JsonSerializerWriter::serialize(StringRange key, BifrostUUID& value)
+  void JsonSerializerWriter::serialize(StringRange key, bfUUID& value)
   {
     const auto str = String(value.as_string.data);
 
@@ -140,7 +140,7 @@ namespace bf
     if (value)
     {
       pushObject(key);
-      serialize("uuid", const_cast<BifrostUUID&>(value.info()->uuid()));
+      serialize("uuid", const_cast<bfUUID&>(value.info()->uuid()));
       popObject();
     }
     else
@@ -400,7 +400,7 @@ namespace bf
     }
   }
 
-  void JsonSerializerReader::serialize(StringRange key, BifrostUUID& value)
+  void JsonSerializerReader::serialize(StringRange key, bfUUID& value)
   {
     String str;
     serialize(key, str);
@@ -415,7 +415,7 @@ namespace bf
   {
     if (pushObject(key))
     {
-      BifrostUUID uuid;
+      bfUUID uuid;
       serialize("uuid", uuid);
 
       BaseAssetInfo* const info = m_Assets.findAssetInfo(uuid);

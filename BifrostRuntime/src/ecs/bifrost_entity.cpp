@@ -66,7 +66,7 @@ namespace bf
     return !bfUUID_numberIsEmpty(&m_UUID);
   }
 
-  const BifrostUUIDNumber& Entity::uuid()
+  const bfUUIDNumber& Entity::uuid()
   {
     if (!hasUUID())
     {

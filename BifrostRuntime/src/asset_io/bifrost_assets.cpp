@@ -218,7 +218,7 @@ namespace bf
   {
   }
 
-  BaseAssetInfo* Assets::findAssetInfo(const BifrostUUID& uuid)
+  BaseAssetInfo* Assets::findAssetInfo(const bfUUID& uuid)
   {
     const auto it = m_AssetMap.find(uuid);
 
@@ -500,7 +500,7 @@ namespace bf
     }
   }
 
-  std::tuple<BifrostUUID, bool, BaseAssetInfo*> Assets::indexAssetImpl(const StringRange abs_path)
+  std::tuple<bfUUID, bool, BaseAssetInfo*> Assets::indexAssetImpl(const StringRange abs_path)
   {
     const StringRange relative_path = path::relative(m_RootPath, abs_path);
     const auto        it_name       = m_NameToGUID.find(relative_path);
@@ -515,7 +515,7 @@ namespace bf
       }
     }
 
-    const BifrostUUID uuid = bfUUID_generate();
+    const bfUUID uuid = bfUUID_generate();
 
     m_NameToGUID.emplace(relative_path, uuid);
 
@@ -548,7 +548,7 @@ namespace bf
     String path_as_str    = info->filePathRel();
 
     json_writer.serialize("Path", path_as_str);
-    json_writer.serialize("UUID", const_cast<BifrostUUID&>(info->uuid()));
+    json_writer.serialize("UUID", const_cast<bfUUID&>(info->uuid()));
     json_writer.serialize("Type", type_info_name);
 
     std::size_t num_sub_assets;
@@ -587,7 +587,7 @@ namespace bf
       return nullptr;
     }
 
-    BifrostUUID uuid = bfUUID_fromString(uuid_str.c_str());
+    bfUUID uuid = bfUUID_fromString(uuid_str.c_str());
 
     if (bfUUID_isEmpty(&uuid))
     {

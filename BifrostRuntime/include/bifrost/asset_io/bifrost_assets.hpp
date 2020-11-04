@@ -66,11 +66,11 @@ namespace bf
     bool renameFile(const StringRange& old_name, const StringRange& new_name);  // ex: renameFile("path/to/my/file.txt", "new_path/to/file2.txt")
   }                                                                             // namespace path
 
-  using PathToUUIDTable = HashTable<String, BifrostUUID, 64>;
+  using PathToUUIDTable = HashTable<String, bfUUID, 64>;
 
   namespace detail
   {
-    using AssetMap = HashTable<BifrostUUID, BaseAssetInfo*, 64, UUIDHasher, UUIDEqual>;
+    using AssetMap = HashTable<bfUUID, BaseAssetInfo*, 64, UUIDHasher, UUIDEqual>;
   }  // namespace detail
 
   template<typename AssetTInfo>
@@ -106,7 +106,7 @@ namespace bf
     {
       AssetIndexResult<AssetTInfo> result = {};
       BaseAssetInfo*               info   = nullptr;
-      BifrostUUID                  uuid;
+      bfUUID                       uuid;
 
       std::tie(uuid, result.is_new, info) = indexAssetImpl(abs_path);
 
@@ -147,7 +147,7 @@ namespace bf
       return result;
     }
 
-    BaseAssetInfo*  findAssetInfo(const BifrostUUID& uuid);
+    BaseAssetInfo*  findAssetInfo(const bfUUID& uuid);
     bool            tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const;
     BaseAssetHandle makeHandle(BaseAssetInfo& info) const;
 
@@ -192,7 +192,7 @@ namespace bf
 
    private:
     template<typename AssetTInfo>
-    AssetTInfo* createAssetInfo(StringRange abs_path, std::size_t root_length, const BifrostUUID& uuid)
+    AssetTInfo* createAssetInfo(StringRange abs_path, std::size_t root_length, const bfUUID& uuid)
     {
       AssetTInfo* const asset_info = m_Memory.allocateT<AssetTInfo>(abs_path, root_length, uuid);
       asset_info->m_TypeInfo       = meta::TypeInfo<AssetTInfo>::get();
@@ -202,11 +202,11 @@ namespace bf
       return asset_info;
     }
 
-    std::tuple<BifrostUUID, bool, BaseAssetInfo*> indexAssetImpl(StringRange abs_path);
-    static BaseAssetInfo*                         findSubAssetFrom(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path);
-    static void                                   addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset);
-    void                                          writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info);
-    BaseAssetInfo*                                readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset = false);
+    std::tuple<bfUUID, bool, BaseAssetInfo*> indexAssetImpl(StringRange abs_path);
+    static BaseAssetInfo*                    findSubAssetFrom(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path);
+    static void                              addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset);
+    void                                     writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info);
+    BaseAssetInfo*                           readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset = false);
   };
 }  // namespace bf
 

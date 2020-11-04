@@ -184,7 +184,7 @@ BIFROST_META_REGISTER(bf::AssetSceneInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetSceneInfo>("AssetSceneInfo"),  //
-   ctor<String, std::size_t, BifrostUUID>())
+   ctor<String, std::size_t, bfUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(Vec3f)

@@ -24,7 +24,7 @@ namespace bf
   struct UUIDHasher final
   {
     // ReSharper disable CppUnreachableCode
-    std::size_t operator()(const BifrostUUID& uuid) const
+    std::size_t operator()(const bfUUID& uuid) const
     {
       if constexpr (sizeof(std::size_t) == 4)
       {
@@ -36,7 +36,7 @@ namespace bf
       }
     }
 
-    std::size_t operator()(const BifrostUUIDNumber& as_number) const
+    std::size_t operator()(const bfUUIDNumber& as_number) const
     {
       if constexpr (sizeof(std::size_t) == 4)
       {
@@ -64,12 +64,12 @@ namespace bf
 
   struct UUIDEqual final
   {
-    bool operator()(const BifrostUUID& lhs, const BifrostUUID& rhs) const
+    bool operator()(const bfUUID& lhs, const bfUUID& rhs) const
     {
       return bfUUID_isEqual(&lhs, &rhs) != 0;
     }
 
-    bool operator()(const BifrostUUIDNumber& lhs, const BifrostUUIDNumber& rhs) const
+    bool operator()(const bfUUIDNumber& lhs, const bfUUIDNumber& rhs) const
     {
       return bfUUID_numberCmp(&lhs, &rhs) != 0;
     }

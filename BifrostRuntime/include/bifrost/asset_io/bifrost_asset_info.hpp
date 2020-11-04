@@ -144,8 +144,8 @@ namespace bf
     virtual void serialize(StringRange key, bfColor4u& value);
     virtual void serialize(StringRange key, Rect2f& value);
     virtual void serialize(StringRange key, String& value) = 0;
-    virtual void serialize(StringRange key, BifrostUUIDNumber& value);
-    virtual void serialize(StringRange key, BifrostUUID& value)     = 0;
+    virtual void serialize(StringRange key, bfUUIDNumber& value);
+    virtual void serialize(StringRange key, bfUUID& value)          = 0;
     virtual void serialize(StringRange key, BaseAssetHandle& value) = 0;
     virtual void serialize(StringRange key, EntityRef& value)       = 0;
     virtual void serialize(StringRange key, IBaseObject& value);
@@ -202,7 +202,7 @@ namespace bf
    protected:
     String                        m_FilePathAbs;       //!< The full path to an asset.
     StringRange                   m_FilePathRel;       //!< Indexes into `BaseAssetInfo::m_FilePathAbs` for the relative path.
-    BifrostUUID                   m_UUID;              //!< Uniquely identifies the asset.
+    bfUUID                        m_UUID;              //!< Uniquely identifies the asset.
     std::uint16_t                 m_RefCount;          //!< How many live references in the engine. TODO(SR): If I multithread things, see if this needs to be atomic.
     AssetTagList                  m_Tags;              //!< Tags associated with this asset.
     meta::BaseClassMetaInfo*      m_TypeInfo;          //!< The type info for the subclasses.
@@ -211,12 +211,12 @@ namespace bf
     typename AssetInfoFlags::type m_Flags;             //!<
 
    protected:
-    BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const BifrostUUID& uuid);
+    BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const bfUUID& uuid);
 
    public:
     // Accessors
 
-    const BifrostUUID&             uuid() const { return m_UUID; }
+    const bfUUID&                  uuid() const { return m_UUID; }
     std::uint16_t                  refCount() const { return m_RefCount; }
     meta::BaseClassMetaInfoPtr     typeInfo() const { return m_TypeInfo; }
     const ListView<BaseAssetInfo>& subAssets() const { return m_SubAssets; }
@@ -318,7 +318,7 @@ namespace bf
     Optional<TPayload> m_Payload;
 
    public:
-    AssetInfo(const String& full_path, const size_t length_of_root_path, const BifrostUUID& uuid) :
+    AssetInfo(const String& full_path, const size_t length_of_root_path, const bfUUID& uuid) :
       BaseAssetInfo(full_path, length_of_root_path, uuid)
     {
       static_assert(std::is_base_of<IBaseObject, TPayload>::value, "Only reflect-able types can be used as a payload.");

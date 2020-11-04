@@ -54,7 +54,6 @@ namespace bf
     if (this != &rhs)
     {
       safeUnref();
-      m_ID = rhs.m_ID;
       safeRef(rhs.m_CachedEntity);
     }
 
@@ -73,7 +72,7 @@ namespace bf
     return *this;
   }
 
-  const BifrostUUIDNumber& EntityRef::uuid() const
+  const bfUUIDNumber& EntityRef::uuid() const
   {
     return m_ID;
   }
@@ -150,7 +149,7 @@ namespace bf
   {
     static constexpr int k_InitialMapSize = 256;
 
-    using UUIDToObject = HashTable<BifrostUUIDNumber, Entity*, k_InitialMapSize, UUIDHasher, UUIDEqual>;
+    using UUIDToObject = HashTable<bfUUIDNumber, Entity*, k_InitialMapSize, UUIDHasher, UUIDEqual>;
 
     struct GCContext final
     {
@@ -173,7 +172,7 @@ namespace bf
       {
       }
 
-      static BifrostUUIDNumber& id(Entity& object)
+      static bfUUIDNumber& id(Entity& object)
       {
         return object.m_UUID;
       }
@@ -188,7 +187,7 @@ namespace bf
       g_GCCtx = GCContextPtr(memory.allocateT<GCContext>(&memory));
     }
 
-    bool hasUUID(const BifrostUUIDNumber& id)
+    bool hasUUID(const bfUUIDNumber& id)
     {
       return findEntity(id) != nullptr;
     }
@@ -200,7 +199,7 @@ namespace bf
       reviveEntity(object);
     }
 
-    Entity* findEntity(const BifrostUUIDNumber& id)
+    Entity* findEntity(const bfUUIDNumber& id)
     {
       Entity** const entry  = g_GCCtx->id_to_object.at(id);
       Entity* const  entity = entry ? *entry : nullptr;

@@ -48,7 +48,7 @@ namespace bf
     void serialize(StringRange key, double& value) override;
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, BifrostUUID& value) override;
+    void serialize(StringRange key, bfUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     using ISerializer::serialize;
@@ -103,7 +103,7 @@ namespace bf
     void serialize(StringRange key, double& value) override;
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, BifrostUUID& value) override;
+    void serialize(StringRange key, bfUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     using ISerializer::serialize;

@@ -87,8 +87,8 @@ namespace bf::editor
     void serialize(StringRange key, bfColor4f& value) override;
     void serialize(StringRange key, bfColor4u& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, BifrostUUIDNumber& value) override;
-    void serialize(StringRange key, BifrostUUID& value) override;
+    void serialize(StringRange key, bfUUIDNumber& value) override;
+    void serialize(StringRange key, bfUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     void serialize(StringRange key, meta::MetaObject& value) override;

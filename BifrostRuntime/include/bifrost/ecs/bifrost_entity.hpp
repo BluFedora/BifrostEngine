@@ -88,7 +88,7 @@ namespace bf
     std::atomic_uint32_t    m_RefCount;                 //!<
     intrusive::Node<Entity> m_GCList;                   //!<
     std::uint8_t            m_Flags;                    //!<
-    BifrostUUIDNumber       m_UUID;                     //!< This uuid will remain unset until the first use through "Entity::uuid".
+    bfUUIDNumber            m_UUID;                     //!< This uuid will remain unset until the first use through "Entity::uuid".
 
    public:
     Entity(Scene& scene, const StringRange& name);
@@ -104,7 +104,7 @@ namespace bf
     [[nodiscard]] BVHNodeOffset            bvhID() const { return m_BHVNode; }
     [[nodiscard]] const BehaviorList&      behaviors() const { return m_Behaviors; }
     [[nodiscard]] bool                     hasUUID() const;
-    [[nodiscard]] const BifrostUUIDNumber& uuid();
+    [[nodiscard]] const bfUUIDNumber&      uuid();
 
     // General API
 

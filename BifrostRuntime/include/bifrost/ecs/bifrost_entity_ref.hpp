@@ -29,8 +29,8 @@ namespace bf
     friend class JsonSerializerReader;
 
    private:
-    BifrostUUIDNumber m_ID;
-    Entity*           m_CachedEntity;
+    bfUUIDNumber m_ID;
+    Entity*      m_CachedEntity;
 
    public:
     explicit EntityRef(Entity* object = nullptr) noexcept;
@@ -43,8 +43,8 @@ namespace bf
     EntityRef& operator=(const EntityRef& rhs) noexcept;
     EntityRef& operator=(EntityRef&& rhs) noexcept;
 
-    [[nodiscard]] const BifrostUUIDNumber& uuid() const;
-    [[nodiscard]] Entity*                  object() noexcept;
+    [[nodiscard]] const bfUUIDNumber& uuid() const;
+    [[nodiscard]] Entity*             object() noexcept;
 
     [[nodiscard]]         operator bool() { return object() != nullptr; }
     [[nodiscard]]         operator Entity*() { return object(); }
@@ -69,14 +69,14 @@ namespace bf
   namespace gc
   {
     void    init(IMemoryManager& memory);
-    bool    hasUUID(const BifrostUUIDNumber& id);
+    bool    hasUUID(const bfUUIDNumber& id);
     void    registerEntity(Entity& object);
-    Entity* findEntity(const BifrostUUIDNumber& id);
+    Entity* findEntity(const bfUUIDNumber& id);
     void    removeEntity(Entity& object);
     void    reviveEntity(Entity& object);  // TODO(SR): Editor only API
     void    collect(IMemoryManager& entity_memory);
     void    quit();
   }  // namespace gc
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_REF_HPP */
