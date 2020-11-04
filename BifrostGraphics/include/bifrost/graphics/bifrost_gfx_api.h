@@ -18,7 +18,7 @@
 #ifndef BIFROST_GFX_API_H
 #define BIFROST_GFX_API_H
 
-#include "bifrost/bifrost_std.h"        /* bfBool32 */
+#include "bf/Core.h"                    /* bfBool32 */
 #include "bifrost_gfx_export.h"         /* BIFROST_GFX_API */
 #include "bifrost_gfx_handle.h"         /* */
 #include "bifrost_gfx_limits.h"         /* */
@@ -30,8 +30,15 @@
 #if __cplusplus
 extern "C" {
 #endif
+/* Constants */
+
+enum
+{
+  k_bfGfxMaxFramesDelay = 3, /*!< The max number of frames the CPU and GPU can be out of synce by. */
+};
+
 /* Forward Declarations */
-struct BifrostWindow_t;
+struct bfWindow_t;
 
 typedef uint64_t bfBufferSize;
 
@@ -273,8 +280,7 @@ typedef struct
 /* Context */
 BIFROST_GFX_API bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 BIFROST_GFX_API bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
-BIFROST_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window);
-BIFROST_GFX_API void                   bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
+BIFROST_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window);
 BIFROST_GFX_API void                   bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 BIFROST_GFX_API bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window);
 BIFROST_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self);
@@ -327,7 +333,16 @@ BIFROST_GFX_API bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHa
 BIFROST_GFX_API bfTextureHandle       bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params);
 BIFROST_GFX_API bfTextureHandle       bfGfxDevice_requestSurface(bfWindowSurfaceHandle window);
 BIFROST_GFX_API bfDeviceLimits        bfGfxDevice_limits(bfGfxDeviceHandle self);
-BIFROST_GFX_API void                  bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
+
+/*!
+ * @brief
+ *   Freeing a null handle is valid.
+ *
+ * @param self 
+ * @param resource 
+ * @return 
+*/
+BIFROST_GFX_API void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
 /* Buffer */
 BIFROST_GFX_API bfBufferSize bfBuffer_size(bfBufferHandle self);
@@ -475,8 +490,10 @@ BIFROST_GFX_API uint32_t           bfTexture_depth(bfTextureHandle self);
 BIFROST_GFX_API uint32_t           bfTexture_numMipLevels(bfTextureHandle self);
 BIFROST_GFX_API BifrostImageLayout bfTexture_layout(bfTextureHandle self);
 BIFROST_GFX_API bfBool32           bfTexture_loadFile(bfTextureHandle self, const char* file);
-BIFROST_GFX_API void               bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
-BIFROST_GFX_API bfBool32           bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length);
+BIFROST_GFX_API bfBool32           bfTexture_loadPNG(bfTextureHandle self, const void* png_bytes, size_t png_bytes_length);
+BIFROST_GFX_API bfBool32           bfTexture_loadData(bfTextureHandle self, const void* pixels, size_t pixels_length);
+BIFROST_GFX_API bfBool32           bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3]);
+BIFROST_GFX_API void               bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3]);
 BIFROST_GFX_API void               bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties);
 
 /* CommandList */
@@ -580,7 +597,7 @@ BIFROST_GFX_API void                  bfGfxCmdList_setDepthBiasSlopeFactor(bfGfx
 BIFROST_GFX_API void                  bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value);
 BIFROST_GFX_API void                  bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mask);
 BIFROST_GFX_API void                  bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout);
-BIFROST_GFX_API void                  bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
+BIFROST_GFX_API void                  bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
 BIFROST_GFX_API void                  bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type);
 BIFROST_GFX_API void                  bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
 BIFROST_GFX_API void                  bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
@@ -600,6 +617,17 @@ BIFROST_GFX_API char* LoadFileIntoMemory(const char* filename, long* out_size);
 
 #if __cplusplus
 }
+#endif
+
+#if __cplusplus
+
+template<typename T>
+static constexpr inline BifrostIndexType bfIndexTypeFromT()
+{
+  static_assert((sizeof(T) == 2 || sizeof(T) == 4), "An index type must either be a uint16 or a uint32");
+  return sizeof(T) == 2 ? BIFROST_INDEX_TYPE_UINT16 : BIFROST_INDEX_TYPE_UINT32;
+}
+
 #endif
 
 #endif /* BIFROST_GFX_API_H */

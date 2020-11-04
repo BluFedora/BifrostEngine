@@ -90,6 +90,14 @@ bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
   return bfFalse;
 }
 
+bfBool32 bfTexture_loadData(bfTextureHandle self, const void* pixels, size_t pixels_length)
+{
+  const int32_t  offset[3] = {0u, 0u, 0u};
+  const uint32_t sizes[3]  = {bfTexture_width(self), bfTexture_height(self), bfTexture_depth(self)};
+
+  return bfTexture_loadDataRange(self, pixels, pixels_length, offset, sizes);
+}
+
 bfRenderpassInfo bfRenderpassInfo_init(uint16_t num_subpasses)
 {
   assert(num_subpasses < BIFROST_GFX_RENDERPASS_MAX_SUBPASSES);
@@ -399,7 +407,12 @@ void bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self)
 
 void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandListHandle self, float x, float y, float width, float height)
 {
-  // TODO: Clamp the paramters or emit an error.
+  assert(x >= 0.0f && x <= 1.0f);
+  assert(y >= 0.0f && y <= 1.0f);
+  assert(width >= 0.0f && width <= 1.0f);
+  assert(height >= 0.0f && height <= 1.0f);
+  assert((x + width) >= 0.0f && (x + width) <= 1.0f);
+  assert((y + height) >= 0.0f && (y + height) <= 1.0f);
 
   const int32_t fb_width  = bfTexture_width(texture);
   const int32_t fb_height = bfTexture_height(texture);
@@ -441,3 +454,20 @@ char* LoadFileIntoMemory(const char* const filename, long* out_size)
 
   return buffer;
 }
+
+/* Prefer Dedicated GPU On Windows */
+#ifdef _WIN32
+#include <intsafe.h> /* DWORD */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+__declspec(dllexport) DWORD NvOptimusEnablement                = 1;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  //  _WIN32

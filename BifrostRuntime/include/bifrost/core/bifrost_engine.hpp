@@ -1,25 +1,34 @@
 #ifndef BIFROST_ENGINE_HPP
 #define BIFROST_ENGINE_HPP
 
+#include "bf/LinearAllocator.hpp"
+#include "bf/PoolAllocator.hpp"
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_scene.hpp"
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
 #include "bifrost/graphics/bifrost_debug_renderer.hpp"
 #include "bifrost/graphics/bifrost_standard_renderer.hpp"
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
-#include "bifrost/memory/bifrost_pool_allocator.hpp"
 #include "bifrost/script/bifrost_vm.hpp"
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
 
-// ReSharper disable once CppUnusedIncludeDirective
-#include "bifrost/memory/bifrost_c_allocator.hpp"
-// ReSharper disable once CppUnusedIncludeDirective
-#include "bifrost/memory/bifrost_freelist_allocator.hpp"
+#include <utility>  // pair
 
-#include <utility>
+#define USE_CRT_HEAP 0
 
-using BifrostEngineCreateParams = bfGfxContextCreateParams;
+#if USE_CRT_HEAP
+#include "bifrost/memory/bf_crt_allocator.hpp"
+#else
+#include "bf/FreeListAllocator.hpp"
+#endif
+
+#if USE_CRT_HEAP
+using MainHeap = bf::CRTAllocator;
+#else
+using MainHeap = bf::FreeListAllocator;
+#endif
+
+using bfEngineCreateParams = bfGfxContextCreateParams;
 
 static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
 {
@@ -35,7 +44,7 @@ static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no,
   }
 }
 
-namespace bifrost::detail
+namespace bf::detail
 {
   class CoreEngineGameStateLayer final : public IGameStateLayer
   {
@@ -45,19 +54,25 @@ namespace bifrost::detail
    public:
     const char* name() override { return "__CoreEngineLayer__"; }
   };
-}  // namespace bifrost::detail
+}  // namespace bf::detail
 
-namespace bifrost
+namespace bf
 {
   static constexpr int k_MaxNumCamera = 16;
 
-  struct CameraRenderCreateParams final
+  class AnimationSystem;
+  class CollisionSystem;
+  class ComponentRenderer;
+  class BehaviorSystem;
+  struct Gfx2DPainter;
+
+  struct CameraRenderCreateParams
   {
     int width;
     int height;
   };
 
-  struct CameraRender final
+  struct CameraRender
   {
     friend class ::Engine;
 
@@ -116,23 +131,42 @@ namespace bifrost
     }
   };
 
+  // using Window      = bfWindow;
+  using ButtonFlags = std::uint8_t;
+
+  struct MouseInputState
+  {
+    Vector2i    current_pos  = {0, 0};
+    Vector2i    delta_pos    = {0, 0};
+    ButtonFlags button_state = 0x00000000;
+  };
+
+  class Input : bfNonCopyMoveable<Input>
+  {
+    friend class ::Engine;
+
+   private:
+    MouseInputState m_MouseState = {};
+
+   private:
+    void onEvent(Event& evt);
+    void frameEnd();
+
+   public:
+    const MouseInputState& mouseState() const { return m_MouseState; }
+    Vector2i               mousePos() const { return mouseState().current_pos; }
+    Vector2i               mousePosDelta() const { return mouseState().delta_pos; }
+  };
+
   enum class EngineState : std::uint8_t
   {
     RUNTIME_PLAYING,
     EDITOR_PLAYING,
     PAUSED,
   };
-}  // namespace bifrost
+}  // namespace bf
 
-using namespace bifrost;
-
-#define USE_CRT_HEAP 0
-
-#if USE_CRT_HEAP
-using MainHeap = CAllocator;
-#else
-using MainHeap = FreeListAllocator;
-#endif
+using namespace bf;
 
 class Engine : private bfNonCopyMoveable<Engine>
 {
@@ -141,39 +175,68 @@ class Engine : private bfNonCopyMoveable<Engine>
   using CameraRenderMemory = PoolAllocator<CameraRender, k_MaxNumCamera>;
 
  private:
-  CommandLineArgs         m_CmdlineArgs;
-  MainHeap                m_MainMemory;
-  LinearAllocator         m_TempMemory;
-  NoFreeAllocator         m_TempAdapter;
+  // Config
+
+  CommandLineArgs m_CmdlineArgs;
+
+  // Memory
+
+  MainHeap        m_MainMemory;
+  LinearAllocator m_TempMemory;
+  NoFreeAllocator m_TempAdapter;
+
+  // Core Low Level Systems
+
   GameStateMachine        m_StateMachine;
   VM                      m_Scripting;
-  StandardRenderer        m_Renderer;
-  DebugRenderer           m_DebugRenderer;
-  Array<AssetSceneHandle> m_SceneStack;
   Assets                  m_Assets;
-  Array<IECSSystem*>      m_Systems;
-  CameraRenderMemory      m_CameraMemory;
-  CameraRender*           m_CameraList;
-  CameraRender*           m_CameraResizeList;
-  CameraRender*           m_CameraDeleteList;
-  EngineState             m_State;
+  Array<AssetSceneHandle> m_SceneStack;
+  Input                   m_Input;
+
+  // Rendering
+
+  StandardRenderer   m_Renderer;
+  DebugRenderer      m_DebugRenderer;
+  Gfx2DPainter*      m_Renderer2D;
+  CameraRenderMemory m_CameraMemory;
+  CameraRender*      m_CameraList;
+  CameraRender*      m_CameraResizeList;
+  CameraRender*      m_CameraDeleteList;
+
+  // IECSSystem (High Level Systems)
+
+  Array<IECSSystem*> m_Systems;
+  AnimationSystem*   m_AnimationSystem;
+  CollisionSystem*   m_CollisionSystem;
+  ComponentRenderer* m_ComponentRenderer;
+  BehaviorSystem*    m_BehaviorSystem;
+
+  // Misc
+
+  EngineState m_State;
 
  public:
   explicit Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]);
 
   // Subsystem Accessors
 
-  MainHeap&         mainMemory() { return m_MainMemory; }
-  LinearAllocator&  tempMemory() { return m_TempMemory; }
-  IMemoryManager&   tempMemoryNoFree() { return m_TempAdapter; }
-  GameStateMachine& stateMachine() { return m_StateMachine; }
-  VM&               scripting() { return m_Scripting; }
-  StandardRenderer& renderer() { return m_Renderer; }
-  DebugRenderer&    debugDraw() { return m_DebugRenderer; }
-  Assets&           assets() { return m_Assets; }
-  AssetSceneHandle  currentScene() const;
-  EngineState       state() const { return m_State; }
-  void              setState(EngineState value) { m_State = value; }
+  MainHeap&          mainMemory() { return m_MainMemory; }
+  LinearAllocator&   tempMemory() { return m_TempMemory; }
+  IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
+  GameStateMachine&  stateMachine() { return m_StateMachine; }
+  VM&                scripting() { return m_Scripting; }
+  StandardRenderer&  renderer() { return m_Renderer; }
+  DebugRenderer&     debugDraw() { return m_DebugRenderer; }
+  Gfx2DPainter&      renderer2D() const { return *m_Renderer2D; }
+  Assets&            assets() { return m_Assets; }
+  Input&             input() { return m_Input; }
+  AnimationSystem&   animationSys() const { return *m_AnimationSystem; }
+  CollisionSystem&   collisionSys() const { return *m_CollisionSystem; }
+  ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
+  BehaviorSystem&    behaviorSys() const { return *m_BehaviorSystem; }
+  AssetSceneHandle   currentScene() const;
+  EngineState        state() const { return m_State; }
+  void               setState(EngineState value) { m_State = value; }
 
   // Low Level Camera API
 
@@ -200,19 +263,23 @@ class Engine : private bfNonCopyMoveable<Engine>
 
   // "System" Functions to be called by the Application
 
-  template<typename T>
-  void addECSSystem()
+  template<typename T, typename... Args>
+  T* addECSSystem(Args&&... args)
   {
-    m_Systems.push(m_MainMemory.allocateT<T>());
+    T* const sys = m_MainMemory.allocateT<T>(std::forward<Args>(args)...);
+    m_Systems.push(sys);
+    sys->onInit(*this);
+
+    return sys;
   }
 
-  void               init(const BifrostEngineCreateParams& params, BifrostWindow* main_window);
+  void               init(const bfEngineCreateParams& params, bfWindow* main_window);
   [[nodiscard]] bool beginFrame();
-  void               onEvent(Event& evt);
+  void               onEvent(bfWindow* window, Event& evt);
   void               fixedUpdate(float delta_time);
   void               update(float delta_time);
   void               drawBegin(float render_alpha);
-  void               drawEnd() const;
+  void               drawEnd();
   void               endFrame();
   void               deinit();
 

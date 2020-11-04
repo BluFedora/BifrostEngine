@@ -3,48 +3,12 @@
 #                           BIFROST SCRIPT PROJECT                             #
 #                                                                              #
 ################################################################################
-###  CMakeList.txt : Bifrost Script Sub Project of the Bifrost Engine        ###
+###  CMakeList.txt : Bifrost Script bytecode Virtual Machine project.        ###
 ################################################################################
 
 cmake_minimum_required(VERSION 3.8)
 
 project(BifrostScript VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge." LANGUAGES C)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-  # GCC / Clang
-  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "-std=c++17"                = "/std:c++17"
-  #   "-fno-rtti"                 = "/GR-"
-  #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "-std=c++17 -fno-rtti -Wall -g -pedantic")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-  # using Intel C++
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  # NOTE(Shareef): Setting the compiler flags we will be using.
-  #    
-  #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
-  #   "/WX"   - treat warnings as errors.
-  #   "/EHsc" - is for enabling C++ exceptions which we will NOT be using.
-  #     Reason being the C++ STL uses exceptions like a mother f*cker and with warnings as
-  #   errors on this would not build other wise.
-  #   (alternative is to define: _HAS_EXCEPTIONS but that has some other implications.)
-  #   "/GR-"  - Disables RTTI, trying to see if we can do without it for this engine.
-  #   "/D_***_SECURE_NO_WARNINGS" - Disable the warnings for not using the "secure"
-  #      versions of certain functions.
-  #   "/std:c++17" - I needed some new C++17 features for some tEmPlAtE mAgIc
-  #   "/GF"        - String Pooling is very important for the way the Material System works. I want stable
-  #                  addresses. ("Eliminate Duplicate Strings")
-  #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
-  #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
-  #
-  set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /permissive- /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-endif()
-
-include_directories("${PROJECT_BINARY_DIR}")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
   set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
@@ -56,7 +20,8 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 file(GLOB_RECURSE BIFROST_SCRIPT_SOURCE_FILES
-  "src/bifrost_vm_build.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_vm_build.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_hash_map.c"
 )
 
 include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/../include/bifrost)
@@ -66,15 +31,20 @@ include_directories(BifrostScript ${PROJECT_SOURCE_DIR}/include)
 add_library(
   BifrostScript STATIC
   ${BIFROST_SCRIPT_SOURCE_FILES}
-  "../BifrostRuntime/src/data_structures/bifrost_array_t.c"
-  "../BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
-  "../BifrostRuntime/src/data_structures/bifrost_hash_map.c"
+)
+
+target_link_libraries(
+  BifrostScript
+
+  PUBLIC
+    BF_Core_static
 )
 
 target_include_directories(
   BifrostScript 
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
-  ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
+  PUBLIC 
+    ${PROJECT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
 )
 
 set_property(
@@ -82,7 +52,7 @@ set_property(
   PROPERTY C_STANDARD 99
 )
 
-target_compile_definitions(BifrostScript PRIVATE BIFROST_VM_EXPORT_STATIC)
+target_compile_definitions(BifrostScript PRIVATE BF_VM_EXPORT_STATIC)
 
 set_target_properties(BifrostScript PROPERTIES OUTPUT_NAME BifrostScript_static)
 set_target_properties(BifrostScript PROPERTIES VERSION ${PROJECT_VERSION})
@@ -99,9 +69,6 @@ if(NOT EMSCRIPTEN)
   add_library(
     BifrostScript_shared SHARED
     ${BIFROST_SCRIPT_SOURCE_FILES}
-    "../BifrostRuntime/src/data_structures/bifrost_array_t.c"
-    "../BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
-    "../BifrostRuntime/src/data_structures/bifrost_hash_map.c"
   )
   
   target_include_directories(BifrostScript_shared
@@ -110,9 +77,20 @@ if(NOT EMSCRIPTEN)
       PRIVATE
         ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
   )
+
+  target_link_libraries(
+    BifrostScript_shared
+    PRIVATE
+      BF_DataStructuresC_static
+      BF_Core_static
+  )
   
-  target_compile_definitions(BifrostScript_shared PRIVATE BIFROST_VM_EXPORT)
-  set_target_properties(BifrostScript_shared PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
+  target_compile_definitions(BifrostScript_shared PRIVATE BF_VM_EXPORT)
+  set_target_properties(
+    BifrostScript_shared 
+    PROPERTIES 
+      PUBLIC_HEADER include/bifrost/script/bifrost_vm.h
+      OUTPUT_NAME   bf.ScriptDLL)
 endif()
 
 # Command Line Interface
@@ -128,13 +106,14 @@ target_link_libraries(
   BifrostScript_cli 
   PRIVATE 
     BifrostScript
+    # BifrostDataStructuresCxx
 )
 
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
-target_compile_definitions(BifrostScript_cli PRIVATE BIFROST_VM_EXPORT_STATIC)
+target_compile_definitions(BifrostScript_cli PRIVATE BF_VM_EXPORT_STATIC)
 
 set_target_properties(
   BifrostScript_cli
@@ -184,8 +163,8 @@ if (EMSCRIPTEN)
     BifrostWeb 
     PRIVATE 
       BifrostScript
-      BifrostPlatform_static
-      BifrostMemory
+      BF_Platform_static
+      BF_Memory_interface
       BifrostMath_static
       BifrostGraphics_static
   )
@@ -194,8 +173,8 @@ target_link_libraries(
   BifrostWeb 
   PRIVATE 
     BifrostScript
-    BifrostPlatform_shared
-    BifrostMemory
+    BF_Platform_shared
+    BF_Memory_interface
     BifrostMath_shared
     BifrostGraphics_shared
 )

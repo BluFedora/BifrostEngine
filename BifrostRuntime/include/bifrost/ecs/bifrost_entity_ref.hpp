@@ -18,7 +18,7 @@
 
 #include <cstddef> /* nullptr_t */
 
-namespace bifrost
+namespace bf
 {
   class Entity;
   class IMemoryManager;

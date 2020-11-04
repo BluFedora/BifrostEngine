@@ -1,9 +1,8 @@
 {
-    "UUID" : "B06985CC-48E6-46DE-9071-16167ADB9849",
+    "UUID" : "82616B1E-2DB5-40EC-B5B8-EDB855902FEE",
     "Path" : "Shaders/basic_material.frag.spv",
     "m_Type" : {
-        "name" : "BIFROST_SHADER_TYPE_FRAGMENT",
-        "value" : 4
+        "__EnumValue__" : 0
     },
     "Type" : "AssetShaderModuleInfo"
 }

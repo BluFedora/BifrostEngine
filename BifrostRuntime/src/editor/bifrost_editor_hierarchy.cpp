@@ -1,9 +1,10 @@
 #include "bifrost/editor/bifrost_editor_hierarchy.hpp"
 
+#include "bifrost/editor/bf_editor_icons.hpp"
 #include "bifrost/editor/bifrost_editor_overlay.hpp"
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   HierarchyView::HierarchyView() :
     m_SearchQuery{""}  // Filled with initial data for ImGui since ImGui functions do not accept nullptr as an input string.
@@ -19,7 +20,9 @@ namespace bifrost::editor
     {
       if (ImGui::BeginMenuBar())
       {
-        if (ImGui::BeginMenu("+ Entity"))
+        ImGui::Separator();
+
+        if (ImGui::BeginMenu(ICON_FA_PLUS))
         {
           if (ImGui::MenuItem("Create Empty"))
           {
@@ -33,21 +36,43 @@ namespace bifrost::editor
 
         ImGui::Separator();
 
-        imgui_ext::inspect("###SearchBar", "Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
-
-        if (!m_SearchQuery.isEmpty())
-        {
-          ImGui::SameLine();
-
-          if (ImGui::Button("clear"))
-          {
-            m_SearchQuery.clear();
-          }
-        }
-
         ImGui::EndMenuBar();
       }
 
+      if (ImGui::Button(" " ICON_FA_ARROWS_ALT " "))
+      {
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button(" " ICON_FA_UNDO " "))
+      {
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button(" " ICON_FA_EXPAND_ALT " "))
+      {
+      }
+
+      ImGui::SameLine();
+
+      imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH " Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
+
+      if (!m_SearchQuery.isEmpty())
+      {
+        ImGui::SameLine();
+
+        if (ImGui::Button("clear"))
+        {
+
+          m_SearchQuery.clear();
+        }
+      }
+
+      ImGui::Separator();
+
+#if 0
       if (ImGui::Selectable("Undo", false, editor.undoRedo().canUndo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))
       {
         editor.undoRedo().undo();
@@ -57,6 +82,7 @@ namespace bifrost::editor
       {
         editor.undoRedo().redo();
       }
+#endif
 
       const ImVec2 old_item_spacing = ImGui::GetStyle().ItemSpacing;
 
@@ -85,9 +111,9 @@ namespace bifrost::editor
     Selection&                  selection       = editor.selection();
     const bool                  has_children    = !entity->children().isEmpty();
     const bool                  is_selected     = editor.selection().contains(entity);
-    ImGuiTreeNodeFlags          tree_node_flags = ImGuiTreeNodeFlags_OpenOnArrow;
     std::pair<Entity*, Entity*> parent_to       = {nullptr, nullptr}; /* {parent, child} */
     const bool                  is_active       = entity->isActive();
+    ImGuiTreeNodeFlags          tree_node_flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
     ImGui::PushID(entity);
 
@@ -106,7 +132,15 @@ namespace bifrost::editor
       ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
     }
 
-    const bool is_opened = ImGui::TreeNodeEx(entity->name().c_str(), tree_node_flags);
+    bool is_opened;
+
+    {
+      LinearAllocator&     tmp_alloc = editor.engine().tempMemory();
+      LinearAllocatorScope scope     = tmp_alloc;
+
+      char* tree_node_name = string_utils::fmtAlloc(tmp_alloc, nullptr, "%s %s", ICON_FA_DICE_D6, entity->name().c_str());
+      is_opened            = ImGui::TreeNodeEx(tree_node_name, tree_node_flags);
+    }
 
     if (!is_active)
     {
@@ -147,10 +181,13 @@ namespace bifrost::editor
       ImGui::EndDragDropSource();
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+    if (!ImGui::IsItemToggledOpen())
     {
-      selection.clear();
-      selection.select(entity);
+      if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+      {
+        selection.clear();
+        selection.select(entity);
+      }
     }
 
     if (ImGui::BeginDragDropTarget())
@@ -218,4 +255,4 @@ namespace bifrost::editor
 
     bfTransform_flushChanges(&entity->transform());
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor

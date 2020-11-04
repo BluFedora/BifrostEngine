@@ -1,5 +1,23 @@
 {
-    "UUID" : "32A2B49A-8DE1-42E2-84E7-D999AE61C084",
+    "UUID" : "2876F7E1-FCA1-448A-A516-AED45442C7E5",
     "Path" : "Models/plane.obj",
+    "m_SubAssets" : [
+        {
+            "UUID" : "96BCD139-13A1-47C8-A686-BF4357713490",
+            "Path" : "Material_#0",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "CD8D99F4-F157-4F0B-944C-8639BD02C5CC",
+            "Path" : "Material_#1",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        }
+    ],
     "Type" : "AssetModelInfo"
 }

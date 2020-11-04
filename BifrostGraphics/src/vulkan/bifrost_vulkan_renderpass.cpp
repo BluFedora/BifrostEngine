@@ -26,13 +26,13 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   const auto bitsToLoadOp = [](uint32_t i, bfLoadStoreFlags load_ops, bfLoadStoreFlags clear_ops) -> VkAttachmentLoadOp {
     if (bfBit(i) & clear_ops)
     {
-      // TODO(Shareef): Check for the load bit NOT to be set.
+      // TODO(Shareef): Assert for the load bit NOT to be set.
       return VK_ATTACHMENT_LOAD_OP_CLEAR;
     }
 
     if (bfBit(i) & load_ops)
     {
-      // TODO(Shareef): Check for the clear bit NOT to be set.
+      // TODO(Shareef): Assert for the clear bit NOT to be set.
       return VK_ATTACHMENT_LOAD_OP_LOAD;
     }
 
@@ -137,6 +137,13 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   return renderpass;
 }
 
+template<typename T>
+static inline void DeleteResource(T* obj)
+{
+  memset(obj, 0xCD, sizeof(*obj));
+  delete obj;
+}
+
 void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
   if (resource)
@@ -168,6 +175,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
             }
           }
         });
+
+        DeleteResource(buffer);
         break;
       }
       case BIFROST_GFX_OBJECT_RENDERPASS:
@@ -175,6 +184,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
 
         vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
+
+        DeleteResource(renderpass);
         break;
       }
       case BIFROST_GFX_OBJECT_SHADER_MODULE:
@@ -185,6 +196,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         {
           vkDestroyShaderModule(shader_module->parent->handle, shader_module->handle, CUSTOM_ALLOC);
         }
+
+        DeleteResource(shader_module);
         break;
       }
       case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
@@ -205,6 +218,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         {
           vkDestroyPipelineLayout(shader_program->parent->handle, shader_program->layout, CUSTOM_ALLOC);
         }
+
+        DeleteResource(shader_program);
         break;
       }
       case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
@@ -212,6 +227,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
 
         MaterialPool_free(self->descriptor_pool, desc_set);
+
+        DeleteResource(desc_set);
         break;
       }
       case BIFROST_GFX_OBJECT_TEXTURE:
@@ -262,6 +279,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
             }
           }
         });
+
+        DeleteResource(texture);
         break;
       }
       case BIFROST_GFX_OBJECT_FRAMEBUFFER:
@@ -269,6 +288,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(obj);
 
         vkDestroyFramebuffer(self->handle, framebuffer->handle, CUSTOM_ALLOC);
+
+        DeleteResource(framebuffer);
         break;
       }
       case BIFROST_GFX_OBJECT_PIPELINE:
@@ -276,6 +297,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(obj);
 
         vkDestroyPipeline(self->handle, pipeline->handle, CUSTOM_ALLOC);
+
+        DeleteResource(pipeline);
         break;
       }
       default:
@@ -285,7 +308,9 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
     }
 
-    memset(obj, 0xCD, sizeof(*obj));
-    delete obj;
+    // NOTE(SR):
+    //   asan complains about new / delete pairing with different sizes.
+    //   memset(obj, 0xCD, sizeof(*obj));
+    //   delete obj;
   }
 }

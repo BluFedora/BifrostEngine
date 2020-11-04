@@ -2,7 +2,6 @@
 
 #include "bifrost/bifrost.hpp"
 
-#include "bifrost/platform/bifrost_platform_event.h"
 #include "glfw/glfw3.h"
 
 extern GLFWwindow* g_Window;

@@ -15,25 +15,25 @@
 #include "bifrost_vm_function_builder.h"
 
 #include "bifrost_vm_obj.h"
+
 #include <assert.h>
-#include <bifrost/data_structures/bifrost_array_t.h>
 #include <stdio.h>
 
 #define bfAssert(cond, msg) assert((cond) && (msg))
 
-#define DEFAULT_ARRAY_SIZE 5
+#define k_DefaultArraySize 5
 
-void bfVMFunctionBuilder_ctor(BifrostVMFunctionBuilder* self)
+void bfVMFunctionBuilder_ctor(BifrostVMFunctionBuilder* self, struct BifrostLexer_t* lexer)
 {
   self->name                 = NULL;
   self->name_len             = 0;
   self->constants            = NULL;
-  self->local_vars           = Array_new(BifrostVMLocalVar, DEFAULT_ARRAY_SIZE);
-  self->local_var_scope_size = Array_new(int, DEFAULT_ARRAY_SIZE);
+  self->local_vars           = bfVMArray_new(lexer->vm, BifrostVMLocalVar, k_DefaultArraySize);
+  self->local_var_scope_size = bfVMArray_new(lexer->vm, int, k_DefaultArraySize);
   self->instructions         = NULL;
   self->code_to_line         = NULL;
   self->max_local_idx        = 0;
-  self->lexer                = NULL;
+  self->lexer                = lexer;
 }
 
 void bfVMFunctionBuilder_begin(BifrostVMFunctionBuilder* self, const char* name, size_t length)
@@ -42,23 +42,23 @@ void bfVMFunctionBuilder_begin(BifrostVMFunctionBuilder* self, const char* name,
 
   self->name      = name;
   self->name_len  = length;
-  self->constants = Array_new(bfVMValue, DEFAULT_ARRAY_SIZE);
-  Array_clear(&self->local_vars);
-  Array_clear(&self->local_var_scope_size);
-  self->instructions = Array_new(uint32_t, DEFAULT_ARRAY_SIZE);
-  self->code_to_line = OLD_bfArray_newA(self->code_to_line, DEFAULT_ARRAY_SIZE);
+  self->constants = bfVMArray_new(self->lexer->vm, bfVMValue, k_DefaultArraySize);
+  bfVMArray_clear(&self->local_vars);
+  bfVMArray_clear(&self->local_var_scope_size);
+  self->instructions = bfVMArray_new(self->lexer->vm, uint32_t, k_DefaultArraySize);
+  self->code_to_line = bfVMArray_newA(self->lexer->vm, self->code_to_line, k_DefaultArraySize);
 
   bfVMFunctionBuilder_pushScope(self);
 }
 
 uint32_t bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMValue value)
 {
-  size_t index = Array_find(&self->constants, &value, NULL);
+  size_t index = bfVMArray_find(&self->constants, &value, NULL);
 
   if (index == BIFROST_ARRAY_INVALID_INDEX)
   {
-    index = Array_size(&self->constants);
-    Array_push(&self->constants, &value);
+    index = bfVMArray_size(&self->constants);
+    bfVMArray_push(self->lexer->vm, &self->constants, &value);
   }
 
   return (uint32_t)index;
@@ -66,22 +66,22 @@ uint32_t bfVMFunctionBuilder_addConstant(BifrostVMFunctionBuilder* self, bfVMVal
 
 void bfVMFunctionBuilder_pushScope(BifrostVMFunctionBuilder* self)
 {
-  bfScopeVarCount* count = Array_emplace(&self->local_var_scope_size);
+  bfScopeVarCount* count = bfVMArray_emplace(self->lexer->vm, &self->local_var_scope_size);
   *count                 = 0;
 }
 
 static inline size_t bfVMFunctionBuilder__getVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length, bfBool32 in_current_scope)
 {
-  const int* count = (const int*)Array_back(&self->local_var_scope_size);
-  const int  end   = in_current_scope ? *count : (int)Array_size(&self->local_vars);
+  const int* count = (const int*)bfVMArray_back(&self->local_var_scope_size);
+  const int  end   = in_current_scope ? *count : (int)bfVMArray_size(&self->local_vars);
 
   for (int i = end - 1; i >= 0; --i)
   {
     BifrostVMLocalVar* var = self->local_vars + i;
 
-    assert((int)Array_size(&self->local_vars) > i && "This is a rt error");
+    assert((int)bfVMArray_size(&self->local_vars) > i && "This is a rt error");
 
-    if (length == var->name_len && String_ccmpn(name, var->name, length) == 0)
+    if (length == var->name_len && bfVMString_ccmpn(name, var->name, length) == 0)
     {
       return i;
     }
@@ -103,12 +103,12 @@ uint32_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const 
     return (uint32_t)prev_decl;
   }
 
-  const size_t       var_loc = Array_size(&self->local_vars);
-  BifrostVMLocalVar* var     = Array_emplace(&self->local_vars);
+  const size_t       var_loc = bfVMArray_size(&self->local_vars);
+  BifrostVMLocalVar* var     = bfVMArray_emplace(self->lexer->vm, &self->local_vars);
   var->name                  = name;
   var->name_len              = length;
 
-  int* count = (int*)Array_back(&self->local_var_scope_size);
+  int* count = (int*)bfVMArray_back(&self->local_var_scope_size);
   ++(*count);
 
   if (self->max_local_idx < var_loc)
@@ -121,9 +121,9 @@ uint32_t bfVMFunctionBuilder_declVariable(BifrostVMFunctionBuilder* self, const 
 
 uint16_t bfVMFunctionBuilder_pushTemp(BifrostVMFunctionBuilder* self, uint16_t num_temps)
 {
-  const size_t       var_loc     = Array_size(&self->local_vars);
+  const size_t       var_loc     = bfVMArray_size(&self->local_vars);
   const size_t       var_loc_end = var_loc + num_temps;
-  BifrostVMLocalVar* vars        = Array_emplaceN(&self->local_vars, num_temps);
+  BifrostVMLocalVar* vars        = bfVMArray_emplaceN(self->lexer->vm, &self->local_vars, num_temps);
 
   for (size_t i = 0; i < num_temps; ++i)
   {
@@ -142,7 +142,7 @@ uint16_t bfVMFunctionBuilder_pushTemp(BifrostVMFunctionBuilder* self, uint16_t n
 
 void bfVMFunctionBuilder_popTemp(BifrostVMFunctionBuilder* self, uint16_t start)
 {
-  Array_resize(&self->local_vars, start);
+  bfVMArray_resize(self->lexer->vm, &self->local_vars, start);
 }
 
 size_t bfVMFunctionBuilder_getVariable(BifrostVMFunctionBuilder* self, const char* name, size_t length)
@@ -152,17 +152,18 @@ size_t bfVMFunctionBuilder_getVariable(BifrostVMFunctionBuilder* self, const cha
 
 void bfVMFunctionBuilder_popScope(BifrostVMFunctionBuilder* self)
 {
-  const int*   count    = (const int*)Array_back(&self->local_var_scope_size);
-  const size_t num_vars = Array_size(&self->local_vars);
+  const int*   count    = (const int*)bfVMArray_back(&self->local_var_scope_size);
+  const size_t num_vars = bfVMArray_size(&self->local_vars);
   const size_t new_size = num_vars - *count;
-  Array_resize(&self->local_vars, new_size);
-  Array_pop(&self->local_var_scope_size);
+
+  bfVMArray_resize(self->lexer->vm, &self->local_vars, new_size);
+  bfVMArray_pop(&self->local_var_scope_size);
 }
 
 static inline bfInstruction* bfVMFunctionBuilder_addInst(BifrostVMFunctionBuilder* self)
 {
-  *(uint16_t*)Array_emplace(&self->code_to_line) = (uint16_t)self->lexer->current_line_no;
-  return Array_emplace(&self->instructions);
+  *(uint16_t*)bfVMArray_emplace(self->lexer->vm, &self->code_to_line) = (uint16_t)self->lexer->current_line_no;
+  return bfVMArray_emplace(self->lexer->vm, &self->instructions);
 }
 
 void bfVMFunctionBuilder_addInstABC(BifrostVMFunctionBuilder* self, bfInstructionOp op, uint16_t a, uint16_t b, uint16_t c)
@@ -187,7 +188,7 @@ void bfVMFunctionBuilder_addInstBreak(BifrostVMFunctionBuilder* self)
 
 void bfVMFunctionBuilder_addInstOp(BifrostVMFunctionBuilder* self, bfInstructionOp op)
 {
-  bfInstruction* inst = Array_emplace(&self->instructions);
+  bfInstruction* inst = bfVMArray_emplace(self->lexer->vm, &self->instructions);
   *inst               = BIFROST_MAKE_INST_OP(op);
 }
 
@@ -197,7 +198,7 @@ void bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn
   bfVMFunctionBuilder_popScope(self);
 
   out->super.type         = BIFROST_VM_OBJ_FUNCTION;
-  out->name               = String_newLen(self->name, self->name_len);
+  out->name               = bfVMString_newLen(self->lexer->vm, self->name, self->name_len);
   out->arity              = arity;
   out->code_to_line       = self->code_to_line;
   out->constants          = self->constants;
@@ -210,6 +211,6 @@ void bfVMFunctionBuilder_end(BifrostVMFunctionBuilder* self, struct BifrostObjFn
 
 void bfVMFunctionBuilder_dtor(BifrostVMFunctionBuilder* self)
 {
-  Array_delete(&self->local_vars);
-  Array_delete(&self->local_var_scope_size);
+  bfVMArray_delete(self->lexer->vm, &self->local_vars);
+  bfVMArray_delete(self->lexer->vm, &self->local_var_scope_size);
 }

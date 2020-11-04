@@ -13,7 +13,7 @@
 /******************************************************************************/
 #include "bifrost/utility/bifrost_uuid.h"
 
-#include "bifrost/platform/bifrost_platform.h" /* BIFROST_PLATFORM_* */
+#include "bf/platform/bf_platform.h" /* BIFROST_PLATFORM_* */
 
 #include <stdio.h>  /* sprintf        */
 #include <string.h> /* strcpy, memcpy */
@@ -69,18 +69,18 @@ BifrostUUID bfUUID_generate(void)
 #endif
 }
 
-BifrostUUID bfUUID_fromString(const char source[37])
+BifrostUUID bfUUID_fromString(const char source[k_bfUUIDStringCapacity])
 {
 #if BIFROST_PLATFORM_WINDOWS
   GUID out;
 
-  WCHAR source_wide[39];
+  WCHAR source_wide[k_bfUUIDStringCapacity + 2];
 
   source_wide[0]  = L'{';
   source_wide[37] = L'}';
   source_wide[38] = L'\0';
 
-  mbstowcs(source_wide + 1, source, 36); /* <cstdlib> */
+  mbstowcs(source_wide + 1, source, k_bfUUIDStringCapacity - 1); /* <cstdlib> */
 
   if (IIDFromString(source_wide, &out) == S_OK)
   {

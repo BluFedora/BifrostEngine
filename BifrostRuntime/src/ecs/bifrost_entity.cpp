@@ -19,7 +19,7 @@
 #include "bifrost/debug/bifrost_dbg_logger.h"
 #include "bifrost/ecs/bifrost_behavior.hpp"
 
-namespace bifrost
+namespace bf
 {
   static constexpr StringRange k_SerializeComponentActiveKey   = "__Active__";
   static constexpr StringRange k_SerializeBehaviorClassNameKey = "__BehaviorClass__";
@@ -42,6 +42,11 @@ namespace bifrost
     m_Flags{IS_ACTIVE | IS_SERIALIZABLE},
     m_UUID{bfUUID_makeEmpty().as_number}
   {
+  }
+
+  Engine& Entity::engine() const
+  {
+    return scene().engine();
   }
 
   BifrostTransform& Entity::transform() const
@@ -213,7 +218,7 @@ namespace bifrost
   bool Entity::removeBehavior(IBehavior* behavior)
   {
     const std::size_t list_size = m_Behaviors.size();
-    std::size_t       index     = BIFROST_ARRAY_INVALID_INDEX;
+    std::size_t       index     = k_bfArrayInvalidIndex;
 
     for (std::size_t i = 0; i < list_size; ++i)
     {
@@ -226,7 +231,7 @@ namespace bifrost
       }
     }
 
-    const bool was_found = index != BIFROST_ARRAY_INVALID_INDEX;
+    const bool was_found = index != k_bfArrayInvalidIndex;
 
     if (was_found)
     {
@@ -265,7 +270,7 @@ namespace bifrost
         m_Children.back().destroy();
       }
 
-      setParent(nullptr);
+      detachFromParent();
 
       gc::removeEntity(*this);
     }
@@ -509,7 +514,7 @@ namespace bifrost
   {
     const std::size_t index = findBehaviorIdxByType(type);
 
-    return index != BIFROST_ARRAY_INVALID_INDEX ? m_Behaviors[index] : nullptr;
+    return index != k_bfArrayInvalidIndex ? m_Behaviors[index] : nullptr;
   }
 
   std::size_t Entity::findBehaviorIdxByType(meta::BaseClassMetaInfoPtr type) const
@@ -526,14 +531,14 @@ namespace bifrost
       }
     }
 
-    return BIFROST_ARRAY_INVALID_INDEX;
+    return k_bfArrayInvalidIndex;
   }
 
   bool Entity::removeBehaviorFromList(meta::BaseClassMetaInfoPtr type)
   {
     const std::size_t index = findBehaviorIdxByType(type);
 
-    if (index != BIFROST_ARRAY_INVALID_INDEX)
+    if (index != k_bfArrayInvalidIndex)
     {
       deleteBehavior(m_Behaviors[index]);
       m_Behaviors.removeAt(index);

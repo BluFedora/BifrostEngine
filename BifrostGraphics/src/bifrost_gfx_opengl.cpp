@@ -2,10 +2,10 @@
 
 #include "bifrost/graphics/bifrost_gfx_object_cache.hpp"
 
-#include <bifrost/memory/bifrost_freelist_allocator.hpp>
-#include <bifrost/memory/bifrost_stl_allocator.hpp>
+#include "bf/FreeListAllocator.hpp"
+#include "bf/StlAllocator.hpp"
 
-#include <bifrost/platform/bifrost_platform_gl.h>
+#include <bf/platform/bf_platform_gl.h>
 
 #include <stb/stb_image.h>
 
@@ -304,7 +304,7 @@ void         bfWebGL_handleResize(void);
 #define glBindBufferRange bfWebGL_bindBufferRange
 #endif
 
-using namespace bifrost;
+using namespace bf;
 
 //
 // Memory
@@ -396,7 +396,7 @@ BIFROST_DEFINE_HANDLE(Pipeline)
 
 BIFROST_DEFINE_HANDLE(WindowSurface)
 {
-  struct BifrostWindow_t* window;
+  struct bfWindow_t* window;
   bfGfxCommandListHandle  current_cmd_list;
   bfTexture               surface_dummy;
 };
@@ -625,7 +625,7 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
   return self->logical_device;
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct BifrostWindow_t* bf_window)
+bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window)
 {
   (void)self;
 
@@ -1415,9 +1415,30 @@ bfBool32 bfTexture_loadFile(bfTextureHandle self, const char* file)
   return bfFalse;
 }
 
+bfBool32 bfTexture_loadPNG(bfTextureHandle self, const void* png_bytes, size_t png_bytes_length)
+{
+  static const size_t k_NumReqComps = 4;
+
+  int      num_components = 0;
+  stbi_uc* texture_data   = stbi_load_from_memory((const stbi_uc*)png_bytes, int(png_bytes_length), &self->image_width, &self->image_height, &num_components, STBI_rgb_alpha);
+
+  if (texture_data)
+  {
+    const size_t num_req_bytes = (size_t)(self->image_width) * (size_t)(self->image_height) * k_NumReqComps * sizeof(char);
+
+    bfTexture_loadData(self, (const char*)texture_data, num_req_bytes);
+
+    stbi_image_free(texture_data);
+
+    return bfTrue;
+  }
+
+  return bfFalse;
+}
+
 void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
 
-bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pixels_length)
+bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3])
 {
   const bool is_indefinite =
    self->image_width == BIFROST_TEXTURE_UNKNOWN_SIZE ||
@@ -1464,7 +1485,8 @@ bfBool32 bfTexture_loadData(bfTextureHandle self, const char* pixels, size_t pix
   else
   {
     glBindTexture(GL_TEXTURE_2D, self->tex_image);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self->image_width, self->image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self->image_width, self->image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexSubImage2D(GL_TEXTURE_2D, offset[2], offset[0], offset[1], sizes[0], sizes[1], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     if (self->image_miplevels > 1)
     {
@@ -2140,7 +2162,7 @@ void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetH
   self->pipeline_state.vertex_set_layout = vertex_set_layout;
 }
 
-void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
+void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
 {
   assert(num_buffers < BIFROST_GFX_BUFFERS_MAX_BINDING);
 
@@ -2421,10 +2443,12 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
     }
   }
 
+  // glDrawElementsBaseVertex
+
   glDrawElements(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode),
                  num_indices,
                  self->index_type == BIFROST_INDEX_TYPE_UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-                 (const void*)(uintptr_t(index_offset * index_size)));
+                 (const void*)(uintptr_t(index_offset * index_size) + self->index_offset));
 
   if (vertex_offset != 0)
   {

@@ -63,32 +63,33 @@ bfVMValue bfVMValue_fromNumber(bfFloat64 value)
 
 bfVMValue bfVMValue_fromPointer(const void* value)
 {
-  return value ? (bfVMValue)(k_VMValuePointerMask | (uint64_t)((uintptr_t)value))  : bfVMValue_fromNull();
+  return value ? (bfVMValue)(k_VMValuePointerMask | (uint64_t)((uintptr_t)value)) : bfVMValue_fromNull();
 }
 
-bfFloat64 bfVmValue_asNumber(bfVMValue self)
+bfFloat64 bfVMValue_asNumber(bfVMValue self)
 {
   bfFloat64 num;
+
   memcpy(&num, &self, sizeof(num));
 
   return num;
 }
 
-void* bfVmValue_asPointer(bfVMValue self)
+void* bfVMValue_asPointer(bfVMValue self)
 {
   return (void*)((uintptr_t)(self & ~k_VMValuePointerMask));
 }
 
 bfVMValue bfVMValue_sub(bfVMValue lhs, bfVMValue rhs)
 {
-  return bfVMValue_fromNumber(bfVmValue_asNumber(lhs) - bfVmValue_asNumber(rhs));
+  return bfVMValue_fromNumber(bfVMValue_asNumber(lhs) - bfVMValue_asNumber(rhs));
 }
 
 bfVMValue bfVMValue_mul(bfVMValue lhs, bfVMValue rhs)
 {
   if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return bfVMValue_fromNumber(bfVmValue_asNumber(lhs) * bfVmValue_asNumber(rhs));
+    return bfVMValue_fromNumber(bfVMValue_asNumber(lhs) * bfVMValue_asNumber(rhs));
   }
 
   return bfVMValue_fromNull();
@@ -98,7 +99,7 @@ bfVMValue bfVMValue_div(bfVMValue lhs, bfVMValue rhs)
 {
   if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return bfVMValue_fromNumber(bfVmValue_asNumber(lhs) / bfVmValue_asNumber(rhs));
+    return bfVMValue_fromNumber(bfVMValue_asNumber(lhs) / bfVMValue_asNumber(rhs));
   }
 
   return bfVMValue_fromNull();
@@ -106,7 +107,7 @@ bfVMValue bfVMValue_div(bfVMValue lhs, bfVMValue rhs)
 
 bfBool32 bfVMValue_isThuthy(bfVMValue self)
 {
-  if (bfVMValue_isNull(self) || bfVMValue_isFalse(self) || (bfVMValue_isPointer(self) && !bfVmValue_asPointer(self)))
+  if (bfVMValue_isNull(self) || bfVMValue_isFalse(self) || (bfVMValue_isPointer(self) && !bfVMValue_asPointer(self)))
   {
     return bfFalse;
   }
@@ -118,8 +119,8 @@ bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
 {
   if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    const bfFloat64 lhs_num = bfVmValue_asNumber(lhs);
-    const bfFloat64 rhs_num = bfVmValue_asNumber(rhs);
+    const bfFloat64 lhs_num = bfVMValue_asNumber(lhs);
+    const bfFloat64 rhs_num = bfVMValue_asNumber(rhs);
 
     return lhs_num == rhs_num;
   }
@@ -136,14 +137,14 @@ bfBool32 bfVMValue_ee(bfVMValue lhs, bfVMValue rhs)
         BifrostObjStr* const lhs_string = (BifrostObjStr*)lhs_obj;
         BifrostObjStr* const rhs_string = (BifrostObjStr*)rhs_obj;
 
-        return lhs_string->hash == rhs_string->hash && String_cmp(lhs_string->value, rhs_string->value) == 0;
+        return lhs_string->hash == rhs_string->hash && bfVMString_cmp(lhs_string->value, rhs_string->value) == 0;
       }
     }
 
     return bfFalse;
   }
 
-  // TODO(Shareef): Specilize things more than just numbers
+  // TODO(Shareef): Specialize things more than just numbers
   return lhs == rhs;
 }
 
@@ -151,7 +152,7 @@ bfBool32 bfVMValue_lt(bfVMValue lhs, bfVMValue rhs)
 {
   if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return bfVmValue_asNumber(lhs) < bfVmValue_asNumber(rhs);
+    return bfVMValue_asNumber(lhs) < bfVMValue_asNumber(rhs);
   }
 
   return bfFalse;
@@ -161,7 +162,7 @@ bfBool32 bfVMValue_gt(bfVMValue lhs, bfVMValue rhs)
 {
   if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return bfVmValue_asNumber(lhs) > bfVmValue_asNumber(rhs);
+    return bfVMValue_asNumber(lhs) > bfVMValue_asNumber(rhs);
   }
 
   return bfFalse;
@@ -171,7 +172,7 @@ bfBool32 bfVMValue_ge(bfVMValue lhs, bfVMValue rhs)
 {
   if (bfVMValue_isNumber(lhs) && bfVMValue_isNumber(rhs))
   {
-    return bfVmValue_asNumber(lhs) >= bfVmValue_asNumber(rhs);
+    return bfVMValue_asNumber(lhs) >= bfVMValue_asNumber(rhs);
   }
 
   return bfFalse;

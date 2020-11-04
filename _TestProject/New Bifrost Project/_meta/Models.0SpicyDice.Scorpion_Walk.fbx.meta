@@ -1,0 +1,15 @@
+{
+    "UUID" : "801107DA-C0A5-462C-B38C-5BF7B713989B",
+    "Path" : "Models/0SpicyDice/Scorpion_Walk.fbx",
+    "m_SubAssets" : [
+        {
+            "UUID" : "B429A206-5B20-4BAF-8F26-258C54D00D90",
+            "Path" : "Scorpion_Walk",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "___NoTypeInfo___"
+        }
+    ],
+    "Type" : "AssetModelInfo"
+}

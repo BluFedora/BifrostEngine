@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-namespace bifrost
+namespace bf
 {
   DebugRenderer::DebugRenderer(IMemoryManager& memory) :
     m_Gfx{nullptr},
@@ -95,6 +95,8 @@ namespace bifrost
             {max_point.x, max_point.y, min_point.z},  // 7
            };
 
+          // TODO(Shareef): Use an index buffer.
+
           // Top 'Face'
           addVertices(line_buffer, points[1], points[0], data.color, frame_info);
           addVertices(line_buffer, points[1], points[6], data.color, frame_info);
@@ -155,9 +157,9 @@ namespace bifrost
       bfGfxDevice_release(m_Gfx->device(), shader);
     }
 
-    for (auto& m_LineBuffer : m_LineBuffers)
+    for (auto& line_buffer : m_LineBuffers)
     {
-      clearLineBuffer(m_LineBuffer);
+      clearLineBuffer(line_buffer);
     }
 
     while (m_LineBufferPool)

@@ -1,6 +1,6 @@
 #include "bifrost/asset_io/bifrost_file.hpp"
 
-#include "bifrost/memory/bifrost_imemory_manager.hpp" /* IMmeoryManager */
+#include "bf/IMemoryManager.hpp" /* IMemoryManager */
 
 #if _WIN32 /* Windows */
 #ifndef NOMINMAX
@@ -17,7 +17,7 @@
 
 #include <cstring> /* strlen */
 
-namespace bifrost
+namespace bf
 {
   namespace file
   {

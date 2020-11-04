@@ -16,7 +16,7 @@
 #include <type_traits> /* index_sequence, make_index_sequence, remove_reference_t */
 #include <utility>     /* forward                                                 */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   //
   // NthTypeOf<N, Ts...>
@@ -100,7 +100,7 @@ namespace bifrost::meta
     };
 
     //
-    // TODO: Add constexpr index to this version for for each....
+    // TODO: Add constexpr index to this version of for each....
     //
 
     template<std::size_t N>

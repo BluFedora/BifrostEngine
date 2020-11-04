@@ -24,7 +24,7 @@
 #include "bifrost/ecs/bifrost_light.hpp"              /* Light        */
 #include "bifrost/ecs/bifrost_renderer_component.hpp" /* MeshRenderer */
 
-namespace bifrost
+namespace bf
 {
   template<typename... Args>
   using DenseMapTuple    = ContainerTuple<DenseMap, Args...>;

@@ -24,7 +24,7 @@
 
 #include <atomic>  // std::atomic_uint32_t
 
-namespace bifrost::meta
+namespace bf::meta
 {
   template<>
   inline const auto& Meta::registerMembers<BifrostTransform>()
@@ -40,9 +40,9 @@ namespace bifrost::meta
 
     return member_ptrs;
   }
-}  // namespace bifrost::meta
+}  // namespace bf::meta
 
-namespace bifrost
+namespace bf
 {
   class BaseBehavior;
   class ISerializer;
@@ -73,7 +73,7 @@ namespace bifrost
     static constexpr std::uint8_t IS_ACTIVE              = bfBit(3);  //!<
     static constexpr std::uint8_t IS_SERIALIZABLE        = bfBit(4);  //!<
 
-   private:
+    // private:
     Scene&                  m_OwningScene;              //!<
     String                  m_Name;                     //!<
     BifrostTransformID      m_Transform;                //!<
@@ -93,8 +93,9 @@ namespace bifrost
    public:
     Entity(Scene& scene, const StringRange& name);
 
-    // Getters
+    // Accessors
 
+    [[nodiscard]] Engine&                  engine() const;
     [[nodiscard]] Scene&                   scene() const { return m_OwningScene; }
     [[nodiscard]] const String&            name() const { return m_Name; }
     [[nodiscard]] BifrostTransform&        transform() const;
@@ -134,6 +135,11 @@ namespace bifrost
 
         handle.handle = getComponentList<T>(is_active).add(*this);
         setComponentActiveState<T>(is_active);
+
+        if (is_active)
+        {
+          get<T>()->privateOnEnable(engine());
+        }
       }
 
       return *get<T>();
@@ -182,7 +188,17 @@ namespace bifrost
 
           new_data = std::move(old_data);
 
-          remove<T>();
+          if (value)
+          {
+            new_data.privateOnEnable(engine());
+          }
+          else
+          {
+            new_data.privateOnDisable(engine());
+          }
+
+          // remove<T>();
+          getComponentList<T>(!value).remove(handle.handle);
 
           handle.handle = new_handle;
 
@@ -210,6 +226,7 @@ namespace bifrost
 
       if (handle.handle.isValid())
       {
+        get<T>()->privateOnDisable(engine());
         getComponentList<T>(getComponentActiveState<T>()).remove(handle.handle);
         handle.handle = {};
         setComponentActiveState<T>(false);
@@ -336,9 +353,9 @@ namespace bifrost
     void    editorLinkEntity(Entity* old_parent);
     Entity* editorUnlinkEntity();
   };
-}  // namespace bifrost
+}  // namespace bf
 
-BIFROST_META_REGISTER(bifrost::Entity)
+BIFROST_META_REGISTER(bf::Entity)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(

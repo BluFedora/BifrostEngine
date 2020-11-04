@@ -1,14 +1,14 @@
 #ifndef BIFROST_META_RUNTIME_IMPL_HPP
 #define BIFROST_META_RUNTIME_IMPL_HPP
 
-#include "bifrost_meta_function_traits.hpp"
+#include "bf_meta_function_traits.hpp"
 #include "bifrost_meta_member.hpp"
 #include "bifrost_meta_runtime.hpp"
 #include "bifrost_meta_utils.hpp"
 
 #include <array>
 
-namespace bifrost::meta
+namespace bf::meta
 {
   template<typename MemberConcept>
   class PropertyMetaInfo : public BasePropertyMetaInfo

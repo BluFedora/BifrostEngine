@@ -19,7 +19,7 @@
 
 #include <cstddef> /* size_t */
 
-namespace bifrost
+namespace bf
 {
   struct UUIDHasher final
   {

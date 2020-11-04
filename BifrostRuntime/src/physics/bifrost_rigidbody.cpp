@@ -1,6 +1,6 @@
 #include "bifrost_rigidbody.h"
 
-namespace bifrost
+namespace bf
 {
   const static real sleepEpsilon = (real)0.3;
 

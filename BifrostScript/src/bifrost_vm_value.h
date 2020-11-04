@@ -16,11 +16,13 @@
 #ifndef BIFROST_VM_VALUE_H
 #define BIFROST_VM_VALUE_H
 
-#include "bifrost/script/bifrost_vm.h" /* uint64_t, bfFloat64 */
+#include <stdint.h> /* uint64_t */
 
 #if __cplusplus
 extern "C" {
 #endif
+typedef double bfFloat64;
+
 /* clang-format off */
 /* static uint8_t TAG_GET(bfVMValue value) { return (uint8_t)(value & TAG_MASK); } */
 
@@ -48,8 +50,8 @@ bfVMValue bfVMValue_fromNull(void);
 bfVMValue bfVMValue_fromBool(bfBool32 value);
 bfVMValue bfVMValue_fromNumber(bfFloat64 value);
 bfVMValue bfVMValue_fromPointer(const void* value);
-bfFloat64 bfVmValue_asNumber(bfVMValue self);
-void*     bfVmValue_asPointer(bfVMValue self);
+bfFloat64 bfVMValue_asNumber(bfVMValue self);
+void*     bfVMValue_asPointer(bfVMValue self);
 bfVMValue bfVMValue_sub(bfVMValue lhs, bfVMValue rhs);
 bfVMValue bfVMValue_mul(bfVMValue lhs, bfVMValue rhs);
 bfVMValue bfVMValue_div(bfVMValue lhs, bfVMValue rhs);

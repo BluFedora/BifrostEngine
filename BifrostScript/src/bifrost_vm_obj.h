@@ -14,9 +14,7 @@
 #ifndef BIFROST_VM_OBJ_H
 #define BIFROST_VM_OBJ_H
 
-#include "bifrost/script/bifrost_vm.h"                      /* bfNativeFnT, bfClassFinalizer, bfVMValue */
-#include <bifrost/data_structures/bifrost_dynamic_string.h> /* BifrostString, ConstBifrostString        */
-#include <bifrost/data_structures/bifrost_hash_map.h>       /* BifrostHashMap                           */
+#include "bifrost/script/bifrost_vm.h" /* bfNativeFnT, bfClassFinalizer, bfVMValue, BifrostHashMap */
 
 #if __cplusplus
 extern "C" {
@@ -97,7 +95,7 @@ typedef struct BifrostObjInstance_t
 {
   BifrostObj       super;
   BifrostObjClass* clz;
-  BifrostHashMap   fields;                   // <ConstBifrostString, bfVMValue> (/* Non owning string, [BifrostVM::symbols] is the owner. */)
+  BifrostHashMap   fields;                   // <ConstBifrostString (Non owning string, [BifrostVM::symbols] is the owner), bfVMValue>
   char             extra_data[bfStructHack]; /* This is for native class data. */
 
 } BifrostObjInstance;
@@ -150,9 +148,8 @@ typedef struct BifrostVMStackFrame_t
 
 } BifrostVMStackFrame;
 
-#define BIFROST_AS_OBJ(value) ((BifrostObj*)bfVmValue_asPointer((value)))
+#define BIFROST_AS_OBJ(value) ((BifrostObj*)bfVMValue_asPointer((value)))
 
-// Move to "GC" Header.
 BifrostObjModule*    bfVM_createModule(struct BifrostVM_t* self, bfStringRange name);
 BifrostObjClass*     bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* module, bfStringRange name, BifrostObjClass* base_clz, size_t extra_data);
 BifrostObjInstance*  bfVM_createInstance(struct BifrostVM_t* self, BifrostObjClass* clz);
@@ -164,6 +161,49 @@ BifrostObjWeakRef*   bfVM_createWeakRef(struct BifrostVM_t* self, void* data);
 void                 bfVMObject_delete(struct BifrostVM_t* self, BifrostObj* obj);
 bfBool32             bfObjIsFunction(const BifrostObj* obj);
 void                 bfObjFinalize(struct BifrostVM_t* self, BifrostObj* obj);
+
+/*
+  Data Structures
+*/
+
+/* array */
+
+#define BIFROST_ARRAY_INVALID_INDEX ((size_t)(-1))
+#define bfVMArray_new(vm, T, initial_size) (T*)_bfVMArrayT_new((vm), sizeof(T), (initial_size))
+#define bfVMArray_newA(vm, arr, initial_size) _bfVMArrayT_new((vm), sizeof((arr)[0]), (initial_size))
+
+typedef int (*bfVMArrayFindCompare)(const void*, const void*);
+
+void*  _bfVMArrayT_new(struct BifrostVM_t* vm, const size_t stride, const size_t initial_size);
+size_t bfVMArray_size(const void* const self);
+void*  bfVMArray_at(const void* const self, const size_t index);
+void   bfVMArray_resize(struct BifrostVM_t* vm, void* const self, const size_t size);
+void*  bfVMArray_emplace(struct BifrostVM_t* vm, void* const self);
+void*  bfVMArray_emplaceN(struct BifrostVM_t* vm, void* const self, const size_t num_elements);
+void*  bfVMArray_pop(void* const self);
+void*  bfVMArray_back(const void* const self);
+void   bfVMArray_clear(void* const self);
+size_t bfVMArray_find(const void* const self, const void* key, bfVMArrayFindCompare compare);
+void   bfVMArray_push(struct BifrostVM_t* vm, void* const self, const void* const data);
+void   bfVMArray_delete(struct BifrostVM_t* vm, void* const self);
+
+/* string */
+
+BifrostString bfVMString_new(struct BifrostVM_t* vm, const char* initial_data);
+BifrostString bfVMString_newLen(struct BifrostVM_t* vm, const char* initial_data, size_t string_length);
+const char*   bfVMString_cstr(ConstBifrostString self);
+size_t        bfVMString_length(ConstBifrostString self);
+void          bfVMString_reserve(struct BifrostVM_t* vm, BifrostString* self, size_t new_capacity);
+void          bfVMString_sprintf(struct BifrostVM_t* vm, BifrostString* self, const char* format, ...);
+void          bfVMString_unescape(BifrostString self);
+int           bfVMString_cmp(ConstBifrostString self, ConstBifrostString other);
+int           bfVMString_ccmpn(ConstBifrostString self, const char* other, size_t length);
+uint32_t      bfVMString_hash(const char* str);
+uint32_t      bfVMString_hashN(const char* str, size_t length);
+void          bfVMString_delete(struct BifrostVM_t* vm, BifrostString self);
+
+/* hash-map */
+
 #if __cplusplus
 }
 #endif

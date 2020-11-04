@@ -23,11 +23,12 @@
 #if __cplusplus
 extern "C" {
 #endif
+typedef struct BifrostObjFn_t BifrostObjFn;
 
 enum
 {
   // IEEE 754-1985 says we need 24 chars: "-2.2250738585072020E-308"
-  BIFROST_DBG_DOUBLE_MAX_DIGITS = 1 + 15 + 1 + 1 + 1 + 4 + 1 + 1 /* Sign + Digits + Dot + e + "+/-" + exp + '\0' + Safety? */,
+  k_bfDbgDoubleMaxDigits = 1 + 15 + 1 + 1 + 1 + 4 + 1 + 1 /* Sign + Digits + Dot + e + "+/-" + exp + '\0' + Safety? */,
 };
 
 size_t      bfDbgValueToString(bfVMValue value, char* buffer, size_t buffer_size);

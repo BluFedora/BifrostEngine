@@ -19,7 +19,9 @@
 #include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
 #include "bifrost/utility/bifrost_json.hpp"             /* json::Value          */
 
-namespace bifrost
+#include "bf/anim2D/bf_animation_system.hpp"
+
+namespace bf
 {
 #define ID_TO_INDEX(id) ((id)-1)
 
@@ -96,12 +98,14 @@ namespace bifrost
     m_Engine{engine},
     m_Memory{m_Engine.mainMemory()},
     m_RootEntities{m_Memory},
+    m_Entities{&Entity::m_Hierarchy},
     m_ActiveComponents{m_Memory},
     m_InactiveComponents{m_Memory},
     m_ActiveBehaviors{m_Memory},
     m_BVHTree{m_Memory},
     m_TransformSystem{m_Memory},
-    m_Camera{}
+    m_Camera{},
+    m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
   }
@@ -129,6 +133,17 @@ namespace bifrost
     m_RootEntities.removeAt(m_RootEntities.find(entity));
   }
 
+  void Scene::removeAllEntities()
+  {
+    while (!m_RootEntities.isEmpty())
+    {
+      m_RootEntities.back()->destroy();
+
+      // Entity::destroy detaches from parent.
+      // m_RootEntities.pop();
+    }
+  }
+
   void Scene::update(LinearAllocator& temp, DebugRenderer& dbg_renderer)
   {
     for (Entity* entity : m_RootEntities)
@@ -137,7 +152,7 @@ namespace bifrost
     }
 
     m_BVHTree.endFrame(temp, true);
-
+    #if 0
     m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
       // Don't draw inactive entities.
       if (bvh_node::isLeaf(node))
@@ -155,6 +170,9 @@ namespace bifrost
        Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
        bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
     });
+    #else
+    (void)dbg_renderer;
+    #endif
   }
 
   void Scene::markEntityTransformDirty(Entity* entity)
@@ -183,9 +201,9 @@ namespace bifrost
     {
       if (serializer.mode() == SerializerMode::LOADING)
       {
-        for (auto& entity : m_RootEntities)
+        while (!m_RootEntities.isEmpty())
         {
-          entity->destroy();
+          m_RootEntities.back()->destroy();
         }
 
         m_RootEntities.clear();
@@ -216,17 +234,15 @@ namespace bifrost
 
   Scene::~Scene()
   {
-    while (!m_RootEntities.isEmpty())
-    {
-      m_RootEntities.back()->destroy();
-      m_RootEntities.pop();
-    }
+    bfAnimation2D_destroyScene(m_Engine.animationSys().anim2DCtx(), m_AnimationScene);
+
+    removeAllEntities();
   }
 
   bool AssetSceneInfo::load(Engine& engine)
   {
     Assets&      assets    = engine.assets();
-    const String full_path = assets.fullPath(*this);
+    const String full_path = filePathAbs();
     File         file_in   = {full_path, file::FILE_MODE_READ};
 
     if (file_in)

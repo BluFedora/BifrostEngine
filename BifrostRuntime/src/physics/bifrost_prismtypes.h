@@ -13,7 +13,7 @@
 #define PRISM_PHYSICS_DBL 0
 #define PRISM_PHYSICS_FLT 1
 
-namespace bifrost
+namespace bf
 {
 #ifdef PRISM_USE_DOUBLE
 #define PRISM_PHYSICS_PRECISION PRISM_PHYSICS_DBL
@@ -38,7 +38,7 @@ namespace bifrost
 #define epsilon_real FLT_EPSILON
 #endif
 
-using namespace bifrost;
+using namespace bf;
 
 namespace prism
 {

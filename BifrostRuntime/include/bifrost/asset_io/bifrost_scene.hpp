@@ -13,15 +13,16 @@
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
-#include "bifrost/bifrost_math.h"                    /* Vec3f, Mat4x4     */
-#include "bifrost/core/bifrost_base_object.hpp"      /* BaseObject<T>     */
-#include "bifrost/ecs/bifrost_collision_system.hpp"  /* BVH               */
-#include "bifrost/ecs/bifrost_component_storage.hpp" /* ComponentStorage  */
-#include "bifrost_asset_handle.hpp"                  /* AssetInfo<T1, T2> */
+#include "bifrost/bifrost_math.h"                              /* Vec3f, Mat4x4     */
+#include "bifrost/core/bifrost_base_object.hpp"                /* BaseObject<T>     */
+#include "bifrost/data_structures/bifrost_intrusive_list.hpp"  //
+#include "bifrost/ecs/bifrost_collision_system.hpp"            /* BVH               */
+#include "bifrost/ecs/bifrost_component_storage.hpp"           /* ComponentStorage  */
+#include "bifrost_asset_handle.hpp"                            /* AssetInfo<T1, T2> */
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
   class BaseBehavior;
   class DebugRenderer;
@@ -65,7 +66,8 @@ namespace bifrost
     }
   };
 
-  using Camera = BifrostCamera;
+  using Camera     = BifrostCamera;
+  using EntityList = intrusive::ListView<Entity>;
 
   /*!
    * @brief
@@ -82,28 +84,33 @@ namespace bifrost
     Engine&              m_Engine;
     IMemoryManager&      m_Memory;
     Array<Entity*>       m_RootEntities;
+    EntityList           m_Entities;
     ComponentStorage     m_ActiveComponents;
     ComponentStorage     m_InactiveComponents;
     Array<BaseBehavior*> m_ActiveBehaviors;
     BVH                  m_BVHTree;
     SceneTransformSystem m_TransformSystem;
     Camera               m_Camera;
+    bfAnim2DScene*       m_AnimationScene;
 
    public:
     explicit Scene(Engine& engine);
 
     // Accessors
 
-    Engine&       engine() const { return m_Engine; }
-    const Camera& camera() const { return m_Camera; }
-    Camera&       camera() { return m_Camera; }
+    Engine&        engine() const { return m_Engine; }
+    const Camera&  camera() const { return m_Camera; }
+    Camera&        camera() { return m_Camera; }
+    bfAnim2DScene* anim2DScene() const { return m_AnimationScene; }
 
     // Entity Management
 
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
+    const EntityList&     entities() const { return m_Entities; }
     EntityRef             addEntity(const StringRange& name = "Untitled");
     EntityRef             findEntity(const StringRange& name) const;
     void                  removeEntity(Entity* entity);
+    void                  removeAllEntities();
 
     BVH& bvh() { return m_BVHTree; }
 
@@ -135,6 +142,8 @@ namespace bifrost
     void serialize(ISerializer& serializer);
 
     ~Scene();
+
+   private:
   };
 
   class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>
@@ -150,7 +159,7 @@ namespace bifrost
   };
 
   using AssetSceneHandle = AssetHandle<Scene>;
-}  // namespace bifrost
+}  // namespace bf
 
 BIFROST_META_REGISTER(Quaternionf){
  BIFROST_META_BEGIN()
@@ -164,22 +173,18 @@ BIFROST_META_REGISTER(Quaternionf){
    )
    BIFROST_META_END()}
 
-/* This uses custom serialization cuz reasons.
-BIFROST_META_REGISTER(bifrost::Scene){
+BIFROST_META_REGISTER(bf::Scene){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   class_info<Scene>("Scene"),                               //
-   ctor<IMemoryManager&>(),                                  //
-   field_readonly("m_RootEntities", &Scene::m_RootEntities)  //
+   class_info<Scene>("Scene")  //
    )
    BIFROST_META_END()}
-*/
 
-BIFROST_META_REGISTER(bifrost::AssetSceneInfo){
+BIFROST_META_REGISTER(bf::AssetSceneInfo){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<AssetSceneInfo>("AssetSceneInfo"),  //
-   ctor<StringRange, BifrostUUID>())
+   ctor<String, std::size_t, BifrostUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(Vec3f)

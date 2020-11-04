@@ -1,6 +1,6 @@
 #include "bifrost/core/bifrost_igame_state_layer.hpp"
 
-namespace bifrost
+namespace bf
 {
   IGameStateLayer::IGameStateLayer():
     m_Prev{nullptr},
@@ -29,6 +29,12 @@ namespace bifrost
   {
     (void)engine;
     (void)delta_time;
+  }
+
+  void IGameStateLayer::onDraw2D(Engine& engine, Gfx2DPainter& painter)
+  {
+    (void)engine;
+    (void)painter;
   }
 
   void IGameStateLayer::onUpdate(Engine& engine, float delta_time)

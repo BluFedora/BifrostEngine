@@ -12,6 +12,7 @@
 /******************************************************************************/
 #include "bifrost/editor/bifrost_editor_serializer.hpp"
 
+#include "bf/LinearAllocator.hpp"  // LinearAllocator
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_script.hpp"
 #include "bifrost/bifrost_math.h"
@@ -20,10 +21,9 @@
 #include "bifrost/ecs/bifrost_entity.hpp"
 #include "bifrost/math/bifrost_vec2.h"
 #include "bifrost/math/bifrost_vec3.h"
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
 #include "bifrost/script/bifrost_script_behavior.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   static constexpr int   s_MaxDigitsUInt64 = 20;
   static constexpr float s_DragSpeed       = 0.05f;
@@ -252,10 +252,10 @@ namespace bifrost::editor
 
     if (has_changed)
     {
-      value.r = std::uint8_t(value4f.r * k_ToUint8Point);
-      value.g = std::uint8_t(value4f.g * k_ToUint8Point);
-      value.b = std::uint8_t(value4f.b * k_ToUint8Point);
-      value.a = std::uint8_t(value4f.a * k_ToUint8Point);
+      value.r = std::uint8_t(std::round(value4f.r * k_ToUint8Point));
+      value.g = std::uint8_t(std::round(value4f.g * k_ToUint8Point));
+      value.b = std::uint8_t(std::round(value4f.b * k_ToUint8Point));
+      value.a = std::uint8_t(std::round(value4f.a * k_ToUint8Point));
     }
 
     hasChangedTop() |= has_changed;
@@ -264,6 +264,7 @@ namespace bifrost::editor
   void ImGuiSerializer::serialize(StringRange key, String& value)
   {
     setNameBuffer(key);
+
     hasChangedTop() |= imgui_ext::inspect(m_NameBuffer, value);
   }
 
@@ -300,7 +301,7 @@ namespace bifrost::editor
       ImGui::SameLine();
     }
 
-    const char* const preview_name  = value ? value.info()->path().c_str() : "<null>";
+    const char* const preview_name  = value ? value.info()->filePathRel().begin() : "<null>";
     BaseAssetInfo*    assigned_info = nullptr;
 
     if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightLargest))
@@ -313,7 +314,7 @@ namespace bifrost::editor
         {
           const bool is_selected = asset_info == value.info();
 
-          if (ImGui::Selectable(asset_info->path().cstr(), is_selected, ImGuiSelectableFlags_None))
+          if (ImGui::Selectable(asset_info->filePathRel().begin(), is_selected, ImGuiSelectableFlags_None))
           {
             if (!is_selected)
             {
@@ -381,7 +382,7 @@ namespace bifrost::editor
 
     if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightRegular))
     {
-      const auto scene = m_Assets->engine().currentScene();
+      const auto scene = entity->engine().currentScene();
 
       if (scene)
       {
@@ -732,14 +733,14 @@ namespace bifrost::editor
 
         if (asset_info->typeInfo() == script_class_info)
         {
-          const auto& path  = asset_info->path();
-          char*       label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add (%.*s) Script", int(path.length()), path.data());
+          const auto& path  = asset_info->filePathRel();
+          char*       label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add (%.*s) Script", int(path.length()), path.begin());
 
           if (ImGui::Selectable(label))
           {
             ScriptBehavior* const behav = entity.addBehavior<ScriptBehavior>();
 
-            behav->setScriptPath(asset_info->path());
+            behav->setScriptPath(asset_info->filePathRel());
           }
         }
       }
@@ -775,4 +776,4 @@ namespace bifrost::editor
 
     return 0;
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor

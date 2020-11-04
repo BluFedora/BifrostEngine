@@ -13,7 +13,7 @@
 
 #include "bifrost_iecs_system.hpp"
 
-namespace bifrost
+namespace bf
 {
   class BehaviorSystem final : public IECSSystem
   {

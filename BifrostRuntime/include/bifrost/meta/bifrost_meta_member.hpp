@@ -1,12 +1,12 @@
 #ifndef BIFROST_META_MEMBER_HPP
 #define BIFROST_META_MEMBER_HPP
 
-#include "bifrost_meta_function_traits.hpp"  // ParameterPack
+#include "bf_meta_function_traits.hpp"  // ParameterPack
 
 #include <tuple>       /* tuple                 */
 #include <type_traits> /* decay_t, is_pointer_v */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   class BaseMember
   {
@@ -540,14 +540,15 @@ namespace bifrost::meta
   using member_type_base = typename member_t<MemberType>::type_base;
 }  // namespace bifrost::meta
 
-#define BIFROST_META_FRIEND friend class ::bifrost::meta::Meta
+#define BIFROST_META_FRIEND friend class ::bf::meta::Meta
+#define BF_META_FRIEND friend class ::bf::meta::Meta
 
 #define BIFROST_META_REGISTER(name) \
   template<>                        \
-  inline const auto& ::bifrost::meta::Meta::registerMembers<name>()
+  inline const auto& ::bf::meta::Meta::registerMembers<name>()
 
 #define BIFROST_META_BEGIN() \
-  static auto member_ptrs = ::bifrost::meta::members(
+  static auto member_ptrs = ::bf::meta::members(
 
 #define BIFROST_META_MEMBERS(...) __VA_ARGS__);
 

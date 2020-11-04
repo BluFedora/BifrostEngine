@@ -7,7 +7,7 @@
 
 #include <imgui/imgui_internal.h>
 
-namespace bifrost::editor
+namespace bf::editor
 {
   GameView::GameView() :
     m_Editor{nullptr},

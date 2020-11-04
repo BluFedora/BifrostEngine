@@ -21,10 +21,9 @@
 #ifndef BIFROST_VM_API_H
 #define BIFROST_VM_API_H
 
-#include "bifrost/bifrost_std.h"                            /* bfStringRange, int32_t, size_t */
-#include "bifrost/data_structures/bifrost_dynamic_string.h" /* BifrostString                  */
-#include "bifrost/data_structures/bifrost_hash_map.h"       /* BifrostHashMap                 */
-#include "bifrost_vm_export.h"                              /* BIFROST_VM_API                 */
+#include "bf/Core.h"           /* bfStringRange, int32_t, size_t */
+#include "bifrost_hash_map.h"  /* BifrostHashMap                 */
+#include "bifrost_vm_export.h" /* BIFROST_VM_API                 */
 
 #if __cplusplus
 extern "C" {
@@ -42,6 +41,12 @@ struct bfValueHandle_t;
 typedef struct bfValueHandle_t* bfValueHandle; /*!< An opaque handle to a VM Value to keep it alive from the GC. */
 
 typedef uint64_t bfVMValue; /*!< The Nan-Tagged value representation of this scripting language. */
+
+/// NOTE(Shareef):
+///   The memory layout: [BifrostStringHeader (capacity | length) | BifrostString (char*)]
+///   A 'BifrostString' can be used anywhere a 'normal' C string can be used.
+typedef char*       BifrostString;
+typedef const char* ConstBifrostString;
 
 /*!
  * @brief
@@ -129,7 +134,7 @@ typedef struct
  * @return BifrostMethodBind
  *   A valid BifrostMethodBind object for use in an array of [BifrostVMClassBind::methods].
  */
-BIFROST_VM_API BifrostMethodBind bfMethodBind_make(const char* name, bfNativeFnT func, int32_t arity, uint32_t num_statics, uint16_t extra_data);
+BF_VM_API BifrostMethodBind bfMethodBind_make(const char* name, bfNativeFnT func, int32_t arity, uint32_t num_statics, uint16_t extra_data);
 
 /*!
  * @brief
@@ -139,7 +144,7 @@ BIFROST_VM_API BifrostMethodBind bfMethodBind_make(const char* name, bfNativeFnT
  * @return BifrostMethodBind
  *   A nulled out BifrostMethodBind indicating the end of the [BifrostVMClassBind::methods] array.
  */
-BIFROST_VM_API BifrostMethodBind bfMethodBind_end(void);
+BF_VM_API BifrostMethodBind bfMethodBind_end(void);
 
 typedef struct
 {
@@ -217,7 +222,7 @@ typedef struct
  * @param self
  *   The BifrostVMParams to initialize to reasonable defaults.
  */
-BIFROST_VM_API void bfVMParams_init(BifrostVMParams* self);
+BF_VM_API void bfVMParams_init(BifrostVMParams* self);
 
 typedef enum
 {
@@ -241,11 +246,11 @@ typedef enum
  */
 struct BifrostVM_t
 {
+  BifrostVMParams               params;                                  /*!< The user defined parameters used by the VM                                     */
   struct BifrostVMStackFrame_t* frames;                                  /*!< The call stack.                                                                */
   bfVMValue*                    stack;                                   /*!< The base pointer to the stack memory.                                          */
   bfVMValue*                    stack_top;                               /*!< The usable top of the [BifrostVM::stack].                                      */
-  BifrostString*                symbols;                                 /*!< Every symbol ever used in the vm, a 'perfect hash'                             */
-  BifrostVMParams               params;                                  /*!< The user defined parameters used by the VM                                     */
+  BifrostString*                symbols;                                 /*!< Every symbol ever used in the vm, a 'perfect hash'.                            */
   struct BifrostObj_t*          gc_object_list;                          /*!< The list of every object allocated by this VM.                                 */
   BifrostHashMap                modules;                                 /*!< <BifrostObjStr, BifrostObjModule*> for fast module lookup                      */
   struct BifrostParser_t*       parser_stack;                            /*!< For handling the recursive nature of importing modules.                        */
@@ -273,7 +278,7 @@ struct BifrostVM_t
  * @return BifrostVM*
  *   The newly created virtual machine.
  */
-BIFROST_VM_API BifrostVM* bfVM_new(const BifrostVMParams* params);
+BF_VM_API BifrostVM* bfVM_new(const BifrostVMParams* params);
 
 /*!
  * @brief
@@ -286,7 +291,7 @@ BIFROST_VM_API BifrostVM* bfVM_new(const BifrostVMParams* params);
  * @param params
  *   The customization points for the virtual machine.
  */
-BIFROST_VM_API void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
+BF_VM_API void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
 
 /*!
  * @brief
@@ -297,7 +302,7 @@ BIFROST_VM_API void bfVM_ctor(BifrostVM* self, const BifrostVMParams* params);
  * @return void*
  *   The user data pointer. 
 */
-BIFROST_VM_API void* bfVM_userData(const BifrostVM* self);
+BF_VM_API void* bfVM_userData(const BifrostVM* self);
 
 /*!
  * @brief
@@ -315,7 +320,7 @@ BIFROST_VM_API void* bfVM_userData(const BifrostVM* self);
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_MODULE_ALREADY_DEFINED - The module with that name has already been defined.
  */
-BIFROST_VM_API BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
+BF_VM_API BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const char* module);
 
 /*!
  * @brief
@@ -332,7 +337,7 @@ BIFROST_VM_API BifrostVMError bfVM_moduleMake(BifrostVM* self, size_t idx, const
  * @param module_flags
  *  Must be a valid set of bits from 'BifrostVMStandardModule'.
  */
-BIFROST_VM_API void bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
+BF_VM_API void bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t module_flags);
 
 /*!
  * @brief
@@ -350,7 +355,7 @@ BIFROST_VM_API void bfVM_moduleLoadStd(BifrostVM* self, size_t idx, uint32_t mod
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_MODULE_NOT_FOUND - The module could not be found.
  */
-BIFROST_VM_API BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
+BF_VM_API BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const char* module);
 
 /*!
  * @brief
@@ -363,7 +368,7 @@ BIFROST_VM_API BifrostVMError bfVM_moduleLoad(BifrostVM* self, size_t idx, const
  * @param module
  *   The name of the module to unload.
  */
-BIFROST_VM_API void bfVM_moduleUnload(BifrostVM* self, const char* module);
+BF_VM_API void bfVM_moduleUnload(BifrostVM* self, const char* module);
 
 /*!
  * @brief
@@ -372,7 +377,7 @@ BIFROST_VM_API void bfVM_moduleUnload(BifrostVM* self, const char* module);
  * @param self
  *   The vm to operate on.
  */
-BIFROST_VM_API void bfVM_moduleUnloadAll(BifrostVM* self);
+BF_VM_API void bfVM_moduleUnloadAll(BifrostVM* self);
 
 /*!
  * @brief
@@ -385,7 +390,7 @@ BIFROST_VM_API void bfVM_moduleUnloadAll(BifrostVM* self);
  * @return size_t
  *   The number of slots you may acces from the API.
  */
-BIFROST_VM_API size_t bfVM_stackSize(const BifrostVM* self);
+BF_VM_API size_t bfVM_stackSize(const BifrostVM* self);
 
 /*!
  * @brief
@@ -400,7 +405,7 @@ BIFROST_VM_API size_t bfVM_stackSize(const BifrostVM* self);
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_OUT_OF_MEMORY - Failed to resize the API stack.
  */
-BIFROST_VM_API BifrostVMError bfVM_stackResize(BifrostVM* self, size_t size);
+BF_VM_API BifrostVMError bfVM_stackResize(BifrostVM* self, size_t size);
 
 /*!
  * @brief
@@ -419,7 +424,7 @@ BIFROST_VM_API BifrostVMError bfVM_stackResize(BifrostVM* self, size_t size);
  *   BIFROST_VM_ERROR_INVALID_OP_ON_TYPE - The value at \p clz_idx is either not an object or a class.
  *   BIFROST_VM_ERROR_OUT_OF_MEMORY      - Failed to get memory for the new instance.
  */
-BIFROST_VM_API BifrostVMError bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx);
+BF_VM_API BifrostVMError bfVM_stackMakeInstance(BifrostVM* self, size_t clz_idx, size_t dst_idx);
 
 /*!
  * @brief
@@ -438,7 +443,7 @@ BIFROST_VM_API BifrostVMError bfVM_stackMakeInstance(BifrostVM* self, size_t clz
  *   NULL      - If the memory was not able to be acquired for the reference.
  *   Otherwise - A pointer of pointing to \p extra_data_size bytes of memory.
  */
-BIFROST_VM_API void* bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t extra_data_size);
+BF_VM_API void* bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t extra_data_size);
 
 /*!
  * @brief
@@ -460,10 +465,10 @@ BIFROST_VM_API void* bfVM_stackMakeReference(BifrostVM* self, size_t idx, size_t
  *   NULL      - If the memory was not able to be acquired for the reference.
  *   Otherwise - A pointer of pointing to clz_bind->extra_data_size bytes of memory.
  */
-BIFROST_VM_API void* bfVM_stackMakeReferenceClz(BifrostVM*                self,
-                                                size_t                    module_idx,
-                                                const BifrostVMClassBind* clz_bind,
-                                                size_t                    dst_idx);
+BF_VM_API void* bfVM_stackMakeReferenceClz(BifrostVM*                self,
+                                           size_t                    module_idx,
+                                           const BifrostVMClassBind* clz_bind,
+                                           size_t                    dst_idx);
 
 /*!
  * @brief
@@ -482,7 +487,7 @@ BIFROST_VM_API void* bfVM_stackMakeReferenceClz(BifrostVM*                self,
  * @param value
  *   The pointer to be stored in this weak reference.
  */
-BIFROST_VM_API void bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value);
+BF_VM_API void bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* value);
 
 /*!
  * @brief
@@ -499,7 +504,7 @@ BIFROST_VM_API void bfVM_stackMakeWeakRef(BifrostVM* self, size_t idx, void* val
  * @param clz_idx
  *   The index of the class object.
  */
-BIFROST_VM_API void bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t clz_idx);
+BF_VM_API void bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t clz_idx);
 
 /*!
  * @brief
@@ -516,7 +521,7 @@ BIFROST_VM_API void bfVM_referenceSetClass(BifrostVM* self, size_t idx, size_t c
  * @param clz_idx
  *   The base class that will be assigned to \p idx.
  */
-BIFROST_VM_API void bfVM_classSetBaseClass(BifrostVM* self, size_t idx, size_t clz_idx);
+BF_VM_API void bfVM_classSetBaseClass(BifrostVM* self, size_t idx, size_t clz_idx);
 
 /*!
  * @brief
@@ -535,7 +540,7 @@ BIFROST_VM_API void bfVM_classSetBaseClass(BifrostVM* self, size_t idx, size_t c
  * @param variable
  *   The name of the variable to load from the object at \p dst_idx.
  */
-BIFROST_VM_API void bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_class_or_module, const char* variable);
+BF_VM_API void bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_class_or_module, const char* variable);
 
 /*!
  * @brief
@@ -556,10 +561,10 @@ BIFROST_VM_API void bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_INVALID_OP_ON_TYPE - \p inst_or_class_or_module was not a valid object to set a field on.
  */
-BIFROST_VM_API BifrostVMError bfVM_stackStoreVariable(BifrostVM*  self,
-                                                      size_t      inst_or_class_or_module,
-                                                      const char* field,
-                                                      size_t      value_idx);
+BF_VM_API BifrostVMError bfVM_stackStoreVariable(BifrostVM*  self,
+                                                 size_t      inst_or_class_or_module,
+                                                 const char* field,
+                                                 size_t      value_idx);
 
 /*!
  * @brief
@@ -586,11 +591,11 @@ BIFROST_VM_API BifrostVMError bfVM_stackStoreVariable(BifrostVM*  self,
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_INVALID_OP_ON_TYPE - \p inst_or_class_or_module was not a valid object to set a field on.
  */
-BIFROST_VM_API BifrostVMError bfVM_stackStoreNativeFn(BifrostVM*  self,
-                                                      size_t      inst_or_class_or_module,
-                                                      const char* field,
-                                                      bfNativeFnT func,
-                                                      int32_t     arity);
+BF_VM_API BifrostVMError bfVM_stackStoreNativeFn(BifrostVM*  self,
+                                                 size_t      inst_or_class_or_module,
+                                                 const char* field,
+                                                 bfNativeFnT func,
+                                                 int32_t     arity);
 
 /*!
  * @brief
@@ -622,13 +627,13 @@ BIFROST_VM_API BifrostVMError bfVM_stackStoreNativeFn(BifrostVM*  self,
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_INVALID_OP_ON_TYPE - \p inst_or_class_or_module was not a valid object to set a field on.
  */
-BIFROST_VM_API BifrostVMError bfVM_stackStoreClosure(BifrostVM*  self,
-                                                     size_t      inst_or_class_or_module,
-                                                     const char* field,
-                                                     bfNativeFnT func,
-                                                     int32_t     arity,
-                                                     uint32_t    num_statics,
-                                                     uint16_t    extra_data);
+BF_VM_API BifrostVMError bfVM_stackStoreClosure(BifrostVM*  self,
+                                                size_t      inst_or_class_or_module,
+                                                const char* field,
+                                                bfNativeFnT func,
+                                                int32_t     arity,
+                                                uint32_t    num_statics,
+                                                uint16_t    extra_data);
 
 /*!
  * @brief
@@ -647,7 +652,7 @@ BIFROST_VM_API BifrostVMError bfVM_stackStoreClosure(BifrostVM*  self,
  *   BIFROST_VM_ERROR_INVALID_ARGUMENT - There is no current native function.
  *                                     - \p static_idx is not a valid index.
  */
-BIFROST_VM_API BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t static_idx);
+BF_VM_API BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_idx, size_t static_idx);
 
 /*!
  * @brief
@@ -668,7 +673,7 @@ BIFROST_VM_API BifrostVMError bfVM_closureGetStatic(BifrostVM* self, size_t dst_
  *   BIFROST_VM_ERROR_INVALID_OP_ON_TYPE - \p closure_idx is not a valid object type to be setting the field of.
  *   BIFROST_VM_ERROR_INVALID_ARGUMENT   - \p static_idx is an invalid index into the number of statics \p closure_idx contains.
  */
-BIFROST_VM_API BifrostVMError bfVM_closureSetStatic(BifrostVM* self, size_t closure_idx, size_t static_idx, size_t value_idx);
+BF_VM_API BifrostVMError bfVM_closureSetStatic(BifrostVM* self, size_t closure_idx, size_t static_idx, size_t value_idx);
 
 /* TODO: add a function line 'bfVM_closureSetStatic' that operates on the current native function. */
 
@@ -686,7 +691,7 @@ BIFROST_VM_API BifrostVMError bfVM_closureSetStatic(BifrostVM* self, size_t clos
  *   NULL      - If \p closure_idx is not a function object.
  *   Otherwise - The user data stored in \p closure_idx.
  */
-BIFROST_VM_API void* bfVM_closureStackGetExtraData(BifrostVM* self, size_t closure_idx);
+BF_VM_API void* bfVM_closureStackGetExtraData(BifrostVM* self, size_t closure_idx);
 
 /*!
  * @brief
@@ -700,7 +705,7 @@ BIFROST_VM_API void* bfVM_closureStackGetExtraData(BifrostVM* self, size_t closu
  *   NULL      - If not in a current native function.
  *   Otherwise - The user data stored in \p closure_idx.
  */
-BIFROST_VM_API void* bfVM_closureGetExtraData(BifrostVM* self);
+BF_VM_API void* bfVM_closureGetExtraData(BifrostVM* self);
 
 /*!
  * @brief
@@ -719,7 +724,7 @@ BIFROST_VM_API void* bfVM_closureGetExtraData(BifrostVM* self);
  * @return BifrostVMError
  *   BIFROST_VM_ERROR_INVALID_OP_ON_TYPE - \p inst_or_class_or_module is not the type of object that can have a field set.
  */
-BIFROST_VM_API BifrostVMError bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind);
+BF_VM_API BifrostVMError bfVM_stackStoreClass(BifrostVM* self, size_t inst_or_class_or_module, const BifrostVMClassBind* clz_bind);
 
 /*!
  * @brief
@@ -734,7 +739,7 @@ BIFROST_VM_API BifrostVMError bfVM_stackStoreClass(BifrostVM* self, size_t inst_
  * @param value
  *   A nul-terminated string that will be copied into the vm.
  */
-BIFROST_VM_API void bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value);
+BF_VM_API void bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value);
 
 /*!
  * @brief
@@ -752,7 +757,7 @@ BIFROST_VM_API void bfVM_stackSetString(BifrostVM* self, size_t idx, const char*
  * @param len
  *   The number of bytes to copy from \p value to create the string value.
  */
-BIFROST_VM_API void bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len);
+BF_VM_API void bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len);
 
 /*!
  * @brief
@@ -767,7 +772,7 @@ BIFROST_VM_API void bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const ch
  * @param value
  *   The number that will be stored in the vm API stack.
  */
-BIFROST_VM_API void bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfFloat64 value);
+BF_VM_API void bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfFloat64 value);
 
 /*!
  * @brief
@@ -782,7 +787,7 @@ BIFROST_VM_API void bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfFloat64 v
  * @param value
  *   The boolean value that will be stored in the vm API stack.
  */
-BIFROST_VM_API void bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
+BF_VM_API void bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 value);
 
 /*!
  * @brief
@@ -794,7 +799,7 @@ BIFROST_VM_API void bfVM_stackSetBool(BifrostVM* self, size_t idx, bfBool32 valu
  * @param idx
  *   The index to store a nil value in.
  */
-BIFROST_VM_API void bfVM_stackSetNil(BifrostVM* self, size_t idx);
+BF_VM_API void bfVM_stackSetNil(BifrostVM* self, size_t idx);
 
 /*!
  * @brief
@@ -811,7 +816,7 @@ BIFROST_VM_API void bfVM_stackSetNil(BifrostVM* self, size_t idx);
  *   NULL     - if \p is a null object.
  *   Otherise - a pointer to the instance object memory.
  */
-BIFROST_VM_API void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx);  // Also works on null values, just returns NULL
+BF_VM_API void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx);  // Also works on null values, just returns NULL
 
 /*!
  * @brief
@@ -830,7 +835,7 @@ BIFROST_VM_API void* bfVM_stackReadInstance(const BifrostVM* self, size_t idx); 
  * @return const char*
  *   A nul-terminated string stored in \p idx.
  */
-BIFROST_VM_API const char* bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);  // 'out_size' can be NULL.
+BF_VM_API const char* bfVM_stackReadString(const BifrostVM* self, size_t idx, size_t* out_size);  // 'out_size' can be NULL.
 
 /*!
  * @brief
@@ -846,7 +851,7 @@ BIFROST_VM_API const char* bfVM_stackReadString(const BifrostVM* self, size_t id
  * @return bfFloat64
  *   Returns the number at the API stack.
  */
-BIFROST_VM_API bfFloat64 bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
+BF_VM_API bfFloat64 bfVM_stackReadNumber(const BifrostVM* self, size_t idx);
 
 /*!
  * @brief
@@ -862,7 +867,7 @@ BIFROST_VM_API bfFloat64 bfVM_stackReadNumber(const BifrostVM* self, size_t idx)
  *   bfTrue  - If the value stored in \p idx is bfTrue.
  *   bfFalse - If the value stored in \p idx is bfFalse.
  */
-BIFROST_VM_API bfBool32 bfVM_stackReadBool(const BifrostVM* self, size_t idx);
+BF_VM_API bfBool32 bfVM_stackReadBool(const BifrostVM* self, size_t idx);
 
 /*!
  * @brief
@@ -877,7 +882,7 @@ BIFROST_VM_API bfBool32 bfVM_stackReadBool(const BifrostVM* self, size_t idx);
  * @return BifrostVMType
  *   The type of object stored at index.
  */
-BIFROST_VM_API BifrostVMType bfVM_stackGetType(BifrostVM* self, size_t idx);
+BF_VM_API BifrostVMType bfVM_stackGetType(BifrostVM* self, size_t idx);
 
 /*!
  * @brief
@@ -893,7 +898,7 @@ BIFROST_VM_API BifrostVMType bfVM_stackGetType(BifrostVM* self, size_t idx);
  * @return int32_t
  *   The arity of the function at \p idx, will be -1 if the function is variadic.
  */
-BIFROST_VM_API int32_t bfVM_stackGetArity(const BifrostVM* self, size_t idx);
+BF_VM_API int32_t bfVM_stackGetArity(const BifrostVM* self, size_t idx);
 
 /*!
  * @brief
@@ -912,7 +917,7 @@ BIFROST_VM_API int32_t bfVM_stackGetArity(const BifrostVM* self, size_t idx);
  * @return bfValueHandle
  *   The opaque handle to the value at \p idx.
  */
-BIFROST_VM_API bfValueHandle bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
+BF_VM_API bfValueHandle bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
 
 /*!
  * @brief
@@ -928,7 +933,7 @@ BIFROST_VM_API bfValueHandle bfVM_stackMakeHandle(BifrostVM* self, size_t idx);
  *   The handle to load into the API stack.
  *   Must not be NULL.
  */
-BIFROST_VM_API void bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle);
+BF_VM_API void bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValueHandle handle);
 
 /*!
  * @brief
@@ -941,7 +946,7 @@ BIFROST_VM_API void bfVM_stackLoadHandle(BifrostVM* self, size_t dst_idx, bfValu
  * @param handle
  *   The handle to be destroyed.
  */
-BIFROST_VM_API void bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);
+BF_VM_API void bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handle);
 
 /*!
  * @brief
@@ -955,7 +960,7 @@ BIFROST_VM_API void bfVM_stackDestroyHandle(BifrostVM* self, bfValueHandle handl
  * @return int32_t
  *   The arity of the function at \p idx, will be -1 if the function is variadic.
  */
-BIFROST_VM_API int32_t bfVM_handleGetArity(bfValueHandle handle);
+BF_VM_API int32_t bfVM_handleGetArity(bfValueHandle handle);
 
 /*!
  * @brief
@@ -969,7 +974,7 @@ BIFROST_VM_API int32_t bfVM_handleGetArity(bfValueHandle handle);
  * @return BifrostVMType
  *   The type of object stored at index.
  */
-BIFROST_VM_API BifrostVMType bfVM_handleGetType(bfValueHandle handle);
+BF_VM_API BifrostVMType bfVM_handleGetType(bfValueHandle handle);
 
 /*!
  * @brief
@@ -993,7 +998,7 @@ BIFROST_VM_API BifrostVMType bfVM_handleGetType(bfValueHandle handle);
  *   BIFROST_VM_ERROR_FUNCTION_ARITY_MISMATCH - Wrong number of arguments passed to the function.
  *   BIFROST_VM_ERROR_RUNTIME                 - There was a runtime error somewhere along the function execution.
  */
-BIFROST_VM_API BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
+BF_VM_API BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args_start, int32_t num_args);
 
 /*!
  * @brief
@@ -1020,7 +1025,7 @@ BIFROST_VM_API BifrostVMError bfVM_call(BifrostVM* self, size_t idx, size_t args
  *   BIFROST_VM_ERROR_COMPILE                - If the \p source string contains invalid code.
  *   BIFROST_VM_ERROR_RUNTIME                - There was a runtime error somewhere along the source execution.
  */
-BIFROST_VM_API BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);
+BF_VM_API BifrostVMError bfVM_execInModule(BifrostVM* self, const char* module, const char* source, size_t source_length);
 
 /*!
  * @brief
@@ -1031,7 +1036,7 @@ BIFROST_VM_API BifrostVMError bfVM_execInModule(BifrostVM* self, const char* mod
  * @param self
  *   The vm to garbage collect.
  */
-BIFROST_VM_API void bfVM_gc(BifrostVM* self);
+BF_VM_API void bfVM_gc(BifrostVM* self);
 
 /*!
  * @brief
@@ -1047,7 +1052,7 @@ BIFROST_VM_API void bfVM_gc(BifrostVM* self);
  * @return const char*
  *   A NUL terminated string of the symbol at \p symbol.
  */
-BIFROST_VM_API const char* bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol);
+BF_VM_API const char* bfVM_buildInSymbolStr(const BifrostVM* self, BifrostVMBuildInSymbol symbol);
 
 /*!
  * @brief
@@ -1059,7 +1064,7 @@ BIFROST_VM_API const char* bfVM_buildInSymbolStr(const BifrostVM* self, BifrostV
  * @return ConstBifrostString
  *   A user friendly string of the last error to occur. (NUL terminated)
  */
-BIFROST_VM_API ConstBifrostString bfVM_errorString(const BifrostVM* self);
+BF_VM_API ConstBifrostString bfVM_errorString(const BifrostVM* self);
 
 /*!
  * @brief
@@ -1068,7 +1073,7 @@ BIFROST_VM_API ConstBifrostString bfVM_errorString(const BifrostVM* self);
  * @param self
  *   The vm to destruct the internal members of.
  */
-BIFROST_VM_API void bfVM_dtor(BifrostVM* self);
+BF_VM_API void bfVM_dtor(BifrostVM* self);
 
 /*!
  * @brief
@@ -1077,7 +1082,7 @@ BIFROST_VM_API void bfVM_dtor(BifrostVM* self);
  * @param self
  *   The vm to destroy and free the memory of.
  */
-BIFROST_VM_API void bfVM_delete(BifrostVM* self);
+BF_VM_API void bfVM_delete(BifrostVM* self);
 #if __cplusplus
 }
 #endif

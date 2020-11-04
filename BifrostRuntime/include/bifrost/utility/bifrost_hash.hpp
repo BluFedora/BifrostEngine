@@ -15,7 +15,7 @@
 #include <cstddef> /* size_t   */
 #include <cstdint> /* uint64_t */
 
-namespace bifrost::hash
+namespace bf::hash
 {
   using Hash_t = std::uint64_t;
 

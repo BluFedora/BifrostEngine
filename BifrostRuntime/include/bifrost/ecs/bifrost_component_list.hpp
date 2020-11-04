@@ -19,10 +19,10 @@
 #ifndef BIFROST_COMPONENT_LIST_HPP
 #define BIFROST_COMPONENT_LIST_HPP
 
-#include "bifrost/data_structures/bifrost_string.hpp"    /* StringRange   */
-#include "bifrost/meta/bifrost_meta_function_traits.hpp" /* ParameterPack */
+#include "bifrost/data_structures/bifrost_string.hpp" /* StringRange   */
+#include "bifrost/meta/bf_meta_function_traits.hpp"   /* ParameterPack */
 
-namespace bifrost
+namespace bf
 {
   //
   // @EngineComponentRegister
@@ -33,6 +33,8 @@ namespace bifrost
   class SpriteRenderer;
   class ParticleEmitter;
   class Light;
+  class SpriteAnimator;
+  class SkinnedMeshRenderer;
 
   struct ComponentTypeInfo final
   {
@@ -47,7 +49,9 @@ namespace bifrost
    MeshRenderer,
    SpriteRenderer,
    ParticleEmitter,
-   Light>;
+   Light,
+   SpriteAnimator,
+   SkinnedMeshRenderer>;
 
   //
   // @EngineComponentRegister
@@ -59,7 +63,8 @@ namespace bifrost
     {"SpriteRenderer"},
     {"ParticleEmitter"},
     {"Light"},
-  };
-}  // namespace bifrost
+    {"SpriteAnimator"},
+    {"SkinnedMeshRenderer"}};
+}  // namespace bf
 
 #endif /* BIFROST_COMPONENT_LIST_HPP */

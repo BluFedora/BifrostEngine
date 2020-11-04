@@ -8,15 +8,15 @@
 #if BIFROST_META_USE_FREELIST
 #include "bifrost/memory/bifrost_freelist_allocator.hpp"
 #else
-#include "bifrost/memory/bifrost_linear_allocator.hpp"
+#include "bf/LinearAllocator.hpp"
 #endif
-#include "bifrost/memory/bifrost_proxy_allocator.hpp"
+#include "bf/memory/bf_proxy_allocator.hpp"
 
 #include "bifrost_meta_variant.hpp"
 
 #include <string_view> /* string_view */
 
-namespace bifrost::meta
+namespace bf::meta
 {
   class BaseClassMetaInfo;
 

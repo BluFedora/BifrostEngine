@@ -10,13 +10,15 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_IECS_SYSTEM_HPP
-#define BIFROST_IECS_SYSTEM_HPP
+#ifndef BF_IECS_SYSTEM_HPP
+#define BF_IECS_SYSTEM_HPP
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
+  struct CameraRender;
+
   class IECSSystem
   {
     friend class Engine;
@@ -32,10 +34,12 @@ namespace bifrost
 
   public: // TODO: This isn't right...
     // clang-format off
+    virtual void onInit(Engine& engine) { (void)engine; }
     virtual void onFrameBegin(Engine& engine, float dt)   { (void)engine; (void)dt;    }
     virtual void onFrameUpdate(Engine& engine, float dt)  { (void)engine; (void)dt;    }
     virtual void onFrameEnd(Engine& engine, float dt)     { (void)engine; (void)dt;    }
-    virtual void onFrameDraw(Engine& engine, float alpha) { (void)engine; (void)alpha; }
+    virtual void onFrameDraw(Engine& engine, CameraRender& camera, float alpha) { (void)engine; (void)camera; (void)alpha; }
+    virtual void onDeinit(Engine& engine) { (void)engine; }
     // clang-format on
 
    public:
@@ -43,4 +47,4 @@ namespace bifrost
   };
 }  // namespace bifrost
 
-#endif /* BIFROST_IECS_SYSTEM_HPP */
+#endif /* BF_IECS_SYSTEM_HPP */

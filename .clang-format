@@ -59,7 +59,7 @@ DerivePointerAlignment:                         true
 DisableFormat:                                  false
 #ExperimentalAutoDetectBinPacking (bool)
 FixNamespaceComments:                           true
-ForEachMacros:                                  ['BIFROST_FOREACH', 'foreach']
+ForEachMacros:                                  ['bfForEach', 'foreach']
 #IncludeCategories (std::vector<IncludeCategory>)
 #IncludeIsMainRegex (std::string)
 IndentCaseLabels:                               true

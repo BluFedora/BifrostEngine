@@ -24,7 +24,7 @@ struct bfEvent_t;
 typedef struct bfEvent_t bfEvent;
 }
 
-namespace bifrost
+namespace bf
 {
   using Event = struct ::bfEvent_t;
   class IMemoryManager;
@@ -32,7 +32,7 @@ namespace bifrost
   class IBaseObject;
 }  // namespace bifrost
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class EditorOverlay;
 

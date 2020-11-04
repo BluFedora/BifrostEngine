@@ -20,8 +20,9 @@ class Engine;
 struct bfEvent_t;
 typedef struct bfEvent_t bfEvent;
 
-namespace bifrost
+namespace bf
 {
+  struct Gfx2DPainter;
   using Event = ::bfEvent;
 
   class GameStateMachine;
@@ -39,11 +40,12 @@ namespace bifrost
    protected:
     IGameStateLayer();
 
-   public:  // TODO: This isn't right.
+   private:
     virtual void onCreate(Engine& engine);
     virtual void onLoad(Engine& engine);
     virtual void onEvent(Engine& engine, bfEvent& event);
     virtual void onFixedUpdate(Engine& engine, float delta_time);
+    virtual void onDraw2D(Engine& engine, Gfx2DPainter& painter);
     virtual void onUpdate(Engine& engine, float delta_time);
     virtual void onUnload(Engine& engine);
     virtual void onDestroy(Engine& engine);

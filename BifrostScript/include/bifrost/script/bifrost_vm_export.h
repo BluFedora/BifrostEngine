@@ -14,31 +14,31 @@
 * @copyright Copyright (c) 2019-2020 Shareef Abdoul-Raheem
 */
 /******************************************************************************/
-#ifndef BIFROST_VM_EXPORT_H
-#define BIFROST_VM_EXPORT_H
+#ifndef BF_VM_EXPORT_H
+#define BF_VM_EXPORT_H
 
 #if __cplusplus
 extern "C" {
 #endif
 
 #if defined _WIN32 || defined __CYGWIN__
-#ifdef BIFROST_VM_EXPORT
+#ifdef BF_VM_EXPORT
 
 #ifdef __GNUC__
-#define BIFROST_VM_API __attribute__((dllexport))
+#define BF_VM_API __attribute__((dllexport))
 #else
-#define BIFROST_VM_API __declspec(dllexport)
+#define BF_VM_API __declspec(dllexport)
 #endif
 
-#elif defined(BIFROST_VM_EXPORT_STATIC)
+#elif defined(BF_VM_EXPORT_STATIC)
 
-#define BIFROST_VM_API
+#define BF_VM_API
 
 #else
 #ifdef __GNUC__
-#define BIFROST_VM_API __attribute__((dllimport))
+#define BF_VM_API __attribute__((dllimport))
 #else
-#define BIFROST_VM_API __declspec(dllimport)
+#define BF_VM_API __declspec(dllimport)
 #endif
 #endif
 
@@ -46,11 +46,11 @@ extern "C" {
 
 #else
 #if __GNUC__ >= 4
-#define BIFROST_VM_API __attribute__((visibility("default")))
-#define BIFROST_VM_NOAPI __attribute__((visibility("hidden")))
+#define BF_VM_API __attribute__((visibility("default")))
+#define BF_VM_APIAPI __attribute__((visibility("hidden")))
 #else
-#define BIFROST_VM_API
-#define BIFROST_VM_NOAPI
+#define BF_VM_API
+#define BF_VM_APIAPI
 #endif
 #endif
 
@@ -58,4 +58,4 @@ extern "C" {
 }
 #endif
 
-#endif /* BIFROST_VM_EXPORT_H */
+#endif /* BF_VM_EXPORT_H */

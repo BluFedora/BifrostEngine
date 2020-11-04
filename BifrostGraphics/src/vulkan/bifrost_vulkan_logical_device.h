@@ -45,19 +45,6 @@ BIFROST_DEFINE_HANDLE(Pipeline)
   VkPipeline           handle;
 };
 
-BIFROST_DEFINE_HANDLE(WindowSurface)
-{
-  VkSurfaceKHR           surface;
-  VulkanSwapchainInfo    swapchain_info;
-  VulkanSwapchain        swapchain;
-  VkSemaphore*           is_image_available;
-  VkSemaphore*           is_render_done;
-  uint32_t               image_index;
-  bfBool32               swapchain_needs_deletion;
-  bfBool32               swapchain_needs_creation;
-  bfGfxCommandListHandle current_cmd_list;
-};
-
 using VulkanWindow = bfWindowSurface;
 
 BIFROST_DEFINE_HANDLE(GfxCommandList)
@@ -74,6 +61,20 @@ BIFROST_DEFINE_HANDLE(GfxCommandList)
   VkClearValue        clear_colors[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
   bfBool32            has_command;
   uint16_t            dynamic_state_dirty;
+};
+
+BIFROST_DEFINE_HANDLE(WindowSurface)
+{
+  VkSurfaceKHR           surface;
+  VulkanSwapchainInfo    swapchain_info;
+  VulkanSwapchain        swapchain;
+  VkSemaphore*           is_image_available;
+  VkSemaphore*           is_render_done;
+  uint32_t               image_index;
+  bfBool32               swapchain_needs_deletion;
+  bfBool32               swapchain_needs_creation;
+  bfGfxCommandList       cmd_list_memory[5];
+  bfGfxCommandListHandle current_cmd_list;
 };
 
 BIFROST_DEFINE_HANDLE(Buffer)

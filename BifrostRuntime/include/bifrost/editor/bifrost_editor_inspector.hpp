@@ -17,7 +17,7 @@
 #include "bifrost_editor_serializer.hpp"  // ImGuiSerializer
 #include "bifrost_editor_window.hpp"      // EditorWindow
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class Inspector final : public EditorWindow<Inspector>
   {
@@ -34,7 +34,7 @@ namespace bifrost::editor
     void        onDrawGUI(EditorOverlay& editor) override;
 
    private:
-    void guiDrawSelection(Engine& engine, Selectable& selectable);
+    void guiDrawSelection(Engine& engine, const Selectable& selectable);
   };
 }  // namespace bifrost::editor
 

@@ -2,7 +2,7 @@
 
 #include "bifrost/core/bifrost_igame_state_layer.hpp" /* IGameStateLayer */
 
-namespace bifrost
+namespace bf
 {
   GameStateMachine::iterator::iterator(IGameStateLayer* pos) :
     base_iterator<iterator>{pos}

@@ -14,7 +14,7 @@
 #include "bifrost/asset_io/bifrost_scene.hpp"  // Scene
 #include "bifrost/ecs/bifrost_entity.hpp"      // Entity
 
-namespace bifrost
+namespace bf
 {
   BaseBehavior::BaseBehavior(PrivateCtorTag) :
     IBehavior(),
@@ -54,7 +54,7 @@ namespace bifrost
   }
 }  // namespace bifrost
 
-using namespace bifrost;
+using namespace bf;
 
 void game::ExampleBehavior::onEnable()
 {

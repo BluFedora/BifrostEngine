@@ -17,7 +17,7 @@
 #include "bifrost/data_structures/bifrost_array.hpp" /* Array<T>     */
 #include "bifrost_editor_memory.hpp"                 /* UniquePtr<T> */
 
-namespace bifrost::editor
+namespace bf::editor
 {
   struct IUndoRedoCommand
   {
@@ -128,7 +128,7 @@ namespace bifrost::editor
    private:
     void clearRedo()
     {
-      m_UndoRedoStack.resize(m_StackTop + 1u);
+      m_UndoRedoStack.resize(std::size_t(m_StackTop) + 1u);
     }
   };
 

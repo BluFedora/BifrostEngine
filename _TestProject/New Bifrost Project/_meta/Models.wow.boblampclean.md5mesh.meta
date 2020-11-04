@@ -1,0 +1,63 @@
+{
+    "UUID" : "157EADA9-D007-4F05-BB4E-2863C250B025",
+    "Path" : "Models/wow/boblampclean.md5mesh",
+    "m_SubAssets" : [
+        {
+            "UUID" : "BD138941-9661-449C-A60C-4905815E79C8",
+            "Path" : "Material_#0",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "AE6EE277-445A-4780-B8CA-BAC38EE78285",
+            "Path" : "Material_#1",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "BB0EC024-3CB1-49A2-B468-38270A45E6CB",
+            "Path" : "Material_#2",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "7D6C6666-B0CA-499F-9A96-A1B2811F49E0",
+            "Path" : "Material_#3",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "BAFFC235-4511-43A8-94D3-AA9F9D9E2DFE",
+            "Path" : "Material_#4",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "B683083A-98C8-4348-86BD-0DE291BE2932",
+            "Path" : "Material_#5",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetMaterialInfo"
+        },
+        {
+            "UUID" : "612B2574-EBF4-4ACB-9F0A-31A1FE9CB188",
+            "Path" : "",
+            "m_SubAssets" : [
+
+            ],
+            "Type" : "AssetAnimation3DInfo"
+        }
+    ],
+    "Type" : "AssetModelInfo"
+}

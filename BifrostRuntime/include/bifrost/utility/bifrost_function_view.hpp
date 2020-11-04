@@ -4,7 +4,7 @@
 
 #include <optional> /* optional<T>  */
 
-namespace bifrost
+namespace bf
 {
   template<typename>
   class FunctionView; /* undefined */
@@ -115,8 +115,6 @@ namespace bifrost
     // valid callback stored in this delegate.
     decltype(auto) safeCall(Args... args) const
     {
-      using OptionalReturn = std::optional<R>;
-
       if constexpr (std::is_same_v<void, R>)
       {
         if (m_Callback.second)
@@ -126,7 +124,9 @@ namespace bifrost
       }
       else
       {
-        return m_Callback.second ? OptionalReturn{call(std::forward<Args>(args)...)} : OptionalReturn{};
+        using OptionalReturn = std::optional<R>;
+
+        return m_Callback.second ? OptionalReturn{call(std::forward<Args>(args)...)} : std::nullopt;
       }
     }
 
@@ -176,6 +176,6 @@ namespace bifrost
       return (static_cast<const Clz*>(instance)->*callback)(std::forward<Args>(args)...);
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_FUNCTION_VIEW_HPP */

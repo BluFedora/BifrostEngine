@@ -1,6 +1,9 @@
 git submodule update
 git pull --recurse-submodules
+
 // NOTE(Shareef): The important one
 git submodule update --remote --recursive
 
 git clone --recursive
+
+git submodule update --remote --merge

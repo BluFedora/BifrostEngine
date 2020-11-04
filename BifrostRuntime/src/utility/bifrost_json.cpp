@@ -13,12 +13,12 @@
 /******************************************************************************/
 #include "bifrost/utility/bifrost_json.hpp"
 
-#include "bifrost/memory/bifrost_c_allocator.hpp" /* CAllocator       */
-#include "bifrost/utility/bifrost_json.h"         /* Bifrost Json API */
+#include "bf/CRTAllocator.hpp"            /* CRTAllocator */
+#include "bifrost/utility/bifrost_json.h" /* Json API     */
 
-namespace bifrost::json
+namespace bf::json
 {
-  static CAllocator s_ArrayAllocator = {}; // TODO(SR): Think about this allocation scheme a bit more??
+  static CRTAllocator s_ArrayAllocator = {};  // TODO(SR): Think about this allocation scheme a bit more??
 
   static Value** readStorage(bfJsonParserContext* ctx)
   {
@@ -56,6 +56,21 @@ namespace bifrost::json
     *readStorage(ctx) = value;
   }
 
+  static StringRange fromJsonString(const bfJsonString& value)
+  {
+    return StringRange(value.string, value.length);
+  }
+
+  static bfJsonString toJsonString(const StringRange& value)
+  {
+    bfJsonString result;
+
+    result.string = value.begin();
+    result.length = value.length();
+
+    return result;
+  }
+
   Value fromString(char* source, std::size_t source_length)
   {
     struct Context final
@@ -72,22 +87,22 @@ namespace bifrost::json
 
        switch (event)
        {
-         case BIFROST_JSON_EVENT_BEGIN_DOCUMENT:
+         case BF_JSON_EVENT_BEGIN_DOCUMENT:
          {
            writeStorage(ctx, nullptr);
            break;
          }
-         case BIFROST_JSON_EVENT_END_DOCUMENT:
+         case BF_JSON_EVENT_END_DOCUMENT:
          {
            break;
          }
-         case BIFROST_JSON_EVENT_BEGIN_ARRAY:
-         case BIFROST_JSON_EVENT_BEGIN_OBJECT:
+         case BF_JSON_EVENT_BEGIN_ARRAY:
+         case BF_JSON_EVENT_BEGIN_OBJECT:
          {
            Value* const parent_value  = readParentStorageValue(ctx);
            Value* const current_value = parent_value == nullptr ? &user_context->document : makeChildItem(*parent_value, user_context->last_key);
 
-           if (event == BIFROST_JSON_EVENT_BEGIN_ARRAY)
+           if (event == BF_JSON_EVENT_BEGIN_ARRAY)
            {
              current_value->set<Array>(s_ArrayAllocator);
            }
@@ -99,17 +114,17 @@ namespace bifrost::json
            writeStorage(ctx, current_value);
            break;
          }
-         case BIFROST_JSON_EVENT_END_ARRAY:
-         case BIFROST_JSON_EVENT_END_OBJECT:
+         case BF_JSON_EVENT_END_ARRAY:
+         case BF_JSON_EVENT_END_OBJECT:
          {
            break;
          }
-         case BIFROST_JSON_EVENT_KEY:
+         case BF_JSON_EVENT_KEY:
          {
-           user_context->last_key = bfJsonParser_asString(ctx);
+           user_context->last_key = fromJsonString(bfJsonParser_asString(ctx));
            break;
          }
-         case BIFROST_JSON_EVENT_VALUE:
+         case BF_JSON_EVENT_VALUE:
          {
            Value* current_value = readStorageValue(ctx);
 
@@ -122,22 +137,22 @@ namespace bifrost::json
 
            switch (bfJsonParser_valueType(ctx))
            {
-             case BIFROST_JSON_VALUE_STRING:
+             case BF_JSON_VALUE_STRING:
              {
-               value_data.add(user_context->last_key, String(bfJsonParser_asString(ctx)));
+               value_data.add(user_context->last_key, String(fromJsonString(bfJsonParser_asString(ctx))));
                break;
              }
-             case BIFROST_JSON_VALUE_NUMBER:
+             case BF_JSON_VALUE_NUMBER:
              {
                value_data.add(user_context->last_key, bfJsonParser_asNumber(ctx));
                break;
              }
-             case BIFROST_JSON_VALUE_BOOLEAN:
+             case BF_JSON_VALUE_BOOLEAN:
              {
                value_data.add(user_context->last_key, bfJsonParser_asBoolean(ctx) != 0u);
                break;
              }
-             case BIFROST_JSON_VALUE_NULL:
+             case BF_JSON_VALUE_NULL:
              {
                value_data.add(user_context->last_key, Value());
 
@@ -148,7 +163,7 @@ namespace bifrost::json
 
            break;
          }
-         case BIFROST_JSON_EVENT_PARSE_ERROR:
+         case BF_JSON_EVENT_PARSE_ERROR:
          {
 #if _MSC_VER
            __debugbreak();
@@ -165,7 +180,7 @@ namespace bifrost::json
 
   static bool s_PrettyPrint = true;
 
-  static void toStringRecNewline(BifrostJsonWriter* json_writer)
+  static void toStringRecNewline(bfJsonWriter* json_writer)
   {
     if (s_PrettyPrint)
     {
@@ -173,7 +188,7 @@ namespace bifrost::json
     }
   }
 
-  static void toStringRecIndent(BifrostJsonWriter* json_writer, int indent_level)
+  static void toStringRecIndent(bfJsonWriter* json_writer, int indent_level)
   {
     if (s_PrettyPrint)
     {
@@ -181,7 +196,7 @@ namespace bifrost::json
     }
   }
 
-  static void toStringRec(BifrostJsonWriter* json_writer, const Value& value, int current_indent)
+  static void toStringRec(bfJsonWriter* json_writer, const Value& value, int current_indent)
   {
     if (value.isObject())
     {
@@ -200,7 +215,7 @@ namespace bifrost::json
         }
 
         toStringRecIndent(json_writer, current_indent + 1);
-        bfJsonWriter_key(json_writer, it.key());
+        bfJsonWriter_key(json_writer, toJsonString(it.key()));
         toStringRec(json_writer, it.value(), current_indent + 1);
         is_first_item = false;
       }
@@ -236,7 +251,7 @@ namespace bifrost::json
     }
     else if (value.isString())
     {
-      bfJsonWriter_valueString(json_writer, value.as<String>());
+      bfJsonWriter_valueString(json_writer, toJsonString(value.as<String>()));
     }
     else if (value.isNumber())
     {
@@ -254,7 +269,7 @@ namespace bifrost::json
 
   void toString(const Value& json, String& out)
   {
-    BifrostJsonWriter* json_writer = bfJsonWriter_new(&malloc);
+    bfJsonWriter* json_writer = bfJsonWriter_new([](size_t size, void*) { return malloc(size); }, nullptr);
 
     toStringRec(json_writer, json, 0);
 
@@ -264,12 +279,12 @@ namespace bifrost::json
     bfJsonWriter_forEachBlock(
      json_writer, [](const bfJsonStringBlock* block, void* ud) {
        String* const     out_buffer = static_cast<String*>(ud);
-       const StringRange block_str  = bfJsonStringBlock_string(block);
+       const StringRange block_str  = fromJsonString(bfJsonStringBlock_string(block));
        out_buffer->append(block_str.begin(), block_str.length());
      },
      &out);
 
-    bfJsonWriter_delete(json_writer, &free);
+    bfJsonWriter_delete(json_writer, [](void* ptr, void*) { free(ptr); });
   }
 
   Value::Value(detail::ObjectInitializer&& values) :
@@ -395,4 +410,4 @@ namespace bifrost::json
       *this = value;
     }
   }
-}  // namespace bifrost::json
+}  // namespace bf::json

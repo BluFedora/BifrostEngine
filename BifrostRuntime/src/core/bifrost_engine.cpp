@@ -1,11 +1,49 @@
 #include "bifrost/core/bifrost_engine.hpp"
 
-#include "bifrost/debug/bifrost_dbg_logger.h"  // bfLog*
-#include "bifrost/ecs/bifrost_behavior.hpp"
-#include "bifrost/ecs/bifrost_behavior_system.hpp"    // BehaviorSystem
-#include "bifrost/ecs/bifrost_entity.hpp"             // Entity
-#include "bifrost/platform/bifrost_platform.h"        // BifrostWindow
-#include "bifrost/platform/bifrost_platform_event.h"  // bfEvent
+#include "bf/Gfx2DPainter.hpp"                              // Gfx2DPainter
+#include "bf/Platform.h"                                    // BifrostWindow
+#include "bf/anim2D/bf_animation_system.hpp"                // AnimationSystem
+#include "bifrost/debug/bifrost_dbg_logger.h"               // bfLog*
+#include "bifrost/ecs/bifrost_behavior.hpp"                 // BaseBehavior
+#include "bifrost/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
+#include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
+#include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
+
+namespace bf
+{
+  void Input::onEvent(Event& evt)
+  {
+    if (evt.isMouseEvent())
+    {
+      const auto& mouse_evt = evt.mouse;
+
+      m_MouseState.button_state = mouse_evt.button_state;
+    }
+
+    switch (evt.type)
+    {
+      case BIFROST_EVT_ON_MOUSE_MOVE:
+      {
+        const auto& mouse_evt = evt.mouse;
+
+        const Vector2i old_mouse_pos = m_MouseState.current_pos;
+
+        m_MouseState.current_pos = {mouse_evt.x, mouse_evt.y};
+        m_MouseState.delta_pos   = m_MouseState.current_pos - old_mouse_pos;
+
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
+  void Input::frameEnd()
+  {
+    m_MouseState.delta_pos = {0, 0};
+  }
+}  // namespace bf
 
 Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
   bfNonCopyMoveable<Engine>{},
@@ -19,15 +57,21 @@ Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* 
   m_TempAdapter{m_TempMemory},
   m_StateMachine{*this, m_MainMemory},
   m_Scripting{},
+  m_Assets{*this, m_MainMemory},
+  m_SceneStack{m_MainMemory},
+  m_Input{},
   m_Renderer{m_MainMemory},
   m_DebugRenderer{m_MainMemory},
-  m_SceneStack{m_MainMemory},
-  m_Assets{*this, m_MainMemory},
-  m_Systems{m_MainMemory},
+  m_Renderer2D{nullptr},
   m_CameraMemory{},
   m_CameraList{nullptr},
   m_CameraResizeList{nullptr},
   m_CameraDeleteList{nullptr},
+  m_Systems{m_MainMemory},
+  m_AnimationSystem{nullptr},
+  m_CollisionSystem{nullptr},
+  m_ComponentRenderer{nullptr},
+  m_BehaviorSystem{nullptr},
   m_State{EngineState::RUNTIME_PLAYING}
 {
 #if USE_CRT_HEAP
@@ -50,7 +94,7 @@ void Engine::resizeCamera(CameraRender* camera, int width, int height)
   camera->new_width  = width;
   camera->new_height = height;
 
-  // If not already on the list.
+  // If not already on the resize list.
   if (!camera->resize_list_next)
   {
     camera->resize_list_next = m_CameraResizeList;
@@ -110,7 +154,11 @@ void Engine::returnCamera(CameraRender* camera)
 void Engine::openScene(const AssetSceneHandle& scene)
 {
   m_SceneStack.clear();  // TODO: Scene Stacking.
-  m_SceneStack.push(scene);
+
+  if (scene)
+  {
+    m_SceneStack.push(scene);
+  }
 }
 
 EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
@@ -125,7 +173,7 @@ EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
   return EntityRef{entity};
 }
 
-void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_window)
+void Engine::init(const bfEngineCreateParams& params, bfWindow* main_window)
 {
   IBifrostDbgLogger logger_config{
    nullptr,
@@ -150,12 +198,13 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
 
   bfLogger_init(&logger_config);
 
-  bfLogPush("Engine Init of App: %s", params.app_name);
+  bfLogPush("Engine Init of App: '%s'", params.app_name);
 
   gc::init(m_MainMemory);
 
   m_Renderer.init(params, main_window);
   m_DebugRenderer.init(m_Renderer);
+  m_Renderer2D = m_MainMemory.allocateT<Gfx2DPainter>(m_MainMemory, m_Renderer.glslCompiler(), m_Renderer.context());
 
   VMParams vm_params{};
   vm_params.error_fn = &userErrorFn;
@@ -177,16 +226,18 @@ void Engine::init(const BifrostEngineCreateParams& params, BifrostWindow* main_w
   m_Scripting.moduleMake(0, "bifrost");
 
   const BifrostVMClassBind behavior_clz_bindings = vmMakeClassBinding<BaseBehavior>(
-   "Behavior"//,
-   //vmMakeMemberBinding<&BaseBehavior::owner>("owner"),
-   //vmMakeMemberBinding<&BaseBehavior::scene>("scene"),
-   //vmMakeMemberBinding<&BaseBehavior::engine>("engine")
+   "Behavior"  //,
+               //vmMakeMemberBinding<&BaseBehavior::owner>("owner"),
+               //vmMakeMemberBinding<&BaseBehavior::scene>("scene"),
+               //vmMakeMemberBinding<&BaseBehavior::engine>("engine")
   );
 
   m_Scripting.stackStore(0, behavior_clz_bindings);
 
-  addECSSystem<BehaviorSystem>();
-  addECSSystem<CollisionSystem>();
+  m_CollisionSystem   = addECSSystem<CollisionSystem>();
+  m_BehaviorSystem    = addECSSystem<BehaviorSystem>();
+  m_AnimationSystem   = addECSSystem<AnimationSystem>(m_MainMemory);
+  m_ComponentRenderer = addECSSystem<ComponentRenderer>();
 
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
 
@@ -199,12 +250,17 @@ bool Engine::beginFrame()
   deleteCameras();
   resizeCameras();
   m_StateMachine.purgeStates();
+  renderer2D().reset();
 
   return m_Renderer.frameBegin();
 }
 
-void Engine::onEvent(Event& evt)
+void Engine::onEvent(bfWindow* window, Event& evt)
 {
+  (void)window;
+
+  m_Input.onEvent(evt);
+
   for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != m_StateMachine.rend(); ++it)
   {
     it->onEvent(*this, evt);
@@ -217,56 +273,6 @@ void Engine::fixedUpdate(float delta_time)
   {
     state.onFixedUpdate(*this, delta_time);
   }
-}
-
-void Engine::drawEnd() const
-{
-  m_Renderer.endPass(m_Renderer.mainCommandList());
-  m_Renderer.drawEnd();
-}
-
-void Engine::endFrame()
-{
-  m_Renderer.frameEnd();
-
-  gc::collect(m_MainMemory);
-}
-
-void Engine::deinit()
-{
-  bfGfxDevice_flush(m_Renderer.device());
-
-  // Released any resources from the game states.
-  m_StateMachine.removeAll();
-
-  // Must be cleared before the Asset System destruction since it contains handles to scenes.
-  m_SceneStack.clear();
-
-  m_Assets.clearDirtyList();
-  m_Assets.setRootPath(nullptr);
-
-  m_DebugRenderer.deinit();
-
-  assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
-  deleteCameras();
-
-  m_Renderer.deinit();
-
-  for (auto& system : m_Systems)
-  {
-    // system->onDeinit();
-    m_MainMemory.deallocateT(system);
-  }
-
-  m_Systems.clear();
-
-  gc::quit();
-
-  // This happens after most systems because they could be holding bfValueHandles that needs to be released.
-  m_Scripting.destroy();
-
-  // Shutdown last since there could be errors logged on shutdown if any failures happen.
-  bfLogger_deinit();
 }
 
 void Engine::update(float delta_time)
@@ -324,31 +330,18 @@ void Engine::drawBegin(float render_alpha)
     }
   }
 
-  forEachCamera([this, &cmd_list, render_alpha, &scene](CameraRender* camera) {
+  forEachCamera([this, &cmd_list, render_alpha](CameraRender* camera) {
     Camera_update(&camera->cpu_camera);
 
     m_Renderer.renderCameraTo(
      camera->cpu_camera,
      camera->gpu_camera,
-     [this, &cmd_list, render_alpha, camera, &scene]() {
-       if (scene)
-       {
-         for (MeshRenderer& renderer : scene->components<MeshRenderer>())
-         {
-           if (renderer.material() && renderer.model())
-           {
-             m_Renderer.bindMaterial(cmd_list, *renderer.material());
-             m_Renderer.bindObject(cmd_list, camera->gpu_camera, renderer.owner());
-             renderer.model()->draw(cmd_list);
-           }
-         }
-       }
-
+     [this, &cmd_list, render_alpha, camera]() {
        for (auto& system : m_Systems)
        {
          if (system->isEnabled())
          {
-           system->onFrameDraw(*this, render_alpha);
+           system->onFrameDraw(*this, *camera, render_alpha);
          }
        }
 
@@ -360,6 +353,78 @@ void Engine::drawBegin(float render_alpha)
   });
 
   m_Renderer.beginScreenPass(m_Renderer.mainCommandList());
+}
+
+void Engine::drawEnd()
+{
+  const bfTextureHandle main_surface = renderer().surface();
+  auto* const           cmd_list     = renderer().mainCommandList();
+  auto&                 painter      = renderer2D();
+
+  for (auto& state : m_StateMachine)
+  {
+    state.onDraw2D(*this, painter);
+  }
+
+  renderer2D().render(cmd_list, bfTexture_width(main_surface), bfTexture_height(main_surface));
+
+  m_Renderer.endPass(cmd_list);
+  m_Renderer.drawEnd();
+}
+
+void Engine::endFrame()
+{
+  m_Input.frameEnd();
+  m_Renderer.frameEnd();
+
+  gc::collect(m_MainMemory);
+}
+
+void Engine::deinit()
+{
+  bfGfxDevice_flush(m_Renderer.device());
+
+  // Released any resources from the game states.
+  m_StateMachine.removeAll();
+
+  // This must happen before the Entity GC so that they are all ready to be collected.
+
+  for (auto& scene : m_SceneStack)
+  {
+    scene->removeAllEntities();
+  }
+
+  // Entity Garbage Must be collected before 'm_SceneStack' is cleared.
+  gc::collect(m_MainMemory);
+
+  // Must be cleared before the Asset System destruction since it contains handles to scenes.
+  m_SceneStack.clear();
+
+  m_Assets.clearDirtyList();
+  m_Assets.setRootPath(nullptr);
+
+  assert(m_CameraList == nullptr && "All cameras not returned to the engine before shutting down.");
+  deleteCameras();
+
+  // Must happen before 'm_Renderer.deinit' since ECS systems use renderer resources.
+  for (auto& system : m_Systems)
+  {
+    system->onDeinit(*this);
+    m_MainMemory.deallocateT(system);
+  }
+  m_Systems.clear();
+
+  m_MainMemory.deallocateT(m_Renderer2D);
+  m_DebugRenderer.deinit();
+  m_Renderer.deinit();
+
+  gc::quit();
+
+  // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
+  m_Scripting.destroy();
+
+  // Shutdown last since there could be errors logged on shutdown if any failures happen.
+  bfLogger_deinit();
 }
 
 void Engine::resizeCameras()
@@ -400,11 +465,13 @@ void Engine::deleteCameras()
   }
 }
 
-namespace bifrost
+namespace bf::detail
 {
-  void detail::CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
+  void CoreEngineGameStateLayer::onEvent(Engine& engine, Event& event)
   {
+    (void)engine;
+
     // This is the bottom most layer so just accept the event.
     event.accept();
   }
-}  // namespace bifrost
+}  // namespace bf::detail

@@ -16,48 +16,64 @@
  *
  * @copyright Copyright (c) 2020
  */
-#ifndef BIFROST_STANDARD_RENDERER_HPP
-#define BIFROST_STANDARD_RENDERER_HPP
+#ifndef BF_STANDARD_RENDERER_HPP
+#define BF_STANDARD_RENDERER_HPP
 
+#include "bf/PlatformFwd.h"                                   /* BifrostWindow           */
 #include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
 #include "bifrost/data_structures/bifrost_array.hpp"          /* Array<T>                */
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
 #include "bifrost/graphics/bifrost_gfx_api.h"                 /* Bifrost C Gfx API       */
-#include "bifrost/platform/bifrost_platform_fwd.h"            /* BifrostWindow           */
 #include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
 class Engine;
 
-namespace bifrost
+namespace bf
 {
+  //
+  // Constants
+  //
+
+  static constexpr int         k_GfxCameraSetIndex               = 0;
+  static constexpr int         k_GfxLightSetIndex                = 1;
+  static constexpr int         k_GfxMaterialSetIndex             = 2;
+  static constexpr int         k_GfxObjectSetIndex               = 3;
+  static constexpr int         k_GfxNumGBufferAttachments        = 2;
+  static constexpr int         k_GfxNumSSAOBufferAttachments     = 2;
+  static constexpr int         k_GfxSSAOKernelSize               = 128; /* Matches the constant defined in "assets/shaders/standard/ssao.frag.glsl"                                    */
+  static constexpr int         k_GfxSSAONoiseTextureDim          = 4;   /* Matches the constant defined in "assets/shaders/standard/ssao_blur.frag.glsl"                               */
+  static constexpr int         k_GfxMaxPunctualLightsOnScreen    = 512; /* (Techincally x2 this value) Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls" */
+  static constexpr int         k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls"                             */
+  static constexpr int         k_GfxSSAONoiseTextureNumElements  = k_GfxSSAONoiseTextureDim * k_GfxSSAONoiseTextureDim;
+  static constexpr int         k_GfxMaxLightsOnScreen            = k_GfxMaxPunctualLightsOnScreen + k_GfxMaxDirectionalLightsOnScreen;
+  static constexpr std::size_t k_GfxMaxVertexBones               = 4;
+  static constexpr std::size_t k_GfxMaxTotalBones                = 128;
+
+  //
+  // Forward Declarations
+  //
+
   class Light;
   class Material;
   class Entity;
 
-  struct VertexPos2D final
-  {
-    Vec2f pos;
-  };
+  //
+  // Simple Structs
+  //
 
-  struct VertexPos2DUV final
-  {
-    Vec2f pos;
-    Vec2f uv;
-  };
-
-  struct VertexPos3DColor4u final
-  {
-    Vector3f  pos;
-    bfColor4u color;
-  };
-
-  struct StandardVertex final
+  struct StandardVertex
   {
     Vector3f  pos;
     Vector3f  normal;
     Vector3f  tangent;
     bfColor4u color;
     Vec2f     uv;
+  };
+
+  struct VertexBoneData
+  {
+    std::uint8_t bone_idx[k_GfxMaxVertexBones];
+    float        bone_weights[k_GfxMaxVertexBones];
   };
 
   // -------------------------------------------------------- //
@@ -92,7 +108,7 @@ namespace bifrost
   // {                                                        //
   //   (binding = 0) mat4x4 u_ModelTransform;                 //
   //   (binding = 0) mat4x4 u_ModelView;                      //
-  //   (binding = 0) mat4x4 u_NormalModelView;                // transpose(M^-1) * Nobject
+  //   (binding = 0) mat4x4 u_NormalModelView;                //
   // }                                                        //
   //                                                          //
   // -------------------------------------------------------- //
@@ -113,24 +129,7 @@ namespace bifrost
   // -------------------------------------------------------- //
 
   //
-  // Constants
-  //
-
-  static constexpr int k_GfxCameraSetIndex               = 0;
-  static constexpr int k_GfxLightSetIndex                = 1;
-  static constexpr int k_GfxMaterialSetIndex             = 2;
-  static constexpr int k_GfxObjectSetIndex               = 3;
-  static constexpr int k_GfxNumGBufferAttachments        = 2;
-  static constexpr int k_GfxNumSSAOBufferAttachments     = 2;
-  static constexpr int k_GfxSSAOKernelSize               = 128; /* Matches the constant defined in "assets/shaders/standard/ssao.frag.glsl"                                    */
-  static constexpr int k_GfxSSAONoiseTextureDim          = 4;   /* Matches the constant defined in "assets/shaders/standard/ssao_blur.frag.glsl"                               */
-  static constexpr int k_GfxMaxPunctualLightsOnScreen    = 512; /* (Techincally x2 this value) Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls" */
-  static constexpr int k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls"                             */
-  static constexpr int k_GfxSSAONoiseTextureNumElements  = k_GfxSSAONoiseTextureDim * k_GfxSSAONoiseTextureDim;
-  static constexpr int k_GfxMaxLightsOnScreen            = k_GfxMaxPunctualLightsOnScreen + k_GfxMaxDirectionalLightsOnScreen;
-
-  //
-  // Struct Mappings
+  // Shader Struct Mappings
   //
 
   struct LightGPUData final
@@ -143,7 +142,7 @@ namespace bifrost
   };
 
   //
-  // Uniform Mappings
+  // Shader Uniform Mappings
   //
 
   struct CameraUniformData final
@@ -213,6 +212,7 @@ namespace bifrost
     void deinit(bfGfxDeviceHandle device);
   };
 
+  // This class if good for non resizing allocations that need to be safe across frames.
   struct BaseMultiBuffer
   {
     bfBufferHandle handle;
@@ -265,12 +265,166 @@ namespace bifrost
   // Misc
   //
 
+  template<typename TUniformData>
   struct Renderable final
   {
-    MultiBuffer<ObjectUniformData> transform_uniform;
+    MultiBuffer<TUniformData> transform_uniform;
 
-    void create(bfGfxDeviceHandle device, const bfGfxFrameInfo& info);
-    void destroy(bfGfxDeviceHandle device) const;
+    void create(bfGfxDeviceHandle device, const bfGfxFrameInfo& info)
+    {
+      const auto limits = bfGfxDevice_limits(device);
+
+      transform_uniform.create(device, BIFROST_BUF_UNIFORM_BUFFER, info, limits.uniform_buffer_offset_alignment);
+    }
+
+    void destroy(bfGfxDeviceHandle device) const
+    {
+      transform_uniform.destroy(device);
+    }
+  };
+
+  // This class is good for largely varying growing buffers with out the need to realloc a buffer.
+  // The cost of doing it this way is batching becomes more complex since this is a linked list of separate buffers.
+  //
+  // T - Vertex Type
+  //
+  template<typename T, std::size_t NumVerticesPerBatch, bfBufferUsageBits k_Usage>
+  struct GfxLinkedBuffer final
+  {
+    using TArray = T[NumVerticesPerBatch];
+
+    struct Link final
+    {
+      MultiBuffer<TArray> gpu_buffer;
+      Link*               next;
+      int                 vertices_left;
+
+      T* currentVertex()
+      {
+        return &(*gpu_buffer.currentElement())[numVertices()];
+      }
+
+      int numVertices() const
+      {
+        return NumVerticesPerBatch - vertices_left;
+      }
+
+      void bind(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info)
+      {
+        const bfBufferSize offset = gpu_buffer.offset(frame_info);
+
+        bfGfxCmdList_bindVertexBuffers(command_list, 0, &gpu_buffer.handle(), 1, &offset);
+      }
+    };
+
+    bfGfxDeviceHandle gfx_device;
+    Link*             free_list;
+    Array<Link*>      used_buffers;
+
+    explicit GfxLinkedBuffer(IMemoryManager& memory_manager) :
+      gfx_device{nullptr},
+      free_list{nullptr},
+      used_buffers{memory_manager}
+    {
+    }
+
+    void init(bfGfxDeviceHandle device)
+    {
+      gfx_device = device;
+    }
+
+    void clear()
+    {
+      for (Link* const link : used_buffers)
+      {
+        link->next = free_list;
+        free_list  = link;
+      }
+
+      used_buffers.clear();
+    }
+
+    // Pointer and offset is returned.
+    std::pair<T*, int> requestVertices(const bfGfxFrameInfo& frame_info, int vertices)
+    {
+      assert(vertices < NumVerticesPerBatch && "Could not handle this amount of vetices in one batch.");
+
+      if (used_buffers.isEmpty() || used_buffers.back()->vertices_left < vertices)
+      {
+        Link* new_link = grabFreeLink(gfx_device, frame_info);
+
+        used_buffers.push(new_link);
+
+        bfBuffer_map(new_link->gpu_buffer.handle(), new_link->gpu_buffer.offset(frame_info), new_link->gpu_buffer.elementAlignedSize());
+      }
+
+      Link* buffer_link = used_buffers.back();
+
+      T* data = buffer_link->currentVertex();
+
+      const int offset = buffer_link->numVertices();
+
+      buffer_link->vertices_left -= vertices;
+
+      return {data, offset};
+    }
+
+    Link* currentLink() const
+    {
+      return used_buffers.back();
+    }
+
+    void flushLinks(const bfGfxFrameInfo& frame_info)
+    {
+      for (Link* const link : used_buffers)
+      {
+        link->gpu_buffer.flushCurrent(frame_info);
+        bfBuffer_unMap(link->gpu_buffer.handle());
+      }
+    }
+
+    void deinit()
+    {
+      clear();
+
+      while (free_list)
+      {
+        Link* const next = free_list->next;
+        free_list->gpu_buffer.destroy(gfx_device);
+        memory().deallocateT(free_list);
+        free_list = next;
+      }
+    }
+
+   private:
+    Link* grabFreeLink(bfGfxDeviceHandle gfx_device, const bfGfxFrameInfo& frame_info)
+    {
+      Link* result = free_list;
+
+      if (!result)
+      {
+        result = memory().allocateT<Link>();
+        result->gpu_buffer.create(
+         gfx_device,
+         BIFROST_BUF_TRANSFER_DST | k_Usage,
+         frame_info,
+         alignof(T));
+      }
+      else
+      {
+        free_list = free_list->next;
+      }
+
+      result->vertices_left = NumVerticesPerBatch;
+      result->next          = nullptr;
+
+      return result;
+    }
+
+    IMemoryManager& memory() const
+    {
+      return used_buffers.memory();
+    }
   };
 
   //
@@ -323,28 +477,30 @@ namespace bifrost
    private:
     using CameraObjectPair = std::pair<const CameraGPUData*, Entity*>;
 
-   private:
-    GLSLCompiler                                              m_GLSLCompiler;
-    bfGfxContextHandle                                        m_GfxBackend;
-    bfGfxDeviceHandle                                         m_GfxDevice;
-    bfGfxFrameInfo                                            m_FrameInfo;
-    bfVertexLayoutSetHandle                                   m_StandardVertexLayout;
-    bfVertexLayoutSetHandle                                   m_EmptyVertexLayout;
-    bfGfxCommandListHandle                                    m_MainCmdList;
-    bfTextureHandle                                           m_MainSurface;
-    bfShaderProgramHandle                                     m_GBufferShader;
-    bfShaderProgramHandle                                     m_SSAOBufferShader;
-    bfShaderProgramHandle                                     m_SSAOBlurShader;
-    bfShaderProgramHandle                                     m_AmbientLighting;
-    bfShaderProgramHandle                                     m_LightShaders[LightShaders::MAX];
-    List<Renderable>                                          m_RenderablePool;
-    HashTable<CameraObjectPair, Renderable*, 64, StdPairHash> m_RenderableMapping;  // TODO: Make this per Scene.
-    Array<bfGfxBaseHandle>                                    m_AutoRelease;
-    bfTextureHandle                                           m_WhiteTexture;
-    MultiBuffer<DirectionalLightUniformData>                  m_DirectionalLightBuffer;
-    MultiBuffer<PunctualLightUniformData>                     m_PunctualLightBuffers[2];  // [Point, Spot]
-    float                                                     m_GlobalTime;
-    bfWindowSurfaceHandle                                     m_MainWindow;
+   public:
+    GLSLCompiler                                                                 m_GLSLCompiler;
+    bfGfxContextHandle                                                           m_GfxBackend;
+    bfGfxDeviceHandle                                                            m_GfxDevice;
+    bfGfxFrameInfo                                                               m_FrameInfo;
+    bfVertexLayoutSetHandle                                                      m_StandardVertexLayout;
+    bfVertexLayoutSetHandle                                                      m_SkinnedVertexLayout;
+    bfVertexLayoutSetHandle                                                      m_EmptyVertexLayout;
+    bfGfxCommandListHandle                                                       m_MainCmdList;
+    bfTextureHandle                                                              m_MainSurface;
+    bfShaderProgramHandle                                                        m_GBufferShader;
+    bfShaderProgramHandle                                                        m_GBufferSkinnedShader;
+    bfShaderProgramHandle                                                        m_SSAOBufferShader;
+    bfShaderProgramHandle                                                        m_SSAOBlurShader;
+    bfShaderProgramHandle                                                        m_AmbientLighting;
+    bfShaderProgramHandle                                                        m_LightShaders[LightShaders::MAX];
+    List<Renderable<ObjectUniformData>>                                          m_RenderablePool;
+    HashTable<CameraObjectPair, Renderable<ObjectUniformData>*, 64, StdPairHash> m_RenderableMapping;  // TODO: Make this per Scene.
+    Array<bfGfxBaseHandle>                                                       m_AutoRelease;
+    bfTextureHandle                                                              m_WhiteTexture;
+    MultiBuffer<DirectionalLightUniformData>                                     m_DirectionalLightBuffer;
+    MultiBuffer<PunctualLightUniformData>                                        m_PunctualLightBuffers[2];  // [Point, Spot]
+    float                                                                        m_GlobalTime;
+    bfWindowSurfaceHandle                                                        m_MainWindow;
 
    public:
     explicit StandardRenderer(IMemoryManager& memory);
@@ -355,20 +511,22 @@ namespace bifrost
     bfGfxCommandListHandle  mainCommandList() const { return m_MainCmdList; }
     bfTextureHandle         surface() const { return m_MainSurface; }
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
+    bfGfxFrameInfo          frameInfo() const { return m_FrameInfo; }
 
-    void               init(const bfGfxContextCreateParams& gfx_create_params, BifrostWindow* main_window);
-    [[nodiscard]] bool frameBegin();
-    void               bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
-    void               bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
-    void               addLight(Light& light);
-    void               beginGBufferPass(CameraGPUData& camera) const;
-    void               beginSSAOPass(CameraGPUData& camera) const;
-    void               beginLightingPass(CameraGPUData& camera);
-    void               beginScreenPass(bfGfxCommandListHandle command_list) const;
-    void               endPass(bfGfxCommandListHandle command_list) const;
-    void               drawEnd() const;
-    void               frameEnd() const;
-    void               deinit();
+    void                init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
+    [[nodiscard]] bool  frameBegin();
+    void                bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
+    void                bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
+    bfDescriptorSetInfo bindObject2(const CameraGPUData& camera, Entity& entity);
+    void                addLight(Light& light);
+    void                beginGBufferPass(CameraGPUData& camera) const;
+    void                beginSSAOPass(CameraGPUData& camera) const;
+    void                beginLightingPass(CameraGPUData& camera);
+    void                beginScreenPass(bfGfxCommandListHandle command_list) const;
+    void                endPass(bfGfxCommandListHandle command_list) const;
+    void                drawEnd() const;
+    void                frameEnd() const;
+    void                deinit();
 
     template<typename FGBufferPass, typename FLightOverlayPass>
     void renderCameraTo(BifrostCamera& camera, CameraGPUData& camera_gpu_data, FGBufferPass&& gbuffer_callback, FLightOverlayPass&& overlay_callback)
@@ -410,6 +568,12 @@ namespace bifrost
      const bfTextureSamplerProperties& sampler,
      const void*                       data,
      std::size_t                       data_size);
+    bfTextureHandle createTexturePNG(
+     bfGfxDeviceHandle                 device,
+     const bfTextureCreateParams&      create_params,
+     const bfTextureSamplerProperties& sampler,
+     const void*                       data,
+     std::size_t                       data_size);
     bfShaderProgramHandle createShaderProgram(
      bfGfxDeviceHandle    device,
      std::uint32_t        num_desc_sets,
@@ -417,6 +581,20 @@ namespace bifrost
      bfShaderModuleHandle fragment_module,
      const char*          debug_name = nullptr);
   }  // namespace gfx
-}  // namespace bifrost
 
-#endif /* BIFROST_STANDARD_RENDERER_HPP */
+  //
+  // Shader UBO Bindings
+  //
+  namespace bindings
+  {
+    void addObject(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addMaterial(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addCamera(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addSSAOInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addSSAOBlurInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addLightingInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addLightBuffer(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+  }  // namespace bindings
+}  // namespace bf
+
+#endif /* BF_STANDARD_RENDERER_HPP */

@@ -1,6 +1,6 @@
 ﻿################################################################################
 #                                                                              #
-#                            BIFROST CMAKE PROJECT                             #
+#                               BF CMAKE PROJECT                               #
 #                                                                              #
 ################################################################################
 ###  CMakeList.txt : Top-level CMake project file, for global configuration  ###
@@ -9,14 +9,12 @@
   # NOTE(Shareef): This sets the minimum version of CMake that must be used
 cmake_minimum_required(VERSION 3.8)
 
-project(BifrostEngine VERSION 1.0)
+project(BluFedoraEngine VERSION 1.0)
 
-set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "W3WPJFAACM")
-
-  # NOTE(Shareef): Bifrost Engine Version
-set(BIFROST_ENGINE_VERSION_MAJOR 1)
-set(BIFROST_ENGINE_VERSION_MINOR 3)
-set(BIFROST_ENGINE_VERSION_PATCH 0)
+  # NOTE(Shareef): Engine Version
+set(BF_ENGINE_VERSION_MAJOR 1)
+set(BF_ENGINE_VERSION_MINOR 3)
+set(BF_ENGINE_VERSION_PATCH 0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -27,7 +25,6 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/docs/bifrost_version.h.in"
   "${PROJECT_BINARY_DIR}/bifrost/bifrost_version.h"
 )
-include_directories(${PROJECT_BINARY_DIR})
 
 # NOTE(Shareef): Print out some CMake Info.
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
@@ -81,8 +78,10 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
   #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
   #
-  set(CMAKE_CXX_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-  set(CMAKE_C_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
+  # [https://docs.microsoft.com/en-us/cpp/build/reference/vmb-vmg-representation-method?redirectedfrom=MSDN&view=vs-2019]
+  #
+  set(CMAKE_CXX_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812 /permissive- /vmg")
+  set(CMAKE_C_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812 /permissive- /vmg")
 endif()
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
@@ -96,7 +95,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_common.c"
 
   # Experiments
-  "BifrostExperiments/src/*.cpp"
   "BifrostExperiments/src/*.c"
 
   # Bifrost Asset Module
@@ -106,30 +104,25 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "BifrostRuntime/src/core/bifrost_game_state_machine.cpp"
   "BifrostRuntime/src/core/bifrost_igame_state_layer.cpp"
 
-  # Bifrost Datastructures Module
-  "BifrostRuntime/src/data_structures/bifrost_array_t.c"
-  "BifrostRuntime/src/data_structures/bifrost_dynamic_string.c"
-  "BifrostRuntime/src/data_structures/bifrost_hash_map.c"
-  "BifrostRuntime/src/data_structures/bifrost_string.cpp"
-
   # Bifrost Debug Module
   "BifrostRuntime/src/debug/bifrost_dbg_logger.c"
 
   # Bifrost ECS Module
   "BifrostRuntime/src/ecs/bifrost_entity.cpp"
-  "BifrostRuntime/src/ecs/bifrost_base_component.cpp"
+  "Engine/Runtime/src/ecs/bf_base_component.cpp"
   "BifrostRuntime/src/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
   "include/bifrost/editor/*.hpp"
   "BifrostRuntime/src/editor/bifrost_editor_build.cpp"
+  "BifrostRuntime/src/bifrost_imgui_glfw.cpp"
 
   # Bifrost Graphics Module
   "BifrostRuntime/src/graphics/bifrost_standard_renderer.cpp"
   "BifrostRuntime/src/graphics/bifrost_glsl_compiler.cpp"
 
   # Bifrost Math Module
-  "BifrostMath/src/bifrost_rect2.cpp"
+  "Engine/Math/src/bifrost_rect2.cpp"
 
   # Bifrost Meta Module
   "BifrostRuntime/src/meta/bifrost_meta_runtime.cpp"
@@ -138,9 +131,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "BifrostRuntime/src/utility/bifrost_hash.cpp"
   "BifrostRuntime/src/utility/bifrost_json.cpp"
   "BifrostRuntime/src/utility/bifrost_uuid.c"
-
-  # Editor
-  "BifrostRuntime/src/bifrost_imgui_glfw.cpp"
 
   # Physics
   "BifrostRuntime/src/bifrost/physics/bifrost_particle.cpp"
@@ -158,13 +148,8 @@ endif()
 # find_package(OpenGL REQUIRED)
 find_package(OpenCL)
 
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/lib/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/BifrostExperiments/include)
-include_directories(BifrostEngine ${PROJECT_SOURCE_DIR}/DemoApp/include)
-
 add_executable(
-  BifrostEngine
+  BifrostEngineOLD
   ${BIFROST_ENGINE_SOURCE_FILES}
   "BifrostRuntime/src/ecs/bifrost_collision_system.cpp"
   "BifrostRuntime/src/graphics/bifrost_debug_renderer.cpp"
@@ -178,42 +163,73 @@ add_executable(
 
   "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script_behavior.cpp"
   "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script.cpp"
+  "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code
  "DemoApp/src/camera_controller.cpp"
 
-)
+ "BifrostRuntime/src/graphics/bifrost_component_renderer.cpp"
+
+ "${PROJECT_SOURCE_DIR}/Engine/Graphics2D/src/bf_painter.cpp" 
+ "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
+ "${PROJECT_SOURCE_DIR}/Engine/Runtime/include/bf/asset_io/bf_spritesheet_asset.hpp" 
+ "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
+ "Engine/Runtime/src/asset_io/bf_asset_info.cpp" 
+ "Engine/Runtime/include/bf/asset_io/bf_path_manip.hpp" 
+ "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
+ )
+
+# if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+#   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")
+#   target_link_options(BifrostEngineOLD PRIVATE "/SAFESEH:NO")
+# endif()
 
 # Bifrost Engine Submodules
 
 target_include_directories(
-  BifrostEngine
+  BifrostEngineOLD
   PRIVATE
+    ${PROJECT_SOURCE_DIR}/lib/include
     ${PROJECT_SOURCE_DIR}/BifrostRuntime/include
+    ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/BifrostExperiments/include
+    ${PROJECT_SOURCE_DIR}/DemoApp/include
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
+    ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
+    ${PROJECT_BINARY_DIR} # For the cmake version file
+    ${PROJECT_SOURCE_DIR}/Engine/Graphics2D/include 
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
 )
 
 target_link_libraries(
-  BifrostEngine
+  BifrostEngineOLD
   PRIVATE
+    BF_AssetIO_static
+    BF_Core_static
+    BF_Platform_shared
+    BF_Text_static
+    BF_Memory_interface
+
+    BifrostDataStructuresCxx
     BifrostScript_shared
     BifrostMath_shared
-    BifrostMemory
-    BifrostPlatform_shared
+    bfAnimation2D_shared
     BifrostGraphics_shared
 )
 
-set_target_properties(BifrostEngine PROPERTIES CXX_STANDARD 17)
+set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)
 
   # NOTE(Shareef): Sets the working directory of the exe to be at the exe
   #   allowing us to load stuff from the assets folder.
-set_target_properties(BifrostEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_target_properties(BifrostEngineOLD PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
   # NOTE(Shareef): Make the console not pop up.
 # set_target_properties(BifrostEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
 # Copy over the assets folder. TODO: Instead of a copy make a symlink?
-add_custom_command(TARGET BifrostEngine PRE_BUILD
+add_custom_command(TARGET BifrostEngineOLD PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngine>/assets)
+                       ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngineOLD>/assets)
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
@@ -236,20 +252,20 @@ endif()
 
 if (WIN32)
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependentd.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRVd.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependentd.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRVd.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib")
   else()
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslang.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependent.lib")
-    target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslang.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependent.lib")
+    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
     # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapper.lib")
@@ -257,17 +273,17 @@ if (WIN32)
   # target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
 elseif (APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
-  target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libglslang.a")
-  target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libHLSL.a")
-  target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOGLCompiler.a")
-  target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libSPIRV.a")
-  target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
+  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libglslang.a")
+  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libHLSL.a")
+  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOGLCompiler.a")
+  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libSPIRV.a")
+  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
 endif()
 
 
 if(OpenCL_FOUND)
   include_directories(${OPENCL_INCLUDE_DIR})
-  target_link_libraries(BifrostEngine PRIVATE OpenCL::OpenCL)
+  target_link_libraries(BifrostEngineOLD PRIVATE OpenCL::OpenCL)
   #target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
   add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
 else()
@@ -300,7 +316,7 @@ endif()
   # NOTE(Shareef): Automatically copy the needed dlls to the output directory
 
 if (WIN32)
-  configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
+  # configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostPlatform_shared.dll"   COPYONLY)
@@ -317,17 +333,29 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
 endif()
 
 if (false)
-add_custom_command(TARGET BifrostEngine POST_BUILD
+add_custom_command(TARGET BifrostEngineOLD POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
+add_subdirectory(Engine/Anim2D)
+add_subdirectory(Engine/AssetIO)
+add_subdirectory(Engine/Core)
+add_subdirectory(Engine/DataStructures)
+add_subdirectory(Engine/Dispatch)
+add_subdirectory(Engine/Math)
+add_subdirectory(Engine/Memory)
+add_subdirectory(Engine/Network)
+add_subdirectory(Engine/Platform)
+add_subdirectory(Engine/Runtime)
+add_subdirectory(Engine/Text)
+add_subdirectory(Engine/Job)
+
+add_subdirectory(Games/DungeonSwiper)
+
 add_subdirectory(BifrostExperiments)
 add_subdirectory(BifrostGraphics)
-add_subdirectory(BifrostMath)
-add_subdirectory(BifrostMemory)
-add_subdirectory(BifrostPlatform)
 add_subdirectory(BifrostScript)
 
-# add_subdirectory(BuildTimeAnalyzerGUI)
+add_subdirectory(BuildTimeAnalyzerGUI)

@@ -2,7 +2,7 @@
 
 #include "bifrost/ecs/bifrost_entity.hpp" // Entity
 
-namespace bifrost::editor
+namespace bf::editor
 {
   IUndoRedoCommandPtr cmd::deleteEntity(Entity& entity)
   {

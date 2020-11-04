@@ -1,6 +1,6 @@
 #include "bifrost/editor/bifrost_editor_selection.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   Selection::Selection(IMemoryManager& memory) :
     m_Selectables{memory},

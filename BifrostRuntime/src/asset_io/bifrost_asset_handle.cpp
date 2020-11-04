@@ -31,7 +31,7 @@
 #include "bifrost/core/bifrost_engine.hpp" /* Engine */
 #include "bifrost/utility/bifrost_json.hpp"
 
-namespace bifrost
+namespace bf
 {
   static constexpr int         k_MaxDigitsUInt64 = 20;
   static constexpr StringRange k_EnumValueKey    = "__EnumValue__";
@@ -100,6 +100,29 @@ namespace bifrost
       serialize("g", value.g);
       serialize("b", value.b);
       serialize("a", value.a);
+
+      popObject();
+    }
+  }
+
+  void ISerializer::serialize(StringRange key, Rect2f& value)
+  {
+    if (pushObject(key))
+    {
+      float x = value.left();
+      float y = value.top();
+      float w = value.width();
+      float h = value.height();
+
+      serialize("x", x);
+      serialize("y", y);
+      serialize("width", w);
+      serialize("height", h);
+
+      value.setX(x);
+      value.setY(y);
+      value.setWidth(w);
+      value.setHeight(h);
 
       popObject();
     }
@@ -253,31 +276,36 @@ namespace bifrost
 
   bool BaseAssetInfo::defaultLoad(Engine& engine)
   {
-    const String full_path = engine.assets().fullPath(*this);
-
-    File file{full_path, file::FILE_MODE_READ};
-
-    if (file)
+    if (m_Flags & AssetInfoFlags::IS_SUB_ASSET)
     {
-      std::size_t buffer_size;
-      char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
-
-      json::Value json_value = json::fromString(buffer, buffer_size - 1);
-
-      JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
-
-      ISerializer& serializer = reader;
-
-      serializer.beginDocument(false);
-      serializer.serialize(*payload());
-      serializer.endDocument();
-
-      file.close();
-
       return true;
     }
+    else
+    {
+      File file{filePathAbs(), file::FILE_MODE_READ};
 
-    return false;
+      if (file)
+      {
+        std::size_t buffer_size;
+        char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
+
+        json::Value json_value = json::fromString(buffer, buffer_size - 1);
+
+        JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
+
+        ISerializer& serializer = reader;
+
+        serializer.beginDocument(false);
+        serializer.serialize(*payload());
+        serializer.endDocument();
+
+        file.close();
+
+        return true;
+      }
+
+      return false;
+    }
   }
 
   BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info) :
@@ -339,18 +367,18 @@ namespace bifrost
     return *this;
   }
 
-  bool BaseAssetHandle::isValid() const
-  {
-    return m_Info != nullptr;
-  }
-
   void BaseAssetHandle::release()
   {
     if (m_Info)
     {
       if (--m_Info->m_RefCount == 0)
       {
-        m_Info->unload();
+        m_Info->onAssetUnload(*m_Engine);
+
+        if (!(m_Info->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
+        {
+          m_Info->unload();
+        }
       }
 
       m_Engine = nullptr;
@@ -385,4 +413,4 @@ namespace bifrost
   {
     return m_Info ? m_Info->payload() : nullptr;
   }
-}  // namespace bifrost
+}  // namespace bf

@@ -15,7 +15,7 @@
 #include "bifrost/data_structures/bifrost_dense_map_handle.hpp" /* DenseMapHandle<T>       */
 #include "bifrost_component_list.hpp"                           /* ComponentPack     */
 
-namespace bifrost
+namespace bf
 {
   template<typename T>
   struct ComponentHandle  // NOLINT(hicpp-member-init)

@@ -5,7 +5,7 @@
 #include "bifrost/utility/bifrost_json.hpp"
 #include "bifrost_editor_window.hpp"  // EditorWindow
 
-namespace bifrost::editor
+namespace bf::editor
 {
   class GameView final : public EditorWindow<GameView>
   {

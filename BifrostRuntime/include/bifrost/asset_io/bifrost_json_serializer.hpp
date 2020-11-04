@@ -17,7 +17,7 @@
 #include "bifrost/utility/bifrost_json.hpp"                    // Value
 #include "bifrost_asset_info.hpp"                              // ISerializer
 
-namespace bifrost
+namespace bf
 {
   class Assets;
 

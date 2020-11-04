@@ -1,9 +1,9 @@
 ﻿################################################################################
 #                                                                              #
-#                          BIFROST GRAPHICS PROJECT                            #
+#                             BF GRAPHICS PROJECT                              #
 #                                                                              #
 ################################################################################
-###  CMakeList.txt : Bifrost Graphics Sub Project of the Bifrost Engine      ###
+###  CMakeList.txt : Graphics Sub Project of the Engine                      ###
 ################################################################################
 
 cmake_minimum_required(VERSION 3.8)
@@ -11,39 +11,7 @@ cmake_minimum_required(VERSION 3.8)
 option(BIFROST_OPT_GRAPHICS_VULKAN "Vulkan will be used as the graphics Backend" ON)
 option(BIFROST_OPT_GRAPHICS_OPENGL "OpenGL will be used as the graphics Backend" OFF)
 
-  # GCC / Clang
-  #   "/GR-"                      - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "/D_***_SECURE_NO_WARNINGS" - Not needed since GCC / Clang isn't stupid like MSVC.
-  #   "-std=c++17"                = "/std:c++17"
-  #   "-fno-rtti"                 = "/GR-"
-  #   TODO(Shareef): /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -fno-rtti -Wall -g")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-  # using Intel C++
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  # NOTE(Shareef): Setting the compiler flags we will be using.
-  #    
-  #   "/Zc:__cplusplus" - Report the correct '__cplusplus' macro on msvc.
-  #   "/WX"   - treat warnings as errors.
-  #   "/EHsc" - is for enabling C++ exceptions which we will NOT be using.
-  #     Reason being the C++ STL uses exceptions like a mother f*cker and with warnings as
-  #   errors on this would not build other wise.
-  #   (alternative is to define: _HAS_EXCEPTIONS but that has some other implications.)
-  #   "/GR-"  - Disables RTTI, trying to see if we can do without it for this engine.
-  #   "/D_***_SECURE_NO_WARNINGS" - Disable the warnings for not using the "secure"
-  #      versions of certain functions.
-  #   "/std:c++17" - I needed some new C++17 features for some tEmPlAtE mAgIc
-  #   "/GF"        - String Pooling is very important for the way the Material System works. I want stable
-  #                  addresses. ("Eliminate Duplicate Strings")
-  #   "/MP[N]"     - N is optional, will just use all the cores if omitted. Allows for
-  #                  compilation on mutiple cores. Should give us a big speed-up on compile times.
-  #
-  set(CMAKE_CXX_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-  set(CMAKE_C_FLAGS "/Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812")
-endif()
-
-project(BifrostGraphics VERSION 1.0.0 DESCRIPTION "The graphics abstraction layer sub project.")
+project(BF_Graphics VERSION 1.0.0 DESCRIPTION "The graphics abstraction layer sub project.")
 
 set(
   BIFROST_GRAPHICS_DEFINES
@@ -53,6 +21,7 @@ set(
 set(
   BIFROST_GRAPHICS_INCLUDE_DIRS
   "${PROJECT_SOURCE_DIR}/include"
+  "${PROJECT_SOURCE_DIR}/lib/include"
   "${CMAKE_SOURCE_DIR}/BifrostRuntime/include"
 )
 
@@ -64,7 +33,8 @@ set(
 
 set(
   BIFROST_GRAPHICS_LIBRARIES
-  ""
+  BF_DataStructuresC_static
+  BF_Core_static
 )
 
 if (BIFROST_OPT_GRAPHICS_VULKAN)
@@ -78,8 +48,6 @@ if (BIFROST_OPT_GRAPHICS_VULKAN)
     "src/vulkan/bifrost_vulkan_renderpass.cpp"
     "src/bifrost_gfx_vulkan.cpp"
 
-    # TODO(SR): Dependencies That Should Not Be Here!!
-    "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/data_structures/bifrost_array_t.c"
     "${CMAKE_SOURCE_DIR}/BifrostRuntime/src/debug/bifrost_dbg_logger.c"
   )
 
@@ -126,7 +94,7 @@ elseif (BIFROST_OPT_GRAPHICS_OPENGL)
   set(
     BIFROST_GRAPHICS_LIBRARIES
     "${BIFROST_GRAPHICS_LIBRARIES}"
-    BifrostMemory
+    BF_Memory_interface
   )
 else()
   message(SEND_ERROR "Either 'BIFROST_OPT_GRAPHICS_VULKAN' or 'BIFROST_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
@@ -141,8 +109,9 @@ target_compile_definitions(
   BifrostGraphics_static
   PRIVATE
     "${BIFROST_GRAPHICS_DEFINES}"
-    BIFROST_VM_EXPORT_STATIC
     BIFROST_GRAPHICS_NO_LOG
+  PUBLIC
+    BIFROST_GFX_EXPORT_STATIC
 )
 
 target_include_directories(
@@ -154,7 +123,7 @@ target_include_directories(
 target_link_libraries(
   BifrostGraphics_static
   PUBLIC
-    BifrostPlatform_static
+    BF_Platform_static
   PRIVATE
     "${BIFROST_GRAPHICS_LIBRARIES}"
 )
@@ -181,7 +150,10 @@ target_include_directories(
 target_link_libraries(
   BifrostGraphics_shared
   PUBLIC
-    BifrostPlatform_shared
+    BF_Platform_shared
   PRIVATE
     "${BIFROST_GRAPHICS_LIBRARIES}"
 )
+
+add_library("${PROJECT_NAME}_static" ALIAS BifrostGraphics_static)
+add_library("${PROJECT_NAME}_shared" ALIAS BifrostGraphics_shared)

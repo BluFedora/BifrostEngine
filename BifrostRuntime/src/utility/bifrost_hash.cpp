@@ -8,10 +8,10 @@ namespace
   // This is a very simple hash (same one that Java uses for String.hashCode())
   // It is NOT cryptographically secure but is fairly fast.
   template<typename TPredicate>
-  bifrost::hash::Hash_t simple_hash_base(const char* p, TPredicate&& f)
+  bf::hash::Hash_t simple_hash_base(const char* p, TPredicate&& f)
   {
     static constexpr std::size_t PRIME  = 31;
-    bifrost::hash::Hash_t        result = 0;
+    bf::hash::Hash_t        result = 0;
 
     while (f(p))
     {
@@ -23,7 +23,7 @@ namespace
   }
 }  // namespace
 
-namespace bifrost::hash
+namespace bf::hash
 {
   Hash_t simple(const char* p, std::size_t size)
   {

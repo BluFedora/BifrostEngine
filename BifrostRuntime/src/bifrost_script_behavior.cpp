@@ -14,7 +14,7 @@
 #include "bifrost/asset_io/bifrost_file.hpp" /* File   */
 #include "bifrost/core/bifrost_engine.hpp"   /* Engine */
 
-namespace bifrost
+namespace bf
 {
   static constexpr std::size_t k_CallIndex = 0;
 
@@ -89,7 +89,7 @@ namespace bifrost
 
   bfValueHandle ScriptBehavior::loadVmValueHandleFromModule(VMView& vm, const char* name)
   {
-    // Assumptions:
+    // Preconditions:
     //   - The module exists in slot 0
     //   - Stack space has already been resized to 2.
 

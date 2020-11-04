@@ -17,13 +17,13 @@
 
 #include <imgui/imgui.h>  // ImGui::*
 
-namespace bifrost
+namespace bf
 {
   class Entity;
   class Assets;
 }  // namespace bifrost
 
-namespace bifrost::editor
+namespace bf::editor
 {
   static constexpr int k_FieldNameBufferSize = 256;  //!< You shouldn't have a field with a name bigger than this right?
 

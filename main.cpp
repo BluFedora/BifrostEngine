@@ -1,12 +1,13 @@
-#define NOMINMAX
+﻿#define NOMINMAX
+
+#include "bf/Gfx2DPainter.hpp"
+#include "bf/MemoryUtils.h"  // bfMegabytes
+#include "main_demo.hpp"
 
 #include <bifrost/bifrost.hpp>
+#include <bifrost/bifrost_imgui_glfw.hpp>
 #include <bifrost/bifrost_version.h>
 #include <bifrost/editor/bifrost_editor_overlay.hpp>
-#include <bifrost/memory/bifrost_memory_utils.h>  // bfMegabytes
-#include <bifrost_imgui_glfw.hpp>
-
-#include "main_demo.hpp"
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
@@ -161,15 +162,6 @@ class Camera_
     m_ElapsedTime += dt;
   }
 };
-
-#ifdef _WIN32
-#include <intsafe.h> /* DWORD */
-
-extern "C" {
-__declspec(dllexport) DWORD NvOptimusEnablement                = 0x00000001;
-__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif  //  _WIN32
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -336,25 +328,25 @@ static void TestMetaSystem()
 
 static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &TestApplyReturningVoid, &TestMetaSystem};
 
-namespace Error
+namespace ReturnCode
 {
   static constexpr int SUCCESS                          = 0;
   static constexpr int FAILED_TO_INITIALIZE_PLATFORM    = 1;
   static constexpr int FAILED_TO_CREATE_MAIN_WINDOW     = 2;
   static constexpr int FAILED_TO_ALLOCATE_ENGINE_MEMORY = 3;
-}  // namespace Error
+}  // namespace ReturnCode
 
 extern void toggleFs();
-
-GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
 
 static constexpr float frame_rate       = 60.0f;
 static constexpr float min_frame_rate   = 4.0f;
 static constexpr float time_step_ms     = 1.0f / frame_rate;
 static constexpr float max_time_step_ms = 1.0f / min_frame_rate;
 
-float current_time;
-float time_accumulator;
+GLFWwindow*         g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
+float               current_time;
+float               time_accumulator;
+static PainterFont* TEST_FONT = nullptr;
 
 #define MainQuit(code, label) \
   err_code = (code);          \
@@ -362,32 +354,30 @@ float time_accumulator;
 
 int main(int argc, char* argv[])
 {
-  static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
-
-  int err_code = Error::SUCCESS;
+  static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<float>::is_iec559, "Use IEEE754, you weirdo.");
 
   for (const auto& test_fn : s_Test)
   {
     test_fn();
   }
 
-  namespace bfmeta = meta;
+  int err_code = ReturnCode::SUCCESS;
 
   if (!bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
-    MainQuit(Error::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
+    MainQuit(ReturnCode::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
   }
 
   {
-    BifrostWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
+    bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
 
     if (!main_window)
     {
-      MainQuit(Error::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
+      MainQuit(ReturnCode::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
     }
 
     bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
-    std::printf("\n\n                 Bifrost Engine v%s\n\n\n", BIFROST_VERSION_STR);
+    std::printf("\n\n                 BlueFedora Engine v%s\n\n\n", BF_VERSION_STR);
     bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
     {
@@ -395,7 +385,7 @@ int main(int argc, char* argv[])
 
       try
       {
-        const std::size_t             engine_memory_size = bfMegabytes(50);
+        const std::size_t             engine_memory_size = bfMegabytes(300);
         const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
 
         Engine engine{engine_memory.get(), engine_memory_size, argc, argv};
@@ -404,9 +394,11 @@ int main(int argc, char* argv[])
 
         glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-        const BifrostEngineCreateParams params = {argv[0], 0};
+        const bfEngineCreateParams params = {argv[0], 0};
 
         engine.init(params, main_window);
+
+        main_window->user_data = &engine;
 
         imgui::startup(engine.renderer().context(), main_window);
 
@@ -463,21 +455,14 @@ int main(int argc, char* argv[])
         current_time     = float(glfwGetTime());
         time_accumulator = 0.0f;
 
-        main_window->user_data = &engine;
-
-        main_window->event_fn = [](BifrostWindow* window, bfEvent* event) {
+        main_window->event_fn = [](bfWindow* window, bfEvent* event) {
           Engine* const engine = (Engine*)window->user_data;
 
-          if (event->isType(BIFROST_EVT_ON_WINDOW_RESIZE))
-          {
-            bfGfxWindow_markResized(engine->renderer().context(), (bfWindowSurfaceHandle)window->renderer_data);
-          }
-
           imgui::onEvent(window, *event);
-          engine->onEvent(*event);
+          engine->onEvent(window, *event);
         };
 
-        main_window->frame_fn = [](BifrostWindow* window) {
+        main_window->frame_fn = [](bfWindow* window) {
           Engine* const engine = (Engine*)window->user_data;
 
           const auto CurrentTimeSeconds = []() -> float {
@@ -486,6 +471,7 @@ int main(int argc, char* argv[])
 
           const float new_time   = CurrentTimeSeconds();
           const float delta_time = std::min(new_time - current_time, max_time_step_ms);
+          const auto  mouse_pos  = Vector2f{(float)engine->input().mousePos().x, (float)engine->input().mousePos().y};
 
           time_accumulator += delta_time;
           current_time = new_time;
@@ -499,18 +485,17 @@ int main(int argc, char* argv[])
             StandardRenderer& renderer = engine->renderer();
 
 #if 0
-        if (update_fn)
-        {
-          vm.stackResize(1);
-          vm.stackLoadHandle(0, update_fn);
+            if (update_fn)
+            {
+              vm.stackResize(1);
+              vm.stackLoadHandle(0, update_fn);
 
-          if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-          {
-            vm.call(0, delta_time);
-          }
-        }
+              if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+              {
+                vm.call(0, delta_time);
+              }
+            }
 #endif
-
             imgui::beginFrame(
              renderer.surface(),
              float(window_width),
@@ -529,16 +514,80 @@ int main(int argc, char* argv[])
 
             engine->drawBegin(render_alpha);
             imgui::endFrame();
+#if 0
+            auto& painter = engine->renderer2D();
+
+            if (!TEST_FONT)
+            {
+              TEST_FONT = new PainterFont(engine->mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
+            }
+
+            int w, h;
+            bfWindow_getSize(window, &w, &h);
+
+            const float angle_map   = bfMathRemapf(0.0f, float(w), 0.0f, k_TwoPI, mouse_pos.x);
+            const float rounded_map = bfMathRemapf(0.0f, float(w), 2.0f, 100.0f, mouse_pos.x);
+            const float thick_map   = bfMathRemapf(0.0f, float(w), 5.0f, 40.0f, mouse_pos.x);
+
+            for (int y = 0; y < 8; ++y)
+            {
+              const float offset_y = 150.0f * float(y);
+
+              for (int x = 0; x < 8; ++x)
+              {
+                const float    offset_x      = 150.0f * float(x);
+                const Vector2f box_pos       = mouse_pos + Vector2f{20.0f, 0.0f} + Vector2f{offset_x, offset_y};
+                const float    blur_amount   = (float(x + y * 8) / 64.0f) * 25.0f;
+                const float    border_radius = std::min(rounded_map, 50.0f);
+
+                painter.pushRectShadow(blur_amount, box_pos, 100, 100, border_radius, BIFROST_COLOR_BLACK);
+                painter.pushFillRoundedRect(box_pos, 100, 100, border_radius, BIFROST_COLOR_ROYALBLUE);
+              }
+            }
+
+            // painter.pushRect(mouse_pos, 100, 100, BIFROST_COLOR_ROYALBLUE);
+            painter.pushFilledCircle(mouse_pos + Vector2f{200.0f, 0.0f}, 55.0f, BIFROST_COLOR_SALMON);
+            painter.pushFilledArc(mouse_pos + Vector2f{260.0f, 100.0f}, 22.0f, 0.0f, angle_map, BIFROST_COLOR_NAVY);
+            painter.pushFillRoundedRect(Vector2f{500.0f, 200.0f} - Vector2f{5.0f}, 310.0f, 230.0f, rounded_map, BIFROST_COLOR_LIGHTYELLOW);
+            painter.pushFillRoundedRect({500.0f, 200.0f}, 300.0f, 220.0f, rounded_map, BIFROST_COLOR_LIME);
+
+            Vector2f points[] = {
+             {20.0f, 20.0f},
+             {200.0f, 20.0f},
+             {300.0f, 600.0f},
+             {800.0f, 500.0f},
+             mouse_pos,
+            };
+
+            painter.pushPolyline(points, UIIndexType(bfCArraySize(points)), thick_map, PolylineJoinStyle::BEVEL, PolylineEndStyle::ROUND, BIFROST_COLOR_OLIVE & 0x55FFFFFF, false);
+
+            painter.pushLinedArc(mouse_pos + Vector2f{-260.0f, 100.0f}, thick_map * 2.0f, 0.3f, angle_map * 1.2f, BIFROST_COLOR_SALMON);
+
+            Vector2f sine_wave[800];
+
+            for (int i = 0; i < int(bfCArraySize(sine_wave)); ++i)
+            {
+              const float percent = float(i) / (float(bfCArraySize(sine_wave)) - 1.0f);
+
+              sine_wave[i] = Vector2f{percent * float(w), 300 + 20.0f * std::sin(percent * k_TwoPI * 30)};
+            }
+
+            painter.pushPolyline(sine_wave, UIIndexType(bfCArraySize(sine_wave)), 2.0f, PolylineJoinStyle::ROUND, PolylineEndStyle::ROUND, BIFROST_COLOR_MOCCASIN, false);
+
+            painter.pushText(
+             Vector2f{100.0f, 100.0f},
+             u8"Hello this is\nsome Test\nText ;)∑𒄨Ö",
+             TEST_FONT);
+#endif
+
             engine->drawEnd();
             engine->endFrame();
           }
         };
 
-        while (!bfWindow_wantsToClose(main_window))
-        {
-          bfPlatformPumpEvents();
-          main_window->frame_fn(main_window);
-        }
+        bfPlatformDoMainLoop(main_window);
+
+        delete TEST_FONT;
 
         vm.stackDestroyHandle(update_fn);
         imgui::shutdown();
@@ -546,7 +595,7 @@ int main(int argc, char* argv[])
       }
       catch (std::bad_alloc&)
       {
-        MainQuit(Error::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
+        MainQuit(ReturnCode::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
       }
     }
 

@@ -1,6 +1,6 @@
 #include "bifrost/editor/bifrost_editor_window.hpp"
 
-namespace bifrost::editor
+namespace bf::editor
 {
   EditorWindowID BaseEditorWindow::s_TypeIDCounter = 0;
 
@@ -40,6 +40,8 @@ namespace bifrost::editor
       ImGui::SetNextWindowDockID(m_DockID, ImGuiCond_Once);
     }
 
+     const auto old_window_padding = ImGui::GetStyle().WindowPadding;
+
     onPreDrawGUI(editor);
 
     if (ImGui::Begin(title_id, &m_IsOpen, ImGuiWindowFlags_MenuBar))
@@ -51,6 +53,8 @@ namespace bifrost::editor
       if (is_docked)
       {
         const auto dock_id = ImGui::GetWindowDockID();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, old_window_padding);
 
         if (ImGui::BeginMenuBar())
         {
@@ -70,11 +74,20 @@ namespace bifrost::editor
               new_window.m_DockID = dock_id;
             }
 
+            if (ImGui::MenuItem("Game"))
+            {
+              auto& new_window = editor.addWindow<GameView>();
+
+              new_window.m_DockID = dock_id;
+            }
+
             ImGui::EndMenu();
           }
 
           ImGui::EndMenuBar();
         }
+
+        ImGui::PopStyleVar(1);
       }
 
       onDrawGUI(editor);

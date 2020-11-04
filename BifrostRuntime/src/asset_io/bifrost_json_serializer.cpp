@@ -15,7 +15,7 @@
 #include "bifrost/asset_io/bifrost_assets.hpp"  // Assets
 #include "bifrost/ecs/bifrost_entity.hpp"       // Entity
 
-namespace bifrost
+namespace bf
 {
   JsonSerializerWriter::JsonSerializerWriter(IMemoryManager& memory) :
     ISerializer(SerializerMode::SAVING),

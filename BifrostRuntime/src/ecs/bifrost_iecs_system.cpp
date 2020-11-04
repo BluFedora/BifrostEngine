@@ -12,7 +12,7 @@
 /******************************************************************************/
 #include "bifrost/ecs/bifrost_iecs_system.hpp"
 
-namespace bifrost
+namespace bf
 {
   IECSSystem::IECSSystem() :
     m_IsEnabled{true}

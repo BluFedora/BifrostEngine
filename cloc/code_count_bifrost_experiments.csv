@@ -1,5 +1,0 @@
-language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (8.0 files/s, 2518.0 lines/s)"
-C,..\BifrostExperiments\src\bifrost_json.c,115,52,618
-C,..\BifrostExperiments\main.c,54,2,257
-C/C++ Header,..\BifrostExperiments\include\bifrost\utility\bifrost_json.h,14,17,67
-CMake,..\BifrostExperiments\CMakeLists.txt,11,32,20

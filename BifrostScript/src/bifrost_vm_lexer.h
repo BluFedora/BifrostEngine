@@ -14,12 +14,32 @@
 #ifndef BIFROST_VM_LEXER_H
 #define BIFROST_VM_LEXER_H
 
-#include "bifrost/bifrost_std.h" /* bfBool32, bfFloat64 */
-#include <stddef.h>              /* size_t              */
+#include "bf/Core.h" /* bfStringRange */
+
+// #include <stdint.h> /* uint32_t */
+#include <stddef.h> /* size_t   */
 
 #if __cplusplus
 extern "C" {
 #endif
+typedef uint32_t bfBool32;
+typedef double   bfFloat64;
+#define bfTrue 1
+#define bfFalse 0
+
+#if false
+/*!
+ * @brief
+ *   A non-owning reference to a string.
+*/
+typedef struct bfStringRange_t
+{
+  const char* bgn;
+  const char* end;
+
+} bfStringRange;
+#endif
+
 /*!
  * @brief
  *   These are all of the token types that are used by the lexer.
@@ -108,7 +128,7 @@ static size_t bfStringRange_length(const bfStringRange* self)
 
 /*!
  * @brief
- *    An individual token for a bts program.
+ *   An individual token for a program.
  */
 typedef struct
 {

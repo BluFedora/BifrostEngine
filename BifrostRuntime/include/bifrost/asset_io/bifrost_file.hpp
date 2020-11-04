@@ -3,13 +3,13 @@
 
 // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 
+#include "bf/TempBuffer.hpp"                          /* TempBuffer          */
 #include "bifrost/data_structures/bifrost_string.hpp" /* String, StringRange */
-#include "bifrost/memory/bifrost_imemory_manager.hpp" /* TenmBuffer          */
 
 #include <algorithm> /* reverse      */
 #include <fstream>   /* fstream, ios */
 
-namespace bifrost
+namespace bf
 {
   namespace file
   {
@@ -51,7 +51,7 @@ namespace bifrost
 
     // These functions assumes a canonical path by the calling of 'canonicalizePath'.
     StringRange directoryOfFile(const StringRange& path);  // In canonical style.
-    StringRange extensionOfFile(const StringRange& path);  // Includes the '.ext', if no extension a null path is returned.
+    StringRange extensionOfFile(const StringRange& path);  // Includes the (dot) e.g '.ext', if no extension a null path is returned.
     StringRange fileNameOfPath(const StringRange& path);   // 'filename.ext'
 
   }  // namespace file
@@ -160,6 +160,6 @@ namespace bifrost
   {
     return readBytes(reinterpret_cast<char*>(&data), sizeof(T));
   }
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_FILE_HPP */

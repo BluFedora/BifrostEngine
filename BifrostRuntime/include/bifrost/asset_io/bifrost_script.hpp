@@ -2,7 +2,6 @@
  * @file   bifrost_script.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   Implements the IBehavior interface for runtime scripts.
  *
  * @version 0.0.1
  * @date    2020-07-08
@@ -18,22 +17,19 @@
 #include "bifrost/script/bifrost_vm.h"               /* bfValueHandle */
 #include "bifrost/script/bifrost_vm.hpp"             /* VMView        */
 
-namespace bifrost
+namespace bf
 {
   class Script final : public BaseObject<Script>
   {
     friend class AssetScriptInfo;
 
    private:
-    VMView&       m_VM;
     bfValueHandle m_ModuleHandle;
 
    public:
-    Script(VMView& vm);
+    Script(bfValueHandle module_handle);
 
     bfValueHandle vmModuleHandle() const { return m_ModuleHandle; }
-
-    ~Script();
   };
 
   class AssetScriptInfo final : public AssetInfo<Script, AssetScriptInfo>
@@ -45,9 +41,10 @@ namespace bifrost
     using BaseT::BaseT;
 
     bool load(Engine& engine) override;
+    void onAssetUnload(Engine& engine) override;
   };
 
   using AssetScriptHandle = AssetHandle<Script>;
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_SCRIPT_HPP */

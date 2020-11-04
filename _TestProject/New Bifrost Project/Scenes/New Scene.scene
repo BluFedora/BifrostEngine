@@ -9,13 +9,13 @@
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
-                        "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
+                        "uuid" : "BD36C35C-DB03-46D5-A079-018D70A8EEAE"
                     },
                     "m_EntityRef" : {
                         "uuid" : "261362FE-4497-479E-B128-31D707FEB3B0"
                     },
                     "m_Model" : {
-                        "uuid" : "2F5BC8E8-ACD4-4745-BF59-178DC427CB2E"
+                        "uuid" : "BBFF69EC-85DF-4670-A8E3-1E7878F01B3D"
                     },
                     "__Active__" : true
                 }
@@ -23,7 +23,7 @@
             "m_Transform" : {
                 "Position" : {
                     "y" : -0.4,
-                    "w" : 0,
+                    "w" : 1,
                     "x" : 0,
                     "z" : 6.45
                 },
@@ -61,15 +61,11 @@
             "m_Name" : "Cult Char",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
-                    },
+                    "m_Material" : null,
                     "m_EntityRef" : {
                         "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
-                    "m_Model" : {
-                        "uuid" : "C0275B2A-F168-4EBB-9D74-458E79E19D54"
-                    },
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -112,15 +108,11 @@
             "m_Name" : "Test Plane",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
-                    },
+                    "m_Material" : null,
                     "m_EntityRef" : {
                         "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
-                    "m_Model" : {
-                        "uuid" : "32A2B49A-8DE1-42E2-84E7-D999AE61C084"
-                    },
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -286,15 +278,11 @@
                     "m_Name" : "Cube",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "82A9AFF7-3E75-4206-978C-EEFEE85C6F45"
-                            },
+                            "m_Material" : null,
                             "m_EntityRef" : {
                                 "uuid" : "00000000-0000-0000-0000-000000000000"
                             },
-                            "m_Model" : {
-                                "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
-                            },
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -333,15 +321,11 @@
             "m_Name" : "Cube2",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "C2177178-ED97-450D-907F-0EB1DF927239"
-                    },
+                    "m_Material" : null,
                     "m_EntityRef" : {
                         "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
-                    "m_Model" : {
-                        "uuid" : "4A855C9B-9F8F-4367-A02E-5A125F39860A"
-                    },
+                    "m_Model" : null,
                     "__Active__" : false
                 }
             },
@@ -415,10 +399,78 @@
             "m_Behaviors" : [
                 {
                     "m_Player" : {
-                        "uuid" : "F9984A00-5CEB-4C14-8072-915D3507AE1B"
+                        "uuid" : "00000000-0000-0000-0000-000000000000"
                     },
                     "__BehaviorClass__" : "CameraController"
                 }
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "SpriteAnimator" : {
+                    "__Active__" : true,
+                    "m_Spritesheet" : {
+                        "uuid" : "C75D6F10-A6FA-44F0-83FC-1013ABDF6FCF"
+                    }
+                },
+                "SpriteRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "0184A37B-A7BF-48B9-A745-B4FAB85198B0"
+                    },
+                    "m_UVRect" : {
+                        "height" : 1,
+                        "y" : 0,
+                        "x" : 0,
+                        "width" : 1
+                    },
+                    "m_Color" : {
+                        "r" : 51,
+                        "g" : 228,
+                        "b" : 228,
+                        "a" : 255
+                    },
+                    "__Active__" : true,
+                    "m_Size" : {
+                        "y" : 1,
+                        "x" : 1.4
+                    },
+                    "m_Flags" : 0
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 1.2,
+                    "z" : 0
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1.15,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
             ]
         }
     ]
