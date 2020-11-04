@@ -11,7 +11,8 @@
  */
 #include "bifrost/memory/bifrost_memory_utils.h"
 
-#include <assert.h> /* assert */
+#include <stdint.h> /* uintptr_t */
+#include <assert.h> /* assert    */
 
 #define bfCast(e, T) ((T)(e))
 

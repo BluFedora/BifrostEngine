@@ -5,8 +5,10 @@
 
 #if BIFROST_PLATFORM_ANDROID
 #include <GLES3/gl3.h>
+typedef void* (* GLADloadproc)(const char *name);
 #elif BIFROST_PLATFORM_IOS
 #include <OpenGLES/ES3/gl.h>
+typedef void* (* GLADloadproc)(const char *name);
 #elif BIFROST_PLATFORM_MACOS
 #include <OpenGL/gl3.h>
 #include <glad/glad.h>
