@@ -29,7 +29,7 @@ namespace bf
   {
     // clang-format off
     template<typename TSelf, typename THandle>
-    class BaseGraphicsResource : public BaseObject<TSelf>, private bfNonCopyMoveable<TSelf>
+    class BaseGraphicsResource : public BaseObject<TSelf>, private NonCopyMoveable<TSelf>
     // clang-format on
     {
      protected:

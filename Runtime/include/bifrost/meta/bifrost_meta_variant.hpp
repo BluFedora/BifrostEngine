@@ -13,14 +13,14 @@
 #ifndef BIFROST_META_VARIANT_HPP
 #define BIFROST_META_VARIANT_HPP
 
-#include "bf_meta_function_traits.hpp"                    /* ParameterPack<Ts...>                        */
+#include "bf/bf_meta_function_traits.hpp"                 /* ParameterPack<Ts...>                        */
+#include "bf/bf_meta_utils.hpp"                           /* overloaded                                  */
 #include "bifrost/asset_io/bifrost_base_asset_handle.hpp" /* BaseAssetHandle, + All Serializable Classes */
 #include "bifrost/bifrost_math.hpp"                       /* bfColor4f, bfColor4u                        */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* String                                      */
 #include "bifrost/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>                              */
-#include "bifrost/ecs/bifrost_entity_ref.hpp"             /* EntityRef                                     */
+#include "bifrost/ecs/bifrost_entity_ref.hpp"             /* EntityRef                                   */
 #include "bifrost/utility/bifrost_uuid.h"                 /* BifrostUUID                                 */
-#include "bifrost_meta_utils.hpp"                         /* overloaded                                  */
 
 #include <cstddef> /* byte                                                                     */
 #include <cstdint> /* uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t */

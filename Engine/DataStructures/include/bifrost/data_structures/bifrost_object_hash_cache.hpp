@@ -1,7 +1,7 @@
 #ifndef BIFROST_OBJECT_HASH_CACHE_HPP
 #define BIFROST_OBJECT_HASH_CACHE_HPP
 
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
+#include "bf/bf_non_copy_move.hpp" /* NonCopyMoveable<T> */
 
 #include <cassert>     /* assert                */
 #include <cstddef>     /* size_t                */
@@ -26,7 +26,7 @@ namespace bf
   // Non owning data structure. Just used for managing a hash-based cache of objects.
   //
   template<typename T, typename TConfig, typename Compare = MemCompare<TConfig>>
-  class ObjectHashCache final : private bfNonCopyMoveable<ObjectHashCache<T, TConfig, Compare>>, private Compare
+  class ObjectHashCache final : private NonCopyMoveable<ObjectHashCache<T, TConfig, Compare>>, private Compare
   // clang-format on
   {
     struct Node final

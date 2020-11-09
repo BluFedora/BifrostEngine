@@ -50,7 +50,7 @@ namespace bf
 }  // namespace bf
 
 Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
-  bfNonCopyMoveable<Engine>{},
+  NonCopyMoveable<Engine>{},
   m_CmdlineArgs{argc, argv},
 #if USE_CRT_HEAP
   m_MainMemory{},

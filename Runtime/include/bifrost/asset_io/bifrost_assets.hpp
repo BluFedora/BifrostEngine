@@ -17,10 +17,10 @@
 #ifndef BF_ASSETS_HPP
 #define BF_ASSETS_HPP
 
+#include "bf/bf_non_copy_move.hpp"                        /* NonCopyMoveable<T>                           */
 #include "bifrost/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
 #include "bifrost/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
-#include "bifrost/utility/bifrost_non_copy_move.hpp"      /* bfNonCopyMoveable<T>                         */
 #include "bifrost/utility/bifrost_uuid.hpp"               /* BifrostUUID                                  */
 #include "bifrost_asset_handle.hpp"                       /* AssetHandle<T>                               */
 
@@ -80,7 +80,7 @@ namespace bf
     bool        is_new;
   };
 
-  class Assets final : public bfNonCopyMoveable<Assets>
+  class Assets final : public NonCopyMoveable<Assets>
   {
    public:
     inline static const char META_PATH_NAME[]      = "_meta";

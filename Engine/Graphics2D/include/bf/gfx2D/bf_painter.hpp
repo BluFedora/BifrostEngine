@@ -67,7 +67,7 @@ namespace bf
     void reserveShadow(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size);
   };
 
-  struct Gfx2DRenderData : private bfNonCopyMoveable<Gfx2DRenderData>
+  struct Gfx2DRenderData : private NonCopyMoveable<Gfx2DRenderData>
   {
     IMemoryManager&               memory;
     bfGfxContextHandle            ctx;
@@ -143,7 +143,7 @@ namespace bf
     bool            needs_resize;
   };
 
-  struct PainterFont : bfNonCopyMoveable<PainterFont>
+  struct PainterFont : NonCopyMoveable<PainterFont>
   {
     Font*        font;
     DynamicAtlas gpu_atlas[k_bfGfxMaxFramesDelay];
@@ -152,7 +152,7 @@ namespace bf
     ~PainterFont();
   };
 
-  struct Gfx2DPainter : private bfNonCopyMoveable<Gfx2DPainter>
+  struct Gfx2DPainter : private NonCopyMoveable<Gfx2DPainter>
   {
     static const UIIndexType k_TempMemorySize = bfMegabytes(2);
 

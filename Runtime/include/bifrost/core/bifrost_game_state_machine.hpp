@@ -12,8 +12,8 @@
 #ifndef BIFROST_GAME_STATE_MACHINE_HPP
 #define BIFROST_GAME_STATE_MACHINE_HPP
 
-#include "bf/IMemoryManager.hpp"                     /* IMemoryManager       */
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
+#include "bf/IMemoryManager.hpp"   /* IMemoryManager     */
+#include "bf/bf_non_copy_move.hpp" /* NonCopyMoveable<T> */
 
 class Engine;
 
@@ -21,7 +21,7 @@ namespace bf
 {
   class IGameStateLayer;
 
-  class GameStateMachine final : private bfNonCopyMoveable<GameStateMachine>
+  class GameStateMachine final : private NonCopyMoveable<GameStateMachine>
   {
     friend class Engine;
     friend class IGameStateLayer;

@@ -19,8 +19,8 @@
 #ifndef BIFROST_COMPONENT_LIST_HPP
 #define BIFROST_COMPONENT_LIST_HPP
 
+#include "bf/bf_meta_function_traits.hpp"             /* ParameterPack */
 #include "bifrost/data_structures/bifrost_string.hpp" /* StringRange   */
-#include "bifrost/meta/bf_meta_function_traits.hpp"   /* ParameterPack */
 
 namespace bf
 {

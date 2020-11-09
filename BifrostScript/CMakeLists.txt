@@ -106,7 +106,6 @@ target_link_libraries(
   BifrostScript_cli 
   PRIVATE 
     BifrostScript
-    # BifrostDataStructuresCxx
 )
 
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)

@@ -12,9 +12,9 @@
 #ifndef BIFROST_BEHAVIOR_HPP
 #define BIFROST_BEHAVIOR_HPP
 
-#include "bf/ecs/bf_base_component.hpp"               // BaseComponent, Entity
-#include "bifrost/core/bifrost_base_object.hpp"       // BaseObject<T>
-#include "bifrost/utility/bifrost_non_copy_move.hpp"  // bfNonCopyMoveable<T>
+#include "bf/bf_non_copy_move.hpp"               // bfNonCopyMoveable<T>
+#include "bf/ecs/bf_base_component.hpp"          // BaseComponent, Entity
+#include "bifrost/core/bifrost_base_object.hpp"  // BaseObject<T>
 
 namespace bf
 {
@@ -78,7 +78,7 @@ namespace bf
 
   // clang-format off
 
-  class BaseBehavior : public IBehavior, public meta::Factory<BaseBehavior>, public BaseComponent, private bfNonCopyMoveable<BaseBehavior>
+  class BaseBehavior : public IBehavior, public meta::Factory<BaseBehavior>, public BaseComponent, private NonCopyMoveable<BaseBehavior>
   // clang-format on
   {
     friend class Entity;

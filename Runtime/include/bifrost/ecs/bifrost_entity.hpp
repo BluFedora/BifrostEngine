@@ -59,7 +59,7 @@ namespace bf
   using BehaviorList = Array<BaseBehavior*>;
 
   // clang-format off
-  class Entity final : public BaseObject<Entity>, private bfNonCopyMoveable<Entity>
+  class Entity final : public BaseObject<Entity>, private NonCopyMoveable<Entity>
   // clang-format on
   {
     BIFROST_META_FRIEND;

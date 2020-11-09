@@ -6,7 +6,7 @@
 namespace bf
 {
   BaseAssetInfo::BaseAssetInfo(const String& full_path, std::size_t length_of_root_path, const bfUUID& uuid) :
-    bfNonCopyMoveable<BaseAssetInfo>(),
+    NonCopyMoveable<BaseAssetInfo>(),
     m_FilePathAbs{full_path},
     m_FilePathRel{m_FilePathAbs.begin() + (length_of_root_path ? length_of_root_path + 1u : 0u), m_FilePathAbs.end()},  // The plus one accounts for the '/'
     m_UUID{uuid},

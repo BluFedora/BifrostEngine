@@ -1,7 +1,7 @@
 #ifndef BIFROST_META_MEMBER_HPP
 #define BIFROST_META_MEMBER_HPP
 
-#include "bf_meta_function_traits.hpp"  // ParameterPack
+#include "bf/bf_meta_function_traits.hpp"  // ParameterPack
 
 #include <tuple>       /* tuple                 */
 #include <type_traits> /* decay_t, is_pointer_v */

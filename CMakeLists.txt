@@ -210,8 +210,9 @@ target_link_libraries(
     BF_AssetIO_static
     BF_Core_static
     BF_Platform_shared
-    BF_Text_static
     BF_Memory_interface
+    BF_Text_static
+    BF_TMPUtils
 
     BifrostDataStructuresCxx
     BifrostScript_shared
@@ -341,18 +342,7 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
-add_subdirectory(Engine/Anim2D)
-add_subdirectory(Engine/AssetIO)
-add_subdirectory(Engine/Core)
-add_subdirectory(Engine/DataStructures)
-add_subdirectory(Engine/Dispatch)
-add_subdirectory(Engine/Math)
-add_subdirectory(Engine/Memory)
-add_subdirectory(Engine/Network)
-add_subdirectory(Engine/Platform)
-add_subdirectory(Engine/Runtime)
-add_subdirectory(Engine/Text)
-add_subdirectory(Engine/Job)
+add_subdirectory(Engine)
 
 add_subdirectory(Games/DungeonSwiper)
 

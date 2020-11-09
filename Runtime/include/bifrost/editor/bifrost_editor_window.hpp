@@ -13,9 +13,9 @@
 #ifndef BIFROST_EDITOR_WINDOW_HPP
 #define BIFROST_EDITOR_WINDOW_HPP
 
+#include "bf/bf_non_copy_move.hpp"                      // bfNonCopyMoveable<T>
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"    // BaseAssetHandle
 #include "bifrost/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
-#include "bifrost/utility/bifrost_non_copy_move.hpp"    // bfNonCopyMoveable<T>
 
 #include <imgui/imgui.h> /* ImGuiID */
 
@@ -30,7 +30,7 @@ namespace bf
   class IMemoryManager;
   class Entity;
   class IBaseObject;
-}  // namespace bifrost
+}  // namespace bf
 
 namespace bf::editor
 {
@@ -49,7 +49,7 @@ namespace bf::editor
 
   using EditorWindowID = int;
 
-  class BaseEditorWindow : private bfNonCopyMoveable<BaseEditorWindow>
+  class BaseEditorWindow : private NonCopyMoveable<BaseEditorWindow>
   {
    protected:
     static EditorWindowID s_TypeIDCounter;
@@ -101,6 +101,6 @@ namespace bf::editor
       return typeID();
     }
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_WINDOW_HPP */

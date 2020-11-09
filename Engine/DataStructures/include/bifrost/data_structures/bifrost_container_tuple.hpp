@@ -1,7 +1,7 @@
 #ifndef BIFROST_CONTAINER_TUPLE_HPP
 #define BIFROST_CONTAINER_TUPLE_HPP
 
-#include "bifrost/meta/bifrost_meta_utils.hpp" /* for_each_template */
+#include "bf/bf_meta_utils.hpp" /* for_each_template */
 
 #include <tuple>       /* size_t, tuple     */
 #include <type_traits> /* aligned_storage_t */

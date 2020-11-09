@@ -13,7 +13,7 @@
 #ifndef BIFROST_IGAME_STATE_LAYER_HPP
 #define BIFROST_IGAME_STATE_LAYER_HPP
 
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
+#include "bf/bf_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
 
 class Engine;
 
@@ -27,7 +27,7 @@ namespace bf
 
   class GameStateMachine;
 
-  class IGameStateLayer : private bfNonCopyMoveable<IGameStateLayer>
+  class IGameStateLayer : private NonCopyMoveable<IGameStateLayer>
   {
     friend class ::Engine;
     friend class GameStateMachine;

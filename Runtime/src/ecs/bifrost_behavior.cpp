@@ -19,7 +19,7 @@ namespace bf
   BaseBehavior::BaseBehavior(PrivateCtorTag) :
     IBehavior(),
     BaseComponent(),
-    bfNonCopyMoveable<BaseBehavior>{},
+    NonCopyMoveable<BaseBehavior>{},
     m_EventFlags{ON_NOTHING}
   {
   }

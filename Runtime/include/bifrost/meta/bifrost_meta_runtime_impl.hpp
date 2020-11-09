@@ -1,10 +1,10 @@
 #ifndef BIFROST_META_RUNTIME_IMPL_HPP
 #define BIFROST_META_RUNTIME_IMPL_HPP
 
-#include "bf_meta_function_traits.hpp"
+#include "bf/bf_meta_function_traits.hpp"
+#include "bf/bf_meta_utils.hpp"
 #include "bifrost_meta_member.hpp"
 #include "bifrost_meta_runtime.hpp"
-#include "bifrost_meta_utils.hpp"
 
 #include <array>
 
@@ -308,7 +308,6 @@ namespace bf::meta
   {
   };
 
-
   template<typename T>
   struct TypeInfo<Array<T>>
   {
@@ -534,6 +533,6 @@ namespace bf::meta
   {
     return TypeInfo<T>::get();
   }
-}  // namespace bifrost::meta
+}  // namespace bf::meta
 
 #endif /* BIFROST_META_RUNTIME_IMPL_HPP */

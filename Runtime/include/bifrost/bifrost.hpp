@@ -13,6 +13,7 @@
 #define BIFROST_HPP
 
 #include "bf/Platform.h"
+#include "bf/bf_non_copy_move.hpp"
 #include "bifrost/asset_io/bifrost_asset_handle.hpp"
 #include "bifrost/asset_io/bifrost_assets.hpp"
 #include "bifrost/asset_io/bifrost_file.hpp"
@@ -28,6 +29,5 @@
 #include "debug/bifrost_dbg_logger.h"
 #include "ecs/bifrost_entity.hpp"
 #include "meta/bifrost_meta_runtime.hpp"
-#include "utility/bifrost_non_copy_move.hpp"
 
 #endif /* BIFROST_HPP */

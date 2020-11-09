@@ -1,8 +1,8 @@
 #ifndef BIFROST_EDITOR_SELECTION_HPP
 #define BIFROST_EDITOR_SELECTION_HPP
 
-#include "bifrost/utility/bifrost_function_view.hpp"  // FunctionView<R(Args...)>
-#include "bifrost_editor_window.hpp"                  // Selectable
+#include "bf/bf_function_view.hpp"    // FunctionView<R(Args...)>
+#include "bifrost_editor_window.hpp"  // Selectable
 
 namespace bf::editor
 {

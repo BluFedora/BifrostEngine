@@ -14,12 +14,12 @@
 #ifndef BF_ASSET_INFO_HPP
 #define BF_ASSET_INFO_HPP
 
+#include "bf/bf_non_copy_move.hpp"                          /* NonCopyMoveable<T>   */
 #include "bifrost/data_structures/bifrost_dynamic_string.h" /* BifrostString        */
 #include "bifrost/data_structures/bifrost_string.hpp"       /* StringRange          */
 #include "bifrost/data_structures/bifrost_variant.hpp"      /* Variant<Ts...>       */
 #include "bifrost/math/bifrost_rect2.hpp"                   // TODO: Find a way to get this to be fwd declared.
 #include "bifrost/meta/bifrost_meta_runtime_impl.hpp"       /* meta::TypeInfo       */
-#include "bifrost/utility/bifrost_non_copy_move.hpp"        /* bfNonCopyMoveable<T> */
 #include "bifrost/utility/bifrost_uuid.h"                   /* BifrostUUID          */
 
 #include "bf/ListView.hpp" /* ListView<T> */
@@ -194,7 +194,7 @@ namespace bf
     };
   }  // namespace AssetInfoFlags
 
-  class BaseAssetInfo : private bfNonCopyMoveable<BaseAssetInfo>
+  class BaseAssetInfo : private NonCopyMoveable<BaseAssetInfo>
   {
     friend class Assets;
     friend class BaseAssetHandle;

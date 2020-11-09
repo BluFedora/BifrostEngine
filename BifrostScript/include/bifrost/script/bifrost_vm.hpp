@@ -3,8 +3,8 @@
  * @file   bifrost_vm.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   A C++ wrapper around the scripting virtual machine API
- *   with helpers for binding any callable object and classes.
+ *   A C++17 OOP wrapper around the scripting virtual machine API with helpers 
+ *   for binding callables and classes.
  *
  *   References:
  *     [https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/]
@@ -18,10 +18,10 @@
 #ifndef BIFROST_VM_HPP
 #define BIFROST_VM_HPP
 
-#include "bifrost/meta/bf_meta_function_traits.hpp"  /* function_traits */
-#include "bifrost/meta/bifrost_meta_utils.hpp"       /* for_each        */
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyable   */
-#include "bifrost_vm.h"                              /* bfVM_*          */
+#include "bf/bf_meta_function_traits.hpp" /* function_traits */
+#include "bf/bf_meta_utils.hpp"           /* for_each        */
+#include "bf/bf_non_copy_move.hpp"        /* NonCopyable     */
+#include "bifrost_vm.h"                   /* bfVM_*          */
 
 #include <string>      /* string                   */
 #include <tuple>       /* tuple                    */
@@ -670,7 +670,7 @@ namespace bf
   };
 
   // clang-format off
-  class VM final : private bfNonCopyable<VM>, public VMView  // NOLINT(hicpp-special-member-functions)
+  class VM final : private NonCopyable<VM>, public VMView  // NOLINT(hicpp-special-member-functions)
   // clang-format on
   {
    private:

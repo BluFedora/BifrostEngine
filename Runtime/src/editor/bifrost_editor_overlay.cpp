@@ -1,6 +1,7 @@
 ﻿#include "bifrost/editor/bifrost_editor_overlay.hpp"
 
 #include "bf/FreeListAllocator.hpp"
+#include "bf/Gfx2DPainter.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 
@@ -132,7 +133,7 @@ class FixedLinearAllocator final
 
 // clang-format off
 template<std::size_t Size, typename TAllocator = FreeListAllocator>
-class BlockAllocator final : public IMemoryManager, private bfNonCopyMoveable<BlockAllocator<Size>>
+class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<BlockAllocator<Size>>
 // clang-format on
 {
   struct MemoryBlock final
@@ -894,7 +895,7 @@ namespace bf::editor
   {
     StandardRenderer& renderer = engine.renderer();
 
-     int window_width, window_height;
+    int window_width, window_height;
     bfWindow_getSize(m_MainWindow, &window_width, &window_height);
 
     imgui::beginFrame(
@@ -1132,16 +1133,13 @@ namespace bf::editor
   {
     imgui::endFrame();
 
-#if 0
-    auto& painter = engine->renderer2D();
+#if 1
+    static PainterFont* const TEST_FONT = new PainterFont(engine.mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
 
-    if (!TEST_FONT)
-    {
-      TEST_FONT = new PainterFont(engine->mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
-    }
+    const auto mouse_pos = vec::convert<float>(engine.input().mousePos());
 
     int w, h;
-    bfWindow_getSize(window, &w, &h);
+    bfWindow_getSize(m_MainWindow, &w, &h);
 
     const float angle_map   = bfMathRemapf(0.0f, float(w), 0.0f, k_TwoPI, mouse_pos.x);
     const float rounded_map = bfMathRemapf(0.0f, float(w), 2.0f, 100.0f, mouse_pos.x);

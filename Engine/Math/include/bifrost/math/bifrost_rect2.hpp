@@ -585,6 +585,18 @@ namespace bf
        0.0f,
       };
     }
+
+    template<typename To, typename From>
+    detail::Vec3T<To> convert(const detail::Vec3T<From>& p0)
+    {
+      return {static_cast<To>(p0.x), static_cast<To>(p0.y), static_cast<To>(p0.z), static_cast<To>(p0.w)};
+    }
+
+    template<typename To, typename From>
+    detail::Vec2T<To> convert(const detail::Vec2T<From>& p0)
+    {
+      return {static_cast<To>(p0.x), static_cast<To>(p0.y)};
+    }
   }  // namespace vec
 
 }  // namespace bf

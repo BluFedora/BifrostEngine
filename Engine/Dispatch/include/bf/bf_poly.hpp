@@ -15,7 +15,7 @@
 #ifndef BF_POLY_HPP
 #define BF_POLY_HPP
 
-#include "../../../BifrostRuntime/include/bifrost/meta/bf_meta_function_traits.hpp"
+#include "../../../Runtime/include/bifrost/meta/bf_meta_function_traits.hpp"
 
 #include <cstddef>     /* max_align_t */
 #include <tuple>       /* tuple stuff */

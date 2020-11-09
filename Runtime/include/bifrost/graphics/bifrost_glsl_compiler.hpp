@@ -13,18 +13,18 @@
 #ifndef BIFROST_GLSL_COMPILER_HPP
 #define BIFROST_GLSL_COMPILER_HPP
 
+#include "bf/bf_non_copy_move.hpp"                         // bfNonCopyMoveable
 #include "bifrost/data_structures/bifrost_array.hpp"       // Array<T>
 #include "bifrost/data_structures/bifrost_hash_table.hpp"  // HashTable<K, V>
 #include "bifrost/data_structures/bifrost_string.hpp"      // String
 #include "bifrost/graphics/bifrost_gfx_api.h"              // BifrostShaderType
-#include "bifrost/utility/bifrost_non_copy_move.hpp"       // bfNonCopyMoveable
 
 namespace bf
 {
   //
   // Only create one of these per process.
   //
-  class GLSLCompiler : private bfNonCopyMoveable<GLSLCompiler>
+  class GLSLCompiler : private NonCopyMoveable<GLSLCompiler>
   {
    private:
     HashTable<String, String> m_LoadedFiles;
@@ -39,6 +39,6 @@ namespace bf
     bfShaderModuleHandle createModule(bfGfxDeviceHandle device, const String& filename, BifrostShaderType type);
     bfShaderModuleHandle createModule(bfGfxDeviceHandle device, const String& filename);
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_GLSL_COMPILER_HPP */

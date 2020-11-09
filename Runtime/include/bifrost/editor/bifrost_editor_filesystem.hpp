@@ -37,7 +37,7 @@ namespace bf::editor
     FileEntry(String&& name, const String& full_path, bool is_file);
   };
 
-  class FileSystem final : bfNonCopyMoveable<FileSystem>
+  class FileSystem final : NonCopyMoveable<FileSystem>
   {
    private:
     IMemoryManager&   m_Memory;

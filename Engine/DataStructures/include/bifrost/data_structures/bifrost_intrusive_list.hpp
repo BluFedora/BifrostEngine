@@ -3,7 +3,7 @@
 #ifndef BIFROST_INTRUSIVE_LIST_HPP
 #define BIFROST_INTRUSIVE_LIST_HPP
 
-#include "bifrost/utility/bifrost_non_copy_move.hpp" /* bfNonCopyable<T>, bfNonCopyMoveable<t> */
+#include "bf/bf_non_copy_move.hpp" /* bfNonCopyable<T>, bfNonCopyMoveable<t> */
 
 namespace bf::intrusive
 {
@@ -11,7 +11,7 @@ namespace bf::intrusive
   class ListView;
 
   template<typename T>
-  struct Node : private bfNonCopyable<Node<T>>
+  struct Node : private NonCopyable<Node<T>>
   {
     Node<T>* prev;
     T*       next;
@@ -209,7 +209,7 @@ namespace bf
 {
   // Memory Owning List
   template<typename T>
-  class List : private bfNonCopyMoveable<List<T>>
+  class List : private NonCopyMoveable<List<T>>
   {
    private:
     struct Node;

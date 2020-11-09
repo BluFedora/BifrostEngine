@@ -32,9 +32,11 @@ set(
 )
 
 set(
-  BIFROST_GRAPHICS_LIBRARIES
+  BF_GRAPHICS_LIBRARIES
+
   BF_DataStructuresC_static
   BF_Core_static
+  BF_TMPUtils
 )
 
 if (BIFROST_OPT_GRAPHICS_VULKAN)
@@ -61,8 +63,8 @@ if (BIFROST_OPT_GRAPHICS_VULKAN)
      )
 
      set(
-       BIFROST_GRAPHICS_LIBRARIES
-       "${BIFROST_GRAPHICS_LIBRARIES}"
+       BF_GRAPHICS_LIBRARIES
+       "${BF_GRAPHICS_LIBRARIES}"
        "${Vulkan_LIBRARIES}"
      )
   else()
@@ -92,8 +94,8 @@ elseif (BIFROST_OPT_GRAPHICS_OPENGL)
   )
 
   set(
-    BIFROST_GRAPHICS_LIBRARIES
-    "${BIFROST_GRAPHICS_LIBRARIES}"
+    BF_GRAPHICS_LIBRARIES
+    "${BF_GRAPHICS_LIBRARIES}"
     BF_Memory_interface
   )
 else()
@@ -125,7 +127,7 @@ target_link_libraries(
   PUBLIC
     BF_Platform_static
   PRIVATE
-    "${BIFROST_GRAPHICS_LIBRARIES}"
+    "${BF_GRAPHICS_LIBRARIES}"
 )
 
 add_library(
@@ -152,7 +154,7 @@ target_link_libraries(
   PUBLIC
     BF_Platform_shared
   PRIVATE
-    "${BIFROST_GRAPHICS_LIBRARIES}"
+    "${BF_GRAPHICS_LIBRARIES}"
 )
 
 add_library("${PROJECT_NAME}_static" ALIAS BifrostGraphics_static)

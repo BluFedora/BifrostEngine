@@ -144,7 +144,7 @@ namespace bf
     ButtonFlags button_state = 0x00000000;
   };
 
-  class Input : bfNonCopyMoveable<Input>
+  class Input : NonCopyMoveable<Input>
   {
     friend class ::Engine;
 
@@ -173,7 +173,7 @@ namespace bf
 
 using namespace bf;
 
-class Engine : private bfNonCopyMoveable<Engine>
+class Engine : private NonCopyMoveable<Engine>
 {
  private:
   using CommandLineArgs     = std::pair<int, char**>;
