@@ -19,11 +19,11 @@
 #ifndef BF_STANDARD_RENDERER_HPP
 #define BF_STANDARD_RENDERER_HPP
 
-#include "bf/PlatformFwd.h"                                   /* BifrostWindow           */
+#include "bf/PlatformFwd.h"                                   /* bfWindow                */
 #include "bifrost/bifrost_math.hpp"                           /* Vec3f, Vec2f, bfColor4u */
 #include "bifrost/data_structures/bifrost_array.hpp"          /* Array<T>                */
 #include "bifrost/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
-#include "bifrost/graphics/bifrost_gfx_api.h"                 /* Bifrost C Gfx API       */
+#include "bifrost/graphics/bifrost_gfx_api.h"                 /* bf C Gfx API            */
 #include "bifrost_glsl_compiler.hpp"                          /* GLSLCompiler            */
 
 class Engine;
@@ -475,32 +475,33 @@ namespace bf
     Vector3f AmbientColor = {0.64f};
 
    private:
-    using CameraObjectPair = std::pair<const CameraGPUData*, Entity*>;
+    using CameraObjectPair  = std::pair<const CameraGPUData*, Entity*>;
+    using RenderableMapping = HashTable<CameraObjectPair, Renderable<ObjectUniformData>*, 64, StdPairHash>;
 
    public:
-    GLSLCompiler                                                                 m_GLSLCompiler;
-    bfGfxContextHandle                                                           m_GfxBackend;
-    bfGfxDeviceHandle                                                            m_GfxDevice;
-    bfGfxFrameInfo                                                               m_FrameInfo;
-    bfVertexLayoutSetHandle                                                      m_StandardVertexLayout;
-    bfVertexLayoutSetHandle                                                      m_SkinnedVertexLayout;
-    bfVertexLayoutSetHandle                                                      m_EmptyVertexLayout;
-    bfGfxCommandListHandle                                                       m_MainCmdList;
-    bfTextureHandle                                                              m_MainSurface;
-    bfShaderProgramHandle                                                        m_GBufferShader;
-    bfShaderProgramHandle                                                        m_GBufferSkinnedShader;
-    bfShaderProgramHandle                                                        m_SSAOBufferShader;
-    bfShaderProgramHandle                                                        m_SSAOBlurShader;
-    bfShaderProgramHandle                                                        m_AmbientLighting;
-    bfShaderProgramHandle                                                        m_LightShaders[LightShaders::MAX];
-    List<Renderable<ObjectUniformData>>                                          m_RenderablePool;
-    HashTable<CameraObjectPair, Renderable<ObjectUniformData>*, 64, StdPairHash> m_RenderableMapping;  // TODO: Make this per Scene.
-    Array<bfGfxBaseHandle>                                                       m_AutoRelease;
-    bfTextureHandle                                                              m_WhiteTexture;
-    MultiBuffer<DirectionalLightUniformData>                                     m_DirectionalLightBuffer;
-    MultiBuffer<PunctualLightUniformData>                                        m_PunctualLightBuffers[2];  // [Point, Spot]
-    float                                                                        m_GlobalTime;
-    bfWindowSurfaceHandle                                                        m_MainWindow;
+    GLSLCompiler                             m_GLSLCompiler;
+    bfGfxContextHandle                       m_GfxBackend;
+    bfGfxDeviceHandle                        m_GfxDevice;
+    bfGfxFrameInfo                           m_FrameInfo;
+    bfVertexLayoutSetHandle                  m_StandardVertexLayout;
+    bfVertexLayoutSetHandle                  m_SkinnedVertexLayout;
+    bfVertexLayoutSetHandle                  m_EmptyVertexLayout;
+    bfGfxCommandListHandle                   m_MainCmdList;
+    bfTextureHandle                          m_MainSurface;
+    bfShaderProgramHandle                    m_GBufferShader;
+    bfShaderProgramHandle                    m_GBufferSkinnedShader;
+    bfShaderProgramHandle                    m_SSAOBufferShader;
+    bfShaderProgramHandle                    m_SSAOBlurShader;
+    bfShaderProgramHandle                    m_AmbientLighting;
+    bfShaderProgramHandle                    m_LightShaders[LightShaders::MAX];
+    List<Renderable<ObjectUniformData>>      m_RenderablePool;
+    RenderableMapping                        m_RenderableMapping;  // TODO: Make this per Scene.
+    Array<bfGfxBaseHandle>                   m_AutoRelease;
+    bfTextureHandle                          m_WhiteTexture;
+    MultiBuffer<DirectionalLightUniformData> m_DirectionalLightBuffer;
+    MultiBuffer<PunctualLightUniformData>    m_PunctualLightBuffers[2];  // [Point, Spot]
+    float                                    m_GlobalTime;
+    bfWindowSurfaceHandle                    m_MainWindow;
 
    public:
     explicit StandardRenderer(IMemoryManager& memory);

@@ -426,12 +426,9 @@ namespace bf
 
     Array<std::uint32_t> result{m_CurrentlyCompiling.memory()};
 
-    result.reserve(spir_v.size());
+    result.resize(spir_v.size());
 
-    for (unsigned int code : spir_v)
-    {
-      result.push(code);
-    }
+    std::copy(spir_v.begin(), spir_v.end(), result.begin());
 
     return result;
   }
@@ -442,10 +439,10 @@ namespace bf
 
     const String& source = load(filename);
 
-#if BIFROST_PLATFORM_USE_VULKAN
+#if BF_PLATFORM_USE_VULKAN
     Array<std::uint32_t> spirv_code = toSPIRV(source, type);
 #else
-    const String& spirv_code = source;
+    const String&          spirv_code              = source;
 #endif
 
     if (!bfShaderModule_loadData(module, (const char*)spirv_code.data(), spirv_code.size() * sizeof(spirv_code[0])))
@@ -464,21 +461,16 @@ namespace bf
     static constexpr int  k_FragmentShaderExtLength = sizeof(k_FragmentShaderExt) - 1;
 
     const StringRange path = filename;
-    BifrostShaderType type;
 
     if (file::pathEndsIn(path.begin(), k_VertexShaderExt, k_VertexShaderExtLength, (int)path.length()))
     {
-      type = BIFROST_SHADER_TYPE_VERTEX;
+      return createModule(device, filename, BIFROST_SHADER_TYPE_VERTEX);
     }
     else if (file::pathEndsIn(path.begin(), k_FragmentShaderExt, k_FragmentShaderExtLength, (int)path.length()))
     {
-      type = BIFROST_SHADER_TYPE_FRAGMENT;
-    }
-    else
-    {
-      return nullptr;
+      return createModule(device, filename, BIFROST_SHADER_TYPE_FRAGMENT);
     }
 
-    return createModule(device, filename, type);
+    return nullptr;
   }
 }  // namespace bf

@@ -21,7 +21,9 @@
 
 namespace bf
 {
-  // Only create one per process.
+  //
+  // Only create one of these per process.
+  //
   class GLSLCompiler : private bfNonCopyMoveable<GLSLCompiler>
   {
    private:
