@@ -4,3 +4,6 @@
 [submodule "Engine/Job"]
 	path = Engine/Job
 	url = https://github.com/BluFedora/BF-Job-System.git
+[submodule "Engine/Platform"]
+	path = Engine/Platform
+	url = https://github.com/BluFedora/BF-Platform
