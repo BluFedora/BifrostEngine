@@ -343,11 +343,9 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
 endif()
 
 add_subdirectory(Engine)
-
-add_subdirectory(Games/DungeonSwiper)
-
 add_subdirectory(Experiments)
 add_subdirectory(Graphics)
 add_subdirectory(BifrostScript)
+add_subdirectory(Games/DungeonSwiper)
 
 add_subdirectory(BuildTimeAnalyzerGUI)

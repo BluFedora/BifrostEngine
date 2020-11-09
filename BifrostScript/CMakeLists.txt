@@ -44,12 +44,13 @@ target_include_directories(
   BifrostScript 
   PUBLIC 
     ${PROJECT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/BifrostRuntime/include
+    ${CMAKE_SOURCE_DIR}/Runtime/include
 )
 
 set_property(
   TARGET BifrostScript 
-  PROPERTY C_STANDARD 99
+  PROPERTY 
+    C_STANDARD 99
 )
 
 target_compile_definitions(BifrostScript PRIVATE BF_VM_EXPORT_STATIC)
@@ -106,6 +107,7 @@ target_link_libraries(
   BifrostScript_cli 
   PRIVATE 
     BifrostScript
+    BF_TMPUtils
 )
 
 set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/bin)

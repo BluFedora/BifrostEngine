@@ -20,8 +20,8 @@ extern "C" {
 
 #if _MSC_VER
 /*
-    Macro for having the compiler check for correct printf formatting.
-  */
+  Macro for having the compiler check for correct printf formatting.
+ */
 #define bfFormatString(t) __format_string t
 #else
 #define bfFormatString(t) t
@@ -88,12 +88,12 @@ void bfLogger_deinit(void);
 
 /* clang-format off */
 #ifndef bfLogPush
-#define bfLogPush(format, ...)  bfLogPush_(__FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
-#define bfLogPrint(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_VERBOSE, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
-#define bfLogWarn(format, ...)  bfLogPrint_(BIFROST_LOGGER_LVL_WARNING, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
-#define bfLogError(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_ERROR, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
-#define bfLogFatal(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_FATAL, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
-#define bfLogPop(...)           bfLogPop_(__FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+  #define bfLogPush(format, ...)  bfLogPush_(__FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+  #define bfLogPrint(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_VERBOSE, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+  #define bfLogWarn(format, ...)  bfLogPrint_(BIFROST_LOGGER_LVL_WARNING, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+  #define bfLogError(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_ERROR, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+  #define bfLogFatal(format, ...) bfLogPrint_(BIFROST_LOGGER_LVL_FATAL, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__)
+  #define bfLogPop(...)           bfLogPop_(__FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif /* bfLogPush */
 /* clang-format on */
 

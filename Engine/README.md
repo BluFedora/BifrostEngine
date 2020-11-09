@@ -14,8 +14,8 @@ This layer consists of libraries which only rely on code within it's own source 
 - Math
 - [Memory][Memory]
 - Network  (should use: [Memory][Memory])
-- Platform
-- Utility
+- [Platform][Platform]
+- TMPUtils
 
 ## Layer 1
 
@@ -28,9 +28,9 @@ This layer consists of libraries which only rely on code within it's own source 
 ## Layer 2
 
 - AssetIO    (Data Structures, Graphics, Math, [Memory][Memory])
-- Graphics2D ([Memory][Memory], Graphics, Runtime, Math, Text, Platform)
+- Graphics2D ([Memory][Memory], Graphics, Runtime, Math, Text, [Platform][Platform])
 - Editor     (AssetIO, Runtime)
-- Runtime    ([Memory][Memory], Graphics, Runtime, Math, Text, Platform)
+- Runtime    ([Memory][Memory], Graphics, Runtime, Math, Text, [Platform][Platform])
 
 # Source Structure 
 
@@ -52,7 +52,8 @@ This layer consists of libraries which only rely on code within it's own source 
 
 <!-- Link Definitions -->
 
-[Memory]: https://github.com/BluFedora/BF-Memory     (Link to the BF Memory Library Documentation)
-[Job]:    https://github.com/BluFedora/BF-Job-System (Link to the BF Job Library Documentation)
+[Job]:      https://github.com/BluFedora/BF-Job-System (Link to the BF Job Library Documentation)
+[Memory]:   https://github.com/BluFedora/BF-Memory     (Link to the BF Memory Library Documentation)
+[Platform]: https://github.com/BluFedora/BF-Platform   (Link to the BF Platform Library Documentation)
 
 <!-- Link Definitions -->
