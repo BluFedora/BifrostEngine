@@ -95,47 +95,47 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_common.c"
 
   # Experiments
-  "BifrostExperiments/src/*.c"
+  "Experiments/src/*.c"
 
   # Bifrost Asset Module
-  "BifrostRuntime/src/asset_io/*.cpp"
+  "Runtime/src/asset_io/*.cpp"
 
   # Bifrost Core Module
-  "BifrostRuntime/src/core/bifrost_game_state_machine.cpp"
-  "BifrostRuntime/src/core/bifrost_igame_state_layer.cpp"
+  "Runtime/src/core/bifrost_game_state_machine.cpp"
+  "Runtime/src/core/bifrost_igame_state_layer.cpp"
 
   # Bifrost Debug Module
-  "BifrostRuntime/src/debug/bifrost_dbg_logger.c"
+  "Runtime/src/debug/bifrost_dbg_logger.c"
 
   # Bifrost ECS Module
-  "BifrostRuntime/src/ecs/bifrost_entity.cpp"
+  "Runtime/src/ecs/bifrost_entity.cpp"
   "Engine/Runtime/src/ecs/bf_base_component.cpp"
-  "BifrostRuntime/src/ecs/bifrost_iecs_system.cpp"
+  "Runtime/src/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
   "include/bifrost/editor/*.hpp"
-  "BifrostRuntime/src/editor/bifrost_editor_build.cpp"
-  "BifrostRuntime/src/bifrost_imgui_glfw.cpp"
+  "Runtime/src/editor/bifrost_editor_build.cpp"
+  "Runtime/src/bifrost_imgui_glfw.cpp"
 
   # Bifrost Graphics Module
-  "BifrostRuntime/src/graphics/bifrost_standard_renderer.cpp"
-  "BifrostRuntime/src/graphics/bifrost_glsl_compiler.cpp"
+  "Runtime/src/graphics/bifrost_standard_renderer.cpp"
+  "Runtime/src/graphics/bifrost_glsl_compiler.cpp"
 
   # Bifrost Math Module
   "Engine/Math/src/bifrost_rect2.cpp"
 
   # Bifrost Meta Module
-  "BifrostRuntime/src/meta/bifrost_meta_runtime.cpp"
+  "Runtime/src/meta/bifrost_meta_runtime.cpp"
 
   # Bifrost Utility Module
-  "BifrostRuntime/src/utility/bifrost_hash.cpp"
-  "BifrostRuntime/src/utility/bifrost_json.cpp"
+  "Runtime/src/utility/bifrost_hash.cpp"
+  "Runtime/src/utility/bifrost_json.cpp"
 
-  "BifrostRuntime/include/utility/bifrost_uuid.h"
-  "BifrostRuntime/src/utility/bifrost_uuid.c"
+  "Runtime/include/utility/bifrost_uuid.h"
+  "Runtime/src/utility/bifrost_uuid.c"
 
   # Physics
-  "BifrostRuntime/src/bifrost/physics/bifrost_particle.cpp"
+  "Runtime/src/bifrost/physics/bifrost_particle.cpp"
 
   "main.cpp"
  )
@@ -153,24 +153,24 @@ find_package(OpenCL)
 add_executable(
   BifrostEngineOLD
   ${BIFROST_ENGINE_SOURCE_FILES}
-  "BifrostRuntime/src/ecs/bifrost_collision_system.cpp"
-  "BifrostRuntime/src/graphics/bifrost_debug_renderer.cpp"
-  "BifrostRuntime/src/core/bifrost_engine.cpp"
+  "Runtime/src/ecs/bifrost_collision_system.cpp"
+  "Runtime/src/graphics/bifrost_debug_renderer.cpp"
+  "Runtime/src/core/bifrost_engine.cpp"
   "DemoApp/src/main_demo.cpp"
-  "BifrostRuntime/src/ecs/bifrost_behavior.cpp"
-  "BifrostRuntime/src/ecs/bifrost_behavior_system.cpp"
-  "BifrostRuntime/src/ecs/bifrost_entity_ref.cpp"
+  "Runtime/src/ecs/bifrost_behavior.cpp"
+  "Runtime/src/ecs/bifrost_behavior_system.cpp"
+  "Runtime/src/ecs/bifrost_entity_ref.cpp"
 
   # Runtime
 
-  "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script_behavior.cpp"
-  "${PROJECT_SOURCE_DIR}/BifrostRuntime/src/bifrost_script.cpp"
+  "${PROJECT_SOURCE_DIR}/Runtime/src/bifrost_script_behavior.cpp"
+  "${PROJECT_SOURCE_DIR}/Runtime/src/bifrost_script.cpp"
   "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code
  "DemoApp/src/camera_controller.cpp"
 
- "BifrostRuntime/src/graphics/bifrost_component_renderer.cpp"
+ "Runtime/src/graphics/bifrost_component_renderer.cpp"
 
  "${PROJECT_SOURCE_DIR}/Engine/Graphics2D/src/bf_painter.cpp" 
  "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
@@ -192,10 +192,10 @@ target_include_directories(
   BifrostEngineOLD
   PRIVATE
     ${PROJECT_SOURCE_DIR}/lib/include
-    ${PROJECT_SOURCE_DIR}/BifrostRuntime/include
+    ${PROJECT_SOURCE_DIR}/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/BifrostExperiments/include
+    ${PROJECT_SOURCE_DIR}/Experiments/include
     ${PROJECT_SOURCE_DIR}/DemoApp/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
@@ -356,8 +356,8 @@ add_subdirectory(Engine/Job)
 
 add_subdirectory(Games/DungeonSwiper)
 
-add_subdirectory(BifrostExperiments)
-add_subdirectory(BifrostGraphics)
+add_subdirectory(Experiments)
+add_subdirectory(Graphics)
 add_subdirectory(BifrostScript)
 
 add_subdirectory(BuildTimeAnalyzerGUI)

@@ -12,9 +12,9 @@ target_include_directories(
   BifrostRuntime
   INTERFACE 
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/../../BifrostRuntime/include # TODO(SR): This is a hack to bootstrap the new project layout.
+    ${PROJECT_SOURCE_DIR}/../../Runtime/include # TODO(SR): This is a hack to bootstrap the new project layout.
     ${PROJECT_SOURCE_DIR}/../../Engine/Graphics2D/include
-    ${PROJECT_SOURCE_DIR}/../../BifrostExperiments/include
+    ${PROJECT_SOURCE_DIR}/../../Experiments/include
 )
 
 target_link_libraries(
@@ -82,7 +82,7 @@ target_link_libraries(
     # "${BIFROST_RUNTIME_LIB}/${BIFROST_RUNTIME_LIB_PREFIX}SPIRV${BIFROST_RUNTIME_LIB_SUFFIX}.${BIFROST_RUNTIME_LIB_EXT}"
 )
 
-set(THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED "${PROJECT_SOURCE_DIR}/../../BifrostRuntime/src/")
+set(THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED "${PROJECT_SOURCE_DIR}/../../Runtime/src/")
 
 target_sources(
    BifrostRuntime
@@ -135,7 +135,7 @@ target_sources(
 
    # HAcky Hacks
 
-   "${PROJECT_SOURCE_DIR}/../../BifrostExperiments/src/bifrost_json.c"
+   "${PROJECT_SOURCE_DIR}/../../Experiments/src/bifrost_json.c"
 
    "${PROJECT_SOURCE_DIR}/../../Engine/Graphics2D/src/bf_painter.cpp"
 
