@@ -9,7 +9,7 @@ The main project is written in C++17 but the various Engine Submodules may be on
 ## Getting Started
 
 Most of the Engine is separated into separate libraries that must be compiled and linked to be used.
-The base Module that you should start with [Platform](Engine/Platform/README.md) for basic windowing and other low level platform specifics.
+The base Module that you should start with [Platform](https://github.com/BluFedora/BF-Platform) for basic windowing and other low level platform specifics.
 
 ## Build System
 
