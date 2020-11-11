@@ -82,7 +82,29 @@ zoom = exp[base](lerp(log(zoom), log[base](target_zoom), delta_time / duration);
 
 ## Linear Algebra
 
+### Quaternion
+
+```
+A quaternion represents an expression: 
+q = w + i*x + j*y + k*z
+
+i^2 = j^2 = k^2 = i*j*k = -1
+
+A `pure` quaternion is one in which the w component is 0.0f. 
+
+
+
+p_1 = q * p_o * q^*
+
+Notation: q^* = q's conjugate
+```
+
 ### Matrix
+
+```
+R = A^T
+=> transpose(inverse(R)) =inverse(A) = transpose(inverse(transpose(A)))
+```
 
 #### Normal Mapping
 
@@ -328,6 +350,7 @@ Most are covered by the links below but I wanted to just give you as feel of wha
 ```cpp
 namespace bf
 {
+  //
   // Property Storage Policies
   //
   // * Inline / Owned - The data in held by the property itself.

@@ -274,6 +274,8 @@ void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle w
   window_handle->swapchain_needs_deletion = bfTrue;
   gfxRecreateSwapchain(self, *window_handle);
 
+  vkDestroySurfaceKHR(self->instance, window_handle->surface, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+
   for (std::uint32_t i = 0; i < self->max_frames_in_flight; ++i)
   {
     vkDestroySemaphore(self->logical_device->handle, window_handle->is_image_available[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
@@ -292,6 +294,8 @@ static bool gfxRecreateSwapchain(bfGfxContextHandle self, VulkanWindow& window)
   if (window.swapchain_needs_deletion)
   {
     VulkanSwapchain& old_swapchain = window.swapchain;
+
+    vkWaitForFences(self->logical_device->handle, self->max_frames_in_flight, old_swapchain.in_flight_fences, VK_TRUE, UINT64_MAX);
 
     gfxContextDestroyCmdBuffers(self, &old_swapchain);
     gfxContextDestroyCmdFences(self, &old_swapchain);
@@ -327,17 +331,17 @@ void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window)
 
 bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window)
 {
+  if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
+  {
+    return bfFalse;
+  }
+
   if (window->swapchain_needs_creation)
   {
     if (!gfxRecreateSwapchain(self, *window))
     {
       return bfFalse;
     }
-  }
-
-  if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
-  {
-    return bfFalse;
   }
 
   {
@@ -567,7 +571,7 @@ namespace
 {
   void gfxContextSetupApp(bfGfxContextHandle self, const bfGfxContextCreateParams* params)
   {
-    static const char* const VALIDATION_LAYER_NAMES[] = {"VK_LAYER_LUNARG_standard_validation"};
+    static const char* const VALIDATION_LAYER_NAMES[] = {"VK_LAYER_KHRONOS_validation"};
     static const char* const INSTANCE_EXT_NAMES[]     = {
       VK_KHR_SURFACE_EXTENSION_NAME,
 

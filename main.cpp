@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
   }
 
   {
-    bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, BIFROST_WINDOW_FLAGS_DEFAULT);
+    bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, k_bfWindowFlagsDefault);
 
     if (!main_window)
     {
@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
     }
 
     bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
-    std::printf("\n\n                 BlueFedora Engine v%s\n\n\n", BF_VERSION_STR);
+    std::printf("\n\n                 BluFedora Engine v%s\n\n\n", BF_VERSION_STR);
     bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
 
     {

@@ -366,3 +366,36 @@ Transparency Handling:
     - Gradient Bevel
     - Color Adjust
   - Any blending mode other than the _default_ source-over.
+
+
+
+
+Editor Idea:
+"Inline Assets" - To make it less intrusive to add sharable properities to
+                  field make it so editing of the properties can be inline
+                  with that field and later extracted out.
+                  This allows for the Designer to not lose there workflow
+                  and work locally.
+
+                  Less disruptive workflow while still allowing data driven workflow.
+                  if an asset is dropped over this then just clear it.
+
+                  Even asset refs should be editable here too?
+
+                  EnemyStats: [Inline Asset] (*)
+                                              [ Export Properties... ]
+                                              [ Clear                ]
+                    ... Display Stats here ...
+
+[https://www.youtube.com/watch?v=raQ3iHhE_Kk&feature=youtu.be&ab_channel=Unity]
+
+
+
+For example, style guides for Python projects often specify either 79 or 120 characters vs. Git commit messages should be no longer than 50 characters.
+
+
+
+Windows Threads Pools expose a default thread pool to which work - including io requests - can be submitted. This is used by Microsoft’s STL implementation.
+Apple platforms have Grand Central Dispatch, which works similarly but has a far cooler name.
+
+

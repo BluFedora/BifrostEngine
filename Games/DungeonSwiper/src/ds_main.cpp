@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  const auto      window_flags = BIFROST_WINDOW_FLAG_IS_RESIZABLE | BIFROST_WINDOW_FLAG_IS_VISIBLE | BIFROST_WINDOW_FLAG_IS_DECORATED | BIFROST_WINDOW_FLAG_IS_FOCUSED_ON_SHOW;
+  const auto      window_flags = k_bfWindowFlagIsResizable | k_bfWindowFlagIsVisible | k_bfWindowFlagIsDecorated | k_bfWindowFlagIsFocusedOnShow;
   bfWindow* const main_window  = bfPlatformCreateWindow(k_AppName, 320, 568, window_flags);
 
   if (!main_window)

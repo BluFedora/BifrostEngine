@@ -15,6 +15,7 @@ This layer consists of libraries which only rely on code within it's own source 
 - [Memory][Memory]
 - Network  (should use: [Memory][Memory])
 - [Platform][Platform]
+- Script (optinally uses: TMPUtils)
 - TMPUtils
 
 ## Layer 1
@@ -22,7 +23,6 @@ This layer consists of libraries which only rely on code within it's own source 
 - Anim2D          (Networking, Data Structures)
 - Data Structures (Core, [Memory][Memory], some ds are standalone)
 - [Job][Job]      (internally [Memory][Memory])
-- Script          (DataStructures)
 - Text            ([Memory][Memory])
 
 ## Layer 2
