@@ -216,6 +216,8 @@ namespace bf::editor
                 return ray_cast_result.did_hit;
               });
 
+              editor.select(nullptr);
+              
               if (!clicked_nodes.empty())
               {
                 clicked_nodes.sort([](const ClickResult& a, const ClickResult& b) {
@@ -225,10 +227,6 @@ namespace bf::editor
                 const ClickResult best_click = clicked_nodes.front();
 
                 editor.select(static_cast<Entity*>(best_click.first->user_data));
-              }
-              else
-              {
-                editor.select(nullptr);
               }
             }
             // Ray cast Hit End

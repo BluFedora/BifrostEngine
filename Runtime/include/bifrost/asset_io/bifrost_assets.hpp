@@ -185,10 +185,10 @@ namespace bf
 
     ~Assets();
 
-    // TODO: Remove This
+    // TODO: Remove These
     detail::AssetMap& assetMap() { return m_AssetMap; }
-
-    IMemoryManager& memory() const { return m_Memory; }
+    Engine&           engine() const { return m_Engine; }
+    IMemoryManager&   memory() const { return m_Memory; }
 
    private:
     template<typename AssetTInfo>

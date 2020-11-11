@@ -1133,7 +1133,7 @@ namespace bf::editor
   {
     imgui::endFrame();
 
-#if 1
+#if 0
     static PainterFont* const TEST_FONT = new PainterFont(engine.mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
 
     const auto mouse_pos = vec::convert<float>(engine.input().mousePos());

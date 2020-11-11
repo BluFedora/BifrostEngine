@@ -419,7 +419,7 @@ namespace bf::editor
 
     if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightRegular))
     {
-      const auto scene = entity->engine().currentScene();
+      const auto scene = m_Assets->engine().currentScene();
 
       if (scene)
       {
