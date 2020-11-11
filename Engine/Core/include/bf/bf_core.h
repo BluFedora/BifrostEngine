@@ -96,7 +96,7 @@ typedef struct bfStringRange_t
 #if __cplusplus
 constexpr
 #endif
- static bfStringRange
+ static inline bfStringRange
  bfMakeStringRangeLen(const char* bgn, size_t length)
 {
 #if __cplusplus

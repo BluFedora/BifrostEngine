@@ -45,13 +45,13 @@ typedef struct Quaternionf_t
 typedef Quaternionf bfQuaternionf;
 
 BF_MATH_API Quaternionf   bfQuaternionf_init(float x, float y, float z, float w);
-BF_MATH_API Quaternionf   bfQuaternionf_identity();
+BF_MATH_API Quaternionf   bfQuaternionf_identity(void);
 BF_MATH_API Quaternionf   bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle);
 BF_MATH_API Quaternionf   bfQuaternionf_fromAxisAngleDeg(const Vec3f* axis, float angle);
 BF_MATH_API Quaternionf   bfQuaternionf_fromMatrix(const Mat4x4* rot_mat);
 BF_MATH_API Quaternionf   bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
 BF_MATH_API Quaternionf   bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
-BF_MATH_API void          bfQuaternionf_multQ(Quaternionf* self, const Quaternionf* rhs);
+BF_MATH_API Quaternionf   bfQuaternionf_multQ(const Quaternionf* self, const Quaternionf* rhs);  // rhs happens _first_
 BF_MATH_API void          bfQuaternionf_multV(Quaternionf* self, const Vec3f* rhs);
 BF_MATH_API void          bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier);
 BF_MATH_API void          bfQuaternionf_rotByVec(Quaternionf* self, const Vec3f* rhs);

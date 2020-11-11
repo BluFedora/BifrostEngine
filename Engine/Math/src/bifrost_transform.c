@@ -29,7 +29,7 @@ Quaternionf bfQuaternionf_init(float x, float y, float z, float w)
   return ret;
 }
 
-Quaternionf bfQuaternionf_identity()
+Quaternionf bfQuaternionf_identity(void)
 {
   return bfQuaternionf_init(0.0f, 0.0f, 0.0f, 1.0f);
 }
@@ -129,17 +129,14 @@ Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll)
    cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll);
 }
 
-void bfQuaternionf_multQ(Quaternionf* self, const Quaternionf* rhs)
+Quaternionf bfQuaternionf_multQ(const Quaternionf* self, const Quaternionf* rhs)
 {
   const float x = self->x * rhs->w + self->w * rhs->x + self->y * rhs->z - self->z * rhs->y;
   const float y = self->y * rhs->w + self->w * rhs->y + self->z * rhs->x - self->x * rhs->z;
   const float z = self->z * rhs->w + self->w * rhs->z + self->x * rhs->y - self->y * rhs->x;
   const float w = self->w * rhs->w - self->x * rhs->x - self->y * rhs->y - self->z * rhs->z;
 
-  self->x = x;
-  self->y = y;
-  self->z = z;
-  self->w = w;
+  return bfQuaternionf_init(x, y, z, w);
 }
 
 void bfQuaternionf_multV(Quaternionf* self, const Vec3f* rhs)
@@ -162,7 +159,7 @@ void bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier)
                                            rhs->y * multiplier,
                                            rhs->z * multiplier);
 
-  bfQuaternionf_multQ(self, &q);
+  *self = bfQuaternionf_multQ(self, &q);
 
   self->w += q.w * 0.5f;
   self->x += q.x * 0.5f;
@@ -173,7 +170,7 @@ void bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier)
 void bfQuaternionf_rotByVec(Quaternionf* self, const Vec3f* rhs)
 {
   const Quaternionf q = bfQuaternionf_init(0.0f, rhs->x, rhs->y, rhs->z);
-  bfQuaternionf_multQ(self, &q);
+  *self               = bfQuaternionf_multQ(self, &q);
 }
 
 Quaternionf bfQuaternionf_conjugate(const Quaternionf* self)
@@ -333,15 +330,21 @@ Vec3f bfQuaternionf_backwardVec(const Quaternionf* self)
   return ret;
 }
 
+static inline float bfQuaternionf_dot(const bfQuaternionf* lhs, const bfQuaternionf* rhs)
+{
+  return lhs->x * rhs->x + lhs->y * rhs->y + lhs->z * rhs->z + lhs->w * rhs->w;
+}
+
 bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf* rhs, float factor)
 {
   //
   // Adopted from Assimp / gmtl
   //
 
-  float cosom = lhs->x * rhs->x + lhs->y * rhs->y + lhs->z * rhs->z + lhs->w * rhs->w;
-
-  bfQuaternionf end = *rhs;
+  bfQuaternionf end   = *rhs;
+  float         cosom = bfQuaternionf_dot(lhs, &end);
+  float         sclp;
+  float         sclq;
 
   if (cosom < 0.0f)
   {
@@ -352,17 +355,15 @@ bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf*
     end.w = -end.w;
   }
 
-  float sclp, sclq;
-
   if ((1.0f - cosom) > k_Epsilonf)
   {
     const float omega = (float)acos(cosom);
     const float sinom = (float)sin(omega);
 
-    sclp = (float)sin((1.0f - factor) * omega) / sinom;
-    sclq = (float)sin(factor * omega) / sinom;
+    sclp = sinf((1.0f - factor) * omega) / sinom;
+    sclq = sinf(factor * omega) / sinom;
   }
-  else
+  else // If the angles are close enough then just linearly interpolate.
   {
     sclp = 1.0f - factor;
     sclq = factor;
@@ -548,9 +549,8 @@ void bfTransform_flushChanges(BifrostTransform* self)
       Mat4x4_mult(parent_mat, &node->local_transform, &node->world_transform);
 
       Mat4x4_multVec(parent_mat, &node->local_position, &node->world_position);
-      node->world_rotation = node->local_rotation;
-      bfQuaternionf_multQ(&node->world_rotation, &node_parent->world_rotation);
-      node->world_scale = node->local_scale;
+      node->world_rotation = bfQuaternionf_multQ(&node_parent->world_rotation, &node->local_rotation);
+      node->world_scale    = node->local_scale;
       Vec3f_multV(&node->world_scale, &node_parent->world_scale);
     }
     else

@@ -120,7 +120,7 @@ struct SoundFxAsset : public BaseAsset
 
 ## Asset Map
 
-`BaseAsset` contains a `BifrostUUID m_UUID` which
+`BaseAsset` contains a `bfUUID m_UUID` which
 is a copy of the _key_ in the Map. So this can be a specialized map
 that uses the BaseAsset itself.
 
@@ -129,21 +129,23 @@ struct AssetMap
 {
   static const int k_MaxProbe = 16;
 
-  // Typedef(s) for clarity in these string + integer's purpose.
+  // Typedefs for clarity of these type's purpose.
   using StringRangeInAsset = StringRange;
   using HashIndex          = std::size_t;
   using PathToIndex        = HashMap<StringRangeInAsset, HashIndex>;
 
   struct Node
   {
-    BaseAsset* value;
-    bool       is_tombstone;
+    static BaseAsset s_TombstoneSentinel = {...};
 
-    bool is_active() const { return value != nullptr; }
-    bool is_inactive() const { return !value && !is_tombstone; }
+    BaseAsset* value;
+
+    bool is_active()    const { return value != nullptr && !is_tombstone(); }
+    bool is_tombstone() const { return value == &s_TombstoneSentinel;       }
+    bool is_inactive()  const { return value == nullptr;                    }
   };
 
-  Node*       assets;          // Ordered / hashed based on BifrostUUID.
+  Node*       assets;          // Ordered / hashed based on bfUUID.
   std::size_t num_assets;      // Must always be a power of 2.
   std::size_t num_assets_mask; // (`num_assets` - 1)
   PathToIndex path_to_asset;   // Path string stored in the `BaseAsset*`
@@ -162,9 +164,9 @@ struct AssetMap
     {
       const HashIndex actual_index = start_index & num_assets_mask;
 
-      if (assets[actual_index].is_inactive())
+      if (assets[actual_index].is_inactive()) 
       {
-        return nullptr;
+        return nullptr; 
       }
 
       if (assets[actual_index].is_active() && cmp(key, assets[actual_index].value))

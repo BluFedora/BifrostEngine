@@ -125,6 +125,7 @@ namespace bf
     [[nodiscard]] reference              back() { return *static_cast<T*>(::bfArray_back(rawData())); }
     [[nodiscard]] const_reference        back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }
     [[nodiscard]] std::size_t            size() const { return ::bfArray_size(rawData()); }
+    [[nodiscard]] std::size_t            length() const { return ::bfArray_size(rawData()); }
     [[nodiscard]] std::size_t            capacity() const { return ::bfArray_capacity(rawData()); }
     [[nodiscard]] pointer                data() { return begin(); }
     [[nodiscard]] const_pointer          data() const { return begin(); }

@@ -54,7 +54,7 @@ namespace bf
       return length != 0;
     }
 
-    void copyOverString(const char* src, std::size_t src_length)
+    void copyOverString(const char* src, std::size_t src_length) noexcept
     {
       src_length = std::min(kSize - 1, src_length);
 

@@ -541,6 +541,17 @@ namespace bf
 
     // Vec3
 
+    static inline Vector3f normalized(Vector3f a)
+    {
+      Vec3f_normalize(&a);
+      return a;
+    }
+
+    static inline float length(const Vector3f& a)
+    {
+      return Vec3f_len(&a);
+    }
+
     static Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
     {
       Vector3f result;
@@ -548,6 +559,11 @@ namespace bf
       result.w = w;
 
       return result;
+    }
+
+    static float dot(const Vector3f& a, const Vector3f& b)
+    {
+      return Vec3f_dot(&a, &b);
     }
 
     template<typename T>
