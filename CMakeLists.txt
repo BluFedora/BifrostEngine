@@ -225,12 +225,11 @@ target_link_libraries(
     BF_Memory_interface
     BF_Text_static
     BF_TMPUtils
-
-    BifrostDataStructuresCxx
-    BifrostScript_shared
+    BF_DataStructuresCxx
     BF_Math_shared
-    bfAnimation2D_shared
     BF_Graphics_shared
+    bfAnimation2D_shared
+    BifrostScript_shared
 )
 
 set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)

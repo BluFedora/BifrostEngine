@@ -30,7 +30,7 @@ target_include_directories(
 target_link_libraries(
   bfAnimation2D_shared
   PRIVATE
-    BifrostDataStructuresCxx
+    BF_DataStructuresCxx
     BF_Networking_static
 )
 

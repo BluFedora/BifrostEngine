@@ -26,7 +26,7 @@ target_link_libraries(
     BF_Text_static
     BF_Memory_interface
 
-    BifrostDataStructuresCxx
+    BF_DataStructuresCxx
     BifrostScript_shared
     BF_Math_shared
     bfAnimation2D_shared
