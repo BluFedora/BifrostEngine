@@ -165,8 +165,8 @@ if (EMSCRIPTEN)
       BifrostScript
       BF_Platform_static
       BF_Memory_interface
-      BifrostMath_static
-      BifrostGraphics_static
+      BF_Math_static
+      BF_Graphics_static
   )
 else()
 target_link_libraries(
@@ -175,8 +175,8 @@ target_link_libraries(
     BifrostScript
     BF_Platform_shared
     BF_Memory_interface
-    BifrostMath_shared
-    BifrostGraphics_shared
+    BF_Math_shared
+    BF_Graphics_shared
 )
 endif()
 

@@ -228,9 +228,9 @@ target_link_libraries(
 
     BifrostDataStructuresCxx
     BifrostScript_shared
-    BifrostMath_shared
+    BF_Math_shared
     bfAnimation2D_shared
-    BifrostGraphics_shared
+    BF_Graphics_shared
 )
 
 set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)

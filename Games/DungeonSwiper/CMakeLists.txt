@@ -15,7 +15,7 @@ target_link_libraries(
   DungeonSwiper
 
   PRIVATE
-    BifrostGraphics_static
+    BF_Graphics_static
     BF_Platform_static
     BifrostRuntime
 )

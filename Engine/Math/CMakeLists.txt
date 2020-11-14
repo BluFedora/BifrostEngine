@@ -21,44 +21,44 @@ set(
 )
 
 add_library(
-  BifrostMath_static 
+  BF_Math_static 
   STATIC
     ${BF_MATH_SOURCE_FILES}
 )
 
 target_include_directories(
-  BifrostMath_static 
+  BF_Math_static 
   PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
 
 
-target_compile_definitions(BifrostMath_static PRIVATE BIFROST_MATH_EXPORT_STATIC)
+target_compile_definitions(BF_Math_static PRIVATE BIFROST_MATH_EXPORT_STATIC)
 
-set_target_properties(BifrostMath_static PROPERTIES OUTPUT_NAME bf.MathLib)
-set_target_properties(BifrostMath_static PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(BifrostMath_static PROPERTIES PUBLIC_HEADER include/bifrost/bifrost_math.h)
-set_target_properties(BifrostMath_static PROPERTIES CXX_STANDARD 17)
-set_target_properties(BifrostMath_static PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_target_properties(BF_Math_static PROPERTIES OUTPUT_NAME bf.MathLib)
+set_target_properties(BF_Math_static PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(BF_Math_static PROPERTIES PUBLIC_HEADER include/bifrost/bifrost_math.h)
+set_target_properties(BF_Math_static PROPERTIES CXX_STANDARD 17)
+set_target_properties(BF_Math_static PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 # Shared Library Setttings
 
 if(NOT EMSCRIPTEN)
   add_library(
-    BifrostMath_shared 
+    BF_Math_shared 
     SHARED
       ${BF_MATH_SOURCE_FILES}
   )
 
   target_include_directories(
-    BifrostMath_shared
+    BF_Math_shared
     PUBLIC
       ${PROJECT_SOURCE_DIR}/include
   )
 
-  target_compile_definitions(BifrostMath_shared PRIVATE BIFROST_MATH_EXPORT)
+  target_compile_definitions(BF_Math_shared PRIVATE BIFROST_MATH_EXPORT)
   set_target_properties(
-    BifrostMath_shared 
+    BF_Math_shared 
     PROPERTIES 
     PUBLIC_HEADER include/bifrost/bifrost_math.h
     OUTPUT_NAME   bf.MathDLL
@@ -69,5 +69,5 @@ if(NOT EMSCRIPTEN)
   set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 endif()
 
-add_library(BF_Math_static ALIAS BifrostMath_static)
-add_library(BF_Math_shared ALIAS BifrostMath_shared)
+add_library(BF_Math_static ALIAS BF_Math_static)
+add_library(BF_Math_shared ALIAS BF_Math_shared)
