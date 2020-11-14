@@ -12,12 +12,12 @@
 * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#include "bifrost/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bifrost_entity.hpp"
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"
-#include "bifrost/asset_io/bifrost_scene.hpp"
-#include "bifrost/debug/bifrost_dbg_logger.h"
-#include "bifrost/ecs/bifrost_behavior.hpp"
+#include "bf/asset_io/bifrost_asset_handle.hpp"
+#include "bf/asset_io/bifrost_scene.hpp"
+#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/ecs/bifrost_behavior.hpp"
 
 namespace bf
 {

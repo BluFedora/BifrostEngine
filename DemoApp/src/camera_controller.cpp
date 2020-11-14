@@ -2,11 +2,10 @@
 #include "bf/Engine.hpp"
 #include "bf/FreeListAllocator.hpp"
 #include "bf/MemoryUtils.h"
-
-#include "bifrost/asset_io/bifrost_scene.hpp"
-#include "bifrost/debug/bifrost_dbg_logger.h"
-#include "bifrost/ecs/bifrost_behavior.hpp"
-#include "bifrost/ecs/bifrost_entity.hpp"
+#include "bf/asset_io/bifrost_scene.hpp"
+#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/ecs/bifrost_behavior.hpp"
+#include "bf/ecs/bifrost_entity.hpp"
 
 using namespace bf;
 
@@ -83,7 +82,7 @@ static const float k_ChainLinkLen = 0.5f;
 
 // [https://www.euclideanspace.com/physics/kinematics/joints/ik/index.htm]
 // [http://what-when-how.com/advanced-methods-in-computer-graphics/kinematics-advanced-methods-in-computer-graphics-part-4/]
-// 
+//
 
 class IkDemo final : public Behavior<IkDemo>
 {
@@ -179,12 +178,12 @@ class IkDemo final : public Behavior<IkDemo>
           continue;
         }
 
-        const float       dot_prod          = vec::dot(pos_to_end, pos_to_target);
-        const float       pos_to_end_len    = vec::length(pos_to_end);
-        const float       pos_to_target_len = vec::length(pos_to_target);
-        const float       cos_value         = dot_prod / (pos_to_end_len * pos_to_target_len);
-        const float       rot_angle         = std::acos(math::clamp(-1.0f, cos_value, 1.0f));
-        /*const*/Quaternionf rot               = bfQuaternionf_fromAxisAngleRad(&rot_axis, rot_angle);
+        const float           dot_prod          = vec::dot(pos_to_end, pos_to_target);
+        const float           pos_to_end_len    = vec::length(pos_to_end);
+        const float           pos_to_target_len = vec::length(pos_to_target);
+        const float           cos_value         = dot_prod / (pos_to_end_len * pos_to_target_len);
+        const float           rot_angle         = std::acos(math::clamp(-1.0f, cos_value, 1.0f));
+        /*const*/ Quaternionf rot               = bfQuaternionf_fromAxisAngleRad(&rot_axis, rot_angle);
 
         bfQuaternionf_normalize(&rot);
 

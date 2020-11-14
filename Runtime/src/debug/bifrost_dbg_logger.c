@@ -9,7 +9,7 @@
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#include "bifrost/debug/bifrost_dbg_logger.h"
+#include "bf/debug/bifrost_dbg_logger.h"
 
 #include <assert.h> /* assert */
 #include <string.h> /* memset */

@@ -25,7 +25,7 @@
  * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#include "bifrost/data_structures/bifrost_array_t.h"
+#include "bf/data_structures/bifrost_array_t.h"
 
 #include <assert.h> /* assert             */
 #include <stdint.h> /* uint8_t, uintptr_t */

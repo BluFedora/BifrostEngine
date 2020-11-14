@@ -1,5 +1,5 @@
 
-#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
+#include "bf/data_structures/bifrost_intrusive_list.hpp"
 
 namespace bf
 {

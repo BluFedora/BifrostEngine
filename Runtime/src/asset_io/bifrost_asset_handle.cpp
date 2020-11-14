@@ -23,13 +23,13 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"
+#include "bf/asset_io/bifrost_asset_handle.hpp"
 
-#include "bifrost/asset_io/bifrost_asset_info.hpp"
-#include "bifrost/asset_io/bifrost_file.hpp"
-#include "bifrost/asset_io/bifrost_json_serializer.hpp"
-#include "bifrost/core/bifrost_engine.hpp" /* Engine */
-#include "bifrost/utility/bifrost_json.hpp"
+#include "bf/asset_io/bifrost_asset_info.hpp"
+#include "bf/asset_io/bifrost_file.hpp"
+#include "bf/asset_io/bifrost_json_serializer.hpp"
+#include "bf/core/bifrost_engine.hpp" /* Engine */
+#include "bf/utility/bifrost_json.hpp"
 
 namespace bf
 {

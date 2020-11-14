@@ -15,10 +15,9 @@
 /******************************************************************************/
 #include "bf/ecs/bf_base_component.hpp"
 
-#include "bifrost/asset_io/bifrost_scene.hpp" /* Scene  */
-#include "bifrost/ecs/bifrost_entity.hpp"     /* Entity */
-
-#include <bifrost/debug/bifrost_dbg_logger.h>
+#include "bf/asset_io/bifrost_scene.hpp" /* Scene  */
+#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/ecs/bifrost_entity.hpp" /* Entity */
 
 namespace bf
 {
@@ -71,4 +70,4 @@ namespace bf
       bfAnim2DScene_destroySprite(scene().anim2DScene(), &m_SpriteHandle);
     }
   }
-}  // namespace bifrost
+}  // namespace bf

@@ -1,13 +1,13 @@
-#include "bifrost/core/bifrost_engine.hpp"
+#include "bf/core/bifrost_engine.hpp"
 
-#include "bf/Gfx2DPainter.hpp"                              // Gfx2DPainter
-#include "bf/Platform.h"                                    // BifrostWindow
-#include "bf/anim2D/bf_animation_system.hpp"                // AnimationSystem
-#include "bifrost/debug/bifrost_dbg_logger.h"               // bfLog*
-#include "bifrost/ecs/bifrost_behavior.hpp"                 // BaseBehavior
-#include "bifrost/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
-#include "bifrost/ecs/bifrost_entity.hpp"                   // Entity
-#include "bifrost/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
+#include "bf/Gfx2DPainter.hpp"                         // Gfx2DPainter
+#include "bf/Platform.h"                               // BifrostWindow
+#include "bf/anim2D/bf_animation_system.hpp"           // AnimationSystem
+#include "bf/debug/bifrost_dbg_logger.h"               // bfLog*
+#include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
+#include "bf/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
+#include "bf/ecs/bifrost_entity.hpp"                   // Entity
+#include "bf/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
 
 using namespace std::chrono_literals;
 

@@ -10,15 +10,14 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/asset_io/bifrost_material.hpp"
-
-#include "bifrost/asset_io/bifrost_file.hpp"
-#include "bifrost/asset_io/bifrost_json_serializer.hpp"
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/utility/bifrost_json.hpp"
+#include "bf/asset_io/bifrost_material.hpp"
 
 #include "bf/asset_io/bf_model_loader.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"
+#include "bf/asset_io/bifrost_file.hpp"
+#include "bf/asset_io/bifrost_json_serializer.hpp"
+#include "bf/core/bifrost_engine.hpp"
+#include "bf/utility/bifrost_json.hpp"
 
 namespace bf
 {
@@ -180,7 +179,7 @@ namespace bf
      [](const auto& src_bone) -> NodeIDBone {
        NodeIDBone dst_bone;
 
-       dst_bone.node_idx = src_bone.first;
+       dst_bone.node_idx  = src_bone.first;
        dst_bone.transform = src_bone.second;
 
        return dst_bone;

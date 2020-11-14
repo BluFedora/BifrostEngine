@@ -4,7 +4,7 @@
 // References:
 //   [http://kylehalladay.com/blog/tutorial/2017/12/13/Custom-Allocators-Vulkan.html]
 
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bf/bf_gfx_api.h"
 
 #include <vulkan/vulkan.h>
 

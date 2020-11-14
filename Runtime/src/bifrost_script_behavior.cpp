@@ -9,10 +9,10 @@
  *
  * @copyright Copyright (c) 2020
  */
-#include "bifrost/script/bifrost_script_behavior.hpp"
+#include "bf/script/bifrost_script_behavior.hpp"
 
-#include "bifrost/asset_io/bifrost_file.hpp" /* File   */
-#include "bifrost/core/bifrost_engine.hpp"   /* Engine */
+#include "bf/asset_io/bifrost_file.hpp" /* File   */
+#include "bf/core/bifrost_engine.hpp"   /* Engine */
 
 namespace bf
 {

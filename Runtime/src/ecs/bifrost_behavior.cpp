@@ -9,10 +9,10 @@
  *
  * @copyright Copyright (c) 2020
  */
-#include "bifrost/ecs/bifrost_behavior.hpp"
+#include "bf/ecs/bifrost_behavior.hpp"
 
-#include "bifrost/asset_io/bifrost_scene.hpp"  // Scene
-#include "bifrost/ecs/bifrost_entity.hpp"      // Entity
+#include "bf/asset_io/bifrost_scene.hpp"  // Scene
+#include "bf/ecs/bifrost_entity.hpp"      // Entity
 
 namespace bf
 {

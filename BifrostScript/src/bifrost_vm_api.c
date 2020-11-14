@@ -18,7 +18,7 @@
  * @copyright Copyright (c) 2019 Shareef Abdoul-Raheem
  */
 /******************************************************************************/
-#include "bifrost/script/bifrost_vm.h"
+#include "bifrost/bifrost_vm.h"
 
 #include "bifrost_vm_debug.h"
 #include "bifrost_vm_gc.h"

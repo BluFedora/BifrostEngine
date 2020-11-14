@@ -1,4 +1,4 @@
-#include "bifrost/editor/bifrost_editor_scene.hpp"
+#include "bf/editor/bifrost_editor_scene.hpp"
 
 #include "bf/StlAllocator.hpp"  // StlAllocator
 

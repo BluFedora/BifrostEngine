@@ -1,7 +1,7 @@
-#include "bifrost/data_structures/bifrost_array.hpp"
+#include "bf/data_structures/bifrost_array.hpp"
 
-#include "bifrost/math/bifrost_vec3.h"
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
+#include "bf/math/bifrost_vec3.h"
+#include "bf/graphics/bifrost_standard_renderer.hpp"
 
 #include <cctype>  // isdigit
 #include <cstdint>

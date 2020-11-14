@@ -7,10 +7,10 @@
  *
  * @copyright Copyright (c) 2019
  */
-#include "bifrost/script/bifrost_hash_map.h"
+#include "bifrost/bifrost_hash_map.h"
 
-#include "bifrost/script/bifrost_vm.h"  // VM Turn off GC
-#include "bifrost_vm_gc.h"              // Allocation Functions
+#include "bifrost/bifrost_vm.h"  // VM Turn off GC
+#include "bifrost_vm_gc.h"       // Allocation Functions
 
 #include <assert.h> /* assert */
 #include <stdlib.h> /* NULL   */

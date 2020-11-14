@@ -1,6 +1,6 @@
-#include "bifrost/editor/bifrost_editor_undo_redo.hpp"\
+#include "bf/editor/bifrost_editor_undo_redo.hpp"
 
-#include "bifrost/ecs/bifrost_entity.hpp" // Entity
+#include "bf/ecs/bifrost_entity.hpp" // Entity
 
 namespace bf::editor
 {

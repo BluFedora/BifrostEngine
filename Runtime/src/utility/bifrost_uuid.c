@@ -11,7 +11,7 @@
  * @copyright Copyright (c) 2019
  */
 /******************************************************************************/
-#include "bifrost/utility/bifrost_uuid.h"
+#include "bf/utility/bifrost_uuid.h"
 
 #include <stdio.h>  /* sprintf        */
 #include <string.h> /* strcpy, memcpy */

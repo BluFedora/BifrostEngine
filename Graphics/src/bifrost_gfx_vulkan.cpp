@@ -1,4 +1,4 @@
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bf/bf_gfx_api.h"
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN

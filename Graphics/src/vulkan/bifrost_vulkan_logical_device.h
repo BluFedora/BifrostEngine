@@ -1,7 +1,7 @@
 #ifndef BIFROST_VULKAN_LOGICAL_DEVICE_H
 #define BIFROST_VULKAN_LOGICAL_DEVICE_H
 
-#include "bifrost/graphics/bifrost_gfx_object_cache.hpp"
+#include "bf/bf_gfx_object_cache.hpp"
 #include "bifrost_vulkan_hash.hpp"
 #include "bifrost_vulkan_material_pool.h"
 #include "bifrost_vulkan_mem_allocator.h"

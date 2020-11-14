@@ -11,7 +11,7 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/math/bifrost_rect2.hpp"
+#include "bf/math/bifrost_rect2.hpp"
 
 namespace bf
 {

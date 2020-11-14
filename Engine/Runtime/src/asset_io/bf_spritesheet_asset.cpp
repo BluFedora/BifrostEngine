@@ -1,8 +1,8 @@
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 
 #include "bf/anim2D/bf_animation_system.hpp"  // AnimationSystem
-#include "bifrost/asset_io/bifrost_file.hpp"  // File
-#include "bifrost/core/bifrost_engine.hpp"    // Engine
+#include "bf/asset_io/bifrost_file.hpp"  // File
+#include "bf/core/bifrost_engine.hpp"    // Engine
 
 namespace bf
 {

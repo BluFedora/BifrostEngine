@@ -10,7 +10,7 @@
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#include "bifrost/ecs/bifrost_collision_system.hpp"
+#include "bf/ecs/bifrost_collision_system.hpp"
 
 namespace bf
 {

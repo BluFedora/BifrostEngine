@@ -4,10 +4,10 @@
 #include "bf/MemoryUtils.h"  // bfMegabytes
 #include "main_demo.hpp"
 
-#include <bifrost/bifrost.hpp>
-#include <bifrost/bifrost_imgui_glfw.hpp>
-#include <bifrost/bifrost_version.h>
-#include <bifrost/editor/bifrost_editor_overlay.hpp>
+#include <bf/bifrost.hpp>
+#include <bf/bifrost_imgui_glfw.hpp>
+#include <bf/bf_version.h>
+#include <bf/editor/bifrost_editor_overlay.hpp>
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 

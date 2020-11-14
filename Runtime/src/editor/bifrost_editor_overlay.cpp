@@ -1,20 +1,20 @@
-﻿#include "bifrost/editor/bifrost_editor_overlay.hpp"
+﻿#include "bf/editor/bifrost_editor_overlay.hpp"
 
 #include "bf/FreeListAllocator.hpp"
 #include "bf/Gfx2DPainter.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 
-#include "bifrost/asset_io/bifrost_assets.hpp"
-#include "bifrost/asset_io/bifrost_material.hpp"
-#include "bifrost/asset_io/bifrost_script.hpp"
-#include "bifrost/bifrost.hpp"
-#include "bifrost/bifrost_imgui_glfw.hpp"
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/data_structures/bifrost_intrusive_list.hpp"
-#include "bifrost/editor/bifrost_editor_inspector.hpp"
-#include "bifrost/editor/bifrost_editor_scene.hpp"
-#include "bifrost/utility/bifrost_json.hpp"
+#include "bf/asset_io/bifrost_assets.hpp"
+#include "bf/asset_io/bifrost_material.hpp"
+#include "bf/asset_io/bifrost_script.hpp"
+#include "bf/bifrost.hpp"
+#include "bf/bifrost_imgui_glfw.hpp"
+#include "bf/core/bifrost_engine.hpp"
+#include "bf/data_structures/bifrost_intrusive_list.hpp"
+#include "bf/editor/bifrost_editor_inspector.hpp"
+#include "bf/editor/bifrost_editor_scene.hpp"
+#include "bf/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>          /* ImGUI::* */
 #include <nativefiledialog/nfd.h> /* nfd**    */

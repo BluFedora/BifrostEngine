@@ -4,8 +4,8 @@
 #include "bf/Animation2D.h"   // bfSpritesheet
 #include "bf/BaseObject.hpp"  // BaseObject
 
-#include "bifrost/asset_io/bifrost_asset_handle.hpp" /* AssetHandle<T>    */
-#include "bifrost/asset_io/bifrost_asset_info.hpp"   /* AssetInfo<T1, T2> */
+#include "bf/asset_io/bifrost_asset_handle.hpp" /* AssetHandle<T>    */
+#include "bf/asset_io/bifrost_asset_info.hpp"   /* AssetInfo<T1, T2> */
 
 namespace bf
 {

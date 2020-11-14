@@ -10,7 +10,7 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/ecs/bifrost_iecs_system.hpp"
+#include "bf/ecs/bifrost_iecs_system.hpp"
 
 namespace bf
 {

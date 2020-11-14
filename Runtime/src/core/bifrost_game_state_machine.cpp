@@ -1,6 +1,6 @@
-#include "bifrost/core/bifrost_game_state_machine.hpp"
+#include "bf/core/bifrost_game_state_machine.hpp"
 
-#include "bifrost/core/bifrost_igame_state_layer.hpp" /* IGameStateLayer */
+#include "bf/core/bifrost_igame_state_layer.hpp" /* IGameStateLayer */
 
 namespace bf
 {

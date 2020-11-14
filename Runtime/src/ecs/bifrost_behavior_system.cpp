@@ -1,7 +1,7 @@
-#include "bifrost/ecs/bifrost_behavior_system.hpp"
+#include "bf/ecs/bifrost_behavior_system.hpp"
 
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/ecs/bifrost_behavior.hpp"
+#include "bf/core/bifrost_engine.hpp"
+#include "bf/ecs/bifrost_behavior.hpp"
 
 namespace bf
 {

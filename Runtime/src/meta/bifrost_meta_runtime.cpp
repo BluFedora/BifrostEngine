@@ -1,6 +1,6 @@
-#include "bifrost/meta/bifrost_meta_runtime.hpp"
+#include "bf/meta/bifrost_meta_runtime.hpp"
 
-#include "bifrost/core/bifrost_base_object.hpp"
+#include "bf/core/bifrost_base_object.hpp"
 
 namespace
 {

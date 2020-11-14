@@ -1,4 +1,4 @@
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bf/bf_gfx_api.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

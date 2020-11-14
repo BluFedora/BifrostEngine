@@ -10,7 +10,7 @@
 #include "bf/LinearAllocator.hpp"  // LinearAllocator
 #include "bf/MemoryUtils.h"        // bfMegabytes
 
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics
+#include "bf/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics
 
 namespace bf
 {

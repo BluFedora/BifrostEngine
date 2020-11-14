@@ -1,7 +1,7 @@
-#include "bifrost/editor/bifrost_editor_game.hpp"
+#include "bf/editor/bifrost_editor_game.hpp"
 
-#include "bifrost/asset_io/bifrost_json_serializer.hpp"
-#include "bifrost/editor/bifrost_editor_overlay.hpp"
+#include "bf/asset_io/bifrost_json_serializer.hpp"
+#include "bf/editor/bifrost_editor_overlay.hpp"
 
 #include <imgui/imgui.h>
 

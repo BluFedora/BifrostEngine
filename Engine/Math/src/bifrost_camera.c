@@ -1,4 +1,4 @@
-#include "bifrost/math/bifrost_camera.h"
+#include "bf/math/bifrost_camera.h"
 
 #include <math.h> /* cosf, sinf */
 

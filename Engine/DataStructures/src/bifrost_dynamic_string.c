@@ -6,7 +6,7 @@
 //
 // Copyright (C) 2018 Shareef Raheem.
 //----------------------------------------------------------------------------//
-#include "bifrost/data_structures/bifrost_dynamic_string.h"
+#include "bf/data_structures/bifrost_dynamic_string.h"
 
 #ifndef BIFROST_MALLOC
 #define BIFROST_MALLOC(size, align) malloc((size))

@@ -5,9 +5,9 @@
 //  Created by Shareef Raheem on 12/17/17.
 //  Copyright © 2017 Shareef Raheem. All rights reserved.
 //
-#include "bifrost/math/bifrost_mat4x4.h"
+#include "bf/math/bifrost_mat4x4.h"
 
-#include "bifrost/math/bifrost_vec3.h"
+#include "bf/math/bifrost_vec3.h"
 
 #include <math.h>   /* cosf, sinf tanf  */
 #include <string.h> /* memcpy           */

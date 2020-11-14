@@ -5,8 +5,8 @@
 //  Created by Shareef Raheem on 12/15/17.
 //  Copyright © 2017 Shareef Raheem. All rights reserved.
 //
-#include "bifrost/math/bifrost_vec3.h"
-#include "bifrost/math/bifrost_mat4x4.h"
+#include "bf/math/bifrost_vec3.h"
+#include "bf/math/bifrost_mat4x4.h"
 
 #include <math.h>   /* sqrt   */
 #include <string.h> /* memcmp */

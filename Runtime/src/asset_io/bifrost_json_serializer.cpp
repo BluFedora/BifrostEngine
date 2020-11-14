@@ -10,10 +10,10 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/asset_io/bifrost_json_serializer.hpp"
+#include "bf/asset_io/bifrost_json_serializer.hpp"
 
-#include "bifrost/asset_io/bifrost_assets.hpp"  // Assets
-#include "bifrost/ecs/bifrost_entity.hpp"       // Entity
+#include "bf/asset_io/bifrost_assets.hpp"  // Assets
+#include "bf/ecs/bifrost_entity.hpp"       // Entity
 
 namespace bf
 {

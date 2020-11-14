@@ -1,4 +1,4 @@
-#include "bifrost/asset_io/bifrost_asset_info.hpp"
+#include "bf/asset_io/bifrost_asset_info.hpp"
 
 #include "bf/asset_io/bf_file.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"

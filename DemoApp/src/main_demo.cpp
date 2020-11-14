@@ -1,6 +1,6 @@
 #include "main_demo.hpp"
 
-#include "bifrost/bifrost.hpp"
+#include "bf/bifrost.hpp"
 
 #include "glfw/glfw3.h"
 

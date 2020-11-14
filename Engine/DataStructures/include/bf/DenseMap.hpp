@@ -1,2 +1,2 @@
 
-#include "bifrost/data_structures/bifrost_dense_map.hpp"
+#include "bf/data_structures/bifrost_dense_map.hpp"

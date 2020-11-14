@@ -22,8 +22,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   # The file will be made in the build directory hence why the build
   # dir needs to be added to the includes.
 configure_file(
-  "${PROJECT_SOURCE_DIR}/docs/bifrost_version.h.in"
-  "${PROJECT_BINARY_DIR}/bifrost/bifrost_version.h"
+  "${PROJECT_SOURCE_DIR}/docs/bf_version.h.in"
+  "${PROJECT_BINARY_DIR}/bf/bf_version.h"
 )
 
 # NOTE(Shareef): Print out some CMake Info.

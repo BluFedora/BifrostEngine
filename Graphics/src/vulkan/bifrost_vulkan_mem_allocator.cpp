@@ -2,7 +2,7 @@
 
 #include "bifrost_vulkan_logical_device.h"
 
-#include "bifrost/data_structures/bifrost_array_t.h"
+#include "bf/data_structures/bifrost_array_t.h"
 
 #include <cassert> /* assert */
 

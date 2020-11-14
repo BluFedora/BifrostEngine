@@ -1,4 +1,4 @@
-#include "bifrost/math/bifrost_vec2.h"
+#include "bf/math/bifrost_vec2.h"
 
 #include <math.h> /* sqrtf */
 

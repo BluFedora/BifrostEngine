@@ -1,8 +1,8 @@
-#include "bifrost/editor/bifrost_editor_hierarchy.hpp"
+#include "bf/editor/bifrost_editor_hierarchy.hpp"
 
-#include "bifrost/editor/bf_editor_icons.hpp"
-#include "bifrost/editor/bifrost_editor_overlay.hpp"
-#include "bifrost/editor/bifrost_editor_serializer.hpp"
+#include "bf/editor/bf_editor_icons.hpp"
+#include "bf/editor/bifrost_editor_overlay.hpp"
+#include "bf/editor/bifrost_editor_serializer.hpp"
 
 namespace bf::editor
 {

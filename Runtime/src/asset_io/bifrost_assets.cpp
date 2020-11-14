@@ -12,13 +12,13 @@
  *
  * @copyright Copyright (c) 2019-2020
  */
-#include "bifrost/asset_io/bifrost_assets.hpp"
+#include "bf/asset_io/bifrost_assets.hpp"
 
 #include "bf/LinearAllocator.hpp"                        // LinearAllocator
-#include "bifrost/asset_io/bifrost_asset_handle.hpp"     //
-#include "bifrost/asset_io/bifrost_file.hpp"             // File
-#include "bifrost/asset_io/bifrost_json_serializer.hpp"  //
-#include "bifrost/meta/bifrost_meta_runtime.hpp"         //
+#include "bf/asset_io/bifrost_asset_handle.hpp"     //
+#include "bf/asset_io/bifrost_file.hpp"             // File
+#include "bf/asset_io/bifrost_json_serializer.hpp"  //
+#include "bf/meta/bifrost_meta_runtime.hpp"         //
 
 #include "bf/Platform.h"
 #include "bf/asset_io/bf_path_manip.hpp"
@@ -32,7 +32,7 @@
 #include <dirent.h>
 #endif
 
-#include "bifrost/core/bifrost_engine.hpp"  // THIS HAS A GLFW HEADER WHICH FUCKS WITH WINDOWS.h
+#include "bf/core/bifrost_engine.hpp"  // THIS HAS A GLFW HEADER WHICH FUCKS WITH WINDOWS.h
 
 namespace bf
 {

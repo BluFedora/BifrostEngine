@@ -1204,7 +1204,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 }
 
 // TODO(SR): Make a new file
-#include "bifrost/utility/bifrost_hash.hpp"
+#include "bf/bf_hash.hpp"
 
 namespace bf::vk
 {

@@ -8,11 +8,11 @@
  *
  * @copyright Copyright (c) 2020
  */
-#include "bifrost/asset_io/bifrost_script.hpp"
+#include "bf/asset_io/bifrost_script.hpp"
 
-#include "bifrost/asset_io/bifrost_file.hpp" /* File   */
-#include "bifrost/core/bifrost_engine.hpp"   /* Engine */
-#include "bifrost/script/bifrost_vm.hpp"     /* VMView */
+#include "bf/asset_io/bifrost_file.hpp" /* File   */
+#include "bf/core/bifrost_engine.hpp"   /* Engine */
+#include "bifrost/bifrost_vm.hpp"       /* VMView */
 
 namespace bf
 {
@@ -55,4 +55,4 @@ namespace bf
   {
     engine.scripting().stackDestroyHandle(payloadT()->m_ModuleHandle);
   }
-}  // namespace bifrost
+}  // namespace bf

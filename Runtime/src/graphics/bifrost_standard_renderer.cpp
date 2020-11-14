@@ -7,19 +7,19 @@
 *
 * @copyright Copyright (c) 2020
 */
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
+#include "bf/graphics/bifrost_standard_renderer.hpp"
 
 #include "bf/MemoryUtils.h"
 #include "bf/Platform.h"  // BifrostWindow
-#include "bifrost/asset_io/bifrost_material.hpp"
-#include "bifrost/data_structures/bifrost_string.hpp"
-#include "bifrost/ecs/bifrost_entity.hpp"  // Entity
-#include "bifrost/ecs/bifrost_light.hpp"   // LightType
+#include "bf/asset_io/bifrost_material.hpp"
+#include "bf/data_structures/bifrost_string.hpp"
+#include "bf/ecs/bifrost_entity.hpp"  // Entity
+#include "bf/ecs/bifrost_light.hpp"   // LightType
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */
 
-#include "bifrost/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
+#include "bf/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
 
 namespace bf
 {
@@ -667,6 +667,7 @@ namespace bf
 
     bfGfxCmdList_setCullFace(m_MainCmdList, BIFROST_CULL_FACE_FRONT);
 
+#if 1
     {
       const bfPipelineBarrier barriers[] =
        {
@@ -682,6 +683,7 @@ namespace bf
        num_barriers,
        bfTrue);
     }
+#endif
 
     auto renderpass_info0 = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info0, k_LoadFlags);
@@ -730,6 +732,7 @@ namespace bf
 
     endPass(m_MainCmdList);
 
+#if 1
     {
       const bfPipelineBarrier barriers[] =
        {
@@ -749,6 +752,7 @@ namespace bf
        num_barriers,
        bfFalse);
     }
+#endif
 
     bfGfxCmdList_setRenderpassInfo(m_MainCmdList, &renderpass_info1);
     bfGfxCmdList_setClearValues(m_MainCmdList, ssoa_buffer.clear_values + 1u);

@@ -10,12 +10,12 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/graphics/bifrost_component_renderer.hpp"
+#include "bf/graphics/bifrost_component_renderer.hpp"
 
 #include "bf/anim2D/bf_animation_system.hpp"
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/ecs/bifrost_entity.hpp"
-#include "bifrost/ecs/bifrost_renderer_component.hpp"  // MeshRenderer
+#include "bf/core/bifrost_engine.hpp"
+#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bifrost_renderer_component.hpp"  // MeshRenderer
 
 namespace bf
 {

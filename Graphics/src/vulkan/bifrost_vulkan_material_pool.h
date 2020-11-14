@@ -1,7 +1,8 @@
 #ifndef BIFROST_VULKAN_MATERIAL_POOL_H
 #define BIFROST_VULKAN_MATERIAL_POOL_H
 
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bf/bf_gfx_api.h"
+
 #include <vulkan/vulkan.h>
 
 #if __cplusplus

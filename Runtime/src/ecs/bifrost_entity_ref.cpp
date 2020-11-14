@@ -11,10 +11,10 @@
  * @copyright Copyright (c) 2020
  */
 /******************************************************************************/
-#include "bifrost/ecs/bifrost_entity_ref.hpp"
+#include "bf/ecs/bifrost_entity_ref.hpp"
 
-#include "bifrost/ecs/bifrost_entity.hpp"
-#include "bifrost/utility/bifrost_uuid.hpp"
+#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/utility/bifrost_uuid.hpp"
 
 namespace bf
 {

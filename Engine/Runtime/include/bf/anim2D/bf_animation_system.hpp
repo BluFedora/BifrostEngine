@@ -1,8 +1,8 @@
 #ifndef BF_ANIMATION_SYSTEM
 #define BF_ANIMATION_SYSTEM
 
-#include "bifrost/ecs/bifrost_iecs_system.hpp"
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
+#include "bf/ecs/bifrost_iecs_system.hpp"
+#include "bf/graphics/bifrost_standard_renderer.hpp"
 
 #include "bf/Animation2D.h"
 

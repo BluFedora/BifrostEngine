@@ -1,7 +1,7 @@
-#include "bifrost/graphics/bifrost_debug_renderer.hpp"
+#include "bf/graphics/bifrost_debug_renderer.hpp"
 
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/graphics/bifrost_standard_renderer.hpp"
+#include "bf/core/bifrost_engine.hpp"
+#include "bf/graphics/bifrost_standard_renderer.hpp"
 
 #include <cassert>
 

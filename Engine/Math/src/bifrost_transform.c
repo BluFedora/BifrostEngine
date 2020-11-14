@@ -7,7 +7,7 @@
  *
  * @copyright Copyright (c) 2019-2020
  */
-#include "bifrost/math/bifrost_transform.h"
+#include "bf/math/bifrost_transform.h"
 
 #include <assert.h>  // assert
 #include <math.h>    // quat::sqrt

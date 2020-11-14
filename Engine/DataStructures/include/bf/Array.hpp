@@ -1,2 +1,2 @@
 
-#include "bifrost/data_structures/bifrost_array.hpp"
+#include "bf/data_structures/bifrost_array.hpp"

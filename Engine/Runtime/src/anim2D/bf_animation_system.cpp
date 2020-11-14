@@ -4,7 +4,7 @@
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bf/ecs/bf_entity.hpp"
 
-#include "bifrost/core/bifrost_engine.hpp"
+#include "bf/core/bifrost_engine.hpp"
 
 namespace bf
 {

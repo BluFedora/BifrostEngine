@@ -11,10 +11,10 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/utility/bifrost_json.hpp"
+#include "bf/utility/bifrost_json.hpp"
 
-#include "bf/CRTAllocator.hpp"            /* CRTAllocator */
-#include "bifrost/utility/bifrost_json.h" /* Json API     */
+#include "bf/CRTAllocator.hpp"       /* CRTAllocator */
+#include "bf/utility/bifrost_json.h" /* Json API     */
 
 namespace bf::json
 {

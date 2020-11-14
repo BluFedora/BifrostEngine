@@ -10,16 +10,15 @@
 *
 * @copyright Copyright (c) 2019
 */
-#include "bifrost/asset_io/bifrost_scene.hpp"
-
-#include "bifrost/asset_io/bifrost_file.hpp"            /* File                 */
-#include "bifrost/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
-#include "bifrost/core/bifrost_engine.hpp"              /* Engine               */
-#include "bifrost/ecs/bifrost_collision_system.hpp"     /* DebugRenderer        */
-#include "bifrost/ecs/bifrost_entity.hpp"               /* Entity               */
-#include "bifrost/utility/bifrost_json.hpp"             /* json::Value          */
+#include "bf/asset_io/bifrost_scene.hpp"
 
 #include "bf/anim2D/bf_animation_system.hpp"
+#include "bf/asset_io/bifrost_file.hpp"            /* File                 */
+#include "bf/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
+#include "bf/core/bifrost_engine.hpp"              /* Engine               */
+#include "bf/ecs/bifrost_collision_system.hpp"     /* DebugRenderer        */
+#include "bf/ecs/bifrost_entity.hpp"               /* Entity               */
+#include "bf/utility/bifrost_json.hpp"             /* json::Value          */
 
 namespace bf
 {
@@ -152,7 +151,7 @@ namespace bf
     }
 
     m_BVHTree.endFrame(temp, true);
-    #if 0
+#if 0
     m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
       // Don't draw inactive entities.
       if (bvh_node::isLeaf(node))
@@ -170,9 +169,9 @@ namespace bf
        Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
        bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
     });
-    #else
+#else
     (void)dbg_renderer;
-    #endif
+#endif
   }
 
   void Scene::markEntityTransformDirty(Entity* entity)
@@ -279,4 +278,4 @@ namespace bf
 
     return true;
   }
-}  // namespace bifrost
+}  // namespace bf

@@ -19,13 +19,12 @@ startButton.onClick(
 To have animations be able to be undone after an interaction (press) we should always be animating towards a goal.
 To "Undo" the goal is the starting value.
 
-
 -------------------------------------------------------------------------------------
 -------------------------------- Scripted Particles ---------------------------------
 -------------------------------------------------------------------------------------
 
 To boot strap the first version an actual scripting language can be used with binding functions
-with the sole purpose of emitting a simple particle bytecode.
+with the sole purpose of emitting a simple particle byte-code.
 
 -------------------------------------------------------------------------------------
 -------------------------------- Transform Hierarchy -------------------------------- 
@@ -193,7 +192,7 @@ ClassInfo : BaseMetaInfo
   Members        : Array<MemberInfo>
   Properties     : Array<PropertyInfo>
   Methods        : Array<MethodInfo>
-  Instanciate()  : GenericValue
+  Instantiate()  : GenericValue
   FindProperty() : PropertyInfo
   FindMember()   : MemberInfo
   FindMethod()   : MethodInfo
@@ -219,7 +218,7 @@ MethodInfo : BaseMetaInfo
 
 EnumInfo : BaseMetaInfo
   FindElement() : EnumElementInfo
-  Instanciate() : StringView
+  Instantiate() : StringView
   ToElement()   : EnumElementInfo
     
 EnumElementInfo : BaseMetaInfo
@@ -265,11 +264,11 @@ The event system can store a contiguous list of EventData,
   uint8_t header;
   char    event_data[...];
 
-All events should be trivially destuctable. (otherwise we need to keep track of a dtor for all events regardless of if it's needed)
+All events should be trivially destructible. (otherwise we need to keep track of a dtor for all events regardless of if it's needed)
 String Data can be stored inline to the EventBuffer.
 
 There needs to be a way to signify the event has been captured / cancelled.
-This feature must be independent of Gamestate / Behavior order in some way (EventHanlder layers???).
+This feature must be independent of Gamestate / Behavior order in some way (EventHandler layers???).
 
 If we limit the amount of events to 32 or less then the type can be a flag adn event handlers can just "filter"
 out what it listens to. Otherwise we need a lot of lists of each type of listener / checking each listener for the type it wants.
@@ -293,7 +292,7 @@ Like Unity we should have:
 > Start  - Called the first frame that this Behavior is active.
 > Update - Called every frame on an active behavior.
 
-The separation between Awake and Start is that with Awake you do some initializaton but you cannot assume other Behaviors have been initialized.
+The separation between Awake and Start is that with Awake you do some initialization but you cannot assume other Behaviors have been initialized.
 Then in Start you can assume all 'Awake's have been called so that you can do some inter object communication.
 
 * Unity Requires that script files have a class with the same name as the file otherwise there is a rejection of adding it to an object.
@@ -305,7 +304,7 @@ Also maybe it should have a more immediate API like the RenderGraph / FrameGraph
 allow more dynamic behaviors since the actions are created each frame can be put into if statements.
 This is retarded because then sense of timing will be very off.
 
------ Scripting Language Regstry -----
+----- Scripting Language Registry -----
 
 Rather than an int maybe this should be an opaque handle that is really an int.
 typedef int bfVMRegistrySlot;
@@ -369,13 +368,11 @@ Transparency Handling:
 
 
 
-
 Editor Idea:
-"Inline Assets" - To make it less intrusive to add sharable properities to
-                  field make it so editing of the properties can be inline
-                  with that field and later extracted out.
-                  This allows for the Designer to not lose there workflow
-                  and work locally.
+"Inline Assets" - To make it less intrusive to add sharable properties to field 
+                  make it so editing of the properties can be inline with that 
+                  field and later extracted out. This allows for the Designer to 
+                  not lose their flow and work locally.
 
                   Less disruptive workflow while still allowing data driven workflow.
                   if an asset is dropped over this then just clear it.
@@ -399,3 +396,40 @@ Windows Threads Pools expose a default thread pool to which work - including io 
 Apple platforms have Grand Central Dispatch, which works similarly but has a far cooler name.
 
 
+
+DLLs
+
+dlls are reference counted.
+
+`cl /c MySource.cpp`  Generates Obj File (MySource.obj)
+`link MySource.obj /DLL /NOENTRY /EXPORT:FunctionName /EXPORT:RenamedFunctionName=FancyFunctionName /EXPORT:OnlyUseWithGetProcAddress,PRIVATE` (Generates The Library (MySource.dll And MySource.lib) file with the specified exported symbol)
+
+Whatever.def (use with `/DEF:Whatever.def`)
+```  
+LIBRARY liName
+EXPORTS
+  FunctionName
+  RenamedFunctionName=FancyFunctionName
+  OnlyUseWithGetProcAddress PRIVATE
+```
+
+```
+__declspec(dllexport)
+__declspec(dllimport)
+
+or
+
+#pragma comment(linker, "/export:FunctionName")
+```
+
+Runtime (These are defined in KERNEL32.dll):
+  LoadLibraryEx
+  GetProcAddress
+  FreeLibrary
+
+References:
+  (Everything You Ever Wanted to Know about DLLs)[https://www.youtube.com/watch?v=JPQWQfDhICA&ab_channel=CppCon]
+
+
+Optimizing:
+(Low Latency C++ for Fun and Profit)[https://www.youtube.com/watch?v=BxfT9fiUsZ4&ab_channel=Pacific%2B%2B]

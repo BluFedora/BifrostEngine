@@ -211,3 +211,46 @@ dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 |VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, or VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR|
 |VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR|
 |VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT|
+
+
+# Vulkan Sync In English
+
+There is no synchronization across different Command Buffers when submitted to
+the same Queue. The queue treats all Command Buffers submitted as one big linear
+list of commands. This has the implication that any synchronization performed in
+a single Command Buffer will be seen by all other submitted Command Buffers in 
+the same Queue.
+
+## Commands
+
+- Commands should be treated as if they execute out-of-order if no explicit
+  synchronization is performed. This includes across Command Buffers and calls
+  to `vkQueueSubmit`.
+
+- All commands go through a set of *VK_PIPELINE_STAGE*s, these pipeline states
+  are what get synchronized rather than individual commands. All commands
+  go through a `TOP_OF_PIPE` (GPU parsing the command) and `BOTTOM_OF_PIPE` 
+  stage (command is done working).
+
+## Execution Barriers
+
+### Pipeline Barriers
+
+These are created by the `vkCmdPipelineBarrier` function, splitting the command
+stream into two halves.
+
+
+
+
+
+
+
+
+## References
+
+[Yet another blog explaining Vulkan synchronization](https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/)
+
+
+
+
+

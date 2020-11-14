@@ -1,7 +1,7 @@
 #ifndef MAIN_DEMO_HPP
 #define MAIN_DEMO_HPP
 
-#include "bifrost/core/bifrost_igame_state_layer.hpp"
+#include "bf/core/bifrost_igame_state_layer.hpp"
 
 class MainDemoLayer final : public bf::IGameStateLayer
 {

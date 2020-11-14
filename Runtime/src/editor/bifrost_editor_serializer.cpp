@@ -10,18 +10,18 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/editor/bifrost_editor_serializer.hpp"
+#include "bf/editor/bifrost_editor_serializer.hpp"
 
 #include "bf/LinearAllocator.hpp"  // LinearAllocator
-#include "bifrost/asset_io/bifrost_assets.hpp"
-#include "bifrost/asset_io/bifrost_script.hpp"
-#include "bifrost/bifrost_math.h"
-#include "bifrost/core/bifrost_engine.hpp"
-#include "bifrost/ecs/bifrost_behavior.hpp"
-#include "bifrost/ecs/bifrost_entity.hpp"
-#include "bifrost/math/bifrost_vec2.h"
-#include "bifrost/math/bifrost_vec3.h"
-#include "bifrost/script/bifrost_script_behavior.hpp"
+#include "bf/asset_io/bifrost_assets.hpp"
+#include "bf/asset_io/bifrost_script.hpp"
+#include "bf/bifrost_math.h"
+#include "bf/core/bifrost_engine.hpp"
+#include "bf/ecs/bifrost_behavior.hpp"
+#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/math/bifrost_vec2.h"
+#include "bf/math/bifrost_vec3.h"
+#include "bf/script/bifrost_script_behavior.hpp"
 
 namespace bf::editor
 {

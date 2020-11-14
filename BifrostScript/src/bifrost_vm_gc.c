@@ -23,13 +23,14 @@
 /******************************************************************************/
 #include "bifrost_vm_gc.h"
 
-#include "bifrost/script/bifrost_vm.h"                // BifrostVM_t
-#include "bifrost_vm_function_builder.h"              // BifrostVMFunctionBuilder
-#include "bifrost_vm_obj.h"                           // BifrostObj
-#include "bifrost_vm_parser.h"                        // BifrostParser
-#include "bifrost_vm_value.h"                         // bfVMValue
-#include <assert.h>                                   /* assert        */
-#include <stdlib.h>                                   /* realloc, free */
+#include "bifrost/bifrost_vm.h"           // BifrostVM_t
+#include "bifrost_vm_function_builder.h"  // BifrostVMFunctionBuilder
+#include "bifrost_vm_obj.h"               // BifrostObj
+#include "bifrost_vm_parser.h"            // BifrostParser
+#include "bifrost_vm_value.h"             // bfVMValue
+
+#include <assert.h> /* assert        */
+#include <stdlib.h> /* realloc, free */
 
 /* TODO(SR):
   @Optimization:

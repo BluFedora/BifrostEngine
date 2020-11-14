@@ -1,2 +1,2 @@
 
-#include "bifrost/bifrost_math.hpp"
+#include "bf/bifrost_math.hpp"

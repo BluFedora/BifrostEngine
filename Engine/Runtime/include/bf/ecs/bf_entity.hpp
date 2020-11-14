@@ -1,2 +1,2 @@
 
-#include "bifrost/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bifrost_entity.hpp"

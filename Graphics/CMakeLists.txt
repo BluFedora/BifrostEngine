@@ -28,7 +28,6 @@ set(
 set(
   BIFROST_GRAPHICS_SOURCES
   "src/bifrost_gfx_common.c"
-  "${CMAKE_SOURCE_DIR}/Runtime/src/utility/bifrost_hash.cpp"
 )
 
 set(

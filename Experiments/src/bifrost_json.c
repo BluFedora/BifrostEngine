@@ -13,7 +13,7 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#include "bifrost/utility/bifrost_json.h"
+#include "bf/utility/bifrost_json.h"
 
 #include <ctype.h>  /* isspace, isalpha, isdigit, tolower, isxdigit  */
 #include <setjmp.h> /* jmp_buf, setjmp, longjmp                      */

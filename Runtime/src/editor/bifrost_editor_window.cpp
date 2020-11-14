@@ -1,4 +1,4 @@
-#include "bifrost/editor/bifrost_editor_window.hpp"
+#include "bf/editor/bifrost_editor_window.hpp"
 
 namespace bf::editor
 {

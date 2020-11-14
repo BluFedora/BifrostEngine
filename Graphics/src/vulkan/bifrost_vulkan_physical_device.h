@@ -1,7 +1,7 @@
 #ifndef BIFROST_VULKAN_PHYSICAL_DEVICE_H
 #define BIFROST_VULKAN_PHYSICAL_DEVICE_H
 
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bf/bf_gfx_api.h"
 
 #include <vulkan/vulkan.h>
 

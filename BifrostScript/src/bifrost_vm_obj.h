@@ -14,7 +14,7 @@
 #ifndef BIFROST_VM_OBJ_H
 #define BIFROST_VM_OBJ_H
 
-#include "bifrost/script/bifrost_vm.h" /* bfNativeFnT, bfClassFinalizer, bfVMValue, BifrostHashMap */
+#include "bifrost/bifrost_vm.h" /* bfNativeFnT, bfClassFinalizer, bfVMValue, BifrostHashMap */
 
 #if __cplusplus
 extern "C" {

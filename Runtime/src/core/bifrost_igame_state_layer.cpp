@@ -1,4 +1,4 @@
-#include "bifrost/core/bifrost_igame_state_layer.hpp"
+#include "bf/core/bifrost_igame_state_layer.hpp"
 
 namespace bf
 {

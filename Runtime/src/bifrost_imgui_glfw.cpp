@@ -1,9 +1,9 @@
-#include "bifrost/bifrost_imgui_glfw.hpp"
+#include "bf/bifrost_imgui_glfw.hpp"
 
 #include "bf/Platform.h"
-#include "bifrost/editor/bf_editor_icons.hpp"
-#include "bifrost/graphics/bifrost_gfx_api.h"
-#include "bifrost/math/bifrost_mat4x4.h"
+#include "bf/bf_gfx_api.h"
+#include "bf/editor/bf_editor_icons.hpp"
+#include "bf/math/bifrost_mat4x4.h"
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove, but still needed for Cursors, Clipboard, and monitors.
 #include <imgui/imgui.h>
@@ -326,7 +326,7 @@ namespace bf::imgui
     const float font_size = 18.0f * dpi_scale_factor;
 
     ImGui::GetStyle().ScaleAllSizes(dpi_scale_factor);
-    
+
     //io.Fonts->AddFontDefault();
 
     io.Fonts->AddFontFromFileTTF(

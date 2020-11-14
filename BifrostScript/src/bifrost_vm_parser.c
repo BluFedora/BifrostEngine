@@ -20,7 +20,7 @@
 /******************************************************************************/
 #include "bifrost_vm_parser.h"
 
-#include "bifrost/script/bifrost_vm.h"
+#include "bifrost/bifrost_vm.h"
 #include "bifrost_vm_debug.h"
 #include "bifrost_vm_function_builder.h"
 #include "bifrost_vm_gc.h"

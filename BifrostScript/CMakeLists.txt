@@ -131,7 +131,6 @@ add_executable(
   BifrostWeb
   "webgl_testing.cpp"
 
-  "${CMAKE_SOURCE_DIR}/Runtime/src/utility/bifrost_hash.cpp"
   "${CMAKE_SOURCE_DIR}/Runtime/src/bifrost_imgui_glfw.cpp"
 
   "${CMAKE_SOURCE_DIR}/lib/include/imgui/imgui.cpp"
