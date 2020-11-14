@@ -82,7 +82,12 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   #
   set(CMAKE_CXX_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812 /permissive- /vmg")
   set(CMAKE_C_FLAGS "/wd4996 /Zc:__cplusplus /GR- /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /std:c++17 /W3 /WX /EHsc /GF /MP /fp:fast /Zm2000 /bigobj /wd26812 /permissive- /vmg")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4099")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4099")
+  set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4099")
 endif()
+
+
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
@@ -187,6 +192,13 @@ add_executable(
 # endif()
 
 # Bifrost Engine Submodules
+
+set_target_properties(
+  BifrostEngineOLD
+
+  PROPERTIES
+    LINK_FLAGS "/ignore:4099"
+)
 
 target_include_directories(
   BifrostEngineOLD

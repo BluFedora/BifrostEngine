@@ -8,8 +8,8 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-option(BIFROST_OPT_GRAPHICS_VULKAN "Vulkan will be used as the graphics Backend" ON)
-option(BIFROST_OPT_GRAPHICS_OPENGL "OpenGL will be used as the graphics Backend" OFF)
+option(BF_OPT_GRAPHICS_VULKAN "Vulkan will be used as the graphics Backend" ON)
+option(BF_OPT_GRAPHICS_OPENGL "OpenGL will be used as the graphics Backend" OFF)
 
 project(BF_Graphics VERSION 1.0.0 DESCRIPTION "The graphics abstraction layer sub project.")
 
@@ -38,7 +38,7 @@ set(
   BF_TMPUtils
 )
 
-if (BIFROST_OPT_GRAPHICS_VULKAN)
+if (BF_OPT_GRAPHICS_VULKAN)
   set(
     BIFROST_GRAPHICS_SOURCES
     "${BIFROST_GRAPHICS_SOURCES}"
@@ -85,7 +85,7 @@ if (BIFROST_OPT_GRAPHICS_VULKAN)
   else()
     message(SEND_ERROR "This is an unsupported Vulkan Platform.")
   endif()
-elseif (BIFROST_OPT_GRAPHICS_OPENGL)
+elseif (BF_OPT_GRAPHICS_OPENGL)
   set(
     BIFROST_GRAPHICS_SOURCES
     "${BIFROST_GRAPHICS_SOURCES}"
@@ -98,7 +98,7 @@ elseif (BIFROST_OPT_GRAPHICS_OPENGL)
     BF_Memory_interface
   )
 else()
-  message(SEND_ERROR "Either 'BIFROST_OPT_GRAPHICS_VULKAN' or 'BIFROST_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
+  message(SEND_ERROR "Either 'BF_OPT_GRAPHICS_VULKAN' or 'BF_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
 endif()
 
 add_library(
