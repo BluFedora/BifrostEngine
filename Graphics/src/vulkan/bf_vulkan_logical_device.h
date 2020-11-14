@@ -2,10 +2,10 @@
 #define BIFROST_VULKAN_LOGICAL_DEVICE_H
 
 #include "bf/bf_gfx_object_cache.hpp"
-#include "bifrost_vulkan_hash.hpp"
-#include "bifrost_vulkan_material_pool.h"
-#include "bifrost_vulkan_mem_allocator.h"
-#include "bifrost_vulkan_physical_device.h"
+#include "bf_vulkan_hash.hpp"
+#include "bf_vulkan_material_pool.h"
+#include "bf_vulkan_mem_allocator.h"
+#include "bf_vulkan_physical_device.h"
 
 BIFROST_DEFINE_HANDLE(GfxDevice)
 {

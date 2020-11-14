@@ -1,8 +1,9 @@
-#include "bifrost_vulkan_logical_device.h"
+#include "bf_vulkan_logical_device.h"
 
-#include "bifrost_vulkan_conversions.h" /* bfVKConvert* */
-#include "bifrost_vulkan_hash.hpp"      /* hash         */
-#include <cassert>                      /* assert       */
+#include "bf_vulkan_conversions.h" /* bfVKConvert* */
+#include "bf_vulkan_hash.hpp"      /* hash         */
+
+#include <cassert> /* assert */
 
 #define CUSTOM_ALLOC nullptr
 
@@ -1311,7 +1312,7 @@ namespace bf::vk
 
     return self;
   }
-}  // namespace bifrost::vk
+}  // namespace bf::vk
 
 static constexpr std::uint64_t k_FrontStencilCmpStateMask       = 0b0000000000000000011111111000000000000000000000000000000000000000;
 static constexpr std::uint64_t k_FrontStencilWriteStateMask     = 0b0000000001111111100000000000000000000000000000000000000000000000;

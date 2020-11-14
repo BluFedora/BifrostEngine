@@ -1,6 +1,6 @@
-#include "bifrost_vulkan_material_pool.h"
+#include "bf_vulkan_material_pool.h"
 
-#include "bifrost_vulkan_logical_device.h"
+#include "bf_vulkan_logical_device.h"
 
 #include <stdlib.h>
 #include <string.h>  // memcpy

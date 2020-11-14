@@ -1,6 +1,6 @@
-#include "bifrost_vulkan_logical_device.h"
+#include "bf_vulkan_logical_device.h"
 
-#include "bifrost_vulkan_conversions.h"
+#include "bf_vulkan_conversions.h"
 
 #include <cassert> /* assert */
 

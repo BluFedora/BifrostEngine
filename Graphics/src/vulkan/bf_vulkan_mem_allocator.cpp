@@ -1,6 +1,6 @@
-#include "bifrost_vulkan_mem_allocator.h"
+#include "bf_vulkan_mem_allocator.h"
 
-#include "bifrost_vulkan_logical_device.h"
+#include "bf_vulkan_logical_device.h"
 
 #include "bf/data_structures/bifrost_array_t.h"
 

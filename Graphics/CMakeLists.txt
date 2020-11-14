@@ -22,12 +22,11 @@ set(
   BIFROST_GRAPHICS_INCLUDE_DIRS
   "${PROJECT_SOURCE_DIR}/include"
   "${PROJECT_SOURCE_DIR}/lib/include"
-  "${CMAKE_SOURCE_DIR}/Runtime/include"
 )
 
 set(
   BIFROST_GRAPHICS_SOURCES
-  "src/bifrost_gfx_common.c"
+  "src/bf_gfx_common.c"
 )
 
 set(
@@ -42,14 +41,18 @@ if (BF_OPT_GRAPHICS_VULKAN)
   set(
     BIFROST_GRAPHICS_SOURCES
     "${BIFROST_GRAPHICS_SOURCES}"
-    "src/vulkan/bifrost_vulkan_command_list.cpp"
-    "src/vulkan/bifrost_vulkan_conversions.c"
-    "src/vulkan/bifrost_vulkan_material_pool.cpp"
-    "src/vulkan/bifrost_vulkan_mem_allocator.cpp"
-    "src/vulkan/bifrost_vulkan_renderpass.cpp"
-    "src/bifrost_gfx_vulkan.cpp"
-
-    "${CMAKE_SOURCE_DIR}/Runtime/src/debug/bifrost_dbg_logger.c"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_command_list.cpp"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_conversions.c"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_conversions.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_hash.hpp"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_logical_device.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_material_pool.cpp"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_material_pool.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_physical_device.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_renderpass.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
   )
 
   find_package(Vulkan)
@@ -89,7 +92,7 @@ elseif (BF_OPT_GRAPHICS_OPENGL)
   set(
     BIFROST_GRAPHICS_SOURCES
     "${BIFROST_GRAPHICS_SOURCES}"
-    "src/bifrost_gfx_opengl.cpp"
+    "src/bf_gfx_opengl.cpp"
   )
 
   set(
@@ -110,7 +113,6 @@ target_compile_definitions(
   BifrostGraphics_static
   PRIVATE
     "${BIFROST_GRAPHICS_DEFINES}"
-    BIFROST_GRAPHICS_NO_LOG
   PUBLIC
     BIFROST_GFX_EXPORT_STATIC
 )
@@ -139,7 +141,6 @@ target_compile_definitions(
   PRIVATE
     "${BIFROST_GRAPHICS_DEFINES}"
     BIFROST_GFX_EXPORT
-    BIFROST_GRAPHICS_NO_LOG
 )
 
 target_include_directories(

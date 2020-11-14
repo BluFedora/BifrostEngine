@@ -5,10 +5,10 @@
 #define VC_EXTRALEAN
 
 #include "bf/platform/bf_platform_vulkan.h"
-#include "vulkan/bifrost_vulkan_conversions.h"
-#include "vulkan/bifrost_vulkan_logical_device.h"
-#include "vulkan/bifrost_vulkan_material_pool.h"
-#include "vulkan/bifrost_vulkan_mem_allocator.h"
+#include "vulkan/bf_vulkan_conversions.h"
+#include "vulkan/bf_vulkan_logical_device.h"
+#include "vulkan/bf_vulkan_material_pool.h"
+#include "vulkan/bf_vulkan_mem_allocator.h"
 
 #include <algorithm> /* clamp */
 #include <cassert>   /* assert   */
@@ -34,13 +34,11 @@
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
 
-#if BIFROST_GRAPHICS_NO_LOG
-#define bfLogPush(...)
-#define bfLogPrint(...)
-#define bfLogError(...)
-#define bfLogPop(...)
-#else
-#include "bifrost/debug/bifrost_dbg_logger.h"
+#if 1 /* BIFROST_GRAPHICS_NO_LOG */
+#define bfLogPush(...) std::printf(__VA_ARGS__)
+#define bfLogPrint(...) std::printf(__VA_ARGS__)
+#define bfLogError(...) std::printf(__VA_ARGS__)
+#define bfLogPop(...) std::printf("GFX_POP")
 #endif
 
 // Memory Functions (To Be Replaced)
