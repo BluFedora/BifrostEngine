@@ -15,11 +15,11 @@ VkSampleCountFlagBits bfVkConvertSampleCount(bfGfxSampleFlags bit);
 VkClearValue          bfVKConvertClearColor(const bfClearValue* color);
 VkIndexType           bfVkConvertIndexType(bfGfxIndexType idx_type);
 VkShaderStageFlagBits bfVkConvertShaderType(bfShaderType type);
-VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageBits flags);
+VkShaderStageFlagBits bfVkConvertShaderStage(bfShaderStageBits flags);
 VkPrimitiveTopology   bfVkConvertTopology(bfDrawMode draw_mode);
 VkViewport            bfVkConvertViewport(const bfViewport* viewport);
 VkRect2D              bfVkConvertScissorRect(const bfScissorRect* viewport);
-VkPolygonMode         bfVkConvertPolygonMode(BifrostPolygonFillMode polygon_mode);
+VkPolygonMode         bfVkConvertPolygonMode(bfPolygonFillMode polygon_mode);
 VkCullModeFlags       bfVkConvertCullModeFlags(uint32_t cull_face_flags);  // bfCullFaceFlags
 VkFrontFace           bfVkConvertFrontFace(bfFrontFace front_face);
 VkFormat              bfVkConvertVertexFormatAttrib(bfGfxVertexFormatAttribute vertex_format_attrib);

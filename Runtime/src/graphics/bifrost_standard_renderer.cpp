@@ -975,13 +975,13 @@ namespace bf
 
   namespace bindings
   {
-    void addObject(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addObject(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addUniformBuffer(shader, "u_Set3Binding0", k_GfxObjectSetIndex, 0, 1, stages);
       bfShaderProgram_addUniformBuffer(shader, "u_Set3Binding1", k_GfxObjectSetIndex, 1, 1, stages);
     }
 
-    void addMaterial(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addMaterial(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addImageSampler(shader, "u_AlbedoTexture", k_GfxMaterialSetIndex, 0, 1, stages);
       bfShaderProgram_addImageSampler(shader, "u_NormalTexture", k_GfxMaterialSetIndex, 1, 1, stages);
@@ -990,12 +990,12 @@ namespace bf
       bfShaderProgram_addImageSampler(shader, "u_AmbientOcclusionTexture", k_GfxMaterialSetIndex, 4, 1, stages);
     }
 
-    void addCamera(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addCamera(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addUniformBuffer(shader, "u_Set0", k_GfxCameraSetIndex, 0, 1, stages);
     }
 
-    void addSSAOInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addSSAOInputs(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addImageSampler(shader, "u_DepthTexture", k_GfxMaterialSetIndex, 0, 1, stages);
       bfShaderProgram_addImageSampler(shader, "u_NormalTexture", k_GfxMaterialSetIndex, 1, 1, stages);
@@ -1003,12 +1003,12 @@ namespace bf
       bfShaderProgram_addUniformBuffer(shader, "u_Set2", k_GfxMaterialSetIndex, 3, 1, stages);
     }
 
-    void addSSAOBlurInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addSSAOBlurInputs(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addImageSampler(shader, "u_SSAOTexture", k_GfxMaterialSetIndex, 0, 1, stages);
     }
 
-    void addLightingInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addLightingInputs(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addImageSampler(shader, "u_GBufferRT0", k_GfxMaterialSetIndex, 0, 1, stages);
       bfShaderProgram_addImageSampler(shader, "u_GBufferRT1", k_GfxMaterialSetIndex, 1, 1, stages);
@@ -1016,7 +1016,7 @@ namespace bf
       bfShaderProgram_addImageSampler(shader, "u_DepthTexture", k_GfxMaterialSetIndex, 3, 1, stages);
     }
 
-    void addLightBuffer(bfShaderProgramHandle shader, BifrostShaderStageBits stages)
+    void addLightBuffer(bfShaderProgramHandle shader, bfShaderStageBits stages)
     {
       bfShaderProgram_addUniformBuffer(shader, "u_Set1", k_GfxLightSetIndex, 0, 1, stages);
     }

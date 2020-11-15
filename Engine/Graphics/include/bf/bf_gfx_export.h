@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
-* @file   BF_gfx_export.h
+* @file   bf_gfx_export.h
 * @author Shareef Raheem (http://blufedora.github.io)
 *
 * @brief

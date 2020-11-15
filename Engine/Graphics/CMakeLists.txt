@@ -32,9 +32,11 @@ set(
   "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_export.h"
   "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_handle.h"
   "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_limits.h"
-  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_object_cache.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_pipeline_state.h"
   "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_types.h"
+
+  # Internal Headers
+  "${PROJECT_SOURCE_DIR}/src/bf_gfx_object_cache.hpp"
 
   # Shared Source
   "${PROJECT_SOURCE_DIR}/src/bf_gfx_common.c"

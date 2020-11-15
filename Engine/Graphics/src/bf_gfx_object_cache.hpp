@@ -1,8 +1,8 @@
 #ifndef BF_GFX_OBJECT_CACHE_HPP
 #define BF_GFX_OBJECT_CACHE_HPP
 
-#include "bf/bf_gfx_api.h"                                       /* bf gfx API      */
-#include "bf/bf_hash.hpp"                                        /* bf::hash::*     */
+#include "bf/bf_gfx_api.h"                                  /* bf gfx API      */
+#include "bf/bf_hash.hpp"                                   /* bf::hash::*     */
 #include "bf/data_structures/bifrost_object_hash_cache.hpp" /* ObjectHashCache */
 
 typedef struct

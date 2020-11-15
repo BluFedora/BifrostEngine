@@ -127,7 +127,7 @@ enum
 
 } /* bfShaderStageFlags */;
 
-typedef uint8_t BifrostShaderStageBits;
+typedef uint8_t bfShaderStageBits;
 
 typedef enum
 {
@@ -423,8 +423,8 @@ BF_GFX_API bfBool32              bfShaderModule_loadData(bfShaderModuleHandle se
 BF_GFX_API void                  bfShaderProgram_addModule(bfShaderProgramHandle self, bfShaderModuleHandle module);
 BF_GFX_API void                  bfShaderProgram_link(bfShaderProgramHandle self);
 BF_GFX_API void                  bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, uint32_t binding);
-BF_GFX_API void                  bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages);
-BF_GFX_API void                  bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages);
+BF_GFX_API void                  bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, bfShaderStageBits stages);
+BF_GFX_API void                  bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, bfShaderStageBits stages);
 BF_GFX_API void                  bfShaderProgram_compile(bfShaderProgramHandle self);
 BF_GFX_API bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle self, uint32_t index);
 
@@ -553,7 +553,7 @@ BF_GFX_API void                  bfGfxCmdList_setSampleShading(bfGfxCommandListH
 BF_GFX_API void                  bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value);
 BF_GFX_API void                  bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value);
 BF_GFX_API void                  bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op);
-BF_GFX_API void                  bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, BifrostPolygonFillMode fill_mode);
+BF_GFX_API void                  bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, bfPolygonFillMode fill_mode);
 BF_GFX_API void                  bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output_attachment_idx, uint8_t color_mask);
 BF_GFX_API void                  bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op);
 BF_GFX_API void                  bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);

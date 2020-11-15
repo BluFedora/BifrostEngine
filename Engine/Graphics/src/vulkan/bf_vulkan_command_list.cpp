@@ -329,7 +329,7 @@ void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op)
   state(self).logic_op = op;
 }
 
-void bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, BifrostPolygonFillMode fill_mode)
+void bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, bfPolygonFillMode fill_mode)
 {
   state(self).fill_mode = fill_mode;
 }
@@ -784,7 +784,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     rasterization.flags                   = 0x0;
     rasterization.depthClampEnable        = state.state.do_depth_clamp;
     rasterization.rasterizerDiscardEnable = state.state.rasterizer_discard;
-    rasterization.polygonMode             = bfVkConvertPolygonMode((BifrostPolygonFillMode)state.state.fill_mode);
+    rasterization.polygonMode             = bfVkConvertPolygonMode((bfPolygonFillMode)state.state.fill_mode);
     rasterization.cullMode                = bfVkConvertCullModeFlags(state.state.cull_face);
     rasterization.frontFace               = bfVkConvertFrontFace((bfFrontFace)state.state.front_face);
     rasterization.depthBiasEnable         = state.state.do_depth_bias;

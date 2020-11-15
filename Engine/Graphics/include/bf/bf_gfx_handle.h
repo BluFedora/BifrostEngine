@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bf_gfx_handle.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Opaque Handle declarations.
+ *
+ * @version 0.0.1
+ * @date    2020-03-22
+ *
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #ifndef BF_GFX_HANDLE_H
 #define BF_GFX_HANDLE_H
 

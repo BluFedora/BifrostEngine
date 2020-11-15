@@ -1,7 +1,7 @@
 #ifndef BIFROST_VULKAN_LOGICAL_DEVICE_H
 #define BIFROST_VULKAN_LOGICAL_DEVICE_H
 
-#include "bf/bf_gfx_object_cache.hpp"
+#include "../bf_gfx_object_cache.hpp"
 #include "bf_vulkan_hash.hpp"
 #include "bf_vulkan_material_pool.h"
 #include "bf_vulkan_mem_allocator.h"
@@ -18,7 +18,7 @@ BF_DEFINE_GFX_HANDLE(GfxDevice)
   VulkanPipelineCache    cache_pipeline;
   VulkanFramebufferCache cache_framebuffer;
   VulkanDescSetCache     cache_descriptor_set;
-  bfBaseGfxObject*  cached_resources; /* Linked List */
+  bfBaseGfxObject*       cached_resources; /* Linked List */
 };
 
 #if __cplusplus
@@ -26,15 +26,15 @@ extern "C" {
 #endif
 BF_DEFINE_GFX_HANDLE(Renderpass)
 {
-  bfBaseGfxObject super;
-  VkRenderPass         handle;
-  bfRenderpassInfo     info;
+  bfBaseGfxObject  super;
+  VkRenderPass     handle;
+  bfRenderpassInfo info;
 };
 
 BF_DEFINE_GFX_HANDLE(Framebuffer)
 {
   bfBaseGfxObject super;
-  VkFramebuffer        handle;
+  VkFramebuffer   handle;
   // uint32_t             num_attachments;
   bfTextureHandle attachments[k_bfGfxMaxAttachments];
 };
@@ -42,7 +42,7 @@ BF_DEFINE_GFX_HANDLE(Framebuffer)
 BF_DEFINE_GFX_HANDLE(Pipeline)
 {
   bfBaseGfxObject super;
-  VkPipeline           handle;
+  VkPipeline      handle;
 };
 
 using VulkanWindow = bfWindowSurface;
@@ -80,19 +80,19 @@ BF_DEFINE_GFX_HANDLE(WindowSurface)
 BF_DEFINE_GFX_HANDLE(Buffer)
 {
   bfBaseGfxObject super;
-  PoolAllocator*       alloc_pool;
-  VkBuffer             handle;
-  Allocation           alloc_info;  // This has the aligned size.
-  bfBufferSize         real_size;
+  PoolAllocator*  alloc_pool;
+  VkBuffer        handle;
+  Allocation      alloc_info;  // This has the aligned size.
+  bfBufferSize    real_size;
 };
 
 BF_DEFINE_GFX_HANDLE(ShaderModule)
 {
-  bfBaseGfxObject super;
-  bfGfxDeviceHandle    parent;
-  bfShaderType    type;
-  VkShaderModule       handle;
-  char                 entry_point[k_bfGfxShaderEntryPointNameLength];
+  bfBaseGfxObject   super;
+  bfGfxDeviceHandle parent;
+  bfShaderType      type;
+  VkShaderModule    handle;
+  char              entry_point[k_bfGfxShaderEntryPointNameLength];
 };
 
 typedef struct
@@ -113,7 +113,7 @@ typedef struct bfDescriptorSetLayoutInfo_t
 
 BF_DEFINE_GFX_HANDLE(ShaderProgram)
 {
-  bfBaseGfxObject      super;
+  bfBaseGfxObject           super;
   bfGfxDeviceHandle         parent;
   VkPipelineLayout          layout;
   uint32_t                  num_desc_set_layouts;
@@ -125,7 +125,7 @@ BF_DEFINE_GFX_HANDLE(ShaderProgram)
 
 BF_DEFINE_GFX_HANDLE(DescriptorSet)
 {
-  bfBaseGfxObject   super;
+  bfBaseGfxObject        super;
   bfShaderProgramHandle  shader_program;
   VkDescriptorSet        handle;
   uint32_t               set_index;

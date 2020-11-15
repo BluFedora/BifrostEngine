@@ -588,13 +588,13 @@ namespace bf
   //
   namespace bindings
   {
-    void addObject(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
-    void addMaterial(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
-    void addCamera(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
-    void addSSAOInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
-    void addSSAOBlurInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
-    void addLightingInputs(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
-    void addLightBuffer(bfShaderProgramHandle shader, BifrostShaderStageBits stages);
+    void addObject(bfShaderProgramHandle shader, bfShaderStageBits stages);
+    void addMaterial(bfShaderProgramHandle shader, bfShaderStageBits stages);
+    void addCamera(bfShaderProgramHandle shader, bfShaderStageBits stages);
+    void addSSAOInputs(bfShaderProgramHandle shader, bfShaderStageBits stages);
+    void addSSAOBlurInputs(bfShaderProgramHandle shader, bfShaderStageBits stages);
+    void addLightingInputs(bfShaderProgramHandle shader, bfShaderStageBits stages);
+    void addLightBuffer(bfShaderProgramHandle shader, bfShaderStageBits stages);
   }  // namespace bindings
 }  // namespace bf
 

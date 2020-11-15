@@ -1,6 +1,6 @@
-#include "bifrost/graphics/bifrost_gfx_api.h"
+#include "bf/bf_gfx_api.h"
 
-#include "bifrost/graphics/bifrost_gfx_object_cache.hpp"
+#include "bf_gfx_object_cache.hpp"
 
 #include "bf/FreeListAllocator.hpp"
 #include "bf/StlAllocator.hpp"
@@ -15,8 +15,8 @@
 #include <unordered_map> /* unordered_map<K, V> */
 #include <vector>        /* vector<T>           */
 
-#define USE_OPENGL_ES_STANDARD (BIFROST_PLATFORM_EMSCRIPTEN || BIFROST_PLATFORM_IOS || BIFROST_PLATFORM_ANDROID)
-#define USE_WEBGL_STANDARD BIFROST_PLATFORM_EMSCRIPTEN
+#define USE_OPENGL_ES_STANDARD (BF_PLATFORM_EMSCRIPTEN || BF_PLATFORM_IOS || BF_PLATFORM_ANDROID)
+#define USE_WEBGL_STANDARD BF_PLATFORM_EMSCRIPTEN
 
 #if USE_OPENGL_ES_STANDARD
 #define glGenVertexArrays glGenVertexArraysOES
@@ -309,7 +309,6 @@ using namespace bf;
 //
 // Memory
 //
-
 static char              s_GraphicsMemoryBacking[16384];
 static FreeListAllocator s_GraphicsMemory{s_GraphicsMemoryBacking, sizeof(s_GraphicsMemoryBacking)};
 
@@ -341,7 +340,7 @@ using StdUniquePtr = std::unique_ptr<T, StdUniquePtrDeleter<T>>;
 // Handle Definitions
 //
 
-BIFROST_DEFINE_HANDLE(GfxContext)
+BF_DEFINE_GFX_HANDLE(GfxContext)
 {
   const bfGfxContextCreateParams* params;                // Only valid during initialization
   std::uint32_t                   max_frames_in_flight;  // TODO(Shareef): Make customizable at runtime
@@ -350,91 +349,91 @@ BIFROST_DEFINE_HANDLE(GfxContext)
   bfFrameCount_t                  frame_index;           // frame_count % max_frames_in_flight
 };
 
-BIFROST_DEFINE_HANDLE(GfxDevice)
+BF_DEFINE_GFX_HANDLE(GfxDevice)
 {
   GfxRenderpassCache     cache_renderpass;
   VulkanPipelineCache    cache_pipeline;
   VulkanFramebufferCache cache_framebuffer;
   VulkanDescSetCache     cache_descriptor_set;
-  BifrostGfxObjectBase*  cached_resources; /* Linked List */
+  bfBaseGfxObject*       cached_resources; /* Linked List */
 };
 
-BIFROST_DEFINE_HANDLE(Texture)
+BF_DEFINE_GFX_HANDLE(Texture)
 {
-  BifrostGfxObjectBase   super;
-  bfGfxDeviceHandle      parent;
-  BifrostTexFeatureFlags flags;
+  bfBaseGfxObject   super;
+  bfGfxDeviceHandle parent;
+  bfTexFeatureFlags flags;
   // CPU Side Data
-  BifrostTextureType image_type;
-  int32_t            image_width;
-  int32_t            image_height;
-  int32_t            image_depth;
-  uint32_t           image_miplevels;
+  bfTextureType image_type;
+  int32_t       image_width;
+  int32_t       image_height;
+  int32_t       image_depth;
+  uint32_t      image_miplevels;
   // GPU Side Data
   GLuint                     tex_image; /* For Depth Textures this is an RBO */
   bfTextureSamplerProperties tex_sampler;
-  BifrostSampleFlags         tex_samples;
+  bfGfxSampleFlags           tex_samples;
 };
 
-BIFROST_DEFINE_HANDLE(Renderpass)
+BF_DEFINE_GFX_HANDLE(Renderpass)
 {
-  BifrostGfxObjectBase super;
-  bfRenderpassInfo     info;
+  bfBaseGfxObject  super;
+  bfRenderpassInfo info;
 };
 
-BIFROST_DEFINE_HANDLE(Framebuffer)
+BF_DEFINE_GFX_HANDLE(Framebuffer)
 {
-  BifrostGfxObjectBase super;
-  GLuint               handle;
-  bfTextureHandle      attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  bfBaseGfxObject super;
+  GLuint          handle;
+  bfTextureHandle attachments[k_bfGfxMaxAttachments];
 };
 
-BIFROST_DEFINE_HANDLE(Pipeline)
+BF_DEFINE_GFX_HANDLE(Pipeline)
 {
-  BifrostGfxObjectBase super;
+  bfBaseGfxObject super;
 };
 
-BIFROST_DEFINE_HANDLE(WindowSurface)
+BF_DEFINE_GFX_HANDLE(WindowSurface)
 {
-  struct bfWindow_t* window;
-  bfGfxCommandListHandle  current_cmd_list;
-  bfTexture               surface_dummy;
+  struct bfWindow_t*     window;
+  bfGfxCommandListHandle current_cmd_list;
+  bfTexture              surface_dummy;
 };
 
-BIFROST_DEFINE_HANDLE(GfxCommandList)
+BF_DEFINE_GFX_HANDLE(GfxCommandList)
 {
   bfGfxContextHandle    context;
   bfGfxDeviceHandle     parent;
   bfWindowSurfaceHandle window;
-  BifrostScissorRect    render_area;
+  bfScissorRect         render_area;
   bfFramebufferHandle   framebuffer;
   bfPipelineHandle      pipeline;
   bfPipelineCache       pipeline_state;
-  BifrostClearValue     clear_colors[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  bfClearValue          clear_colors[k_bfGfxMaxAttachments];
   bfBool32              has_command;
   uint16_t              dynamic_state_dirty;
 
-  BifrostIndexType index_type;
-  uint64_t         index_offset;
+  bfGfxIndexType index_type;
+  uint64_t       index_offset;
 };
 
-BIFROST_DEFINE_HANDLE(Buffer)
+BF_DEFINE_GFX_HANDLE(Buffer)
 {
-  BifrostGfxObjectBase super;
-  GLuint               handle;
-  GLenum               target;
-  GLenum               usage;
-  void*                mapped_ptr;
-  bfBufferSize         real_size;
+  bfBaseGfxObject super;
+  GLuint          handle;
+  GLenum          target;
+  GLenum          usage;
+  void*           mapped_ptr;
+  bfBufferSize    real_size;
 };
 
-BIFROST_DEFINE_HANDLE(ShaderModule)
+BF_DEFINE_GFX_HANDLE(ShaderModule)
 {
-  BifrostGfxObjectBase super;
-  bfGfxDeviceHandle    parent;
-  BifrostShaderType    type;
-  GLuint               handle;
-  char                 entry_point[BIFROST_GFX_SHADER_ENTRY_POINT_NAME_LENGTH];
+  bfBaseGfxObject   super;
+  bfGfxDeviceHandle parent;
+  bfShaderType      type;
+  GLuint            handle;
+  char              entry_point[k_bfGfxShaderEntryPointNameLength];
 };
 
 struct DescSetInfo final
@@ -443,12 +442,12 @@ struct DescSetInfo final
   int texture_offset;
 };
 
-BIFROST_DEFINE_HANDLE(ShaderProgram)
+BF_DEFINE_GFX_HANDLE(ShaderProgram)
 {
-  BifrostGfxObjectBase             super;
+  bfBaseGfxObject                  super;
   bfGfxDeviceHandle                parent;
   GLuint                           handle;
-  char                             debug_name[BIFROST_GFX_SHADER_PROGRAM_NAME_LENGTH];
+  char                             debug_name[k_bfGfxShaderProgramNameLength];
   StdUnorderedMap<uint32_t, GLint> binding_to_uniform_loc;
   DescSetInfo*                     set_info;
   int                              num_sets;
@@ -470,9 +469,9 @@ BIFROST_DEFINE_HANDLE(ShaderProgram)
   }
 };
 
-BIFROST_DEFINE_HANDLE(DescriptorSet)
+BF_DEFINE_GFX_HANDLE(DescriptorSet)
 {
-  BifrostGfxObjectBase                                                        super;
+  bfBaseGfxObject                                                             super;
   bfShaderProgramHandle                                                       shader_program;
   uint32_t                                                                    set_index;
   StdVector<std::pair<GLuint, bfTextureHandle>>                               textures;        /* <Uniform, Texture>              */
@@ -531,16 +530,16 @@ struct VertexBindingDetail final
   }
 };
 
-BIFROST_DEFINE_HANDLE(VertexLayoutSet)
+BF_DEFINE_GFX_HANDLE(VertexLayoutSet)
 {
-  // TOOD(SR): Switch to an array of 'BIFROST_GFX_BUFFERS_MAX_BINDING' size?
+  // TOOD(SR): Switch to an array of 'k_bfGfxMaxBufferBindings' size?
   StdUnorderedMap<std::uint32_t, VertexBindingDetail> vertex_bindings;
-  bfBufferSize                                        vertex_buffer_offsets[BIFROST_GFX_BUFFERS_MAX_BINDING]; /*  offset in numn vertices */
+  bfBufferSize                                        vertex_buffer_offsets[k_bfGfxMaxBufferBindings]; /*  offset in numn vertices */
   GLuint                                              vao_handle;
   uint8_t                                             num_buffer_bindings;
   uint8_t                                             num_attrib_bindings;
   uint8_t                                             num_vertex_buffers;
-  std::pair<bfBufferHandle, std::uint32_t>            vertex_buffers[BIFROST_GFX_BUFFERS_MAX_BINDING];
+  std::pair<bfBufferHandle, std::uint32_t>            vertex_buffers[k_bfGfxMaxBufferBindings];
 
   bfVertexLayoutSet_t() :
     vertex_bindings{s_GraphicsMemory},
@@ -587,16 +586,16 @@ BIFROST_DEFINE_HANDLE(VertexLayoutSet)
 
 static GLenum bfGLBufferUsageTarget(bfBufferUsageBits usage);
 static GLenum bfGLBufferUsageHint(bfBufferPropertyBits properties, int mode);
-static GLenum bfGLConvertShaderType(BifrostShaderType type);
-static int    bfGLVertexFormatNumComponents(BifrostVertexFormatAttribute format);
-static GLenum bfGLVertexFormatType(BifrostVertexFormatAttribute format);
-static GLint  bfGLConvertSamplerAddressMode(BifrostSamplerAddressMode sampler_mode);
-static GLint  bfConvertSamplerFilterMode(BifrostSamplerFilterMode filter_mode);
+static GLenum bfGLConvertShaderType(bfShaderType type);
+static int    bfGLVertexFormatNumComponents(bfGfxVertexFormatAttribute format);
+static GLenum bfGLVertexFormatType(bfGfxVertexFormatAttribute format);
+static GLint  bfGLConvertSamplerAddressMode(bfTexSamplerAddressMode sampler_mode);
+static GLint  bfConvertSamplerFilterMode(bfTexSamplerFilterMode filter_mode);
 static bool   bfTextureIsDepthStencil(bfTextureHandle texture);
 static bool   bfTextureCanBeInput(bfTextureHandle texture);
-static GLenum bfConvertDrawMode(BifrostDrawMode draw_mode);
-static GLenum bfConvertFrontFace(BifrostFrontFace face);
-static GLenum bfGLConvertCmpOp(BifrostCompareOp op);
+static GLenum bfConvertDrawMode(bfDrawMode draw_mode);
+static GLenum bfConvertFrontFace(bfFrontFace face);
+static GLenum bfGLConvertCmpOp(bfCompareOp op);
 
 // bfGfxContext
 
@@ -708,20 +707,20 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 }
 
 template<typename T, typename TCache>
-static void bfGfxContext_removeFromCache(TCache& cache, BifrostGfxObjectBase* object)
+static void bfGfxContext_removeFromCache(TCache& cache, bfBaseGfxObject* object)
 {
   cache.remove(object->hash_code, reinterpret_cast<T>(object));
 }
 
 void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
-  BifrostGfxObjectBase* prev         = nullptr;
-  BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
-  BifrostGfxObjectBase* release_list = nullptr;
+  bfBaseGfxObject* prev         = nullptr;
+  bfBaseGfxObject* curr         = self->logical_device->cached_resources;
+  bfBaseGfxObject* release_list = nullptr;
 
   while (curr)
   {
-    BifrostGfxObjectBase* next = curr->next;
+    bfBaseGfxObject* next = curr->next;
 
     if ((self->frame_count - curr->last_frame_used & bfFrameCountMax) >= 60)
     {
@@ -753,26 +752,26 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
   {
     while (release_list)
     {
-      BifrostGfxObjectBase* next = release_list->next;
+      bfBaseGfxObject* next = release_list->next;
 
       switch (release_list->type)
       {
-        case BIFROST_GFX_OBJECT_RENDERPASS:
+        case BF_GFX_OBJECT_RENDERPASS:
         {
           bfGfxContext_removeFromCache<bfRenderpassHandle>(self->logical_device->cache_renderpass, release_list);
           break;
         }
-        case BIFROST_GFX_OBJECT_PIPELINE:
+        case BF_GFX_OBJECT_PIPELINE:
         {
           bfGfxContext_removeFromCache<bfPipelineHandle>(self->logical_device->cache_pipeline, release_list);
           break;
         }
-        case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+        case BF_GFX_OBJECT_FRAMEBUFFER:
         {
           bfGfxContext_removeFromCache<bfFramebufferHandle>(self->logical_device->cache_framebuffer, release_list);
           break;
         }
-        case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
+        case BF_GFX_OBJECT_DESCRIPTOR_SET:
         {
           bfGfxContext_removeFromCache<bfDescriptorSetHandle>(self->logical_device->cache_descriptor_set, release_list);
           break;
@@ -793,11 +792,11 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 {
   const auto device = self->logical_device;
 
-  BifrostGfxObjectBase* curr = device->cached_resources;
+  bfBaseGfxObject* curr = device->cached_resources;
 
   while (curr)
   {
-    BifrostGfxObjectBase* next = curr->next;
+    bfBaseGfxObject* next = curr->next;
     bfGfxDevice_release(self->logical_device, curr);
     curr = next;
   }
@@ -818,7 +817,7 @@ bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self, const bfBufferCreat
 
   if (buffer)
   {
-    BifrostGfxObjectBase_ctor(&buffer->super, BIFROST_GFX_OBJECT_BUFFER);
+    bfBaseGfxObject_ctor(&buffer->super, BF_GFX_OBJECT_BUFFER);
 
     buffer->target    = bfGLBufferUsageTarget(params->usage);
     buffer->usage     = bfGLBufferUsageHint(params->allocation.properties, 0);
@@ -839,7 +838,7 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
 
   if (renderpass)
   {
-    BifrostGfxObjectBase_ctor(&renderpass->super, BIFROST_GFX_OBJECT_RENDERPASS);
+    bfBaseGfxObject_ctor(&renderpass->super, BF_GFX_OBJECT_RENDERPASS);
 
     renderpass->info = *params;
   }
@@ -847,7 +846,7 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   return renderpass;
 }
 
-bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, BifrostShaderType type)
+bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, bfShaderType type)
 {
   static const char k_GLEntryPoint[] = "main";
 
@@ -857,7 +856,7 @@ bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self, Bifrost
   {
     const GLenum gl_type = bfGLConvertShaderType(type);
 
-    BifrostGfxObjectBase_ctor(&shader->super, BIFROST_GFX_OBJECT_SHADER_MODULE);
+    bfBaseGfxObject_ctor(&shader->super, BF_GFX_OBJECT_SHADER_MODULE);
 
     shader->parent = self;
     shader->type   = type;
@@ -878,7 +877,7 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self, const
 
   if (shader)
   {
-    BifrostGfxObjectBase_ctor(&shader->super, BIFROST_GFX_OBJECT_SHADER_PROGRAM);
+    bfBaseGfxObject_ctor(&shader->super, BF_GFX_OBJECT_SHADER_PROGRAM);
 
     shader->parent = self;
     shader->handle = glCreateProgram();
@@ -896,7 +895,7 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCr
 
   if (texture)
   {
-    BifrostGfxObjectBase_ctor(&texture->super, BIFROST_GFX_OBJECT_TEXTURE);
+    bfBaseGfxObject_ctor(&texture->super, BF_GFX_OBJECT_TEXTURE);
 
     texture->parent          = self;
     texture->flags           = params->flags;
@@ -907,7 +906,7 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCr
     texture->image_miplevels = params->generate_mipmaps;
     texture->tex_image       = 0;
     texture->tex_sampler     = bfTextureSamplerProperties{};
-    texture->tex_samples     = BIFROST_SAMPLE_1;
+    texture->tex_samples     = BF_SAMPLE_1;
 
     if (bfTextureIsDepthStencil(texture) && !bfTextureCanBeInput(texture))
     {
@@ -939,11 +938,11 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
   if (resource)
   {
-    BifrostGfxObjectBase* const obj = static_cast<BifrostGfxObjectBase*>(resource);
+    bfBaseGfxObject* const obj = static_cast<bfBaseGfxObject*>(resource);
 
     switch (obj->type)
     {
-      case BIFROST_GFX_OBJECT_BUFFER:
+      case BF_GFX_OBJECT_BUFFER:
       {
         bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(obj);
 
@@ -970,14 +969,14 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
         break;
       }
-      case BIFROST_GFX_OBJECT_RENDERPASS:
+      case BF_GFX_OBJECT_RENDERPASS:
       {
         const bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
 
         deallocate(renderpass);
         break;
       }
-      case BIFROST_GFX_OBJECT_SHADER_MODULE:
+      case BF_GFX_OBJECT_SHADER_MODULE:
       {
         const bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(obj);
 
@@ -989,7 +988,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         deallocate(shader_module);
         break;
       }
-      case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
+      case BF_GFX_OBJECT_SHADER_PROGRAM:
       {
         const bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
 
@@ -998,14 +997,14 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         deallocate(shader_program);
         break;
       }
-      case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
+      case BF_GFX_OBJECT_DESCRIPTOR_SET:
       {
         const bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
 
         deallocate(desc_set);
         break;
       }
-      case BIFROST_GFX_OBJECT_TEXTURE:
+      case BF_GFX_OBJECT_TEXTURE:
       {
         bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
 
@@ -1050,7 +1049,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
         break;
       }
-      case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+      case BF_GFX_OBJECT_FRAMEBUFFER:
       {
         const bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(obj);
 
@@ -1060,7 +1059,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
         break;
       }
-      case BIFROST_GFX_OBJECT_PIPELINE:
+      case BF_GFX_OBJECT_PIPELINE:
       {
         const bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(obj);
 
@@ -1092,7 +1091,7 @@ void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 #if USE_WEBGL_STANDARD
   const GLbitfield access_flags = /*0x1A | */ 0xA;
 #else
-  const GLbitfield access_flags = GL_MAP_WRITE_BIT/* | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT*/;
+  const GLbitfield access_flags = GL_MAP_WRITE_BIT /* | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT*/;
 #endif
 
   const auto whole_size = static_cast<GLsizeiptr>(std::min(self->real_size - offset, size));
@@ -1176,7 +1175,7 @@ void bfVertexLayout_addInstanceBinding(bfVertexLayoutSetHandle self, uint32_t bi
   assert(!"NOT IMPLEMENTED IN THE OPENGL BACKEND");
 }
 
-void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t binding, BifrostVertexFormatAttribute format, uint32_t offset)
+void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t binding, bfGfxVertexFormatAttribute format, uint32_t offset)
 {
   const auto it = self->vertex_bindings.find(binding);
 
@@ -1185,7 +1184,7 @@ void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t bindi
     VertexBindingDetail& detail        = it->second;
     const int            num_comps     = bfGLVertexFormatNumComponents(format);
     const GLenum         type          = bfGLVertexFormatType(format);
-    const bool           is_normalized = format == BIFROST_VFA_UCHAR8_4_UNORM;
+    const bool           is_normalized = format == BF_VFA_UCHAR8_4_UNORM;
 
     detail.details.emplace_back(num_comps, type, reinterpret_cast<void*>(uintptr_t(offset)), is_normalized);
   }
@@ -1199,7 +1198,7 @@ void bfVertexLayout_delete(bfVertexLayoutSetHandle self)
 
 /* Shader Program + Module */
 
-BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self)
+bfShaderType bfShaderModule_type(bfShaderModuleHandle self)
 {
   return self->type;
 }
@@ -1277,7 +1276,7 @@ void bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, 
   glBindAttribLocation(self->handle, binding, name);
 }
 
-void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages)
+void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, bfShaderStageBits stages)
 {
   // NOTE FROM LearnOpenGL, We cannot support this just yet...
   //
@@ -1298,7 +1297,7 @@ void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* na
   glUniformBlockBinding(self->handle, ubo_index, binding);
 }
 
-void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages)
+void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, bfShaderStageBits stages)
 {
   // assert(set == 0 && "OpenGL backend only supports one flat descriptor set");
   // assert(how_many == 1 && "??? IDK how to map this concept");
@@ -1322,7 +1321,7 @@ bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle 
 
   if (desc_set)
   {
-    BifrostGfxObjectBase_ctor(&desc_set->super, BIFROST_GFX_OBJECT_DESCRIPTOR_SET);
+    bfBaseGfxObject_ctor(&desc_set->super, BF_GFX_OBJECT_DESCRIPTOR_SET);
 
     desc_set->shader_program = self;
     desc_set->set_index      = index;
@@ -1389,9 +1388,9 @@ uint32_t bfTexture_numMipLevels(bfTextureHandle self)
   return self->image_miplevels;
 }
 
-BifrostImageLayout bfTexture_layout(bfTextureHandle self)
+bfGfxImageLayout bfTexture_layout(bfTextureHandle self)
 {
-  return BIFROST_IMAGE_LAYOUT_GENERAL;
+  return BF_IMAGE_LAYOUT_GENERAL;
 }
 
 static constexpr size_t k_NumReqComps = 4;
@@ -1441,9 +1440,9 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer);
 bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3])
 {
   const bool is_indefinite =
-   self->image_width == BIFROST_TEXTURE_UNKNOWN_SIZE ||
-   self->image_height == BIFROST_TEXTURE_UNKNOWN_SIZE ||
-   self->image_depth == BIFROST_TEXTURE_UNKNOWN_SIZE;
+   self->image_width == k_bfTextureUnknownSize ||
+   self->image_height == k_bfTextureUnknownSize ||
+   self->image_depth == k_bfTextureUnknownSize;
 
   assert(!is_indefinite && "Texture_setData: The texture dimensions should be defined by this point.");
 
@@ -1458,7 +1457,7 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
   {
     if (bfTextureCanBeInput(self))
     {
-      const GLenum internal_format = (self->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
+      const GLenum internal_format = (self->flags & BF_TEX_IS_STENCIL_ATTACHMENT) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
 
       glBindTexture(GL_TEXTURE_2D, self->tex_image);
       glTexImage2D(
@@ -1474,7 +1473,7 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
     }
     else
     {
-      const GLenum internal_format = (self->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
+      const GLenum internal_format = (self->flags & BF_TEX_IS_STENCIL_ATTACHMENT) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
 
       glBindRenderbuffer(GL_RENDERBUFFER, self->tex_image);
 
@@ -1499,7 +1498,7 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
 
 void bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties)
 {
-  if (sampler_properties && !(self->flags & (BIFROST_TEX_IS_DEPTH_ATTACHMENT | BIFROST_TEX_IS_STENCIL_ATTACHMENT)))
+  if (sampler_properties && !(self->flags & (BF_TEX_IS_DEPTH_ATTACHMENT | BF_TEX_IS_STENCIL_ATTACHMENT)))
   {
     glBindTexture(GL_TEXTURE_2D, self->tex_image);
 
@@ -1518,12 +1517,12 @@ void bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties
   }
 }
 
-static void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj)
+static void UpdateResourceFrame(bfGfxContextHandle ctx, bfBaseGfxObject* obj)
 {
   obj->last_frame_used = ctx->frame_count;
 }
 
-static void AddCachedResource(bfGfxDeviceHandle device, BifrostGfxObjectBase* obj, std::uint64_t hash_code)
+static void AddCachedResource(bfGfxDeviceHandle device, bfBaseGfxObject* obj, std::uint64_t hash_code)
 {
   obj->hash_code           = hash_code;
   obj->next                = device->cached_resources;
@@ -1542,7 +1541,7 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
   return bfTrue;
 }
 
-void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel)
+void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel)
 {
   /* NO-OP By Design */
 }
@@ -1569,7 +1568,7 @@ void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderp
   bfGfxCmdList_setRenderpass(self, rp);
 }
 
-void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClearValue* clear_values)
+void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue* clear_values)
 {
   const std::size_t num_clear_colors = self->pipeline_state.renderpass->info.num_attachments;
 
@@ -1598,7 +1597,7 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
   {
     fb = allocate<bfFramebuffer>();
 
-    BifrostGfxObjectBase_ctor(&fb->super, BIFROST_GFX_OBJECT_FRAMEBUFFER);
+    bfBaseGfxObject_ctor(&fb->super, BF_GFX_OBJECT_FRAMEBUFFER);
 
     if (attachments[0] != &self->window->surface_dummy)
     {
@@ -1613,11 +1612,11 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
         {
           if (bfTextureCanBeInput(attachments[i]))
           {
-            if ((attachments[i]->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT) && (attachments[i]->flags & BIFROST_TEX_IS_DEPTH_ATTACHMENT))
+            if ((attachments[i]->flags & BF_TEX_IS_STENCIL_ATTACHMENT) && (attachments[i]->flags & BF_TEX_IS_DEPTH_ATTACHMENT))
             {
               glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, attachments[i]->tex_image, 0);
             }
-            else if (attachments[i]->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT)
+            else if (attachments[i]->flags & BF_TEX_IS_STENCIL_ATTACHMENT)
             {
               glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, attachments[i]->tex_image, 0);
             }
@@ -1700,21 +1699,12 @@ void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
 
     if (clear_mask)
     {
-      GLuint draw_buffers[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS] =
-       {
-        GL_NONE,
-        GL_NONE,
-        GL_NONE,
-        GL_NONE,
-        GL_NONE,
-        GL_NONE,
-        GL_NONE,
-        GL_NONE,
-       };
+      GLuint draw_buffers[k_bfGfxMaxAttachments];
+      for (auto& draw_buffer : draw_buffers) { draw_buffer = GL_NONE; }
 
-      const auto&                     clear_value   = self->clear_colors[i];
-      const float*                    colors        = clear_value.color.float32;
-      const BifrostClearDepthStencil& depth_stencil = clear_value.depthStencil;
+      const auto&                clear_value   = self->clear_colors[i];
+      const float*               colors        = clear_value.color.float32;
+      const bfClearDepthStencil& depth_stencil = clear_value.depthStencil;
 
       draw_buffers[i] = GL_BACK;  // GL_COLOR_ATTACHMENT0 + i;
 
@@ -1732,17 +1722,8 @@ void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
 
 void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self)
 {
-  GLuint draw_buffers[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS] =
-   {
-    GL_NONE,
-    GL_NONE,
-    GL_NONE,
-    GL_NONE,
-    GL_NONE,
-    GL_NONE,
-    GL_NONE,
-    GL_NONE,
-   };
+  GLuint draw_buffers[k_bfGfxMaxAttachments];
+  for (auto& draw_buffer : draw_buffers) { draw_buffer = GL_NONE; }
 
   bfRenderpassInfo& rp_info         = self->pipeline_state.renderpass->info;
   const uint32_t    num_attachments = rp_info.num_attachments;
@@ -1764,19 +1745,19 @@ void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self)
 
 #define state(self) self->pipeline_state.state
 
-void bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, BifrostDrawMode draw_mode)
+void bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, bfDrawMode draw_mode)
 {
   state(self).draw_mode = draw_mode;
 }
 
-void bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, BifrostFrontFace front_face)
+void bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, bfFrontFace front_face)
 {
   state(self).front_face = front_face;
 
   glFrontFace(bfConvertFrontFace(front_face));
 }
 
-void bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, BifrostCullFaceFlags cull_face)
+void bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, bfCullFaceFlags cull_face)
 {
   state(self).cull_face = cull_face;
 
@@ -1788,9 +1769,9 @@ void bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, BifrostCullFaceFlags 
 
     switch (cull_face)
     {
-      case BIFROST_CULL_FACE_FRONT: gl_face = GL_FRONT; break;
-      case BIFROST_CULL_FACE_BACK: gl_face = GL_BACK; break;
-      case BIFROST_CULL_FACE_BOTH: gl_face = GL_FRONT_AND_BACK; break;
+      case BF_CULL_FACE_FRONT: gl_face = GL_FRONT; break;
+      case BF_CULL_FACE_BACK: gl_face = GL_BACK; break;
+      case BF_CULL_FACE_BOTH: gl_face = GL_FRONT_AND_BACK; break;
       default:
         assert(false);
         break;
@@ -1825,7 +1806,7 @@ void bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value)
   glDepthMask(value ? GL_TRUE : GL_FALSE);
 }
 
-void bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, BifrostCompareOp op)
+void bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, bfCompareOp op)
 {
   state(self).depth_test_op = op;
 
@@ -1893,12 +1874,12 @@ void bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value)
   state(self).alpha_to_one = value;
 }
 
-void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, BifrostLogicOp op)
+void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op)
 {
   state(self).logic_op = op;
 }
 
-void bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, BifrostPolygonFillMode fill_mode)
+void bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, bfPolygonFillMode fill_mode)
 {
   state(self).fill_mode = fill_mode;
 }
@@ -1910,39 +1891,39 @@ void bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output
   self->pipeline_state.blending[output_attachment_idx].color_write_mask = color_mask;
 }
 
-void bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op)
+void bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op)
 {
   self->pipeline_state.blending[output_attachment_idx].color_blend_op = op;
 }
 
-void bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].color_blend_src = factor;
 }
 
-void bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].color_blend_dst = factor;
 }
 
-void bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op)
+void bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op)
 {
   self->pipeline_state.blending[output_attachment_idx].alpha_blend_op = op;
 }
 
-void bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].alpha_blend_src = factor;
 }
 
-void bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].alpha_blend_dst = factor;
 }
 
-void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_fail_op = op;
   }
@@ -1952,9 +1933,9 @@ void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFa
   }
 }
 
-void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_pass_op = op;
   }
@@ -1964,9 +1945,9 @@ void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFa
   }
 }
 
-void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_depth_fail_op = op;
   }
@@ -1975,9 +1956,9 @@ void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostSten
     self->pipeline_state.state.stencil_face_back_depth_fail_op = op;
   }
 }
-void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostCompareOp op)
+void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, bfStencilFace face, bfCompareOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_compare_op = op;
   }
@@ -1987,9 +1968,9 @@ void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStenci
   }
 }
 
-void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t cmp_mask)
+void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t cmp_mask)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_compare_mask = cmp_mask;
   }
@@ -1998,12 +1979,12 @@ void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostSten
     self->pipeline_state.state.stencil_face_back_compare_mask = cmp_mask;
   }
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK;
 }
 
-void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t write_mask)
+void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t write_mask)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_write_mask = write_mask;
   }
@@ -2012,12 +1993,12 @@ void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStenci
     self->pipeline_state.state.stencil_face_back_write_mask = write_mask;
   }
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK;
 }
 
-void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t ref_mask)
+void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, bfStencilFace face, uint8_t ref_mask)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_reference = ref_mask;
   }
@@ -2026,22 +2007,22 @@ void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStenci
     self->pipeline_state.state.stencil_face_back_reference = ref_mask;
   }
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
 }
 
 void bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states)
 {
   auto& s = self->pipeline_state.state;
 
-  const bfBool32 set_dynamic_viewport           = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_VIEWPORT) != 0;
-  const bfBool32 set_dynamic_scissor            = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_SCISSOR) != 0;
-  const bfBool32 set_dynamic_line_width         = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH) != 0;
-  const bfBool32 set_dynamic_depth_bias         = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS) != 0;
-  const bfBool32 set_dynamic_blend_constants    = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS) != 0;
-  const bfBool32 set_dynamic_depth_bounds       = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS) != 0;
-  const bfBool32 set_dynamic_stencil_cmp_mask   = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK) != 0;
-  const bfBool32 set_dynamic_stencil_write_mask = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK) != 0;
-  const bfBool32 set_dynamic_stencil_reference  = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE) != 0;
+  const bfBool32 set_dynamic_viewport           = (dynamic_states & BF_PIPELINE_DYNAMIC_VIEWPORT) != 0;
+  const bfBool32 set_dynamic_scissor            = (dynamic_states & BF_PIPELINE_DYNAMIC_SCISSOR) != 0;
+  const bfBool32 set_dynamic_line_width         = (dynamic_states & BF_PIPELINE_DYNAMIC_LINE_WIDTH) != 0;
+  const bfBool32 set_dynamic_depth_bias         = (dynamic_states & BF_PIPELINE_DYNAMIC_DEPTH_BIAS) != 0;
+  const bfBool32 set_dynamic_blend_constants    = (dynamic_states & BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS) != 0;
+  const bfBool32 set_dynamic_depth_bounds       = (dynamic_states & BF_PIPELINE_DYNAMIC_DEPTH_BOUNDS) != 0;
+  const bfBool32 set_dynamic_stencil_cmp_mask   = (dynamic_states & BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK) != 0;
+  const bfBool32 set_dynamic_stencil_write_mask = (dynamic_states & BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK) != 0;
+  const bfBool32 set_dynamic_stencil_reference  = (dynamic_states & BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE) != 0;
 
   s.dynamic_viewport           = set_dynamic_viewport;
   s.dynamic_scissor            = set_dynamic_scissor;
@@ -2076,7 +2057,7 @@ void bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, flo
   glDepthRangef(depth[0], depth[1]);
   glViewport(GLint(x), GLint(y), GLsizei(width), GLsizei(height));
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_VIEWPORT;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_VIEWPORT;
 }
 
 void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -2088,7 +2069,7 @@ void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t
   s.width  = width;
   s.height = height;
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_SCISSOR;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_SCISSOR;
 
   glScissor(x, y, width, height);
 }
@@ -2097,7 +2078,7 @@ void bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float con
 {
   memcpy(self->pipeline_state.blend_constants, constants, sizeof(self->pipeline_state.blend_constants));
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS;
 
   glBlendColor(constants[0], constants[1], constants[2], constants[3]);
 }
@@ -2106,7 +2087,7 @@ void bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.line_width = value;
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_LINE_WIDTH;
 
   glLineWidth(value);
 }
@@ -2126,25 +2107,25 @@ void bfGfxCmdList_setDepthBounds(bfGfxCommandListHandle self, float min, float m
   self->pipeline_state.depth.min_bound = min;
   self->pipeline_state.depth.max_bound = max;
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BOUNDS;
 }
 
 void bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_constant_factor = value;
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_clamp = value;
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_slope_factor = value;
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value)
@@ -2164,7 +2145,7 @@ void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetH
 
 void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
 {
-  assert(num_buffers < BIFROST_GFX_BUFFERS_MAX_BINDING);
+  assert(num_buffers < k_bfGfxMaxBufferBindings);
 
   self->pipeline_state.vertex_set_layout->bind();
 
@@ -2173,11 +2154,11 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_
     assert(offsets[i] == 0 && "VBO Offsets not supported by the graphics backend.");
 
     glBindBuffer(buffers[i]->target, buffers[i]->handle);
-    self->pipeline_state.vertex_set_layout->apply(buffers[i], binding + i, offsets[i]);
+    self->pipeline_state.vertex_set_layout->apply(buffers[i], first_binding + i, offsets[i]);
   }
 }
 
-void bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type)
+void bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, bfGfxIndexType idx_type)
 {
   self->index_type   = idx_type;
   self->index_offset = offset;
@@ -2240,7 +2221,7 @@ static std::uint64_t hash_bfDescriptorSetInfo(const bfDescriptorSetInfo* desc_se
     {
       self = hash::addPointer(self, binding->handles[i]);
 
-      if (binding->type == BIFROST_DESCRIPTOR_ELEMENT_BUFFER)
+      if (binding->type == BF_DESCRIPTOR_ELEMENT_BUFFER)
       {
         self = hash::addU64(self, binding->offsets[j]);
         self = hash::addU64(self, binding->sizes[j]);
@@ -2267,7 +2248,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
       switch (binding_info->type)
       {
-        case BIFROST_DESCRIPTOR_ELEMENT_TEXTURE:
+        case BF_DESCRIPTOR_ELEMENT_TEXTURE:
           bfDescriptorSet_setCombinedSamplerTextures(
            desc_set,
            binding_info->binding,
@@ -2275,7 +2256,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            (bfTextureHandle*)binding_info->handles,
            binding_info->num_handles);
           break;
-        case BIFROST_DESCRIPTOR_ELEMENT_BUFFER:
+        case BF_DESCRIPTOR_ELEMENT_BUFFER:
           bfDescriptorSet_setUniformBuffers(
            desc_set,
            binding_info->binding,
@@ -2284,9 +2265,9 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            (bfBufferHandle*)binding_info->handles,
            binding_info->num_handles);
           break;
-        case BIFROST_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
-        case BIFROST_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER:
-        case BIFROST_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT:
+        case BF_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
+        case BF_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER:
+        case BF_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT:
         default:
           assert(!"Not supported yet.");
           break;
@@ -2303,10 +2284,10 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
   UpdateResourceFrame(self->context, &desc_set->super);
 }
 
-GLenum bfGLConvertBlendFactor(BifrostBlendFactor factor)
+GLenum bfGLConvertBlendFactor(bfBlendFactor factor)
 {
-#define CONVERT(X)               \
-  case BIFROST_BLEND_FACTOR_##X: \
+#define CONVERT(X)          \
+  case BF_BLEND_FACTOR_##X: \
     return GL_##X
 
   switch (factor)
@@ -2342,15 +2323,15 @@ GLenum bfGLConvertBlendFactor(BifrostBlendFactor factor)
   return GL_ZERO;
 }
 
-GLenum bfGLConvertBlendOp(BifrostBlendOp factor)
+GLenum bfGLConvertBlendOp(bfBlendOp factor)
 {
   switch (factor)
   {
-    case BIFROST_BLEND_OP_ADD: return GL_FUNC_ADD;
-    case BIFROST_BLEND_OP_SUB: return GL_FUNC_SUBTRACT;
-    case BIFROST_BLEND_OP_REV_SUB: return GL_FUNC_REVERSE_SUBTRACT;
-    case BIFROST_BLEND_OP_MIN: return GL_MIN;
-    case BIFROST_BLEND_OP_MAX: return GL_MAX;
+    case BF_BLEND_OP_ADD: return GL_FUNC_ADD;
+    case BF_BLEND_OP_SUB: return GL_FUNC_SUBTRACT;
+    case BF_BLEND_OP_REV_SUB: return GL_FUNC_REVERSE_SUBTRACT;
+    case BF_BLEND_OP_MIN: return GL_MIN;
+    case BF_BLEND_OP_MAX: return GL_MAX;
   }
 
   assert(0);
@@ -2365,20 +2346,20 @@ static void flushPipeline(bfGfxCommandListHandle self)
 
   bfFramebufferBlending& blend = state.blending[0];
 
-  const bool blend_enable = blend.color_blend_src != BIFROST_BLEND_FACTOR_NONE && blend.color_blend_dst != BIFROST_BLEND_FACTOR_NONE;
+  const bool blend_enable = blend.color_blend_src != BF_BLEND_FACTOR_NONE && blend.color_blend_dst != BF_BLEND_FACTOR_NONE;
 
   if (blend_enable)
   {
     glEnable(GL_BLEND);
 
     glBlendFuncSeparate(
-     bfGLConvertBlendFactor((BifrostBlendFactor)blend.color_blend_src),
-     bfGLConvertBlendFactor((BifrostBlendFactor)blend.color_blend_dst),
-     bfGLConvertBlendFactor((BifrostBlendFactor)blend.alpha_blend_src),
-     bfGLConvertBlendFactor((BifrostBlendFactor)blend.alpha_blend_dst));
+     bfGLConvertBlendFactor((bfBlendFactor)blend.color_blend_src),
+     bfGLConvertBlendFactor((bfBlendFactor)blend.color_blend_dst),
+     bfGLConvertBlendFactor((bfBlendFactor)blend.alpha_blend_src),
+     bfGLConvertBlendFactor((bfBlendFactor)blend.alpha_blend_dst));
     glBlendEquationSeparate(
-     bfGLConvertBlendOp((BifrostBlendOp)blend.color_blend_op),
-     bfGLConvertBlendOp((BifrostBlendOp)blend.alpha_blend_op));
+     bfGLConvertBlendOp((bfBlendOp)blend.color_blend_op),
+     bfGLConvertBlendOp((bfBlendOp)blend.alpha_blend_op));
   }
   else
   {
@@ -2391,7 +2372,7 @@ void bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint3
   flushPipeline(self);
 
   glDrawArrays(
-   bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode),
+   bfConvertDrawMode((bfDrawMode)self->pipeline_state.state.draw_mode),
    first_vertex,
    num_vertices);
 }
@@ -2405,7 +2386,7 @@ void bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vert
 #if USE_OPENGL_ES_STANDARD
   assert(!"Not implemented on webgl");
 #else
-  glDrawArraysInstanced(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode), first_vertex, num_vertices, num_instances);
+  glDrawArraysInstanced(bfConvertDrawMode((bfDrawMode)self->pipeline_state.state.draw_mode), first_vertex, num_vertices, num_instances);
 #endif
 }
 
@@ -2413,14 +2394,14 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
 {
   flushPipeline(self);
 
-  const uint32_t index_size = self->index_type == BIFROST_INDEX_TYPE_UINT16 ? sizeof(uint16_t) : sizeof(uint32_t);
-  bfBufferHandle tmp_buffers[BIFROST_GFX_BUFFERS_MAX_BINDING];
+  const uint32_t index_size = self->index_type == BF_INDEX_TYPE_UINT16 ? sizeof(uint16_t) : sizeof(uint32_t);
+  bfBufferHandle tmp_buffers[k_bfGfxMaxBufferBindings];
 
   if (vertex_offset != 0)
   {
     const auto vertex_state = self->pipeline_state.vertex_set_layout;
 
-    bfBufferCreateParams create_params = {{0, 0}, BIFROST_BUF_VERTEX_BUFFER};
+    bfBufferCreateParams create_params = {{0, 0}, BF_BUFFER_USAGE_VERTEX_BUFFER};
 
     for (uint32_t i = 0; i < vertex_state->num_vertex_buffers; ++i)
     {
@@ -2445,9 +2426,9 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
 
   // glDrawElementsBaseVertex
 
-  glDrawElements(bfConvertDrawMode((BifrostDrawMode)self->pipeline_state.state.draw_mode),
+  glDrawElements(bfConvertDrawMode((bfDrawMode)self->pipeline_state.state.draw_mode),
                  num_indices,
-                 self->index_type == BIFROST_INDEX_TYPE_UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
+                 self->index_type == BF_INDEX_TYPE_UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
                  (const void*)(uintptr_t(index_offset * index_size) + self->index_offset));
 
   if (vertex_offset != 0)
@@ -2515,24 +2496,24 @@ static void deallocate(T* ptr)
 
 static GLenum bfGLBufferUsageTarget(const bfBufferUsageBits usage)
 {
-  if (usage & BIFROST_BUF_VERTEX_BUFFER)
+  if (usage & BF_BUFFER_USAGE_VERTEX_BUFFER)
   {
     return GL_ARRAY_BUFFER;
   }
 
-  if (usage & BIFROST_BUF_UNIFORM_BUFFER)
+  if (usage & BF_BUFFER_USAGE_UNIFORM_BUFFER)
   {
     return GL_UNIFORM_BUFFER;
   }
 
 #if !USE_OPENGL_ES_STANDARD
-  if (usage & BIFROST_BUF_INDIRECT_BUFFER)
+  if (usage & BF_BUFFER_USAGE_INDIRECT_BUFFER)
   {
     return GL_DRAW_INDIRECT_BUFFER;
   }
 #endif
 
-  if (usage & BIFROST_BUF_INDEX_BUFFER)
+  if (usage & BF_BUFFER_USAGE_INDEX_BUFFER)
   {
     return GL_ELEMENT_ARRAY_BUFFER;
   }
@@ -2541,11 +2522,11 @@ static GLenum bfGLBufferUsageTarget(const bfBufferUsageBits usage)
   return 0;
 
   /*
-    BIFROST_BUF_TRANSFER_SRC         = (1 << 0), 
-    BIFROST_BUF_TRANSFER_DST          = (1 << 1),
-    BIFROST_BUF_UNIFORM_TEXEL_BUFFER = (1 << 2),
-    BIFROST_BUF_STORAGE_TEXEL_BUFFER = (1 << 3),
-    BIFROST_BUF_STORAGE_BUFFER       = (1 << 5),
+    BF_BUF_TRANSFER_SRC         = (1 << 0), 
+    BF_BUF_TRANSFER_DST          = (1 << 1),
+    BF_BUF_UNIFORM_TEXEL_BUFFER = (1 << 2),
+    BF_BUF_STORAGE_TEXEL_BUFFER = (1 << 3),
+    BF_BUF_STORAGE_BUFFER       = (1 << 5),
   */
 }
 
@@ -2554,7 +2535,7 @@ static GLenum bfGLBufferUsageTarget(const bfBufferUsageBits usage)
 // mode(2) - write
 static GLenum bfGLBufferUsageHint(const bfBufferPropertyBits properties, int mode)
 {
-  const bool is_static = properties & BIFROST_BPF_DEVICE_LOCAL;
+  const bool is_static = properties & BF_BUFFER_PROP_DEVICE_LOCAL;
 
   switch (mode & 0x3)
   {
@@ -2596,19 +2577,19 @@ static GLenum bfGLBufferUsageHint(const bfBufferPropertyBits properties, int mod
   }
 }
 
-static GLenum bfGLConvertShaderType(BifrostShaderType type)
+static GLenum bfGLConvertShaderType(bfShaderType type)
 {
   switch (type)
   {
-    case BIFROST_SHADER_TYPE_VERTEX: return GL_VERTEX_SHADER;
+    case BF_SHADER_TYPE_VERTEX: return GL_VERTEX_SHADER;
 #if !USE_OPENGL_ES_STANDARD
-    case BIFROST_SHADER_TYPE_TESSELLATION_CONTROL: return GL_TESS_CONTROL_SHADER;
-    case BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION: return GL_TESS_EVALUATION_SHADER;
-    case BIFROST_SHADER_TYPE_GEOMETRY: return GL_GEOMETRY_SHADER;
+    case BF_SHADER_TYPE_TESSELLATION_CONTROL: return GL_TESS_CONTROL_SHADER;
+    case BF_SHADER_TYPE_TESSELLATION_EVALUATION: return GL_TESS_EVALUATION_SHADER;
+    case BF_SHADER_TYPE_GEOMETRY: return GL_GEOMETRY_SHADER;
 #endif
-    case BIFROST_SHADER_TYPE_FRAGMENT: return GL_FRAGMENT_SHADER;
+    case BF_SHADER_TYPE_FRAGMENT: return GL_FRAGMENT_SHADER;
 #if !USE_OPENGL_ES_STANDARD
-    case BIFROST_SHADER_TYPE_COMPUTE: return GL_COMPUTE_SHADER;
+    case BF_SHADER_TYPE_COMPUTE: return GL_COMPUTE_SHADER;
 #endif
     default:
       assert(!"Invalid shader type.");
@@ -2616,45 +2597,45 @@ static GLenum bfGLConvertShaderType(BifrostShaderType type)
   }
 }
 
-static int bfGLVertexFormatNumComponents(const BifrostVertexFormatAttribute format)
+static int bfGLVertexFormatNumComponents(const bfGfxVertexFormatAttribute format)
 {
   switch (format)
   {
-    case BIFROST_VFA_UINT32_4:
-    case BIFROST_VFA_SINT32_4:
-    case BIFROST_VFA_USHORT16_4:
-    case BIFROST_VFA_UCHAR8_4:
-    case BIFROST_VFA_UCHAR8_4_UNORM:
-    case BIFROST_VFA_FLOAT32_4:
-    case BIFROST_VFA_SSHORT16_4:
-    case BIFROST_VFA_SCHAR8_4:
+    case BF_VFA_UINT32_4:
+    case BF_VFA_SINT32_4:
+    case BF_VFA_USHORT16_4:
+    case BF_VFA_UCHAR8_4:
+    case BF_VFA_UCHAR8_4_UNORM:
+    case BF_VFA_FLOAT32_4:
+    case BF_VFA_SSHORT16_4:
+    case BF_VFA_SCHAR8_4:
       return 4;
 
-    case BIFROST_VFA_FLOAT32_3:
-    case BIFROST_VFA_SCHAR8_3:
-    case BIFROST_VFA_UINT32_3:
-    case BIFROST_VFA_SINT32_3:
-    case BIFROST_VFA_SSHORT16_3:
-    case BIFROST_VFA_USHORT16_3:
-    case BIFROST_VFA_UCHAR8_3:
+    case BF_VFA_FLOAT32_3:
+    case BF_VFA_SCHAR8_3:
+    case BF_VFA_UINT32_3:
+    case BF_VFA_SINT32_3:
+    case BF_VFA_SSHORT16_3:
+    case BF_VFA_USHORT16_3:
+    case BF_VFA_UCHAR8_3:
       return 3;
 
-    case BIFROST_VFA_SINT32_2:
-    case BIFROST_VFA_FLOAT32_2:
-    case BIFROST_VFA_UINT32_2:
-    case BIFROST_VFA_USHORT16_2:
-    case BIFROST_VFA_SSHORT16_2:
-    case BIFROST_VFA_UCHAR8_2:
-    case BIFROST_VFA_SCHAR8_2:
+    case BF_VFA_SINT32_2:
+    case BF_VFA_FLOAT32_2:
+    case BF_VFA_UINT32_2:
+    case BF_VFA_USHORT16_2:
+    case BF_VFA_SSHORT16_2:
+    case BF_VFA_UCHAR8_2:
+    case BF_VFA_SCHAR8_2:
       return 2;
 
-    case BIFROST_VFA_SCHAR8_1:
-    case BIFROST_VFA_SSHORT16_1:
-    case BIFROST_VFA_UINT32_1:
-    case BIFROST_VFA_FLOAT32_1:
-    case BIFROST_VFA_SINT32_1:
-    case BIFROST_VFA_USHORT16_1:
-    case BIFROST_VFA_UCHAR8_1:
+    case BF_VFA_SCHAR8_1:
+    case BF_VFA_SSHORT16_1:
+    case BF_VFA_UINT32_1:
+    case BF_VFA_FLOAT32_1:
+    case BF_VFA_SINT32_1:
+    case BF_VFA_USHORT16_1:
+    case BF_VFA_UCHAR8_1:
       return 1;
 
     default:
@@ -2663,53 +2644,53 @@ static int bfGLVertexFormatNumComponents(const BifrostVertexFormatAttribute form
   }
 }
 
-static GLenum bfGLVertexFormatType(const BifrostVertexFormatAttribute format)
+static GLenum bfGLVertexFormatType(const bfGfxVertexFormatAttribute format)
 {
   switch (format)
   {
-    case BIFROST_VFA_FLOAT32_4:
-    case BIFROST_VFA_FLOAT32_3:
-    case BIFROST_VFA_FLOAT32_2:
-    case BIFROST_VFA_FLOAT32_1:
+    case BF_VFA_FLOAT32_4:
+    case BF_VFA_FLOAT32_3:
+    case BF_VFA_FLOAT32_2:
+    case BF_VFA_FLOAT32_1:
       return GL_FLOAT;
 
-    case BIFROST_VFA_UINT32_4:
-    case BIFROST_VFA_UINT32_3:
-    case BIFROST_VFA_UINT32_2:
-    case BIFROST_VFA_UINT32_1:
+    case BF_VFA_UINT32_4:
+    case BF_VFA_UINT32_3:
+    case BF_VFA_UINT32_2:
+    case BF_VFA_UINT32_1:
       return GL_UNSIGNED_INT;
 
-    case BIFROST_VFA_SINT32_4:
-    case BIFROST_VFA_SINT32_3:
-    case BIFROST_VFA_SINT32_2:
-    case BIFROST_VFA_SINT32_1:
+    case BF_VFA_SINT32_4:
+    case BF_VFA_SINT32_3:
+    case BF_VFA_SINT32_2:
+    case BF_VFA_SINT32_1:
       return GL_INT;
 
-    case BIFROST_VFA_USHORT16_4:
-    case BIFROST_VFA_USHORT16_3:
-    case BIFROST_VFA_USHORT16_2:
-    case BIFROST_VFA_USHORT16_1:
+    case BF_VFA_USHORT16_4:
+    case BF_VFA_USHORT16_3:
+    case BF_VFA_USHORT16_2:
+    case BF_VFA_USHORT16_1:
       return GL_UNSIGNED_SHORT;
 
-    case BIFROST_VFA_SSHORT16_4:
-    case BIFROST_VFA_SSHORT16_3:
-    case BIFROST_VFA_SSHORT16_2:
-    case BIFROST_VFA_SSHORT16_1:
+    case BF_VFA_SSHORT16_4:
+    case BF_VFA_SSHORT16_3:
+    case BF_VFA_SSHORT16_2:
+    case BF_VFA_SSHORT16_1:
       return GL_SHORT;
 
-    case BIFROST_VFA_UCHAR8_4:
-    case BIFROST_VFA_UCHAR8_3:
-    case BIFROST_VFA_UCHAR8_2:
-    case BIFROST_VFA_UCHAR8_1:
+    case BF_VFA_UCHAR8_4:
+    case BF_VFA_UCHAR8_3:
+    case BF_VFA_UCHAR8_2:
+    case BF_VFA_UCHAR8_1:
       return GL_UNSIGNED_BYTE;
 
-    case BIFROST_VFA_SCHAR8_4:
-    case BIFROST_VFA_SCHAR8_3:
-    case BIFROST_VFA_SCHAR8_2:
-    case BIFROST_VFA_SCHAR8_1:
+    case BF_VFA_SCHAR8_4:
+    case BF_VFA_SCHAR8_3:
+    case BF_VFA_SCHAR8_2:
+    case BF_VFA_SCHAR8_1:
       return GL_BYTE;
 
-    case BIFROST_VFA_UCHAR8_4_UNORM:
+    case BF_VFA_UCHAR8_4_UNORM:
       return GL_UNSIGNED_BYTE;
 
     default:
@@ -2718,17 +2699,17 @@ static GLenum bfGLVertexFormatType(const BifrostVertexFormatAttribute format)
   }
 }
 
-static GLint bfGLConvertSamplerAddressMode(BifrostSamplerAddressMode sampler_mode)
+static GLint bfGLConvertSamplerAddressMode(bfTexSamplerAddressMode sampler_mode)
 {
   switch (sampler_mode)
   {
-    case BIFROST_SAM_REPEAT: return GL_REPEAT;
-    case BIFROST_SAM_MIRRORED_REPEAT: return GL_MIRRORED_REPEAT;
-    case BIFROST_SAM_CLAMP_TO_EDGE: return GL_CLAMP_TO_EDGE;
+    case BF_SAM_REPEAT: return GL_REPEAT;
+    case BF_SAM_MIRRORED_REPEAT: return GL_MIRRORED_REPEAT;
+    case BF_SAM_CLAMP_TO_EDGE: return GL_CLAMP_TO_EDGE;
 
 #if !USE_OPENGL_ES_STANDARD
-    case BIFROST_SAM_CLAMP_TO_BORDER: return GL_CLAMP_TO_BORDER;
-    case BIFROST_SAM_MIRROR_CLAMP_TO_EDGE: return GL_MIRROR_CLAMP_TO_EDGE;
+    case BF_SAM_CLAMP_TO_BORDER: return GL_CLAMP_TO_BORDER;
+    case BF_SAM_MIRROR_CLAMP_TO_EDGE: return GL_MIRROR_CLAMP_TO_EDGE;
 #endif
 
     default:
@@ -2737,12 +2718,12 @@ static GLint bfGLConvertSamplerAddressMode(BifrostSamplerAddressMode sampler_mod
   }
 }
 
-static GLint bfConvertSamplerFilterMode(BifrostSamplerFilterMode filter_mode)
+static GLint bfConvertSamplerFilterMode(bfTexSamplerFilterMode filter_mode)
 {
   switch (filter_mode)
   {
-    case BIFROST_SFM_NEAREST: return GL_NEAREST;
-    case BIFROST_SFM_LINEAR: return GL_LINEAR;
+    case BF_SFM_NEAREST: return GL_NEAREST;
+    case BF_SFM_LINEAR: return GL_LINEAR;
     default:
       assert(false);
       return -1;
@@ -2751,54 +2732,54 @@ static GLint bfConvertSamplerFilterMode(BifrostSamplerFilterMode filter_mode)
 
 static bool bfTextureIsDepthStencil(bfTextureHandle texture)
 {
-  return texture->flags & (BIFROST_TEX_IS_DEPTH_ATTACHMENT | BIFROST_TEX_IS_STENCIL_ATTACHMENT);
+  return texture->flags & (BF_TEX_IS_DEPTH_ATTACHMENT | BF_TEX_IS_STENCIL_ATTACHMENT);
 }
 
 static bool bfTextureCanBeInput(bfTextureHandle texture)
 {
-  return texture->flags & (BIFROST_TEX_IS_SAMPLED | BIFROST_TEX_IS_INPUT_ATTACHMENT);
+  return texture->flags & (BF_TEX_IS_SAMPLED | BF_TEX_IS_INPUT_ATTACHMENT);
 }
 
-static GLenum bfConvertDrawMode(BifrostDrawMode draw_mode)
+static GLenum bfConvertDrawMode(bfDrawMode draw_mode)
 {
   switch (draw_mode)
   {
-    case BIFROST_DRAW_MODE_POINT_LIST: return GL_POINTS;
-    case BIFROST_DRAW_MODE_LINE_LIST: return GL_LINES;
-    case BIFROST_DRAW_MODE_LINE_STRIP: return GL_LINE_STRIP;
-    case BIFROST_DRAW_MODE_TRIANGLE_LIST: return GL_TRIANGLES;
-    case BIFROST_DRAW_MODE_TRIANGLE_STRIP: return GL_TRIANGLE_STRIP;
-    case BIFROST_DRAW_MODE_TRIANGLE_FAN: return GL_TRIANGLE_FAN;
+    case BF_DRAW_MODE_POINT_LIST: return GL_POINTS;
+    case BF_DRAW_MODE_LINE_LIST: return GL_LINES;
+    case BF_DRAW_MODE_LINE_STRIP: return GL_LINE_STRIP;
+    case BF_DRAW_MODE_TRIANGLE_LIST: return GL_TRIANGLES;
+    case BF_DRAW_MODE_TRIANGLE_STRIP: return GL_TRIANGLE_STRIP;
+    case BF_DRAW_MODE_TRIANGLE_FAN: return GL_TRIANGLE_FAN;
     default:
       assert(false);
       return -1;
   }
 }
 
-static GLenum bfConvertFrontFace(BifrostFrontFace face)
+static GLenum bfConvertFrontFace(bfFrontFace face)
 {
   switch (face)
   {
-    case BIFROST_FRONT_FACE_CCW: return GL_CCW;
-    case BIFROST_FRONT_FACE_CW: return GL_CW;
+    case BF_FRONT_FACE_CCW: return GL_CCW;
+    case BF_FRONT_FACE_CW: return GL_CW;
     default:
       assert(false);
       return -1;
   }
 }
 
-static GLenum bfGLConvertCmpOp(BifrostCompareOp op)
+static GLenum bfGLConvertCmpOp(bfCompareOp op)
 {
   switch (op)
   {
-    case BIFROST_COMPARE_OP_NEVER: return GL_NEVER;
-    case BIFROST_COMPARE_OP_LESS_THAN: return GL_LESS;
-    case BIFROST_COMPARE_OP_EQUAL: return GL_EQUAL;
-    case BIFROST_COMPARE_OP_LESS_OR_EQUAL: return GL_LEQUAL;
-    case BIFROST_COMPARE_OP_GREATER: return GL_GREATER;
-    case BIFROST_COMPARE_OP_NOT_EQUAL: return GL_NOTEQUAL;
-    case BIFROST_COMPARE_OP_GREATER_OR_EQUAL: return GL_GEQUAL;
-    case BIFROST_COMPARE_OP_ALWAYS: return GL_ALWAYS;
+    case BF_COMPARE_OP_NEVER: return GL_NEVER;
+    case BF_COMPARE_OP_LESS_THAN: return GL_LESS;
+    case BF_COMPARE_OP_EQUAL: return GL_EQUAL;
+    case BF_COMPARE_OP_LESS_OR_EQUAL: return GL_LEQUAL;
+    case BF_COMPARE_OP_GREATER: return GL_GREATER;
+    case BF_COMPARE_OP_NOT_EQUAL: return GL_NOTEQUAL;
+    case BF_COMPARE_OP_GREATER_OR_EQUAL: return GL_GEQUAL;
+    case BF_COMPARE_OP_ALWAYS: return GL_ALWAYS;
     default:
       assert(false);
       return -1;

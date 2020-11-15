@@ -11,7 +11,18 @@
       "buildCommandArgs": "-v",
       "addressSanitizerEnabled": true,
       "ctestCommandArgs": "",
-      "variables": []
+      "variables": [
+        {
+          "name": "BF_OPT_GRAPHICS_OPENGL",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BF_OPT_GRAPHICS_VULKAN",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
     },
     {
       "name": "x64 GLFW-Vk (Release)",

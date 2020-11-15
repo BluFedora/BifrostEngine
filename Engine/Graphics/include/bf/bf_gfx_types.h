@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bf_gfx_types.h
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Defines basic enumerations used throughout the API.
+ * 
+ * @version 0.0.1
+ * @date    2020-03-22
+ *
+ * @copyright Copyright (c) 2020
+ */
+/******************************************************************************/
 #ifndef BF_GFX_TYPES_H
 #define BF_GFX_TYPES_H
 

@@ -69,7 +69,7 @@ VkShaderStageFlagBits bfVkConvertShaderType(bfShaderType type)
   return VK_SHADER_STAGE_ALL;
 }
 
-VkShaderStageFlagBits bfVkConvertShaderStage(BifrostShaderStageBits flags)
+VkShaderStageFlagBits bfVkConvertShaderStage(bfShaderStageBits flags)
 {
   VkShaderStageFlagBits result = 0x0;
 
@@ -148,7 +148,7 @@ VkRect2D bfVkConvertScissorRect(const bfScissorRect* viewport)
   return ret;
 }
 
-VkPolygonMode bfVkConvertPolygonMode(BifrostPolygonFillMode polygon_mode)
+VkPolygonMode bfVkConvertPolygonMode(bfPolygonFillMode polygon_mode)
 {
   switch (polygon_mode)
   {

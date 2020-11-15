@@ -3,6 +3,8 @@
  * @file   bf_gfx_pipeline_state.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
+ *   Handles a packed representation of the GPU pipeline.
+ * 
  * @version 0.0.1
  * @date    2020-03-22
  *
@@ -159,7 +161,7 @@ typedef enum
   BF_POLYGON_MODE_LINE  = 1,
   BF_POLYGON_MODE_POINT = 2,
 
-} BifrostPolygonFillMode;  // Requires 2 bits
+} bfPolygonFillMode;  // Requires 2 bits
 
 typedef enum
 {

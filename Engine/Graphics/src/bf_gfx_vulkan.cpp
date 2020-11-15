@@ -1870,7 +1870,7 @@ void bfShaderProgram_addAttribute(bfShaderProgramHandle self, const char* name, 
   /* NO-OP */
 }
 
-void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages)
+void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, bfShaderStageBits stages)
 {
   (void)name;  // NOTE(Shareef): Vulkan isn't lame like OpenGL thus doesn't use strings for names
 
@@ -1889,7 +1889,7 @@ void bfShaderProgram_addUniformBuffer(bfShaderProgramHandle self, const char* na
   ++desc_set->num_uniforms;
 }
 
-void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, BifrostShaderStageBits stages)
+void bfShaderProgram_addImageSampler(bfShaderProgramHandle self, const char* name, uint32_t set, uint32_t binding, uint32_t how_many, bfShaderStageBits stages)
 {
   (void)name;  // NOTE(Shareef): Vulkan isn't lame like OpenGL thus doesn't use strings for names
 
