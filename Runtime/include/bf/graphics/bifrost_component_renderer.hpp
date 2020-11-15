@@ -34,7 +34,7 @@ namespace bf
   static constexpr std::size_t k_MaxIndicesInSpriteBatch  = (k_MaxVerticesInSpriteBatch / k_NumVerticesPerSprite) * k_NumIndicesPerSprite;
 
   using SpriteIndexType                               = std::uint16_t;
-  static constexpr BifrostIndexType k_SpriteIndexType = sizeof(SpriteIndexType) == 2 ? BIFROST_INDEX_TYPE_UINT16 : BIFROST_INDEX_TYPE_UINT32;
+  static constexpr bfGfxIndexType k_SpriteIndexType = sizeof(SpriteIndexType) == 2 ? BF_INDEX_TYPE_UINT16 : BF_INDEX_TYPE_UINT32;
 
   static_assert(k_MaxVerticesInSpriteBatch % k_NumVerticesPerSprite == 0, "The number of vertices in a batch is most optimal as a multiple of 4.");
   static_assert(k_MaxVerticesInSpriteBatch < std::numeric_limits<SpriteIndexType>::max(), "The index type needs top be upgraded if we cannot refer to all vertices in a single GfxLinkedBuffer::Link.");
@@ -42,8 +42,8 @@ namespace bf
 
   class ComponentRenderer final : public IECSSystem
   {
-    using VertexBuffer = GfxLinkedBuffer<StandardVertex, k_MaxVerticesInSpriteBatch, BIFROST_BUF_VERTEX_BUFFER>;
-    using IndexBuffer  = GfxLinkedBuffer<SpriteIndexType, k_MaxVerticesInSpriteBatch, BIFROST_BUF_INDEX_BUFFER>;
+    using VertexBuffer = GfxLinkedBuffer<StandardVertex, k_MaxVerticesInSpriteBatch, BF_BUFFER_USAGE_VERTEX_BUFFER>;
+    using IndexBuffer  = GfxLinkedBuffer<SpriteIndexType, k_MaxVerticesInSpriteBatch, BF_BUFFER_USAGE_INDEX_BUFFER>;
 
    private:
     bfShaderModuleHandle  m_ShaderModules[2]   = {};       //!< [Sprite-Vertex, Sprite-Fragment]

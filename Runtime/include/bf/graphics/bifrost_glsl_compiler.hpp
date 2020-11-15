@@ -35,8 +35,8 @@ namespace bf
     ~GLSLCompiler();
 
     const String&        load(const String& filename);
-    Array<std::uint32_t> toSPIRV(const String& source, BifrostShaderType type) const;
-    bfShaderModuleHandle createModule(bfGfxDeviceHandle device, const String& filename, BifrostShaderType type);
+    Array<std::uint32_t> toSPIRV(const String& source, bfShaderType type) const;
+    bfShaderModuleHandle createModule(bfGfxDeviceHandle device, const String& filename, bfShaderType type);
     bfShaderModuleHandle createModule(bfGfxDeviceHandle device, const String& filename);
   };
 }  // namespace bf

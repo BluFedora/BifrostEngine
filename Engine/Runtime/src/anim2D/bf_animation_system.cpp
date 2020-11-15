@@ -8,7 +8,7 @@
 
 namespace bf
 {
-  static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
+  static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
 
   static void onSSChange(bfAnimation2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event)
   {
@@ -25,9 +25,9 @@ namespace bf
       if (texture_info && texture_info->refCount())
       {
         const bfTextureCreateParams create_params = bfTextureCreateParams_init2D(
-         BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM,
-         BIFROST_TEXTURE_UNKNOWN_SIZE,
-         BIFROST_TEXTURE_UNKNOWN_SIZE);
+         BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
+         k_bfTextureUnknownSize,
+         k_bfTextureUnknownSize);
 
         Texture& texture = *texture_info->payloadT();
 

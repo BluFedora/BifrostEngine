@@ -9,13 +9,13 @@
 extern "C" {
 #endif
 
-BIFROST_DEFINE_HANDLE(Texture)
+BF_DEFINE_GFX_HANDLE(Texture)
 {
-  BifrostGfxObjectBase   super;
+  bfBaseGfxObject   super;
   bfGfxDeviceHandle      parent;
-  BifrostTexFeatureFlags flags;
+  bfTexFeatureFlags flags;
   // CPU Side Data
-  BifrostTextureType image_type;
+  bfTextureType image_type;
   int32_t            image_width;
   int32_t            image_height;
   int32_t            image_depth;
@@ -25,16 +25,16 @@ BIFROST_DEFINE_HANDLE(Texture)
   VkDeviceMemory     tex_memory;
   VkImageView        tex_view;
   VkSampler          tex_sampler;
-  BifrostImageLayout tex_layout;
+  bfGfxImageLayout tex_layout;
   VkFormat           tex_format;
-  BifrostSampleFlags tex_samples;
+  bfGfxSampleFlags tex_samples;
 };
 
 typedef struct VulkanQueueArray_t
 {
   VkQueueFamilyProperties* queues;
   uint32_t                 size;
-  uint32_t                 family_index[BIFROST_GFX_QUEUE_MAX];
+  uint32_t                 family_index[BF_GFX_QUEUE_MAX];
 
 } VulkanQueueArray;
 

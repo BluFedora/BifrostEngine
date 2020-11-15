@@ -32,18 +32,18 @@ namespace bf
     m_DbgVertexLayout  = bfVertexLayout_new();
 
     bfVertexLayout_addVertexBinding(m_DbgVertexLayout, 0, sizeof(VertexDebugLine));
-    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(VertexDebugLine, curr_pos));
-    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(VertexDebugLine, next_pos));
-    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(VertexDebugLine, prev_pos));
-    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(VertexDebugLine, color));
-    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_1, offsetof(VertexDebugLine, direction));
-    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BIFROST_VFA_FLOAT32_1, offsetof(VertexDebugLine, thickness));
+    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(VertexDebugLine, curr_pos));
+    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(VertexDebugLine, next_pos));
+    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(VertexDebugLine, prev_pos));
+    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BF_VFA_UCHAR8_4_UNORM, offsetof(VertexDebugLine, color));
+    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BF_VFA_FLOAT32_1, offsetof(VertexDebugLine, direction));
+    bfVertexLayout_addVertexLayout(m_DbgVertexLayout, 0, BF_VFA_FLOAT32_1, offsetof(VertexDebugLine, thickness));
 
     bfShaderProgram_link(m_Shaders[0]);
     bfShaderProgram_link(m_Shaders[1]);
 
-    bfShaderProgram_addUniformBuffer(m_Shaders[0], "u_Set0", k_GfxCameraSetIndex, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
-    bfShaderProgram_addUniformBuffer(m_Shaders[1], "u_Set0", k_GfxCameraSetIndex, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addUniformBuffer(m_Shaders[0], "u_Set0", k_GfxCameraSetIndex, 0, 1, BF_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addUniformBuffer(m_Shaders[1], "u_Set0", k_GfxCameraSetIndex, 0, 1, BF_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(m_Shaders[0]);
     bfShaderProgram_compile(m_Shaders[1]);
@@ -119,7 +119,7 @@ namespace bf
        command.data);
     }
 
-    bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_NONE);
+    bfGfxCmdList_setCullFace(command_list, BF_CULL_FACE_NONE);
     bfGfxCmdList_bindProgram(command_list, m_Shaders[overlay ? 1 : 0]);
     bfGfxCmdList_bindVertexDesc(command_list, m_DbgVertexLayout);
 
@@ -140,7 +140,7 @@ namespace bf
         bfGfxCmdList_draw(command_list, 0, num_vertices);
       }
     }
-    bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_BACK);
+    bfGfxCmdList_setCullFace(command_list, BF_CULL_FACE_BACK);
   }
 
   void DebugRenderer::deinit()
@@ -185,7 +185,7 @@ namespace bf
       result = memory().allocateT<BufferLink>();
       result->gpu_buffer.create(
        m_Gfx->device(),
-       BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER,
+       BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER,
        frame_info,
        sizeof(Vector3f));
     }

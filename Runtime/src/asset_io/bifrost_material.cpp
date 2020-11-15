@@ -77,8 +77,8 @@ namespace bf
 
       if (m_NumDescriptorSets)
       {
-        bfShaderProgram_addImageSampler(m_Handle, "u_DiffuseTexture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
-        bfShaderProgram_addUniformBuffer(m_Handle, "u_ModelTransform", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
+        bfShaderProgram_addImageSampler(m_Handle, "u_DiffuseTexture", 0, 0, 1, BF_SHADER_STAGE_FRAGMENT);
+        bfShaderProgram_addUniformBuffer(m_Handle, "u_ModelTransform", 0, 1, 1, BF_SHADER_STAGE_VERTEX);
       }
     }
   }
@@ -192,7 +192,7 @@ namespace bf
     bfBufferHandle buffer_handles[2] = {m_Handle, m_VertexBoneData};
 
     bfGfxCmdList_bindVertexBuffers(cmd_list, 0, buffer_handles, uint32_t(bfCArraySize(buffer_offsets)), buffer_offsets);
-    bfGfxCmdList_bindIndexBuffer(cmd_list, m_IndexBuffer, 0u, BIFROST_INDEX_TYPE_UINT32);
+    bfGfxCmdList_bindIndexBuffer(cmd_list, m_IndexBuffer, 0u, BF_INDEX_TYPE_UINT32);
 
     for (const Mesh& mesh : m_Meshes)
     {
@@ -398,48 +398,48 @@ namespace bf
       // TODO(SR): Staging buffer should be used here.
 
       bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE;
+      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE;
 
       ////////
 
       buffer_params.allocation.size = sizeof(StandardVertex) * num_vertices;
-      buffer_params.usage           = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
       model.m_Handle = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);
 
-      void* const vertex_buffer_ptr = bfBuffer_map(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      void* const vertex_buffer_ptr = bfBuffer_map(model.m_Handle, 0, k_bfBufferWholeSize);
 
       std::memcpy(vertex_buffer_ptr, vertices.data(), buffer_params.allocation.size);
 
-      bfBuffer_flushRange(model.m_Handle, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      bfBuffer_flushRange(model.m_Handle, 0, k_bfBufferWholeSize);
       bfBuffer_unMap(model.m_Handle);
 
       ///////
 
       buffer_params.allocation.size = sizeof(std::uint32_t) * model_result.indices->length;
-      buffer_params.usage           = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
       model.m_IndexBuffer = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);
 
-      void* const index_buffer_ptr = bfBuffer_map(model.m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      void* const index_buffer_ptr = bfBuffer_map(model.m_IndexBuffer, 0, k_bfBufferWholeSize);
 
       std::memcpy(index_buffer_ptr, model_result.indices->data, buffer_params.allocation.size);
 
-      bfBuffer_flushRange(model.m_IndexBuffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      bfBuffer_flushRange(model.m_IndexBuffer, 0, k_bfBufferWholeSize);
       bfBuffer_unMap(model.m_IndexBuffer);
 
       ///////
 
       buffer_params.allocation.size = sizeof(VertexBoneData) * num_vertices;
-      buffer_params.usage           = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
       model.m_VertexBoneData = bfGfxDevice_newBuffer(model.m_GraphicsDevice, &buffer_params);
 
-      void* const bone_buffer_ptr = bfBuffer_map(model.m_VertexBoneData, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      void* const bone_buffer_ptr = bfBuffer_map(model.m_VertexBoneData, 0, k_bfBufferWholeSize);
 
       std::memcpy(bone_buffer_ptr, bone_vertices.data(), buffer_params.allocation.size);
 
-      bfBuffer_flushRange(model.m_VertexBoneData, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      bfBuffer_flushRange(model.m_VertexBoneData, 0, k_bfBufferWholeSize);
       bfBuffer_unMap(model.m_VertexBoneData);
 
       return true;

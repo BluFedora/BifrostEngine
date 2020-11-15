@@ -9,14 +9,14 @@
 
 extern VkImageAspectFlags bfTexture__aspect(bfTextureHandle self);
 
-static void AddCachedResource(bfGfxDeviceHandle device, BifrostGfxObjectBase* obj, std::uint64_t hash_code)
+static void AddCachedResource(bfGfxDeviceHandle device, bfBaseGfxObject* obj, std::uint64_t hash_code)
 {
   obj->hash_code           = hash_code;
   obj->next                = device->cached_resources;
   device->cached_resources = obj;
 }
 
-void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj);
+void UpdateResourceFrame(bfGfxContextHandle ctx, bfBaseGfxObject* obj);
 
 bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self)
 {
@@ -40,14 +40,14 @@ bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self)
   return error == VK_SUCCESS;
 }
 
-void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineStageBits src_stage, BifrostPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel)
+void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel)
 {
   std::uint32_t         num_memory_barriers = 0;
-  VkMemoryBarrier       memory_barriers[BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES];
+  VkMemoryBarrier       memory_barriers[k_bfGfxMaxPipelineBarrierWrites];
   std::uint32_t         num_buffer_barriers = 0;
-  VkBufferMemoryBarrier buffer_barriers[BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES];
+  VkBufferMemoryBarrier buffer_barriers[k_bfGfxMaxPipelineBarrierWrites];
   std::uint32_t         num_image_barriers = 0;
-  VkImageMemoryBarrier  image_barriers[BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES];
+  VkImageMemoryBarrier  image_barriers[k_bfGfxMaxPipelineBarrierWrites];
 
   const std::uint32_t* queue_list = self->parent->parent->queue_list.family_index;
 
@@ -57,9 +57,9 @@ void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineS
 
     switch (pl_barrier->type)
     {
-      case BIFROST_PIPELINE_BARRIER_MEMORY:
+      case BF_PIPELINE_BARRIER_MEMORY:
       {
-        assert(num_memory_barriers < BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES);
+        assert(num_memory_barriers < k_bfGfxMaxPipelineBarrierWrites);
 
         VkMemoryBarrier* const barrier = memory_barriers + num_memory_barriers;
         barrier->sType                 = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
@@ -70,9 +70,9 @@ void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineS
         ++num_memory_barriers;
         break;
       }
-      case BIFROST_PIPELINE_BARRIER_BUFFER:
+      case BF_PIPELINE_BARRIER_BUFFER:
       {
-        assert(num_buffer_barriers < BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES);
+        assert(num_buffer_barriers < k_bfGfxMaxPipelineBarrierWrites);
 
         VkBufferMemoryBarrier* const barrier = buffer_barriers + num_buffer_barriers;
         barrier->sType                       = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -88,9 +88,9 @@ void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, BifrostPipelineS
         ++num_buffer_barriers;
         break;
       }
-      case BIFROST_PIPELINE_BARRIER_IMAGE:
+      case BF_PIPELINE_BARRIER_IMAGE:
       {
-        assert(num_image_barriers < BIFROST_GFX_PIPELINE_BARRIER_MAX_WRITES);
+        assert(num_image_barriers < k_bfGfxMaxPipelineBarrierWrites);
 
         VkImageMemoryBarrier* const barrier      = image_barriers + num_image_barriers;
         barrier->sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -152,13 +152,13 @@ void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderp
   bfGfxCmdList_setRenderpass(self, rp);
 }
 
-void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const BifrostClearValue* clear_values)
+void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue* clear_values)
 {
   const std::size_t num_clear_colors = self->pipeline_state.renderpass->info.num_attachments;
 
   for (std::size_t i = 0; i < num_clear_colors; ++i)
   {
-    const BifrostClearValue* const bf_color = clear_values + i;
+    const bfClearValue* const bf_color = clear_values + i;
     VkClearValue* const            color    = self->clear_colors + i;
 
     *color = bfVKConvertClearColor(bf_color);
@@ -182,11 +182,11 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
 
   if (!fb)
   {
-    VkImageView image_views[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+    VkImageView image_views[k_bfGfxMaxAttachments];
 
     fb = new bfFramebuffer();
 
-    BifrostGfxObjectBase_ctor(&fb->super, BIFROST_GFX_OBJECT_FRAMEBUFFER);
+    bfBaseGfxObject_ctor(&fb->super, BF_GFX_OBJECT_FRAMEBUFFER);
 
     for (uint32_t i = 0; i < num_attachments; ++i)
     {
@@ -259,17 +259,17 @@ void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self)
 
 #define state(self) self->pipeline_state.state
 
-void bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, BifrostDrawMode draw_mode)
+void bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, bfDrawMode draw_mode)
 {
   state(self).draw_mode = draw_mode;
 }
 
-void bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, BifrostFrontFace front_face)
+void bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, bfFrontFace front_face)
 {
   state(self).front_face = front_face;
 }
 
-void bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, BifrostCullFaceFlags cull_face)
+void bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, bfCullFaceFlags cull_face)
 {
   state(self).cull_face = cull_face;
 }
@@ -284,7 +284,7 @@ void bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value)
   state(self).depth_write = value;
 }
 
-void bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, BifrostCompareOp op)
+void bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, bfCompareOp op)
 {
   state(self).depth_test_op = op;
 }
@@ -324,7 +324,7 @@ void bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value)
   state(self).alpha_to_one = value;
 }
 
-void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, BifrostLogicOp op)
+void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op)
 {
   state(self).logic_op = op;
 }
@@ -341,39 +341,39 @@ void bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output
   self->pipeline_state.blending[output_attachment_idx].color_write_mask = color_mask;
 }
 
-void bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op)
+void bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op)
 {
   self->pipeline_state.blending[output_attachment_idx].color_blend_op = op;
 }
 
-void bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].color_blend_src = factor;
 }
 
-void bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].color_blend_dst = factor;
 }
 
-void bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendOp op)
+void bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op)
 {
   self->pipeline_state.blending[output_attachment_idx].alpha_blend_op = op;
 }
 
-void bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].alpha_blend_src = factor;
 }
 
-void bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, BifrostBlendFactor factor)
+void bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor)
 {
   self->pipeline_state.blending[output_attachment_idx].alpha_blend_dst = factor;
 }
 
-void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_fail_op = op;
   }
@@ -383,9 +383,9 @@ void bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, BifrostStencilFa
   }
 }
 
-void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_pass_op = op;
   }
@@ -395,9 +395,9 @@ void bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, BifrostStencilFa
   }
 }
 
-void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostStencilOp op)
+void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_depth_fail_op = op;
   }
@@ -406,9 +406,9 @@ void bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, BifrostSten
     self->pipeline_state.state.stencil_face_back_depth_fail_op = op;
   }
 }
-void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStencilFace face, BifrostCompareOp op)
+void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, bfStencilFace face, bfCompareOp op)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_compare_op = op;
   }
@@ -418,9 +418,9 @@ void bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, BifrostStenci
   }
 }
 
-void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t cmp_mask)
+void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t cmp_mask)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_compare_mask = cmp_mask;
   }
@@ -429,12 +429,12 @@ void bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, BifrostSten
     self->pipeline_state.state.stencil_face_back_compare_mask = cmp_mask;
   }
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK;
 }
 
-void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t write_mask)
+void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t write_mask)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_write_mask = write_mask;
   }
@@ -443,12 +443,12 @@ void bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, BifrostStenci
     self->pipeline_state.state.stencil_face_back_write_mask = write_mask;
   }
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK;
 }
 
-void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStencilFace face, uint8_t ref_mask)
+void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, bfStencilFace face, uint8_t ref_mask)
 {
-  if (face == BIFROST_STENCIL_FACE_FRONT)
+  if (face == BF_STENCIL_FACE_FRONT)
   {
     self->pipeline_state.state.stencil_face_front_reference = ref_mask;
   }
@@ -457,22 +457,22 @@ void bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, BifrostStenci
     self->pipeline_state.state.stencil_face_back_reference = ref_mask;
   }
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
 }
 
 void bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states)
 {
   auto& s = self->pipeline_state.state;
 
-  const bfBool32 set_dynamic_viewport           = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_VIEWPORT) != 0;
-  const bfBool32 set_dynamic_scissor            = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_SCISSOR) != 0;
-  const bfBool32 set_dynamic_line_width         = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH) != 0;
-  const bfBool32 set_dynamic_depth_bias         = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS) != 0;
-  const bfBool32 set_dynamic_blend_constants    = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS) != 0;
-  const bfBool32 set_dynamic_depth_bounds       = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS) != 0;
-  const bfBool32 set_dynamic_stencil_cmp_mask   = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK) != 0;
-  const bfBool32 set_dynamic_stencil_write_mask = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK) != 0;
-  const bfBool32 set_dynamic_stencil_reference  = (dynamic_states & BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE) != 0;
+  const bfBool32 set_dynamic_viewport           = (dynamic_states & BF_PIPELINE_DYNAMIC_VIEWPORT) != 0;
+  const bfBool32 set_dynamic_scissor            = (dynamic_states & BF_PIPELINE_DYNAMIC_SCISSOR) != 0;
+  const bfBool32 set_dynamic_line_width         = (dynamic_states & BF_PIPELINE_DYNAMIC_LINE_WIDTH) != 0;
+  const bfBool32 set_dynamic_depth_bias         = (dynamic_states & BF_PIPELINE_DYNAMIC_DEPTH_BIAS) != 0;
+  const bfBool32 set_dynamic_blend_constants    = (dynamic_states & BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS) != 0;
+  const bfBool32 set_dynamic_depth_bounds       = (dynamic_states & BF_PIPELINE_DYNAMIC_DEPTH_BOUNDS) != 0;
+  const bfBool32 set_dynamic_stencil_cmp_mask   = (dynamic_states & BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK) != 0;
+  const bfBool32 set_dynamic_stencil_write_mask = (dynamic_states & BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK) != 0;
+  const bfBool32 set_dynamic_stencil_reference  = (dynamic_states & BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE) != 0;
 
   s.dynamic_viewport           = set_dynamic_viewport;
   s.dynamic_scissor            = set_dynamic_scissor;
@@ -504,7 +504,7 @@ void bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, flo
   vp.min_depth = depth[0];
   vp.max_depth = depth[1];
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_VIEWPORT;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_VIEWPORT;
 }
 
 void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -516,21 +516,21 @@ void bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t
   s.width  = width;
   s.height = height;
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_SCISSOR;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_SCISSOR;
 }
 
 void bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float constants[4])
 {
   memcpy(self->pipeline_state.blend_constants, constants, sizeof(self->pipeline_state.blend_constants));
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS;
 }
 
 void bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.line_width = value;
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_LINE_WIDTH;
 }
 
 void bfGfxCmdList_setDepthClampEnabled(bfGfxCommandListHandle self, bfBool32 value)
@@ -548,25 +548,25 @@ void bfGfxCmdList_setDepthBounds(bfGfxCommandListHandle self, float min, float m
   self->pipeline_state.depth.min_bound = min;
   self->pipeline_state.depth.max_bound = max;
 
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BOUNDS;
 }
 
 void bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_constant_factor = value;
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_clamp = value;
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value)
 {
   self->pipeline_state.depth.bias_slope_factor = value;
-  self->dynamic_state_dirty |= BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS;
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_DEPTH_BIAS;
 }
 
 void bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value)
@@ -586,10 +586,10 @@ void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetH
 
 void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
 {
-  assert(num_buffers < BIFROST_GFX_BUFFERS_MAX_BINDING);
+  assert(num_buffers < k_bfGfxMaxBufferBindings);
 
-  VkBuffer binded_buffers[BIFROST_GFX_BUFFERS_MAX_BINDING];
-  uint64_t binded_offsets[BIFROST_GFX_BUFFERS_MAX_BINDING];
+  VkBuffer binded_buffers[k_bfGfxMaxBufferBindings];
+  uint64_t binded_offsets[k_bfGfxMaxBufferBindings];
 
   for (uint32_t i = 0; i < num_buffers; ++i)
   {
@@ -605,7 +605,7 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_
    binded_offsets);
 }
 
-void bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, BifrostIndexType idx_type)
+void bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, bfGfxIndexType idx_type)
 {
   vkCmdBindIndexBuffer(self->handle, buffer->handle, offset, bfVkConvertIndexType(idx_type));
 }
@@ -617,8 +617,8 @@ void bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle
 
 void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets)
 {
-  assert(num_desc_sets <= BIFROST_GFX_RENDERPASS_MAX_DESCRIPTOR_SETS);
-  VkDescriptorSet sets[BIFROST_GFX_RENDERPASS_MAX_DESCRIPTOR_SETS];
+  assert(num_desc_sets <= k_bfGfxDescriptorSets);
+  VkDescriptorSet sets[k_bfGfxDescriptorSets];
 
   const VkPipelineBindPoint bind_point = self->pipeline_state.renderpass ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 
@@ -663,7 +663,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
 
       switch (binding_info->type)
       {
-        case BIFROST_DESCRIPTOR_ELEMENT_TEXTURE:
+        case BF_DESCRIPTOR_ELEMENT_TEXTURE:
           bfDescriptorSet_setCombinedSamplerTextures(
            desc_set,
            binding_info->binding,
@@ -671,7 +671,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            (bfTextureHandle*)binding_info->handles,
            binding_info->num_handles);
           break;
-        case BIFROST_DESCRIPTOR_ELEMENT_BUFFER:
+        case BF_DESCRIPTOR_ELEMENT_BUFFER:
           bfDescriptorSet_setUniformBuffers(
            desc_set,
            binding_info->binding,
@@ -680,9 +680,9 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            (bfBufferHandle*)binding_info->handles,
            binding_info->num_handles);
           break;
-        case BIFROST_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
-        case BIFROST_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER:
-        case BIFROST_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT:
+        case BF_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
+        case BF_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER:
+        case BF_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT:
         default:
           assert(!"Not supported yet.");
           break;
@@ -718,13 +718,13 @@ static void flushPipeline(bfGfxCommandListHandle self)
   {
     pl = new bfPipeline();
 
-    BifrostGfxObjectBase_ctor(&pl->super, BIFROST_GFX_OBJECT_PIPELINE);
+    bfBaseGfxObject_ctor(&pl->super, BF_GFX_OBJECT_PIPELINE);
 
     auto& state   = self->pipeline_state;
     auto& ss      = state.state;
     auto& program = state.program;
 
-    VkPipelineShaderStageCreateInfo shader_stages[BIFROST_SHADER_TYPE_MAX];
+    VkPipelineShaderStageCreateInfo shader_stages[BF_SHADER_TYPE_MAX];
 
     for (size_t i = 0; i < program->modules.size; ++i)
     {
@@ -752,7 +752,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     input_asm.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     input_asm.pNext                  = nullptr;
     input_asm.flags                  = 0x0;
-    input_asm.topology               = bfVkConvertTopology((BifrostDrawMode)state.state.draw_mode);
+    input_asm.topology               = bfVkConvertTopology((bfDrawMode)state.state.draw_mode);
     input_asm.primitiveRestartEnable = state.state.primitive_restart;
 
     VkPipelineTessellationStateCreateInfo tess;
@@ -786,7 +786,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     rasterization.rasterizerDiscardEnable = state.state.rasterizer_discard;
     rasterization.polygonMode             = bfVkConvertPolygonMode((BifrostPolygonFillMode)state.state.fill_mode);
     rasterization.cullMode                = bfVkConvertCullModeFlags(state.state.cull_face);
-    rasterization.frontFace               = bfVkConvertFrontFace((BifrostFrontFace)state.state.front_face);
+    rasterization.frontFace               = bfVkConvertFrontFace((bfFrontFace)state.state.front_face);
     rasterization.depthBiasEnable         = state.state.do_depth_bias;
     rasterization.depthBiasConstantFactor = state.depth.bias_constant_factor;
     rasterization.depthBiasClamp          = state.depth.bias_clamp;
@@ -805,10 +805,10 @@ static void flushPipeline(bfGfxCommandListHandle self)
     multisample.alphaToOneEnable      = state.state.alpha_to_one;
 
     const auto ConvertStencilOpState = [](VkStencilOpState& out, uint64_t fail, uint64_t pass, uint64_t depth_fail, uint64_t cmp_op, uint32_t cmp_mask, uint32_t write_mask, uint32_t ref) {
-      out.failOp      = bfVkConvertStencilOp((BifrostStencilOp)fail);
-      out.passOp      = bfVkConvertStencilOp((BifrostStencilOp)pass);
-      out.depthFailOp = bfVkConvertStencilOp((BifrostStencilOp)depth_fail);
-      out.compareOp   = bfVkConvertCompareOp((BifrostCompareOp)cmp_op);
+      out.failOp      = bfVkConvertStencilOp((bfStencilOp)fail);
+      out.passOp      = bfVkConvertStencilOp((bfStencilOp)pass);
+      out.depthFailOp = bfVkConvertStencilOp((bfStencilOp)depth_fail);
+      out.compareOp   = bfVkConvertCompareOp((bfCompareOp)cmp_op);
       out.compareMask = cmp_mask;
       out.writeMask   = write_mask;
       out.reference   = ref;
@@ -820,7 +820,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     depth_stencil.flags                 = 0x0;
     depth_stencil.depthTestEnable       = state.state.do_depth_test;
     depth_stencil.depthWriteEnable      = state.state.depth_write;
-    depth_stencil.depthCompareOp        = bfVkConvertCompareOp((BifrostCompareOp)state.state.depth_test_op);
+    depth_stencil.depthCompareOp        = bfVkConvertCompareOp((bfCompareOp)state.state.depth_test_op);
     depth_stencil.depthBoundsTestEnable = state.state.do_depth_bounds_test;
     depth_stencil.stencilTestEnable     = state.state.do_stencil_test;
 
@@ -848,7 +848,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     depth_stencil.maxDepthBounds = state.depth.max_bound;
 
     VkPipelineColorBlendStateCreateInfo color_blend;
-    VkPipelineColorBlendAttachmentState color_blend_states[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+    VkPipelineColorBlendAttachmentState color_blend_states[k_bfGfxMaxAttachments];
 
     const uint32_t num_color_attachments = self->pipeline_state.renderpass->info.subpasses[state.subpass_index].num_out_attachment_refs;
 
@@ -857,16 +857,16 @@ static void flushPipeline(bfGfxCommandListHandle self)
       bfFramebufferBlending&               blend     = state.blending[i];
       VkPipelineColorBlendAttachmentState& clr_state = color_blend_states[i];
 
-      clr_state.blendEnable = blend.color_blend_src != BIFROST_BLEND_FACTOR_NONE && blend.color_blend_dst != BIFROST_BLEND_FACTOR_NONE;
+      clr_state.blendEnable = blend.color_blend_src != BF_BLEND_FACTOR_NONE && blend.color_blend_dst != BF_BLEND_FACTOR_NONE;
 
       if (clr_state.blendEnable)
       {
-        clr_state.srcColorBlendFactor = bfVkConvertBlendFactor((BifrostBlendFactor)blend.color_blend_src);
-        clr_state.dstColorBlendFactor = bfVkConvertBlendFactor((BifrostBlendFactor)blend.color_blend_dst);
-        clr_state.colorBlendOp        = bfVkConvertBlendOp((BifrostBlendOp)blend.color_blend_op);
-        clr_state.srcAlphaBlendFactor = bfVkConvertBlendFactor((BifrostBlendFactor)blend.alpha_blend_src);
-        clr_state.dstAlphaBlendFactor = bfVkConvertBlendFactor((BifrostBlendFactor)blend.alpha_blend_dst);
-        clr_state.alphaBlendOp        = bfVkConvertBlendOp((BifrostBlendOp)blend.alpha_blend_op);
+        clr_state.srcColorBlendFactor = bfVkConvertBlendFactor((bfBlendFactor)blend.color_blend_src);
+        clr_state.dstColorBlendFactor = bfVkConvertBlendFactor((bfBlendFactor)blend.color_blend_dst);
+        clr_state.colorBlendOp        = bfVkConvertBlendOp((bfBlendOp)blend.color_blend_op);
+        clr_state.srcAlphaBlendFactor = bfVkConvertBlendFactor((bfBlendFactor)blend.alpha_blend_src);
+        clr_state.dstAlphaBlendFactor = bfVkConvertBlendFactor((bfBlendFactor)blend.alpha_blend_dst);
+        clr_state.alphaBlendOp        = bfVkConvertBlendOp((bfBlendOp)blend.alpha_blend_op);
       }
       else
       {
@@ -885,7 +885,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     color_blend.pNext           = nullptr;
     color_blend.flags           = 0x0;
     color_blend.logicOpEnable   = ss.do_logic_op;
-    color_blend.logicOp         = bfVkConvertLogicOp((BifrostLogicOp)ss.logic_op);
+    color_blend.logicOp         = bfVkConvertLogicOp((bfLogicOp)ss.logic_op);
     color_blend.attachmentCount = num_color_attachments;
     color_blend.pAttachments    = color_blend_states;
     memcpy(color_blend.blendConstants, state.blend_constants, sizeof(state.blend_constants));
@@ -962,43 +962,43 @@ static void flushPipeline(bfGfxCommandListHandle self)
     self->pipeline            = pl;
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_VIEWPORT && self->pipeline_state.state.dynamic_viewport)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_VIEWPORT && self->pipeline_state.state.dynamic_viewport)
   {
     VkViewport viewports = bfVkConvertViewport(&self->pipeline_state.viewport);
     vkCmdSetViewport(self->handle, 0, 1, &viewports);
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_SCISSOR && self->pipeline_state.state.dynamic_scissor)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_SCISSOR && self->pipeline_state.state.dynamic_scissor)
   {
     VkRect2D scissors = bfVkConvertScissorRect(&self->pipeline_state.scissor_rect);
     vkCmdSetScissor(self->handle, 0, 1, &scissors);
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_LINE_WIDTH && self->pipeline_state.state.dynamic_line_width)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_LINE_WIDTH && self->pipeline_state.state.dynamic_line_width)
   {
     vkCmdSetLineWidth(self->handle, self->pipeline_state.line_width);
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_DEPTH_BIAS && self->pipeline_state.state.dynamic_depth_bias)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_DEPTH_BIAS && self->pipeline_state.state.dynamic_depth_bias)
   {
     auto& depth = self->pipeline_state.depth;
 
     vkCmdSetDepthBias(self->handle, depth.bias_constant_factor, depth.bias_clamp, depth.bias_slope_factor);
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_BLEND_CONSTANTS && self->pipeline_state.state.dynamic_blend_constants)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS && self->pipeline_state.state.dynamic_blend_constants)
   {
     vkCmdSetBlendConstants(self->handle, self->pipeline_state.blend_constants);
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_DEPTH_BOUNDS && self->pipeline_state.state.dynamic_depth_bounds)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_DEPTH_BOUNDS && self->pipeline_state.state.dynamic_depth_bounds)
   {
     auto& depth = self->pipeline_state.depth;
 
     vkCmdSetDepthBounds(self->handle, depth.min_bound, depth.max_bound);
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK && self->pipeline_state.state.dynamic_stencil_cmp_mask)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK && self->pipeline_state.state.dynamic_stencil_cmp_mask)
   {
     auto& ss = self->pipeline_state.state;
 
@@ -1013,7 +1013,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     }
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK && self->pipeline_state.state.dynamic_stencil_write_mask)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK && self->pipeline_state.state.dynamic_stencil_write_mask)
   {
     auto& ss = self->pipeline_state.state;
 
@@ -1028,7 +1028,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     }
   }
 
-  if (self->dynamic_state_dirty & BIFROST_PIPELINE_DYNAMIC_STENCIL_REFERENCE && self->pipeline_state.state.dynamic_stencil_reference)
+  if (self->dynamic_state_dirty & BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE && self->pipeline_state.state.dynamic_stencil_reference)
   {
     auto& ss = self->pipeline_state.state;
 
@@ -1176,7 +1176,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
   vkResetFences(self->parent->handle, 1, &command_fence);
 
-  VkResult err = vkQueueSubmit(self->parent->queues[BIFROST_GFX_QUEUE_GRAPHICS], 1, &submit_info, command_fence);
+  VkResult err = vkQueueSubmit(self->parent->queues[BF_GFX_QUEUE_GRAPHICS], 1, &submit_info, command_fence);
 
   assert(err == VK_SUCCESS && "bfGfxCmdList_submit: failed to submit the graphics queue");
 
@@ -1190,7 +1190,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
   present_info.pImageIndices      = &window.image_index;
   present_info.pResults           = nullptr;
 
-  err = vkQueuePresentKHR(self->parent->queues[BIFROST_GFX_QUEUE_PRESENT], &present_info);
+  err = vkQueuePresentKHR(self->parent->queues[BF_GFX_QUEUE_PRESENT], &present_info);
 
   if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
   {
@@ -1302,7 +1302,7 @@ namespace bf::vk
       {
         self = hash::addPointer(self, binding->handles[i]);
 
-        if (binding->type == BIFROST_DESCRIPTOR_ELEMENT_BUFFER)
+        if (binding->type == BF_DESCRIPTOR_ELEMENT_BUFFER)
         {
           self = hash::addU64(self, binding->offsets[j]);
           self = hash::addU64(self, binding->sizes[j]);

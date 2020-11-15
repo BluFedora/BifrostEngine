@@ -26,7 +26,18 @@ set(
 
 set(
   BF_GRAPHICS_SOURCES
-  "src/bf_gfx_common.c"
+  
+  # API Headers
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_api.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_export.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_handle.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_limits.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_object_cache.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_pipeline_state.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/bf_gfx_types.h"
+
+  # Shared Source
+  "${PROJECT_SOURCE_DIR}/src/bf_gfx_common.c"
 )
 
 set(
@@ -140,7 +151,7 @@ target_compile_definitions(
   BF_Graphics_shared
   PRIVATE
     "${BF_GRAPHICS_DEFINES}"
-    BIFROST_GFX_EXPORT
+    BF_GFX_EXPORT
 )
 
 target_include_directories(

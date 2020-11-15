@@ -127,7 +127,7 @@ namespace bf
     using BaseT = AssetInfo<ShaderModule, AssetShaderModuleInfo>;
 
    private:
-    BifrostShaderType m_Type = BIFROST_SHADER_TYPE_VERTEX;
+    bfShaderType m_Type = BF_SHADER_TYPE_VERTEX;
 
    public:
     using BaseT::BaseT;
@@ -429,17 +429,16 @@ namespace bf
   using AssetModelHandle = AssetHandle<Model>;
 }  // namespace bf
 
-BIFROST_META_REGISTER(BifrostShaderType){
+BIFROST_META_REGISTER(bfShaderType){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   enum_info<BifrostShaderType>("BifrostShaderType"),                                                         //
-   enum_element("BIFROST_SHADER_TYPE_VERTEX", BIFROST_SHADER_TYPE_VERTEX),                                    //
-   enum_element("BIFROST_SHADER_TYPE_TESSELLATION_CONTROL", BIFROST_SHADER_TYPE_TESSELLATION_CONTROL),        //
-   enum_element("BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION", BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION),  //
-   enum_element("BIFROST_SHADER_TYPE_GEOMETRY", BIFROST_SHADER_TYPE_GEOMETRY),                                //
-   enum_element("BIFROST_SHADER_TYPE_FRAGMENT", BIFROST_SHADER_TYPE_FRAGMENT),                                //
-   enum_element("BIFROST_SHADER_TYPE_COMPUTE", BIFROST_SHADER_TYPE_COMPUTE),                                  //
-   enum_element("BIFROST_SHADER_TYPE_MAX", BIFROST_SHADER_TYPE_MAX)                                           //
+   enum_info<bfShaderType>("bfShaderType"),                                                         //
+   enum_element("BF_SHADER_TYPE_VERTEX", BF_SHADER_TYPE_VERTEX),                                    //
+   enum_element("BF_SHADER_TYPE_TESSELLATION_CONTROL", BF_SHADER_TYPE_TESSELLATION_CONTROL),        //
+   enum_element("BF_SHADER_TYPE_TESSELLATION_EVALUATION", BF_SHADER_TYPE_TESSELLATION_EVALUATION),  //
+   enum_element("BF_SHADER_TYPE_GEOMETRY", BF_SHADER_TYPE_GEOMETRY),                                //
+   enum_element("BF_SHADER_TYPE_FRAGMENT", BF_SHADER_TYPE_FRAGMENT),                                //
+   enum_element("BF_SHADER_TYPE_COMPUTE", BF_SHADER_TYPE_COMPUTE)                                   //
    )
    BIFROST_META_END()}
 

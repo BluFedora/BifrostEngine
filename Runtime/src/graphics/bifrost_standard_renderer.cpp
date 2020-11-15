@@ -23,8 +23,8 @@
 
 namespace bf
 {
-  static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
-  static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
+  static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
+  static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
 
   void GBuffer::init(bfGfxDeviceHandle device, int width, int height)
@@ -35,8 +35,8 @@ namespace bf
 
     bfTextureCreateParams texture_create_params[k_GfxNumGBufferAttachments] =
      {
-      init_clr_att(width, height, BIFROST_IMAGE_FORMAT_R16G16B16A16_UNORM, bfTrue, bfFalse),
-      init_clr_att(width, height, BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, bfTrue, bfFalse),
+      init_clr_att(width, height, BF_IMAGE_FORMAT_R16G16B16A16_UNORM, bfTrue, bfFalse),
+      init_clr_att(width, height, BF_IMAGE_FORMAT_R8G8B8A8_UNORM, bfTrue, bfFalse),
      };
 
     for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
@@ -44,7 +44,7 @@ namespace bf
       color_attachments[i] = gfx::createAttachment(device, texture_create_params[i], k_SamplerNearestClampToEdge);
     }
 
-    const bfTextureCreateParams create_depth_tex = init_depth_att(width, height, BIFROST_IMAGE_FORMAT_D24_UNORM_S8_UINT, bfTrue, bfFalse);
+    const bfTextureCreateParams create_depth_tex = init_depth_att(width, height, BF_IMAGE_FORMAT_D24_UNORM_S8_UINT, bfTrue, bfFalse);
 
     depth_attachment = bfGfxDevice_newTexture(device, &create_depth_tex);
     bfTexture_loadData(depth_attachment, nullptr, 0);
@@ -76,12 +76,12 @@ namespace bf
     for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
     {
       attachments_info[i].texture      = color_attachments[i];
-      attachments_info[i].final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      attachments_info[i].final_layout = BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
       attachments_info[i].may_alias    = bfFalse;
     }
 
     attachments_info[k_GfxNumGBufferAttachments].texture      = depth_attachment;
-    attachments_info[k_GfxNumGBufferAttachments].final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    attachments_info[k_GfxNumGBufferAttachments].final_layout = BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     attachments_info[k_GfxNumGBufferAttachments].may_alias    = bfFalse;
 
     for (const auto& att_info : attachments_info)
@@ -91,10 +91,10 @@ namespace bf
 
     for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
     {
-      bfRenderpassInfo_addColorOut(&renderpass_info, subpass_index, i, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+      bfRenderpassInfo_addColorOut(&renderpass_info, subpass_index, i, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     }
 
-    bfRenderpassInfo_addDepthOut(&renderpass_info, subpass_index, k_GfxNumGBufferAttachments, BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addDepthOut(&renderpass_info, subpass_index, k_GfxNumGBufferAttachments, BF_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
   }
 
   void GBuffer::deinit(bfGfxDeviceHandle device)
@@ -117,7 +117,7 @@ namespace bf
        bfTextureCreateParams_initColorAttachment(
         width,
         height,
-        BIFROST_IMAGE_FORMAT_R8_UNORM,
+        BF_IMAGE_FORMAT_R8_UNORM,
         bfTrue,
         bfFalse),
        k_SamplerNearestClampToEdge);
@@ -162,14 +162,14 @@ namespace bf
        {
         {
          size,
-         BIFROST_BPF_HOST_MAPPABLE,
+         BF_BUFFER_PROP_HOST_MAPPABLE,
         },
-        BIFROST_BUF_UNIFORM_BUFFER,
+        BF_BUFFER_USAGE_UNIFORM_BUFFER,
        };
 
       kernel_uniform = bfGfxDevice_newBuffer(device, &create_camera_buffer);
 
-      void* uniform_buffer_ptr = bfBuffer_map(kernel_uniform, 0, BIFROST_BUFFER_WHOLE_SIZE);
+      void* uniform_buffer_ptr = bfBuffer_map(kernel_uniform, 0, k_bfBufferWholeSize);
       std::memcpy(uniform_buffer_ptr, &kernel, sizeof(kernel));
       bfBuffer_unMap(kernel_uniform);
     }
@@ -188,10 +188,10 @@ namespace bf
         noise_texture_data[i++] = 0.0f;
       }
 
-      auto noise_tex_params = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT, k_GfxSSAONoiseTextureDim, k_GfxSSAONoiseTextureDim);
+      auto noise_tex_params = bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT, k_GfxSSAONoiseTextureDim, k_GfxSSAONoiseTextureDim);
 
       noise_tex_params.generate_mipmaps = false;
-      noise_tex_params.flags |= BIFROST_TEX_IS_LINEAR;
+      noise_tex_params.flags |= BF_TEX_IS_LINEAR;
 
       noise = gfx::createTexture(
        device,
@@ -202,7 +202,7 @@ namespace bf
     }
 
     {
-      for (BifrostClearValue& clear_value : clear_values)
+      for (bfClearValue& clear_value : clear_values)
       {
         clear_value.color.float32[0] = 0.0f;
         clear_value.color.float32[1] = 0.0f;
@@ -216,11 +216,11 @@ namespace bf
   {
     bfAttachmentInfo attachment;
     attachment.texture      = color_attachments[color_attachment_idx];
-    attachment.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    attachment.final_layout = BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     attachment.may_alias    = bfFalse;
 
     bfRenderpassInfo_addAttachment(&renderpass_info, &attachment);
-    bfRenderpassInfo_addColorOut(&renderpass_info, ao_subpass_index, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addColorOut(&renderpass_info, ao_subpass_index, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
   }
 
   void SSAOBuffer::deinit(bfGfxDeviceHandle device)
@@ -244,7 +244,7 @@ namespace bf
      {
       {
        total_size,
-       BIFROST_BPF_HOST_MAPPABLE,
+       BF_BUFFER_PROP_HOST_MAPPABLE,
       },
       usage,
      };
@@ -263,14 +263,14 @@ namespace bf
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      initial_width,
      initial_height,
-     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
      bfTrue,
      bfFalse);
 
     geometry_buffer.init(device, initial_width, initial_height);
     ssao_buffer.init(device, initial_width, initial_height);
     composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
-    camera_uniform_buffer.create(device, BIFROST_BUF_UNIFORM_BUFFER | BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
+    camera_uniform_buffer.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
   }
 
   void CameraGPUData::updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient)
@@ -325,7 +325,7 @@ namespace bf
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      width,
      height,
-     BIFROST_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM BIFROST_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
      bfTrue,
      bfFalse);
 
@@ -377,21 +377,21 @@ namespace bf
 
     m_StandardVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_StandardVertexLayout, 0, sizeof(StandardVertex));
-    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(StandardVertex, pos));
-    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(StandardVertex, normal));
-    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(StandardVertex, color));
-    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BIFROST_VFA_FLOAT32_2, offsetof(StandardVertex, uv));
+    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(StandardVertex, pos));
+    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(StandardVertex, normal));
+    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BF_VFA_UCHAR8_4_UNORM, offsetof(StandardVertex, color));
+    bfVertexLayout_addVertexLayout(m_StandardVertexLayout, 0, BF_VFA_FLOAT32_2, offsetof(StandardVertex, uv));
 
     m_SkinnedVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_SkinnedVertexLayout, 0, sizeof(StandardVertex));
-    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(StandardVertex, pos));
-    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BIFROST_VFA_FLOAT32_4, offsetof(StandardVertex, normal));
-    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(StandardVertex, color));
-    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BIFROST_VFA_FLOAT32_2, offsetof(StandardVertex, uv));
+    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(StandardVertex, pos));
+    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BF_VFA_FLOAT32_4, offsetof(StandardVertex, normal));
+    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BF_VFA_UCHAR8_4_UNORM, offsetof(StandardVertex, color));
+    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 0, BF_VFA_FLOAT32_2, offsetof(StandardVertex, uv));
 
     bfVertexLayout_addVertexBinding(m_SkinnedVertexLayout, 1, sizeof(VertexBoneData));
-    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 1, BIFROST_VFA_UINT32_1, offsetof(VertexBoneData, bone_idx));
-    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 1, BIFROST_VFA_FLOAT32_4, offsetof(VertexBoneData, bone_weights));
+    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 1, BF_VFA_UINT32_1, offsetof(VertexBoneData, bone_idx));
+    bfVertexLayout_addVertexLayout(m_SkinnedVertexLayout, 1, BF_VFA_FLOAT32_4, offsetof(VertexBoneData, bone_weights));
 
     m_EmptyVertexLayout = bfVertexLayout_new();
 
@@ -400,15 +400,15 @@ namespace bf
     {
       const auto limits = bfGfxDevice_limits(m_GfxDevice);
 
-      m_DirectionalLightBuffer.create(m_GfxDevice, BIFROST_BUF_UNIFORM_BUFFER | BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER, m_FrameInfo, limits.uniform_buffer_offset_alignment);
+      m_DirectionalLightBuffer.create(m_GfxDevice, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, m_FrameInfo, limits.uniform_buffer_offset_alignment);
 
       for (auto& buffer : m_PunctualLightBuffers)
       {
-        buffer.create(m_GfxDevice, BIFROST_BUF_UNIFORM_BUFFER | BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER, m_FrameInfo, limits.uniform_buffer_offset_alignment);
+        buffer.create(m_GfxDevice, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, m_FrameInfo, limits.uniform_buffer_offset_alignment);
       }
     }
 
-    m_WhiteTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
+    m_WhiteTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
 
     m_AutoRelease.push(m_WhiteTexture);
   }
@@ -618,9 +618,9 @@ namespace bf
 
     const bfSubpassDependency color_write_dep =
      {
-      {0, BIFROST_SUBPASS_EXTERNAL},
-      {BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
-      {BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BIFROST_ACCESS_SHADER_READ_BIT},
+      {0, k_bfSubpassExternal},
+      {BF_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, BF_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
+      {BF_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BF_ACCESS_SHADER_READ_BIT},
       true,
      };
 
@@ -645,15 +645,15 @@ namespace bf
 
     bfGfxCmdList_setDepthTesting(m_MainCmdList, bfTrue);
     bfGfxCmdList_setDepthWrite(m_MainCmdList, bfTrue);
-    bfGfxCmdList_setDepthTestOp(m_MainCmdList, BIFROST_COMPARE_OP_LESS_OR_EQUAL);
-    bfGfxCmdList_setCullFace(m_MainCmdList, BIFROST_CULL_FACE_BACK);
+    bfGfxCmdList_setDepthTestOp(m_MainCmdList, BF_COMPARE_OP_LESS_OR_EQUAL);
+    bfGfxCmdList_setCullFace(m_MainCmdList, BF_CULL_FACE_BACK);
 
     for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
     {
-      bfGfxCmdList_setBlendSrc(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
-      bfGfxCmdList_setBlendDst(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
-      bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
-      bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, i, BIFROST_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendSrc(m_MainCmdList, i, BF_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendDst(m_MainCmdList, i, BF_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, i, BF_BLEND_FACTOR_NONE);
+      bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, i, BF_BLEND_FACTOR_NONE);
     }
   }
 
@@ -665,20 +665,20 @@ namespace bf
     static constexpr std::uint16_t k_StencilClearFlags = 0x0;
     static constexpr std::uint16_t k_StencilStoreFlags = 0x0;
 
-    bfGfxCmdList_setCullFace(m_MainCmdList, BIFROST_CULL_FACE_FRONT);
+    bfGfxCmdList_setCullFace(m_MainCmdList, BF_CULL_FACE_FRONT);
 
 #if 1
     {
       const bfPipelineBarrier barriers[] =
        {
-        bfPipelineBarrier_memory(BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BIFROST_ACCESS_SHADER_READ_BIT),
+        bfPipelineBarrier_memory(BF_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BF_ACCESS_SHADER_READ_BIT),
        };
       const std::uint32_t num_barriers = std::uint32_t(bfCArraySize(barriers));
 
       bfGfxCmdList_pipelineBarriers(
        m_MainCmdList,
-       BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-       BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+       BF_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+       BF_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
        barriers,
        num_barriers,
        bfTrue);
@@ -737,17 +737,17 @@ namespace bf
       const bfPipelineBarrier barriers[] =
        {
         bfPipelineBarrier_image(
-         BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-         BIFROST_ACCESS_SHADER_READ_BIT,
+         BF_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+         BF_ACCESS_SHADER_READ_BIT,
          ssoa_buffer.color_attachments[0],
-         BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+         BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
        };
       const std::uint32_t num_barriers = std::uint32_t(bfCArraySize(barriers));
 
       bfGfxCmdList_pipelineBarriers(
        m_MainCmdList,
-       BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-       BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+       BF_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+       BF_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
        barriers,
        num_barriers,
        bfFalse);
@@ -779,21 +779,21 @@ namespace bf
   {
     const bfPipelineBarrier barriers[] =
      {
-      bfPipelineBarrier_memory(BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BIFROST_ACCESS_SHADER_READ_BIT),
+      bfPipelineBarrier_memory(BF_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, BF_ACCESS_SHADER_READ_BIT),
      };
     const std::uint32_t num_barriers = std::uint32_t(bfCArraySize(barriers));
 
     bfGfxCmdList_pipelineBarriers(
      m_MainCmdList,
-     BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-     BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+     BF_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+     BF_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
      barriers,
      num_barriers,
      bfTrue);
 
     bfAttachmentInfo deferred_composite;
     deferred_composite.texture      = camera.composite_buffer;
-    deferred_composite.final_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    deferred_composite.final_layout = BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     deferred_composite.may_alias    = bfFalse;
 
     auto renderpass_info = bfRenderpassInfo_init(1);
@@ -804,9 +804,9 @@ namespace bf
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &deferred_composite);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    BifrostClearValue clear_colors[1];
+    bfClearValue clear_colors[1];
     clear_colors[0].color.float32[0] = 0.2f;
     clear_colors[0].color.float32[1] = 0.2f;
     clear_colors[0].color.float32[2] = 0.2f;
@@ -867,19 +867,19 @@ namespace bf
     baseLightingBegin(m_AmbientLighting);
     baseLightingEnd();
 
-    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ZERO);
+    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ZERO);
 
     lightingDraw(m_LightShaders[LightShaders::DIR], m_DirectionalLightBuffer);
     lightingDraw(m_LightShaders[LightShaders::POINT], m_PunctualLightBuffers[0]);
     lightingDraw(m_LightShaders[LightShaders::SPOT], m_PunctualLightBuffers[1]);
 
-    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_SRC_ALPHA);
-    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
-    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BIFROST_BLEND_FACTOR_ZERO);
+    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BF_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ZERO);
 
     // TODO: Post process pass.
   }
@@ -890,7 +890,7 @@ namespace bf
 
     bfAttachmentInfo main_surface;
     main_surface.texture      = surface_tex;
-    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    main_surface.final_layout = BF_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     main_surface.may_alias    = bfFalse;
 
     auto renderpass_info = bfRenderpassInfo_init(1);
@@ -901,9 +901,9 @@ namespace bf
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    BifrostClearValue clear_colors[1];
+    bfClearValue clear_colors[1];
     clear_colors[0].color.float32[0] = 0.6f;
     clear_colors[0].color.float32[1] = 0.6f;
     clear_colors[0].color.float32[2] = 0.75f;
@@ -1044,29 +1044,29 @@ namespace bf
     m_LightShaders[LightShaders::POINT] = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, point_light_frag_module, "P Light Shader");
     m_LightShaders[LightShaders::SPOT]  = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, spot_light_frag_module, "S Light Shader");
 
-    bindings::addObject(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
-    bindings::addMaterial(m_GBufferShader, BIFROST_SHADER_STAGE_FRAGMENT);
-    bindings::addCamera(m_GBufferShader, BIFROST_SHADER_STAGE_VERTEX);
+    bindings::addObject(m_GBufferShader, BF_SHADER_STAGE_VERTEX);
+    bindings::addMaterial(m_GBufferShader, BF_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_GBufferShader, BF_SHADER_STAGE_VERTEX);
 
-    bindings::addObject(m_GBufferSkinnedShader, BIFROST_SHADER_STAGE_VERTEX);
-    bindings::addMaterial(m_GBufferSkinnedShader, BIFROST_SHADER_STAGE_FRAGMENT);
-    bindings::addCamera(m_GBufferSkinnedShader, BIFROST_SHADER_STAGE_VERTEX);
+    bindings::addObject(m_GBufferSkinnedShader, BF_SHADER_STAGE_VERTEX);
+    bindings::addMaterial(m_GBufferSkinnedShader, BF_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_GBufferSkinnedShader, BF_SHADER_STAGE_VERTEX);
 
-    bindings::addCamera(m_SSAOBufferShader, BIFROST_SHADER_STAGE_VERTEX | BIFROST_SHADER_STAGE_FRAGMENT);
-    bindings::addSSAOInputs(m_SSAOBufferShader, BIFROST_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_SSAOBufferShader, BF_SHADER_STAGE_VERTEX | BF_SHADER_STAGE_FRAGMENT);
+    bindings::addSSAOInputs(m_SSAOBufferShader, BF_SHADER_STAGE_FRAGMENT);
 
-    bindings::addCamera(m_SSAOBlurShader, BIFROST_SHADER_STAGE_VERTEX);
-    bindings::addSSAOBlurInputs(m_SSAOBlurShader, BIFROST_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_SSAOBlurShader, BF_SHADER_STAGE_VERTEX);
+    bindings::addSSAOBlurInputs(m_SSAOBlurShader, BF_SHADER_STAGE_FRAGMENT);
 
-    bindings::addCamera(m_AmbientLighting, BIFROST_SHADER_STAGE_VERTEX | BIFROST_SHADER_STAGE_FRAGMENT);
-    bindings::addLightingInputs(m_AmbientLighting, BIFROST_SHADER_STAGE_FRAGMENT);
-    bindings::addLightBuffer(m_AmbientLighting, BIFROST_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_AmbientLighting, BF_SHADER_STAGE_VERTEX | BF_SHADER_STAGE_FRAGMENT);
+    bindings::addLightingInputs(m_AmbientLighting, BF_SHADER_STAGE_FRAGMENT);
+    bindings::addLightBuffer(m_AmbientLighting, BF_SHADER_STAGE_FRAGMENT);
 
     for (const auto& light_shader : m_LightShaders)
     {
-      bindings::addCamera(light_shader, BIFROST_SHADER_STAGE_VERTEX | BIFROST_SHADER_STAGE_FRAGMENT);
-      bindings::addLightingInputs(light_shader, BIFROST_SHADER_STAGE_FRAGMENT);
-      bindings::addLightBuffer(light_shader, BIFROST_SHADER_STAGE_FRAGMENT);
+      bindings::addCamera(light_shader, BF_SHADER_STAGE_VERTEX | BF_SHADER_STAGE_FRAGMENT);
+      bindings::addLightingInputs(light_shader, BF_SHADER_STAGE_FRAGMENT);
+      bindings::addLightBuffer(light_shader, BF_SHADER_STAGE_FRAGMENT);
     }
 
     bfShaderProgram_compile(m_GBufferShader);
@@ -1124,9 +1124,9 @@ namespace bf
     const bfGfxDeviceHandle     device        = bfGfxContext_device(engine.renderer().context());
     const String&               full_path     = filePathAbs();
     const bfTextureCreateParams create_params = bfTextureCreateParams_init2D(
-     BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM,
-     BIFROST_TEXTURE_UNKNOWN_SIZE,
-     BIFROST_TEXTURE_UNKNOWN_SIZE);
+     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
+     k_bfTextureUnknownSize,
+     k_bfTextureUnknownSize);
 
     texture.m_Handle = bfGfxDevice_newTexture(device, &create_params);
 

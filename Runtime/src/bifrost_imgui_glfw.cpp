@@ -22,9 +22,9 @@ namespace bf::imgui
     void create(bfGfxDeviceHandle device)
     {
       bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = 0x100;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER;
+      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_UNIFORM_BUFFER;
 
       uniform_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -48,9 +48,9 @@ namespace bf::imgui
         bfGfxDevice_release(device, vertex_buffer);
 
         bfBufferCreateParams buffer_params;
-        buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+        buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
         buffer_params.allocation.size       = vertex_size;
-        buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+        buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
         vertex_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
       }
@@ -60,9 +60,9 @@ namespace bf::imgui
         bfGfxDevice_release(device, index_buffer);
 
         bfBufferCreateParams buffer_params;
-        buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+        buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
         buffer_params.allocation.size       = indices_size;
-        buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
+        buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
         index_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
       }
@@ -287,17 +287,17 @@ namespace bf::imgui
     // Renderer Setup: Vertex Layout
     const auto vertex_layout = s_RenderData.vertex_layout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(vertex_layout, 0, sizeof(ImDrawVert));
-    bfVertexLayout_addVertexLayout(vertex_layout, 0, BIFROST_VFA_FLOAT32_2, offsetof(ImDrawVert, pos));
-    bfVertexLayout_addVertexLayout(vertex_layout, 0, BIFROST_VFA_FLOAT32_2, offsetof(ImDrawVert, uv));
-    bfVertexLayout_addVertexLayout(vertex_layout, 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(ImDrawVert, col));
+    bfVertexLayout_addVertexLayout(vertex_layout, 0, BF_VFA_FLOAT32_2, offsetof(ImDrawVert, pos));
+    bfVertexLayout_addVertexLayout(vertex_layout, 0, BF_VFA_FLOAT32_2, offsetof(ImDrawVert, uv));
+    bfVertexLayout_addVertexLayout(vertex_layout, 0, BF_VFA_UCHAR8_4_UNORM, offsetof(ImDrawVert, col));
 
     // Renderer Setup: Shaders
     bfShaderProgramCreateParams create_shader;
     create_shader.debug_name    = "ImGui.Shader";
     create_shader.num_desc_sets = 1;
 
-    s_RenderData.vertex_shader   = bfGfxDevice_newShaderModule(device, BIFROST_SHADER_TYPE_VERTEX);
-    s_RenderData.fragment_shader = bfGfxDevice_newShaderModule(device, BIFROST_SHADER_TYPE_FRAGMENT);
+    s_RenderData.vertex_shader   = bfGfxDevice_newShaderModule(device, BF_SHADER_TYPE_VERTEX);
+    s_RenderData.fragment_shader = bfGfxDevice_newShaderModule(device, BF_SHADER_TYPE_FRAGMENT);
     s_RenderData.program         = bfGfxDevice_newShaderProgram(device, &create_shader);
 
     if (bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL)
@@ -316,8 +316,8 @@ namespace bf::imgui
 
     bfShaderProgram_link(s_RenderData.program);
 
-    bfShaderProgram_addImageSampler(s_RenderData.program, "u_Texture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
-    bfShaderProgram_addUniformBuffer(s_RenderData.program, "u_Set0", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addImageSampler(s_RenderData.program, "u_Texture", 0, 0, 1, BF_SHADER_STAGE_FRAGMENT);
+    bfShaderProgram_addUniformBuffer(s_RenderData.program, "u_Set0", 0, 1, 1, BF_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(s_RenderData.program);
 
@@ -348,8 +348,8 @@ namespace bf::imgui
     int            width, height, bytes_per_pixel;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
 
-    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, width, height);
-    bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_REPEAT);
+    bfTextureCreateParams      create_texture = bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, width, height);
+    bfTextureSamplerProperties sampler        = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
 
     create_texture.generate_mipmaps = bfFalse;
 
@@ -463,8 +463,8 @@ namespace bf::imgui
   {
     uint64_t vertex_buffer_offset = 0;
 
-    bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_NONE);
-    bfGfxCmdList_setDynamicStates(command_list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
+    bfGfxCmdList_setCullFace(command_list, BF_CULL_FACE_NONE);
+    bfGfxCmdList_setDynamicStates(command_list, BF_PIPELINE_DYNAMIC_VIEWPORT | BF_PIPELINE_DYNAMIC_SCISSOR);
     bfGfxCmdList_bindVertexDesc(command_list, s_RenderData.vertex_layout);
     bfGfxCmdList_bindVertexBuffers(command_list, 0, &frame.vertex_buffer, 1, &vertex_buffer_offset);
     bfGfxCmdList_bindIndexBuffer(command_list, frame.index_buffer, 0, bfIndexTypeFromT<ImDrawIdx>());
@@ -519,8 +519,8 @@ namespace bf::imgui
 
       frame.checkSizes(s_RenderData.device, vertex_size, index_size);
 
-      ImDrawVert* vertex_buffer_ptr  = static_cast<ImDrawVert*>(bfBuffer_map(frame.vertex_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
-      ImDrawIdx*  index_buffer_ptr   = static_cast<ImDrawIdx*>(bfBuffer_map(frame.index_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
+      ImDrawVert* vertex_buffer_ptr  = static_cast<ImDrawVert*>(bfBuffer_map(frame.vertex_buffer, 0, k_bfBufferWholeSize));
+      ImDrawIdx*  index_buffer_ptr   = static_cast<ImDrawIdx*>(bfBuffer_map(frame.index_buffer, 0, k_bfBufferWholeSize));
       Mat4x4*     uniform_buffer_ptr = static_cast<Mat4x4*>(bfBuffer_map(frame.uniform_buffer, 0, sizeof(Mat4x4)));
 
       for (int i = 0; i < draw_data->CmdListsCount; ++i)
@@ -650,7 +650,7 @@ namespace bf::imgui
   {
     bfAttachmentInfo main_surface;
     main_surface.texture      = surface;
-    main_surface.final_layout = BIFROST_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    main_surface.final_layout = BF_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     main_surface.may_alias    = bfFalse;
 
     auto renderpass_info = bfRenderpassInfo_init(1);
@@ -661,9 +661,9 @@ namespace bf::imgui
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &main_surface);
-    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    BifrostClearValue clear_colors[1];
+    bfClearValue clear_colors[1];
     clear_colors[0].color.float32[0] = 0.6f;
     clear_colors[0].color.float32[1] = 0.6f;
     clear_colors[0].color.float32[2] = 0.75f;

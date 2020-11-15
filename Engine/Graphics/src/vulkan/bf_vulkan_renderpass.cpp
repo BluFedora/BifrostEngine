@@ -10,18 +10,18 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
 {
   bfRenderpassHandle renderpass = new bfRenderpass();
 
-  BifrostGfxObjectBase_ctor(&renderpass->super, BIFROST_GFX_OBJECT_RENDERPASS);
+  bfBaseGfxObject_ctor(&renderpass->super, BF_GFX_OBJECT_RENDERPASS);
 
   renderpass->info                        = *params;
   const auto              num_attachments = params->num_attachments;
-  VkAttachmentDescription attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  VkAttachmentDescription attachments[k_bfGfxMaxAttachments];
   const uint32_t          num_subpasses = params->num_subpasses;
-  VkSubpassDescription    subpasses[BIFROST_GFX_RENDERPASS_MAX_SUBPASSES];
+  VkSubpassDescription    subpasses[k_bfGfxMaxSubpasses];
   const auto              num_dependencies = params->num_dependencies;
-  VkSubpassDependency     dependencies[BIFROST_GFX_RENDERPASS_MAX_DEPENDENCIES];
-  VkAttachmentReference   inputs[BIFROST_GFX_RENDERPASS_MAX_SUBPASSES][BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
-  VkAttachmentReference   outputs[BIFROST_GFX_RENDERPASS_MAX_SUBPASSES][BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
-  VkAttachmentReference   depth_atts[BIFROST_GFX_RENDERPASS_MAX_SUBPASSES];
+  VkSubpassDependency     dependencies[k_bfGfxMaxRenderpassDependencies];
+  VkAttachmentReference   inputs[k_bfGfxMaxSubpasses][k_bfGfxMaxAttachments];
+  VkAttachmentReference   outputs[k_bfGfxMaxSubpasses][k_bfGfxMaxAttachments];
+  VkAttachmentReference   depth_atts[k_bfGfxMaxSubpasses];
 
   const auto bitsToLoadOp = [](uint32_t i, bfLoadStoreFlags load_ops, bfLoadStoreFlags clear_ops) -> VkAttachmentLoadOp {
     if (bfBit(i) & clear_ops)
@@ -148,11 +148,11 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
   if (resource)
   {
-    BifrostGfxObjectBase* const obj = static_cast<BifrostGfxObjectBase*>(resource);
+    bfBaseGfxObject* const obj = static_cast<bfBaseGfxObject*>(resource);
 
     switch (obj->type)
     {
-      case BIFROST_GFX_OBJECT_BUFFER:
+      case BF_GFX_OBJECT_BUFFER:
       {
         bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(obj);
 
@@ -179,7 +179,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(buffer);
         break;
       }
-      case BIFROST_GFX_OBJECT_RENDERPASS:
+      case BF_GFX_OBJECT_RENDERPASS:
       {
         bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
 
@@ -188,7 +188,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(renderpass);
         break;
       }
-      case BIFROST_GFX_OBJECT_SHADER_MODULE:
+      case BF_GFX_OBJECT_SHADER_MODULE:
       {
         bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(obj);
 
@@ -200,7 +200,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(shader_module);
         break;
       }
-      case BIFROST_GFX_OBJECT_SHADER_PROGRAM:
+      case BF_GFX_OBJECT_SHADER_PROGRAM:
       {
         bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
 
@@ -222,7 +222,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(shader_program);
         break;
       }
-      case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
+      case BF_GFX_OBJECT_DESCRIPTOR_SET:
       {
         bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
 
@@ -231,7 +231,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(desc_set);
         break;
       }
-      case BIFROST_GFX_OBJECT_TEXTURE:
+      case BF_GFX_OBJECT_TEXTURE:
       {
         bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
 
@@ -283,7 +283,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(texture);
         break;
       }
-      case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+      case BF_GFX_OBJECT_FRAMEBUFFER:
       {
         bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(obj);
 
@@ -292,7 +292,7 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         DeleteResource(framebuffer);
         break;
       }
-      case BIFROST_GFX_OBJECT_PIPELINE:
+      case BF_GFX_OBJECT_PIPELINE:
       {
         bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(obj);
 

@@ -231,7 +231,7 @@ namespace bf
     return Resources;
   }
 
-  Array<std::uint32_t> GLSLCompiler::toSPIRV(const String& source, BifrostShaderType type) const
+  Array<std::uint32_t> GLSLCompiler::toSPIRV(const String& source, bfShaderType type) const
   {
 #if 0
     const TBuiltInResource DefaultTBuiltInResource = {
@@ -347,22 +347,22 @@ namespace bf
 
     switch (type)
     {
-      case BIFROST_SHADER_TYPE_VERTEX:
+      case BF_SHADER_TYPE_VERTEX:
         shader_type = EShLangVertex;
         break;
-      case BIFROST_SHADER_TYPE_TESSELLATION_CONTROL:
+      case BF_SHADER_TYPE_TESSELLATION_CONTROL:
         shader_type = EShLangTessControl;
         break;
-      case BIFROST_SHADER_TYPE_TESSELLATION_EVALUATION:
+      case BF_SHADER_TYPE_TESSELLATION_EVALUATION:
         shader_type = EShLangTessEvaluation;
         break;
-      case BIFROST_SHADER_TYPE_GEOMETRY:
+      case BF_SHADER_TYPE_GEOMETRY:
         shader_type = EShLangGeometry;
         break;
-      case BIFROST_SHADER_TYPE_FRAGMENT:
+      case BF_SHADER_TYPE_FRAGMENT:
         shader_type = EShLangFragment;
         break;
-      case BIFROST_SHADER_TYPE_COMPUTE:
+      case BF_SHADER_TYPE_COMPUTE:
         shader_type = EShLangCompute;
         break;
       default:
@@ -433,7 +433,7 @@ namespace bf
     return result;
   }
 
-  bfShaderModuleHandle GLSLCompiler::createModule(bfGfxDeviceHandle device, const String& filename, BifrostShaderType type)
+  bfShaderModuleHandle GLSLCompiler::createModule(bfGfxDeviceHandle device, const String& filename, bfShaderType type)
   {
     const bfShaderModuleHandle module = bfGfxDevice_newShaderModule(device, type);
 
@@ -464,11 +464,11 @@ namespace bf
 
     if (file::pathEndsIn(path.begin(), k_VertexShaderExt, k_VertexShaderExtLength, (int)path.length()))
     {
-      return createModule(device, filename, BIFROST_SHADER_TYPE_VERTEX);
+      return createModule(device, filename, BF_SHADER_TYPE_VERTEX);
     }
     else if (file::pathEndsIn(path.begin(), k_FragmentShaderExt, k_FragmentShaderExtLength, (int)path.length()))
     {
-      return createModule(device, filename, BIFROST_SHADER_TYPE_FRAGMENT);
+      return createModule(device, filename, BF_SHADER_TYPE_FRAGMENT);
     }
 
     return nullptr;

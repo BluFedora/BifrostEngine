@@ -8,7 +8,7 @@
 
 namespace bf
 {
-  static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BIFROST_SFM_NEAREST, BIFROST_SAM_CLAMP_TO_EDGE);
+  static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
   static constexpr float                  k_ArcSmoothingFactor        = 3.5f; /*!< This is just about the minimum before quality of the curves degrade. */
 
@@ -19,9 +19,9 @@ namespace bf
       bfGfxDevice_release(device, vertex_buffer);
 
       bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = vertex_size;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
       vertex_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -31,9 +31,9 @@ namespace bf
       bfGfxDevice_release(device, index_buffer);
 
       bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = indices_size;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
+      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
       index_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -46,9 +46,9 @@ namespace bf
       bfGfxDevice_release(device, vertex_shadow_buffer);
 
       bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = vertex_size;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_VERTEX_BUFFER;
+      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
       vertex_shadow_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -58,9 +58,9 @@ namespace bf
       bfGfxDevice_release(device, index_shadow_buffer);
 
       bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
       buffer_params.allocation.size       = indices_size;
-      buffer_params.usage                 = BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_INDEX_BUFFER;
+      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
       index_shadow_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -85,25 +85,25 @@ namespace bf
     // Vertex Layout
     vertex_layouts[0] = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(vertex_layouts[0], 0, sizeof(UIVertex2D));
-    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BIFROST_VFA_FLOAT32_2, offsetof(UIVertex2D, pos));
-    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BIFROST_VFA_FLOAT32_2, offsetof(UIVertex2D, uv));
-    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(UIVertex2D, color));
+    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BF_VFA_FLOAT32_2, offsetof(UIVertex2D, pos));
+    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BF_VFA_FLOAT32_2, offsetof(UIVertex2D, uv));
+    bfVertexLayout_addVertexLayout(vertex_layouts[0], 0, BF_VFA_UCHAR8_4_UNORM, offsetof(UIVertex2D, color));
 
     vertex_layouts[1] = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(vertex_layouts[1], 0, sizeof(DropShadowVertex));
-    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_2, offsetof(DropShadowVertex, pos));
-    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_1, offsetof(DropShadowVertex, shadow_sigma));
-    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_1, offsetof(DropShadowVertex, corner_radius));
-    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_FLOAT32_4, offsetof(DropShadowVertex, box));
-    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BIFROST_VFA_UCHAR8_4_UNORM, offsetof(DropShadowVertex, color));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BF_VFA_FLOAT32_2, offsetof(DropShadowVertex, pos));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BF_VFA_FLOAT32_1, offsetof(DropShadowVertex, shadow_sigma));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BF_VFA_FLOAT32_1, offsetof(DropShadowVertex, corner_radius));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BF_VFA_FLOAT32_4, offsetof(DropShadowVertex, box));
+    bfVertexLayout_addVertexLayout(vertex_layouts[1], 0, BF_VFA_UCHAR8_4_UNORM, offsetof(DropShadowVertex, color));
 
     // Shaders
     vertex_shader   = glsl_compiler.createModule(device, "assets/shaders/gfx2D/textured.vert.glsl");
     fragment_shader = glsl_compiler.createModule(device, "assets/shaders/gfx2D/textured.frag.glsl");
     shader_program  = gfx::createShaderProgram(device, 2, vertex_shader, fragment_shader, "Graphics2D.Painter");
 
-    bfShaderProgram_addImageSampler(shader_program, "u_Texture", 0, 0, 1, BIFROST_SHADER_STAGE_FRAGMENT);
-    bfShaderProgram_addUniformBuffer(shader_program, "u_Set0", 0, 1, 1, BIFROST_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addImageSampler(shader_program, "u_Texture", 0, 0, 1, BF_SHADER_STAGE_FRAGMENT);
+    bfShaderProgram_addUniformBuffer(shader_program, "u_Set0", 0, 1, 1, BF_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(shader_program);
 
@@ -113,14 +113,14 @@ namespace bf
     rect_shadow_program         = gfx::createShaderProgram(device, 1, shadow_modules[0], shadow_modules[1], "Graphics2D.ShadowRect");
     rounded_rect_shadow_program = gfx::createShaderProgram(device, 1, shadow_modules[0], shadow_modules[2], "Graphics2D.ShadowRoundedRect");
 
-    bfShaderProgram_addUniformBuffer(rect_shadow_program, "u_Set0", 0, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
-    bfShaderProgram_addUniformBuffer(rounded_rect_shadow_program, "u_Set0", 0, 0, 1, BIFROST_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addUniformBuffer(rect_shadow_program, "u_Set0", 0, 0, 1, BF_SHADER_STAGE_VERTEX);
+    bfShaderProgram_addUniformBuffer(rounded_rect_shadow_program, "u_Set0", 0, 0, 1, BF_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(rect_shadow_program);
     bfShaderProgram_compile(rounded_rect_shadow_program);
 
     // White Texture
-    white_texture = gfx::createTexture(device, bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
+    white_texture = gfx::createTexture(device, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
 
     // Frame Datas
     const auto& frame_info = bfGfxContext_getFrameInfo(ctx);
@@ -131,7 +131,7 @@ namespace bf
     // Uniform Buffer
     const auto device_info = bfGfxDevice_limits(device);
 
-    uniform.create(device, BIFROST_BUF_TRANSFER_DST | BIFROST_BUF_UNIFORM_BUFFER, frame_info, device_info.uniform_buffer_offset_alignment);
+    uniform.create(device, BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_UNIFORM_BUFFER, frame_info, device_info.uniform_buffer_offset_alignment);
   }
 
   void Gfx2DRenderData::reserve(int index, size_t vertex_size, size_t indices_size) const
@@ -951,7 +951,7 @@ namespace bf
         current_atlas.handle =
          gfx::createTexture(
           render_data.device,
-          bfTextureCreateParams_init2D(BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM, pixmap->width, pixmap->height),
+          bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, pixmap->width, pixmap->height),
           k_SamplerNearestClampToEdge,
           pixmap->pixels,
           pixmap->sizeInBytes());
@@ -1002,8 +1002,8 @@ namespace bf
     {
       render_data.reserve(frame_info.frame_index, vertices.size(), indices.size());
 
-      UIVertex2D*  vertex_buffer_ptr = static_cast<UIVertex2D*>(bfBuffer_map(frame_data.vertex_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
-      UIIndexType* index_buffer_ptr  = static_cast<UIIndexType*>(bfBuffer_map(frame_data.index_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
+      UIVertex2D*  vertex_buffer_ptr = static_cast<UIVertex2D*>(bfBuffer_map(frame_data.vertex_buffer, 0, k_bfBufferWholeSize));
+      UIIndexType* index_buffer_ptr  = static_cast<UIIndexType*>(bfBuffer_map(frame_data.index_buffer, 0, k_bfBufferWholeSize));
 
       std::memcpy(vertex_buffer_ptr, vertices.data(), vertices.size() * sizeof(UIVertex2D));
       std::memcpy(index_buffer_ptr, indices.data(), indices.size() * sizeof(UIIndexType));
@@ -1026,9 +1026,9 @@ namespace bf
       bfBuffer_unMap(ubo_buffer.handle());
     }
 
-    bfGfxCmdList_setFrontFace(command_list, BIFROST_FRONT_FACE_CW);
-    bfGfxCmdList_setCullFace(command_list, BIFROST_CULL_FACE_BACK);
-    bfGfxCmdList_setDynamicStates(command_list, BIFROST_PIPELINE_DYNAMIC_VIEWPORT | BIFROST_PIPELINE_DYNAMIC_SCISSOR);
+    bfGfxCmdList_setFrontFace(command_list, BF_FRONT_FACE_CW);
+    bfGfxCmdList_setCullFace(command_list, BF_CULL_FACE_BACK);
+    bfGfxCmdList_setDynamicStates(command_list, BF_PIPELINE_DYNAMIC_VIEWPORT | BF_PIPELINE_DYNAMIC_SCISSOR);
     bfGfxCmdList_setViewport(command_list, 0.0f, 0.0f, float(fb_width), float(fb_height), nullptr);
     bfGfxCmdList_setScissorRect(command_list, 0, 0, fb_width, fb_height);
 
@@ -1036,8 +1036,8 @@ namespace bf
     {
       render_data.reserveShadow(frame_info.frame_index, shadow_vertices.size(), shadow_indices.size());
 
-      DropShadowVertex* vertex_buffer_ptr = static_cast<DropShadowVertex*>(bfBuffer_map(frame_data.vertex_shadow_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
-      UIIndexType*      index_buffer_ptr  = static_cast<UIIndexType*>(bfBuffer_map(frame_data.index_shadow_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE));
+      DropShadowVertex* vertex_buffer_ptr = static_cast<DropShadowVertex*>(bfBuffer_map(frame_data.vertex_shadow_buffer, 0, k_bfBufferWholeSize));
+      UIIndexType*      index_buffer_ptr  = static_cast<UIIndexType*>(bfBuffer_map(frame_data.index_shadow_buffer, 0, k_bfBufferWholeSize));
 
       std::memcpy(vertex_buffer_ptr, shadow_vertices.data(), shadow_vertices.size() * sizeof(DropShadowVertex));
       std::memcpy(index_buffer_ptr, shadow_indices.data(), shadow_indices.size() * sizeof(UIIndexType));

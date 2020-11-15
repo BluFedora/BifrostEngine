@@ -189,9 +189,9 @@ namespace bf
     // NOTE(Shareef):
     //   Don't mess with the layout of this struct unless you change the way
     //   the [GBuffer::attachments] function works or all uses of it.
-    bfTextureHandle   color_attachments[k_GfxNumGBufferAttachments];
-    bfTextureHandle   depth_attachment;
-    BifrostClearValue clear_values[k_GfxNumGBufferAttachments + 1];
+    bfTextureHandle color_attachments[k_GfxNumGBufferAttachments];
+    bfTextureHandle depth_attachment;
+    bfClearValue    clear_values[k_GfxNumGBufferAttachments + 1];
 
     void init(bfGfxDeviceHandle device, int width, int height);
     void setupAttachments(bfRenderpassInfo& renderpass_info, uint16_t subpass_index = 0);
@@ -202,10 +202,10 @@ namespace bf
 
   struct SSAOBuffer final
   {
-    bfTextureHandle   color_attachments[k_GfxNumSSAOBufferAttachments]; /* normal, blurred */
-    BifrostClearValue clear_values[k_GfxNumSSAOBufferAttachments];
-    bfTextureHandle   noise;
-    bfBufferHandle    kernel_uniform;
+    bfTextureHandle color_attachments[k_GfxNumSSAOBufferAttachments]; /* normal, blurred */
+    bfClearValue    clear_values[k_GfxNumSSAOBufferAttachments];
+    bfTextureHandle noise;
+    bfBufferHandle  kernel_uniform;
 
     void init(bfGfxDeviceHandle device, int width, int height);
     void setupAttachments(bfRenderpassInfo& renderpass_info, uint16_t ao_subpass_index, int color_attachment_idx);
@@ -274,7 +274,7 @@ namespace bf
     {
       const auto limits = bfGfxDevice_limits(device);
 
-      transform_uniform.create(device, BIFROST_BUF_UNIFORM_BUFFER, info, limits.uniform_buffer_offset_alignment);
+      transform_uniform.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER, info, limits.uniform_buffer_offset_alignment);
     }
 
     void destroy(bfGfxDeviceHandle device) const
@@ -406,7 +406,7 @@ namespace bf
         result = memory().allocateT<Link>();
         result->gpu_buffer.create(
          gfx_device,
-         BIFROST_BUF_TRANSFER_DST | k_Usage,
+         BF_BUFFER_USAGE_TRANSFER_DST | k_Usage,
          frame_info,
          alignof(T));
       }

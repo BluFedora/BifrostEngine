@@ -7,7 +7,7 @@
 
 typedef struct
 {
-  bfTextureHandle attachments[BIFROST_GFX_RENDERPASS_MAX_ATTACHMENTS];
+  bfTextureHandle attachments[k_bfGfxMaxAttachments];
   uint32_t        num_attachments;
 
 } bfFramebufferState;
@@ -55,7 +55,7 @@ struct ComparebfDescriptorSetInfo
           return false;
         }
 
-        if (binding_a->type == BIFROST_DESCRIPTOR_ELEMENT_BUFFER)
+        if (binding_a->type == BF_DESCRIPTOR_ELEMENT_BUFFER)
         {
           if (binding_a->offsets[j] != binding_b->offsets[j])
           {
@@ -109,7 +109,7 @@ namespace bf
 {
   namespace gfx_hash
   {
-    inline void hash(std::uint64_t& self, const BifrostViewport& vp)
+    inline void hash(std::uint64_t& self, const bfViewport& vp)
     {
       self = hash::addF32(self, vp.x);
       self = hash::addF32(self, vp.y);
@@ -119,7 +119,7 @@ namespace bf
       self = hash::addF32(self, vp.max_depth);
     }
 
-    inline void hash(std::uint64_t& self, const BifrostScissorRect& scissor)
+    inline void hash(std::uint64_t& self, const bfScissorRect& scissor)
     {
       self = hash::addS32(self, scissor.x);
       self = hash::addS32(self, scissor.y);
@@ -127,7 +127,7 @@ namespace bf
       self = hash::addU32(self, scissor.height);
     }
 
-    inline void hash(std::uint64_t& self, const BifrostPipelineDepthInfo& depth, const bfPipelineState& state)
+    inline void hash(std::uint64_t& self, const bfPipelineDepthInfo& depth, const bfPipelineState& state)
     {
       if (!state.dynamic_depth_bias)
       {

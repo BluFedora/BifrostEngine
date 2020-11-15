@@ -126,7 +126,7 @@ struct FixedArray
   }
 };
 
-BIFROST_DEFINE_HANDLE(GfxContext)
+BF_DEFINE_GFX_HANDLE(GfxContext)
 {
   const bfGfxContextCreateParams*  params;                // Only valid during initialization
   std::uint32_t                    max_frames_in_flight;  // TODO(Shareef): Make customizable
@@ -392,7 +392,7 @@ bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self)
 }
 
 template<typename T, typename TCache>
-static void bfGfxContext_removeFromCache(TCache& cache, BifrostGfxObjectBase* object)
+static void bfGfxContext_removeFromCache(TCache& cache, bfBaseGfxObject* object)
 {
   cache.remove(object->hash_code, reinterpret_cast<T>(object));
 }
@@ -401,13 +401,13 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
 {
   // TODO: This whole set of garbage collection should not get called every frame??
 
-  BifrostGfxObjectBase* prev         = nullptr;
-  BifrostGfxObjectBase* curr         = self->logical_device->cached_resources;
-  BifrostGfxObjectBase* release_list = nullptr;
+  bfBaseGfxObject* prev         = nullptr;
+  bfBaseGfxObject* curr         = self->logical_device->cached_resources;
+  bfBaseGfxObject* release_list = nullptr;
 
   while (curr)
   {
-    BifrostGfxObjectBase* next = curr->next;
+    bfBaseGfxObject* next = curr->next;
 
     if ((self->frame_count - curr->last_frame_used & bfFrameCountMax) >= 60)
     {
@@ -439,26 +439,26 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
   {
     while (release_list)
     {
-      BifrostGfxObjectBase* next = release_list->next;
+      bfBaseGfxObject* next = release_list->next;
 
       switch (release_list->type)
       {
-        case BIFROST_GFX_OBJECT_RENDERPASS:
+        case BF_GFX_OBJECT_RENDERPASS:
         {
           bfGfxContext_removeFromCache<bfRenderpassHandle>(self->logical_device->cache_renderpass, release_list);
           break;
         }
-        case BIFROST_GFX_OBJECT_PIPELINE:
+        case BF_GFX_OBJECT_PIPELINE:
         {
           bfGfxContext_removeFromCache<bfPipelineHandle>(self->logical_device->cache_pipeline, release_list);
           break;
         }
-        case BIFROST_GFX_OBJECT_FRAMEBUFFER:
+        case BF_GFX_OBJECT_FRAMEBUFFER:
         {
           bfGfxContext_removeFromCache<bfFramebufferHandle>(self->logical_device->cache_framebuffer, release_list);
           break;
         }
-        case BIFROST_GFX_OBJECT_DESCRIPTOR_SET:
+        case BF_GFX_OBJECT_DESCRIPTOR_SET:
         {
           bfGfxContext_removeFromCache<bfDescriptorSetHandle>(self->logical_device->cache_descriptor_set, release_list);
           break;
@@ -479,11 +479,11 @@ void bfGfxContext_delete(bfGfxContextHandle self)
 {
   auto device = self->logical_device;
 
-  BifrostGfxObjectBase* curr = device->cached_resources;
+  bfBaseGfxObject* curr = device->cached_resources;
 
   while (curr)
   {
-    BifrostGfxObjectBase* next = curr->next;
+    bfBaseGfxObject* next = curr->next;
     bfGfxDevice_release(self->logical_device, curr);
     curr = next;
   }
@@ -972,10 +972,10 @@ namespace
       }
     }
 
-    device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] = UINT32_MAX;
-    device->queue_list.family_index[BIFROST_GFX_QUEUE_COMPUTE]  = UINT32_MAX;
-    device->queue_list.family_index[BIFROST_GFX_QUEUE_TRANSFER] = UINT32_MAX;
-    device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT]  = UINT32_MAX;
+    device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS] = UINT32_MAX;
+    device->queue_list.family_index[BF_GFX_QUEUE_COMPUTE]  = UINT32_MAX;
+    device->queue_list.family_index[BF_GFX_QUEUE_TRANSFER] = UINT32_MAX;
+    device->queue_list.family_index[BF_GFX_QUEUE_PRESENT]  = UINT32_MAX;
 
     for (uint32_t i = 0; i < queue_size; ++i)
     {
@@ -983,30 +983,30 @@ namespace
 
       if (queue->queueCount && queue->queueFlags & VK_QUEUE_GRAPHICS_BIT)
       {
-        if (device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] == UINT32_MAX)
+        if (device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS] == UINT32_MAX)
         {
-          device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] = i;
+          device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS] = i;
         }
 
         if (supports_present[i])
         {
-          device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT] = device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] = i;
+          device->queue_list.family_index[BF_GFX_QUEUE_PRESENT] = device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS] = i;
           break;
         }
       }
     }
 
-    device->queue_list.family_index[BIFROST_GFX_QUEUE_COMPUTE]  = findQueueBasic(device, queue_size, VK_QUEUE_COMPUTE_BIT);
-    device->queue_list.family_index[BIFROST_GFX_QUEUE_TRANSFER] = findQueueBasic(device, queue_size, VK_QUEUE_TRANSFER_BIT);
+    device->queue_list.family_index[BF_GFX_QUEUE_COMPUTE]  = findQueueBasic(device, queue_size, VK_QUEUE_COMPUTE_BIT);
+    device->queue_list.family_index[BF_GFX_QUEUE_TRANSFER] = findQueueBasic(device, queue_size, VK_QUEUE_TRANSFER_BIT);
 
-    if (device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT] == UINT32_MAX)
+    if (device->queue_list.family_index[BF_GFX_QUEUE_PRESENT] == UINT32_MAX)
     {
       // If didn't find a queue that supports both graphics and present, then find a separate present queue.
       for (uint32_t i = 0; i < queue_size; ++i)
       {
         if (supports_present[i])
         {
-          device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT] = i;
+          device->queue_list.family_index[BF_GFX_QUEUE_PRESENT] = i;
           break;
         }
       }
@@ -1050,9 +1050,9 @@ namespace
     static const float queue_priorities[] = {0.0f};
 
     VulkanPhysicalDevice*   device        = self->physical_device;
-    const uint32_t          gfx_queue_idx = device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS];
+    const uint32_t          gfx_queue_idx = device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS];
     uint32_t                num_queues    = 0;
-    VkDeviceQueueCreateInfo queue_create_infos[BIFROST_GFX_QUEUE_MAX];
+    VkDeviceQueueCreateInfo queue_create_infos[BF_GFX_QUEUE_MAX];
 
     const auto addQueue = [gfx_queue_idx, &num_queues, &queue_create_infos](uint32_t queue_index) {
       if (gfx_queue_idx != queue_index)
@@ -1062,9 +1062,9 @@ namespace
     };
 
     queue_create_infos[num_queues++] = makeBasicQCreateInfo(gfx_queue_idx, 1, queue_priorities);
-    addQueue(device->queue_list.family_index[BIFROST_GFX_QUEUE_COMPUTE]);
-    addQueue(device->queue_list.family_index[BIFROST_GFX_QUEUE_TRANSFER]);
-    addQueue(device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT]);
+    addQueue(device->queue_list.family_index[BF_GFX_QUEUE_COMPUTE]);
+    addQueue(device->queue_list.family_index[BF_GFX_QUEUE_TRANSFER]);
+    addQueue(device->queue_list.family_index[BF_GFX_QUEUE_PRESENT]);
 
     VkPhysicalDeviceFeatures deviceFeatures;  // I should be checking if the features exist for the device in the first place.
     memset(&deviceFeatures, 0x0, sizeof(deviceFeatures));
@@ -1133,7 +1133,7 @@ namespace
     cmd_pool_info.pNext = nullptr;
     cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |            // Since these are short lived buffers
                           VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;  // Since I Reuse the Buffer each frame
-    cmd_pool_info.queueFamilyIndex = phys_device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS];
+    cmd_pool_info.queueFamilyIndex = phys_device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS];
 
     const VkResult error = vkCreateCommandPool(
      logical_device->handle,
@@ -1291,11 +1291,11 @@ namespace
 
     const uint32_t queue_family_indices[2] =
      {
-      physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS],
-      physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT],
+      physical_device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS],
+      physical_device->queue_list.family_index[BF_GFX_QUEUE_PRESENT],
      };
 
-    if (physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_GRAPHICS] != physical_device->queue_list.family_index[BIFROST_GFX_QUEUE_PRESENT])
+    if (physical_device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS] != physical_device->queue_list.family_index[BF_GFX_QUEUE_PRESENT])
     {
       // If the graphics and present queues are from different queue families,
       // we either have to explicitly transfer ownership of images between
@@ -1336,9 +1336,9 @@ namespace
     {
       bfTexture* const image = swapchain->img_list.images + i;
 
-      BifrostGfxObjectBase_ctor(&image->super, BIFROST_GFX_OBJECT_TEXTURE);
+      bfBaseGfxObject_ctor(&image->super, BF_GFX_OBJECT_TEXTURE);
 
-      image->image_type      = BIFROST_TEX_TYPE_2D;
+      image->image_type      = BF_TEX_TYPE_2D;
       image->image_width     = int32_t(swapchain->extents.width);
       image->image_height    = int32_t(swapchain->extents.height);
       image->image_depth     = 1;
@@ -1346,9 +1346,9 @@ namespace
       image->tex_memory      = VK_NULL_HANDLE;
       image->tex_view        = bfCreateImageView2D(logical_device->handle, temp_images[i], swapchain->format.format, VK_IMAGE_ASPECT_COLOR_BIT, image->image_miplevels);
       image->tex_sampler     = VK_NULL_HANDLE;
-      image->tex_layout      = BIFROST_IMAGE_LAYOUT_UNDEFINED;
+      image->tex_layout      = BF_IMAGE_LAYOUT_UNDEFINED;
       image->tex_format      = swapchain->format.format;
-      image->tex_samples     = BIFROST_SAMPLE_1;
+      image->tex_samples     = BF_SAMPLE_1;
     }
   }
 
@@ -1437,7 +1437,7 @@ namespace
     return {self, result};
   }
 
-  void gfxContextEndTransientCommandBuffer(TempCommandBuffer buffer, BifrostGfxQueueType queue_type = BIFROST_GFX_QUEUE_GRAPHICS, bool wait_for_finish = true)
+  void gfxContextEndTransientCommandBuffer(TempCommandBuffer buffer, bfGfxQueueType queue_type = BF_GFX_QUEUE_GRAPHICS, bool wait_for_finish = true)
   {
     const VkQueue queue = buffer.context->logical_device->queues[queue_type];
 
@@ -1650,7 +1650,7 @@ bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCrea
 {
   bfBufferHandle self = new bfBuffer();
 
-  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_BUFFER);
+  bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_BUFFER);
 
   self->alloc_pool            = &self_->device_memory_allocator;
   self->alloc_info.mapped_ptr = NULL;
@@ -1686,7 +1686,7 @@ bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCrea
 
   VkPoolAllocator_alloc(self->alloc_pool,
                         &buffer_create_info,
-                        params->usage & BIFROST_BUF_PERSISTENTLY_MAPPED_BUFFER,
+                        params->usage & BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER,
                         memory_type_index,
                         &self->alloc_info);
   vkBindBufferMemory(self_->handle, self->handle, self->alloc_info.handle, self->alloc_info.offset);
@@ -1775,11 +1775,11 @@ void bfBuffer_unMap(bfBufferHandle self)
 }
 
 /* Shader Program + Module */
-bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self_, BifrostShaderType type)
+bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self_, bfShaderType type)
 {
   bfShaderModuleHandle self = new bfShaderModule();
 
-  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_SHADER_MODULE);
+  bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_SHADER_MODULE);
 
   self->parent         = self_;
   self->type           = type;
@@ -1793,9 +1793,9 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self_, cons
 {
   bfShaderProgramHandle self = new bfShaderProgram();
 
-  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_SHADER_PROGRAM);
+  bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_SHADER_PROGRAM);
 
-  assert(params->num_desc_sets <= BIFROST_GFX_RENDERPASS_MAX_DESCRIPTOR_SETS);
+  assert(params->num_desc_sets <= k_bfGfxDescriptorSets);
 
   self->parent               = self_;
   self->layout               = VK_NULL_HANDLE;
@@ -1816,7 +1816,7 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self_, cons
   return self;
 }
 
-BifrostShaderType bfShaderModule_type(bfShaderModuleHandle self)
+bfShaderType bfShaderModule_type(bfShaderModuleHandle self)
 {
   return self->type;
 }
@@ -1951,7 +1951,7 @@ bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle 
 
   bfDescriptorSetHandle self = new bfDescriptorSet();
 
-  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_DESCRIPTOR_SET);
+  bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_DESCRIPTOR_SET);
 
   self->shader_program       = self_;
   self->set_index            = index;
@@ -1978,7 +1978,7 @@ static VkWriteDescriptorSet* bfDescriptorSet__checkForFlush(
   if (self->num_buffer_info + num_buffer_info > bfCArraySize(self->buffer_info) ||
       self->num_image_info + num_image_info > bfCArraySize(self->image_info) ||
       self->num_buffer_view_info + num_buffer_view_info > bfCArraySize(self->buffer_view_info) ||
-      self->num_writes > BIFROST_GFX_DESCRIPTOR_SET_MAX_WRITES)
+      self->num_writes > k_bfGfxMaxDescriptorSetWrites)
   {
     bfDescriptorSet_flushWrites(self);
   }
@@ -2050,7 +2050,7 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
 {
   bfTextureHandle self = new bfTexture();
 
-  BifrostGfxObjectBase_ctor(&self->super, BIFROST_GFX_OBJECT_TEXTURE);
+  bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_TEXTURE);
 
   self->parent          = self_;
   self->flags           = params->flags;
@@ -2063,9 +2063,9 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
   self->tex_memory      = VK_NULL_HANDLE;
   self->tex_view        = VK_NULL_HANDLE;
   self->tex_sampler     = VK_NULL_HANDLE;
-  self->tex_layout      = BIFROST_IMAGE_LAYOUT_UNDEFINED;
+  self->tex_layout      = BF_IMAGE_LAYOUT_UNDEFINED;
   self->tex_format      = bfVkConvertFormat(params->format);
-  self->tex_samples     = BIFROST_SAMPLE_1;
+  self->tex_samples     = BF_SAMPLE_1;
 
   if (self->image_miplevels)
   {
@@ -2105,7 +2105,7 @@ uint32_t bfTexture_numMipLevels(bfTextureHandle self)
   return self->image_miplevels;
 }
 
-BifrostImageLayout bfTexture_layout(bfTextureHandle self)
+bfGfxImageLayout bfTexture_layout(bfTextureHandle self)
 {
   return self->tex_layout;
 }
@@ -2210,16 +2210,16 @@ VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
 {
   VkImageAspectFlags aspects = 0x0;
 
-  if (self->flags & BIFROST_TEX_IS_DEPTH_ATTACHMENT)
+  if (self->flags & BF_TEX_IS_DEPTH_ATTACHMENT)
   {
     aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    if (self->flags & BIFROST_TEX_IS_STENCIL_ATTACHMENT)
+    if (self->flags & BF_TEX_IS_STENCIL_ATTACHMENT)
     {
       aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
   }
-  else if (self->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  else if (self->flags & BF_TEX_IS_COLOR_ATTACHMENT)
   {
     aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
   }
@@ -2231,7 +2231,7 @@ VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
   return aspects;
 }
 
-static void bfTexture__setLayout(bfTextureHandle self, BifrostImageLayout layout)
+static void bfTexture__setLayout(bfTextureHandle self, bfGfxImageLayout layout)
 {
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
   setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), bfVkConvertImgLayout(self->tex_layout), bfVkConvertImgLayout(layout), self->image_miplevels);
@@ -2258,55 +2258,55 @@ static void bfTexture__createImage(bfTextureHandle self)
   create_image.mipLevels             = self->image_miplevels;
   create_image.arrayLayers           = 1;  // TODO:
   create_image.samples               = bfVkConvertSampleCount(self->tex_samples);
-  create_image.tiling                = self->flags & BIFROST_TEX_IS_LINEAR ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+  create_image.tiling                = self->flags & BF_TEX_IS_LINEAR ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
   create_image.usage                 = 0x0;
   create_image.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
   create_image.queueFamilyIndexCount = 0;
   create_image.pQueueFamilyIndices   = nullptr;
   create_image.initialLayout         = bfVkConvertImgLayout(self->tex_layout);
 
-  if (self->flags & BIFROST_TEX_IS_MULTI_QUEUE)
+  if (self->flags & BF_TEX_IS_MULTI_QUEUE)
   {
     create_image.sharingMode = VK_SHARING_MODE_CONCURRENT;
   }
 
   // TODO: Make this a function? BGN
-  if (self->flags & BIFROST_TEX_IS_TRANSFER_SRC || self->image_miplevels > 1)
+  if (self->flags & BF_TEX_IS_TRANSFER_SRC || self->image_miplevels > 1)
   {
     create_image.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   }
 
-  if (self->flags & BIFROST_TEX_IS_TRANSFER_DST)
+  if (self->flags & BF_TEX_IS_TRANSFER_DST)
   {
     create_image.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
   }
 
-  if (self->flags & BIFROST_TEX_IS_SAMPLED)
+  if (self->flags & BF_TEX_IS_SAMPLED)
   {
     create_image.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
 
-  if (self->flags & BIFROST_TEX_IS_STORAGE)
+  if (self->flags & BF_TEX_IS_STORAGE)
   {
     create_image.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
 
-  if (self->flags & BIFROST_TEX_IS_COLOR_ATTACHMENT)
+  if (self->flags & BF_TEX_IS_COLOR_ATTACHMENT)
   {
     create_image.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
 
-  if (self->flags & (BIFROST_TEX_IS_DEPTH_ATTACHMENT | BIFROST_TEX_IS_STENCIL_ATTACHMENT))
+  if (self->flags & (BF_TEX_IS_DEPTH_ATTACHMENT | BF_TEX_IS_STENCIL_ATTACHMENT))
   {
     create_image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
   }
 
-  if (self->flags & BIFROST_TEX_IS_TRANSIENT)
+  if (self->flags & BF_TEX_IS_TRANSIENT)
   {
     create_image.usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
   }
 
-  if (self->flags & BIFROST_TEX_IS_INPUT_ATTACHMENT)
+  if (self->flags & BF_TEX_IS_INPUT_ATTACHMENT)
   {
     create_image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
   }
@@ -2385,9 +2385,9 @@ bfBool32 bfTexture_loadPNG(bfTextureHandle self, const void* png_bytes, size_t p
 bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_t pixels_length, const int32_t offset[3], const uint32_t sizes[3])
 {
   const bool is_indefinite =
-   self->image_width == BIFROST_TEXTURE_UNKNOWN_SIZE ||
-   self->image_height == BIFROST_TEXTURE_UNKNOWN_SIZE ||
-   self->image_depth == BIFROST_TEXTURE_UNKNOWN_SIZE;
+   self->image_width == k_bfTextureUnknownSize ||
+   self->image_height == k_bfTextureUnknownSize ||
+   self->image_depth == k_bfTextureUnknownSize;
 
   assert(!is_indefinite && "Texture_setData: The texture dimensions should be defined by this point.");
 
@@ -2406,13 +2406,13 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
     // TODO(SR): This should not be creating a local temp buffer, rather this staging buffer should be some kind of reused resoruce.
 
     bfBufferCreateParams buffer_params;
-    buffer_params.allocation.properties = BIFROST_BPF_HOST_MAPPABLE | BIFROST_BPF_HOST_CACHE_MANAGED;
+    buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
     buffer_params.allocation.size       = pixels_length;
-    buffer_params.usage                 = BIFROST_BUF_TRANSFER_SRC;
+    buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_SRC;
 
     const bfBufferHandle staging_buffer = bfGfxDevice_newBuffer(self->parent, &buffer_params);
 
-    bfBuffer_map(staging_buffer, 0, BIFROST_BUFFER_WHOLE_SIZE);
+    bfBuffer_map(staging_buffer, 0, k_bfBufferWholeSize);
     bfBuffer_copyCPU(staging_buffer, 0, pixels, pixels_length);
     bfBuffer_unMap(staging_buffer);
 
@@ -2425,7 +2425,7 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
 
 void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3])
 {
-  bfTexture__setLayout(self, BIFROST_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+  bfTexture__setLayout(self, BF_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
   const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
   {
     VkBufferImageCopy region;
@@ -2560,11 +2560,11 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int
     }
     gfxContextEndTransientCommandBuffer(copy_cmds);
 
-    self->tex_layout = BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    self->tex_layout = BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
   }
   else
   {
-    bfTexture__setLayout(self, BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    bfTexture__setLayout(self, BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
   }
 }
 
@@ -2619,7 +2619,7 @@ bfVertexLayoutSetHandle bfVertexLayout_new(void)
 
 static void bfVertexLayout_addXBinding(bfVertexLayoutSetHandle self, uint32_t binding, uint32_t sizeof_vertex, VkVertexInputRate input_rate)
 {
-  assert(self->num_attrib_bindings < BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS);
+  assert(self->num_attrib_bindings < k_bfGfxMaxLayoutBindings);
 
   VkVertexInputBindingDescription* desc = self->buffer_bindings + self->num_buffer_bindings;
 
@@ -2640,9 +2640,9 @@ void bfVertexLayout_addInstanceBinding(bfVertexLayoutSetHandle self, uint32_t bi
   bfVertexLayout_addXBinding(self, binding, stride, VK_VERTEX_INPUT_RATE_INSTANCE);
 }
 
-void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t binding, BifrostVertexFormatAttribute format, uint32_t offset)
+void bfVertexLayout_addVertexLayout(bfVertexLayoutSetHandle self, uint32_t binding, bfGfxVertexFormatAttribute format, uint32_t offset)
 {
-  assert(self->num_attrib_bindings < BIFROST_GFX_VERTEX_LAYOUT_MAX_BINDINGS);
+  assert(self->num_attrib_bindings < k_bfGfxMaxLayoutBindings);
 
   VkVertexInputAttributeDescription* desc = self->attrib_bindings + self->num_attrib_bindings;
 
@@ -2661,7 +2661,7 @@ void bfVertexLayout_delete(bfVertexLayoutSetHandle self)
 
 // Idk what's happeneing with this code
 
-void UpdateResourceFrame(bfGfxContextHandle ctx, BifrostGfxObjectBase* obj)
+void UpdateResourceFrame(bfGfxContextHandle ctx, bfBaseGfxObject* obj)
 {
   obj->last_frame_used = ctx->frame_count;
 }

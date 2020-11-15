@@ -30,9 +30,9 @@ namespace bf
 
     bfShaderProgram_link(m_ShaderProgram);
 
-    // bindings::addObject(m_ShaderProgram, BIFROST_SHADER_STAGE_VERTEX);
-    bindings::addMaterial(m_ShaderProgram, BIFROST_SHADER_STAGE_FRAGMENT);
-    bindings::addCamera(m_ShaderProgram, BIFROST_SHADER_STAGE_VERTEX);
+    // bindings::addObject(m_ShaderProgram, BF_SHADER_STAGE_VERTEX);
+    bindings::addMaterial(m_ShaderProgram, BF_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_ShaderProgram, BF_SHADER_STAGE_VERTEX);
 
     bfShaderProgram_compile(m_ShaderProgram);
 
@@ -268,7 +268,7 @@ namespace bf
         m_SpriteIndexBuffer->flushLinks(frame_info);
 #endif
 
-        bfGfxCmdList_setCullFace(cmd_list, BIFROST_CULL_FACE_NONE);
+        bfGfxCmdList_setCullFace(cmd_list, BF_CULL_FACE_NONE);
         bfGfxCmdList_bindProgram(cmd_list, m_ShaderProgram);
         bfGfxCmdList_bindVertexDesc(cmd_list, engine_renderer.standardVertexLayout());
 
@@ -321,7 +321,7 @@ namespace bf
           batches = batches->next_batch;
         }
 
-        bfGfxCmdList_setCullFace(cmd_list, BIFROST_CULL_FACE_BACK);
+        bfGfxCmdList_setCullFace(cmd_list, BF_CULL_FACE_BACK);
       }
     }
   }

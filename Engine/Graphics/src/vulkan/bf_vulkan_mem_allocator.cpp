@@ -95,7 +95,7 @@ static void         update_chunk(MemoryPool* const pool, const BlockSpanIndexPai
 
 void VkPoolAllocator_alloc(PoolAllocator* self, const bfAllocationCreateInfo* create_info, const bfBool32 is_globally_mapped, const uint32_t mem_type, Allocation* out)
 {
-  const bfBool32     needs_own_page = create_info->properties != BIFROST_BPF_DEVICE_LOCAL || !is_globally_mapped;
+  const bfBool32     needs_own_page = create_info->properties != BF_BUFFER_PROP_DEVICE_LOCAL || !is_globally_mapped;
   const VkDeviceSize size           = create_info->size;
   const VkDeviceSize real_size      = align_to(size, self->m_PageSize);
   MemoryPool* const  pool           = (MemoryPool*)bfArray_at((void**)&self->m_MemPools, mem_type);
@@ -120,7 +120,7 @@ void VkPoolAllocator_alloc(PoolAllocator* self, const bfAllocationCreateInfo* cr
     VkResult err = vkMapMemory(self->m_LogicalDevice->handle,
                                block->mem.handle,
                                0,
-                               BIFROST_BUFFER_WHOLE_SIZE,
+                               k_bfBufferWholeSize,
                                0,
                                &block->pageMapping);
 

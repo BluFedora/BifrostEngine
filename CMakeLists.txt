@@ -265,24 +265,32 @@ elseif (APPLE)
 endif()
 
 if (WIN32)
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependentd.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRVd.lib")
-    # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib")
-    # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
-    # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib")
+  if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    target_link_libraries(
+      BifrostEngineOLD
+      PRIVATE 
+        "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib"
+        "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib"
+        "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib"
+        "${BIFROST_ENGINE_LIB_DIR}/OSDependentd.lib"
+        "${BIFROST_ENGINE_LIB_DIR}/SPIRVd.lib"
+        # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib"
+        # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib"
+        # "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib"
+    )
   else()
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/glslang.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/OSDependent.lib")
-    target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV.lib")
-    # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib")
-    # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib")
-    # target_link_libraries(BifrostEngine PRIVATE "${BIFROST_ENGINE_LIB_DIR}/SPVRemapper.lib")
+    target_link_libraries(
+        BifrostEngineOLD
+        PRIVATE 
+          "${BIFROST_ENGINE_LIB_DIR}/glslang.lib"
+          "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib"
+          "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib"
+          "${BIFROST_ENGINE_LIB_DIR}/OSDependent.lib"
+          "${BIFROST_ENGINE_LIB_DIR}/SPIRV.lib"
+          # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib"
+          # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib"
+          # "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib"
+    )
   endif()
   # target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
 elseif (APPLE)
@@ -355,7 +363,6 @@ endif()
 
 add_subdirectory(Engine)
 add_subdirectory(Experiments)
-add_subdirectory(Graphics)
 add_subdirectory(BifrostScript)
 add_subdirectory(Games/DungeonSwiper)
 
