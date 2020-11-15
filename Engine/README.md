@@ -10,7 +10,6 @@ This layer consists of libraries which only rely on code within it's own source 
 
 - Core
 - Dispatch
-- Graphics (should use: [Memory][Memory])
 - Math
 - [Memory][Memory]
 - Network  (should use: [Memory][Memory])
@@ -21,9 +20,11 @@ This layer consists of libraries which only rely on code within it's own source 
 ## Layer 1
 
 - Anim2D          (Networking, Data Structures)
-- Data Structures (Core, [Memory][Memory], some ds are standalone)
+- Data Structures (Core, [Memory][Memory])
+  - Some of the Data Structures are standalong an can be copied as is.
 - [Job][Job]      (internally [Memory][Memory])
 - Text            ([Memory][Memory])
+- Graphics        (Core, Data Structures, [Memory][Memory], [Platform][Platform], TMPUtils)
 
 ## Layer 2
 
