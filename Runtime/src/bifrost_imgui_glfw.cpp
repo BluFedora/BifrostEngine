@@ -707,11 +707,11 @@ namespace bf::imgui
      (vp->Flags & ImGuiViewportFlags_NoDecoration ? 0x0 : k_bfWindowFlagIsDecorated) |
       convertVpFlag(vp, ImGuiViewportFlags_TopMost, k_bfWindowFlagIsFloating));
 
-    window->event_fn = [](struct bfWindow_t* window, bfEvent* event) {
+    window->event_fn = [](bfWindow* window, bfEvent* event) {
       onEvent(window, *event);
     };
 
-    window->frame_fn = [](struct bfWindow_t* window) {
+    window->frame_fn = [](bfWindow* window) {
       ImGuiViewport* vp = ImGui::FindViewportByPlatformHandle(window->user_data);
 
       if (vp)

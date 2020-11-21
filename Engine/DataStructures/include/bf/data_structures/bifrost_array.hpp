@@ -219,6 +219,13 @@ namespace bf
       new (bfArray_insertEmplace(rawData(), index)) T(std::forward<Args>(args)...);
     }
 
+    template<typename... Args>
+    void insert(iterator location, Args&&... args)
+    {
+      // TODO(SR): This only works if T is trivially locatable.
+      insert(iteratorToInsertIndex(location), std::forward<Args>(args)...);
+    }
+
     T& at(std::size_t index)
     {
       return *static_cast<T*>(::bfArray_at(rawData(), index));
@@ -316,6 +323,13 @@ namespace bf
     }
 
    private:
+    std::size_t iteratorToInsertIndex(const iterator element)
+    {
+      assert(begin() <= element && element <= end() && "'element' must be within this Array");
+
+      return element - begin();
+    }
+
     void copyFrom(const Array& rhs)
     {
       reserve(rhs.size());

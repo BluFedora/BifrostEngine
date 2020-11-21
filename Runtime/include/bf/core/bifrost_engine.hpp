@@ -1,5 +1,5 @@
-#ifndef BIFROST_ENGINE_HPP
-#define BIFROST_ENGINE_HPP
+#ifndef BF_ENGINE_HPP
+#define BF_ENGINE_HPP
 
 #include "bf/LinearAllocator.hpp"
 #include "bf/PoolAllocator.hpp"
@@ -11,8 +11,6 @@
 #include "bifrost/bifrost_vm.hpp"
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
-
-#include <utility>  // pair
 
 #define USE_CRT_HEAP 0
 
@@ -32,32 +30,6 @@ struct EngineCreateParams : public bfGfxContextCreateParams
 {
   int fixed_frame_rate = 60;
 };
-
-static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
-{
-  (void)vm;
-  (void)line_no;
-  if (err == BIFROST_VM_ERROR_STACK_TRACE_BEGIN || err == BIFROST_VM_ERROR_STACK_TRACE_END)
-  {
-    printf("### ------------ ERROR ------------ ###\n");
-  }
-  else
-  {
-    std::printf("%s", message);
-  }
-}
-
-namespace bf::detail
-{
-  class CoreEngineGameStateLayer final : public IGameStateLayer
-  {
-   protected:
-    void onEvent(Engine& engine, Event& event) override;
-
-   public:
-    const char* name() override { return "__CoreEngineLayer__"; }
-  };
-}  // namespace bf::detail
 
 namespace bf
 {
@@ -169,7 +141,8 @@ namespace bf
   };
 }  // namespace bf
 
-#include <chrono> /* high_resolution_clock */
+#include <chrono>   // high_resolution_clock
+#include <utility>  // pair
 
 using namespace bf;
 
@@ -292,6 +265,12 @@ class Engine : private NonCopyMoveable<Engine>
   void deinit();
 
  private:
+  //
+  // Engine::tick() calls these functions in this order.
+  // If 'Engine::beginFrame' returns false no other function
+  // is called that frame.
+  //
+
   [[nodiscard]] bool beginFrame();
   void               fixedUpdate(float delta_time);
   void               update(float delta_time);
@@ -303,4 +282,4 @@ class Engine : private NonCopyMoveable<Engine>
   void deleteCameras();
 };
 
-#endif /* BIFROST_ENGINE_HPP */
+#endif /* BF_ENGINE_HPP */

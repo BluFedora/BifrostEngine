@@ -12,7 +12,7 @@
  */
 /******************************************************************************/
 
-#include <bifrost/script/bifrost_vm.hpp> /* VM C++ API */
+#include <bifrost/bifrost_vm.hpp> /* VM C++ API */
 
 #include <cstdio>    // printf, fopen, flocse, ftell, fseek, fread, malloc
 #include <iostream>  // cin

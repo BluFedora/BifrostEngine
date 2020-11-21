@@ -1,3 +1,4 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_igame_state_layer.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
@@ -10,15 +11,14 @@
  *
  * @copyright Copyright (c) 2019
  */
+/******************************************************************************/
 #ifndef BIFROST_IGAME_STATE_LAYER_HPP
 #define BIFROST_IGAME_STATE_LAYER_HPP
 
+#include "bf/PlatformFwd.h"        /* bfEvent              */
 #include "bf/bf_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
 
 class Engine;
-
-struct bfEvent_t;
-typedef struct bfEvent_t bfEvent;
 
 namespace bf
 {
@@ -57,6 +57,6 @@ namespace bf
     [[nodiscard]] IGameStateLayer* prev() const { return m_Prev; }
     [[nodiscard]] IGameStateLayer* next() const { return m_Next; }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_IGAME_STATE_LAYER_HPP */

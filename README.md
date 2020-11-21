@@ -1,4 +1,4 @@
-# BF Engine by Shareef Raheem
+# BF Engine
 
 ## Description
 

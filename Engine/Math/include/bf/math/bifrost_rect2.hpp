@@ -539,6 +539,24 @@ namespace bf
     }
 #endif
 
+    template<typename T>
+    detail::Vec2T<T> min(const detail::Vec2T<T>& a, const detail::Vec2T<T>& b)
+    {
+      return {
+       std::min(a.x, b.x),
+       std::min(a.y, b.y),
+      };
+    }
+
+    template<typename T>
+    detail::Vec2T<T> max(const detail::Vec2T<T>& a, const detail::Vec2T<T>& b)
+    {
+      return {
+       std::max(a.x, b.x),
+       std::max(a.y, b.y),
+      };
+    }
+
     // Vec3
 
     static inline Vector3f normalized(Vector3f a)

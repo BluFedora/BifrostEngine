@@ -3,6 +3,8 @@
 #include "bf/Gfx2DPainter.hpp"                         // Gfx2DPainter
 #include "bf/Platform.h"                               // BifrostWindow
 #include "bf/anim2D/bf_animation_system.hpp"           // AnimationSystem
+#include "bf/bf_ui.hpp"                                // UI::
+#include "bf/bf_version.h"                             // BF_VERSION_STR
 #include "bf/debug/bifrost_dbg_logger.h"               // bfLog*
 #include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bf/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
@@ -12,6 +14,18 @@
 using namespace std::chrono_literals;
 
 static constexpr float k_SecToMs = 1000.0f;
+
+namespace bf::detail
+{
+  class CoreEngineGameStateLayer final : public IGameStateLayer
+  {
+   protected:
+    void onEvent(Engine& engine, Event& event) override;
+
+   public:
+    const char* name() override { return "__CoreEngineLayer__"; }
+  };
+}  // namespace bf::detail
 
 namespace bf
 {
@@ -180,6 +194,20 @@ EntityRef Engine::createEntity(Scene& scene, const StringRange& name)
   return EntityRef{entity};
 }
 
+static void userErrorFn(struct BifrostVM_t* vm, BifrostVMError err, int line_no, const char* message)
+{
+  (void)vm;
+  (void)line_no;
+  if (err == BIFROST_VM_ERROR_STACK_TRACE_BEGIN || err == BIFROST_VM_ERROR_STACK_TRACE_END)
+  {
+    printf("### ------------ ERROR ------------ ###\n");
+  }
+  else
+  {
+    std::printf("%s", message);
+  }
+}
+
 void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
 {
   IBifrostDbgLogger logger_config{
@@ -205,7 +233,7 @@ void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
 
   bfLogger_init(&logger_config);
 
-  bfLogPush("Engine Init of App: '%s'", params.app_name);
+  bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 
   gc::init(m_MainMemory);
 
@@ -248,6 +276,8 @@ void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
 
   m_StateMachine.push<detail::CoreEngineGameStateLayer>();
 
+  UI::Init();
+
   bfLogPop();
 
   m_TimeStep    = std::chrono::milliseconds(int((1.0f / float(params.fixed_frame_rate)) * k_SecToMs));
@@ -264,6 +294,8 @@ void Engine::onEvent(bfWindow* window, Event& evt)
   {
     it->onEvent(*this, evt);
   }
+
+  UI::PumpEvents(&evt);
 }
 
 void Engine::tick()
@@ -448,7 +480,9 @@ void Engine::draw(float render_alpha)
     state.onDraw2D(*this, painter);
   }
 
-  renderer2D().render(cmd_list, bfTexture_width(main_surface), bfTexture_height(main_surface));
+  UI::Render(painter);
+
+  painter.render(cmd_list, bfTexture_width(main_surface), bfTexture_height(main_surface));
 
   m_Renderer.endPass(cmd_list);
   m_Renderer.drawEnd();

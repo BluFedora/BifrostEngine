@@ -256,6 +256,8 @@ void bfArray_insert(void** self, size_t index, const void* element)
   memcpy(dst, element, stride);
 }
 
+static void* bfArray_atInclusive(void** self, size_t index);
+
 void* bfArray_insertEmplace(void** self, size_t index)
 {
   ArrayHeader* const header = grabHeader(self);
@@ -266,7 +268,7 @@ void* bfArray_insertEmplace(void** self, size_t index)
 
   bfArray_resize(self, size + 1);
 
-  void* const move_dst = bfArray_at(self, index + 1);
+  void* const move_dst = bfArray_atInclusive(self, index + 1);
   void* const move_src = bfArray_at(self, index);
 
   memmove(move_dst, move_src, stride * (size - index));
@@ -293,6 +295,15 @@ void* bfArray_emplaceN(void** self, size_t num_elements)
 
   header->size += num_elements;
   return elements_start;
+}
+
+static void* bfArray_atInclusive(void** self, size_t index)
+{
+  ArrayHeader* const header = grabHeader(self);
+
+  bfAssert(index <= header->size, "bfArray_at:: index must be less than the size.");
+
+  return bfCastByte(*self) + index * header->stride;
 }
 
 void* bfArray_at(void** self, size_t index)

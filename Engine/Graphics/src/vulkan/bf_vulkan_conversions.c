@@ -106,6 +106,16 @@ VkShaderStageFlagBits bfVkConvertShaderStage(bfShaderStageBits flags)
   return result;
 }
 
+// NOTE(Shareef):
+//   If topology is VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+//     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+//     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY or VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+//     primitiveRestartEnable must be VK_FALSE
+//   If the geometry shaders feature is not enabled, topology must not be any of
+//     VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
+//     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY or VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY
+//   If the tessellation shaders feature is not enabled, topology must not be VK_PRIMITIVE_TOPOLOGY_PATCH_LIST
+
 VkPrimitiveTopology bfVkConvertTopology(bfDrawMode draw_mode)
 {
   switch (draw_mode)

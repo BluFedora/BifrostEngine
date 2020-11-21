@@ -14,12 +14,12 @@
 #ifndef BF_GFX_API_H
 #define BF_GFX_API_H
 
-#include "bf/Core.h"               /* bfBool32 */
-#include "bf_gfx_export.h"         /* BF_GFX_API */
-#include "bf_gfx_handle.h"         /* */
-#include "bf_gfx_limits.h"         /* */
-#include "bf_gfx_pipeline_state.h" /* */
-#include "bf_gfx_types.h"          /* */
+#include "bf/Core.h"               /* bfBool32, bfBit */
+#include "bf_gfx_export.h"         /* BF_GFX_API      */
+#include "bf_gfx_handle.h"         /*                 */
+#include "bf_gfx_limits.h"         /*                 */
+#include "bf_gfx_pipeline_state.h" /*                 */
+#include "bf_gfx_types.h"          /*                 */
 
 #include <stdint.h> /* uint32_t */
 
@@ -40,7 +40,7 @@ enum
 /* clang-format on */
 
 /* Forward Declarations */
-struct bfWindow_t;
+struct bfWindow;
 
 typedef uint64_t bfBufferSize;
 
@@ -232,6 +232,7 @@ typedef struct
   bfBool32          generate_mipmaps;
   uint32_t          num_layers;
   bfTexFeatureFlags flags;
+  bfGfxSampleFlags  sample_count;
 
 } bfTextureCreateParams;
 
@@ -265,7 +266,7 @@ typedef struct
 /* Context */
 BF_GFX_API bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
 BF_GFX_API bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
-BF_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window);
+BF_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow* bf_window);
 BF_GFX_API void                   bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
 BF_GFX_API bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window);
 BF_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self);

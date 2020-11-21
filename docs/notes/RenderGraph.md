@@ -128,7 +128,7 @@ Color / Depth Attachments:
 	[Y] Write -> Write
 	[N] Read  -> Read
 
-// All the condtions to make a barrier.
+// All the conditions to make a barrier.
   [ 0] Buffer Read -> Buffer Write.
   [ 1] Subpass Reading of the same pixel that is being written to earlier.
   [ 2] A renderpass needing the framebuffer from an earlier renderpass.

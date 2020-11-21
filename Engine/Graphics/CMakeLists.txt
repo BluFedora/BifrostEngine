@@ -46,7 +46,7 @@ set(
   BF_GRAPHICS_LIBRARIES
 
   BF_DataStructuresC_static
-  BF_Core_static
+  BF_Platform_shared
   BF_TMPUtils
 )
 
@@ -140,6 +140,7 @@ target_link_libraries(
   BF_Graphics_static
   PUBLIC
     BF_Platform_static
+    BF_Core_static
   PRIVATE
     "${BF_GRAPHICS_LIBRARIES}"
 )
@@ -166,6 +167,7 @@ target_link_libraries(
   BF_Graphics_shared
   PUBLIC
     BF_Platform_shared
+    BF_Core_static
   PRIVATE
     "${BF_GRAPHICS_LIBRARIES}"
 )

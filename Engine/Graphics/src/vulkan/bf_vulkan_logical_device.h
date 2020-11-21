@@ -1,5 +1,5 @@
-#ifndef BIFROST_VULKAN_LOGICAL_DEVICE_H
-#define BIFROST_VULKAN_LOGICAL_DEVICE_H
+#ifndef BF_VULKAN_LOGICAL_DEVICE_H
+#define BF_VULKAN_LOGICAL_DEVICE_H
 
 #include "../bf_gfx_object_cache.hpp"
 #include "bf_vulkan_hash.hpp"
@@ -293,4 +293,4 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
   return true;
 }
 
-#endif /* BIFROST_VULKAN_LOGICAL_DEVICE_H */
+#endif /* BF_VULKAN_LOGICAL_DEVICE_H */

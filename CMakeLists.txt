@@ -230,6 +230,7 @@ target_link_libraries(
     BF_Graphics_shared
     bfAnimation2D_shared
     BifrostScript_shared
+    BF_UI_shared
 )
 
 set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)

@@ -80,6 +80,7 @@ static const uint s_Colors[] = {BIFROST_COLOR_CORAL, BIFROST_COLOR_CORNFLOWERBLU
 
 static const float k_ChainLinkLen = 0.5f;
 
+//
 // [https://www.euclideanspace.com/physics/kinematics/joints/ik/index.htm]
 // [http://what-when-how.com/advanced-methods-in-computer-graphics/kinematics-advanced-methods-in-computer-graphics-part-4/]
 //
@@ -91,7 +92,7 @@ class IkDemo final : public Behavior<IkDemo>
     Quaternionf rotation;
     float       length;
 
-    Vector3f points[2];
+    Vector3f points[2]; // Cached points.
 
     void EndPointFrom(Quaternionf& parent_rotation, Vector3f& start_pos)
     {
@@ -116,7 +117,9 @@ class IkDemo final : public Behavior<IkDemo>
   void onEnable() override
   {
     for (int i = 0; i < 20; ++i)
+    {
       m_Joints.push(IKJoint{bfQuaternionf_identity(), k_ChainLinkLen});
+    }
 
     // m_Joints.push(IKJoint{bfQuaternionf_identity(), 1.0f});
     // m_Joints.push(IKJoint{bfQuaternionf_identity(), 2.0f});
@@ -129,12 +132,12 @@ class IkDemo final : public Behavior<IkDemo>
 
   void onUpdate(float dt) override
   {
-    const auto recalculate_joint_positions = [this]() {
+    const auto recalculate_joint_positions = [this](int i = 0) {
       auto&       transform     = owner().transform();
       Vector3f    base_position = transform.world_position;
       Quaternionf base_rotation = transform.world_rotation;
 
-      for (int i = 0; i < int(m_Joints.length()); ++i)
+      for (; i < int(m_Joints.length()); ++i)
       {
         m_Joints[i].EndPointFrom(base_rotation, base_position);
       }

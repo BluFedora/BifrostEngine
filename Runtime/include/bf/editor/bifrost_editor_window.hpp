@@ -13,20 +13,16 @@
 #ifndef BIFROST_EDITOR_WINDOW_HPP
 #define BIFROST_EDITOR_WINDOW_HPP
 
-#include "bf/bf_non_copy_move.hpp"                      // bfNonCopyMoveable<T>
+#include "bf/PlatformFwd.h"                        // bfEvent
 #include "bf/asset_io/bifrost_asset_handle.hpp"    // BaseAssetHandle
+#include "bf/bf_non_copy_move.hpp"                 // bfNonCopyMoveable<T>
 #include "bf/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
 
 #include <imgui/imgui.h> /* ImGuiID */
 
-extern "C" {
-struct bfEvent_t;
-typedef struct bfEvent_t bfEvent;
-}
-
 namespace bf
 {
-  using Event = struct ::bfEvent_t;
+  using Event = struct ::bfEvent;
   class IMemoryManager;
   class Entity;
   class IBaseObject;
@@ -38,7 +34,8 @@ namespace bf::editor
 
   using Selectable = Variant<IBaseObject*, Entity*, BaseAssetHandle>;
 
-  // TODO(SR): The title ID stuff could be more efficient since it assumes changing titles but most likely case is that the title string stays the same...
+  // TODO(SR): 
+  //   The title ID stuff could be more efficient since it assumes changing titles but most likely case is that the title string stays the same...
 
   //
   // This unique type ID system may not work across dll boundaries.

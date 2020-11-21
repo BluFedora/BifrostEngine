@@ -9,7 +9,7 @@
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "-DCMAKE_CXX_FLAGS:STRING=\"/DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /W3 /GR /EHsc /Od\"",
       "buildCommandArgs": "-v",
-      "addressSanitizerEnabled": true,
+      "addressSanitizerEnabled": false,
       "ctestCommandArgs": "",
       "variables": [
         {
@@ -222,6 +222,30 @@
           "type": "BOOL"
         }
       ]
+    },
+    {
+      "name": "x64 GLFW-Vk (Debug)-ASAN",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "C:/Users/rshar/Documents/BifrostEngine/build/cmake",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_CXX_FLAGS:STRING=\"/DWIN32 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /D_WINDOWS /W3 /GR /EHsc /Od\"",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "BF_OPT_GRAPHICS_OPENGL",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "BF_OPT_GRAPHICS_VULKAN",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ],
+      "addressSanitizerEnabled": true
     }
   ]
 }

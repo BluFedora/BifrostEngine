@@ -10,14 +10,14 @@ cmake_minimum_required(VERSION 3.8)
 
 project(BifrostScript VERSION 0.1.3 DESCRIPTION "This is a toy compiler and virtual machine for my simple scripting langauge." LANGUAGES C)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
-  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-  set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win32)
-endif()
-
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
+# if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
+#   set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win64)
+# elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
+#   set(CMAKE_BINARY_DIR       ${CMAKE_SOURCE_DIR}/lib/win32)
+# endif()
+# 
+# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+# set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 
 file(GLOB_RECURSE BIFROST_SCRIPT_SOURCE_FILES
   "${PROJECT_SOURCE_DIR}/src/bifrost_vm_build.c"

@@ -1,0 +1,37 @@
+import "std:io"  for print;
+import "bifrost" for Behavior;
+
+class DemoScript : Behavior
+{
+	var member_variable = 0;
+
+	func onEnable()
+	{
+		print("I have been enabled");
+	}
+
+	func onUpdate(dt)
+	{
+		print("Delta Time is " + dt + " seconds");
+	}
+
+	func onDisable()
+	{
+		print("I have been disabled");
+	}
+};
+
+func onEnable()
+{
+	print("I have been enabled");
+}
+
+func onUpdate(dt)
+{
+	// print("Delta Time is " + dt + " seconds");
+}
+
+func onDisable()
+{
+	print("I have been disabled");
+}

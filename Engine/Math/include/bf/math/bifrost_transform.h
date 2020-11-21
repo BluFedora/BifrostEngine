@@ -91,6 +91,12 @@ typedef enum bfTransformFlags_t
   BIFROST_TRANSFORM_CHILD_DIRTY      = (1 << 5),
   BIFROST_TRANSFORM_NEEDS_GPU_UPLOAD = (1 << 6),
 
+// TODO: Un plimentetdafasfa
+  BF_TRANSFORM_ADOPT_SCALE    = (1 << 7),
+  BF_TRANSFORM_ADOPT_ROTATION = (1 << 8),
+  BF_TRANSFORM_ADOPT_POSITION = (1 << 9),
+
+
   /* Helper Flags */
   BIFROST_TRANSFORM_NONE        = 0x0,
   BIFROST_TRANSFORM_DIRTY       = 0xFF,

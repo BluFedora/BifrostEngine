@@ -1,12 +1,10 @@
 ﻿#define NOMINMAX
 
-#include "bf/Gfx2DPainter.hpp"
 #include "bf/MemoryUtils.h"  // bfMegabytes
 #include "main_demo.hpp"
 
 #include <bf/bifrost.hpp>
 #include <bf/bifrost_imgui_glfw.hpp>
-#include <bf/bf_version.h>
 #include <bf/editor/bifrost_editor_overlay.hpp>
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
@@ -79,75 +77,75 @@ void testFN()
 }
 
 static char source[] = R"(
-  import "main"    for TestClass, cppFn, BigFunc, AnotherOne;
-  import "bifrost" for Camera;
-  import "std:io"  for print;
+import "main"    for TestClass, cppFn, BigFunc, AnotherOne;
+import "bifrost" for Camera;
+import "std:io"  for print;
 
-  class MyBase
+class MyBase
+{
+  func ctor()
   {
-    func ctor()
-    {
-      print("MyBase::ctor");
-    }
-
-    func baseClassCall()
-    {
-      print("This is from the base class.");
-    }
-  };
-
-  class Derived : MyBase
-  {
-    func ctor()
-    {
-      super.ctor(self);
-      print("Derived::ctor");
-    }
-
-    func test()
-    {
-      print(super);
-      self:baseClassCall();
-    }
-  };
-
-  var d = new Derived();
-  d:test();
-
-  static var cam = new Camera();
-
-  var t = new TestClass.ctor(28);
-  print("ret from t = " +  t:printf(54));
-
-  hello();
-
-  func hello()
-  {
-    print("Hello from another module.");
+    print("MyBase::ctor");
   }
 
-  class GameState
+  func baseClassCall()
   {
-    static var i = 2;
-  };
+    print("This is from the base class.");
+  }
+};
 
-  func update(dt)
+class Derived : MyBase
+{
+  func ctor()
   {
-    cam:update(dt);
-
-    // BigFunc();
-    // print AnotherOne();
-
-    // print "I am updating!" + GameState.i;
-    // GameState.i = GameState.i + 1;
-    // t = nil;
+    super.ctor(self);
+    print("Derived::ctor");
   }
 
-  func callMeFromCpp(arg0, arg1, arg2)
+  func test()
   {
-    print("You passed in: " + arg0 + ", " + arg1 + ", "  + arg2);
-    cppFn();
+    print(super);
+    self:baseClassCall();
   }
+};
+
+var d = new Derived();
+d:test();
+
+static var cam = new Camera();
+
+var t = new TestClass.ctor(28);
+print("ret from t = " +  t:printf(54));
+
+hello();
+
+func hello()
+{
+  print("Hello from another module.");
+}
+
+class GameState
+{
+  static var i = 2;
+};
+
+func update(dt)
+{
+  cam:update(dt);
+
+  // BigFunc();
+  // print AnotherOne();
+
+  // print "I am updating!" + GameState.i;
+  // GameState.i = GameState.i + 1;
+  // t = nil;
+}
+
+func callMeFromCpp(arg0, arg1, arg2)
+{
+  print("You passed in: " + arg0 + ", " + arg1 + ", "  + arg2);
+  cppFn();
+}
 )";
 
 class Camera_
@@ -325,15 +323,97 @@ static void TestMetaSystem()
   std::printf("test.field = %i\n", test.field);
 }
 
-static constexpr TestCaseFn s_Test[] = {&Test2DTransform, &TestQuaternions, &TestApplyReturningVoid, &TestMetaSystem};
-
-namespace ReturnCode
+static void TestScriptingStuff()
 {
-  static constexpr int SUCCESS                          = 0;
-  static constexpr int FAILED_TO_INITIALIZE_PLATFORM    = 1;
-  static constexpr int FAILED_TO_CREATE_MAIN_WINDOW     = 2;
-  static constexpr int FAILED_TO_ALLOCATE_ENGINE_MEMORY = 3;
-}  // namespace ReturnCode
+  TestClass my_obj    = {74, "This message will be in Y"};
+  VMParams  vm_params = VMParams{};
+  vm_params.print_fn  = [](BifrostVM*, const char* message) {
+    bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
+    std::printf("(BTS) %s", message);
+    bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+  };
+
+  VM vm = VM{vm_params};
+
+  const BifrostVMClassBind camera_clz_bindings = vmMakeClassBinding<Camera_>(
+   "Camera",
+   vmMakeCtorBinding<Camera_>());
+
+  vm.stackResize(5);
+
+  vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
+  vm.moduleMake(0, "bifrost");
+  vm.stackStore(0, camera_clz_bindings);
+  vm.stackLoadVariable(1, 0, "Camera");
+  vm.stackStore(1, "update", &Camera_::update);
+
+  const BifrostVMClassBind clz_bind = vmMakeClassBinding<TestClass>(
+   "TestClass",
+   vmMakeCtorBinding<TestClass, int>(),
+   vmMakeMemberBinding<&TestClass::printf>("printf"));
+
+  vm.stackResize(1);
+  vm.moduleMake(0, "main");
+  vm.stackStore(0, clz_bind);
+  vm.stackStore<testFN>(0, "cppFn");
+
+  float capture = 6.0f;
+  vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
+    std::printf("Will this work out %f???\n", capture);
+    ++capture;
+    my_obj.x = 65;
+  });
+  vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
+
+  const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
+
+  bfValueHandle update_fn = nullptr;
+
+  if (!err)
+  {
+    vm.stackResize(1);
+    vm.moduleLoad(0, "main2");
+    vm.stackLoadVariable(0, 0, "callMeFromCpp");
+
+    vm.call(0, 45, std::string("Hello from cpp") + "!!!", false);
+
+    vm.moduleLoad(0, "main2");
+    vm.stackLoadVariable(0, 0, "update");
+    update_fn = vm.stackMakeHandle(0);
+  }
+
+#if 0
+if (update_fn)
+{
+  vm.stackResize(1);
+  vm.stackLoadHandle(0, update_fn);
+
+  if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
+  {
+    vm.call(0, delta_time);
+  }
+}
+#endif
+
+  vm.stackDestroyHandle(update_fn);
+}
+
+static constexpr TestCaseFn s_Test[] =
+ {
+  // &Test2DTransform,
+  // &TestQuaternions,
+  // &TestApplyReturningVoid,
+  // &TestMetaSystem,
+  &TestScriptingStuff,
+};
+
+enum ReturnCode
+{
+  SUCCESS,
+  FAILED_TO_INITIALIZE_PLATFORM,
+  FAILED_TO_CREATE_MAIN_WINDOW,
+  FAILED_TO_ALLOCATE_ENGINE_MEMORY,
+};
 
 GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
 
@@ -350,7 +430,7 @@ int main(int argc, char* argv[])
     test_fn();
   }
 
-  int err_code = ReturnCode::SUCCESS;
+  ReturnCode err_code = ReturnCode::SUCCESS;
 
   if (!bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
@@ -365,100 +445,37 @@ int main(int argc, char* argv[])
       MainQuit(ReturnCode::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
     }
 
-    bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
-    std::printf("\n\n                 BluFedora Engine v%s\n\n\n", BF_VERSION_STR);
-    bfLogSetColor(BIFROST_LOGGER_COLOR_BLUE, BIFROST_LOGGER_COLOR_WHITE, 0x0);
+    g_Window = (GLFWwindow*)main_window->handle;
 
+    try
     {
-      TestClass my_obj = {74, "This message will be in Y"};
+      const std::size_t             engine_memory_size = bfMegabytes(300);
+      const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
+      Engine                        engine             = Engine{engine_memory.get(), engine_memory_size, argc, argv};
+      const EngineCreateParams      params             = {argv[0], 0, 60};
 
-      try
-      {
-        const std::size_t             engine_memory_size = bfMegabytes(300);
-        const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
+      main_window->user_data = &engine;
 
-        Engine engine{engine_memory.get(), engine_memory_size, argc, argv};
+      main_window->event_fn = [](bfWindow* window, bfEvent* event) {
+        static_cast<Engine*>(window->user_data)->onEvent(window, *event);
+      };
 
-        g_Window = (GLFWwindow*)main_window->handle;
+      main_window->frame_fn = [](bfWindow* window) {
+        static_cast<Engine*>(window->user_data)->tick();
+      };
 
-        glfwSetWindowSizeLimits(g_Window, 300, 70, GLFW_DONT_CARE, GLFW_DONT_CARE);
+      engine.init(params, main_window);
 
-        const EngineCreateParams params = {argv[0], 0, 60};
+      engine.stateMachine().push<MainDemoLayer>();
+      engine.stateMachine().addOverlay<editor::EditorOverlay>(main_window);
 
-        engine.init(params, main_window);
+      bfPlatformDoMainLoop(main_window);
 
-        main_window->user_data = &engine;
-
-        // TODO(SR): Figure out how to put this in the editor overlay.
-        imgui::startup(engine.renderer().context(), main_window);
-
-        engine.stateMachine().push<MainDemoLayer>();
-        engine.stateMachine().addOverlay<editor::EditorOverlay>(main_window);
-
-        VM& vm = engine.scripting();
-
-        const BifrostVMClassBind camera_clz_bindings = vmMakeClassBinding<Camera_>("Camera", vmMakeCtorBinding<Camera_>());
-
-        vm.stackResize(5);
-
-        vm.moduleLoad(0, BIFROST_VM_STD_MODULE_ALL);
-        vm.moduleMake(0, "bifrost");
-        vm.stackStore(0, camera_clz_bindings);
-        vm.stackLoadVariable(1, 0, "Camera");
-        vm.stackStore(1, "update", &Camera_::update);
-
-        const BifrostVMClassBind clz_bind = vmMakeClassBinding<TestClass>(
-         "TestClass",
-         vmMakeCtorBinding<TestClass, int>(),
-         vmMakeMemberBinding<&TestClass::printf>("printf"));
-
-        vm.stackResize(1);
-        vm.moduleMake(0, "main");
-        vm.stackStore(0, clz_bind);
-        vm.stackStore<testFN>(0, "cppFn");
-
-        float capture = 6.0f;
-        vm.stackStore(0, "BigFunc", [&capture, my_obj]() mutable -> void {
-          std::printf("Will this work out %f???\n", capture);
-          ++capture;
-          my_obj.x = 65;
-        });
-        vm.stackStore(0, "AnotherOne", std::function<const char*()>([]() { return "Ohhh storing an std::function\n"; }));
-
-        const BifrostVMError err = vm.execInModule("main2", source, std::size(source));
-
-        bfValueHandle update_fn = nullptr;
-
-        if (!err)
-        {
-          vm.stackResize(1);
-          vm.moduleLoad(0, "main2");
-          vm.stackLoadVariable(0, 0, "callMeFromCpp");
-
-          vm.call(0, 45, std::string("Hello from cpp") + "!!!", false);
-
-          vm.moduleLoad(0, "main2");
-          vm.stackLoadVariable(0, 0, "update");
-          update_fn = vm.stackMakeHandle(0);
-        }
-
-        main_window->event_fn = [](bfWindow* window, bfEvent* event) {
-          static_cast<Engine*>(window->user_data)->onEvent(window, *event);
-        };
-
-        main_window->frame_fn = [](bfWindow* window) {
-          static_cast<Engine*>(window->user_data)->tick();
-        };
-
-        bfPlatformDoMainLoop(main_window);
-
-        vm.stackDestroyHandle(update_fn);
-        engine.deinit();
-      }
-      catch (std::bad_alloc&)
-      {
-        MainQuit(ReturnCode::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
-      }
+      engine.deinit();
+    }
+    catch (std::bad_alloc&)
+    {
+      MainQuit(ReturnCode::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
     }
 
   quit_window:
@@ -473,16 +490,3 @@ quit_main:
 }
 
 #undef MainQuit
-
-#if 0
-            if (update_fn)
-            {
-              vm.stackResize(1);
-              vm.stackLoadHandle(0, update_fn);
-
-              if (vm.stackGetType(0) == BIFROST_VM_FUNCTION)
-              {
-                vm.call(0, delta_time);
-              }
-            }
-#endif

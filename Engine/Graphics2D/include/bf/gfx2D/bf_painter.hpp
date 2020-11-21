@@ -223,7 +223,7 @@ namespace bf
       }
 #endif
 
-      T& operator[](UIIndexType index) const
+      T& operator[](UIIndexType index) const noexcept
       {
         assert(index < num_verts);
 

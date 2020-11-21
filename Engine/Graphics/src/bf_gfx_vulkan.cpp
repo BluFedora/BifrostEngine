@@ -27,7 +27,7 @@
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
 #define BIFROST_USE_VALIDATION_LAYERS 0
 #else
-#define BIFROST_USE_VALIDATION_LAYERS 1
+#define BIFROST_USE_VALIDATION_LAYERS 0
 #endif
 
 #define BIFROST_ENGINE_NAME "Bifrost Engine"
@@ -244,7 +244,7 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
   return self->logical_device;
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow_t* bf_window)
+bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow* bf_window)
 {
   bfWindowSurfaceHandle surface = new bfWindowSurface();
 
@@ -2065,7 +2065,7 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
   self->tex_sampler     = VK_NULL_HANDLE;
   self->tex_layout      = BF_IMAGE_LAYOUT_UNDEFINED;
   self->tex_format      = bfVkConvertFormat(params->format);
-  self->tex_samples     = BF_SAMPLE_1;
+  self->tex_samples     = params->sample_count;
 
   if (self->image_miplevels)
   {

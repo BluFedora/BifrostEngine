@@ -20,15 +20,16 @@ target_include_directories(
   BF_DataStructuresC_static
 
   PUBLIC
-    "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/include/"
 )
 
 add_library(BF_DataStructuresCxx INTERFACE)
 
 target_include_directories(
   BF_DataStructuresCxx
+
   INTERFACE 
-    ${PROJECT_SOURCE_DIR}/include
+    "${PROJECT_SOURCE_DIR}/include/"
 )
 
 target_sources(
