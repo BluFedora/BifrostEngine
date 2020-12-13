@@ -754,7 +754,7 @@ namespace bf
 
   float fontAdditionalAdvance(const Font* self, CodePoint from, CodePoint to) noexcept
   {
-    return float(stbtt_GetGlyphKernAdvance(&self->font_info, from, to));
+    return float(stbtt_GetGlyphKernAdvance(&self->font_info, from, to)) * self->scale_size;
   }
 
   float fontNewlineHeight(const Font* self) noexcept

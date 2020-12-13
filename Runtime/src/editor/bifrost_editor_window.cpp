@@ -56,6 +56,9 @@ namespace bf::editor
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, old_window_padding);
 
+        // TODO(SR): editor.addWindow<T> should not be callded here
+        // since it may invalidate pointers while iterating the window array.
+
         if (ImGui::BeginMenuBar())
         {
           if (ImGui::BeginMenu("Window"))

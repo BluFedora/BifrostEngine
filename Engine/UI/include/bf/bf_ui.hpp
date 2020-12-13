@@ -1,6 +1,11 @@
 //
 // Shareef Abdoul-Raheem
 //
+// References:
+//   [https://www.youtube.com/watch?v=Z1qyvQsjK5Y]
+//   [https://www.youtube.com/watch?v=UUfXWzp0-DU]
+//   [https://mortoray.com/topics/writing-a-ui-engine/]
+//
 #ifndef BF_UI_HPP
 #define BF_UI_HPP
 
@@ -12,46 +17,12 @@
 
 namespace bf
 {
-  enum class SizeUnitType
-  {
-    Absolute,
-    Relative,
-    Flex,
-  };
+  //
+  // Forward Declarations
+  //
 
-  struct SizeUnit
-  {
-    SizeUnitType type  = SizeUnitType::Absolute;
-    float        value = 100.0f;
-  };
-
-  struct Size
-  {
-    SizeUnit width  = {};
-    SizeUnit height = {};
-  };
-
-  struct LayoutConstraints
-  {
-    Vector2f min_size = {0.0f, 0.0f};
-    Vector2f max_size = {0.0f, 0.0f};
-  };
-
-  struct LayoutOutput
-  {
-    Vector2f desired_size = {0.0f, 0.0f};
-  };
-
+  struct Gfx2DPainter;
   struct Widget;
-
-  using LayoutFunction = LayoutOutput (*)(Widget* self, const LayoutConstraints& constraints);
-
-  struct WidgetVTable
-  {
-    LayoutFunction do_layout;
-    // LayoutFunction do_render;
-    // LayoutFunction do_nav;
-  };
 
   template<typename T>
   struct Hierarchy
@@ -110,42 +81,133 @@ namespace bf
     }
   };
 
+  enum class SizeUnitType
+  {
+    Absolute,  //!< Size in points (DPI * pixels)
+    Relative,  //!< The float is in a 0.0f => 1.0f range representing the % of the parent size you are.
+    Flex,      //!< The ratio of how much free space to take up raltive to other flex children.
+  };
+
+  struct SizeUnit
+  {
+    SizeUnitType type  = SizeUnitType::Absolute;
+    float        value = 100.0f;
+
+    //
+    // TODO(SR): The `value` can be compressed by
+    //   using Relative as a uint16 remap(0.0f, 1.0f => 0u => 0xFF)
+    //   And the Other values as normal.
+    //
+    //   But how will it works with animations???
+    //
+  };
+
+  struct Size
+  {
+    SizeUnit width  = {};
+    SizeUnit height = {};
+  };
+
+  struct LayoutConstraints
+  {
+    Vector2f min_size = {0.0f, 0.0f};
+    Vector2f max_size = {0.0f, 0.0f};
+  };
+
+  struct LayoutOutput
+  {
+    Vector2f desired_size = {0.0f, 0.0f};
+  };
+
+  using WidgetLayoutFn      = LayoutOutput (*)(Widget* self, const LayoutConstraints& constraints);
+  using WidgetPositioningFn = void (*)(Widget* self);  // Positioning of Children
+  using WidgetRenderFn      = void (*)(Widget* self, Gfx2DPainter& painter);
+
+  enum class LayoutType
+  {
+    // Single Child Layouts
+    Default,
+    Padding,
+    Fixed,
+
+    // Multi-Child Layouts
+    Row,
+    Column,
+    Grid,
+    Stack,
+
+    Custom,
+  };
+
+  struct WidgetLayout
+  {
+    LayoutType type;
+
+    union
+    {
+      struct
+      {
+        SizeUnit top;
+        SizeUnit bottom;
+        SizeUnit left;
+        SizeUnit right;
+
+      } padding;
+
+      struct
+      {
+        WidgetLayoutFn      layout;
+        WidgetPositioningFn position_children;
+
+      } custom;
+    };
+
+    WidgetLayout() :
+      type{LayoutType::Default}
+    {
+    }
+  };
+
   enum class WidgetParams
   {
     HoverTime,
     ActiveTime,
-    Padding,
 
     WidgetParams_Max,
   };
 
+  using UIElementID = std::uint64_t;
+
   struct Widget : public Hierarchy<Widget>
   {
-    enum /* WidgetFlags */
-    {
-      Clickable          = (1 << 0),
-      Disabled           = (1 << 1),
-      HoverCurser_Normal = (1 << 2),
-      HoverCurser_Hand   = (1 << 3),
-      IsLayout           = (1 << 4),
-      IsExpanded         = (1 << 5),
-      // IsBeingDragged     = (1 << 6),
-    };
-
     using ParamList = float[int(WidgetParams::WidgetParams_Max)];
 
-    const WidgetVTable* vtable               = nullptr;
-    const char*         name                 = nullptr;
-    std::size_t         name_len             = 0u;
-    ParamList           params               = {0.0f};
-    Size                desired_size         = {};
-    Vector2f            position_from_parent = {200.0f, 200.0f};
-    Vector2f            realized_size        = {0.0f, 0.0f};
-    std::uint64_t       flags                = Clickable | IsExpanded;
-    std::uint64_t       hash                 = 0x0;
-  };
+    enum /* WidgetFlags */
+    {
+      Clickable      = (1 << 0),
+      Disabled       = (1 << 1),
+      IsExpanded     = (1 << 2),
+      DrawName       = (1 << 3),
+      BlocksInput    = (1 << 4),
+      DrawBackground = (1 << 5),
+      IsWindow       = (1 << 6),
+    };
 
-  using UIElementID = std::uint64_t;
+    WidgetLayout   layout               = {};
+    char*          name                 = nullptr;
+    std::size_t    name_len             = 0u;
+    ParamList      params               = {0.0f};
+    Size           desired_size         = {};
+    Vector2f       position_from_parent = {200.0f, 200.0f};
+    Vector2f       realized_size        = {0.0f, 0.0f};
+    WidgetRenderFn render               = nullptr;
+    std::uint64_t  flags                = IsExpanded;
+    UIElementID    hash                 = 0x0;
+    std::uint32_t  zindex               = 0;
+    Widget*        hit_test_list        = nullptr;
+
+    // TODO(SR): WidgetNavigationFn do_nav;
+  };
 
   namespace UI
   {
@@ -155,11 +217,13 @@ namespace bf
     UIElementID PushID(StringRange string_value);
     void        PopID();
 
-    // Widgets
+    // Intertactable Widgets
 
     bool BeginWindow(const char* title);
     void EndWindow();
     bool Button(const char* name);
+
+    // Layout Widgets
 
     void PushColumn();
     void PushRow();
@@ -171,6 +235,8 @@ namespace bf
 
     void Init();
     void PumpEvents(bfEvent* event);
+    void BeginFrame();
+    void Update(float delta_time);
     void Render(Gfx2DPainter& painter);
   }  // namespace UI
 }  // namespace bf

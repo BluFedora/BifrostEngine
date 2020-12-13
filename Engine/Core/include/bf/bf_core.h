@@ -26,6 +26,9 @@
  *    initialization does not need to happen in this ctor.
  */
 #define bfPureInterface(T) __declspec(novtable) T
+
+// TODO(SR): 
+//   [https://stackoverflow.com/questions/44054078/how-to-guide-gcc-optimizations-based-on-assertions-without-runtime-cost]
 #else
 #define bfInvalidDefaultCase() \
   default:                     \

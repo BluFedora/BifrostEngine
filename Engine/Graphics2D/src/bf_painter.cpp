@@ -859,6 +859,51 @@ namespace bf
     pushPolyline(points.data, UIIndexType(points.data_size), thickness, join_style, end_style, color);
   }
 
+  Vector2f calculateTextSize(const char* utf8_text, PainterFont* font)
+  {
+    float max_width      = 0.0f;
+    float current_width  = 0.0f;
+    float current_height = fontNewlineHeight(font->font);
+
+    while (*utf8_text)
+    {
+      const bool is_backslash_r = *utf8_text == '\r';
+
+      if (is_backslash_r || *utf8_text == '\n')
+      {
+        max_width     = std::max(current_width, max_width);
+        current_width = 0.0f;
+        current_height += fontNewlineHeight(font->font);
+
+        ++utf8_text;
+
+        // Handle Window's '\r\n'
+        if (is_backslash_r && *utf8_text == '\n')
+        {
+          ++utf8_text;
+        }
+
+        continue;
+      }
+
+      const auto       res       = utf8Codepoint(utf8_text);
+      const CodePoint  codepoint = res.codepoint;
+      const GlyphInfo& glyph     = fontGetGlyphInfo(font->font, codepoint);
+
+      utf8_text = res.endpos;
+      current_width += glyph.advance_x;
+
+      // Not at the end
+      if (*utf8_text)
+      {
+        // TODO(SR): This can be optmized. Since that "utf8Codepoint(utf8_text)" call calulates what we need next time through the loop.
+        current_width += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
+      }
+    }
+
+    return {std::max(current_width, max_width), current_height};
+  }
+
   void Gfx2DPainter::pushText(const Vector2f& pos, const char* utf8_text, PainterFont* font)
   {
     const bfColor4u color           = bfColor4u_fromUint32(BIFROST_COLOR_BLACK);
@@ -918,6 +963,7 @@ namespace bf
       // Not at the end
       if (*utf8_text)
       {
+        // TODO(SR): This can be optmized. Since that "utf8Codepoint(utf8_text)" call calulates what we need next time through the loop.
         x += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
       }
 
@@ -1020,7 +1066,16 @@ namespace bf
 
       static constexpr decltype(&Mat4x4_orthoVk) orthos_fns[] = {&Mat4x4_orthoVk, &Mat4x4_ortho};
 
-      orthos_fns[bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL](&uniform_buffer_ptr->ortho_matrix, 0.0f, float(fb_width), float(fb_height), 0.0f, 0.0f, 1.0f);
+      const float k_ScaleFactorDPI = 1.0f;  // TODO(SR): Need to grab this value based on what window is being drawn onto.
+
+      orthos_fns[bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL](
+       &uniform_buffer_ptr->ortho_matrix,
+       0.0f,
+       float(fb_width) / k_ScaleFactorDPI,
+       float(fb_height) / k_ScaleFactorDPI,
+       0.0f,
+       0.0f,
+       1.0f);
 
       ubo_buffer.flushCurrent(frame_info);
       bfBuffer_unMap(ubo_buffer.handle());
@@ -1095,7 +1150,7 @@ namespace bf
   {
     assert(index0 < vertices.size() && index1 < vertices.size() && index2 < vertices.size());
 
-    indices.reserve(indices.size() + 3);
+    // indices.reserve(indices.size() + 3);
     indices.push(index0);
     indices.push(index1);
     indices.push(index2);

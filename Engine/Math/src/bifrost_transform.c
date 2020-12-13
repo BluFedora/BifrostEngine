@@ -25,8 +25,9 @@
 
 Quaternionf bfQuaternionf_init(float x, float y, float z, float w)
 {
-  const Quaternionf ret = {{{x, y, z, w}}};
-  return ret;
+  const Quaternionf result = {{{x, y, z, w}}};
+
+  return result;
 }
 
 Quaternionf bfQuaternionf_identity(void)
@@ -129,12 +130,12 @@ Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll)
    cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll);
 }
 
-Quaternionf bfQuaternionf_multQ(const Quaternionf* self, const Quaternionf* rhs)
+Quaternionf bfQuaternionf_multQ(const Quaternionf* lhs, const Quaternionf* rhs)
 {
-  const float x = self->x * rhs->w + self->w * rhs->x + self->y * rhs->z - self->z * rhs->y;
-  const float y = self->y * rhs->w + self->w * rhs->y + self->z * rhs->x - self->x * rhs->z;
-  const float z = self->z * rhs->w + self->w * rhs->z + self->x * rhs->y - self->y * rhs->x;
-  const float w = self->w * rhs->w - self->x * rhs->x - self->y * rhs->y - self->z * rhs->z;
+  const float x = lhs->x * rhs->w + lhs->w * rhs->x + lhs->y * rhs->z - lhs->z * rhs->y;
+  const float y = lhs->y * rhs->w + lhs->w * rhs->y + lhs->z * rhs->x - lhs->x * rhs->z;
+  const float z = lhs->z * rhs->w + lhs->w * rhs->z + lhs->x * rhs->y - lhs->y * rhs->x;
+  const float w = lhs->w * rhs->w - lhs->x * rhs->x - lhs->y * rhs->y - lhs->z * rhs->z;
 
   return bfQuaternionf_init(x, y, z, w);
 }
@@ -363,7 +364,7 @@ bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf*
     sclp = sinf((1.0f - factor) * omega) / sinom;
     sclq = sinf(factor * omega) / sinom;
   }
-  else // If the angles are close enough then just linearly interpolate.
+  else  // If the angles are close enough then just linearly interpolate.
   {
     sclp = 1.0f - factor;
     sclq = factor;
@@ -444,11 +445,11 @@ void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value)
 {
   assert((!value || self->system == value->system) && "Both transforms must be part of the same system.");
 
-  const BifrostTransformID value_id = self->system->transformToID(self->system, value);
+  const bfTransformID value_id = self->system->transformToID(self->system, value);
 
   if (self->parent != value_id)
   {
-    const BifrostTransformID self_id = self->system->transformToID(self->system, self);
+    const bfTransformID self_id = self->system->transformToID(self->system, self);
     BifrostTransform* const  parent  = bfTransformParent(self);
 
     if (parent)
@@ -522,6 +523,14 @@ static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f
   Mat4x4_initScalef(&scale_mat, scale.x, scale.y, scale.z);
   Mat4x4_initTranslatef(&origin_mat, -origin.x, -origin.y, -origin.z);
 
+  // TODO(SR): 
+  //   Multiplication by the `translation_mat` can probably be optimized
+  //   since it alwys just adds (/ sets) the tranlation part of the matrix.
+  //
+  //   This overall can be optimized since `scale_mat` and `origin_mat` operate of diff parts of the matrix.
+  //
+  //  This info is kinda wrong but there ARE optimizatuions to be made.
+
   Mat4x4_mult(&scale_mat, &origin_mat, out);
   Mat4x4_mult(&rotation_mat, out, out);
   Mat4x4_mult(&translation_mat, out, out);
@@ -540,7 +549,12 @@ void bfTransform_flushChanges(BifrostTransform* self)
     const BifrostTransform* node_parent = bfTransformParent(node);
     BifrostTransform*       child       = bfTransformFirstChild(node);
 
-    bfTransform_flushMatrix(&node->local_transform, node->origin, node->local_position, node->local_rotation, node->local_scale);
+    bfTransform_flushMatrix(
+     &node->local_transform,
+     node->origin,
+     node->local_position,
+     node->local_rotation,
+     node->local_scale);
 
     if (node_parent)
     {

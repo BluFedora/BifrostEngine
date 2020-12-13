@@ -152,6 +152,8 @@ namespace bf
     ~PainterFont();
   };
 
+  Vector2f calculateTextSize(const char* utf8_text, PainterFont* font);
+
   struct Gfx2DPainter : private NonCopyMoveable<Gfx2DPainter>
   {
     static const UIIndexType k_TempMemorySize = bfMegabytes(2);

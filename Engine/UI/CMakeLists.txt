@@ -34,6 +34,7 @@ set(
   BF_Memory_interface
   BF_Platform_shared
   BF_TMPUtils
+  BF_Text_static
 
   BF_DataStructuresCxx
 )

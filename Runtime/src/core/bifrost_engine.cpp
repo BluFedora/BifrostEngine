@@ -379,6 +379,7 @@ bool Engine::beginFrame()
   resizeCameras();
   m_StateMachine.purgeStates();
   renderer2D().reset();
+  UI::BeginFrame();
 
   return m_Renderer.frameBegin();
 }
@@ -394,6 +395,8 @@ void Engine::fixedUpdate(float delta_time)
 void Engine::update(float delta_time)
 {
   m_DebugRenderer.update(delta_time);
+  UI::Update(delta_time);
+
   m_Renderer.m_GlobalTime += delta_time;  // TODO: Not very encapsolated.
 
   for (auto& system : m_Systems)

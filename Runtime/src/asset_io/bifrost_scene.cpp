@@ -24,14 +24,14 @@ namespace bf
 {
 #define ID_TO_INDEX(id) ((id)-1)
 
-  BifrostTransform* SceneTransformSystem::transformFromIDImpl(IBifrostTransformSystem_t* self, BifrostTransformID id)
+  BifrostTransform* SceneTransformSystem::transformFromIDImpl(IBifrostTransformSystem_t* self, bfTransformID id)
   {
     SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
 
     return id == k_TransformInvalidID ? nullptr : &system->m_Transforms[ID_TO_INDEX(id)];
   }
 
-  BifrostTransformID SceneTransformSystem::transformToIDImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
+  bfTransformID SceneTransformSystem::transformToIDImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
   {
     SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
 
@@ -40,7 +40,7 @@ namespace bf
       return k_TransformInvalidID;
     }
 
-    return BifrostTransformID(system->m_Transforms.indexOf(static_cast<TransformNode*>(transform))) + 1;
+    return bfTransformID(system->m_Transforms.indexOf(static_cast<TransformNode*>(transform))) + 1;
   }
 
   void SceneTransformSystem::addToDirtyListImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
@@ -62,9 +62,9 @@ namespace bf
   {
   }
 
-  BifrostTransformID SceneTransformSystem::createTransform()
+  bfTransformID SceneTransformSystem::createTransform()
   {
-    BifrostTransformID id;
+    bfTransformID id;
 
     if (m_FreeList)
     {
@@ -74,7 +74,7 @@ namespace bf
     else
     {
       m_Transforms.emplace();
-      id                                          = BifrostTransformID(m_Transforms.size());
+      id                                          = bfTransformID(m_Transforms.size());
       m_Transforms[ID_TO_INDEX(id)].freelist_next = k_TransformInvalidID;
     }
 
@@ -82,7 +82,7 @@ namespace bf
     return id;
   }
 
-  void SceneTransformSystem::destroyTransform(BifrostTransformID transform)
+  void SceneTransformSystem::destroyTransform(bfTransformID transform)
   {
     bfTransform_dtor(&m_Transforms[ID_TO_INDEX(transform)]);
 
@@ -151,7 +151,7 @@ namespace bf
     }
 
     m_BVHTree.endFrame(temp, true);
-#if 0
+#if 1
     m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
       // Don't draw inactive entities.
       if (bvh_node::isLeaf(node))

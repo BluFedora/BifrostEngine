@@ -34,23 +34,23 @@ namespace bf
    private:
     struct TransformNode final : public BifrostTransform
     {
-      BifrostTransformID freelist_next;  // TODO(SR): To save space this could probably be unioned with the BifrostTransform.
+      bfTransformID freelist_next;  // TODO(SR): To save space this could probably be unioned with the BifrostTransform.
     };
 
    private:
-    static BifrostTransform*  transformFromIDImpl(struct IBifrostTransformSystem_t* self, BifrostTransformID id);
-    static BifrostTransformID transformToIDImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
-    static void               addToDirtyListImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+    static BifrostTransform* transformFromIDImpl(struct IBifrostTransformSystem_t* self, bfTransformID id);
+    static bfTransformID     transformToIDImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+    static void              addToDirtyListImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
 
    private:
     Array<TransformNode> m_Transforms;
-    BifrostTransformID   m_FreeList;
+    bfTransformID        m_FreeList;
 
    public:
     explicit SceneTransformSystem(IMemoryManager& memory);
 
-    BifrostTransformID createTransform();
-    void               destroyTransform(BifrostTransformID transform);
+    bfTransformID createTransform();
+    void          destroyTransform(bfTransformID transform);
 
     template<typename F>
     void forEachDirty(F&& callback)

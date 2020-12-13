@@ -7,3 +7,10 @@ git submodule update --remote --recursive
 git clone --recursive
 
 git submodule update --remote --merge
+
+
+// How To Remove Submodule
+
+
+git submodule deinit -f SUB_MODULE_NAME
+git rm --cached SUB_MODULE_PATH

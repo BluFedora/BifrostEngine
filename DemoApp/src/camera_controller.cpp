@@ -63,7 +63,6 @@ bfRegisterBehavior(CameraController);
 // TODO(SR): Make the gameplay heap part of the core engine.
 static std::array<char, bfMegabytes(50)> s_GameplayHeapBacking;
 static FreeListAllocator                 s_GameplayHeap{s_GameplayHeapBacking.data(), s_GameplayHeapBacking.size()};
-//
 
 // Adapted From: [https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion]
 Vector3f RotateVectorByQuat(const Quaternionf& quat, const Vector3f& vector)
@@ -92,13 +91,20 @@ class IkDemo final : public Behavior<IkDemo>
     Quaternionf rotation;
     float       length;
 
-    Vector3f points[2]; // Cached points.
+    Vector3f points[2];  // Cached points.
+
+    // Note: I Only need one of these but I wanted to test both methods.
+    Mat4x4      cached_world;
+    Quaternionf parent_rot;
 
     void EndPointFrom(Quaternionf& parent_rotation, Vector3f& start_pos)
     {
       const Quaternionf total_rotation = bfQuaternionf_multQ(&parent_rotation, &rotation);
 
       points[0] = start_pos;
+
+      parent_rot = parent_rotation;
+      bfQuaternionf_toMatrix(parent_rotation, &cached_world);
 
       start_pos       = start_pos + RotateVectorByQuat(total_rotation, {length, 0.0f, 0.0f, 0.0f});
       parent_rotation = total_rotation;
@@ -116,7 +122,7 @@ class IkDemo final : public Behavior<IkDemo>
  public:
   void onEnable() override
   {
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 3; ++i)
     {
       m_Joints.push(IKJoint{bfQuaternionf_identity(), k_ChainLinkLen});
     }
@@ -132,12 +138,14 @@ class IkDemo final : public Behavior<IkDemo>
 
   void onUpdate(float dt) override
   {
-    const auto recalculate_joint_positions = [this](int i = 0) {
+    // TODO(SR): All uses of this function goes through all bones. Not good, they need to use the 'start_index' parameter.
+    const auto recalculate_joint_positions = [this](int start_index = 0) {
+      const int   num_joints    = int(m_Joints.length());
       auto&       transform     = owner().transform();
       Vector3f    base_position = transform.world_position;
       Quaternionf base_rotation = transform.world_rotation;
 
-      for (; i < int(m_Joints.length()); ++i)
+      for (int i = start_index; i < num_joints; ++i)
       {
         m_Joints[i].EndPointFrom(base_rotation, base_position);
       }
@@ -172,21 +180,38 @@ class IkDemo final : public Behavior<IkDemo>
           break;
         }
 
-        const Vector3f pos_to_end    = end_point - j.points[0];
-        const Vector3f pos_to_target = target_pos - j.points[0];
-        const Vector3f rot_axis      = vec::normalized(vec::cross(pos_to_end, pos_to_target));
+        // Calculate Rotation Axis
+
+        const Vector3f       pos_to_end    = end_point - j.points[0];
+        const Vector3f       pos_to_target = target_pos - j.points[0];
+        /* const */ Vector3f rot_axis      = vec::normalized(vec::cross(pos_to_end, pos_to_target));
 
         if (math::isAlmostEqual(vec::length(rot_axis), 0.0f))
         {
           continue;
         }
 
-        const float           dot_prod          = vec::dot(pos_to_end, pos_to_target);
-        const float           pos_to_end_len    = vec::length(pos_to_end);
-        const float           pos_to_target_len = vec::length(pos_to_target);
-        const float           cos_value         = dot_prod / (pos_to_end_len * pos_to_target_len);
-        const float           rot_angle         = std::acos(math::clamp(-1.0f, cos_value, 1.0f));
-        /*const*/ Quaternionf rot               = bfQuaternionf_fromAxisAngleRad(&rot_axis, rot_angle);
+        // Convert Rotation Axis From World Space To Bone Local Space.
+
+#if 0 /* Matrix Method */
+        Mat4x4 inv_world;
+
+        if (Mat4x4_inverse(&j.cached_world, &inv_world))
+        {
+          Mat4x4_multVec(&inv_world, &rot_axis, &rot_axis);
+        }
+#else /* Quaternion Method */
+        rot_axis = RotateVectorByQuat(bfQuaternionf_conjugate(&j.parent_rot), rot_axis);
+#endif
+
+        // Calculate The Angle
+
+        const float             dot_prod          = vec::dot(pos_to_end, pos_to_target);
+        const float             pos_to_end_len    = vec::length(pos_to_end);
+        const float             pos_to_target_len = vec::length(pos_to_target);
+        const float             cos_value         = dot_prod / (pos_to_end_len * pos_to_target_len);
+        const float             rot_angle         = std::acos(math::clamp(-1.0f, cos_value, 1.0f));
+        /* const */ Quaternionf rot               = bfQuaternionf_fromAxisAngleRad(&rot_axis, rot_angle);
 
         bfQuaternionf_normalize(&rot);
 

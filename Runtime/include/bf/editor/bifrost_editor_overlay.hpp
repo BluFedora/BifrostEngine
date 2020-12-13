@@ -135,10 +135,15 @@ namespace bf::editor
       {
         result = &m_EntryStorage[m_EntryStorageFreeList];
 
+        // NOTE(SR):
+        //   Must be saved since the next twp lines writes
+        //   to this variable because of unioned data.
+        const std::size_t free_list_next = result->free_list_next;
+
         result->data      = cloned_data;
         result->ref_count = 1;
 
-        m_EntryStorageFreeList = m_EntryStorage[m_EntryStorageFreeList].free_list_next;
+        m_EntryStorageFreeList = free_list_next;
       }
       else
       {
@@ -383,13 +388,13 @@ namespace bf::editor
         }
       }
 
-      return addWindow<T>(std::forward<decltype(args)>(args)...);
+      return addWindow<T>(std::forward<Args>(args)...);
     }
 
     template<typename T, typename... Args>
     T& addWindow(Args&&... args)
     {
-      T* window = allocator().allocateT<T>(std::forward<decltype(args)>(args)...);
+      T* window = allocator().allocateT<T>(std::forward<Args>(args)...);
 
       m_OpenWindows.emplace(window);
 
@@ -413,7 +418,6 @@ namespace bf::editor
       }
     }
 
-    // private:
     void buttonAction(const ActionContext& ctx, const char* action_name) const;
     void buttonAction(const ActionContext& ctx, const char* action_name, const char* custom_label, const ImVec2& size = ImVec2(0.0f, 0.0f)) const;
     void selectableAction(const ActionContext& ctx, const char* action_name) const;

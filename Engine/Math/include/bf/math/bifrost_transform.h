@@ -49,9 +49,9 @@ BF_MATH_API Quaternionf   bfQuaternionf_identity(void);
 BF_MATH_API Quaternionf   bfQuaternionf_fromAxisAngleRad(const Vec3f* axis, float angle);
 BF_MATH_API Quaternionf   bfQuaternionf_fromAxisAngleDeg(const Vec3f* axis, float angle);
 BF_MATH_API Quaternionf   bfQuaternionf_fromMatrix(const Mat4x4* rot_mat);
-BF_MATH_API Quaternionf   bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
-BF_MATH_API Quaternionf   bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll); /* x (pitch), y (yaw), z (roll) */
-BF_MATH_API Quaternionf   bfQuaternionf_multQ(const Quaternionf* self, const Quaternionf* rhs);  // rhs happens _first_
+BF_MATH_API Quaternionf   bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll);       /* x (pitch), y (yaw), z (roll) */
+BF_MATH_API Quaternionf   bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll);       /* x (pitch), y (yaw), z (roll) */
+BF_MATH_API Quaternionf   bfQuaternionf_multQ(const Quaternionf* lhs, const Quaternionf* rhs);  // rhs happens _first_
 BF_MATH_API void          bfQuaternionf_multV(Quaternionf* self, const Vec3f* rhs);
 BF_MATH_API void          bfQuaternionf_addVec(Quaternionf* self, const Vec3f* rhs, float multiplier);
 BF_MATH_API void          bfQuaternionf_rotByVec(Quaternionf* self, const Vec3f* rhs);
@@ -79,7 +79,7 @@ enum
 struct IBifrostTransformSystem_t;
 typedef struct IBifrostTransformSystem_t IBifrostTransformSystem;
 
-typedef uint32_t BifrostTransformID;
+typedef uint32_t bfTransformID;
 
 typedef enum bfTransformFlags_t
 {
@@ -91,11 +91,10 @@ typedef enum bfTransformFlags_t
   BIFROST_TRANSFORM_CHILD_DIRTY      = (1 << 5),
   BIFROST_TRANSFORM_NEEDS_GPU_UPLOAD = (1 << 6),
 
-// TODO: Un plimentetdafasfa
+  // TODO: Unimplemented
   BF_TRANSFORM_ADOPT_SCALE    = (1 << 7),
   BF_TRANSFORM_ADOPT_ROTATION = (1 << 8),
   BF_TRANSFORM_ADOPT_POSITION = (1 << 9),
-
 
   /* Helper Flags */
   BIFROST_TRANSFORM_NONE        = 0x0,
@@ -131,10 +130,10 @@ typedef struct BifrostTransform_t
   Mat4x4                            local_transform;
   Mat4x4                            world_transform;
   Mat4x4                            normal_transform;
-  BifrostTransformID                parent;
-  BifrostTransformID                first_child;
-  BifrostTransformID                next_sibling;
-  BifrostTransformID                prev_sibling;
+  bfTransformID                     parent;
+  bfTransformID                     first_child;
+  bfTransformID                     next_sibling;
+  bfTransformID                     prev_sibling;
   struct IBifrostTransformSystem_t* system;
   struct BifrostTransform_t*        dirty_list_next;
   /* bfTransformFlags */ uint8_t    flags;
@@ -155,8 +154,8 @@ BF_MATH_API void              bfTransform_dtor(BifrostTransform* self);
 struct IBifrostTransformSystem_t
 {
   BifrostTransform* dirty_list;
-  BifrostTransform* (*transformFromID)(struct IBifrostTransformSystem_t* self, BifrostTransformID id);
-  BifrostTransformID (*transformToID)(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
+  BifrostTransform* (*transformFromID)(struct IBifrostTransformSystem_t* self, bfTransformID id);
+  bfTransformID (*transformToID)(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
   void (*addToDirtyList)(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
 };
 

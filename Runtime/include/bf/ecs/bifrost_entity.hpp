@@ -76,7 +76,7 @@ namespace bf
     // private:
     Scene&                  m_OwningScene;              //!<
     String                  m_Name;                     //!<
-    BifrostTransformID      m_Transform;                //!<
+    bfTransformID           m_Transform;                //!<
     Entity*                 m_Parent;                   //!<
     EntityList              m_Children;                 //!<
     intrusive::Node<Entity> m_Hierarchy;                //!<

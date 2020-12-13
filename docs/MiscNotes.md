@@ -514,3 +514,60 @@ a >  b : b < a
 ```
 
 Windows Has a Default THread Pool.
+
+--- C++ Scripting
+
+class Script
+	{
+	public:
+		Script() {};
+		virtual void Update() = 0;
+		virtual void Start() = 0;
+		virtual void OnCollisionEnter() {};
+		std::string ScriptPath;
+	};
+
+  #include "Script.h"
+#include 
+
+class TestScriptClass : public DI::Script
+{
+	public:
+		TestScriptClass(){};
+		~TestScriptClass(){};
+		void Update()
+		{
+			printf("Update");
+		};
+		void Start()
+		{
+			printf("Start");
+		};
+};
+
+
+	extern "C"
+{
+	__declspec(dllexport) DI::Script *CreateScript()
+	{
+		return new TestScriptClass();
+	}
+}
+
+typedef DI::Script* (__stdcall *ScriptPtr)()
+
+const char* ScriptName = "TestScriptClass.dll";
+
+HINSTANCE hGetProcIDDLL = LoadLibraryA(ScriptName);
+
+if (hGetProcIDDLL) {
+  ScriptPtr CreateScript = (ScriptPtr)GetProcAddress(hGetProcIDDLL, "CreateScript");
+
+  if (CreateScript) {
+    CreateScriptMap[ScriptName] = CreateScript;
+  } else {
+    // Error could find 'CreateScript' in ScriptName.
+  }
+} else {
+  // Error Could not load scrpt dll.
+}

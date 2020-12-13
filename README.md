@@ -16,6 +16,11 @@ The base Module that you should start with [Platform](https://github.com/BluFedo
 - CMake v3.12
 - MSVC (VS2019) On Windows and Clang on MacOS
 
+## Build Instructions
+
+- When you clone this repo you must pull in all the submodules.
+  - `git submodule update --init --recursive`
+
 ## External Libraries Used
 
 - Vulkan SDK
