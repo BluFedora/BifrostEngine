@@ -14,11 +14,13 @@
  */
 #include "bf/asset_io/bifrost_assets.hpp"
 
-#include "bf/LinearAllocator.hpp"                        // LinearAllocator
+#include "bf/LinearAllocator.hpp"                   // LinearAllocator
 #include "bf/asset_io/bifrost_asset_handle.hpp"     //
 #include "bf/asset_io/bifrost_file.hpp"             // File
 #include "bf/asset_io/bifrost_json_serializer.hpp"  //
 #include "bf/meta/bifrost_meta_runtime.hpp"         //
+
+#include "bf/debug/bifrost_dbg_logger.h"
 
 #include "bf/Platform.h"
 #include "bf/asset_io/bf_path_manip.hpp"
@@ -52,7 +54,7 @@ namespace bf
 
     bool renameDirectory(const char* full_path, const char* new_name)
     {
-      const StringRange base_path = file::directoryOfFile(full_path);
+      const StringRange base_path = path::directory(full_path);
       files::path       old_path  = {base_path.begin(), base_path.end()};
       files::path       new_path  = old_path;
       std::error_code   err;
@@ -66,7 +68,7 @@ namespace bf
 
     bool moveDirectory(const char* dst_path, const char* src_path)
     {
-      const StringRange src_base_path  = file::directoryOfFile(src_path);
+      const StringRange src_base_path  = path::directory(src_path);
       const char*       src_name_start = src_base_path.end() + 1;
       const files::path old_path       = src_path;
       const files::path new_path       = files::path(dst_path) / src_name_start;
@@ -214,8 +216,43 @@ namespace bf
     m_AssetMap{},
     m_RootPath{nullptr},
     m_MetaPath{},
-    m_DirtyAssetList{memory}
+    m_DirtyAssetList{memory},
+    m_AssetSet{memory},
+    m_FileExtReg{}
   {
+  }
+
+  IBaseAsset* Assets::loadAsset(const StringRange& abs_path)
+  {
+    const StringRange file_ext = path::extensionEx(abs_path);
+    IBaseAsset*       result   = nullptr;
+
+    if (file_ext.length() > 0)
+    {
+      const auto ext_handle = m_FileExtReg.find(file_ext);
+
+      if (ext_handle != m_FileExtReg.end())
+      {
+        result = ext_handle->value()(m_Memory, m_Engine);
+
+        if (result)
+        {
+          const bfUUID uuid = bfUUID_generate();
+
+          result->setup(abs_path, String_length(m_RootPath), uuid.as_number);
+
+          m_AssetSet.insert(result);
+        }
+      }
+      else
+      {
+        bfLogWarn("[Assets::loadAsset] Failed to find extenstion handler for \"%.*s\".",
+                  int(abs_path.length()),
+                  abs_path.begin());
+      }
+    }
+
+    return result;
   }
 
   BaseAssetInfo* Assets::findAssetInfo(const bfUUID& uuid)
@@ -479,18 +516,10 @@ namespace bf
     return path::append({m_RootPath, String_length(m_RootPath)}, rel_path);
   }
 
-#if 0  // TODO(SR): This function cannot work as intended since it does not know the diff between a '.' for a dir separator vs in the actual file name...
-  String Assets::metaPathToRelPath(const StringRange& meta_path)
+  StringRange Assets::absPathToRelPath(const StringRange& abs_path) const
   {
-    String rel_path = {meta_path.begin(), meta_path.length() - sizeof(META_FILE_EXTENSION) + 1};  // The + 1 accounts for the nul terminator.
-
-    std::transform(rel_path.begin(), rel_path.end(), rel_path.begin(), [](const char character) {
-      return character == '.' ? '/' : character;
-    });
-
-    return rel_path;
+    return path::relative(m_RootPath, abs_path);
   }
-#endif
 
   Assets::~Assets()
   {

@@ -2,14 +2,14 @@
 #define BIFROST_CAMERA_H
 
 #include "bifrost_mat4x4.h"      /* Mat4x4       */
-#include "bifrost_math_export.h" /* BIFROST_MATH_API */
+#include "bifrost_math_export.h" /* BF_MATH_API  */
 #include "bifrost_vec2.h"        /* Vec2i        */
 #include "bifrost_vec3.h"        /* Vec3f, Rectf */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef enum CameraMode_t
+typedef enum
 {
   BIFROST_CAMERA_MODE_ORTHOGRAPHIC,
   BIFROST_CAMERA_MODE_FRUSTRUM,
@@ -18,7 +18,7 @@ typedef enum CameraMode_t
 
 } CameraMode;
 
-typedef struct CameraModeParams_t
+typedef struct
 {
   CameraMode mode;
 
@@ -114,7 +114,7 @@ BF_MATH_API void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos);
 
 /* Ray API */
 
-typedef struct bfRay3D_t
+typedef struct
 {
   Vec3f origin;              /* Required                   */
   Vec3f direction;           /* Required                   */
@@ -123,7 +123,7 @@ typedef struct bfRay3D_t
 
 } bfRay3D;
 
-typedef struct bfRayCastResult_t
+typedef struct
 {
   int   did_hit;  /* Check this to se if the ray hit anything.      */
   float min_time; /* Set To An Undefined Value if did_hit is false. */

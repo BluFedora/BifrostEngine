@@ -17,10 +17,11 @@
 
 #include <type_traits> /* false_type, void_t, declval, is_base_of_v */
 
-class Engine;
-
 namespace bf
 {
+  // Forward Declarations
+
+  class Engine;
   class Entity;
   class Scene;
 
@@ -31,7 +32,7 @@ namespace bf
   class BaseComponent
   {
    protected:
-    Entity* m_Owner;  //!< The entity that this compoinent is attached to.
+    Entity* m_Owner;  //!< The entity that this component is attached to.
 
    public:
     explicit BaseComponent(Entity& owner);
@@ -44,7 +45,7 @@ namespace bf
      * @return
      *   The Entity this component is attached to
      */
-    Entity& owner() const;
+    [[nodiscard]] Entity& owner() const;
 
     /*!
      * @brief
@@ -53,16 +54,16 @@ namespace bf
      * @return
      *   The Scene this component's owner is inside of.
      */
-    Scene& scene() const;
+    [[nodiscard]] Scene& scene() const;
 
     /*!
      * @brief
      *   Helper for grabbing 'global' Engine.
      * 
      * @return
-     *   The engine.
+     *   A reference to the engine.
      */
-    Engine& engine() const;
+    [[nodiscard]] Engine& engine() const;
   };
 
   /*!

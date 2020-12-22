@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bf_path_manip.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   String manipulation functions with a focus on file paths.
+ *
+ * @version 0.0.1
+ * @date    2020-12-19
+ *
+ * @copyright Copyright (c) 2019-2020
+ */
+/******************************************************************************/
 #ifndef BF_PATH_MANIP_HPP
 #define BF_PATH_MANIP_HPP
 
@@ -20,7 +33,9 @@ namespace bf::path
   //
 
   StringRange relative(StringRange abs_root_path, StringRange abs_sub_path);
-  String      append(StringRange directory, StringRange rel_path);
+
+  /// Really simple append with a `k_Separator` in between.
+  String append(StringRange directory, StringRange rel_path);
 
   /*!
    * @brief
@@ -45,7 +60,7 @@ namespace bf::path
   /*!
    * @brief
    *   This is a slower version of 'bf::path::extension' but will include
-   *   a file extension with mutiple dots.
+   *   a file extension with multiple dots.
    *   
    * @param file_path
    *   The path to search through for an extension.
@@ -58,12 +73,38 @@ namespace bf::path
 
   StringRange name(StringRange file_path);
 
-  // Ex:
-  //   'hello this is a normal name' => 'hello this is a normal name'
-  //   '.ThisShouldBeAnEmpryName' = > ''
-  //   '/ThisISTheCommonCase.dsadas.dasdsa.adssa.dddd' = > 'ThisISTheCommonCase'
-  //   '.ThisISThe/CommonCase' = > 'CommonCase'
+  /// Ex:
+  ///   'hello this is a normal name' => 'hello this is a normal name'
+  ///   '.ThisShouldBeAnEmpryName' = > ''
+  ///   '/ThisISTheCommonCase.dsadas.dasdsa.adssa.dddd' = > 'ThisISTheCommonCase'
+  ///   '.ThisISThe/CommonCase' = > 'CommonCase'
   StringRange nameWithoutExtension(StringRange file_path);
 }  // namespace bf::path
 
 #endif /* BF_PATH_MANIP_HPP */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

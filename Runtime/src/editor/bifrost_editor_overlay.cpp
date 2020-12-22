@@ -4,7 +4,6 @@
 #include "bf/Gfx2DPainter.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
-
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_material.hpp"
 #include "bf/asset_io/bifrost_script.hpp"
@@ -24,6 +23,8 @@
 #include <ImGuizmo/ImGuizmo.h>
 
 #include <utility>
+
+using namespace bf;
 
 namespace bf::editor
 {
@@ -132,7 +133,7 @@ class FixedLinearAllocator final
 };
 
 // clang-format off
-template<std::size_t Size, typename TAllocator = FreeListAllocator>
+template<std::size_t Size, typename TAllocator = bf::FreeListAllocator>
 class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<BlockAllocator<Size>>
 // clang-format on
 {
@@ -190,7 +191,7 @@ class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<Bloc
     return ptr;
   }
 
-  void deallocate(void* ptr) override
+  void deallocate(void* ptr, std::size_t num_bytes) override
   {
     MemoryBlock* cursor = &m_SmallBacking;
 
@@ -226,7 +227,7 @@ namespace bf::editor
 {
   using namespace intrusive;
 
-  static char              s_EditorMemoryBacking[16384];
+  static char              s_EditorMemoryBacking[bfKilobytes(16)];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
 
   IMemoryManager& allocator()
@@ -505,7 +506,7 @@ namespace bf::editor
         {
           if (path::renameDirectory(m_FileEntry.full_path.cstr(), m_FolderName))
           {
-            const StringRange base_path = file::directoryOfFile(m_FileEntry.full_path);
+            const StringRange base_path = path::directory(m_FileEntry.full_path);
 
             m_FileEntry.name = m_FolderName;
             m_FileEntry.full_path.resize(base_path.length() + 1);  // The + 1 adds the '/'
@@ -1226,7 +1227,6 @@ namespace bf::editor
     m_FpsTimer{0.0f},
     m_CurrentFps{0},
     m_CurrentMs{0},
-    m_TestTexture{nullptr},
     m_FileSystem{allocator()},
     m_OpenWindows{allocator()},
     m_IsKeyDown{false},
@@ -1291,7 +1291,7 @@ namespace bf::editor
         closeProject();
       }
 
-      const StringRange project_dir       = file::directoryOfFile(path);
+      const StringRange project_dir       = path::directory(path);
       String            project_meta_path = project_dir;
 
       project_meta_path.append("/");
@@ -1416,29 +1416,13 @@ namespace bf::editor
 
   static const FileExtensionHandler s_AssetHandlers[] =
    {
-    {".png", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".jpg", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".jpeg", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".ppm", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".pgm", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".bmp", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".tga", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".psd", &fileExtensionHandlerImpl<AssetTextureInfo>},
-    {".spv", &fileExtensionHandlerImpl<AssetShaderModuleInfo>},
-    {".shader", &fileExtensionHandlerImpl<AssetShaderProgramInfo>},
     {".material", &fileExtensionHandlerImpl<AssetMaterialInfo>},
     {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
     {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".fbx", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".md5mesh", &fileExtensionHandlerImpl<AssetModelInfo>},
     {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
-    {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}
-
-    // {".gltf", &fileExtensionHandlerImpl<>},
-    // {".glsl", &fileExtensionHandlerImpl<>},
-    // {".frag", &fileExtensionHandlerImpl<>},
-    // {".vert", &fileExtensionHandlerImpl<>},
-  };
+    {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}};
 
   static void                        assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry);
   static const FileExtensionHandler* assetFindHandler(StringRange relative_path);
@@ -1476,7 +1460,12 @@ namespace bf::editor
         }
         else
         {
-          bfLogWarn("Unknown file type (%s)", meta.file_name);
+          IBaseAsset* const asset = m_Engine->assets().loadAsset(meta.file_name);
+
+          if (!asset)
+          {
+            bfLogWarn("Unknown file type (%s)", meta.file_name);
+          }
         }
 
         string_utils::fmtFree(allocator, meta.file_name);
@@ -1703,7 +1692,7 @@ namespace bf::editor
       std::size_t          old_meta_name_length = 0;
       const char*          old_meta_name        = assets.metaFileName(tmp_no_free, old_rel_path, old_meta_name_length);
       const TempBuffer     old_meta_path        = assets.metaFullPath(tmp_no_free, old_meta_name);
-      const StringRange    path_root_dir        = file::directoryOfFile(bufferToStr(old_meta_path));
+      const StringRange    path_root_dir        = path::directory(bufferToStr(old_meta_path));
       std::size_t          new_path_length      = 0;
       char* const          new_path             = string_utils::fmtAlloc(
        tmp_no_free,
@@ -1904,11 +1893,6 @@ namespace bf::editor
           if (ImGui::MenuItem("Scene"))
           {
             editor.enqueueDialog(make<NewAssetDialog<AssetSceneInfo>>("Make Scene", entry, "New Scene", ".scene"));
-          }
-
-          if (ImGui::MenuItem("Shader Program"))
-          {
-            editor.enqueueDialog(make<NewAssetDialog<AssetShaderProgramInfo>>("Make Shader", entry, "New Shader", ".shader"));
           }
 
           if (ImGui::MenuItem("Material"))

@@ -5,7 +5,7 @@
  * @brief
  *   Allows for compile time introspection on the properties of callable objects.
  * 
- *   Requires atleast C++14 but is best used with C++17.
+ *   Requires at least C++14 but is best used with C++17.
  *
  * @version 0.0.1
  * @date    2019-12-28
@@ -179,7 +179,7 @@ namespace bf::meta
 
   // member object pointer
   template<typename C, typename R>
-  struct function_traits<R(C::*)> : public function_traits<R(C&)>
+  struct function_traits<R C::*> : public function_traits<R(C&)>
   {
     static constexpr bool is_member_fn = false;
 

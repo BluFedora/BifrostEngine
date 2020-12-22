@@ -34,8 +34,8 @@ enum
 };
 
 /* clang-format off */
-#define k_bfBufferWholeSize    (~0ull)
-#define k_bfTextureUnknownSize (-1)
+#define k_bfBufferWholeSize    ((uint64_t)~0ull)
+#define k_bfTextureUnknownSize ((uint32_t)-1)
 #define k_bfSubpassExternal    (~0U)
 /* clang-format on */
 
@@ -605,12 +605,15 @@ BF_GFX_API char* LoadFileIntoMemory(const char* filename, long* out_size);
 }
 #endif
 
-#if __cplusplus
+#if __cplusplus >= 201703L
 
 template<typename T>
-static constexpr inline bfGfxIndexType bfIndexTypeFromT()
+static constexpr bfGfxIndexType bfIndexTypeFromT()
 {
-  static_assert((sizeof(T) == 2 || sizeof(T) == 4), "An index type must either be a uint16 or a uint32");
+  // TODO(SR): This is not a very robust check, but I mean don't mess up.
+
+  static_assert(sizeof(T) == 2 || sizeof(T) == 4, "An index type must either be a uint16 or a uint32");
+
   return sizeof(T) == 2 ? BF_INDEX_TYPE_UINT16 : BF_INDEX_TYPE_UINT32;
 }
 

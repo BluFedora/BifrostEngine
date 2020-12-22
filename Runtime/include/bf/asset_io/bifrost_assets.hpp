@@ -17,14 +17,12 @@
 #ifndef BF_ASSETS_HPP
 #define BF_ASSETS_HPP
 
-#include "bf/bf_non_copy_move.hpp"                        /* NonCopyMoveable<T>                           */
+#include "bf/asset_io/bf_asset_map.hpp"
+#include "bf/bf_non_copy_move.hpp"                   /* NonCopyMoveable<T>                           */
 #include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
 #include "bf/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
 #include "bf/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
 #include "bf/utility/bifrost_uuid.hpp"               /* BifrostUUID                                  */
-#include "bifrost_asset_handle.hpp"                       /* AssetHandle<T>                               */
-
-class Engine;
 
 namespace bf
 {
@@ -37,6 +35,7 @@ namespace bf
   class BaseAssetHandle;
   class JsonSerializerWriter;
   class JsonSerializerReader;
+  class Engine;
 
   enum class AssetError : std::uint8_t
   {
@@ -80,6 +79,43 @@ namespace bf
     bool        is_new;
   };
 
+  using AssetCreationFn = IBaseAsset* (*)(IMemoryManager& asset_memory, Engine& engine);
+
+  template<typename T>
+  IBaseAsset* defaultAssetCreate(IMemoryManager& asset_memory, Engine& engine)
+  {
+    (void)engine;
+
+    return asset_memory.allocateT<T>();
+  }
+
+  // TODO(SR):
+  //   Use of string is pretty heavy, a StringRange would be better since just about all
+  //   file extensions registered are const char* hardcoded in the program.
+  using FileExtenstionRegistry = HashTable<String, AssetCreationFn>;
+
+  // Strong Typing of Paths
+
+  struct AbsPath
+  {
+    StringRange path;
+
+    explicit AbsPath(StringRange path) :
+      path{path}
+    {
+    }
+  };
+
+  struct RelPath
+  {
+    StringRange path;
+
+    explicit RelPath(StringRange path) :
+      path{path}
+    {
+    }
+  };
+
   class Assets final : public NonCopyMoveable<Assets>
   {
    public:
@@ -95,11 +131,89 @@ namespace bf
     PathToUUIDTable        m_NameToGUID;      //!< Allows loading assets from path rather than having to know the UUID.
     detail::AssetMap       m_AssetMap;        //!< Owns the memory for the associated 'BaseAssetHandle*'.
     BifrostString          m_RootPath;        //!< Base Path that all assets are relative to.
-    String                 m_MetaPath;        //!< Path that all assets meta files located in.
+    String                 m_MetaPath;        //!< Path that all assets meta files are located in.
     Array<BaseAssetHandle> m_DirtyAssetList;  //!< Assets that have unsaved modifications.
+    AssetMap               m_AssetSet;        //!< Owns the memory for the associated 'IBaseAsset*'.
+    FileExtenstionRegistry m_FileExtReg;      //!< Allows installing of handlers for certain file extensions.
 
    public:
     explicit Assets(Engine& engine, IMemoryManager& memory);
+
+    // Startup
+
+    template<typename T>
+    void registerFileExtensions(std::initializer_list<StringRange> exts, AssetCreationFn create_fn = &defaultAssetCreate<T>)
+    {
+      static_assert(std::is_convertible_v<T*, IBaseAsset*>, "T must implement the IBaseAsset interface.");
+
+      for (const StringRange& ext : exts)
+      {
+        m_FileExtReg.emplace(ext, create_fn);
+      }
+    }
+
+    // Main API
+
+    IBaseAsset* findAsset(const bfUUIDNumber& uuid) const
+    {
+      return m_AssetSet.find(uuid);
+    }
+
+    IBaseAsset* findAsset(AbsPath abs_path)
+    {
+      const StringRange rel_path = absPathToRelPath(abs_path.path);
+      IBaseAsset*       result   = m_AssetSet.find(rel_path);
+
+      if (!result)
+      {
+        result = loadAsset(abs_path.path);
+      }
+
+      return result;
+    }
+
+    IBaseAsset* findAsset(RelPath rel_path)
+    {
+      IBaseAsset* result = m_AssetSet.find(rel_path.path);
+
+      if (!result)
+      {
+        const String abs_path = relPathToAbsPath(rel_path.path);
+
+        result = loadAsset(abs_path);
+      }
+
+      return result;
+    }
+
+    IBaseAsset* loadAsset(const StringRange& abs_path);
+
+    template<typename F>
+    void forEachAssetOfType(const meta::BaseClassMetaInfo* type_info, F&& callback)
+    {
+      m_AssetSet.forEach([type_info, &callback](IBaseAsset* const asset) {
+        if (asset->type() == type_info)
+        {
+          callback(asset);
+        }
+      });
+    }
+
+    template<typename T>
+    T* findAssetOfType(AbsPath abs_path)
+    {
+      IBaseAsset* base_asset = findAsset(abs_path);
+
+      // If the found asset did not match the correct type.
+      if (base_asset && base_asset->type() != meta::typeInfoGet<T>())
+      {
+        base_asset = nullptr;
+      }
+
+      return static_cast<T*>(base_asset);
+    }
+
+    // Old garbage
 
     template<typename AssetTInfo>
     AssetIndexResult<AssetTInfo> indexAsset(StringRange abs_path)
@@ -181,7 +295,8 @@ namespace bf
 
     // Path Conversions
 
-    String relPathToAbsPath(const StringRange& rel_path) const;
+    String      relPathToAbsPath(const StringRange& rel_path) const;
+    StringRange absPathToRelPath(const StringRange& abs_path) const;  // This function indexes into the passed in abs_path, so be careful about lifetimes.
 
     ~Assets();
 

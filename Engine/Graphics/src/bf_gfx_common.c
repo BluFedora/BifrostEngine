@@ -416,8 +416,8 @@ void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandList
   assert((x + width) >= 0.0f && (x + width) <= 1.0f);
   assert((y + height) >= 0.0f && (y + height) <= 1.0f);
 
-  const int32_t fb_width  = bfTexture_width(texture);
-  const int32_t fb_height = bfTexture_height(texture);
+  const float fb_width  = (float)(bfTexture_width(texture));
+  const float fb_height = (float)(bfTexture_height(texture));
 
   bfGfxCmdList_setRenderAreaAbs(
    self,
@@ -438,8 +438,8 @@ char* LoadFileIntoMemory(const char* const filename, long* out_size)
   {
     fseek(f, 0, SEEK_END);
     long file_size = ftell(f);
-    fseek(f, 0, SEEK_SET);  //same as rewind(f);
-    buffer = (char*)(malloc(file_size + 1));
+    fseek(f, 0, SEEK_SET);  // same as rewind(f);
+    buffer = (char*)malloc(file_size + 1ul);
     if (buffer)
     {
       fread(buffer, sizeof(char), file_size, f);

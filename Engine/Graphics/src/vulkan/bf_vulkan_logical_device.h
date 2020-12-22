@@ -258,18 +258,8 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
     return false;
   }
 
-  if (a.subpass_index != b.subpass_index)
-  {
-    return false;
-  }
-
-  if (a.subpass_index != b.subpass_index)
-  {
-    return false;
-  }
-
-  const auto num_attachments_a = a.renderpass->info.subpasses[a.subpass_index].num_out_attachment_refs;
-  const auto num_attachments_b = b.renderpass->info.subpasses[b.subpass_index].num_out_attachment_refs;
+  const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
+  const auto num_attachments_b = b.renderpass->info.subpasses[b.state.subpass_index].num_out_attachment_refs;
 
   if (num_attachments_a != num_attachments_b)
   {

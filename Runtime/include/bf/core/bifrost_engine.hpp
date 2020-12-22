@@ -49,7 +49,7 @@ namespace bf
 
   struct CameraRender
   {
-    friend class ::Engine;
+    friend class Engine;
 
     bfGfxDeviceHandle device;
     BifrostCamera     cpu_camera;
@@ -118,7 +118,7 @@ namespace bf
 
   class Input : NonCopyMoveable<Input>
   {
-    friend class ::Engine;
+    friend class Engine;
 
    private:
     MouseInputState m_MouseState = {};
@@ -144,142 +144,143 @@ namespace bf
 #include <chrono>   // high_resolution_clock
 #include <utility>  // pair
 
-using namespace bf;
-
-class Engine : private NonCopyMoveable<Engine>
+namespace bf
 {
- private:
-  using CommandLineArgs     = std::pair<int, char**>;
-  using CameraRenderMemory  = PoolAllocator<CameraRender, k_MaxNumCamera>;
-  using UpdateLoopClock     = std::chrono::high_resolution_clock;
-  using UpdateLoopTimePoint = typename UpdateLoopClock::time_point;
-
- private:
-  // Configuration
-
-  CommandLineArgs m_CmdlineArgs;
-
-  // Memory Allocators
-
-  MainHeap        m_MainMemory;
-  LinearAllocator m_TempMemory;
-  NoFreeAllocator m_TempAdapter;
-
-  // Core Low Level Systems
-
-  GameStateMachine        m_StateMachine;
-  VM                      m_Scripting;
-  Assets                  m_Assets;
-  Array<AssetSceneHandle> m_SceneStack;
-  Input                   m_Input;
-
-  // Rendering
-
-  StandardRenderer   m_Renderer;
-  DebugRenderer      m_DebugRenderer;
-  Gfx2DPainter*      m_Renderer2D;
-  CameraRenderMemory m_CameraMemory;
-  CameraRender*      m_CameraList;
-  CameraRender*      m_CameraResizeList;
-  CameraRender*      m_CameraDeleteList;
-
-  // IECSSystem (High Level Systems)
-
-  Array<IECSSystem*> m_Systems;
-  AnimationSystem*   m_AnimationSystem;
-  CollisionSystem*   m_CollisionSystem;
-  ComponentRenderer* m_ComponentRenderer;
-  BehaviorSystem*    m_BehaviorSystem;
-
-  // Update Loop
-
-  std::chrono::nanoseconds m_TimeStep;
-  std::chrono::nanoseconds m_TimeStepLag;
-  UpdateLoopTimePoint      m_CurrentTime;
-
-  // Misc
-
-  EngineState m_State;
-
- public:
-  explicit Engine(char* main_memory, std::size_t main_memory_size, int argc = 0, char* argv[] = nullptr);
-
-  // Subsystem Accessors
-
-  MainHeap&          mainMemory() { return m_MainMemory; }
-  LinearAllocator&   tempMemory() { return m_TempMemory; }
-  IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
-  GameStateMachine&  stateMachine() { return m_StateMachine; }
-  VM&                scripting() { return m_Scripting; }
-  StandardRenderer&  renderer() { return m_Renderer; }
-  DebugRenderer&     debugDraw() { return m_DebugRenderer; }
-  Gfx2DPainter&      renderer2D() const { return *m_Renderer2D; }
-  Assets&            assets() { return m_Assets; }
-  Input&             input() { return m_Input; }
-  AnimationSystem&   animationSys() const { return *m_AnimationSystem; }
-  CollisionSystem&   collisionSys() const { return *m_CollisionSystem; }
-  ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
-  BehaviorSystem&    behaviorSys() const { return *m_BehaviorSystem; }
-  AssetSceneHandle   currentScene() const;
-  EngineState        state() const { return m_State; }
-  void               setState(EngineState value) { m_State = value; }
-
-  // Low Level Camera API
-
-  CameraRender* borrowCamera(const CameraRenderCreateParams& params);
-  void          resizeCamera(CameraRender* camera, int width, int height);
-  void          returnCamera(CameraRender* camera);
-
-  template<typename F>
-  void forEachCamera(F&& callback)
+  class Engine : private NonCopyMoveable<Engine>
   {
-    CameraRender* camera = m_CameraList;
+   private:
+    using CommandLineArgs     = std::pair<int, char**>;
+    using CameraRenderMemory  = PoolAllocator<CameraRender, k_MaxNumCamera>;
+    using UpdateLoopClock     = std::chrono::high_resolution_clock;
+    using UpdateLoopTimePoint = typename UpdateLoopClock::time_point;
 
-    while (camera)
+   private:
+    // Configuration
+
+    CommandLineArgs m_CmdlineArgs;
+
+    // Memory Allocators
+
+    MainHeap        m_MainMemory;
+    LinearAllocator m_TempMemory;
+    NoFreeAllocator m_TempAdapter;
+
+    // Core Low Level Systems
+
+    Assets                  m_Assets;
+    GameStateMachine        m_StateMachine;
+    VM                      m_Scripting;
+    Array<AssetSceneHandle> m_SceneStack;
+    Input                   m_Input;
+
+    // Rendering
+
+    StandardRenderer   m_Renderer;
+    DebugRenderer      m_DebugRenderer;
+    Gfx2DPainter*      m_Renderer2D;
+    CameraRenderMemory m_CameraMemory;
+    CameraRender*      m_CameraList;
+    CameraRender*      m_CameraResizeList;
+    CameraRender*      m_CameraDeleteList;
+
+    // IECSSystem (High Level Systems)
+
+    Array<IECSSystem*> m_Systems;
+    AnimationSystem*   m_AnimationSystem;
+    CollisionSystem*   m_CollisionSystem;
+    ComponentRenderer* m_ComponentRenderer;
+    BehaviorSystem*    m_BehaviorSystem;
+
+    // Update Loop
+
+    std::chrono::nanoseconds m_TimeStep;
+    std::chrono::nanoseconds m_TimeStepLag;
+    UpdateLoopTimePoint      m_CurrentTime;
+
+    // Misc
+
+    EngineState m_State;
+
+   public:
+    explicit Engine(char* main_memory, std::size_t main_memory_size, int argc = 0, char* argv[] = nullptr);
+
+    // Subsystem Accessors
+
+    MainHeap&          mainMemory() { return m_MainMemory; }
+    LinearAllocator&   tempMemory() { return m_TempMemory; }
+    IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
+    GameStateMachine&  stateMachine() { return m_StateMachine; }
+    VM&                scripting() { return m_Scripting; }
+    StandardRenderer&  renderer() { return m_Renderer; }
+    DebugRenderer&     debugDraw() { return m_DebugRenderer; }
+    Gfx2DPainter&      renderer2D() const { return *m_Renderer2D; }
+    Assets&            assets() { return m_Assets; }
+    Input&             input() { return m_Input; }
+    AnimationSystem&   animationSys() const { return *m_AnimationSystem; }
+    CollisionSystem&   collisionSys() const { return *m_CollisionSystem; }
+    ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
+    BehaviorSystem&    behaviorSys() const { return *m_BehaviorSystem; }
+    AssetSceneHandle   currentScene() const;
+    EngineState        state() const { return m_State; }
+    void               setState(EngineState value) { m_State = value; }
+
+    // Low Level Camera API
+
+    CameraRender* borrowCamera(const CameraRenderCreateParams& params);
+    void          resizeCamera(CameraRender* camera, int width, int height);
+    void          returnCamera(CameraRender* camera);
+
+    template<typename F>
+    void forEachCamera(F&& callback)
     {
-      callback(camera);
-      camera = camera->next;
+      CameraRender* camera = m_CameraList;
+
+      while (camera)
+      {
+        callback(camera);
+        camera = camera->next;
+      }
     }
-  }
 
-  // Scene Management API
+    // Scene Management API
 
-  void      openScene(const AssetSceneHandle& scene);
-  EntityRef createEntity(Scene& scene, const StringRange& name = "New Entity");
+    void      openScene(const AssetSceneHandle& scene);
+    EntityRef createEntity(Scene& scene, const StringRange& name = "New Entity");
 
-  // "System" Functions to be called by the Application
+    // "System" Functions to be called by the Application
 
-  template<typename T, typename... Args>
-  T* addECSSystem(Args&&... args)
-  {
-    T* const sys = m_MainMemory.allocateT<T>(std::forward<Args>(args)...);
-    m_Systems.push(sys);
-    sys->onInit(*this);
+    template<typename T, typename... Args>
+    T* addECSSystem(Args&&... args)
+    {
+      T* const sys = m_MainMemory.allocateT<T>(std::forward<Args>(args)...);
+      m_Systems.push(sys);
+      sys->onInit(*this);
 
-    return sys;
-  }
+      return sys;
+    }
 
-  void init(const EngineCreateParams& params, bfWindow* main_window);
-  void onEvent(bfWindow* window, Event& evt);
-  void tick();
-  void deinit();
+    void init(const EngineCreateParams& params, bfWindow* main_window);
+    void onEvent(bfWindow* window, Event& evt);
+    void tick();
+    void deinit();
 
- private:
-  //
-  // Engine::tick() calls these functions in this order.
-  // If 'Engine::beginFrame' returns false no other function
-  // is called that frame.
-  //
+   private:
+    //
+    // Engine::tick() calls these functions in this order.
+    // If 'Engine::beginFrame' returns false no other function
+    // is called that frame.
+    //
 
-  [[nodiscard]] bool beginFrame();
-  void               fixedUpdate(float delta_time);
-  void               update(float delta_time);
-  void               draw(float render_alpha);
-  void               endFrame();
+    [[nodiscard]] bool beginFrame();
+    void               fixedUpdate(float delta_time);
+    void               update(float delta_time);
+    void               draw(float render_alpha);
+    void               endFrame();
 
- private:
-  void resizeCameras();
-  void deleteCameras();
-};
+   private:
+    void resizeCameras();
+    void deleteCameras();
+  };
+}  // namespace bf
 
 #endif /* BF_ENGINE_HPP */

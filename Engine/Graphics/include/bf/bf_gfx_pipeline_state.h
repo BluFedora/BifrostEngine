@@ -207,7 +207,7 @@ typedef enum
 typedef struct
 {
   // 30 Bits
-  uint32_t color_write_mask : 4;
+  uint32_t color_write_mask : 4; // (bfColorMask)
   uint32_t color_blend_op : 3;
   uint32_t color_blend_src : BF_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
   uint32_t color_blend_dst : BF_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
@@ -222,57 +222,58 @@ typedef struct
 {
   /*
     NOTE(SR):
-      * Each stencil state needs 36 bits of data (72 total for front and back).
-      * '_pad' must be zeroed out for consistent hashing / comparing behavior.
+      - Each stencil state needs 36 bits of data (72 total for front and back).
+      - '_pad' must be zeroed out for consistent hashing / comparing behavior.
   */
 
-  /***************************************************************************************************/
-  /* BITS:                                                        || Size                   | Offset */
-  uint64_t draw_mode : BF_PIPELINE_STATE_DRAW_MODE_BITS;          /* 3 (bfDrawMode)         |   0    */
-  uint64_t front_face : BF_PIPELINE_STATE_FRONT_FACE_BITS;        /* 1                      |   3    */
-  uint64_t cull_face : BF_PIPELINE_STATE_CULL_FACE_BITS;          /* 2                      |   4    */
-  uint64_t do_depth_test : BF_PIPELINE_STATE_DEPTH_TEST_BITS;     /* 1                      |   6    */
-  uint64_t do_depth_clamp : 1;                                    /* 1                      |   7    */
-  uint64_t do_depth_bounds_test : 1;                              /* 1                      |   8    */
-  uint64_t depth_write : BF_PIPELINE_STATE_DEPTH_WRITE_BITS;      /* 1                      |   9    */
-  uint64_t depth_test_op : BF_PIPELINE_STATE_DEPTH_OP_BITS;       /* 3 (bfCompareOp)        |   10   */
-  uint64_t do_stencil_test : BF_PIPELINE_STATE_STENCIL_TEST_BITS; /* 1                      |   13   */
-  uint64_t primitive_restart : 1;                                 /* 1                      |   14   */
-  uint64_t rasterizer_discard : 1;                                /* 1                      |   15   */
-  uint64_t do_depth_bias : 1;                                     /* 1                      |   16   */
-  uint64_t do_sample_shading : 1;                                 /* 1                      |   17   */
-  uint64_t alpha_to_coverage : 1;                                 /* 1                      |   18   */
-  uint64_t alpha_to_one : 1;                                      /* 1                      |   19   */
-  uint64_t do_logic_op : 1;                                       /* 1                      |   20   */
-  uint64_t logic_op : 4;                                          /* 4                      |   21   */
-  uint64_t fill_mode : 2;                                         /* 2                      |   25   */
-  uint64_t stencil_face_front_fail_op : 3;                        /* 3 (bfStencilOp)        |   27   */
-  uint64_t stencil_face_front_pass_op : 3;                        /* 3 (bfStencilOp)        |   30   */
-  uint64_t stencil_face_front_depth_fail_op : 3;                  /* 3 (bfStencilOp)        |   33   */
-  uint64_t stencil_face_front_compare_op : 3;                     /* 3 (bfCompareOp)        |   36   */
-  uint64_t stencil_face_front_compare_mask : 8;                   /* 8 (uint8_t)            |   39   */
-  uint64_t stencil_face_front_write_mask : 8;                     /* 8 (uint8_t)            |   47   */
-  uint64_t stencil_face_front_reference : 8;                      /* 8 (uint8_t)            |   55   */
-  uint64_t stencil_face_back_fail_op : 3;                         /* 3 (bfStencilOp)        |   63   */
-  uint64_t stencil_face_back_pass_op : 3;                         /* 3 (bfStencilOp)        |   66   */
-  uint64_t stencil_face_back_depth_fail_op : 3;                   /* 3 (bfStencilOp)        |   69   */
-  uint64_t stencil_face_back_compare_op : 3;                      /* 3 (bfCompareOp)        |   72   */
-  uint64_t stencil_face_back_compare_mask : 8;                    /* 8 (uint8_t)            |   75   */
-  uint64_t stencil_face_back_write_mask : 8;                      /* 8 (uint8_t)            |   83   */
-  uint64_t stencil_face_back_reference : 8;                       /* 8 (uint8_t)            |   91   */
-  uint64_t dynamic_viewport : 1;                                  /* 1 (bool)               |   99   */
-  uint64_t dynamic_scissor : 1;                                   /* 1 (bool)               |   100  */
-  uint64_t dynamic_line_width : 1;                                /* 1 (bool)               |   101  */
-  uint64_t dynamic_depth_bias : 1;                                /* 1 (bool)               |   102  */
-  uint64_t dynamic_blend_constants : 1;                           /* 1 (bool)               |   103  */
-  uint64_t dynamic_depth_bounds : 1;                              /* 1 (bool)               |   104  */
-  uint64_t dynamic_stencil_cmp_mask : 1;                          /* 1 (bool)               |   105  */
-  uint64_t dynamic_stencil_write_mask : 1;                        /* 1 (bool)               |   106  */
-  uint64_t dynamic_stencil_reference : 1;                         /* 1 (bool)               |   107  */
-  uint64_t _pad : 19;                                             /* 19 (zeroed-out)        |   108  */
-  /***************************************************************************************************/
+  /*********************************************************************************************************/
+  /* BITS:                                                        ||              Size            | Offset */
+  uint64_t draw_mode : BF_PIPELINE_STATE_DRAW_MODE_BITS;          /*  3 (bfDrawMode)              |     0  */
+  uint64_t front_face : BF_PIPELINE_STATE_FRONT_FACE_BITS;        /*  1                           |     3  */
+  uint64_t cull_face : BF_PIPELINE_STATE_CULL_FACE_BITS;          /*  2                           |     4  */
+  uint64_t do_depth_test : BF_PIPELINE_STATE_DEPTH_TEST_BITS;     /*  1                           |     6  */
+  uint64_t do_depth_clamp : 1;                                    /*  1                           |     7  */
+  uint64_t do_depth_bounds_test : 1;                              /*  1                           |     8  */
+  uint64_t depth_write : BF_PIPELINE_STATE_DEPTH_WRITE_BITS;      /*  1                           |     9  */
+  uint64_t depth_test_op : BF_PIPELINE_STATE_DEPTH_OP_BITS;       /*  3 (bfCompareOp)             |    10  */
+  uint64_t do_stencil_test : BF_PIPELINE_STATE_STENCIL_TEST_BITS; /*  1                           |    13  */
+  uint64_t primitive_restart : 1;                                 /*  1                           |    14  */
+  uint64_t rasterizer_discard : 1;                                /*  1                           |    15  */
+  uint64_t do_depth_bias : 1;                                     /*  1                           |    16  */
+  uint64_t do_sample_shading : 1;                                 /*  1                           |    17  */
+  uint64_t alpha_to_coverage : 1;                                 /*  1                           |    18  */
+  uint64_t alpha_to_one : 1;                                      /*  1                           |    19  */
+  uint64_t do_logic_op : 1;                                       /*  1                           |    20  */
+  uint64_t logic_op : 4;                                          /*  4 (bfLogicOp)               |    21  */
+  uint64_t fill_mode : 2;                                         /*  2                           |    25  */
+  uint64_t stencil_face_front_fail_op : 3;                        /*  3 (bfStencilOp)             |    27  */
+  uint64_t stencil_face_front_pass_op : 3;                        /*  3 (bfStencilOp)             |    30  */
+  uint64_t stencil_face_front_depth_fail_op : 3;                  /*  3 (bfStencilOp)             |    33  */
+  uint64_t stencil_face_front_compare_op : 3;                     /*  3 (bfCompareOp)             |    36  */
+  uint64_t stencil_face_front_compare_mask : 8;                   /*  8 (uint8_t)                 |    39  */
+  uint64_t stencil_face_front_write_mask : 8;                     /*  8 (uint8_t)                 |    47  */
+  uint64_t stencil_face_front_reference : 8;                      /*  8 (uint8_t)                 |    55  */
+  uint64_t stencil_face_back_fail_op : 3;                         /*  3 (bfStencilOp)             |    63  */
+  uint64_t stencil_face_back_pass_op : 3;                         /*  3 (bfStencilOp)             |    66  */
+  uint64_t stencil_face_back_depth_fail_op : 3;                   /*  3 (bfStencilOp)             |    69  */
+  uint64_t stencil_face_back_compare_op : 3;                      /*  3 (bfCompareOp)             |    72  */
+  uint64_t stencil_face_back_compare_mask : 8;                    /*  8 (uint8_t)                 |    75  */
+  uint64_t stencil_face_back_write_mask : 8;                      /*  8 (uint8_t)                 |    83  */
+  uint64_t stencil_face_back_reference : 8;                       /*  8 (uint8_t)                 |    91  */
+  uint64_t dynamic_viewport : 1;                                  /*  1 (bool)                    |    99  */
+  uint64_t dynamic_scissor : 1;                                   /*  1 (bool)                    |   100  */
+  uint64_t dynamic_line_width : 1;                                /*  1 (bool)                    |   101  */
+  uint64_t dynamic_depth_bias : 1;                                /*  1 (bool)                    |   102  */
+  uint64_t dynamic_blend_constants : 1;                           /*  1 (bool)                    |   103  */
+  uint64_t dynamic_depth_bounds : 1;                              /*  1 (bool)                    |   104  */
+  uint64_t dynamic_stencil_cmp_mask : 1;                          /*  1 (bool)                    |   105  */
+  uint64_t dynamic_stencil_write_mask : 1;                        /*  1 (bool)                    |   106  */
+  uint64_t dynamic_stencil_reference : 1;                         /*  1 (bool)                    |   107  */
+  uint64_t subpass_index : 2;                                     /*  2 (0-3,k_bfGfxMaxSubpasses) |   108  */
+  uint64_t _pad : 17;                                             /* 17 (zeroed-out)              |   110  */
+  /*********************************************************************************************************/
 
-} bfPipelineState; /* 107 used bits (19 extra bits) */
+} bfPipelineState; /* 110 used bits (17 extra bits) */
 
 typedef struct
 {
@@ -329,7 +330,6 @@ typedef struct
   bfPipelineDepthInfo     depth;
   float                   min_sample_shading;
   uint32_t                sample_mask; /* must default to 0xFFFFFFFF */
-  uint32_t                subpass_index;
   bfFramebufferBlending   blending[k_bfGfxMaxAttachments];
   bfShaderProgramHandle   program;
   bfRenderpassHandle      renderpass;

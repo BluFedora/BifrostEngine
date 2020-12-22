@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bf_path_manip.cpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   String manipulation functions with a focus on file paths.
+ *
+ * @version 0.0.1
+ * @date    2020-12-19
+ *
+ * @copyright Copyright (c) 2019-2020
+ */
+/******************************************************************************/
 #include "bf/asset_io/bf_path_manip.hpp"
 
 #include "bf/asset_io/bf_file.hpp"  // File, file::directoryOfFile
@@ -6,11 +19,11 @@
 
 namespace bf::path
 {
+  static constexpr std::size_t k_OffsetFromSlash = 1;  //!< Use of this is to indicate a calculation that needs to account for a k_Separator character.
+
   StringRange relative(StringRange abs_root_path, StringRange abs_sub_path)
   {
     assert(abs_root_path.length() <= abs_sub_path.length());
-
-    static constexpr std::size_t k_OffsetFromSlash = 1;
 
     const std::size_t root_path_length = abs_root_path.length();
     const std::size_t full_path_length = abs_sub_path.length();
@@ -50,7 +63,7 @@ namespace bf::path
     {
       *end_of_path++ = k_Separator;
 
-      const std::size_t bytes_left_over     = out_path_usable_size - dir_bytes_to_write - 1; // Minus one for the 'k_Separator'
+      const std::size_t bytes_left_over     = out_path_usable_size - dir_bytes_to_write - k_OffsetFromSlash;  // Minus k_OffsetFromSlash for the 'k_Separator'
       const std::size_t file_bytes_to_write = std::min(bytes_left_over, file_name.length());
 
       std::memcpy(end_of_path, file_name.begin(), file_bytes_to_write);
@@ -60,12 +73,27 @@ namespace bf::path
 
     end_of_path[0] = '\0';
 
-    return {std::size_t(end_of_path - out_path), (total_length + std::size_t(1)) > out_path_usable_size};  // Plus one for the k_Separator
+    const std::size_t path_length  = end_of_path - out_path;
+    const bool        is_truncated = (total_length + k_OffsetFromSlash) > out_path_usable_size;  // Plus k_OffsetFromSlash for the k_Separator
+
+    return {path_length, is_truncated};
   }
 
   StringRange directory(StringRange file_path)
   {
-    return file::directoryOfFile(file_path);
+    const char* end = file_path.end();
+
+    while (end != file_path.bgn)
+    {
+      if (*end == '/')
+      {
+        break;
+      }
+
+      --end;
+    }
+
+    return {file_path.bgn, end};
   }
 
   StringRange extensionEx(StringRange file_path)
@@ -116,3 +144,29 @@ namespace bf::path
     return {last_slash.base(), last_dot};
   }
 }  // namespace bf::path
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

@@ -4,14 +4,21 @@ project(BF_AssetIO VERSION 0.0.1 DESCRIPTION "")
 
 add_library(
   "${PROJECT_NAME}_static" STATIC
+
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_model_loader.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_base_asset.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_gfx_assets.hpp"
+ 
   "${PROJECT_SOURCE_DIR}/src/bf_model_loader.cpp"
-)
+  "${PROJECT_SOURCE_DIR}/src/bf_gfx_assets.cpp"
+ "src/bf_base_asset.cpp" "include/bf/asset_io/bf_asset_map.hpp")
 
 target_include_directories(
   "${PROJECT_NAME}_static"
 
   PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/../../Runtime/include" # Fuck dude
 
   PRIVATE
     "${PROJECT_SOURCE_DIR}/lib/include"
@@ -59,9 +66,13 @@ endif()
 target_link_libraries(
   "${PROJECT_NAME}_static"
   PUBLIC
-    BF_Memory_interface
     BF_Core_static
+    BF_Graphics_shared
     BF_Math_shared
+    BF_Memory_interface
+    BF_TMPUtils
+
+    BF_DataStructuresCxx
 
   PRIVATE
     "${BF_ASSETIO_LIBS}"

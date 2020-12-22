@@ -15,7 +15,7 @@
 
 #include "bf/data_structures/bifrost_intrusive_list.hpp"  // List<T>
 #include "bf/utility/bifrost_json.hpp"                    // Value
-#include "bifrost_asset_info.hpp"                              // ISerializer
+#include "bifrost_asset_info.hpp"                         // ISerializer
 
 namespace bf
 {
@@ -24,8 +24,8 @@ namespace bf
   class JsonSerializerWriter final : public ISerializer
   {
    private:
-    json::Value                       m_Document;
-    List<json::Value*>                m_ObjectStack;
+    json::Value        m_Document;
+    List<json::Value*> m_ObjectStack;
 
    public:
     explicit JsonSerializerWriter(IMemoryManager& memory);
@@ -48,8 +48,8 @@ namespace bf
     void serialize(StringRange key, double& value) override;
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, bfUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
+    void serialize(StringRange key, IARCHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     using ISerializer::serialize;
     void popObject() override;
@@ -79,9 +79,9 @@ namespace bf
     };
 
    private:
-    Assets&                           m_Assets;
-    json::Value&                      m_Document;
-    List<ObjectStackNode>             m_ObjectStack;
+    Assets&               m_Assets;
+    json::Value&          m_Document;
+    List<ObjectStackNode> m_ObjectStack;
 
    public:
     explicit JsonSerializerReader(Assets& assets, IMemoryManager& memory, json::Value& document);
@@ -103,8 +103,8 @@ namespace bf
     void serialize(StringRange key, double& value) override;
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, bfUUID& value) override;
     void serialize(StringRange key, BaseAssetHandle& value) override;
+    void serialize(StringRange key, IARCHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     using ISerializer::serialize;
     void popObject() override;
@@ -115,6 +115,6 @@ namespace bf
     ObjectStackNode& currentNode() { return m_ObjectStack.back(); }
     json::Value&     currentObject() { return *currentNode().object; }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_JSON_SERIALIZER_HPP */

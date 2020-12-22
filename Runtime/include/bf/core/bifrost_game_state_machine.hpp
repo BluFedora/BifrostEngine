@@ -15,10 +15,9 @@
 #include "bf/IMemoryManager.hpp"   /* IMemoryManager     */
 #include "bf/bf_non_copy_move.hpp" /* NonCopyMoveable<T> */
 
-class Engine;
-
 namespace bf
 {
+  class Engine;
   class IGameStateLayer;
 
   class GameStateMachine final : private NonCopyMoveable<GameStateMachine>

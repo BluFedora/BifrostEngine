@@ -16,12 +16,11 @@
 #ifndef BF_BASE_ASSET_HANDLE_HPP
 #define BF_BASE_ASSET_HANDLE_HPP
 
-class Engine;
-
 namespace bf
 {
   class IBaseObject;
   class BaseAssetInfo;
+  class Engine;
 
   namespace meta
   {
@@ -66,6 +65,6 @@ namespace bf
    protected:
     void acquire();
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BF_BASE_ASSET_HANDLE_HPP */

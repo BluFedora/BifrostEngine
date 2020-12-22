@@ -26,14 +26,12 @@ namespace bf
 
    private:
     AssetMaterialHandle m_Material;   // TODO(SR): Needs to be an array.
-    EntityRef           m_EntityRef;  // TEMP CODE
     AssetModelHandle    m_Model;
 
    public:
     explicit MeshRenderer(Entity& owner) :
       Base(owner),
       m_Material{nullptr},
-      m_EntityRef{},
       m_Model{nullptr}
     {
     }
@@ -165,7 +163,6 @@ BIFROST_META_REGISTER(bf::MeshRenderer){
   BIFROST_META_MEMBERS(
    class_info<MeshRenderer>("MeshRenderer"),                         //
    field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
-   field("m_EntityRef", &MeshRenderer::m_EntityRef),                 //
    field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
    )
    BIFROST_META_END()}

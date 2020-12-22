@@ -239,17 +239,17 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
         if (texture->tex_view != VK_NULL_HANDLE)
         {
-          vkDestroyImageView(texture->parent->handle, texture->tex_view, CUSTOM_ALLOC);
+          vkDestroyImageView(self->handle, texture->tex_view, CUSTOM_ALLOC);
         }
 
         if (texture->tex_memory != VK_NULL_HANDLE)
         {
-          vkFreeMemory(texture->parent->handle, texture->tex_memory, CUSTOM_ALLOC);
+          vkFreeMemory(self->handle, texture->tex_memory, CUSTOM_ALLOC);
         }
 
         if (texture->tex_image != VK_NULL_HANDLE)
         {
-          vkDestroyImage(texture->parent->handle, texture->tex_image, CUSTOM_ALLOC);
+          vkDestroyImage(self->handle, texture->tex_image, CUSTOM_ALLOC);
         }
 
         self->cache_descriptor_set.forEach([texture](bfDescriptorSetHandle desc_set, bfDescriptorSetInfo& config_data) {

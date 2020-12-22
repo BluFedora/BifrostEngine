@@ -111,8 +111,8 @@ struct SoundFxAsset : public BaseAsset
 
 ## Asset Interface
 
-- `bool         load(BaseAsset* self, Engine& engine)`
-- `bool         reload(BaseAsset* self, Engine& engine)`
+- `void         load(BaseAsset* self, Engine& engine)`
+- `void         reload(BaseAsset* self, Engine& engine)`
 - `void         unload(BaseAsset* self, Engine& engine)`
 - `void         saveContent(BaseAsset* self, Engine& engine, ISerializer& serializer)`
 - `void         saveMeta(BaseAsset* self, Engine& engine, ISerializer& serializer)`
@@ -152,7 +152,7 @@ struct AssetMap
 
   //
   // Looking up by string path uses `path_to_asset` then searches from the found index.
-  // Looking up by UUID directly uses `assets`.
+  // Looking up by UUID directly uses `BaseAsset*`.
   //
   
   template<typename TKey, typename FCmp>

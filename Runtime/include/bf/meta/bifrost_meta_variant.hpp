@@ -20,10 +20,15 @@
 #include "bf/data_structures/bifrost_string.hpp"     /* String                                      */
 #include "bf/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>                              */
 #include "bf/ecs/bifrost_entity_ref.hpp"             /* EntityRef                                   */
-#include "bf/utility/bifrost_uuid.h"                 /* BifrostUUID                                 */
+#include "bf/utility/bifrost_uuid.h"                 /* bfUUID                                      */
 
 #include <cstddef> /* byte                                                                     */
 #include <cstdint> /* uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t */
+
+namespace bf
+{
+  class IARCHandle;
+}
 
 namespace bf::meta
 {
@@ -67,6 +72,7 @@ namespace bf::meta
    bfColor4u,
    Rect2f,
    String,
+   IARCHandle*,
    IBaseObject*,
    BaseAssetHandle,
    EntityRef,
@@ -75,6 +81,18 @@ namespace bf::meta
 
   using MetaPrimitiveTypes = MetaValueTypes::extend<MetaObject>;
   using MetaVariant        = MetaPrimitiveTypes::apply<Variant>;
+
+  template<typename... Args>
+  static void debug()
+  {
+    __debugbreak();
+  }
+
+  template<bool... Args>
+  static void debug()
+  {
+    //__debugbreak();
+  }
 
   namespace detail
   {
@@ -90,7 +108,7 @@ namespace bf::meta
       }
       else
       {
-        // #pragma message("Undefined class type, this is ok but I want to check this very once in a while.")
+        // #pragma message("Undefined class type, this is ok but I want to check this every once in a while.")
         return std::is_same_v<RawT, RawTBase>;
       }
     }
@@ -107,29 +125,37 @@ namespace bf::meta
     for_each_template<Args...>(std::forward<F&&>(f));
   }
 
-  template<typename... Args>
-  static void debug()
-  {
-    //__debugbreak();
-  }
+  //
+  // We are a Primitive Type IFF:
+  //
+  // We can convert from
+  //   PassedInType => PrimitiveType
+  //
+  // The Primitive Type is a pointer type compatible with the passed in type.
+  //
+  //
 
-  template<bool... Args>
-  static void debug()
+  template<typename PassedInType, typename PrimitiveType, typename ActualDataType>
+  static void isValueType_(MetaVariant& result_value, bool& result, ActualDataType&& data)
   {
-    //__debugbreak();
-  }
+    using RawPassedInType = std::remove_reference_t<std::decay_t<PassedInType>>;
+    using PassedInTypePtr = std::add_pointer_t<RawPassedInType>;
 
-  template<typename T, typename TT, typename TTT>
-  static void isValueType_(MetaVariant& result_value, bool& result, TTT&& data)
-  {
-    using RawTT = std::decay_t<TT>;
-    using RawT  = std::decay_t<T>;
-
-    if constexpr (std::is_convertible_v<RawT, RawTT> && detail::isSameOrBase<std::remove_reference_t<T>, std::remove_reference_t<TT>>())
+    if constexpr (
+     std::is_convertible_v<RawPassedInType, PrimitiveType> && detail::isSameOrBase<std::remove_reference_t<PassedInType>, std::remove_reference_t<PrimitiveType>>())
     {
       if (!result)
       {
-        result_value.set<TT>(data);
+        result_value.set<PrimitiveType>(data);
+        result = true;
+      }
+    }
+
+    if constexpr (std::is_pointer_v<PrimitiveType> && std::is_convertible_v<PassedInTypePtr, PrimitiveType>)
+    {
+      if (!result)
+      {
+        result_value.set<PrimitiveType>(const_cast<PassedInTypePtr>(&data));
         result = true;
       }
     }
@@ -138,14 +164,16 @@ namespace bf::meta
   template<typename T>
   static bool isValueType(MetaVariant& result_value, T&& data)
   {
+    using PassedInType = std::remove_reference_t<std::decay_t<T>>;
+
     bool result = false;
 
     forEachParameterPack(
      MetaValueTypes{},
      [&result, &data, &result_value](auto t) {
-       using TT = bfForEachTemplateT(t);
+       using PrimitiveType = bfForEachTemplateT(t);
 
-       isValueType_<std::remove_reference_t<T>, TT>(result_value, result, data);
+       isValueType_<PassedInType, PrimitiveType>(result_value, result, data);
      });
 
     return result;

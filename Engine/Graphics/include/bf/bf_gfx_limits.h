@@ -17,23 +17,22 @@
 #if __cplusplus
 extern "C" {
 #endif
-
 /*!
  * @brief
- *  Hardware Limitations Overview\n\n
+ *  Hardware Limitations Overview          \n\n
  *
- *  Portable Vulkan:      4 DescriptorSets\n
- *  Mobile:               4 DescriptorSets\n
- *  Older Graphics cards: 4 DescriptorSets\n
- *  Newer Graphics cards: 8 DescriptorSets\n\n
+ *  Portable Vulkan:      4 DescriptorSets \n
+ *  Mobile:               4 DescriptorSets \n
+ *  Older Graphics cards: 4 DescriptorSets \n
+ *  Newer Graphics cards: 8 DescriptorSets \n\n
  *
- *  Suggested Layout:\n
- *    [0] Camera / Scene\n
- *    [1] General Shader Params\n
- *    [2] Materials\n
- *    [3] Object Transforms\n
+ *  Suggested Layout:           \n
+ *    [0] Camera / Scene        \n
+ *    [1] General Shader Params \n
+ *    [2] Materials             \n
+ *    [3] Object Transforms     \n
  */
-enum
+enum /* bfGraphicsConstants */
 {
   k_bfGfxMaxSubpasses                    = 4,
   k_bfGfxMaxAttachments                  = 8,
@@ -50,15 +49,12 @@ enum
 };
 
 /*
-  [x]   static const unsigned VULKAN_NUM_BINDINGS        = 16;
-  [x]   static const unsigned VULKAN_NUM_VERTEX_ATTRIBS  = 16;
-  [ ]   static const unsigned VULKAN_NUM_VERTEX_BUFFERS  = 4;
-  [ ]   static const unsigned VULKAN_PUSH_CONSTANT_SIZE  = 128;
-  [ ]   static const unsigned VULKAN_UBO_SIZE            = 16 * 1024;
-  [ ]   static const unsigned VULKAN_NUM_SPEC_CONSTANTS  = 8;
-  [ ]   static const unsigned VULKAN_NUM_DYNAMIC_UNIFORM_BUFFEFERS  = 8;
+  static const unsigned VULKAN_NUM_VERTEX_BUFFERS  = 4;
+  static const unsigned VULKAN_PUSH_CONSTANT_SIZE  = 128;
+  static const unsigned VULKAN_UBO_SIZE            = 16 * 1024;
+  static const unsigned VULKAN_NUM_SPEC_CONSTANTS  = 8;
+  static const unsigned VULKAN_NUM_DYNAMIC_UNIFORM_BUFFEFERS  = 8;
  */
-
 #if __cplusplus
 }
 #endif

@@ -321,7 +321,6 @@ namespace bf
     assert(radius > 0.0f);
     assert(arc_angle > 0.0f);
 
-    // const bool  not_full_circle   = arc_angle < k_TwoPI;
     const auto  num_segments      = UIIndexType(k_ArcSmoothingFactor * std::sqrt(radius));
     const float theta             = arc_angle / float(num_segments);
     const float tangential_factor = std::tan(theta);

@@ -123,6 +123,8 @@ namespace bf
   using WidgetPositioningFn = void (*)(Widget* self);  // Positioning of Children
   using WidgetRenderFn      = void (*)(Widget* self, Gfx2DPainter& painter);
 
+  // [https://flutter.dev/docs/development/ui/widgets/layout]
+
   enum class LayoutType
   {
     // Single Child Layouts
@@ -141,7 +143,7 @@ namespace bf
 
   struct WidgetLayout
   {
-    LayoutType type;
+    LayoutType type = LayoutType::Default;
 
     union
     {
@@ -161,11 +163,6 @@ namespace bf
 
       } custom;
     };
-
-    WidgetLayout() :
-      type{LayoutType::Default}
-    {
-    }
   };
 
   enum class WidgetParams
@@ -217,7 +214,7 @@ namespace bf
     UIElementID PushID(StringRange string_value);
     void        PopID();
 
-    // Intertactable Widgets
+    // Interactable Widgets
 
     bool BeginWindow(const char* title);
     void EndWindow();
@@ -239,6 +236,213 @@ namespace bf
     void Update(float delta_time);
     void Render(Gfx2DPainter& painter);
   }  // namespace UI
+
+  enum class RenderBuffer2DCommandType
+  {
+    // Basic Drawing
+    FillRect,
+    FillRoundedRect,
+    BlurredRect,
+    BlurredRoundedRect,
+    FillArc,
+    Polyline,
+    FillTriangles,
+    StrokeRect,
+    StrokeRoundedRect,
+    StrokeArc,
+    Text,
+
+    // Special Drawing
+    NineSliceRect,
+    BlurRegion,
+
+    // Render State Commands
+    PushClipRect,
+    PopClipRect,
+    PushFramebuffer,
+    PopFramebuffer,
+    PushTransform,
+    PopTransform,
+    SetBrush,
+  };
+
+  struct RenderBuffer2DCommandHeader
+  {
+    RenderBuffer2DCommandType type;
+  };
+
+  struct RenderBuffer2DCommand_FillRect : public RenderBuffer2DCommandHeader
+  {
+    Rect2f rect;
+  };
+
+  struct RenderBuffer2DCommand_FillRoundedRect : public RenderBuffer2DCommandHeader
+  {
+    Rect2f rect;
+    float  top_border_radius;
+    float  bottom_border_radius;
+    float  left_border_radius;
+    float  right_border_radius;
+  };
+
+  struct RenderBuffer2DCommand_BlurredRect : public RenderBuffer2DCommand_FillRect
+  {
+    float shadow_sigma;
+  };
+
+  struct RenderBuffer2DCommand_BlurredRoundedRect : public RenderBuffer2DCommand_FillRoundedRect
+  {
+    float shadow_sigma;
+  };
+
+  struct RenderBuffer2DCommand_FillArc : public RenderBuffer2DCommandHeader
+  {
+    Vector2f position;
+    float    radius;
+    float    start_angle;
+    float    arc_angle;
+  };
+
+  struct RenderBuffer2DCommand_Polyline : public RenderBuffer2DCommandHeader
+  {
+    const Vector2f*   points;
+    UIIndexType       num_points;
+    float             thickness;
+    PolylineJoinStyle join_style;
+    PolylineEndStyle  end_style;
+    bool              is_overlap_allowed;
+  };
+
+  struct RenderBuffer2DCommand_FillTriangles : public RenderBuffer2DCommandHeader
+  {
+    const Vector2f*    points;
+    const UIIndexType* indices;
+    UIIndexType        num_points;
+    UIIndexType        num_indices;
+  };
+
+  using RenderBuffer2DCommand_StrokeRect        = RenderBuffer2DCommand_FillRect;
+  using RenderBuffer2DCommand_StrokeRoundedRect = RenderBuffer2DCommand_FillRoundedRect;
+  using RenderBuffer2DCommand_StrokeArc         = RenderBuffer2DCommand_FillArc;
+
+  struct RenderBuffer2DCommand_Text : public RenderBuffer2DCommandHeader
+  {
+    Vector2f     position;
+    const char*  utf8_text;
+    PainterFont* font;
+  };
+
+  struct RenderBuffer2DCommand_NineSliceRect : public RenderBuffer2DCommandHeader
+  {
+    Rect2f rect;
+    float  top_area;
+    float  bottom_area;
+    float  left_area;
+    float  right_area;
+  };
+
+  struct RenderBuffer2DCommand_BlurRegion : public RenderBuffer2DCommandHeader
+  {
+    Rect2f rect;
+  };
+
+  struct RenderBuffer2DCommand_PushClipRect : public RenderBuffer2DCommandHeader
+  {
+    Rect2f region;
+  };
+
+  struct RenderBuffer2DCommand_PopClipRect : public RenderBuffer2DCommandHeader
+  {
+  };
+
+  struct RenderBuffer2DCommand_PushFramebuffer : public RenderBuffer2DCommandHeader
+  {
+    std::uint16_t framebuffer_width;
+    std::uint16_t framebuffer_height;
+  };
+
+  struct RenderBuffer2DCommand_PopFramebuffer : public RenderBuffer2DCommandHeader
+  {
+  };
+
+  struct RenderBuffer2DCommand_PushTransform : public RenderBuffer2DCommandHeader
+  {
+    Mat4x4 matrix;
+    bool   adopt_parent;
+  };
+
+  struct RenderBuffer2DCommand_PopTransform : public RenderBuffer2DCommandHeader
+  {
+  };
+
+  struct Brush
+  {
+    enum /* Type */
+    {
+      Color,
+      LinearGradient,
+      RadialGradient,
+      Texture,
+    } type;
+
+    union
+    {
+      bfColor4f color;
+
+      // TODO(SR): The Rest...
+    };
+  };
+
+  struct RenderBuffer2DCommand_SetBrush : public RenderBuffer2DCommandHeader
+  {
+    Brush brush;
+  };
+
+  // Helper API for an Array of Bytes
+  namespace ByteBuffer
+  {
+    struct Reader
+    {
+      Array<char>& bytes;
+      char*        current_pos;
+    };
+
+    template<typename T>
+    T* Push(Array<char>& bytes)
+    {
+      static_assert(std::is_nothrow_destructible_v<T>, "We only support simple types.");
+
+      char* const bytes = bytes.emplaceN(sizeof(T), ArrayEmplaceUninitializedTag{});
+
+      return static_cast<T*>(bytes.emplaceN(sizeof(T)));
+    }
+
+    inline Reader BeginRead(Array<char>& bytes)
+    {
+      Reader result = {bytes, bytes.data()};
+
+      return result;
+    }
+
+    template<typename T>
+    T* Peek(Reader& reader)
+    {
+      return static_cast<T*>(reader.current_pos);
+    }
+
+    template<typename T>
+    T* Read(Reader& reader)
+    {
+      T* const result = Peek<T>(reader);
+
+      assert((reader.current_pos + sizeof(T)) <= reader.bytes.end());
+
+      reader.current_pos += sizeof(T);
+
+      return result;
+    }
+
+  }  // namespace ByteBuffer
 }  // namespace bf
 
 #endif /* BF_UI_HPP */

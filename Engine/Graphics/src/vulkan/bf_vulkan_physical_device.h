@@ -12,21 +12,23 @@ extern "C" {
 BF_DEFINE_GFX_HANDLE(Texture)
 {
   bfBaseGfxObject   super;
-  bfGfxDeviceHandle      parent;
+  bfGfxDeviceHandle parent;
   bfTexFeatureFlags flags;
+
   // CPU Side Data
   bfTextureType image_type;
-  int32_t            image_width;
-  int32_t            image_height;
-  int32_t            image_depth;
-  uint32_t           image_miplevels;
+  int32_t       image_width;
+  int32_t       image_height;
+  int32_t       image_depth;
+  uint32_t      image_miplevels;
+
   // GPU Side Data
-  VkImage            tex_image;
-  VkDeviceMemory     tex_memory;
-  VkImageView        tex_view;
-  VkSampler          tex_sampler;
+  VkImage          tex_image;
+  VkDeviceMemory   tex_memory;
+  VkImageView      tex_view;
+  VkSampler        tex_sampler;
   bfGfxImageLayout tex_layout;
-  VkFormat           tex_format;
+  VkFormat         tex_format;
   bfGfxSampleFlags tex_samples;
 };
 

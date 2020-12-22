@@ -4,6 +4,8 @@
 
 #include "glfw/glfw3.h"
 
+using namespace bf;
+
 extern GLFWwindow* g_Window;
 
 static GLFWmonitor* get_current_monitor(GLFWwindow* window)
@@ -77,7 +79,7 @@ void toggleFs()
   isFullscreen = !isFullscreen;
 }
 
-void MainDemoLayer::onEvent(Engine&, Event& event)
+void MainDemoLayer::onEvent(bf::Engine&, Event& event)
 {
   const auto is_key_down = event.type == BIFROST_EVT_ON_KEY_DOWN;
 
@@ -89,7 +91,7 @@ void MainDemoLayer::onEvent(Engine&, Event& event)
   }
 }
 
-void MainDemoLayer::onUpdate(Engine& engine, float delta_time)
+void MainDemoLayer::onUpdate(bf::Engine& engine, float delta_time)
 {
   // toggleFs();
 }

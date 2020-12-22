@@ -1,58 +1,73 @@
 /******************************************************************************/
 /*!
- * @file   bf_non_copy_move.hpp
+ * @file   bf_gfx_assets.cpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   Helper Mix-in classes for disabling stupid C++isms.
+ *   Defines some built in Asset Types used mainly by the graphics subsystem(s).
  *
  * @version 0.0.1
- * @date    2019-12-28
+ * @date    2020-12-19
  *
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#ifndef BF_NON_COPY_MOVE_HPP
-#define BF_NON_COPY_MOVE_HPP
+#include "bf/asset_io/bf_gfx_assets.hpp"
 
 namespace bf
 {
-  template<typename T>
-  class NonCopyable  // NOLINT(hicpp-special-member-functions)
+  // TODO(SR): This is copied from "bifrost_standard_renderer.cpp"
+  static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
+
+  TextureAsset::TextureAsset(bfGfxDeviceHandle gfx_device) :
+    BaseAsset<TextureAsset>(),
+    m_ParentDevice{gfx_device},
+    m_TextureHandle{nullptr}
   {
-   public:
-    NonCopyable(const NonCopyable&) = delete;
-    explicit NonCopyable(const T&)  = delete;
-    NonCopyable& operator=(const NonCopyable&) = delete;
-    T&           operator=(const T&) = delete;
+  }
 
-    //protected:
-    NonCopyable()  = default;
-    ~NonCopyable() = default;
-  };
-
-  template<typename T>
-  class NonMoveable  // NOLINT(hicpp-special-member-functions)
+  void TextureAsset::onLoad()
   {
-   public:
-    NonMoveable(NonMoveable&&) = delete;
-    explicit NonMoveable(T&&)  = delete;
-    NonMoveable& operator=(NonMoveable&&) = delete;
-    T&           operator=(T&&) = delete;
+    if (loadImpl())
+    {
+      markIsLoaded();
+    }
+    else
+    {
+      markFailedToLoad();
+    }
+  }
 
-    //protected:
-    NonMoveable()  = default;
-    ~NonMoveable() = default;
-  };
-
-  // clang-format off
-  template<typename T>
-  class NonCopyMoveable : public NonCopyable<T>, public NonMoveable<T>
-  // clang-format on
+  void TextureAsset::onUnload()
   {
-  };
+    if (m_TextureHandle)
+    {
+      // TODO(SR): This will not scale well.
+      bfGfxDevice_flush(m_ParentDevice);
+
+      bfGfxDevice_release(m_ParentDevice, m_TextureHandle);
+    }
+  }
+
+  bool TextureAsset::loadImpl()
+  {
+    const String&               full_path         = fullPath();
+    const bfTextureCreateParams tex_create_params = bfTextureCreateParams_init2D(
+     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
+     k_bfTextureUnknownSize,
+     k_bfTextureUnknownSize);
+
+    m_TextureHandle = bfGfxDevice_newTexture(m_ParentDevice, &tex_create_params);
+
+    if (bfTexture_loadFile(m_TextureHandle, full_path.c_str()))
+    {
+      bfTexture_setSampler(m_TextureHandle, &k_SamplerNearestRepeat);
+
+      return true;
+    }
+
+    return false;
+  }
 }  // namespace bf
-
-#endif /* BF_NON_COPY_MOVE_HPP */
 
 /******************************************************************************/
 /*

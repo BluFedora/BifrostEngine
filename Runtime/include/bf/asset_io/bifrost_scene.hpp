@@ -20,12 +20,11 @@
 #include "bf/ecs/bifrost_component_storage.hpp"           /* ComponentStorage  */
 #include "bifrost_asset_handle.hpp"                       /* AssetInfo<T1, T2> */
 
-class Engine;
-
 namespace bf
 {
   class BaseBehavior;
   class DebugRenderer;
+  class Engine;
   class Entity;
   class bfPureInterface(IBehavior);
 
@@ -67,7 +66,7 @@ namespace bf
   };
 
   using Camera     = BifrostCamera;
-  using EntityList = intrusive::ListView<Entity>;
+  using EntityList = ListView<Entity>;
 
   /*!
    * @brief
@@ -75,10 +74,10 @@ namespace bf
    */
   class Scene final : public BaseObject<Scene>
   {
-    BIFROST_META_FRIEND;
-    friend class Entity;
-    friend class ::Engine;
     friend class BaseBehavior;
+    friend class Engine;
+    friend class Entity;
+    BF_META_FRIEND;
 
    private:
     Engine&              m_Engine;
@@ -141,7 +140,7 @@ namespace bf
 
     void serialize(ISerializer& serializer);
 
-    ~Scene();
+    ~Scene() override;
 
    private:
   };

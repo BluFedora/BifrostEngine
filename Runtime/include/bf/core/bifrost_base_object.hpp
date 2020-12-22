@@ -3,7 +3,7 @@
  * @file   bifrost_base_object.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *  All reflectable / serializable engine objects will inherit from this class.
+ *  All reflectable / serializable engine objects inherit from this class.
  *
  * @version 0.0.1
  * @date    2019-12-22
@@ -14,25 +14,28 @@
 #ifndef BIFROST_BASE_OBJECT_HPP
 #define BIFROST_BASE_OBJECT_HPP
 
-#include "bf/meta/bifrost_meta_factory.hpp" /* Factory<T> */
-
-class Engine;
+#include "bf/meta/bifrost_meta_factory.hpp" /* AutoRegisterType<T> */
 
 namespace bf
 {
+  // Forward Declarations
+
+  class ISerializer;
+
+  // Use this interface if you want to refer to objects generically.
+
   class bfPureInterface(IBaseObject)
   {
    public:
-    virtual meta::BaseClassMetaInfo* type() = 0;
-    virtual ~IBaseObject()                  = default;
+    virtual meta::BaseClassMetaInfo* type() const = 0;
+    virtual void                     reflect(ISerializer & serializer);
+    virtual ~IBaseObject() = default;
   };
-
-  // NOTE(Shareef): Use this class as the base type.
 
   namespace detail
   {
     // clang-format off
-    class BaseObjectT : public meta::Factory<BaseObjectT>, public IBaseObject
+    class BaseObjectT : public IBaseObject, public meta::AutoRegisterType<BaseObjectT>
     // clang-format on
     {
      protected:
@@ -47,16 +50,9 @@ namespace bf
    public:
     using Base = BaseObject<T>;
 
-    static meta::BaseClassMetaInfo* staticType()
-    {
-      return meta::TypeInfo<meta::NthTypeOf<0, T>>::get();
-    }
-
-    meta::BaseClassMetaInfo* type() override
-    {
-      return staticType();
-    }
+    static meta::BaseClassMetaInfo* staticType() { return meta::typeInfoGet<T>(); }
+    meta::BaseClassMetaInfo*        type() const override { return staticType(); }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_BASE_OBJECT_HPP */

@@ -11,7 +11,7 @@ namespace bf::intrusive
   class ListView;
 
   template<typename T>
-  struct Node : private NonCopyable<Node<T>>
+  struct Node // : private NonCopyable<Node<T>>
   {
     Node<T>* prev;
     T*       next;

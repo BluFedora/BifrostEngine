@@ -184,7 +184,7 @@ add_executable(
  "Engine/Runtime/src/asset_io/bf_asset_info.cpp" 
  "Engine/Runtime/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
- )
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp")
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")

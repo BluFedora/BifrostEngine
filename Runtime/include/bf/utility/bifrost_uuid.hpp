@@ -15,7 +15,7 @@
 #define BIFROST_UUID_HPP
 
 #include "bf/data_structures/bifrost_dynamic_string.h" /* bfString_hashN, bfString_hashN64 */
-#include "bifrost_uuid.h"                              /* Biforst UUID API                 */
+#include "bifrost_uuid.h"                              /* UUID API                         */
 
 #include <cstddef> /* size_t */
 

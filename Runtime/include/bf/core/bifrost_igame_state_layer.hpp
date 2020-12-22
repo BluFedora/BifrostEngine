@@ -18,10 +18,9 @@
 #include "bf/PlatformFwd.h"        /* bfEvent              */
 #include "bf/bf_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
 
-class Engine;
-
 namespace bf
 {
+  class Engine;
   struct Gfx2DPainter;
   using Event = ::bfEvent;
 
@@ -29,8 +28,8 @@ namespace bf
 
   class IGameStateLayer : private NonCopyMoveable<IGameStateLayer>
   {
-    friend class ::Engine;
     friend class GameStateMachine;
+    friend class Engine;
 
    private:
     IGameStateLayer* m_Prev;

@@ -13,164 +13,18 @@
 #ifndef BF_MATERIAL_HPP
 #define BF_MATERIAL_HPP
 
+#include "bf/BaseObject.hpp"         // BaseObject<TSelf>
+#include "bf/Quaternion.h"           // bfQuaternionf
 #include "bf/bf_gfx_api.h"           //
 #include "bifrost_asset_handle.hpp"  // AssetHandle<T>
 #include "bifrost_asset_info.hpp"    // AssetInfo<T>
-
-#include "bf/BaseObject.hpp"  // BaseObject<TSelf>
-#include "bf/Quaternion.h"    // bfQuaternionf
+#include "bf/asset_io/bf_base_asset.hpp"
+#include "bf/asset_io/bf_gfx_assets.hpp"
 
 namespace bf
 {
   using Matrix4x4f        = ::Mat4x4;
   using AnimationTimeType = double;
-
-  namespace detail
-  {
-    // clang-format off
-    template<typename TSelf, typename THandle>
-    class BaseGraphicsResource : public BaseObject<TSelf>, private NonCopyMoveable<TSelf>
-    // clang-format on
-    {
-     protected:
-      bfGfxDeviceHandle m_GraphicsDevice;
-      THandle           m_Handle;
-
-     protected:
-      using Base = BaseGraphicsResource<TSelf, THandle>;
-
-      explicit BaseGraphicsResource(bfGfxDeviceHandle device) :
-        m_GraphicsDevice{device},
-        m_Handle{nullptr}
-      {
-      }
-
-      void destroyHandle()
-      {
-        if (m_Handle)
-        {
-          // TODO: This probably will not scale well.
-          bfGfxDevice_flush(m_GraphicsDevice);
-          bfGfxDevice_release(m_GraphicsDevice, m_Handle);
-          m_Handle = nullptr;
-        }
-      }
-
-      virtual ~BaseGraphicsResource()
-      {
-        destroyHandle();
-      }
-
-     public:
-      bfGfxDeviceHandle gfxDevice() const { return m_GraphicsDevice; }
-      THandle           handle() const { return m_Handle; }
-
-      void setHandle(THandle h)
-      {
-        m_Handle = h;
-      }
-    };
-  }  // namespace detail
-
-  class Texture final : public detail::BaseGraphicsResource<Texture, bfTextureHandle>
-  {
-    friend class AssetTextureInfo;
-
-   private:
-    using BaseT = BaseGraphicsResource<Texture, bfTextureHandle>;
-
-   public:
-    explicit Texture(bfGfxDeviceHandle device) :
-      BaseT(device)
-    {
-    }
-
-    using BaseT::destroyHandle;
-
-    std::uint32_t width() const { return m_Handle ? bfTexture_width(m_Handle) : 0u; }
-    std::uint32_t height() const { return m_Handle ? bfTexture_height(m_Handle) : 0u; }
-  };
-
-  class AssetTextureInfo final : public AssetInfo<Texture, AssetTextureInfo>
-  {
-   private:
-    using BaseT = AssetInfo<Texture, AssetTextureInfo>;
-
-   public:
-    using BaseT::BaseT;
-
-    bool load(Engine& engine) override;
-    bool reload(Engine& engine) override;
-
-   private:
-    bool loadImpl(Engine& engine, Texture& texture);
-  };
-
-  using AssetTextureHandle = AssetHandle<Texture>;
-
-  class ShaderModule final : public detail::BaseGraphicsResource<ShaderModule, bfShaderModuleHandle>
-  {
-    friend class AssetShaderModuleInfo;
-
-   private:
-    using BaseT = BaseGraphicsResource<ShaderModule, bfShaderModuleHandle>;
-
-   public:
-    explicit ShaderModule(bfGfxDeviceHandle device);
-  };
-
-  class AssetShaderModuleInfo final : public AssetInfo<ShaderModule, AssetShaderModuleInfo>
-  {
-    BF_META_FRIEND;
-
-   private:
-    using BaseT = AssetInfo<ShaderModule, AssetShaderModuleInfo>;
-
-   private:
-    bfShaderType m_Type = BF_SHADER_TYPE_VERTEX;
-
-   public:
-    using BaseT::BaseT;
-
-    bool load(Engine& engine) override;
-    void serialize(Engine& engine, ISerializer& serializer) override;
-  };
-
-  using AssetShaderModuleHandle = AssetHandle<ShaderModule>;
-
-  class ShaderProgram final : public detail::BaseGraphicsResource<ShaderProgram, bfShaderProgramHandle>
-  {
-    BF_META_FRIEND;
-    friend class AssetShaderProgramInfo;
-
-   private:
-    using BaseT = BaseGraphicsResource<ShaderProgram, bfShaderProgramHandle>;
-
-   private:
-    AssetShaderModuleHandle m_VertexShader;
-    AssetShaderModuleHandle m_FragmentShader;
-    std::uint32_t           m_NumDescriptorSets;
-
-   public:
-    explicit ShaderProgram(bfGfxDeviceHandle device);
-
-    std::uint32_t numDescriptorSets() const { return m_NumDescriptorSets; }
-    void          setNumDescriptorSets(std::uint32_t value);
-
-   private:
-    void createImpl();
-  };
-
-  class AssetShaderProgramInfo final : public AssetInfo<ShaderProgram, AssetShaderProgramInfo>
-  {
-   public:
-    using Base::Base;
-
-    bool load(Engine& engine) override;
-    bool save(Engine& engine, ISerializer& serializer) override;
-  };
-
-  using AssetShaderProgramHandle = AssetHandle<ShaderProgram>;
 
   class Material final : public BaseObject<Material>
   {
@@ -178,11 +32,11 @@ namespace bf
     friend class AssetModelInfo;
 
    private:
-    AssetTextureHandle m_AlbedoTexture;
-    AssetTextureHandle m_NormalTexture;
-    AssetTextureHandle m_MetallicTexture;
-    AssetTextureHandle m_RoughnessTexture;
-    AssetTextureHandle m_AmbientOcclusionTexture;
+    ARC<TextureAsset> m_AlbedoTexture;
+    ARC<TextureAsset> m_NormalTexture;
+    ARC<TextureAsset> m_MetallicTexture;
+    ARC<TextureAsset> m_RoughnessTexture;
+    ARC<TextureAsset> m_AmbientOcclusionTexture;
 
    public:
     explicit Material() :
@@ -195,11 +49,11 @@ namespace bf
     {
     }
 
-    const AssetTextureHandle& albedoTexture() const { return m_AlbedoTexture; }
-    const AssetTextureHandle& normalTexture() const { return m_NormalTexture; }
-    const AssetTextureHandle& metallicTexture() const { return m_MetallicTexture; }
-    const AssetTextureHandle& roughnessTexture() const { return m_RoughnessTexture; }
-    const AssetTextureHandle& ambientOcclusionTexture() const { return m_AmbientOcclusionTexture; }
+    const ARC<TextureAsset>& albedoTexture() const { return m_AlbedoTexture; }
+    const ARC<TextureAsset>& normalTexture() const { return m_NormalTexture; }
+    const ARC<TextureAsset>& metallicTexture() const { return m_MetallicTexture; }
+    const ARC<TextureAsset>& roughnessTexture() const { return m_RoughnessTexture; }
+    const ARC<TextureAsset>& ambientOcclusionTexture() const { return m_AmbientOcclusionTexture; }
   };
 
   class AssetMaterialInfo final : public AssetInfo<Material, AssetMaterialInfo>
@@ -326,8 +180,8 @@ namespace bf
    public:
     Animation3D(IMemoryManager& memory) :
       m_Memory{memory},
-      m_Duration{0.0f},
-      m_TicksPerSecond{0.0f},
+      m_Duration{AnimationTimeType(0)},
+      m_TicksPerSecond{AnimationTimeType(0)},
       m_NumChannels{0u},
       m_Channels{nullptr},
       m_NameToChannel{}
@@ -365,7 +219,7 @@ namespace bf
 
   static constexpr std::uint8_t k_InvalidBoneID = static_cast<std::uint8_t>(-1);
 
-  class Model final : public detail::BaseGraphicsResource<Model, bfBufferHandle>
+  class Model final : public BaseObject<Model>
   {
     BF_META_FRIEND;
     friend class AssetModelInfo;
@@ -394,6 +248,8 @@ namespace bf
     };
 
    public:
+    bfGfxDeviceHandle          m_GraphicsDevice;
+    bfBufferHandle             m_Handle;
     Array<AssetMaterialHandle> m_EmbeddedMaterials;
     Array<Mesh>                m_Meshes;
     Array<Node>                m_Nodes;
@@ -413,6 +269,7 @@ namespace bf
     {
       bfGfxDevice_flush(m_GraphicsDevice);
 
+      bfGfxDevice_release(m_GraphicsDevice, m_Handle);
       bfGfxDevice_release(m_GraphicsDevice, m_IndexBuffer);
       bfGfxDevice_release(m_GraphicsDevice, m_VertexBoneData);
     }
@@ -429,73 +286,18 @@ namespace bf
   using AssetModelHandle = AssetHandle<Model>;
 }  // namespace bf
 
-BIFROST_META_REGISTER(bfShaderType){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   enum_info<bfShaderType>("bfShaderType"),                                                         //
-   enum_element("BF_SHADER_TYPE_VERTEX", BF_SHADER_TYPE_VERTEX),                                    //
-   enum_element("BF_SHADER_TYPE_TESSELLATION_CONTROL", BF_SHADER_TYPE_TESSELLATION_CONTROL),        //
-   enum_element("BF_SHADER_TYPE_TESSELLATION_EVALUATION", BF_SHADER_TYPE_TESSELLATION_EVALUATION),  //
-   enum_element("BF_SHADER_TYPE_GEOMETRY", BF_SHADER_TYPE_GEOMETRY),                                //
-   enum_element("BF_SHADER_TYPE_FRAGMENT", BF_SHADER_TYPE_FRAGMENT),                                //
-   enum_element("BF_SHADER_TYPE_COMPUTE", BF_SHADER_TYPE_COMPUTE)                                   //
-   )
-   BIFROST_META_END()}
 
-BIFROST_META_REGISTER(bf::Texture){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<Texture>("Texture"),       //
-   ctor<bfGfxDeviceHandle>(),            //
-   property("width", &Texture::width),   //
-   property("height", &Texture::height)  //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::AssetTextureInfo){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<AssetTextureInfo>("AssetTextureInfo"),  //
-   ctor<String, std::size_t, bfUUID>()                //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::AssetShaderModuleInfo){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<AssetShaderModuleInfo>("AssetShaderModuleInfo"),  //
-   ctor<String, std::size_t, bfUUID>(),
-   field("m_Type", &AssetShaderModuleInfo::m_Type))
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::ShaderProgram){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<ShaderProgram>("ShaderProgram"),                                                                //
-   ctor<bfGfxDeviceHandle>(),                                                                                 //
-   property("m_NumDescriptorSets", &ShaderProgram::numDescriptorSets, &ShaderProgram::setNumDescriptorSets),  //
-   field<BaseAssetHandle>("m_VertexShader", &ShaderProgram::m_VertexShader),                                  //
-   field<BaseAssetHandle>("m_FragmentShader", &ShaderProgram::m_FragmentShader)                               //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::AssetShaderProgramInfo){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<AssetShaderModuleInfo>("AssetShaderProgramInfo"),  //
-   ctor<String, std::size_t, bfUUID>())
-   BIFROST_META_END()}
 
 BIFROST_META_REGISTER(bf::Material){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
    class_info<Material>("Material"),                                                          //
    ctor<>(),                                                                                  //
-   field<BaseAssetHandle>("m_AlbedoTexture", &Material::m_AlbedoTexture),                     //
-   field<BaseAssetHandle>("m_NormalTexture", &Material::m_NormalTexture),                     //
-   field<BaseAssetHandle>("m_MetallicTexture", &Material::m_MetallicTexture),                 //
-   field<BaseAssetHandle>("m_RoughnessTexture", &Material::m_RoughnessTexture),               //
-   field<BaseAssetHandle>("m_AmbientOcclusionTexture", &Material::m_AmbientOcclusionTexture)  //
+   field<IARCHandle>("m_AlbedoTexture", &Material::m_AlbedoTexture),                          //
+   field<IARCHandle>("m_NormalTexture", &Material::m_NormalTexture),                          //
+   field<IARCHandle>("m_MetallicTexture", &Material::m_MetallicTexture),                      //
+   field<IARCHandle>("m_RoughnessTexture", &Material::m_RoughnessTexture),                    //
+   field<IARCHandle>("m_AmbientOcclusionTexture", &Material::m_AmbientOcclusionTexture)  //
    )
    BIFROST_META_END()}
 
@@ -516,9 +318,7 @@ BIFROST_META_REGISTER(bf::AssetAnimation3DInfo){
 BIFROST_META_REGISTER(bf::Model){
  BIFROST_META_BEGIN()
   BIFROST_META_MEMBERS(
-   class_info<Model>("Model")  // ,  //
-   // ctor<bfGfxDeviceHandle>(),                              //
-   // field_readonly("m_NumVertices", &Model::m_NumVertices)  //
+   class_info<Model>("Model")
    )
    BIFROST_META_END()}
 

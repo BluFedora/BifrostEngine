@@ -19,26 +19,29 @@ namespace bf
       const StringRange           ss_dir      = path::directory(ss_info->filePathAbs());
       const String                texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
       Assets&                     assets      = engine->assets();
-      const auto [texture_info, is_new]       = assets.indexAsset<AssetTextureInfo>(texture_dir);
+      TextureAsset* const         texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
 
-      // This only needs a reload if it is currently being used.
-      if (texture_info && texture_info->refCount())
+      // This only needs a texture if it is currently being used.
+      if (texture && texture->refCount())
       {
+        ARC<TextureAsset> keep_texture_alive = texture;
+
         const bfTextureCreateParams create_params = bfTextureCreateParams_init2D(
          BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
          k_bfTextureUnknownSize,
          k_bfTextureUnknownSize);
 
-        Texture& texture = *texture_info->payloadT();
+        // Cannot use reload because we are loading the texture from memory.
+        // texture_info->reload();
 
-        texture.destroyHandle();
-        texture.setHandle(
+        texture->assignNewHandle(
          gfx::createTexturePNG(
-          texture.gfxDevice(),
+          texture->gfxDevice(),
           create_params,
           k_SamplerNearestRepeat,
           change_event.texture.texture_bytes_png,
-          change_event.texture.texture_bytes_png_size));
+          change_event.texture.texture_bytes_png_size)
+        );
       }
     }
   }
@@ -177,11 +180,11 @@ namespace bf
 
     if (node->bone_idx != k_InvalidBoneID)
     {
-      Matrix4x4f* const out = output_transform + node->bone_idx;
-
       assert(node->bone_idx < k_InvalidBoneID);
 
       // out = global_inv_transform * global_transform * inv_bone
+
+      Matrix4x4f* const out = output_transform + node->bone_idx;
 
       Mat4x4_mult(
        &global_transform,
@@ -307,7 +310,6 @@ namespace bf
              Mat4x4_identity(&mat);
            });
 
-          //*
           updateNodeAnimation(
            &root_node,
            *animation,
@@ -318,7 +320,6 @@ namespace bf
            model->m_BoneToModel.data(),
            output_bones,
            identity);
-          //*/
 
           uniform_bone_data.transform_uniform.flushCurrent(engine_renderer.frameInfo(), size);
           bfBuffer_unMap(uniform_bone_data.transform_uniform.handle());

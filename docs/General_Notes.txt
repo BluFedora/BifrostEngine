@@ -4,7 +4,7 @@ There are really only 2 data structures:
     1. Graphs
         a. Tree (Specialized case of Graph)
             i. Linked List (Specialized case of Tree)
-    2. Arrays
+    2. Arrays (Just a group of items)
 All other data structures are variations on these two concepts.
 
 TODO:

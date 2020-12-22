@@ -1,12 +1,18 @@
-#ifndef BIFROST_META_FACTORY_HPP
-#define BIFROST_META_FACTORY_HPP
+#ifndef BF_META_FACTORY_HPP
+#define BF_META_FACTORY_HPP
 
 #include "bifrost_meta_runtime_impl.hpp" /* TypeInfo<T> */
 
 namespace bf::meta
 {
+  //
+  // Mix-in class to inherit from that 'automatically' registers
+  // a type with the meta system on application startup
+  // by abusing C++'s static initialization system.
+  //
+    
   template<typename BaseT>
-  class Factory
+  class AutoRegisterType
   {
     friend BaseT;
 
@@ -17,7 +23,7 @@ namespace bf::meta
     };
 
    public:
-    // Extra 'T's are registering extra classes.
+    // 'T' is the class you would like to register.
     template<typename T>
     class Base : public BaseT
     {
@@ -41,12 +47,12 @@ namespace bf::meta
     };
 
    private:
-    Factory() = default;
+    AutoRegisterType() = default;
   };
 
   template<typename BaseT>
   template<typename T>
-  bool Factory<BaseT>::Base<T>::s_IsRegistered = registerImpl();
-}  // namespace bifrost::meta
+  bool AutoRegisterType<BaseT>::Base<T>::s_IsRegistered = registerImpl();
+}  // namespace bf::meta
 
-#endif /* BIFROST_META_FACTORY_HPP */
+#endif /* BF_META_FACTORY_HPP */

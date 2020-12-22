@@ -335,7 +335,6 @@ namespace bf::editor
     float              m_FpsTimer;
     int                m_CurrentFps;
     int                m_CurrentMs;
-    AssetTextureHandle m_TestTexture;
     FileSystem         m_FileSystem;
     WindowList         m_OpenWindows;
     bool               m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.

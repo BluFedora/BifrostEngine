@@ -12,6 +12,7 @@
 /******************************************************************************/
 #include "bf/asset_io/bifrost_json_serializer.hpp"
 
+#include "bf/asset_io/bf_base_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"  // Assets
 #include "bf/ecs/bifrost_entity.hpp"       // Entity
 
@@ -121,26 +122,28 @@ namespace bf
     currentObject().add(key, value);
   }
 
-  void JsonSerializerWriter::serialize(StringRange key, bfUUID& value)
-  {
-    const auto str = String(value.as_string.data);
-
-#if 0
-    if (str.length() < 36)
-    {
-      __debugbreak();
-    }
-#endif
-    
-    currentObject().add(key, str);
-  }
-
   void JsonSerializerWriter::serialize(StringRange key, BaseAssetHandle& value)
   {
     if (value)
     {
       pushObject(key);
       serialize("uuid", const_cast<bfUUID&>(value.info()->uuid()));
+      popObject();
+    }
+    else
+    {
+      currentObject().add(key, json::Value{});
+    }
+  }
+
+  void JsonSerializerWriter::serialize(StringRange key, IARCHandle& value)
+  {
+    if (value.isValid())
+    {
+      IBaseAsset* const asset_handle = value.handle();
+
+      pushObject(key);
+      serialize("uuid", const_cast<bfUUIDNumber&>(asset_handle->uuid()));
       popObject();
     }
     else
@@ -400,17 +403,6 @@ namespace bf
     }
   }
 
-  void JsonSerializerReader::serialize(StringRange key, bfUUID& value)
-  {
-    String str;
-    serialize(key, str);
-
-    if (!str.isEmpty())
-    {
-      value = bfUUID_fromString(str.cstr());
-    }
-  }
-
   void JsonSerializerReader::serialize(StringRange key, BaseAssetHandle& value)
   {
     if (pushObject(key))
@@ -424,6 +416,27 @@ namespace bf
       {
         m_Assets.tryAssignHandle(value, info);
       }
+
+      popObject();
+    }
+  }
+
+  void JsonSerializerReader::serialize(StringRange key, IARCHandle& value)
+  {
+    if (pushObject(key))
+    {
+      bfUUIDNumber uuid;
+      serialize("uuid", uuid);
+
+      IBaseAsset* found_asset = m_Assets.findAsset(uuid);
+
+      // If the type info of the found asset is not compatible with the ARC handle then just assign nullptr.
+      if (found_asset && value.typeInfo() != found_asset->type())
+      {
+        found_asset = nullptr;
+      }
+
+      value.assign(found_asset);
 
       popObject();
     }
@@ -452,4 +465,4 @@ namespace bf
   {
     m_ObjectStack.popBack();
   }
-}  // namespace bifrost
+}  // namespace bf

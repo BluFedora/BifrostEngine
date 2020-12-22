@@ -26,8 +26,6 @@
 #include "bf/data_structures/bifrost_intrusive_list.hpp" /* List<T>                 */
 #include "bifrost_glsl_compiler.hpp"                     /* GLSLCompiler            */
 
-class Engine;
-
 namespace bf
 {
   //
@@ -55,6 +53,7 @@ namespace bf
 
   class Light;
   class Material;
+  class Engine;
   class Entity;
 
   //
@@ -469,7 +468,7 @@ namespace bf
 
   class StandardRenderer final
   {
-    friend class ::Engine;  // TODO: Not do this?!?!
+    friend class Engine;  // TODO: Not do this?!?!
 
    public:
     Vector3f AmbientColor = {0.64f};

@@ -13,6 +13,7 @@
 #include "bf/editor/bifrost_editor_serializer.hpp"
 
 #include "bf/LinearAllocator.hpp"  // LinearAllocator
+#include "bf/asset_io/bf_base_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_script.hpp"
 #include "bf/bifrost_math.h"
@@ -37,7 +38,7 @@ namespace bf::editor
       void*    user_data;
     };
 
-    static HashTable<meta::BaseClassMetaInfo*, RegistryValue> s_Registry;
+    static HashTable<meta::BaseClassMetaInfo*, RegistryValue> s_Registry = {};  // NOLINT(clang-diagnostic-exit-time-destructors)
 
     void overrideInspectorImpl(meta::BaseClassMetaInfo* type_info, Callback callback, void* user_data)
     {
@@ -396,6 +397,77 @@ namespace bf::editor
     ImGui::PopID();
   }
 
+  void ImGuiSerializer::serialize(StringRange key, IARCHandle& value)
+  {
+    setNameBuffer(key);
+
+    ImGui::PushID(&value);
+
+    if (value.isValid())
+    {
+      if (ImGui::Button("clear"))
+      {
+        value.assign(nullptr);
+        hasChangedTop() |= true;
+      }
+
+      ImGui::SameLine();
+    }
+
+    const IBaseAsset* const current_asset  = value.handle();
+    const char* const       preview_name   = value.isValid() ? current_asset->relativePath().begin() : "<null>";
+    IBaseAsset*             assigned_asset = nullptr;
+
+    if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightLargest))
+    {
+      m_Assets->forEachAssetOfType(
+       value.typeInfo(), [current_asset, &assigned_asset](IBaseAsset* asset) {
+         const bool is_selected = current_asset == asset;
+
+         if (ImGui::Selectable(asset->relativePath().begin(), is_selected, ImGuiSelectableFlags_None))
+         {
+           if (!is_selected)
+           {
+             assigned_asset = asset;
+           }
+         }
+       });
+
+      ImGui::EndCombo();
+    }
+
+    if (ImGui::BeginDragDropTarget())
+    {
+      const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+
+      if (payload && payload->IsDataType("Asset.UUID"))
+      {
+        const bfUUID* data = static_cast<const bfUUID*>(payload->Data);
+
+        assert(payload->DataSize == sizeof(bfUUID));
+
+        IBaseAsset* const dragged_asset = m_Assets->findAsset(data->as_number);
+
+        if (dragged_asset &&
+            dragged_asset->type() == current_asset->type() &&
+            ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
+        {
+          assigned_asset = dragged_asset;
+        }
+      }
+
+      ImGui::EndDragDropTarget();
+    }
+
+    if (assigned_asset)
+    {
+      value.assign(assigned_asset);
+      hasChangedTop() |= true;
+    }
+
+    ImGui::PopID();
+  }
+
   void ImGuiSerializer::serialize(StringRange key, EntityRef& value)
   {
     setNameBuffer(key);
@@ -444,7 +516,7 @@ namespace bf::editor
       ImGui::EndCombo();
     }
 
-    // TODO(SR): All drag / drop areas should be put in function for maintainance reasons.
+    // TODO(SR): All drag / drop areas should be put in function for maintenance reasons.
     if (ImGui::BeginDragDropTarget())
     {
       if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DROP_ENTITY", ImGuiDragDropFlags_None))
@@ -467,7 +539,7 @@ namespace bf::editor
 
   void ImGuiSerializer::serialize(StringRange key, meta::MetaObject& value)
   {
-    const auto type_info = value.type_info;
+    auto* const type_info = value.type_info;
 
     if (type_info->isEnum())
     {

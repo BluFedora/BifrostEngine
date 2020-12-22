@@ -20,7 +20,8 @@ extern "C" {
 
 enum
 {
-  k_bfUUIDStringCapacity = 37,
+  k_bfUUIDStringLength   = 36,
+  k_bfUUIDStringCapacity = k_bfUUIDStringLength + 1,
 };
 
 typedef struct
@@ -47,7 +48,7 @@ bfUUID bfUUID_generate(void);
 bfUUID bfUUID_fromString(const char source[k_bfUUIDStringCapacity]);  // Expects a string in the format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' (Note lack of curly braces)
 int    bfUUID_isEqual(const bfUUID* lhs, const bfUUID* rhs);
 int    bfUUID_isEmpty(const bfUUID* self);
-void   bfUUID_numberToString(const char number[16], char out_string[37]);
+void   bfUUID_numberToString(const char number[16], char out_string[k_bfUUIDStringCapacity]);
 int    bfUUID_numberCmp(const bfUUIDNumber* lhs, const bfUUIDNumber* rhs);
 int    bfUUID_numberIsEmpty(const bfUUIDNumber* lhs);
 int    bfUUID_stringCmp(const BifrostUUIDString* lhs, const BifrostUUIDString* rhs);

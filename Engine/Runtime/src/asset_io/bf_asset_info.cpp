@@ -11,7 +11,6 @@ namespace bf
     m_FilePathRel{m_FilePathAbs.begin() + (length_of_root_path ? length_of_root_path + 1u : 0u), m_FilePathAbs.end()},  // The plus one accounts for the '/'
     m_UUID{uuid},
     m_RefCount{0u},
-    m_Tags{},
     m_TypeInfo{nullptr},
     m_SubAssets{&BaseAssetInfo::m_SubAssetListNode},
     m_SubAssetListNode{},

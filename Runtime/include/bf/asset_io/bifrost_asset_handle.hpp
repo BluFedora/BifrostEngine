@@ -28,13 +28,13 @@
 #define BIFROST_ASSET_HANDLE_HPP
 
 #include "bf/meta/bifrost_meta_runtime_impl.hpp" /* meta::TypeInfo<T> */
-#include "bifrost_base_asset_handle.hpp"              /* BaseAssetHandle   */
+#include "bifrost_base_asset_handle.hpp"         /* BaseAssetHandle   */
 
 namespace bf
 {
   //
   // This class MUST not have a size different from 'BaseAssetHandle'.
-  // This is merely a convienience wrapper.
+  // This is merely a convenience wrapper.
   //
   template<typename T>
   class AssetHandle final : public BaseAssetHandle
@@ -73,6 +73,6 @@ namespace bf
 
     ~AssetHandle() = default;
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_ASSET_HANDLE_HPP */

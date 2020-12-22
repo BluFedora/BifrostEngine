@@ -24,7 +24,7 @@ namespace bf
   static constexpr Vector3f k_XAxis3f  = {1.0f, 0.0f, 0.0f, 0.0f};
   static constexpr Vector3f k_YAxis3f  = {0.0f, 1.0f, 0.0f, 0.0f};
   static constexpr Vector3f k_ZAxis3f  = {0.0f, 0.0f, 1.0f, 0.0f};
-}  // namespace bifrost
+}  // namespace bf
 
 namespace bf::math
 {
@@ -64,18 +64,17 @@ namespace bf::math
     return std::fma(t, b, std::fma(-t, a, a));
   }
 
-  // NOTE(Shareef): Float Based Functions
-  template<typename T>
-  T mapToRange(T min, T value, T max, T new_min, T new_max)
-  {
-    return ((value - min) / (max - min)) * (new_max - new_min) + new_min;
-  }
-
   // Optimized for going into the 0 - 1 range.
   template<typename T>
   T mapToRange01(T min, T value, T max)
   {
     return ((value - min) / (max - min));
+  }
+
+  template<typename T>
+  T mapToRange(T min, T value, T max, T new_min, T new_max)
+  {
+    return mapToRange01(min, value, max) * (new_max - new_min) + new_min;
   }
 
   template<typename T>
@@ -89,6 +88,6 @@ namespace bf::math
   inline constexpr const auto& alignf   = &bfMathAlignf;
   inline constexpr const auto& invLerpf = &bfMathInvLerpf;
   inline constexpr const auto& remapf   = &bfMathRemapf;
-}  // namespace bifrost::math
+}  // namespace bf::math
 
 #endif /* BIFROST_MATH_HPP */

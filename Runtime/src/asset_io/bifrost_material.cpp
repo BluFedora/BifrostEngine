@@ -21,91 +21,6 @@
 
 namespace bf
 {
-  ShaderModule::ShaderModule(bfGfxDeviceHandle device) :
-    BaseT(device)
-  {
-  }
-
-  bool AssetShaderModuleInfo::load(Engine& engine)
-  {
-    const bfGfxDeviceHandle device        = bfGfxContext_device(engine.renderer().context());
-    ShaderModule&           shader_module = m_Payload.set<ShaderModule>(device);
-    const String&           full_path     = filePathAbs();
-    shader_module.m_Handle                = bfGfxDevice_newShaderModule(device, m_Type);
-
-    return bfShaderModule_loadFile(shader_module.m_Handle, full_path.cstr());
-  }
-
-  void AssetShaderModuleInfo::serialize(Engine& engine, ISerializer& serializer)
-  {
-    serializer.serializeT("m_Type", &m_Type);
-  }
-
-  ShaderProgram::ShaderProgram(bfGfxDeviceHandle device) :
-    BaseT(device),
-    m_VertexShader{nullptr},
-    m_FragmentShader{nullptr},
-    m_NumDescriptorSets{1}
-  {
-  }
-
-  void ShaderProgram::setNumDescriptorSets(std::uint32_t value)
-  {
-    if (m_NumDescriptorSets != value)
-    {
-      m_NumDescriptorSets = value;
-
-      destroyHandle();
-      createImpl();
-    }
-  }
-
-  void ShaderProgram::createImpl()
-  {
-    if (m_VertexShader && m_FragmentShader)
-    {
-      bfShaderProgramCreateParams create_params;
-
-      create_params.debug_name    = "__SHADER__";
-      create_params.num_desc_sets = m_NumDescriptorSets;
-
-      m_Handle = bfGfxDevice_newShaderProgram(m_GraphicsDevice, &create_params);
-
-      // TODO: This isnt correct.
-      bfShaderProgram_addModule(m_Handle, m_VertexShader->handle());
-      bfShaderProgram_addModule(m_Handle, m_FragmentShader->handle());
-
-      if (m_NumDescriptorSets)
-      {
-        bfShaderProgram_addImageSampler(m_Handle, "u_DiffuseTexture", 0, 0, 1, BF_SHADER_STAGE_FRAGMENT);
-        bfShaderProgram_addUniformBuffer(m_Handle, "u_ModelTransform", 0, 1, 1, BF_SHADER_STAGE_VERTEX);
-      }
-    }
-  }
-
-  bool AssetShaderProgramInfo::load(Engine& engine)
-  {
-    const bfGfxDeviceHandle device = bfGfxContext_device(engine.renderer().context());
-
-    auto& shader = m_Payload.set<ShaderProgram>(device);
-
-    if (defaultLoad(engine))
-    {
-      shader.createImpl();
-    }
-
-    return true;  // TODO: File doesn't exit on create.
-  }
-
-  bool AssetShaderProgramInfo::save(Engine& engine, ISerializer& serializer)
-  {
-    (void)engine;
-
-    serializer.serialize(*payload());
-
-    return true;
-  }
-
   bool AssetMaterialInfo::load(Engine& engine)
   {
     m_Payload.set<Material>();
@@ -135,7 +50,8 @@ namespace bf
   void loadObj(IMemoryManager& temp_allocator, Array<StandardVertex>& out, const char* obj_file_data, std::size_t obj_file_data_length);
 
   Model::Model(IMemoryManager& memory, bfGfxDeviceHandle device) :
-    Base(device),
+    m_GraphicsDevice{device},
+    m_Handle{nullptr},
     m_EmbeddedMaterials{memory},
     m_Meshes{memory},
     m_Nodes{memory},
@@ -217,16 +133,9 @@ namespace bf
     return false;
   }
 
-  static AssetTextureHandle getTextureAssetHandle(Assets& assets, StringRange file_path)
+  static ARC<TextureAsset> getTextureAssetHandle(Assets& assets, StringRange file_path)
   {
-    const auto [asset_info, is_new] = assets.indexAsset<AssetTextureInfo>(file_path);
-
-    if (asset_info)
-    {
-      return assets.makeHandleT<AssetTextureHandle>(*asset_info);
-    }
-
-    return nullptr;
+    return assets.findAssetOfType<TextureAsset>(AbsPath(file_path));
   }
 
   template<typename T, typename F>
@@ -260,7 +169,7 @@ namespace bf
       char        name_buffer[128];
 
       const auto assign_texture = [&file_dir, &assets](
-                                   AssetTextureHandle& tex_handle,
+                                   ARC<TextureAsset>& tex_handle,
                                    char(&abs_texture_path)[path::k_MaxLength],
                                    StringRange             root_dir,
                                    const AssetPBRMaterial& src_mat,

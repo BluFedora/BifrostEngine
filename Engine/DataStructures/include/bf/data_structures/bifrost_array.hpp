@@ -22,6 +22,12 @@
 
 namespace bf
 {
+  // NOTE(SR):
+  //   This tag is used with `Array<T>::emplaceN` to allow
+  //   for an emplace that does not initialze the memory.
+  struct ArrayEmplaceUninitializedTag
+  {};
+
   template<typename T>
   class Array final
   {
@@ -208,6 +214,16 @@ namespace bf
       {
         new (elements + i) T(std::forward<Args>(args)...);
       }
+
+      return elements;
+    }
+
+    // Uninitialized `emplaceN`.
+    T* emplaceN(std::size_t num_elements, ArrayEmplaceUninitializedTag)
+    {
+      static_assert(std::is_pod_v<T>, "If the type is not a POD this is probably a mistake.");
+
+      T* const elements = static_cast<T*>(::bfArray_emplaceN(rawData(), num_elements));
 
       return elements;
     }

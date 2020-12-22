@@ -2,6 +2,8 @@
 
 #include "bf/IMemoryManager.hpp" /* IMemoryManager */
 
+#include "bf/asset_io/bf_path_manip.hpp"
+
 #if _WIN32 /* Windows */
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -90,23 +92,6 @@ namespace bf
       return canonicalizePath_(path_bgn, [](const char* path_bgn) { return *path_bgn; });
     }
 
-    StringRange directoryOfFile(const StringRange& path)
-    {
-      const char* end = path.end();
-
-      while (end != path.bgn)
-      {
-        if (*end == '/')
-        {
-          break;
-        }
-
-        --end;
-      }
-
-      return {path.bgn, end};
-    }
-
     StringRange extensionOfFile(const StringRange& path)
     {
       const char* dot_start = path.end();
@@ -126,7 +111,7 @@ namespace bf
 
     StringRange fileNameOfPath(const StringRange& path)
     {
-      const StringRange directory = directoryOfFile(path);
+      const StringRange directory = path::directory(path);
       return {std::min(directory.end() + 1, path.end()), path.end()};
     }
   }  // namespace file

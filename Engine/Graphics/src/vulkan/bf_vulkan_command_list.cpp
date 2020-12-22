@@ -248,13 +248,13 @@ void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
 
   vkCmdBeginRenderPass(self->handle, &begin_render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-  self->pipeline_state.subpass_index = 0;
+  self->pipeline_state.state.subpass_index = 0;
 }
 
 void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self)
 {
   vkCmdNextSubpass(self->handle, VK_SUBPASS_CONTENTS_INLINE);
-  ++self->pipeline_state.subpass_index;
+  ++self->pipeline_state.state.subpass_index;
 }
 
 #define state(self) self->pipeline_state.state
@@ -617,12 +617,14 @@ void bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle
 
 void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets)
 {
-  assert(num_desc_sets <= k_bfGfxDescriptorSets);
-  VkDescriptorSet sets[k_bfGfxDescriptorSets];
-
-  const VkPipelineBindPoint bind_point = self->pipeline_state.renderpass ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+  const VkPipelineBindPoint   bind_point = self->pipeline_state.renderpass ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+  const bfShaderProgramHandle program    = self->pipeline_state.program;
 
   assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
+  assert((binding + num_desc_sets) <= program->num_desc_set_layouts);
+  assert(num_desc_sets <= k_bfGfxDescriptorSets);
+
+  VkDescriptorSet sets[k_bfGfxDescriptorSets];
 
   for (uint32_t i = 0; i < num_desc_sets; ++i)
   {
@@ -642,14 +644,10 @@ void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t bindi
 
 void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info)
 {
-  const bfShaderProgramHandle program = self->pipeline_state.program;
+  bfShaderProgramHandle program = self->pipeline_state.program;
 
   assert(set_index < program->num_desc_set_layouts);
-
-  const VkPipelineBindPoint bind_point = self->pipeline_state.renderpass ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
-
-  assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
-
+  
   const std::uint64_t   hash_code = bf::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
   bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code, *desc_set_info);
 
@@ -695,16 +693,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
     AddCachedResource(self->parent, &desc_set->super, hash_code);
   }
 
-  vkCmdBindDescriptorSets(
-   self->handle,
-   bind_point,
-   program->layout,
-   set_index,
-   1,
-   &desc_set->handle,
-   0,
-   nullptr);
-
+  bfGfxCmdList_bindDescriptorSets(self, set_index, &desc_set, 1);
   UpdateResourceFrame(self->context, &desc_set->super);
 }
 
@@ -850,7 +839,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     VkPipelineColorBlendStateCreateInfo color_blend;
     VkPipelineColorBlendAttachmentState color_blend_states[k_bfGfxMaxAttachments];
 
-    const uint32_t num_color_attachments = self->pipeline_state.renderpass->info.subpasses[state.subpass_index].num_out_attachment_refs;
+    const uint32_t num_color_attachments = self->pipeline_state.renderpass->info.subpasses[state.state.subpass_index].num_out_attachment_refs;
 
     for (uint32_t i = 0; i < num_color_attachments; ++i)
     {
@@ -937,7 +926,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     pl_create_info.pDynamicState       = &dynamic_state;
     pl_create_info.layout              = program->layout;
     pl_create_info.renderPass          = self->pipeline_state.renderpass->handle;
-    pl_create_info.subpass             = state.subpass_index;
+    pl_create_info.subpass             = state.state.subpass_index;
     pl_create_info.basePipelineHandle  = VK_NULL_HANDLE;  // @PipelineDerivative
     pl_create_info.basePipelineIndex   = -1;              // @PipelineDerivative
 
@@ -1213,7 +1202,7 @@ namespace bf::vk
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {
-    const auto    num_attachments = pipeline->renderpass->info.subpasses[pipeline->subpass_index].num_out_attachment_refs;
+    const auto    num_attachments = pipeline->renderpass->info.subpasses[pipeline->state.subpass_index].num_out_attachment_refs;
     std::uint64_t state_bits[2];
 
     static_assert(sizeof(state_bits) == sizeof(pipeline->state), "Needs to be same size.");
@@ -1254,7 +1243,7 @@ namespace bf::vk
     gfx_hash::hash(self, pipeline->depth, pipeline->state);
     self = hash::addF32(self, pipeline->min_sample_shading);
     self = hash::addU64(self, pipeline->sample_mask);
-    self = hash::addU32(self, pipeline->subpass_index);
+    self = hash::addU32(self, pipeline->state.subpass_index);
     self = hash::addU32(self, num_attachments);
 
     for (std::uint32_t i = 0; i < num_attachments; ++i)

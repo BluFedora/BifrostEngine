@@ -24,7 +24,9 @@
 
 // Helper Struct Definitions
 
-// NOTE(SR): The two levels of indirection here is kinda gross but is needed for code reuse, maybe that is a bad goal / reason ...
+// NOTE(SR): 
+//   The two levels of indirection here is kinda gross 
+//   but is needed for code reuse, maybe that is a bad goal / reason ...
 struct CallbackAllocator final : public bf::IMemoryManager
 {
   void*                  user_data;
@@ -706,7 +708,8 @@ bool bfLoadUpSpritesheetFromData(bfAnimation2DCtx* self, bfSpritesheetPrivate* s
   }
 
   // TODO(SR):
-  //   I can probably do a smarter allocation scheme, line not freeing if there are minimal changes but this is simpler.
+  //   I can probably do a smarter allocation scheme, 
+  //   like not freeing if there are minimal changes but this is simpler.
 
   // sheet->name           = bfStringClone(self, name);
   // sheet->user_data      = nullptr;

@@ -1,16 +1,18 @@
+/******************************************************************************/
 /*!
- * @file   bifrost_behavior.hpp
+ * @file   bf_behavior.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   The base class for all gameplay code for extending the engine.
+ *   The base class for all gameplay code extending the engine.
  *
  * @version 0.0.1
  * @date    2020-06-13
  *
  * @copyright Copyright (c) 2020
  */
-#ifndef BIFROST_BEHAVIOR_HPP
-#define BIFROST_BEHAVIOR_HPP
+/******************************************************************************/
+#ifndef BF_BEHAVIOR_HPP
+#define BF_BEHAVIOR_HPP
 
 #include "bf/bf_non_copy_move.hpp"          // bfNonCopyMoveable<T>
 #include "bf/core/bifrost_base_object.hpp"  // BaseObject<T>
@@ -62,7 +64,7 @@ namespace bf
     // Event Flags For Internal Use
     //
 
-    //! This is a flag to indicate that this beahvior has had it's 'IBehavior::onEnable' function called.
+    //! This is a flag to indicate that this behavior has had it's 'IBehavior::onEnable' function called.
     static constexpr BehaviorEventFlags ON_ENABLE_CALLED = static_cast<BehaviorEventFlags>(bfBit(13));
 
    public:
@@ -77,8 +79,7 @@ namespace bf
   // clang-format on
 
   // clang-format off
-
-  class BaseBehavior : public IBehavior, public meta::Factory<BaseBehavior>, public BaseComponent, private NonCopyMoveable<BaseBehavior>
+  class BaseBehavior : public IBehavior, public meta::AutoRegisterType<BaseBehavior>, public BaseComponent, private NonCopyMoveable<BaseBehavior>
   // clang-format on
   {
     friend class Entity;
@@ -120,7 +121,7 @@ namespace bf
     {
     }
 
-    meta::BaseClassMetaInfo* type() override
+    meta::BaseClassMetaInfo* type() const override
     {
       return meta::typeInfoGet<T>();
     }
@@ -165,4 +166,4 @@ namespace game
 bfRegisterBehavior(game::ExampleBehavior)
 #endif
 
-#endif /* BIFROST_BEHAVIOR_HPP */
+#endif /* BF_BEHAVIOR_HPP */

@@ -323,7 +323,7 @@ bfRay3D bfRay3D_make(Vec3f origin, Vec3f direction)
   return self;
 }
 
-int bfRay3D_sign(const bfRay3D* ray, int bit)
+inline int bfRay3D_sign(const bfRay3D* ray, int bit)
 {
   return (ray->inv_direction_signs & bit) != 0;
 }
@@ -360,5 +360,6 @@ bfRayCastResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f
   result.did_hit  = 1;
   result.min_time = tzmin > tmin ? tzmin : tmin;
   result.max_time = tzmax < tmax ? tzmax : tmax;
+
   return result;
 }

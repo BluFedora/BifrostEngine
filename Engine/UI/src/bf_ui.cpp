@@ -18,32 +18,43 @@
 
 namespace bf
 {
+  //
+  // `T` must be default constructable.
+  //
   template<typename Key, typename T>
   struct SortedArrayTable
   {
+   private:
     struct ArrayItem
     {
       Key key;
       T   value;
     };
 
-    Array<ArrayItem> table;
+    struct Comparator
+    {
+      bool operator()(const ArrayItem& item, const Key& key) const
+      {
+        return item.key < key;
+      }
+    };
 
+   private:
+    Array<ArrayItem> m_Table;
+
+   public:
     SortedArrayTable(IMemoryManager& memory) :
-      table{memory}
+      m_Table{memory}
     {
     }
 
     void insert(Key key, const T& value)
     {
-      const auto it = std::lower_bound(
-       table.begin(), table.end(), key, [](const ArrayItem& b, const Key& key) {
-         return b.key < key;
-       });
+      const auto it = std::lower_bound(m_Table.begin(), m_Table.end(), key, Comparator{});
 
-      if (it == table.end() || it->key != key)
+      if (it == m_Table.end() || it->key != key)
       {
-        table.insert(it, ArrayItem{key, value});
+        m_Table.insert(it, ArrayItem{key, value});
       }
       else
       {
@@ -53,20 +64,17 @@ namespace bf
 
     T find(Key key) const
     {
-      const auto it = std::lower_bound(
-       table.begin(), table.end(), key, [](const ArrayItem& b, const Key& key) {
-         return b.key < key;
-       });
+      const auto it = std::lower_bound(m_Table.begin(), m_Table.end(), key, Comparator{});
 
-      if (it == table.end() || it->key != key)
+      if (it == m_Table.end() || it->key != key)
       {
-        return nullptr;
+        return T{};
       }
 
       return it->value;
     }
 
-    // TODO(SR): Add remove when need be.
+    // TODO(SR): Add `remove` function when need be.
   };
 
   struct UIContext
@@ -260,19 +268,19 @@ namespace bf::UI
         layout_result.desired_size.x = 0.0f;
         layout_result.desired_size.y = constraints.min_size.y;
 
-        LayoutConstraints my_constraints = {};
+        LayoutConstraints child_constraints = {};
 
-        my_constraints.min_size   = constraints.min_size;
-        my_constraints.max_size   = constraints.max_size;
-        my_constraints.min_size.x = 0.0f;
-        my_constraints.max_size.x = constraints.max_size.x;
+        child_constraints.min_size   = constraints.min_size;
+        child_constraints.max_size   = constraints.max_size;
+        child_constraints.min_size.x = 0.0f;
+        child_constraints.max_size.x = constraints.max_size.x;
 
         float total_flex_factor = 0.0f;
 
-        widget->ForEachChild([&layout_result, &total_flex_factor, &my_constraints](Widget* child) {
+        widget->ForEachChild([&layout_result, &total_flex_factor, &child_constraints](Widget* child) {
           if (child->desired_size.width.type != SizeUnitType::Flex)
           {
-            LayoutOutput child_size = WidgetDoLayout(child, my_constraints);
+            LayoutOutput child_size = WidgetDoLayout(child, child_constraints);
 
             layout_result.desired_size.x += child_size.desired_size.x;
             layout_result.desired_size.y = std::max(layout_result.desired_size.y, child_size.desired_size.y);
@@ -569,6 +577,12 @@ namespace bf::UI
     g_UI.current_widget = widget;
   }
 
+  static void AddWidget(Widget* widget)
+  {
+    PushWidget(widget);
+    PopWidget();
+  }
+
   static Widget* CreateWidget(StringRange name, LayoutType layout_type = LayoutType::Default)
   {
     const auto id     = CalcID(name);
@@ -775,8 +789,7 @@ namespace bf::UI
       title_spacing->desired_size.height = titlebar->desired_size.height;
       title_spacing->flags |= Widget::DrawName;
 
-      PushWidget(title_spacing);
-      PopWidget();
+      AddWidget(title_spacing);
 
       Widget* const x_button = CreateButton(
        window->flags & Widget::IsExpanded ? "  --  " : "OPEN",
@@ -784,8 +797,7 @@ namespace bf::UI
 
       x_button->flags |= Widget::DrawBackground | Widget::IsWindow;
 
-      PushWidget(x_button);
-      PopWidget();
+      AddWidget(x_button);
 
       const auto behavior = WidgetBehavior(x_button);
 
@@ -822,22 +834,13 @@ namespace bf::UI
 
     const auto behavior = WidgetBehavior(button);
 
-    PushWidget(button);
-    PopWidget();
+    AddWidget(button);
 
-    if (behavior.Is(WidgetBehaviorResult::IsHovered))
-    {
-      WidgetParam(button, WidgetParams::HoverTime) += g_UI.delta_time;
-    }
-    else
-    {
-      WidgetParam(button, WidgetParams::HoverTime) -= g_UI.delta_time;
+    const bool  is_hovered = behavior.Is(WidgetBehaviorResult::IsHovered);
+    const float hover_time = WidgetParam(button, WidgetParams::HoverTime) +
+                             (is_hovered ? +g_UI.delta_time : -g_UI.delta_time);
 
-      if (WidgetParam(button, WidgetParams::HoverTime) < 0.0f)
-      {
-        WidgetParam(button, WidgetParams::HoverTime) = 0.0f;
-      }
-    }
+    WidgetParam(button, WidgetParams::HoverTime) = math::clamp(0.0f, hover_time, 1.0f);
 
     button->render = [](Widget* self, Gfx2DPainter& painter) {
       const float max_hover_time    = 0.3f;
@@ -1020,14 +1023,6 @@ namespace bf::UI
 
     // Test End
 
-    // Layout
-
-    LayoutConstraints main_constraints = {
-     {0.0f, 0.0f},
-     //{std::min(g_UI.mouse_pos.x, 600.0f), std::min(g_UI.mouse_pos.y, 500.0f)},
-     {600.0f, 500.0f},
-    };
-
     std::stable_sort(
      g_UI.root_widgets.begin(),
      g_UI.root_widgets.end(),
@@ -1035,23 +1030,22 @@ namespace bf::UI
        return a->zindex < b->zindex;
      });
 
-    //
-    // TODO(SR): These two loops may be able to be comined since each window is independent.
-    //
+    // Layout, Position and Render Top Level Widgets
+
+    LayoutConstraints main_constraints = {
+     {0.0f, 0.0f},
+     //{std::min(g_UI.mouse_pos.x, 600.0f), std::min(g_UI.mouse_pos.y, 500.0f)},
+     {600.0f, 500.0f},
+    };
 
     for (Widget* const window : g_UI.root_widgets)
     {
       WidgetDoLayout(window, main_constraints);
       WidgetDoLayoutPositioning(window);
-    }
-
-    // Render
-
-    for (Widget* const window : g_UI.root_widgets)
-    {
       WidgetDoRender(window, painter);
     }
 
+    /* HitTest Debugging
     auto     hw  = g_UI.hovered_widgets;
     Vector2f pos = g_UI.mouse_pos;
 
@@ -1066,6 +1060,7 @@ namespace bf::UI
 
       hw = hw->hit_test_list;
     }
+    //*/
 
     if (ClickedDownThisFrame(BIFROST_BUTTON_LEFT) &&
         g_UI.next_hover_root &&

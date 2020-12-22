@@ -13,6 +13,8 @@
 #include <iostream>
 #include <utility>
 
+  using namespace bf;
+
 struct TestClass final
 {
   int         x;
@@ -421,8 +423,14 @@ GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening co
   err_code = (code);          \
   goto label
 
+#include "bf/gfx/bf_render_queue.hpp"
+
 int main(int argc, char* argv[])
 {
+  using namespace bf;
+
+  TestStuff();
+
   static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<float>::is_iec559, "Use IEEE754, you weirdo.");
 
   for (const auto& test_fn : s_Test)

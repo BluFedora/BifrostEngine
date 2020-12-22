@@ -258,55 +258,25 @@ namespace bf::meta
   TYPE_INFO_SPEC(void*);
 #undef TYPE_INFO_SPEC
 
-  template<typename T>
-  struct TypeInfo<const T> : public TypeInfo<std::decay_t<T>>
-  {
-  };
+  //
+  // Make sure even with a bunch of type qualifiers the type resolves the the decayed type.
+  //
 
   template<typename T>
-  struct TypeInfo<volatile T> : public TypeInfo<std::decay_t<T>>
-  {
-  };
+  using FullyDecayed = std::remove_reference_t<std::remove_pointer_t<std::decay_t<T>>>;
 
-  template<typename T>
-  struct TypeInfo<const volatile T> : public TypeInfo<std::decay_t<T>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<T*> : public TypeInfo<std::remove_pointer_t<std::decay_t<T>>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const T*> : public TypeInfo<std::remove_pointer_t<std::decay_t<T>>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const volatile T*> : public TypeInfo<std::remove_pointer_t<std::decay_t<T>>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<volatile T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<const volatile T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
-  {
-  };
-
-  template<typename T>
-  struct TypeInfo<T&> : public TypeInfo<std::remove_reference_t<std::decay_t<T>>>
-  {
-  };
+  // clang-format off
+  template<typename T> struct TypeInfo<const T>           : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<volatile T>        : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<const volatile T>  : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<T*>                : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<const T*>          : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<const volatile T*> : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<const T&>          : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<volatile T&>       : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<const volatile T&> : public TypeInfo<FullyDecayed<T>> { };
+  template<typename T> struct TypeInfo<T&>                : public TypeInfo<FullyDecayed<T>> { };
+  // clang-format on
 
   template<typename T>
   struct TypeInfo<Array<T>>

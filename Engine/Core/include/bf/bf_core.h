@@ -39,6 +39,7 @@
 
 #if __cplusplus
 #undef bfCArraySize
+#undef bfSizeOfField
 #undef bfBit
 
 template<typename T, size_t N>
@@ -54,14 +55,6 @@ static constexpr T bfBit(T bit_idx)
 {
   return T(1) << bit_idx;
 }
-
-#if 0
-template<typename T>
-T bfClamp(T min_value, T value, T max_value)
-{
-  return (value < min_value) ? min_value : (value > max_value ? max_value : value);
-}
-#endif
 
 #else
 #define bfCArraySize(arr) ((sizeof(arr) / sizeof(0 [arr])) / ((size_t)(!(sizeof(arr) % sizeof(0 [arr])))))  //(sizeof((arr)) / sizeof((arr)[0]))

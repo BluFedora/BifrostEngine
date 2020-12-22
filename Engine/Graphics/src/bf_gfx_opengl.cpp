@@ -363,12 +363,14 @@ BF_DEFINE_GFX_HANDLE(Texture)
   bfBaseGfxObject   super;
   bfGfxDeviceHandle parent;
   bfTexFeatureFlags flags;
+
   // CPU Side Data
   bfTextureType image_type;
   int32_t       image_width;
   int32_t       image_height;
   int32_t       image_depth;
   uint32_t      image_miplevels;
+
   // GPU Side Data
   GLuint                     tex_image; /* For Depth Textures this is an RBO */
   bfTextureSamplerProperties tex_sampler;
@@ -891,7 +893,7 @@ bfShaderProgramHandle bfGfxDevice_newShaderProgram(bfGfxDeviceHandle self, const
 
 bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self, const bfTextureCreateParams* params)
 {
-  bfTextureHandle texture = allocate<bfTexture>();
+  bfTextureHandle texture = allocate<bfTexture_t>();
 
   if (texture)
   {
@@ -1716,7 +1718,7 @@ void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
     }
   }
 
-  self->pipeline_state.subpass_index = 0;
+  self->pipeline_state.state.subpass_index = 0;
   bfGfxCmdList_nextSubpass(self);
 }
 
@@ -1727,7 +1729,7 @@ void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self)
 
   bfRenderpassInfo& rp_info         = self->pipeline_state.renderpass->info;
   const uint32_t    num_attachments = rp_info.num_attachments;
-  bfSubpassCache&   subpass         = rp_info.subpasses[self->pipeline_state.subpass_index];
+  bfSubpassCache&   subpass         = rp_info.subpasses[self->pipeline_state.state.subpass_index];
 
   for (uint16_t i = 0; i < subpass.num_out_attachment_refs; ++i)
   {
@@ -1740,7 +1742,7 @@ void bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self)
 
   glDrawBuffers(num_attachments, draw_buffers);
 
-  ++self->pipeline_state.subpass_index;
+  ++self->pipeline_state.state.subpass_index;
 }
 
 #define state(self) self->pipeline_state.state
@@ -2892,18 +2894,8 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
     return false;
   }
 
-  if (a.subpass_index != b.subpass_index)
-  {
-    return false;
-  }
-
-  if (a.subpass_index != b.subpass_index)
-  {
-    return false;
-  }
-
-  const auto num_attachments_a = a.renderpass->info.subpasses[a.subpass_index].num_out_attachment_refs;
-  const auto num_attachments_b = b.renderpass->info.subpasses[b.subpass_index].num_out_attachment_refs;
+  const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
+  const auto num_attachments_b = b.renderpass->info.subpasses[b.state.subpass_index].num_out_attachment_refs;
 
   if (num_attachments_a != num_attachments_b)
   {

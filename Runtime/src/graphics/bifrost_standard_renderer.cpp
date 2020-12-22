@@ -12,7 +12,6 @@
 #include "bf/MemoryUtils.h"
 #include "bf/Platform.h"  // BifrostWindow
 #include "bf/asset_io/bifrost_material.hpp"
-#include "bf/data_structures/bifrost_string.hpp"
 #include "bf/ecs/bifrost_entity.hpp"  // Entity
 #include "bf/ecs/bifrost_light.hpp"   // LightType
 
@@ -441,7 +440,7 @@ namespace bf
 
   void StandardRenderer::bindMaterial(bfGfxCommandListHandle command_list, const Material& material)
   {
-    const auto defaultTexture = [this](const AssetTextureHandle& handle) -> bfTextureHandle {
+    const auto defaultTexture = [this](const ARC<TextureAsset>& handle) -> bfTextureHandle {
       return handle ? handle->handle() : m_WhiteTexture;
     };
 
@@ -1101,43 +1100,6 @@ namespace bf
   void StandardRenderer::deinitShaders()
   {
     // Shaders are using 'm_AutoRelease'...
-  }
-
-  bool AssetTextureInfo::load(Engine& engine)
-  {
-    return loadImpl(engine, m_Payload.set<Texture>(bfGfxContext_device(engine.renderer().context())));
-  }
-
-  bool AssetTextureInfo::reload(Engine& engine)
-  {
-    const bfGfxDeviceHandle device  = bfGfxContext_device(engine.renderer().context());
-    Texture&                texture = m_Payload;
-
-    bfGfxDevice_flush(device);
-    bfGfxDevice_release(device, texture.m_Handle);
-
-    return loadImpl(engine, m_Payload);
-  }
-
-  bool AssetTextureInfo::loadImpl(Engine& engine, Texture& texture)
-  {
-    const bfGfxDeviceHandle     device        = bfGfxContext_device(engine.renderer().context());
-    const String&               full_path     = filePathAbs();
-    const bfTextureCreateParams create_params = bfTextureCreateParams_init2D(
-     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
-     k_bfTextureUnknownSize,
-     k_bfTextureUnknownSize);
-
-    texture.m_Handle = bfGfxDevice_newTexture(device, &create_params);
-
-    if (bfTexture_loadFile(texture.m_Handle, full_path.c_str()))
-    {
-      bfTexture_setSampler(texture.m_Handle, &k_SamplerNearestRepeat);
-
-      return true;
-    }
-
-    return false;
   }
 
   namespace gfx

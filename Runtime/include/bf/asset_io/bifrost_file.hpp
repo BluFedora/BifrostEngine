@@ -50,7 +50,6 @@ namespace bf
     std::size_t canonicalizePath(char* path_bgn);  // Gives you the length
 
     // These functions assumes a canonical path by the calling of 'canonicalizePath'.
-    StringRange directoryOfFile(const StringRange& path);  // In canonical style.
     StringRange extensionOfFile(const StringRange& path);  // Includes the (dot) e.g '.ext', if no extension a null path is returned.
     StringRange fileNameOfPath(const StringRange& path);   // 'filename.ext'
 

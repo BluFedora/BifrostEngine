@@ -33,6 +33,11 @@
 
 namespace bf
 {
+  void IBaseObject::reflect(ISerializer& serializer)
+  {
+    serializer.serialize(*this);
+  }
+
   static constexpr int         k_MaxDigitsUInt64 = 20;
   static constexpr StringRange k_EnumValueKey    = "__EnumValue__";
 
@@ -130,18 +135,16 @@ namespace bf
 
   void ISerializer::serialize(StringRange key, bfUUIDNumber& value)
   {
-    static constexpr int k_AsStringSize = sizeof(BifrostUUIDString) - 1;
-
-    char as_string_chars[37];
+    char as_string_chars[k_bfUUIDStringCapacity];
     bfUUID_numberToString(value.data, as_string_chars);
 
-    String as_string = {as_string_chars, k_AsStringSize};
+    String as_string = {as_string_chars, k_bfUUIDStringLength};
 
     serialize(key, as_string);
 
     if (mode() == SerializerMode::LOADING)
     {
-      if (as_string.length() != k_AsStringSize || !hasKey(key))
+      if (as_string.length() != k_bfUUIDStringLength || !hasKey(key))
       {
         std::memset(&value, 0x0, sizeof(value));
       }
@@ -151,6 +154,16 @@ namespace bf
 
         value = uuid.as_number;
       }
+    }
+  }
+
+  void ISerializer::serialize(StringRange key, bfUUID& value)
+  {
+    serialize(key, value.as_number);
+
+    if (mode() == SerializerMode::LOADING)
+    {
+      bfUUID_numberToString(value.as_number.data, value.as_string.data);
     }
   }
 
@@ -165,8 +178,8 @@ namespace bf
 
   void ISerializer::serialize(IBaseObject& value)
   {
-    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
-    meta::MetaObject meta_obj{};
+    meta::MetaObject meta_obj;  // NOLINT(cppcoreguidelines-pro-type-member-init)
+
     meta_obj.type_info  = value.type();
     meta_obj.object_ref = &value;
 
@@ -196,9 +209,10 @@ namespace bf
 
       for (auto& prop : type_info->properties())
       {
-        auto field_value = prop->get(as_variant);
+        const StringRange field_name  = StringRange(prop->name().data(), prop->name().size());
+        auto              field_value = prop->get(as_variant);
 
-        serialize(StringRange(prop->name().data(), prop->name().size()), field_value);
+        serialize(field_name, field_value);
 
         prop->set(as_variant, field_value);
       }
@@ -237,8 +251,11 @@ namespace bf
   void ISerializer::serialize(StringRange key, meta::MetaVariant& value)
   {
     visit_all(
-     meta::overloaded{[this, &key](auto& primitive_value) -> void { serialize(key, primitive_value); },
-                      [this, &key](IBaseObject* base_obj) -> void { serialize(key, *base_obj); }},
+     meta::overloaded{
+      [this, &key](auto& primitive_value) -> void { serialize(key, primitive_value); },
+      [this, &key](IBaseObject* base_obj) -> void { serialize(key, *base_obj); },
+      [this, &key](IARCHandle* base_handle) -> void { serialize(key, *base_handle); },
+     },
      value);
   }
 
@@ -247,19 +264,15 @@ namespace bf
     visit_all(
      meta::overloaded{
       [this](auto& primitive_value) -> void {
-        // ReSharper disable once CppInitializedValueIsAlwaysRewritten
-        meta::MetaObject meta_obj{};
+        meta::MetaObject meta_obj;  // NOLINT(cppcoreguidelines-pro-type-member-init)
+
         meta_obj.type_info  = meta::TypeInfo<decltype(primitive_value)>::get();
         meta_obj.object_ref = &primitive_value;
 
         serialize(meta_obj);
       },
-      [this](IBaseObject* base_obj) -> void {
-        serialize(*base_obj);
-      },
-      [this](meta::MetaObject& meta_obj) -> void {
-        serialize(meta_obj);
-      },
+      [this](IBaseObject* base_obj) -> void { serialize(*base_obj); },
+      [this](meta::MetaObject& meta_obj) -> void { serialize(meta_obj); },
      },
      value);
   }

@@ -12,8 +12,8 @@ class MainDemoLayer final : public bf::IGameStateLayer
 
   const char* name() override { return "Main Demo"; }
 
-  void onEvent(Engine& engine, bf::Event& event) override;
-  void onUpdate(Engine& engine, float delta_time) override;
+  void onEvent(bf::Engine& engine, bf::Event& event) override;
+  void onUpdate(bf::Engine& engine, float delta_time) override;
 };
 
 #endif /* MAIN_DEMO_HPP */
