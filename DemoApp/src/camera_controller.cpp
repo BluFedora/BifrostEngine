@@ -2,6 +2,7 @@
 #include "bf/Engine.hpp"
 #include "bf/FreeListAllocator.hpp"
 #include "bf/MemoryUtils.h"
+#include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/debug/bifrost_dbg_logger.h"
 #include "bf/ecs/bifrost_behavior.hpp"
@@ -20,6 +21,8 @@ class CameraController final : public Behavior<CameraController>
   void onDisable() override;
   void serialize(ISerializer& serializer) override;
 };
+
+bfRegisterBehavior(CameraController);
 
 void CameraController::onEnable()
 {
@@ -57,8 +60,6 @@ void CameraController::serialize(ISerializer& serializer)
 {
   serializer.serialize("m_Player", m_Player);
 }
-
-bfRegisterBehavior(CameraController);
 
 // TODO(SR): Make the gameplay heap part of the core engine.
 static std::array<char, bfMegabytes(50)> s_GameplayHeapBacking;
@@ -236,7 +237,7 @@ class IkDemo final : public Behavior<IkDemo>
   {
     std::size_t joints_size = m_Joints.size();
 
-    float ARM_SIZE = joints_size * k_ChainLinkLen;
+    float ARM_SIZE = float(joints_size) * k_ChainLinkLen;
 
     serializer.serialize("m_DistToTarget", m_DistToTarget);
     serializer.serialize("ARM_SIZE", ARM_SIZE);

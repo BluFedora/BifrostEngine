@@ -37,13 +37,13 @@ namespace bf
     {
     }
 
-    constexpr StringRange(const char* bgn, const char* end) noexcept :
-      bfStringRange{bgn, end}
+    constexpr StringRange(const char* bgn_in, const char* end_in) noexcept :
+      bfStringRange{bgn_in, end_in}
     {
     }
 
-    constexpr StringRange(const char* bgn, std::size_t length) noexcept :
-      bfStringRange{bgn, bgn + length}
+    constexpr StringRange(const char* bgn_in, std::size_t length) noexcept :
+      bfStringRange{bgn_in, bgn_in + length}
     {
     }
 
@@ -448,6 +448,12 @@ namespace bf
     StringLink* tail;
     std::size_t size;
   };
+
+  struct BufferLen
+  {
+    char*       buffer;
+    std::size_t length;
+  };
 }  // namespace bf
 
 namespace std
@@ -558,7 +564,7 @@ namespace bf::string_utils
   }
 
   // Misc //
-
+  //
   // Caller is responsible for freeing memory from this.
   // TODO(SR) FIX-ME: This is a bad abstraction since it returns a const view into a string that is OWNED by that view.
   StringRange clone(IMemoryManager& allocator, const StringRange& string);

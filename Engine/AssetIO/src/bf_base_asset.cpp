@@ -13,21 +13,136 @@
 /******************************************************************************/
 #include "bf/asset_io/bf_base_asset.hpp"
 
-#include <cassert> /* assert */
-
 #include "bf/asset_io/bf_asset_map.hpp"
+#include "bf/asset_io/bf_iserializer.hpp"
+#include "bf/asset_io/bf_path_manip.hpp"
+#include "bf/asset_io/bifrost_assets.hpp"
+
+#include <cassert> /* assert */
 
 namespace bf
 {
   char AssetMap::s_TombstoneSentinel = 0;
 
+  void AssetMetaInfo::serialize(IMemoryManager& allocator, ISerializer& serializer)
+  {
+    const bool is_loading = serializer.mode() == SerializerMode::LOADING;
+
+    String name_as_str = {name.buffer, name.length};
+
+    serializer.serialize("name", name_as_str);
+
+    if (is_loading)
+    {
+      name = {
+       static_cast<char*>(allocator.allocate(name_as_str.length() + 1)),
+       name_as_str.length(),
+      };
+    }
+
+    serializer.serialize("version", version);
+    serializer.serialize("uuid", uuid);
+
+    std::size_t num_children;
+
+    if (serializer.pushArray("sub-assets", num_children))
+    {
+      if (is_loading)
+      {
+        for (std::size_t i = 0; i < num_children; ++i)
+        {
+          if (serializer.pushObject(nullptr))
+          {
+            AssetMetaInfo* const new_child = allocator.allocateT<AssetMetaInfo>();
+
+            addChild(new_child);
+
+            new_child->serialize(allocator, serializer);
+
+            serializer.popObject();
+          }
+        }
+      }
+      else
+      {
+        AssetMetaInfo* child_iterator = first_child;
+
+        while (child_iterator)
+        {
+          if (serializer.pushObject(nullptr))
+          {
+            child_iterator->serialize(allocator, serializer);
+
+            serializer.popObject();
+          }
+
+          child_iterator = child_iterator->next_sibling;
+        }
+      }
+
+      serializer.popArray();
+    }
+  }
+
+  void AssetMetaInfo::addChild(AssetMetaInfo* child)
+  {
+    if (!first_child)
+    {
+      first_child = child;
+    }
+
+    if (last_child)
+    {
+      last_child->next_sibling = child;
+    }
+
+    last_child = child;
+  }
+
+  void AssetMetaInfo::freeResources(IMemoryManager& allocator)
+  {
+    AssetMetaInfo* child_iterator = first_child;
+
+    while (child_iterator)
+    {
+      AssetMetaInfo* const next_child = child_iterator->next_sibling;
+
+      child_iterator->freeResources(allocator);
+      allocator.deallocateT(child_iterator);
+
+      child_iterator = next_child;
+    }
+
+    if (name.buffer)
+    {
+      allocator.deallocate(name.buffer, name.length + 1);
+
+      name = {nullptr, 0u};
+    }
+  }
+
   IBaseAsset::IBaseAsset() :
     m_UUID{},
     m_FilePathAbs{},
     m_FilePathRel{},
+    m_SubAssets{&IBaseAsset::m_SubAssetListNode},
+    m_SubAssetListNode{},
+    m_ParentAsset{nullptr},
+    m_DirtyListNode{},
     m_RefCount{0},
-    m_Flags{AssetFlags::DEFAULT}
+    m_Flags{AssetFlags::DEFAULT},
+    m_Assets{nullptr}
   {
+  }
+
+  StringRange IBaseAsset::name() const
+  {
+    return path::nameWithoutExtension(relativePath());
+  }
+
+  StringRange IBaseAsset::nameWithExt() const
+  {
+    return path::name(relativePath());
   }
 
   AssetStatus IBaseAsset::status() const
@@ -67,14 +182,29 @@ namespace bf
       {
         assert((m_Flags & AssetFlags::IS_LOADED) == 0 && "If the ref count was zero then this asset should not have been loaded.");
 
-        onLoad();
+        if (isSubAsset())
+        {
+          m_ParentAsset->acquire();
+          m_Flags |= AssetFlags::IS_LOADED;
+        }
+        else
+        {
+          onLoad();
+        }
       }
     }
   }
 
   void IBaseAsset::reload()
   {
-    onReload();
+    if (isSubAsset())
+    {
+      m_ParentAsset->reload();
+    }
+    else
+    {
+      onReload();
+    }
   }
 
   void IBaseAsset::release()
@@ -83,9 +213,16 @@ namespace bf
 
     if (--m_RefCount)  // This is the last use of this asset.
     {
-      assert((m_Flags & AssetFlags::IS_LOADED) != 0 && "The asset should have been loaded if we are now unloading it.");
+      assert((m_Flags & (AssetFlags::IS_LOADED | AssetFlags::FAILED_TO_LOAD)) != 0 && "The asset should have been loaded (or atleast attempted) if we are now unloading it.");
 
-      onUnload();
+      if (isSubAsset())
+      {
+        m_ParentAsset->release();
+      }
+      else
+      {
+        onUnload();
+      }
 
       m_Flags &= ~(AssetFlags::IS_LOADED | AssetFlags::FAILED_TO_LOAD);
     }
@@ -101,14 +238,31 @@ namespace bf
     onSaveMeta(serializer);
   }
 
-  void IBaseAsset::setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid)
+  AssetMetaInfo* IBaseAsset::generateMetaInfo(IMemoryManager& allocator) const
+  {
+    AssetMetaInfo* const result      = allocator.allocateT<AssetMetaInfo>();
+    const StringRange    result_name = name();
+
+    result->name = {static_cast<char*>(allocator.allocate(result_name.length() + 1)), result_name.length()};
+    result->uuid = m_UUID;
+
+    for (const IBaseAsset& sub_asset : m_SubAssets)
+    {
+      result->addChild(sub_asset.generateMetaInfo(allocator));
+    }
+
+    return result;
+  }
+
+  void IBaseAsset::setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid, Assets& assets)
   {
     m_UUID        = uuid;
     m_FilePathAbs = full_path;
     m_FilePathRel = {
-     m_FilePathAbs.begin() + (length_of_root_path ? length_of_root_path + 1u : 0u), // The plus one accounts for the '/'
+     m_FilePathAbs.begin() + (length_of_root_path ? length_of_root_path + 1u : 0u),  // The plus one accounts for the '/'
      m_FilePathAbs.end(),
-    };  
+    };
+    m_Assets = &assets;
   }
 
   void IBaseAsset::onReload()
@@ -134,6 +288,37 @@ namespace bf
   void IBaseAsset::onSaveMeta(ISerializer& serializer)
   {
     (void)serializer; /* NO-OP */
+  }
+
+  String IBaseAsset::createSubAssetPath(StringRange name_with_ext) const
+  {
+    char uuid_as_str[k_bfUUIDStringCapacity];
+    bfUUID_numberToString(m_UUID.data, uuid_as_str);
+
+    String result = path::append(path::k_SubAssetsRoot, {uuid_as_str, k_bfUUIDStringLength});
+
+    result = path::append(result, name_with_ext);
+
+    return result;
+  }
+
+  IBaseAsset* IBaseAsset::findOrCreateSubAsset(StringRange name_with_ext)
+  {
+    for (IBaseAsset& item : m_SubAssets)
+    {
+      if (item.nameWithExt() == name_with_ext)
+      {
+        return &item;
+      }
+    }
+
+    const String sub_asset_path = createSubAssetPath(name_with_ext);
+
+    IBaseAsset* const result = assets().createAssetFromPath(sub_asset_path);
+
+    m_SubAssets.pushBack(*result);
+
+    return result;
   }
 }  // namespace bf
 

@@ -172,7 +172,7 @@ namespace bf
 
     LARGE_INTEGER size;
     size.HighPart = fileInfo.nFileSizeHigh;
-    size.LowPart = fileInfo.nFileSizeLow;
+    size.LowPart  = fileInfo.nFileSizeLow;
 
     return std::size_t(size.QuadPart);
 #else
@@ -423,4 +423,13 @@ namespace bf
 
     return {allocator, buffer, buffer_size};
   }
-}  // namespace bifrost
+
+  BufferLen File::readEntireFile(IMemoryManager& allocator)
+  {
+    BufferLen result;
+
+    result.buffer = readAll(allocator, result.length);
+
+    return result;
+  }
+}  // namespace bf

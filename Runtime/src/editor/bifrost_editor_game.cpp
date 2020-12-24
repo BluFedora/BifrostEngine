@@ -104,7 +104,7 @@ namespace bf::editor
     }
   }
 
-  void GameView::toggleEngineState(Engine& engine, const AssetSceneHandle& scene)
+  void GameView::toggleEngineState(Engine& engine, const ARC<SceneAsset>& scene)
   {
     if (engine.state() == EngineState::EDITOR_PLAYING)
     {
@@ -116,7 +116,7 @@ namespace bf::editor
     }
   }
 
-  void GameView::startSimulation(Engine& engine, const AssetSceneHandle& scene)
+  void GameView::startSimulation(Engine& engine, const ARC<SceneAsset>& scene)
   {
     if (engine.state() == EngineState::EDITOR_PLAYING)
     {
@@ -124,7 +124,7 @@ namespace bf::editor
 
       if (serializer.beginDocument(false))
       {
-        scene->serialize(serializer);
+        scene->reflect(serializer);
         serializer.endDocument();
       }
 
@@ -134,7 +134,7 @@ namespace bf::editor
     }
   }
 
-  void GameView::stopSimulation(Engine& engine, const AssetSceneHandle& scene)
+  void GameView::stopSimulation(Engine& engine, const ARC<SceneAsset>& scene)
   {
     if (engine.state() != EngineState::EDITOR_PLAYING)
     {
@@ -142,7 +142,7 @@ namespace bf::editor
 
       if (serializer.beginDocument(false))
       {
-        scene->serialize(serializer);
+        scene->reflect(serializer);
         serializer.endDocument();
       }
 

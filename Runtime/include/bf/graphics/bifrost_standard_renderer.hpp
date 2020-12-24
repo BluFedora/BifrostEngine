@@ -52,7 +52,7 @@ namespace bf
   //
 
   class Light;
-  class Material;
+  class MaterialAsset;
   class Engine;
   class Entity;
 
@@ -515,7 +515,7 @@ namespace bf
 
     void                init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
     [[nodiscard]] bool  frameBegin();
-    void                bindMaterial(bfGfxCommandListHandle command_list, const Material& material);
+    void                bindMaterial(bfGfxCommandListHandle command_list, const MaterialAsset& material);
     void                bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
     bfDescriptorSetInfo bindObject2(const CameraGPUData& camera, Entity& entity);
     void                addLight(Light& light);

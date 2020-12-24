@@ -5,8 +5,6 @@
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
-#include "bf/asset_io/bifrost_material.hpp"
-#include "bf/asset_io/bifrost_script.hpp"
 #include "bf/bifrost.hpp"
 #include "bf/bifrost_imgui_glfw.hpp"
 #include "bf/core/bifrost_engine.hpp"
@@ -576,7 +574,7 @@ namespace bf::editor
 
           if (assets.writeJsonToFile(abs_file_path, json::Object{}))
           {
-            assets.indexAsset<TAssetInfo>(abs_file_path);
+            assets.loadAsset(abs_file_path);
             assets.saveAssets();
             ctx.editor->assetRefresh();
           }
@@ -795,7 +793,7 @@ namespace bf::editor
 
       serializer.serializeT(sprite_animator);
 
-      AssetSpritesheetHandle sheet = sprite_animator->spritesheet();
+      ARC < SpritesheetAsset> sheet = sprite_animator->spritesheet();
 
       if (sheet)
       {
@@ -1285,6 +1283,7 @@ namespace bf::editor
     if (project_file)
     {
       LinearAllocatorScope temp_mem_scope = m_Engine->tempMemory();
+      Assets&              assets         = m_Engine->assets();
 
       if (currentlyOpenProject())
       {
@@ -1295,7 +1294,7 @@ namespace bf::editor
       String            project_meta_path = project_dir;
 
       project_meta_path.append("/");
-      project_meta_path.append(Assets::META_PATH_NAME);
+      project_meta_path.append("_meta");
 
       const TempBuffer project_json_str = project_file.readAll(m_Engine->tempMemoryNoFree());
 
@@ -1315,9 +1314,8 @@ namespace bf::editor
       else
       {
         FixedLinearAllocator<512> allocator;
-        path::DirectoryEntry*     dir = path::openDirectory(allocator.memory(), project_meta_path);
 
-        if (dir)
+        if (path::DirectoryEntry* dir = path::openDirectory(allocator.memory(), project_meta_path))
         {
           do
           {
@@ -1325,7 +1323,12 @@ namespace bf::editor
 
             if (isFile(dir))
             {
-              m_Engine->assets().loadMeta(bfMakeStringRangeC(name));
+              const StringRange file_ext = file::extensionOfFile(name);
+
+              if (file_ext != Assets::k_MetaFileExtension)
+              {
+                assets.loadAsset(bfMakeStringRangeC(name));
+              }
             }
           } while (readNextEntry(dir));
 
@@ -1388,44 +1391,13 @@ namespace bf::editor
 
   // Asset Management
 
-  struct FileExtensionHandler final
-  {
-    using Callback = BaseAssetInfo* (*)(Assets& engine, StringRange full_path);
-
-    StringRange ext;
-    Callback    handler;
-
-    FileExtensionHandler(StringRange extension, Callback callback) :
-      ext{extension},
-      handler{callback}
-    {
-    }
-  };
-
   struct MetaAssetPath final
   {
     char*      file_name{nullptr};
     FileEntry* entry{nullptr};
   };
 
-  template<typename T>
-  static BaseAssetInfo* fileExtensionHandlerImpl(Assets& assets, StringRange full_path)
-  {
-    return assets.indexAsset<T>(full_path).info;
-  }
-
-  static const FileExtensionHandler s_AssetHandlers[] =
-   {
-    {".material", &fileExtensionHandlerImpl<AssetMaterialInfo>},
-    {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
-    {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
-    {".fbx", &fileExtensionHandlerImpl<AssetModelInfo>},
-    {".md5mesh", &fileExtensionHandlerImpl<AssetModelInfo>},
-    {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
-    {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}};
-
-  static void                        assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry);
-  static const FileExtensionHandler* assetFindHandler(StringRange relative_path);
+  static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry);
 
   void EditorOverlay::assetRefresh()
   {
@@ -1433,19 +1405,20 @@ namespace bf::editor
 
     if (path::doesExist(path.cstr()))
     {
-      FixedLinearAllocator<2048 * 4> allocator;
-      List<MetaAssetPath>            metas_to_check{allocator};
+      FixedLinearAllocator<8192> allocator;
+      List<MetaAssetPath>        metas_to_check{allocator};
 
       m_FileSystem.clear("Assets", path);
       assetFindAssets(metas_to_check, path, "", m_FileSystem, m_FileSystem.root());
 
       for (const auto& meta : metas_to_check)
       {
-        const char* const                 relative_path_bgn = meta.file_name + path.length() + 1;
-        const StringRange                 relative_path     = {relative_path_bgn, relative_path_bgn + std::strlen(relative_path_bgn)};
-        const FileExtensionHandler* const handler           = assetFindHandler(relative_path);
+        const char* const relative_path_bgn = meta.file_name + path.length() + 1;
+        const StringRange relative_path     = {relative_path_bgn, relative_path_bgn + std::strlen(relative_path_bgn)};
 
-        if (handler)
+        IBaseAsset* const asset = m_Engine->assets().loadAsset(meta.file_name);
+
+        if (asset)
         {
           bfLogPush("(%s)", meta.file_name);
           {
@@ -1454,18 +1427,13 @@ namespace bf::editor
             bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
             bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
 
-            meta.entry->asset_info = handler->handler(m_Engine->assets(), meta.file_name);
+            // meta.entry->asset_info = handler->handler(m_Engine->assets(), meta.file_name);
           }
           bfLogPop();
         }
         else
         {
-          IBaseAsset* const asset = m_Engine->assets().loadAsset(meta.file_name);
-
-          if (!asset)
-          {
-            bfLogWarn("Unknown file type (%s)", meta.file_name);
-          }
+          bfLogWarn("Unknown file type (%s)", meta.file_name);
         }
 
         string_utils::fmtFree(allocator, meta.file_name);
@@ -1599,31 +1567,15 @@ namespace bf::editor
     }
   }
 
-  static const FileExtensionHandler* assetFindHandler(StringRange relative_path)
-  {
-    const StringRange file_ext = path::extensionEx(relative_path);
-
-    for (const auto& handler : s_AssetHandlers)
-    {
-      if (handler.ext == file_ext)
-      {
-        return &handler;
-      }
-    }
-
-    return nullptr;
-  }
-
   // bifrost_editor_filesystem.hpp
 
-  FileEntry::FileEntry(String&& name, const String& full_path, bool is_file) :
+  FileEntry::FileEntry(String&& name, const String& full_path) :
     name{name},
     full_path{full_path},
     file_extension{file::extensionOfFile(this->full_path)},
-    is_file{is_file},
-    asset_info{nullptr},
     children{&FileEntry::next},
-    next{}
+    next{},
+    asset_info{nullptr}
   {
   }
 
@@ -1644,7 +1596,7 @@ namespace bf::editor
 
   FileEntry& FileSystem::makeNode(String&& name, const String& path, bool is_file)
   {
-    FileEntry* const entry = m_Memory.allocateT<FileEntry>(std::move(name), path, is_file);
+    FileEntry* const entry = m_Memory.allocateT<FileEntry>(std::move(name), path);
     m_AllNodes.push(entry);
 
     return *entry;
@@ -1679,6 +1631,7 @@ namespace bf::editor
     return {buffer.buffer(), buffer.size()};
   }
 
+#if 0
   void FileSystem::rename(EditorOverlay& editor, FileEntry& entry, const StringRange& new_name) const
   {
     Engine&         engine      = editor.engine();
@@ -1727,6 +1680,7 @@ namespace bf::editor
       }
     }
   }
+#endif
 
   void FileSystem::remove(FileEntry& entry)
   {
@@ -1747,11 +1701,11 @@ namespace bf::editor
 
     ImGui::TableNextRow();
 
-    if (entry.is_file)
+    if (entry.isFile())
     {
       ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen;
 
-      if (!entry.asset_info || entry.asset_info->subAssets().isEmpty())
+      if (!entry.asset_info || !entry.asset_info->hasSubAssets())
       {
         tree_node_flags |= ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_Leaf;
       }
@@ -1760,7 +1714,14 @@ namespace bf::editor
 
       if (ImGui::IsItemHovered())
       {
-        ImGui::SetTooltip("Asset(%s)", entry.asset_info ? entry.asset_info->uuid().as_string.data : "<null>");
+        BifrostUUIDString uuid_str;
+
+        if (entry.asset_info)
+        {
+          bfUUID_numberToString(entry.asset_info->uuid().data, uuid_str.data);
+        }
+
+        ImGui::SetTooltip("Asset(%s)", entry.asset_info ? uuid_str.data : "<null>");
       }
 
       if (entry.asset_info)
@@ -1769,13 +1730,13 @@ namespace bf::editor
         {
           if (entry.file_extension == ".scene")
           {
-            editor.engine().openScene(assets.makeHandleT<AssetSceneHandle>(*entry.asset_info));
+            // editor.engine().openScene(assets.makeHandleT<AssetSceneHandle>(*entry.asset_info));
           }
         }
 
         if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
         {
-          editor.select(assets.makeHandle(*entry.asset_info));
+          /// editor.select(assets.makeHandle(*entry.asset_info));
         }
       }
 
@@ -1785,7 +1746,14 @@ namespace bf::editor
       {
         if constexpr (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
         {
-          ImGui::Text("UUID %s", entry.asset_info->uuid().as_string.data);
+          BifrostUUIDString uuid_str;
+
+          if (entry.asset_info)
+          {
+            bfUUID_numberToString(entry.asset_info->uuid().data, uuid_str.data);
+          }
+
+          ImGui::Text("UUID %s", uuid_str.data);
         }
 
         ImGui::SetDragDropPayload("Asset.UUID", &entry.asset_info->uuid(), sizeof(bfUUID));
@@ -1814,11 +1782,11 @@ namespace bf::editor
       {
         if (entry.asset_info)
         {
-          for (const BaseAssetInfo& sub_asset : entry.asset_info->subAssets())
+          for (const IBaseAsset& sub_asset : entry.asset_info->subAssets())
           {
             ImGui::TableNextRow();
 
-            if (ImGui::TreeNodeEx(sub_asset.filePathAbs().cstr(), ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth))
+            if (ImGui::TreeNodeEx(sub_asset.fullPath().cstr(), ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth))
             {
               ImGui::TreePop();
             }
@@ -1864,7 +1832,7 @@ namespace bf::editor
         {
           FileEntry* const data = *static_cast<FileEntry**>(payload->Data);
 
-          assert(payload->DataSize == sizeof(FileEntry*));
+          assert(payload->DataSize == sizeof(data));
 
           if (data != entry_ptr && ImGui::AcceptDragDropPayload("FileSystem.Folder", ImGuiDragDropFlags_None))
           {
@@ -1888,16 +1856,6 @@ namespace bf::editor
           if (ImGui::MenuItem("Folder"))
           {
             editor.enqueueDialog(make<NewFolderDialog>(entry.full_path));
-          }
-
-          if (ImGui::MenuItem("Scene"))
-          {
-            editor.enqueueDialog(make<NewAssetDialog<AssetSceneInfo>>("Make Scene", entry, "New Scene", ".scene"));
-          }
-
-          if (ImGui::MenuItem("Material"))
-          {
-            editor.enqueueDialog(make<NewAssetDialog<AssetMaterialInfo>>("Make Material", entry, "New Material", ".material"));
           }
 
           ImGui::EndMenu();
@@ -2015,7 +1973,7 @@ namespace bf::editor
 
   void Inspector::guiDrawSelection(Engine& engine, const Selectable& selectable)
   {
-    AssetSceneHandle current_scene = engine.currentScene();
+    ARC<SceneAsset> current_scene = engine.currentScene();
 
     visit_all(
      meta::overloaded{
@@ -2029,7 +1987,7 @@ namespace bf::editor
 
         if (m_Serializer.endChangedCheck())
         {
-          engine.assets().markDirty(current_scene);
+          //engine.assets().markDirty(current_scene);
         }
       },
       [this, &engine](const auto& asset_handle) {
@@ -2043,7 +2001,7 @@ namespace bf::editor
 
           if (m_Serializer.endChangedCheck())
           {
-            engine.assets().markDirty(asset_handle);
+            //engine.assets().markDirty(asset_handle);
           }
         }
       },

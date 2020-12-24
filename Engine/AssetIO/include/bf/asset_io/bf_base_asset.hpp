@@ -14,11 +14,12 @@
 #ifndef BF_BASE_ASSET_HPP
 #define BF_BASE_ASSET_HPP
 
+#include "bf/ListView.hpp"                  // ListView<T>
 #include "bf/bf_core.h"                     // bfBit, bfPureInterface
 #include "bf/bf_non_copy_move.hpp"          // NonCopyMoveable<T>
 #include "bf/core/bifrost_base_object.hpp"  // IBaseObject
 
-#include <atomic> /* atomic_uint16_t */
+#include <atomic>  // atomic_uint16_t
 
 namespace bf
 {
@@ -38,13 +39,31 @@ namespace bf
   {
     enum
     {
-      DEFAULT        = 0x0,       //!< No flags are set by default.
-      IS_LOADED      = bfBit(0),  //!< Marks that the asset has been successfully loaded.
-      IS_SUBASSET    = bfBit(1),  //!< This asset only lives in memory.
-      FAILED_TO_LOAD = bfBit(2),  //!< Failed to load asset, this flag is set do that we do not continuously try to load it.
-      IS_DIRTY       = bfBit(3),  //!< This asset wants to be saved.
+      DEFAULT         = 0x0,       //!< No flags are set by default.
+      IS_LOADED       = bfBit(0),  //!< Marks that the asset has been successfully loaded.
+      IS_SUBASSET     = bfBit(1),  //!< This asset only lives in memory.
+      FAILED_TO_LOAD  = bfBit(2),  //!< Failed to load asset, this flag is set do that we do not continuously try to load it.
+      IS_DIRTY        = bfBit(3),  //!< This asset wants to be saved.
+      IS_ENGINE_ASSET = bfBit(4),  //!< If the content saving routines should be called.
     };
   }
+
+  struct AssetMetaInfo
+  {
+    std::int32_t   version      = 1;
+    BufferLen      name         = {nullptr, 0};
+    bfUUIDNumber   uuid         = {};
+    AssetMetaInfo* first_child  = nullptr;
+    AssetMetaInfo* last_child   = nullptr;  // Last child is stored to make appending fast. (We want to append since serialization is an array, we do not want the data reversing on every save).
+    AssetMetaInfo* next_sibling = nullptr;
+
+    // Before calling this function it is expected that no resources are currently being owned.
+    // (Eg: Either default constructed or after a call to `freeResources` is fine)
+    void serialize(IMemoryManager& allocator, ISerializer& serializer);
+    void addChild(AssetMetaInfo* child);
+
+    void freeResources(IMemoryManager& allocator);
+  };
 
   // clang-format off
   class bfPureInterface(IBaseAsset) : public IBaseObject
@@ -55,10 +74,15 @@ namespace bf
     // TODO(SR): Having data members in an interface probably breaks some of my codebase guidelines.
    private:
     bfUUIDNumber         m_UUID;
-    String               m_FilePathAbs;  //!< The full path to an asset.
-    StringRange          m_FilePathRel;  //!< Indexes into `IBaseAsset::m_FilePathAbs` for the relative path.
-    std::atomic_uint16_t m_RefCount;     //!< The number of live references there are to this asset.
-    std::atomic_uint16_t m_Flags;        //!< Various flags about the current state of the asset.
+    String               m_FilePathAbs;       //!< The full path to an asset.
+    StringRange          m_FilePathRel;       //!< Indexes into `IBaseAsset::m_FilePathAbs` for the relative path.
+    ListView<IBaseAsset> m_SubAssets;         //!< Assets that only exists in memory spawned from this parent asset.
+    ListNode<IBaseAsset> m_SubAssetListNode;  //!< Used with 'm_SubAssets' to make an intrusive non-owning linked list.
+    IBaseAsset*          m_ParentAsset;       //!< The asset this subasset is associated with (assuming this is a subasset).
+    ListNode<IBaseAsset> m_DirtyListNode;     //!< USed with `Assets` to keep track of which assets are dirty and should be saved.
+    std::atomic_uint16_t m_RefCount;          //!< The number of live references there are to this asset.
+    std::atomic_uint16_t m_Flags;             //!< Various flags about the current state of the asset.
+    Assets*              m_Assets;            //!< Kind of a hack, it is useful to have this back pointer.
 
    public:
     IBaseAsset();
@@ -68,8 +92,13 @@ namespace bf
     [[nodiscard]] const bfUUIDNumber& uuid() const { return m_UUID; }
     [[nodiscard]] const String&       fullPath() const { return m_FilePathAbs; }
     [[nodiscard]] StringRange         relativePath() const { return m_FilePathRel; }
+    [[nodiscard]] StringRange         name() const;
+    [[nodiscard]] StringRange         nameWithExt() const;
     [[nodiscard]] std::uint16_t       refCount() const { return m_RefCount; }
     AssetStatus                       status() const;
+    bool                              isSubAsset() const { return (m_Flags & AssetFlags::IS_SUBASSET) != 0; }
+    bool                              hasSubAssets() const { return !m_SubAssets.isEmpty(); }
+    const ListView<IBaseAsset>&       subAssets() const { return m_SubAssets; }
 
     // IO and Ref Count //
 
@@ -79,13 +108,17 @@ namespace bf
     void saveAssetContent(ISerializer & serializer);
     void saveAssetMeta(ISerializer & serializer);
 
+    // Misc //
+
+    AssetMetaInfo* generateMetaInfo(IMemoryManager & allocator) const;
+
    private:
-    void setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid);
+    void setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid, Assets& assets);
 
     // Interface That Must Be Implemented By Subclasses. //
 
-    virtual void onLoad()   = 0;  // Called when the asset should be loaded. (Will never be called if the asset is already loaded)
-    virtual void onUnload() = 0;  // Called when the asset should be unloaded from memory. (Will never be called if the asset is not loaded)
+    virtual void onLoad()   = 0;  // Called when the asset should be loaded. (Will never be called if the asset is already loaded or the asset is a subasset)
+    virtual void onUnload() = 0;  // Called when the asset should be unloaded from memory. (Will never be called if the asset is not loaded or the asset is a subasset)
 
     // These have default implementations.
 
@@ -96,6 +129,12 @@ namespace bf
    protected:
     // Helpers methods for sub classes //
 
+    Assets& assets() const { return *m_Assets; }
+
+    String createSubAssetPath(StringRange name_with_ext) const;
+
+    IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext);
+
     void markFailedToLoad()
     {
       m_Flags |= AssetFlags::FAILED_TO_LOAD;
@@ -105,6 +144,11 @@ namespace bf
     void markIsLoaded()
     {
       m_Flags |= AssetFlags::IS_LOADED;
+    }
+
+    void markAsEngineAsset()
+    {
+      m_Flags |= AssetFlags::IS_ENGINE_ASSET;
     }
   };
 
@@ -251,8 +295,6 @@ namespace bf
 
     void assign(IBaseAsset* asset) override
     {
-      assert(!asset || asset->type() == typeInfo() && "Either must be assigning nullptr or the types must match.");
-
       reassign(asset);
     }
 
@@ -266,6 +308,8 @@ namespace bf
     {
       if (m_Handle != asset)
       {
+        assert(!asset || asset->type() == typeInfo() && "Either must be assigning nullptr or the types must match.");
+
         release();
         m_Handle = static_cast<T*>(asset);
         acquire();
@@ -282,7 +326,7 @@ namespace bf
 
     // NOTE(SR):
     //   This function does not set 'm_Handle' to nullptr.
-    //   That is because it is a useless assignment in the case of the copy assignment.
+    //   That is because it is a redundant assignment to 'm_Handle', ex: copy assignment.
     void release() const
     {
       if (m_Handle)

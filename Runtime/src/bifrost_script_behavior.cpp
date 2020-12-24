@@ -1,16 +1,7 @@
-/*!
- * @file   bifrost_script_behavior.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
- * @brief
- *   Implements the IBehavior interface for runtime scripts.
- *
- * @version 0.0.1
- * @date    2020-07-08
- *
- * @copyright Copyright (c) 2020
- */
+#if 0
 #include "bf/script/bifrost_script_behavior.hpp"
 
+#include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/asset_io/bifrost_file.hpp" /* File   */
 #include "bf/core/bifrost_engine.hpp"   /* Engine */
 
@@ -58,24 +49,12 @@ namespace bf
 
   void ScriptBehavior::serialize(ISerializer& serializer)
   {
-    serializer.serialize("m_ScriptPath", m_ScriptPath);
+    // serializer.serialize("m_ScriptPath", m_ScriptPath);
 
     if (serializer.mode() == SerializerMode::LOADING && m_ScriptPath)
     {
       loadFunctionPointers();
     }
-  }
-
-  bool ScriptBehavior::setScriptPath(const String& path)
-  {
-    const bool loaded_asset = engine().assets().tryLoadAsset<AssetScriptInfo>(m_ScriptPath, path);
-
-    if (loaded_asset && m_ScriptPath)
-    {
-      return loadFunctionPointers();
-    }
-
-    return loaded_asset;
   }
 
   ScriptBehavior::~ScriptBehavior()
@@ -154,4 +133,5 @@ namespace bf
 
     return false;
   }
-}  // namespace bifrost
+}  // namespace bf
+#endif

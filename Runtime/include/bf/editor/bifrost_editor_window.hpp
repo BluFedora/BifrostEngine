@@ -14,7 +14,6 @@
 #define BIFROST_EDITOR_WINDOW_HPP
 
 #include "bf/PlatformFwd.h"                        // bfEvent
-#include "bf/asset_io/bifrost_asset_handle.hpp"    // BaseAssetHandle
 #include "bf/bf_non_copy_move.hpp"                 // bfNonCopyMoveable<T>
 #include "bf/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
 
@@ -32,9 +31,9 @@ namespace bf::editor
 {
   class EditorOverlay;
 
-  using Selectable = Variant<IBaseObject*, Entity*, BaseAssetHandle>;
+  using Selectable = Variant<IBaseObject*, Entity*>;
 
-  // TODO(SR): 
+  // TODO(SR):
   //   The title ID stuff could be more efficient since it assumes changing titles but most likely case is that the title string stays the same...
 
   //

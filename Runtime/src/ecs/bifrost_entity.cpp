@@ -14,7 +14,7 @@
 /******************************************************************************/
 #include "bf/ecs/bifrost_entity.hpp"
 
-#include "bf/asset_io/bifrost_asset_handle.hpp"
+#include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/debug/bifrost_dbg_logger.h"
 #include "bf/ecs/bifrost_behavior.hpp"
@@ -593,4 +593,4 @@ namespace bf
 
     return old_parent;
   }
-}  // namespace bifrost
+}  // namespace bf

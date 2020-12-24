@@ -23,10 +23,7 @@
 * @copyright Copyright (c) 2019
 */
 /******************************************************************************/
-#include "bf/asset_io/bifrost_asset_handle.hpp"
 
-#include "bf/asset_io/bifrost_asset_info.hpp"
-#include "bf/asset_io/bifrost_file.hpp"
 #include "bf/asset_io/bifrost_json_serializer.hpp"
 #include "bf/core/bifrost_engine.hpp" /* Engine */
 #include "bf/utility/bifrost_json.hpp"
@@ -287,143 +284,13 @@ namespace bf
     serialize(key, static_cast<Vec3f&>(value));
   }
 
-  bool BaseAssetInfo::defaultLoad(Engine& engine)
+  LinearAllocator& ENGINE_TEMP_MEM(Engine& engine)
   {
-    if (m_Flags & AssetInfoFlags::IS_SUB_ASSET)
-    {
-      return true;
-    }
-    else
-    {
-      File file{filePathAbs(), file::FILE_MODE_READ};
-
-      if (file)
-      {
-        std::size_t buffer_size;
-        char*       buffer = file.readAll(engine.tempMemoryNoFree(), buffer_size);
-
-        json::Value json_value = json::fromString(buffer, buffer_size - 1);
-
-        JsonSerializerReader reader{engine.assets(), engine.tempMemoryNoFree(), json_value};
-
-        ISerializer& serializer = reader;
-
-        serializer.beginDocument(false);
-        serializer.serialize(*payload());
-        serializer.endDocument();
-
-        file.close();
-
-        return true;
-      }
-
-      return false;
-    }
+    return engine.tempMemory();
   }
 
-  BaseAssetHandle::BaseAssetHandle(Engine& engine, BaseAssetInfo* info, meta::BaseClassMetaInfo* type_info) :
-    m_Engine{&engine},
-    m_Info{info},
-    m_TypeInfo{type_info}
+  IMemoryManager&  ENGINE_TEMP_MEM_NO_FREE(Engine& engine)
   {
-    acquire();
-  }
-
-  BaseAssetHandle::BaseAssetHandle(meta::BaseClassMetaInfo* type_info) noexcept :
-    m_Engine{nullptr},
-    m_Info{nullptr},
-    m_TypeInfo{type_info}
-  {
-  }
-
-  BaseAssetHandle::BaseAssetHandle(const BaseAssetHandle& rhs) noexcept :
-    m_Engine{rhs.m_Engine},
-    m_Info(rhs.m_Info),
-    m_TypeInfo{rhs.m_TypeInfo}
-  {
-    acquire();
-  }
-
-  BaseAssetHandle::BaseAssetHandle(BaseAssetHandle&& rhs) noexcept :
-    m_Engine{rhs.m_Engine},
-    m_Info{rhs.m_Info},
-    m_TypeInfo{rhs.m_TypeInfo}
-  {
-    rhs.m_Engine = nullptr;
-    rhs.m_Info   = nullptr;
-  }
-
-  BaseAssetHandle& BaseAssetHandle::operator=(const BaseAssetHandle& rhs) noexcept
-  {
-    if (this != &rhs)
-    {
-      release();
-      m_Engine = rhs.m_Engine;
-      m_Info   = rhs.m_Info;
-      acquire();
-    }
-
-    return *this;
-  }
-
-  BaseAssetHandle& BaseAssetHandle::operator=(BaseAssetHandle&& rhs) noexcept
-  {
-    if (this != &rhs)
-    {
-      release();
-      m_Engine     = rhs.m_Engine;
-      m_Info       = rhs.m_Info;
-      rhs.m_Engine = nullptr;
-      rhs.m_Info   = nullptr;
-    }
-
-    return *this;
-  }
-
-  void BaseAssetHandle::release()
-  {
-    if (m_Info)
-    {
-      if (--m_Info->m_RefCount == 0)
-      {
-        m_Info->onAssetUnload(*m_Engine);
-
-        if (!(m_Info->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
-        {
-          m_Info->unload();
-        }
-      }
-
-      m_Engine = nullptr;
-      m_Info   = nullptr;
-    }
-  }
-
-  BaseAssetHandle::~BaseAssetHandle()
-  {
-    release();
-  }
-
-  void BaseAssetHandle::acquire()
-  {
-    if (m_Info)
-    {
-      if (m_Info->m_RefCount == 0)
-      {
-        if (!m_Info->load(*m_Engine))
-        {
-          m_Engine = nullptr;
-          m_Info   = nullptr;
-          return;
-        }
-      }
-
-      ++m_Info->m_RefCount;
-    }
-  }
-
-  IBaseObject* BaseAssetHandle::payload() const
-  {
-    return m_Info ? m_Info->payload() : nullptr;
+    return engine.tempMemoryNoFree();
   }
 }  // namespace bf

@@ -35,12 +35,12 @@ namespace bf::path
 
   String append(StringRange directory, StringRange rel_path)
   {
-    String ret = directory;
+    String result = directory;
 
-    ret.append(k_Separator);
-    ret.append(rel_path);
+    result.append(k_Separator);
+    result.append(rel_path);
 
-    return ret;
+    return result;
   }
 
   AppendResult append(char* const out_path, std::size_t out_path_size, StringRange directory, StringRange file_name)
@@ -98,6 +98,11 @@ namespace bf::path
 
   StringRange extensionEx(StringRange file_path)
   {
+    // TODO(SR):
+    //    This can be optimized for the common case of going backward through the string.
+    //    The cost of doing that is a more complicated implementation.
+    //    Probably would include use of std::find_end??
+
     const char*       dot_start = file_path.begin();
     const char* const path_end  = file_path.end();
 
@@ -116,32 +121,29 @@ namespace bf::path
 
   StringRange name(StringRange file_path)
   {
-    const char* dot_start = file_path.end();
+    const auto* const last_slash = std::find(file_path.rbegin(), file_path.rend(), k_Separator).base();
 
-    while (dot_start != file_path.begin())
-    {
-      if (*dot_start == '/')
-      {
-        return {dot_start + 1, file_path.end()};
-      }
-
-      --dot_start;
-    }
-
-    return StringRange{};
+    return StringRange{last_slash, file_path.end()};
   }
 
   StringRange nameWithoutExtension(StringRange file_path)
   {
-    const auto last_slash = std::find(file_path.rbegin(), file_path.rend(), '/');
-    const auto last_dot   = std::find(file_path.begin(), file_path.end(), '.');
+    const auto* const last_slash = std::find(file_path.rbegin(), file_path.rend(), k_Separator).base();
+    const auto* const last_dot   = std::find(last_slash, file_path.end(), '.');
 
-    if (last_dot < last_slash.base())
+    return {last_slash, last_dot};
+  }
+
+  bool startWith(StringRange file_path, StringRange prefix)
+  {
+    const std::size_t prefix_len = prefix.length();
+
+    if (file_path.length() >= prefix_len)
     {
-      return {last_slash.base(), file_path.end()};
+      return std::strncmp(file_path.begin(), prefix.begin(), prefix_len) == 0;
     }
 
-    return {last_slash.base(), last_dot};
+    return false;
   }
 }  // namespace bf::path
 

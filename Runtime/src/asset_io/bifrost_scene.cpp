@@ -93,7 +93,7 @@ namespace bf
 #undef ID_TO_INDEX
 
   Scene::Scene(Engine& engine) :
-    BaseObject<Scene>{},
+    Base(),
     m_Engine{engine},
     m_Memory{m_Engine.mainMemory()},
     m_RootEntities{m_Memory},
@@ -184,7 +184,7 @@ namespace bf
     m_BVHTree.markLeafDirty(entity->bvhID(), entity->transform());
   }
 
-  void Scene::serialize(ISerializer& serializer)
+  void Scene::reflect(ISerializer& serializer)
   {
     if (serializer.mode() == SerializerMode::LOADING)
     {
@@ -231,51 +231,44 @@ namespace bf
     }
   }
 
+  void Scene::onLoad()
+  {
+    Assets&      assets    = engine().assets();
+    const String full_path = fullPath();
+    File         file_in   = {full_path, file::FILE_MODE_READ};
+
+    if (file_in)
+    {
+      auto&                alloc_no_free = engine().tempMemoryNoFree();
+      LinearAllocatorScope scope         = {engine().tempMemory()};
+      const TempBuffer     json_buffer   = file_in.readAll(alloc_no_free);
+      json::Value          json_value    = json::fromString(json_buffer.buffer(), json_buffer.size());
+
+      if (json_value.isObject())
+      {
+        JsonSerializerReader json_writer{assets, alloc_no_free, json_value};
+
+        if (json_writer.beginDocument(false))
+        {
+          reflect(json_writer);
+          json_writer.endDocument();
+        }
+      }
+    }
+    else
+    {
+      markFailedToLoad();
+    }
+  }
+
+  void Scene::onUnload()
+  {
+  }
+
   Scene::~Scene()
   {
     bfAnimation2D_destroyScene(m_Engine.animationSys().anim2DCtx(), m_AnimationScene);
 
     removeAllEntities();
-  }
-
-  bool AssetSceneInfo::load(Engine& engine)
-  {
-    Assets&      assets    = engine.assets();
-    const String full_path = filePathAbs();
-    File         file_in   = {full_path, file::FILE_MODE_READ};
-
-    if (file_in)
-    {
-      LinearAllocatorScope scope       = {engine.tempMemory()};
-      const TempBuffer     json_buffer = file_in.readAll(engine.tempMemoryNoFree());
-      json::Value          json_value  = json::fromString(json_buffer.buffer(), json_buffer.size());
-      Scene&               scene       = m_Payload.set<Scene>(engine);
-
-      if (json_value.isObject())
-      {
-        JsonSerializerReader json_writer{assets, engine.tempMemoryNoFree(), json_value};
-
-        if (json_writer.beginDocument(false))
-        {
-          scene.serialize(json_writer);
-          json_writer.endDocument();
-        }
-      }
-
-      return true;
-    }
-
-    return false;
-  }
-
-  bool AssetSceneInfo::save(Engine& engine, ISerializer& serializer)
-  {
-    (void)engine;
-
-    Scene& scene = m_Payload.as<Scene>();
-
-    scene.serialize(serializer);
-
-    return true;
   }
 }  // namespace bf

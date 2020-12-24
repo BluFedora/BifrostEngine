@@ -94,7 +94,6 @@ target_sources(
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_assets.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_file.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_json_serializer.cpp"
-   "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_material.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_obj_loader.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_scene.cpp"
 
@@ -141,10 +140,7 @@ target_sources(
 
    # Mostly Correct
 
-   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_path_manip.hpp"
-
    "${PROJECT_SOURCE_DIR}/src/anim2D/bf_animation_system.cpp"
-   "${PROJECT_SOURCE_DIR}/src/asset_io/bf_asset_info.cpp"
    "${PROJECT_SOURCE_DIR}/src/asset_io/bf_path_manip.cpp"
    "${PROJECT_SOURCE_DIR}/src/asset_io/bf_spritesheet_asset.cpp"
 )

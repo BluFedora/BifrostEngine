@@ -167,11 +167,11 @@ namespace bf
 
     // Core Low Level Systems
 
-    Assets                  m_Assets;
-    GameStateMachine        m_StateMachine;
-    VM                      m_Scripting;
-    Array<AssetSceneHandle> m_SceneStack;
-    Input                   m_Input;
+    Assets                 m_Assets;
+    GameStateMachine       m_StateMachine;
+    VM                     m_Scripting;
+    Array<ARC<SceneAsset>> m_SceneStack;
+    Input                  m_Input;
 
     // Rendering
 
@@ -220,7 +220,7 @@ namespace bf
     CollisionSystem&   collisionSys() const { return *m_CollisionSystem; }
     ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
     BehaviorSystem&    behaviorSys() const { return *m_BehaviorSystem; }
-    AssetSceneHandle   currentScene() const;
+    ARC<SceneAsset>    currentScene() const;
     EngineState        state() const { return m_State; }
     void               setState(EngineState value) { m_State = value; }
 
@@ -244,7 +244,7 @@ namespace bf
 
     // Scene Management API
 
-    void      openScene(const AssetSceneHandle& scene);
+    void      openScene(const ARC<SceneAsset>& scene);
     EntityRef createEntity(Scene& scene, const StringRange& name = "New Entity");
 
     // "System" Functions to be called by the Application

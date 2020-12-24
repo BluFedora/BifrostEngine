@@ -1,13 +1,11 @@
 #ifndef BIFROST_FILE_HPP
 #define BIFROST_FILE_HPP
 
-// uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-
-#include "bf/TempBuffer.hpp"                          /* TempBuffer          */
+#include "bf/TempBuffer.hpp"                     /* TempBuffer          */
+#include "bf/bf_non_copy_move.hpp"               /* NonCopyMoveable<T>  */
 #include "bf/data_structures/bifrost_string.hpp" /* String, StringRange */
 
-#include <algorithm> /* reverse      */
-#include <fstream>   /* fstream, ios */
+#include <fstream> /* fstream, ios */
 
 namespace bf
 {
@@ -43,9 +41,7 @@ namespace bf
     bool pathEndsIn(const char* path, const char* ending, int ending_len = -1, int path_len = -1);
     bool isValidName(const StringRange& path);
 
-    /// All slashes are forward slashes '/'.      \n
-    /// A path for a folder has no following '/'. \n
-    /// Returns the new length of the path.       \n
+    /// Returns the new length of the path.
     std::size_t canonicalizePath(char* path_bgn, const char* path_end);
     std::size_t canonicalizePath(char* path_bgn);  // Gives you the length
 
@@ -55,7 +51,7 @@ namespace bf
 
   }  // namespace file
 
-  class File final
+  class File final : NonCopyMoveable<File>
   {
    public:
     static bool exists(const char* path);
@@ -73,8 +69,8 @@ namespace bf
 
    public:
     File() = default;
-    File(const char* filename, const unsigned int mode);
-    File(const String& filename, const unsigned int mode);
+    File(const char* filename, unsigned int mode);
+    File(const String& filename, unsigned int mode);
 
     File(const File& rhs) = delete;
     File(File&& rhs)      = delete;
@@ -83,10 +79,10 @@ namespace bf
 
     // Basic FileIO //
     operator bool() const { return isOpen(); }
-    file::FileError open(const char* filename, const unsigned int mode);
-    file::FileError open(const String& filename, const unsigned int mode);
+    file::FileError open(const char* filename, unsigned int mode);
+    file::FileError open(const String& filename, unsigned int mode);
     bool            isOpen() const;
-    void            seek(const int movement, const file::FileSeek mode);
+    void            seek(int movement, file::FileSeek mode);
     std::size_t     size() const;
     void            close();
 
@@ -130,6 +126,10 @@ namespace bf
 
     // Same as the above overload except destructors handle freeing.
     [[nodiscard]] TempBuffer readAll(IMemoryManager& allocator);
+
+    // the returned buffer will be nul terminated but out_size includes that in the size.
+    // Remember to free the buffer.
+    BufferLen readEntireFile(IMemoryManager& allocator);
 
     template<typename T>
     File& operator<<(const T& data)

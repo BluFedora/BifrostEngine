@@ -28,7 +28,7 @@ namespace bf::editor
           {
             current_scene->addEntity();
 
-            engine.assets().markDirty(current_scene);
+            // engine.assets().markDirty(current_scene);
           }
 
           ImGui::EndMenu();

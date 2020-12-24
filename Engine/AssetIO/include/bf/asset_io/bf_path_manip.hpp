@@ -21,15 +21,32 @@
  *  Basic abstraction over a file / folder path.
  *
  *  Glorified string utilities with some extras to make
- *  working with paths cross-platform and less painful.
+ *  working with paths semi portable and less painful.
  */
 namespace bf::path
 {
-  static constexpr std::size_t k_MaxLength = 512;  //!< The maximum allowed length for a single path.
-  static constexpr char        k_Separator = '/';
+  //
+  // `Canonical` Path Definition:
+  //
+  //   - Path separators use UNIX-style '/' even on Windows for portability.
+  //   - A Path to a folder does NOT end in a separator just the name of the folder.
+  //   - Cannot contain these characters in an identifier: [NUL, '<', '>', ':', QUOTE, k_Separator, '\\', '|', '?', '*', '.']
+  //     * This can be checked with the 'path::isValidName' function.
+  //
+  // Special Path Conventions:
+  //
+  //   "assets://"         - Refers to the root project folder.
+  //   "internal://<uuid>" - Refers to an asset with <uuid> for sub asset access.
+  //   otherwise           - It is assumed you are using a path native to the OS, support it not guaranteed by the engine.
+  //
+
+  static constexpr std::size_t k_MaxLength     = 512;  //!< The maximum allowed length for a single path.
+  static constexpr char        k_Separator     = '/';
+  static constexpr StringRange k_AssetsRoot    = "assets://";
+  static constexpr StringRange k_SubAssetsRoot = "internal://";
 
   //
-  // All of these functions assume a 'canonicalized' paths
+  // All of these functions assume 'canonicalized' paths
   //
 
   StringRange relative(StringRange abs_root_path, StringRange abs_sub_path);
@@ -39,7 +56,7 @@ namespace bf::path
 
   /*!
    * @brief
-   *   Bundle of infomation from a call to append.
+   *   Bundle of information from a call to append.
    */
   struct AppendResult
   {
@@ -52,10 +69,11 @@ namespace bf::path
   ///   Both `directory` and `file_name` must be of non zero size.
   ///   `out_path_size` must be at least 1.
   ///
-  /// Out will always be nul terminated even if truncated.
+  /// out_path will always be nul terminated even if truncated.
   ///
   AppendResult append(char* out_path, std::size_t out_path_size, StringRange directory, StringRange file_name);
-  StringRange  directory(StringRange file_path);
+
+  StringRange directory(StringRange file_path);
 
   /*!
    * @brief
@@ -75,10 +93,13 @@ namespace bf::path
 
   /// Ex:
   ///   'hello this is a normal name' => 'hello this is a normal name'
-  ///   '.ThisShouldBeAnEmpryName' = > ''
+  ///   '.ThisShouldBeAnEmptyName' = > ''
   ///   '/ThisISTheCommonCase.dsadas.dasdsa.adssa.dddd' = > 'ThisISTheCommonCase'
   ///   '.ThisISThe/CommonCase' = > 'CommonCase'
   StringRange nameWithoutExtension(StringRange file_path);
+
+  bool startWith(StringRange file_path, StringRange prefix);
+
 }  // namespace bf::path
 
 #endif /* BF_PATH_MANIP_HPP */

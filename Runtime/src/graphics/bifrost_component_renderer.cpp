@@ -91,7 +91,7 @@ namespace bf
 
       for (SkinnedMeshRenderer& mesh : scene->components<SkinnedMeshRenderer>())
       {
-        if (mesh.material() && mesh.model()/* && mesh.m_Animation*/)
+        if (mesh.material() && mesh.model() /* && mesh.m_Animation*/)
         {
           engine_renderer.bindMaterial(cmd_list, *mesh.material());
           engine_renderer.bindObject(cmd_list, camera.gpu_camera, mesh.owner());
@@ -146,7 +146,7 @@ namespace bf
 
         struct SpriteBatch final
         {
-          Material*           material;
+          MaterialAsset*      material;
           int                 vertex_offset;
           int                 num_vertices;
           VertexBuffer::Link* vertex_buffer;
@@ -164,7 +164,7 @@ namespace bf
         for (int i = 0; i < sprite_list_size; ++i)
         {
           SpriteRenderer&                       sprite          = *sprite_list[i];
-          Material* const                       sprite_mat      = &*sprite.material();
+          MaterialAsset* const                  sprite_mat      = &*sprite.material();
           const std::pair<StandardVertex*, int> vertices_offset = m_SpriteVertexBuffer->requestVertices(frame_info, k_NumVerticesPerSprite);
 #if k_UseIndexBufferForSprites
           const std::pair<SpriteIndexType*, int> index_offset = m_SpriteIndexBuffer->requestVertices(frame_info, k_NumIndicesPerSprite);
@@ -275,7 +275,7 @@ namespace bf
         camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
 
         VertexBuffer::Link* last_vertex_buffer = nullptr;
-        Material*           last_material      = nullptr;
+        MaterialAsset*      last_material      = nullptr;
 
 #if k_UseIndexBufferForSprites
         IndexBuffer::Link* last_index_buffer = nullptr;

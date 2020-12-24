@@ -100,9 +100,9 @@ namespace bf
 #endif
   }
 
-  AssetSceneHandle Engine::currentScene() const
+  ARC<SceneAsset> Engine::currentScene() const
   {
-    return m_SceneStack.isEmpty() ? AssetSceneHandle{} : m_SceneStack.back();
+    return m_SceneStack.isEmpty() ? ARC<SceneAsset>{} : m_SceneStack.back();
   }
 
   CameraRender* Engine::borrowCamera(const CameraRenderCreateParams& params)
@@ -172,7 +172,7 @@ namespace bf
     m_CameraDeleteList = camera;
   }
 
-  void Engine::openScene(const AssetSceneHandle& scene)
+  void Engine::openScene(const ARC<SceneAsset>& scene)
   {
     m_SceneStack.clear();  // TODO: Scene Stacking.
 
@@ -235,13 +235,33 @@ namespace bf
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 
-    // m_Assets
+      /*
+      static const FileExtensionHandler s_AssetHandlers[] =
+       {
+        {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
+        {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
+        {".fbx", &fileExtensionHandlerImpl<AssetModelInfo>},
+        {".md5mesh", &fileExtensionHandlerImpl<AssetModelInfo>},
+        {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
+        {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}};
+    */
 
-    m_Assets.registerFileExtensions<TextureAsset>(
+    m_Assets.registerFileExtensions(
      {".png", ".jpg", ".jpeg", ".ppm", ".pgm", ".bmp", ".tga", ".psd"},
      [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
        return asset_memory.allocateT<TextureAsset>(bfGfxContext_device(engine.renderer().context()));
      });
+
+    m_Assets.registerFileExtensions(
+     {".material"},
+      &defaultAssetCreate<MaterialAsset>
+    );
+
+    /*
+    m_Assets.registerFileExtensions(
+     {".scene"},
+     &defaultAssetCreate<SceneAsset>);
+     */
 
     gc::init(m_MainMemory);
 

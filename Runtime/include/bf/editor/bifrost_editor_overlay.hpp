@@ -14,7 +14,6 @@
 #define BIFROST_EDITOR_OVERLAY_HPP
 
 #include "bf/Platform.h"
-#include "bf/asset_io/bifrost_material.hpp"
 #include "bf/bifrost.hpp"
 
 #include "bifrost_editor_filesystem.hpp"

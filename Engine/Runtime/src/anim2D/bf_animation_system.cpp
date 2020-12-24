@@ -15,8 +15,8 @@ namespace bf
     if (change_event.type == bfAnim2DChange_Texture)
     {
       Engine* const               engine      = static_cast<Engine*>(bfAnimation2D_userData(ctx));
-      AssetSpritesheetInfo* const ss_info     = static_cast<AssetSpritesheetInfo*>(spritesheet->user_data);
-      const StringRange           ss_dir      = path::directory(ss_info->filePathAbs());
+      SpritesheetAsset* const     ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
+      const StringRange           ss_dir      = path::directory(ss_info->fullPath());
       const String                texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
       Assets&                     assets      = engine->assets();
       TextureAsset* const         texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
@@ -40,8 +40,7 @@ namespace bf
           create_params,
           k_SamplerNearestRepeat,
           change_event.texture.texture_bytes_png,
-          change_event.texture.texture_bytes_png_size)
-        );
+          change_event.texture.texture_bytes_png_size));
       }
     }
   }
@@ -54,8 +53,8 @@ namespace bf
   }
 
   template<typename T, typename F>
-  T lerpAtTime(const Animation3D&           animation,
-               const Animation3D::Track<T>& track,
+  T lerpAtTime(const Anim3DAsset&           animation,
+               const Anim3DAsset::Track<T>& track,
                AnimationTimeType            animation_time,
                T                            default_value,
                F&&                          lerp_fn)
@@ -91,8 +90,8 @@ namespace bf
   }
 
   Vector3f vec3ValueAtTime(
-   const Animation3D&              animation,
-   const Animation3D::TripleTrack& track,
+   const Anim3DAsset&              animation,
+   const Anim3DAsset::TripleTrack& track,
    AnimationTimeType               animation_time,
    float                           default_value)
   {
@@ -108,8 +107,8 @@ namespace bf
   }
 
   bfQuaternionf quatValueAtTime(
-   const Animation3D&                       animation,
-   const Animation3D::Track<bfQuaternionf>& track,
+   const Anim3DAsset&                       animation,
+   const Anim3DAsset::Track<bfQuaternionf>& track,
    AnimationTimeType                        animation_time)
   {
     bfQuaternionf value = lerpAtTime<bfQuaternionf>(
@@ -127,13 +126,13 @@ namespace bf
   }
 
   static void updateNodeAnimation(
-   const Model::Node*                           root_node,
-   const Animation3D&                           animation,
+   const ModelAsset::Node*                      root_node,
+   const Anim3DAsset&                           animation,
    AnimationTimeType                            animation_time,
-   const Model::Node*                           node,
+   const ModelAsset::Node*                      node,
    const HashTable<std::uint8_t, std::uint8_t>& bone_to_channel,
    const Matrix4x4f&                            global_inv_transform,
-   const Model::NodeIDBone*                     input_transform,
+   const ModelAsset::NodeIDBone*                input_transform,
    Matrix4x4f*                                  output_transform,
    const Matrix4x4f&                            parent_transform)
   {
@@ -153,7 +152,7 @@ namespace bf
 
         assert(channel_index0 == channel_index);
 
-        Animation3D::Channel& channel     = animation.m_Channels[channel_index];
+        Anim3DAsset::Channel& channel     = animation.m_Channels[channel_index];
         const Vector3f        scale       = vec3ValueAtTime(animation, channel.scale, animation_time, 1.0f);
         bfQuaternionf         rotation    = quatValueAtTime(animation, channel.rotation, animation_time);
         const Vector3f        translation = vec3ValueAtTime(animation, channel.translation, animation_time, 0.0f);
@@ -200,7 +199,7 @@ namespace bf
     std::for_each_n(
      root_node + node->first_child,
      node->num_children,
-     [&](const Model::Node& child_node) -> void {
+     [&](const ModelAsset::Node& child_node) -> void {
        updateNodeAnimation(
         root_node,
         animation,
@@ -279,8 +278,8 @@ namespace bf
           std::uint8_t bone_index = 0u;
           for (const auto& bones : model->m_BoneToModel)
           {
-            const Model::Node& node = model->m_Nodes[bones.node_idx];
-            const auto         it   = animation->m_NameToChannel.find(node.name);
+            const ModelAsset::Node& node = model->m_Nodes[bones.node_idx];
+            const auto              it   = animation->m_NameToChannel.find(node.name);
 
             if (it != animation->m_NameToChannel.end())
             {
@@ -296,7 +295,7 @@ namespace bf
           // TODO(SR): This can be baked once /\/\/\/\/\
           //
 
-          Model::Node&                root_node         = model->m_Nodes[0];
+          ModelAsset::Node&           root_node         = model->m_Nodes[0];
           Renderable<ObjectBoneData>& uniform_bone_data = getRenderable(engine_renderer, mesh.owner());
           const bfBufferSize          offset            = uniform_bone_data.transform_uniform.offset(engine_renderer.frameInfo());
           const bfBufferSize          size              = sizeof(ObjectBoneData);

@@ -13,7 +13,6 @@
 #define BIFROST_HPP
 
 #include "bf/Platform.h"
-#include "bf/asset_io/bifrost_asset_handle.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_file.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"

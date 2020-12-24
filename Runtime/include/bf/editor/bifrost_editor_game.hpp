@@ -23,9 +23,9 @@ namespace bf::editor
     void        onDrawGUI(EditorOverlay& editor) override;
 
    private:
-    void toggleEngineState(Engine& engine, const AssetSceneHandle& scene);
-    void startSimulation(Engine& engine, const AssetSceneHandle& scene);
-    void stopSimulation(Engine& engine, const AssetSceneHandle& scene);
+    void toggleEngineState(Engine& engine, const ARC<SceneAsset>& scene);
+    void startSimulation(Engine& engine, const ARC<SceneAsset>& scene);
+    void stopSimulation(Engine& engine, const ARC<SceneAsset>& scene);
   };
 }  // namespace bifrost::editor
 

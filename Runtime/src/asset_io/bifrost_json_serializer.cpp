@@ -122,20 +122,6 @@ namespace bf
     currentObject().add(key, value);
   }
 
-  void JsonSerializerWriter::serialize(StringRange key, BaseAssetHandle& value)
-  {
-    if (value)
-    {
-      pushObject(key);
-      serialize("uuid", const_cast<bfUUID&>(value.info()->uuid()));
-      popObject();
-    }
-    else
-    {
-      currentObject().add(key, json::Value{});
-    }
-  }
-
   void JsonSerializerWriter::serialize(StringRange key, IARCHandle& value)
   {
     if (value.isValid())
@@ -208,7 +194,7 @@ namespace bf
 
   bool JsonSerializerReader::hasKey(StringRange key)
   {
-    auto& current_obj = currentObject();
+    const auto& current_obj = currentObject();
 
     return current_obj.isObject() && current_obj.at(key) != nullptr;
   }
@@ -263,7 +249,7 @@ namespace bf
 
     if (object.array_index > -1 && object.object->isArray())
     {
-      json::Array& arr = object.object->as<json::Array>();
+      const json::Array& arr = object.object->as<json::Array>();
 
       if (object.array_index < int(arr.size()))
       {
@@ -379,7 +365,7 @@ namespace bf
     {
       if (object.object->isArray())
       {
-        json::Array& arr = object.object->as<json::Array>();
+        const json::Array& arr = object.object->as<json::Array>();
 
         if (object.array_index < int(arr.size()))
         {
@@ -400,24 +386,6 @@ namespace bf
       {
         value = object.object->get(key, json::String{});
       }
-    }
-  }
-
-  void JsonSerializerReader::serialize(StringRange key, BaseAssetHandle& value)
-  {
-    if (pushObject(key))
-    {
-      bfUUID uuid;
-      serialize("uuid", uuid);
-
-      BaseAssetInfo* const info = m_Assets.findAssetInfo(uuid);
-
-      if (info)
-      {
-        m_Assets.tryAssignHandle(value, info);
-      }
-
-      popObject();
     }
   }
 

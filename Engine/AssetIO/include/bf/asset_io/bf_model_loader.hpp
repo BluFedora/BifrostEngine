@@ -11,6 +11,16 @@
 
 namespace bf
 {
+  using AssetIndexType = std::uint32_t;
+
+  struct Mesh
+  {
+    AssetIndexType index_offset;
+    AssetIndexType num_indices;
+    std::uint32_t  material_idx;
+  };
+
+
   static constexpr std::size_t k_MaxVertexBones = 4;
   static constexpr std::size_t k_MaxBones       = 128;
 
@@ -161,14 +171,7 @@ namespace bf
     std::uint8_t bone_indices[k_MaxVertexBones];
   };
 
-  using AssetIndexType = std::uint32_t;
-
-  struct AssetMeshPrototype
-  {
-    AssetIndexType index_offset;
-    AssetIndexType num_indices;
-    std::uint32_t  material_index;
-  };
+  
 
   namespace detail
   {
@@ -268,10 +271,10 @@ namespace bf
 
   struct ModelAnimation
   {
-    AssetTempSmallString                   name = {};
-    double                                 duration;          // Duration in ticks.
-    double                                 ticks_per_second;  // Ticks per second. 0 if not specified in the imported file
-    AssetTempArray<ModelAnimationChannel>* channels = {};
+    AssetTempSmallString                   name             = {};
+    double                                 duration         = 0.0f;  // Duration in ticks.
+    double                                 ticks_per_second = 0.0f;  // Ticks per second. 0 if not specified in the imported file
+    AssetTempArray<ModelAnimationChannel>* channels         = {};
   };
 
   using Matrix4x4f = ::Mat4x4;
@@ -294,7 +297,7 @@ namespace bf
     std::pair<unsigned int, Matrix4x4f> bones[k_MaxBones];  // <node index, transform>
   };
 
-  using AssetMeshArray      = AssetTempArray<AssetMeshPrototype>;
+  using AssetMeshArray      = AssetTempArray<Mesh>;
   using AssetVertexArray    = AssetTempArray<AssetModelVertex>;
   using AssetIndexArray     = AssetTempArray<AssetIndexType>;
   using AssetMaterialArray  = AssetTempArray<AssetPBRMaterial>;

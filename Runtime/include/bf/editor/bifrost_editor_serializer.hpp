@@ -13,7 +13,7 @@
 #ifndef BIFROST_EDITOR_SERIALIZER_HPP
 #define BIFROST_EDITOR_SERIALIZER_HPP
 
-#include "bf/asset_io/bifrost_asset_info.hpp" // ISerializer
+#include "bf/asset_io/bf_iserializer.hpp" // ISerializer
 
 #include <imgui/imgui.h>  // ImGui::*
 
@@ -89,7 +89,6 @@ namespace bf::editor
     void serialize(StringRange key, String& value) override;
     void serialize(StringRange key, bfUUIDNumber& value) override;
     void serialize(StringRange key, bfUUID& value) override;
-    void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, IARCHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     void serialize(StringRange key, meta::MetaObject& value) override;

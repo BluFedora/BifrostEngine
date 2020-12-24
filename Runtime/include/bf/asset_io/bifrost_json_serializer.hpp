@@ -13,9 +13,9 @@
 #ifndef BIFROST_JSON_SERIALIZER_HPP
 #define BIFROST_JSON_SERIALIZER_HPP
 
+#include "bf/asset_io/bf_iserializer.hpp"                 // ISerializer
 #include "bf/data_structures/bifrost_intrusive_list.hpp"  // List<T>
 #include "bf/utility/bifrost_json.hpp"                    // Value
-#include "bifrost_asset_info.hpp"                         // ISerializer
 
 namespace bf
 {
@@ -48,7 +48,6 @@ namespace bf
     void serialize(StringRange key, double& value) override;
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, IARCHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     using ISerializer::serialize;
@@ -80,11 +79,11 @@ namespace bf
 
    private:
     Assets&               m_Assets;
-    json::Value&          m_Document;
+    json::Value&          m_Document;  //!< Non cost by design, maybe I should make it const?
     List<ObjectStackNode> m_ObjectStack;
 
    public:
-    explicit JsonSerializerReader(Assets& assets, IMemoryManager& memory, json::Value& document);
+    JsonSerializerReader(Assets& assets, IMemoryManager& memory, json::Value& document);
 
     bool beginDocument(bool is_array) override;
     bool hasKey(StringRange key) override;
@@ -103,7 +102,6 @@ namespace bf
     void serialize(StringRange key, double& value) override;
     void serialize(StringRange key, long double& value) override;
     void serialize(StringRange key, String& value) override;
-    void serialize(StringRange key, BaseAssetHandle& value) override;
     void serialize(StringRange key, IARCHandle& value) override;
     void serialize(StringRange key, EntityRef& value) override;
     using ISerializer::serialize;

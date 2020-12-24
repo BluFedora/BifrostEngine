@@ -21,7 +21,7 @@ extern "C" {
 enum
 {
   k_bfUUIDStringLength   = 36,
-  k_bfUUIDStringCapacity = k_bfUUIDStringLength + 1,
+  k_bfUUIDStringCapacity = k_bfUUIDStringLength + 1, /*!< The +1 is for nul terminator. */
 };
 
 typedef struct

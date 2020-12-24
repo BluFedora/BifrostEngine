@@ -11,13 +11,14 @@
 
 #include "bf/MemoryUtils.h"
 #include "bf/Platform.h"  // BifrostWindow
-#include "bf/asset_io/bifrost_material.hpp"
 #include "bf/ecs/bifrost_entity.hpp"  // Entity
 #include "bf/ecs/bifrost_light.hpp"   // LightType
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */
 
+
+#include "bf/asset_io/bf_gfx_assets.hpp"
 #include "bf/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
 
 namespace bf
@@ -438,7 +439,7 @@ namespace bf
     return false;
   }
 
-  void StandardRenderer::bindMaterial(bfGfxCommandListHandle command_list, const Material& material)
+  void StandardRenderer::bindMaterial(bfGfxCommandListHandle command_list, const MaterialAsset& material)
   {
     const auto defaultTexture = [this](const ARC<TextureAsset>& handle) -> bfTextureHandle {
       return handle ? handle->handle() : m_WhiteTexture;

@@ -13,7 +13,6 @@
 #ifndef BIFROST_META_VARIANT_HPP
 #define BIFROST_META_VARIANT_HPP
 
-#include "bf/asset_io/bifrost_base_asset_handle.hpp" /* BaseAssetHandle, + All Serializable Classes */
 #include "bf/bf_meta_function_traits.hpp"            /* ParameterPack<Ts...>                        */
 #include "bf/bf_meta_utils.hpp"                      /* overloaded                                  */
 #include "bf/bifrost_math.hpp"                       /* bfColor4f, bfColor4u                        */
@@ -27,6 +26,7 @@
 
 namespace bf
 {
+  class IBaseObject;
   class IARCHandle;
 }
 
@@ -74,7 +74,6 @@ namespace bf::meta
    String,
    IARCHandle*,
    IBaseObject*,
-   BaseAssetHandle,
    EntityRef,
    bfUUIDNumber,
    bfUUID>;
@@ -85,7 +84,7 @@ namespace bf::meta
   template<typename... Args>
   static void debug()
   {
-    __debugbreak();
+    // __debugbreak();
   }
 
   template<bool... Args>

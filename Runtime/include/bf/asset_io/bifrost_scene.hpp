@@ -18,7 +18,6 @@
 #include "bf/data_structures/bifrost_intrusive_list.hpp"  //
 #include "bf/ecs/bifrost_collision_system.hpp"            /* BVH               */
 #include "bf/ecs/bifrost_component_storage.hpp"           /* ComponentStorage  */
-#include "bifrost_asset_handle.hpp"                       /* AssetInfo<T1, T2> */
 
 namespace bf
 {
@@ -72,7 +71,7 @@ namespace bf
    * @brief
    *  Hold entities along with any associated Component data.
    */
-  class Scene final : public BaseObject<Scene>
+  class Scene final : public BaseAsset<Scene>
   {
     friend class BaseBehavior;
     friend class Engine;
@@ -80,7 +79,7 @@ namespace bf
     BF_META_FRIEND;
 
    private:
-    Engine&              m_Engine;
+    Engine&              m_Engine; // TODO(SR): Remove this.
     IMemoryManager&      m_Memory;
     Array<Entity*>       m_RootEntities;
     EntityList           m_Entities;
@@ -138,26 +137,26 @@ namespace bf
 
     // Meta
 
-    void serialize(ISerializer& serializer);
+    void reflect(ISerializer& serializer) override;
 
     ~Scene() override;
 
-   private:
+  private:
+    void onLoad() override;
+    void onUnload() override;
   };
 
-  class AssetSceneInfo final : public AssetInfo<Scene, AssetSceneInfo>
+  BIFROST_META_REGISTER(bf::Scene)
   {
-   private:
-    using BaseT = AssetInfo<Scene, AssetSceneInfo>;
+    BIFROST_META_BEGIN()
+      BIFROST_META_MEMBERS(
+       class_info<Scene>("Scene")  //
+      )
+    BIFROST_META_END()
+  }
 
-   public:
-    using BaseT::BaseT;
+  using SceneAsset = Scene;
 
-    bool load(Engine& engine) override;
-    bool save(Engine& engine, ISerializer& serializer) override;
-  };
-
-  using AssetSceneHandle = AssetHandle<Scene>;
 }  // namespace bf
 
 BIFROST_META_REGISTER(Quaternionf){
@@ -170,20 +169,6 @@ BIFROST_META_REGISTER(Quaternionf){
    field("z", &Quaternionf::z),             //
    field("w", &Quaternionf::w)              //
    )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::Scene){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<Scene>("Scene")  //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::AssetSceneInfo){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<AssetSceneInfo>("AssetSceneInfo"),  //
-   ctor<String, std::size_t, bfUUID>())
    BIFROST_META_END()}
 
 BIFROST_META_REGISTER(Vec3f)

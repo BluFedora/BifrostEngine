@@ -15,14 +15,13 @@
 #include "bf/LinearAllocator.hpp"  // LinearAllocator
 #include "bf/asset_io/bf_base_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
-#include "bf/asset_io/bifrost_script.hpp"
 #include "bf/bifrost_math.h"
+#include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/core/bifrost_engine.hpp"
 #include "bf/ecs/bifrost_behavior.hpp"
 #include "bf/ecs/bifrost_entity.hpp"
 #include "bf/math/bifrost_vec2.h"
 #include "bf/math/bifrost_vec3.h"
-#include "bf/script/bifrost_script_behavior.hpp"
 
 namespace bf::editor
 {
@@ -320,81 +319,6 @@ namespace bf::editor
   {
     setNameBuffer(key);
     hasChangedTop() |= ImGui::InputText(m_NameBuffer, value.as_string.data, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
-  }
-
-  void ImGuiSerializer::serialize(StringRange key, BaseAssetHandle& value)
-  {
-    setNameBuffer(key);
-
-    ImGui::PushID(&value);
-
-    if (value)
-    {
-      if (ImGui::Button("clear"))
-      {
-        value.release();
-        hasChangedTop() |= true;
-      }
-
-      ImGui::SameLine();
-    }
-
-    const char* const preview_name  = value ? value.info()->filePathRel().begin() : "<null>";
-    BaseAssetInfo*    assigned_info = nullptr;
-
-    if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightLargest))
-    {
-      for (const auto& asset_info_it : m_Assets->assetMap())
-      {
-        BaseAssetInfo* const asset_info = asset_info_it.value();
-
-        if (Assets::isHandleCompatible(value, asset_info))
-        {
-          const bool is_selected = asset_info == value.info();
-
-          if (ImGui::Selectable(asset_info->filePathRel().begin(), is_selected, ImGuiSelectableFlags_None))
-          {
-            if (!is_selected)
-            {
-              assigned_info = asset_info;
-            }
-          }
-        }
-      }
-
-      ImGui::EndCombo();
-    }
-
-    if (ImGui::BeginDragDropTarget())
-    {
-      const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-
-      if (payload && payload->IsDataType("Asset.UUID"))
-      {
-        const bfUUID* data = static_cast<const bfUUID*>(payload->Data);
-
-        assert(payload->DataSize == sizeof(bfUUID));
-
-        const auto info = m_Assets->findAssetInfo(*data);
-
-        if (info && Assets::isHandleCompatible(value, info) && ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
-        {
-          assigned_info = info;
-        }
-      }
-
-      ImGui::EndDragDropTarget();
-    }
-
-    if (assigned_info)
-    {
-      if (m_Assets->tryAssignHandle(value, assigned_info))
-      {
-        hasChangedTop() |= true;
-      }
-    }
-
-    ImGui::PopID();
   }
 
   void ImGuiSerializer::serialize(StringRange key, IARCHandle& value)
@@ -830,26 +754,6 @@ namespace bf::editor
           if (ImGui::Selectable(label))
           {
             entity.addBehavior(type_info);
-          }
-        }
-      }
-
-      const auto* const script_class_info = meta::typeInfoGet<AssetScriptInfo>();
-
-      for (const auto& asset : engine.assets().assetMap())
-      {
-        auto* const asset_info = asset.value();
-
-        if (asset_info->typeInfo() == script_class_info)
-        {
-          const auto& path  = asset_info->filePathRel();
-          char*       label = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "Add (%.*s) Script", int(path.length()), path.begin());
-
-          if (ImGui::Selectable(label))
-          {
-            ScriptBehavior* const behav = entity.addBehavior<ScriptBehavior>();
-
-            behav->setScriptPath(asset_info->filePathRel());
           }
         }
       }

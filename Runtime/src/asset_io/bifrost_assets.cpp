@@ -15,7 +15,6 @@
 #include "bf/asset_io/bifrost_assets.hpp"
 
 #include "bf/LinearAllocator.hpp"                   // LinearAllocator
-#include "bf/asset_io/bifrost_asset_handle.hpp"     //
 #include "bf/asset_io/bifrost_file.hpp"             // File
 #include "bf/asset_io/bifrost_json_serializer.hpp"  //
 #include "bf/meta/bifrost_meta_runtime.hpp"         //
@@ -201,137 +200,125 @@ namespace bf
     }
   }  // namespace path
 
-  bool Assets::isHandleCompatible(const BaseAssetHandle& handle, const BaseAssetInfo* info)
-  {
-    meta::BaseClassMetaInfo* const handle_type       = handle.typeInfo();
-    meta::BaseClassMetaInfo* const info_payload_type = info->payloadType();
-
-    return handle_type == info_payload_type;
-  }
-
   Assets::Assets(Engine& engine, IMemoryManager& memory) :
     m_Engine{engine},
     m_Memory{memory},
-    m_NameToGUID{},
-    m_AssetMap{},
     m_RootPath{nullptr},
-    m_MetaPath{},
-    m_DirtyAssetList{memory},
     m_AssetSet{memory},
-    m_FileExtReg{}
+    m_FileExtReg{},
+    m_DirtyAssets{&IBaseAsset::m_DirtyListNode}
   {
   }
 
-  IBaseAsset* Assets::loadAsset(const StringRange& abs_path)
+  void Assets::registerFileExtensions(std::initializer_list<StringRange> exts, AssetCreationFn create_fn)
   {
-    const StringRange file_ext = path::extensionEx(abs_path);
-    IBaseAsset*       result   = nullptr;
-
-    if (file_ext.length() > 0)
+    for (const StringRange& ext : exts)
     {
-      const auto ext_handle = m_FileExtReg.find(file_ext);
+      m_FileExtReg.emplace(ext, create_fn);
+    }
+  }
 
-      if (ext_handle != m_FileExtReg.end())
-      {
-        result = ext_handle->value()(m_Memory, m_Engine);
+  IBaseAsset* Assets::findAsset(const bfUUIDNumber& uuid) const
+  {
+    return m_AssetSet.find(uuid);
+  }
 
-        if (result)
-        {
-          const bfUUID uuid = bfUUID_generate();
+  IBaseAsset* Assets::findAsset(AbsPath abs_path, AssetFindOption load_option)
+  {
+    const StringRange rel_path = absPathToRelPath(abs_path.path);
+    IBaseAsset*       result   = m_AssetSet.find(rel_path);
 
-          result->setup(abs_path, String_length(m_RootPath), uuid.as_number);
-
-          m_AssetSet.insert(result);
-        }
-      }
-      else
-      {
-        bfLogWarn("[Assets::loadAsset] Failed to find extenstion handler for \"%.*s\".",
-                  int(abs_path.length()),
-                  abs_path.begin());
-      }
+    if (!result && load_option == AssetFindOption::TRY_LOAD_ASSET)
+    {
+      result = loadAsset(abs_path.path);
     }
 
     return result;
   }
 
-  BaseAssetInfo* Assets::findAssetInfo(const bfUUID& uuid)
+  IBaseAsset* Assets::findAsset(RelPath rel_path, AssetFindOption load_option)
   {
-    const auto it = m_AssetMap.find(uuid);
+    IBaseAsset* result = m_AssetSet.find(rel_path.path);
 
-    if (it != m_AssetMap.end())
+    if (!result && load_option == AssetFindOption::TRY_LOAD_ASSET)
     {
-      return it->value();
+      const String abs_path = relPathToAbsPath(rel_path.path);
+
+      result = loadAsset(abs_path);
     }
 
-    return nullptr;
+    return result;
   }
 
-  bool Assets::tryAssignHandle(BaseAssetHandle& handle, BaseAssetInfo* info) const
+  IBaseAsset* Assets::loadAsset(const StringRange& abs_path)
   {
-    if (info && isHandleCompatible(handle, info))
+    assert(!path::startWith(abs_path, path::k_SubAssetsRoot));
+
+    LinearAllocator&     alloc     = m_Engine.tempMemory();
+    LinearAllocatorScope scope     = {alloc};
+    const String         meta_path = absPathToMetaPath(abs_path);
+    AssetMetaInfo* const meta_info = loadMetaInfo(alloc, meta_path);
+    IBaseAsset*          result;
+
+    if (meta_info)
     {
-      handle = makeHandle(*info);
-      return true;
+      result = createAssetFromPath(abs_path, meta_info->uuid);
+    }
+    else
+    {
+      // If we could not find meta file then mark asset as dirty to be saved later.
+
+      result = createAssetFromPath(abs_path);
+
+      if (result)
+      {
+        markDirty(result);
+      }
     }
 
-    return false;
-  }
-
-  BaseAssetHandle Assets::makeHandle(BaseAssetInfo& info) const
-  {
-    return BaseAssetHandle(m_Engine, &info, info.payloadType());
-  }
-
-  char* Assets::metaFileName(IMemoryManager& allocator, StringRange relative_path, std::size_t& out_string_length) const
-  {
-    char* const buffer     = string_utils::fmtAlloc(allocator, &out_string_length, "%.*s%s", int(relative_path.length()), relative_path.begin(), META_FILE_EXTENSION);
-    char* const buffer_end = buffer + out_string_length;
-
-    std::transform(buffer, buffer_end, buffer, [](const char character) {
-      return character == '/' ? '.' : character;
-    });
-
-    return buffer;
-  }
-
-  TempBuffer Assets::metaFullPath(IMemoryManager& allocator, StringRange meta_file_name) const
-  {
-    std::size_t buffer_size;
-    char*       buffer = string_utils::fmtAlloc(allocator, &buffer_size, "%s/%s/%.*s", String_cstr(m_RootPath), META_PATH_NAME, meta_file_name.length(), meta_file_name.bgn);
-
-    return {allocator, buffer, buffer_size};
-  }
-
-  void Assets::loadMeta(StringRange meta_file_name)
-  {
-    char             path_buffer[path::MAX_LENGTH];
-    LinearAllocator  alloc_path{path_buffer, sizeof(path_buffer)};
-    NoFreeAllocator  alloc_path_adapter{alloc_path};
-    const TempBuffer meta_file_path = metaFullPath(alloc_path_adapter, meta_file_name);
-
-    File project_file{meta_file_path.buffer(), file::FILE_MODE_READ};
-
-    if (project_file)
+    if (result)
     {
-      std::size_t buffer_size;
-      char*       buffer = project_file.readAll(m_Memory, buffer_size);
+      m_AssetSet.insert(result);
+    }
 
-      json::Value loaded_data = json::fromString(buffer, buffer_size);
+    return result;
+  }
 
-      m_Memory.deallocate(buffer, buffer_size);
+  void Assets::markDirty(IBaseAsset* asset)
+  {
+    // TODO(SR): This is not super thread safe, a CAS would be needed.
+    //   THis is because multiple threads can pass the check at the same time
+    //   before the first thread is able to set the flag to true.
 
-      JsonSerializerReader reader{*this, m_Memory, loaded_data};
+    if (!(asset->m_Flags & AssetFlags::IS_DIRTY))
+    {
+      asset->m_Flags |= AssetFlags::IS_DIRTY;
+      m_DirtyAssets.pushBack(*asset);
+    }
+  }
+
+  AssetMetaInfo* Assets::loadMetaInfo(LinearAllocator& temp_allocator, StringRange abs_path_to_meta_file)
+  {
+    AssetMetaInfo* result = nullptr;
+
+    File meta_file_in{abs_path_to_meta_file, file::FILE_MODE_READ};
+
+    if (meta_file_in)
+    {
+      const BufferLen      json_data_str = meta_file_in.readEntireFile(temp_allocator);
+      json::Value          json_value    = json::fromString(json_data_str.buffer, json_data_str.length);
+      JsonSerializerReader reader        = {*this, temp_allocator, json_value};
 
       if (reader.beginDocument(false))
       {
-        readMetaInfo(reader);
+        result = temp_allocator.allocateT<AssetMetaInfo>();
 
+        result->serialize(temp_allocator, reader);
         reader.endDocument();
       }
-
-      project_file.close();
     }
+
+    return result;
   }
 
   AssetError Assets::setRootPath(std::string_view path)
@@ -379,49 +366,31 @@ namespace bf
     const std::size_t new_root_path_length = file::canonicalizePath(m_RootPath);
     String_resize(&m_RootPath, new_root_path_length);
 
-    m_MetaPath.clear();
-    m_MetaPath.append(m_RootPath, new_root_path_length);
-    m_MetaPath.append('/');
-    m_MetaPath.append(META_PATH_NAME, sizeof(META_PATH_NAME) - 1);
-
     return AssetError::NONE;
   }
 
   void Assets::setRootPath(std::nullptr_t)
   {
-    m_NameToGUID.clear();
-
-    // All top level assets must be destroyed first so that they can be removed from the lists.
-    for (const auto& entry : m_AssetMap)
-    {
-      if (!(entry.value()->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
+    // All top level assets must be destroyed first so that subassets can be removed from the lists.
+    m_AssetSet.forEach([this](IBaseAsset* asset) {
+      if (!asset->isSubAsset())
       {
-        m_Memory.deallocateT(entry.value());
+        m_Memory.deallocateT(asset);
       }
-    }
+    });
 
-    for (const auto& entry : m_AssetMap)
-    {
-      if ((entry.value()->m_Flags & AssetInfoFlags::IS_SUB_ASSET))
+    m_AssetSet.forEach([this](IBaseAsset* asset) {
+      if (asset->isSubAsset())
       {
-        m_Memory.deallocateT(entry.value());
+        m_Memory.deallocateT(asset);
       }
-    }
+    });
 
-    m_AssetMap.clear();
+    m_AssetSet.clear();
 
     if (m_RootPath)
     {
       String_clear(&m_RootPath);
-    }
-  }
-
-  void Assets::markDirty(const BaseAssetHandle& asset)
-  {
-    if (asset && !asset.info()->isDirty())
-    {
-      m_DirtyAssetList.push(asset);
-      asset.info()->setDirty(true);
     }
   }
 
@@ -447,35 +416,33 @@ namespace bf
     LinearAllocator& temp_alloc         = m_Engine.tempMemory();
     IMemoryManager&  temp_alloc_no_free = m_Engine.tempMemoryNoFree();
 
-    for (const auto& asset : m_DirtyAssetList)
+    for (auto& asset : m_DirtyAssets)
     {
-      saveAssetInfo(temp_alloc, temp_alloc_no_free, asset.info());
+      saveAssetInfo(temp_alloc, temp_alloc_no_free, &asset);
     }
 
     clearDirtyList();
   }
 
-  void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, BaseAssetInfo* info)
+  void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const
   {
-    const LinearAllocatorScope asset_mem_scope       = {temp_alloc};
-    std::size_t                meta_file_name_length = 0u;
-    char*                      meta_file_name        = metaFileName(temp_alloc_no_free, info->filePathRel(), meta_file_name_length);
-    const TempBuffer           meta_file_path        = metaFullPath(temp_alloc_no_free, {meta_file_name, meta_file_name + meta_file_name_length});
+    const LinearAllocatorScope asset_mem_scope = {temp_alloc};
+    const String&              full_path       = asset->fullPath();
+    const String               meta_file_path  = absPathToMetaPath(asset->fullPath());
 
     // Save Engine Asset
+
+    if (asset->m_Flags & AssetFlags::IS_ENGINE_ASSET)
     {
       const LinearAllocatorScope json_writer_scope = {temp_alloc};
       JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
 
       if (json_writer.beginDocument(false))
       {
-        const bool is_engine_asset = info->save(m_Engine, json_writer);
+        asset->saveAssetContent(json_writer);
         json_writer.endDocument();
 
-        if (is_engine_asset)
-        {
-          writeJsonToFile(info->filePathAbs(), json_writer.document());
-        }
+        writeJsonToFile(full_path, json_writer.document());
       }
     }
 
@@ -483,32 +450,34 @@ namespace bf
     {
       const LinearAllocatorScope json_writer_scope = {temp_alloc};
       JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+      AssetMetaInfo* const       meta_info         = asset->generateMetaInfo(temp_alloc);
 
-      if (json_writer.beginDocument(false))
+      if (meta_info)
       {
-        writeMetaInfo(json_writer, info);
-        json_writer.endDocument();
+        if (json_writer.beginDocument(false))
+        {
+          meta_info->serialize(temp_alloc, json_writer);
+          json_writer.endDocument();
 
-        writeJsonToFile({meta_file_path.buffer(), meta_file_path.size()}, json_writer.document());
+          writeJsonToFile(meta_file_path, json_writer.document());
+        }
       }
     }
   }
 
-  void Assets::saveAssetInfo(Engine& engine, BaseAssetInfo* info)
+  void Assets::saveAssetInfo(Engine& engine, IBaseAsset* asset) const
   {
-    saveAssetInfo(engine.tempMemory(), engine.tempMemoryNoFree(), info);
+    saveAssetInfo(engine.tempMemory(), engine.tempMemoryNoFree(), asset);
   }
 
   void Assets::clearDirtyList()
   {
-    for (const auto& asset : m_DirtyAssetList)
+    for (auto& asset : m_DirtyAssets)
     {
-      BaseAssetInfo* const info = asset.info();
-
-      info->setDirty(false);
+      asset.m_Flags &= ~AssetFlags::IS_DIRTY;
     }
 
-    m_DirtyAssetList.clear();
+    m_DirtyAssets.clear();
   }
 
   String Assets::relPathToAbsPath(const StringRange& rel_path) const
@@ -521,6 +490,30 @@ namespace bf
     return path::relative(m_RootPath, abs_path);
   }
 
+  String Assets::absPathToMetaPath(const StringRange& abs_path) const
+  {
+    const String resolved_path = resolvePath(abs_path);
+
+    return path::append(resolved_path, k_MetaFileExtension);
+  }
+
+  String Assets::resolvePath(const StringRange& abs_or_asset_path) const
+  {
+    String result;
+
+    if (path::startWith(abs_or_asset_path, path::k_AssetsRoot))
+    {
+      result = path::append({m_RootPath, String_length(m_RootPath)},
+                            {abs_or_asset_path.begin() + path::k_AssetsRoot.length(), abs_or_asset_path.end()});
+    }
+    else
+    {
+      result = abs_or_asset_path;
+    }
+
+    return result;
+  }
+
   Assets::~Assets()
   {
     if (m_RootPath)
@@ -529,138 +522,39 @@ namespace bf
     }
   }
 
-  std::tuple<bfUUID, bool, BaseAssetInfo*> Assets::indexAssetImpl(const StringRange abs_path)
+  IBaseAsset* Assets::createAssetFromPath(StringRange path, const bfUUIDNumber& uuid)
   {
-    const StringRange relative_path = path::relative(m_RootPath, abs_path);
-    const auto        it_name       = m_NameToGUID.find(relative_path);
+    const StringRange file_ext = path::extensionEx(path);
+    IBaseAsset*       result   = nullptr;
 
-    if (it_name != m_NameToGUID.end())
+    if (file_ext.length() > 0)
     {
-      const auto it_asset = m_AssetMap.find(it_name->value());
+      const auto ext_handle = m_FileExtReg.find(file_ext);
 
-      if (it_asset != m_AssetMap.end())
+      if (ext_handle != m_FileExtReg.end())
       {
-        return {it_name->value(), false, it_asset->value()};
+        result = ext_handle->value()(m_Memory, m_Engine);
+
+        if (result)
+        {
+          const bool is_sub_asset = path::startWith(path, path::k_SubAssetsRoot);
+
+          result->setup(path, is_sub_asset ? 0 : String_length(m_RootPath), uuid, *this);
+        }
+      }
+      else
+      {
+        bfLogWarn("[Assets::loadAsset] Failed to find extension handler for \"%.*s\".", int(path.length()), path.begin());
       }
     }
 
+    return result;
+  }
+
+  IBaseAsset* Assets::createAssetFromPath(StringRange path)
+  {
     const bfUUID uuid = bfUUID_generate();
 
-    m_NameToGUID.emplace(relative_path, uuid);
-
-    return {uuid, true, nullptr};
-  }
-
-  BaseAssetInfo* Assets::findSubAssetFrom(BaseAssetInfo* parent_asset, StringRange sub_asset_name_path)
-  {
-    for (auto& sub_asset : parent_asset->m_SubAssets)
-    {
-      if (sub_asset.filePathAbs() == sub_asset_name_path)
-      {
-        return &sub_asset;
-      }
-    }
-
-    return nullptr;
-  }
-
-  void Assets::addSubAssetTo(BaseAssetInfo* parent_asset, BaseAssetInfo* child_asset)
-  {
-    parent_asset->addSubAsset(child_asset);
-  }
-
-  void Assets::writeMetaInfo(JsonSerializerWriter& json_writer, BaseAssetInfo* info)
-  {
-    info->serialize(m_Engine, json_writer);
-
-    String type_info_name = {info->m_TypeInfo->name().data(), info->m_TypeInfo->name().size()};
-    String path_as_str    = info->filePathRel();
-
-    json_writer.serialize("Path", path_as_str);
-    json_writer.serialize("UUID", const_cast<bfUUID&>(info->uuid()));
-    json_writer.serialize("Type", type_info_name);
-
-    std::size_t num_sub_assets;
-
-    if (json_writer.pushArray("m_SubAssets", num_sub_assets))
-    {
-      for (BaseAssetInfo& sub_asset : info->m_SubAssets)
-      {
-        if (json_writer.pushObject(nullptr))
-        {
-          writeMetaInfo(json_writer, &sub_asset);
-
-          json_writer.popObject();
-        }
-      }
-
-      json_writer.popArray();
-    }
-  }
-
-  BaseAssetInfo* Assets::readMetaInfo(JsonSerializerReader& reader, bool is_sub_asset)
-  {
-    String rel_path;
-    String uuid_str;
-    String type;
-
-    reader.serialize("Path", rel_path);
-    reader.serialize("UUID", uuid_str);
-    reader.serialize("Type", type);
-
-    meta::BaseClassMetaInfo* type_info = meta::TypeInfoFromName(std::string_view{type.begin(), type.length()});
-
-    if (!type_info || uuid_str.isEmpty())
-    {
-      std::printf("[Assets::loadMeta]: WARNING could not find asset datatype: %s\n", type.c_str());
-      return nullptr;
-    }
-
-    bfUUID uuid = bfUUID_fromString(uuid_str.c_str());
-
-    if (bfUUID_isEmpty(&uuid))
-    {
-      std::printf("[Assets::loadMeta]: WARNING failed to load UUID.");
-      return nullptr;
-    }
-
-    const String            abs_path         = is_sub_asset ? rel_path : relPathToAbsPath(rel_path);
-    const std::size_t       root_path_length = is_sub_asset ? 0u : String_length(m_RootPath);
-    const meta::MetaVariant asset_handle     = type_info->instantiate(m_Memory, abs_path, root_path_length, uuid);
-    BaseAssetInfo*          asset_handle_p   = meta::variantToCompatibleT<BaseAssetInfo*>(asset_handle);
-
-    if (asset_handle_p)
-    {
-      asset_handle_p->m_TypeInfo = type_info;
-
-      asset_handle_p->serialize(m_Engine, reader);
-
-      m_AssetMap.emplace(uuid, asset_handle_p);
-      m_NameToGUID.emplace(rel_path, uuid);
-
-      std::size_t num_sub_assets = 0u;
-
-      if (reader.pushArray("m_SubAssets", num_sub_assets))
-      {
-        for (std::size_t i = 0; i < num_sub_assets; ++i)
-        {
-          if (reader.pushObject(nullptr))
-          {
-            BaseAssetInfo* const sub_asset = readMetaInfo(reader, true);
-
-            if (sub_asset)
-            {
-              asset_handle_p->addSubAsset(sub_asset);
-            }
-
-            reader.popObject();
-          }
-        }
-
-        reader.popArray();
-      }
-    }
-
-    return asset_handle_p;
+    return createAssetFromPath(path, uuid.as_number);
   }
 }  // namespace bf

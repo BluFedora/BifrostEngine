@@ -295,14 +295,14 @@ namespace bf
         AssetIndexType num_vertices = 0;
         AssetIndexType num_indices  = 0;
 
-        result.mesh_list = detail::makeUniqueTempArray<AssetMeshPrototype>(memory, num_meshes);
+        result.mesh_list = detail::makeUniqueTempArray<Mesh>(memory, num_meshes);
 
         for (unsigned int i = 0; i < num_meshes; ++i)
         {
-          const aiMesh* const       mesh              = scene->mMeshes[i];
-          AssetMeshPrototype* const mesh_proto        = result.mesh_list->data + i;
-          const unsigned int        num_mesh_vertices = mesh->mNumVertices;
-          const AssetIndexType      num_mesh_indices  = mesh->mNumFaces * k_NumIndicesPerFace;
+          const aiMesh* const  mesh              = scene->mMeshes[i];
+          Mesh* const          mesh_proto        = result.mesh_list->data + i;
+          const unsigned int   num_mesh_vertices = mesh->mNumVertices;
+          const AssetIndexType num_mesh_indices  = mesh->mNumFaces * k_NumIndicesPerFace;
 
           if (!(mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE))
           {
@@ -312,9 +312,9 @@ namespace bf
           assert((k_MaxUint32 - num_vertices) >= num_mesh_vertices && "Model has too many vertices.");
           assert((k_MaxUint32 - num_indices) >= num_mesh_indices && "Model has too many indices.");
 
-          mesh_proto->index_offset   = num_indices;
-          mesh_proto->num_indices    = num_mesh_indices;
-          mesh_proto->material_index = mesh->mMaterialIndex;
+          mesh_proto->index_offset = num_indices;
+          mesh_proto->num_indices  = num_mesh_indices;
+          mesh_proto->material_idx = mesh->mMaterialIndex;
 
           num_vertices += num_mesh_vertices;
           num_indices += num_mesh_indices;
@@ -332,11 +332,11 @@ namespace bf
 
         for (unsigned int i = 0; i < num_meshes; ++i)
         {
-          const aiMesh* const       mesh              = scene->mMeshes[i];
-          AssetMeshPrototype* const mesh_proto        = result.mesh_list->data + i;
-          const unsigned int        num_mesh_vertices = mesh->mNumVertices;
-          const unsigned int        num_mesh_faces    = mesh->mNumFaces;
-          const AssetIndexType      num_mesh_indices  = num_mesh_faces * k_NumIndicesPerFace;
+          const aiMesh* const  mesh              = scene->mMeshes[i];
+          Mesh* const          mesh_proto        = result.mesh_list->data + i;
+          const unsigned int   num_mesh_vertices = mesh->mNumVertices;
+          const unsigned int   num_mesh_faces    = mesh->mNumFaces;
+          const AssetIndexType num_mesh_indices  = num_mesh_faces * k_NumIndicesPerFace;
 
           if (!(mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE))
           {

@@ -14,9 +14,9 @@
 #ifndef BF_RENDERER_COMPONENT_HPP
 #define BF_RENDERER_COMPONENT_HPP
 
+#include "bf/asset_io/bf_gfx_assets.hpp"
 #include "bf/asset_io/bf_spritesheet_asset.hpp"  // bfSpritesheet, bfAnim2DSpriteHandle
 #include "bf/ecs/bf_base_component.hpp"          /* BaseComponent       */
-#include "bf/asset_io/bifrost_material.hpp" /* AssetMaterialHandle */
 
 namespace bf
 {
@@ -25,8 +25,8 @@ namespace bf
     BF_META_FRIEND;
 
    private:
-    AssetMaterialHandle m_Material;   // TODO(SR): Needs to be an array.
-    AssetModelHandle    m_Model;
+    ARC<MaterialAsset> m_Material;  // TODO(SR): Needs to be an array.
+    ARC<ModelAsset>    m_Model;
 
    public:
     explicit MeshRenderer(Entity& owner) :
@@ -36,19 +36,30 @@ namespace bf
     {
     }
 
-    AssetMaterialHandle& material() { return m_Material; }
-    AssetModelHandle&    model() { return m_Model; }
+    ARC<MaterialAsset>& material() { return m_Material; }
+    ARC<ModelAsset>&    model() { return m_Model; }
   };
+
+  BIFROST_META_REGISTER(bf::MeshRenderer)
+  {
+    BIFROST_META_BEGIN()
+      BIFROST_META_MEMBERS(
+       class_info<MeshRenderer>("MeshRenderer"),                    //
+       field<IARCHandle>("m_Material", &MeshRenderer::m_Material),  //
+       field<IARCHandle>("m_Model", &MeshRenderer::m_Model)         //
+      )
+    BIFROST_META_END()
+  }
 
   class SkinnedMeshRenderer : public Component<MeshRenderer>
   {
     BF_META_FRIEND;
 
    public:
-    AssetMaterialHandle    m_Material;  // TODO(SR): Needs to be an array.
-    AssetModelHandle       m_Model;
-    AssetAnimation3DHandle m_Animation;
-    AnimationTimeType      m_CurrentTime;
+    ARC<MaterialAsset> m_Material;  // TODO(SR): Needs to be an array.
+    ARC<ModelAsset>    m_Model;
+    ARC<Anim3DAsset>   m_Animation;
+    AnimationTimeType  m_CurrentTime;
 
    public:
     explicit SkinnedMeshRenderer(Entity& owner) :
@@ -60,9 +71,21 @@ namespace bf
     {
     }
 
-    AssetMaterialHandle& material() { return m_Material; }
-    AssetModelHandle&    model() { return m_Model; }
+    ARC<MaterialAsset>& material() { return m_Material; }
+    ARC<ModelAsset>&    model() { return m_Model; }
   };
+
+  BIFROST_META_REGISTER(bf::SkinnedMeshRenderer)
+  {
+    BIFROST_META_BEGIN()
+      BIFROST_META_MEMBERS(
+       class_info<MeshRenderer>("SkinnedMeshRenderer"),                      //
+       field<IARCHandle>("m_Material", &SkinnedMeshRenderer::m_Material),    //
+       field<IARCHandle>("m_Animation", &SkinnedMeshRenderer::m_Animation),  //
+       field<IARCHandle>("m_Model", &SkinnedMeshRenderer::m_Model)           //
+      )
+    BIFROST_META_END()
+  }
 
   using SpriteRendererFlags = std::uint8_t;
 
@@ -76,7 +99,7 @@ namespace bf
     static constexpr SpriteRendererFlags FLAG_FLIP_Y  = bfBit(1);
 
    private:
-    AssetMaterialHandle m_Material;
+    ARC<MaterialAsset>  m_Material;
     Vector2f            m_Size;
     Rect2f              m_UVRect;
     bfColor4u           m_Color;
@@ -93,7 +116,7 @@ namespace bf
     {
     }
 
-    AssetMaterialHandle& material() { return m_Material; }
+    ARC<MaterialAsset>&  material() { return m_Material; }
     Vector2f&            size() { return m_Size; }
     Rect2f&              uvRect() { return m_UVRect; }
     bfColor4u&           color() { return m_Color; }
@@ -102,14 +125,28 @@ namespace bf
     void onEnable(Engine& engine);
   };
 
+  BIFROST_META_REGISTER(bf::SpriteRenderer)
+  {
+    BIFROST_META_BEGIN()
+      BIFROST_META_MEMBERS(
+       class_info<SpriteRenderer>("SpriteRenderer"),                  //
+       field<IARCHandle>("m_Material", &SpriteRenderer::m_Material),  //
+       field("m_Size", &SpriteRenderer::m_Size),                      //
+       field("m_UVRect", &SpriteRenderer::m_UVRect),                  //
+       field("m_Color", &SpriteRenderer::m_Color),                    //
+       field("m_Flags", &SpriteRenderer::m_Flags)                     //
+      )
+    BIFROST_META_END()
+  }
+
   class SpriteAnimator : public Component<SpriteAnimator>
   {
     BF_META_FRIEND;
     friend class AnimationSystem;
 
    private:
-    AssetSpritesheetHandle m_Spritesheet;
-    bfAnim2DSpriteHandle   m_SpriteHandle;
+    ARC<SpritesheetAsset> m_Spritesheet;
+    bfAnim2DSpriteHandle  m_SpriteHandle;
 
    public:
     explicit SpriteAnimator(Entity& owner) :
@@ -119,12 +156,22 @@ namespace bf
     {
     }
 
-    AssetSpritesheetHandle spritesheet() const { return m_Spritesheet; }
-    bfAnim2DSpriteHandle   animatedSprite() const { return m_SpriteHandle; }
+    ARC<SpritesheetAsset> spritesheet() const { return m_Spritesheet; }
+    bfAnim2DSpriteHandle  animatedSprite() const { return m_SpriteHandle; }
 
     void onEnable(Engine& engine);
     void onDisable(Engine& engine);
   };
+
+  BIFROST_META_REGISTER(bf::SpriteAnimator)
+  {
+    BIFROST_META_BEGIN()
+      BIFROST_META_MEMBERS(
+       class_info<SpriteAnimator>("SpriteAnimator"),                       //
+       field<IARCHandle>("m_Spritesheet", &SpriteAnimator::m_Spritesheet)  //
+      )
+    BIFROST_META_END()
+  }
 
   using ParticleEmitterFlags = std::uint8_t;
 
@@ -137,7 +184,7 @@ namespace bf
     static constexpr ParticleEmitterFlags FLAG_DEFAULT    = FLAG_IS_PLAYING;
 
    private:
-    AssetMaterialHandle  m_Material;
+    ARC<MaterialAsset>   m_Material;
     Vector2f             m_Size;
     Rect2f               m_UVRect;
     bfColor4f            m_Color;
@@ -157,46 +204,5 @@ namespace bf
     }
   };
 }  // namespace bf
-
-BIFROST_META_REGISTER(bf::MeshRenderer){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<MeshRenderer>("MeshRenderer"),                         //
-   field<BaseAssetHandle>("m_Material", &MeshRenderer::m_Material),  //
-   field<BaseAssetHandle>("m_Model", &MeshRenderer::m_Model)         //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::SkinnedMeshRenderer){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<MeshRenderer>("SkinnedMeshRenderer"),                         //
-   field<BaseAssetHandle>("m_Material", &SkinnedMeshRenderer::m_Material),  //
-   field<BaseAssetHandle>("m_Animation", &SkinnedMeshRenderer::m_Animation),  //
-   field<BaseAssetHandle>("m_Model", &SkinnedMeshRenderer::m_Model)         //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::SpriteRenderer){
- BIFROST_META_BEGIN()
-  BIFROST_META_MEMBERS(
-   class_info<SpriteRenderer>("SpriteRenderer"),                       //
-   field<BaseAssetHandle>("m_Material", &SpriteRenderer::m_Material),  //
-   field("m_Size", &SpriteRenderer::m_Size),                           //
-   field("m_UVRect", &SpriteRenderer::m_UVRect),                       //
-   field("m_Color", &SpriteRenderer::m_Color),                         //
-   field("m_Flags", &SpriteRenderer::m_Flags)                          //
-   )
-   BIFROST_META_END()}
-
-BIFROST_META_REGISTER(bf::SpriteAnimator)
-{
-  BIFROST_META_BEGIN()
-    BIFROST_META_MEMBERS(
-     class_info<SpriteAnimator>("SpriteAnimator"),                            //
-     field<BaseAssetHandle>("m_Spritesheet", &SpriteAnimator::m_Spritesheet)  //
-    )
-  BIFROST_META_END()
-}
 
 #endif /* BF_RENDERER_COMPONENT_HPP */

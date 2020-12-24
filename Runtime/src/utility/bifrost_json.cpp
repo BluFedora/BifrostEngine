@@ -83,7 +83,7 @@ namespace bf::json
 
     bfJsonParser_fromString(
      source, source_length, [](bfJsonParserContext* ctx, bfJsonEvent event, void* user_data) {
-       Context* user_context = static_cast<Context*>(user_data);
+       Context* const user_context = static_cast<Context*>(user_data);
 
        switch (event)
        {

@@ -1,21 +1,15 @@
-/*!
- * @file   bifrost_script.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
- * @brief
- *
- * @version 0.0.1
- * @date    2020-07-08
- *
- * @copyright Copyright (c) 2020
- */
-#include "bf/asset_io/bifrost_script.hpp"
+#if 0
 
+#include "bf/core/bifrost_base_object.hpp"      /* BaseObject            */
+#include "bifrost/bifrost_vm.hpp"               /* VMView, bfValueHandle */
 #include "bf/asset_io/bifrost_file.hpp" /* File   */
 #include "bf/core/bifrost_engine.hpp"   /* Engine */
 #include "bifrost/bifrost_vm.hpp"       /* VMView */
+#endif
 
 namespace bf
 {
+#if 0
   Script::Script(bfValueHandle module_handle) :
     m_ModuleHandle{module_handle}
   {
@@ -55,4 +49,5 @@ namespace bf
   {
     engine.scripting().stackDestroyHandle(payloadT()->m_ModuleHandle);
   }
+#endif
 }  // namespace bf
