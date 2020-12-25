@@ -238,6 +238,10 @@ namespace bf
 
       m_Memory.deallocate(m_Channels, m_NumChannels * sizeof(Channel));
     }
+
+  private:
+    void onLoad() override;
+    void onUnload() override;
   };
 
   // TODO(SR): This should be declared in a better place.

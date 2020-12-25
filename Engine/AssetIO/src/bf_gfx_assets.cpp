@@ -13,7 +13,6 @@
 /******************************************************************************/
 #include "bf/asset_io/bf_gfx_assets.hpp"
 
-// #include "../../Runtime/include/bf/Engine.hpp"
 #include "bf/asset_io/bf_model_loader.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
@@ -27,7 +26,7 @@ namespace bf
   // TODO(SR): This is copied from "bifrost_standard_renderer.cpp"
   static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
 
-    // TODO(SR): We dont want this.
+  // TODO(SR): We dont want this.
   LinearAllocator& ENGINE_TEMP_MEM(Engine& engine);
   IMemoryManager&  ENGINE_TEMP_MEM_NO_FREE(Engine& engine);
 
@@ -109,6 +108,8 @@ namespace bf
       {
         reflect(reader);
         reader.endDocument();
+
+        markIsLoaded();
       }
       else
       {
@@ -129,6 +130,13 @@ namespace bf
     m_RoughnessTexture        = nullptr;
     m_AmbientOcclusionTexture = nullptr;
   }
+
+  void Anim3DAsset::onLoad()
+  {
+    markIsLoaded();
+  }
+
+  void Anim3DAsset::onUnload() { }
 
   ModelAsset::ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device) :
     m_GraphicsDevice{device},
@@ -219,12 +227,12 @@ namespace bf
 
   void ModelAsset::onLoad()
   {
-    Engine&                 engine        = assets().engine();
-    LinearAllocatorScope    mem_scope0    = ENGINE_TEMP_MEM(engine);
-    auto&                   no_free_alloc = ENGINE_TEMP_MEM_NO_FREE(engine);
-    const String&           full_path     = fullPath();
-    const StringRange       file_dir      = path::directory(full_path);
-    AssetModelLoadResult    model_result  = loadModel(AssetModelLoadSettings(full_path, no_free_alloc));
+    Engine&              engine        = assets().engine();
+    LinearAllocatorScope mem_scope0    = ENGINE_TEMP_MEM(engine);
+    auto&                no_free_alloc = ENGINE_TEMP_MEM_NO_FREE(engine);
+    const String&        full_path     = fullPath();
+    const StringRange    file_dir      = path::directory(full_path);
+    AssetModelLoadResult model_result  = loadModel(AssetModelLoadSettings(full_path, no_free_alloc));
 
     if (model_result)
     {
@@ -332,8 +340,7 @@ namespace bf
        model_result.mesh_list->end(),
        [this](const Mesh& mesh_proto) {
          m_Meshes.push(
-          Mesh{mesh_proto.index_offset, mesh_proto.num_indices, mesh_proto.material_idx}
-         );
+          Mesh{mesh_proto.index_offset, mesh_proto.num_indices, mesh_proto.material_idx});
        });
 
       /// Vertex / Index Buffer Marshalling
@@ -417,6 +424,8 @@ namespace bf
 
       bfBuffer_flushRange(m_VertexBoneData, 0, k_bfBufferWholeSize);
       bfBuffer_unMap(m_VertexBoneData);
+
+      markIsLoaded();
     }
     else
     {

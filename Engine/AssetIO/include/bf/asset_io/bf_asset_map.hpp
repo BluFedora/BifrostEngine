@@ -47,7 +47,7 @@ namespace bf
     {
       IBaseAsset* value = nullptr;
 
-      bool is_active() const { return value != nullptr && !is_tombstone(); }
+      bool is_active() const { return !is_inactive() && !is_tombstone(); }
       bool is_tombstone() const { return value == reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel); }
       bool is_inactive() const { return value == nullptr; }
     };
@@ -82,6 +82,11 @@ namespace bf
     ~AssetMap()
     {
       m_Memory.deallocateArray(m_Assets);
+    }
+
+    bool isEmpty() const
+    {
+      return m_NumAssets == 0;
     }
 
     void clear()
@@ -136,13 +141,54 @@ namespace bf
     template<typename F>
     void forEach(F&& callback) const
     {
+      std::size_t num_evaluated_nodes = 0;
+
       for (std::size_t i = 0; i < m_AssetsCapacity; ++i)
       {
         if (m_Assets[i].is_active())
         {
           callback(m_Assets[i].value);
+
+          if (++num_evaluated_nodes == m_NumAssets)
+          {
+            break;
+          }
         }
       }
+    }
+
+    template<typename F, typename Callback>
+    bool removeIf(F&& predicate, Callback&& on_removal)
+    {
+      bool removed_any = false;
+
+      if (!isEmpty())
+      {
+        std::size_t num_evaluated_nodes = 0;
+
+        for (std::size_t i = 0; i < m_AssetsCapacity; ++i)
+        {
+          if (m_Assets[i].is_active())
+          {
+            IBaseAsset* const asset = m_Assets[i].value;
+
+            if (predicate(asset))
+            {
+              removeAt(i);
+              on_removal(asset);
+
+              removed_any = true;
+            }
+
+            if (++num_evaluated_nodes == m_NumAssets)
+            {
+              break;
+            }
+          }
+        }
+      }
+
+      return removed_any;
     }
 
     bool remove(StringRange path)
@@ -151,19 +197,12 @@ namespace bf
 
       if (path_it != m_PathToAssetIndex.end())
       {
-        const FindResult find_result = findImpl(
+        return removeImpl(
          path_it->value(),
          path,
          [](const StringRange key, IBaseAsset* asset) {
            return key == asset->relativePath();
          });
-
-        if (find_result.item)
-        {
-          m_Assets[find_result.bucket_slot].value = reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel);
-
-          return true;
-        }
       }
 
       return false;
@@ -172,21 +211,12 @@ namespace bf
     // ReSharper disable once CppMemberFunctionMayBeConst
     bool remove(const bfUUIDNumber& uuid)
     {
-      const FindResult find_result = findImpl(
+      return removeImpl(
        hashUUID(uuid),
        uuid,
        [](const bfUUIDNumber& key, IBaseAsset* asset) {
          return UUIDEqual()(key, asset->uuid());
        });
-
-      if (find_result.item)
-      {
-        m_Assets[find_result.bucket_slot].value = reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel);
-
-        return true;
-      }
-
-      return false;
     }
 
     bool remove(const IBaseAsset* key)
@@ -195,6 +225,30 @@ namespace bf
     }
 
    private:
+    template<typename TKey, typename FCmp>
+    bool removeImpl(HashIndex start_index, TKey&& key, FCmp&& cmp)
+    {
+      const FindResult find_result = findImpl(start_index, std::forward<TKey>(key), std::forward<FCmp>(cmp));
+
+      if (find_result.item)
+      {
+        removeAt(find_result.bucket_slot);
+
+        return true;
+      }
+
+      return false;
+    }
+
+    void removeAt(HashIndex bucket_slot)
+    {
+      const IBaseAsset* const item = m_Assets[bucket_slot].value;
+
+      m_PathToAssetIndex.remove(item->relativePath());
+      m_Assets[bucket_slot].value = reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel);
+      --m_NumAssets;
+    }
+
     std::size_t findBucketFor(const bfUUIDNumber& uuid)
     {
       const std::size_t base_hash = hashUUID(uuid);
@@ -207,7 +261,7 @@ namespace bf
         if (!m_Assets[slot].is_active())
         {
           if (offset > m_MaxProbed)
-          { 
+          {
             m_MaxProbed = offset;
           }
 

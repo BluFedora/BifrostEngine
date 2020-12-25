@@ -86,6 +86,7 @@ namespace bf
 
    public:
     IBaseAsset();
+    ~IBaseAsset() override;
 
     // Accessors //
 
@@ -123,7 +124,7 @@ namespace bf
     // These have default implementations.
 
     virtual void onReload();                             // By Default calls "unload" then "load" but allows for subclasses to optimize the "reload" operation.
-    virtual void onSaveAsset(ISerializer & serializer);  // Called when the asset should save to the source asset file, default does nothing.
+    virtual void onSaveAsset(ISerializer & serializer);  // Called when the asset should save to the source asset file, default calls `IBaseObject::reflect`.
     virtual void onSaveMeta(ISerializer & serializer);   // Called to save some extra information in the meta file, default does nothing.
 
    protected:
@@ -138,7 +139,6 @@ namespace bf
     void markFailedToLoad()
     {
       m_Flags |= AssetFlags::FAILED_TO_LOAD;
-      m_RefCount = 0;
     }
 
     void markIsLoaded()

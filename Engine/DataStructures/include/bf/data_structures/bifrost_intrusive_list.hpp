@@ -179,6 +179,11 @@ namespace bf::intrusive
       return ListIterator<T>((node.*m_Link).prev, m_Link);
     }
 
+    ListIterator<T> erase(T& node)
+    {
+      return erase(makeIterator(node));
+    }
+
     ListIterator<T> erase(ListIterator<T> it)
     {
       it.m_Current->next                                                      = (it.m_Current->next->*m_Link).next;

@@ -20,6 +20,12 @@ namespace bf::editor
     if (!contains(object))
     {
       m_Selectables.push(object);
+
+      if (object.type() == Selectable::type_of<IBaseAsset*>())
+      {
+        object.as<IBaseAsset*>()->acquire();
+      }
+
       notifyOnChange();
     }
   }
@@ -30,6 +36,11 @@ namespace bf::editor
 
     if (find(object, index))
     {
+      if (object.type() == Selectable::type_of<IBaseAsset*>())
+      {
+        object.as<IBaseAsset*>()->release();
+      }
+
       m_Selectables.removeAt(index);
       notifyOnChange();
     }
@@ -39,6 +50,10 @@ namespace bf::editor
   {
     if (!m_Selectables.isEmpty())
     {
+      forEachOfType<IBaseAsset*>([](IBaseAsset* asset) {
+        asset->release();
+      });
+
       m_Selectables.clear();
       notifyOnChange();
     }

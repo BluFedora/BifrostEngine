@@ -1,0 +1,15 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "32637262-C0B6-4025-B4CE-876A5CED03F8",
+            "name" : "Material_#0",
+            "version" : 1
+        }
+    ],
+    "uuid" : "00DC1DD2-B19A-4F95-BF32-A31B7CC06D08",
+    "name" : "rhino",
+    "version" : 1
+}

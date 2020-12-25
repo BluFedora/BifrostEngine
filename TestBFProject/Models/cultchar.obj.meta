@@ -1,0 +1,23 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "4BE21365-FB64-496C-BAD2-4A50FBC5EC5E",
+            "name" : "Material_#0",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "599F3197-918E-45D5-B258-05C59B8613E3",
+            "name" : "Material_#1",
+            "version" : 1
+        }
+    ],
+    "uuid" : "9520344C-57C1-4FFB-87C3-7F729F14B81C",
+    "name" : "cultchar",
+    "version" : 1
+}

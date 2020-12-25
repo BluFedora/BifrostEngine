@@ -200,6 +200,7 @@ namespace bf
     // Misc
 
     EngineState m_State;
+    bool        m_IsInMiddleOfFrame;
 
    public:
     explicit Engine(char* main_memory, std::size_t main_memory_size, int argc = 0, char* argv[] = nullptr);

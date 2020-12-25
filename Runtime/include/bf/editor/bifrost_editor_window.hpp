@@ -31,7 +31,7 @@ namespace bf::editor
 {
   class EditorOverlay;
 
-  using Selectable = Variant<IBaseObject*, Entity*>;
+  using Selectable = Variant<IBaseAsset*, IBaseObject*, Entity*>;
 
   // TODO(SR):
   //   The title ID stuff could be more efficient since it assumes changing titles but most likely case is that the title string stays the same...
@@ -40,7 +40,7 @@ namespace bf::editor
   // This unique type ID system may not work across dll boundaries.
   // The solution works for me right now since I do not plan
   // on having EditorWindows across dlls but that would be a
-  // thing to remeber if I make a change to this system...
+  // thing to remember if I make a change to this system...
   //
 
   using EditorWindowID = int;

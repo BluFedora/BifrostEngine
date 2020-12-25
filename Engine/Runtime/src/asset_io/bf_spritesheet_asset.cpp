@@ -36,6 +36,8 @@ namespace bf
        json_buffer.size());
 
       m_Anim2DSpritesheet->user_data = this;
+
+      markIsLoaded();
     }
     else
     {

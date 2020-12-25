@@ -1,0 +1,23 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "07B3EB99-1A64-4B63-97B3-B377DB78CBAD",
+            "name" : "Material_#0",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "5F6366AC-2326-40A4-A04E-FDAB705BAA4C",
+            "name" : "Material_#1",
+            "version" : 1
+        }
+    ],
+    "uuid" : "8743D949-946A-475B-AFFF-3D87B07FC32D",
+    "name" : "cube",
+    "version" : 1
+}

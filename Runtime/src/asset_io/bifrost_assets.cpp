@@ -250,49 +250,17 @@ namespace bf
     return result;
   }
 
-  IBaseAsset* Assets::loadAsset(const StringRange& abs_path)
-  {
-    assert(!path::startWith(abs_path, path::k_SubAssetsRoot));
-
-    LinearAllocator&     alloc     = m_Engine.tempMemory();
-    LinearAllocatorScope scope     = {alloc};
-    const String         meta_path = absPathToMetaPath(abs_path);
-    AssetMetaInfo* const meta_info = loadMetaInfo(alloc, meta_path);
-    IBaseAsset*          result;
-
-    if (meta_info)
-    {
-      result = createAssetFromPath(abs_path, meta_info->uuid);
-    }
-    else
-    {
-      // If we could not find meta file then mark asset as dirty to be saved later.
-
-      result = createAssetFromPath(abs_path);
-
-      if (result)
-      {
-        markDirty(result);
-      }
-    }
-
-    if (result)
-    {
-      m_AssetSet.insert(result);
-    }
-
-    return result;
-  }
-
   void Assets::markDirty(IBaseAsset* asset)
   {
-    // TODO(SR): This is not super thread safe, a CAS would be needed.
+    // TODO(SR): This is not thread safe, a CAS would be needed.
     //   THis is because multiple threads can pass the check at the same time
     //   before the first thread is able to set the flag to true.
 
     if (!(asset->m_Flags & AssetFlags::IS_DIRTY))
     {
       asset->m_Flags |= AssetFlags::IS_DIRTY;
+      asset->acquire();
+
       m_DirtyAssets.pushBack(*asset);
     }
   }
@@ -305,9 +273,10 @@ namespace bf
 
     if (meta_file_in)
     {
+      IMemoryManager&      temp_no_free  = m_Engine.tempMemoryNoFree();
       const BufferLen      json_data_str = meta_file_in.readEntireFile(temp_allocator);
       json::Value          json_value    = json::fromString(json_data_str.buffer, json_data_str.length);
-      JsonSerializerReader reader        = {*this, temp_allocator, json_value};
+      JsonSerializerReader reader        = {*this, temp_no_free, json_value};
 
       if (reader.beginDocument(false))
       {
@@ -371,22 +340,53 @@ namespace bf
 
   void Assets::setRootPath(std::nullptr_t)
   {
-    // All top level assets must be destroyed first so that subassets can be removed from the lists.
-    m_AssetSet.forEach([this](IBaseAsset* asset) {
-      if (!asset->isSubAsset())
-      {
-        m_Memory.deallocateT(asset);
-      }
-    });
+    static constexpr std::int32_t k_MaxIterations = 20;
 
-    m_AssetSet.forEach([this](IBaseAsset* asset) {
-      if (asset->isSubAsset())
-      {
-        m_Memory.deallocateT(asset);
-      }
-    });
+    //
+    // This loops through each assets and frees any with a
+    // ref count of zero.
+    //
+    // The reason for this design is so that assets gets freed in order
+    // since assets can reference other assets.
+    //
+    // Loop Exit Conditions:
+    //  - (SUCCESS)            All assets have been freed.                        OR
+    //  - (SUCCESS OR FAILURE) No progress towards freeing assets have been made. OR
+    //  - (FAILURE)            The max iteration count has been hit.              OR
+    //
 
-    m_AssetSet.clear();
+    std::int32_t iteration_count = 0;
+    bool         has_made_progress;
+
+    do
+    {
+      has_made_progress = m_AssetSet.removeIf(
+       [](IBaseAsset* asset) {
+         return asset->refCount() == 0;
+       },
+       [this](IBaseAsset* asset) {
+         m_Memory.deallocateT(asset);
+       });
+
+      ++iteration_count;
+
+    } while (!m_AssetSet.isEmpty() && iteration_count < k_MaxIterations && has_made_progress);
+
+    // Log error and just leak the asset memory.
+    if (!m_AssetSet.isEmpty())
+    {
+      bfLogPush("Count not free all assets in %i iterations.", iteration_count);
+
+      m_AssetSet.forEach([this](IBaseAsset* asset) {
+        const StringRange name      = asset->fullPath();
+        const int         ref_count = asset->refCount();
+
+        bfLogWarn("[%.*s]: RefCount(%i).", int(name.length()), name.begin(), ref_count);
+      });
+      m_AssetSet.clear();
+
+      bfLogPop();
+    }
 
     if (m_RootPath)
     {
@@ -426,6 +426,11 @@ namespace bf
 
   void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const
   {
+    if (asset->isSubAsset())
+    {
+      return;
+    }
+
     const LinearAllocatorScope asset_mem_scope = {temp_alloc};
     const String&              full_path       = asset->fullPath();
     const String               meta_file_path  = absPathToMetaPath(asset->fullPath());
@@ -475,6 +480,7 @@ namespace bf
     for (auto& asset : m_DirtyAssets)
     {
       asset.m_Flags &= ~AssetFlags::IS_DIRTY;
+      asset.release();
     }
 
     m_DirtyAssets.clear();
@@ -494,7 +500,7 @@ namespace bf
   {
     const String resolved_path = resolvePath(abs_path);
 
-    return path::append(resolved_path, k_MetaFileExtension);
+    return resolved_path + k_MetaFileExtension;
   }
 
   String Assets::resolvePath(const StringRange& abs_or_asset_path) const
@@ -522,6 +528,35 @@ namespace bf
     }
   }
 
+  IBaseAsset* Assets::loadAsset(const StringRange& abs_path)
+  {
+    assert(!path::startWith(abs_path, path::k_SubAssetsRoot));
+
+    LinearAllocator&     alloc     = m_Engine.tempMemory();
+    LinearAllocatorScope scope     = {alloc};
+    const String         meta_path = absPathToMetaPath(abs_path);
+    AssetMetaInfo* const meta_info = loadMetaInfo(alloc, meta_path);
+    IBaseAsset*          result;
+
+    if (meta_info)
+    {
+      result = createAssetFromPath(abs_path, meta_info->uuid);
+    }
+    else
+    {
+      // If we could not find meta file then mark asset as dirty to be saved later.
+
+      result = createAssetFromPath(abs_path);
+
+      if (result)
+      {
+        markDirty(result);
+      }
+    }
+
+    return result;
+  }
+
   IBaseAsset* Assets::createAssetFromPath(StringRange path, const bfUUIDNumber& uuid)
   {
     const StringRange file_ext = path::extensionEx(path);
@@ -540,6 +575,11 @@ namespace bf
           const bool is_sub_asset = path::startWith(path, path::k_SubAssetsRoot);
 
           result->setup(path, is_sub_asset ? 0 : String_length(m_RootPath), uuid, *this);
+
+          if (result)
+          {
+            m_AssetSet.insert(result);
+          }
         }
       }
       else

@@ -1,0 +1,23 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "05070C12-A1B3-455C-A853-8C6E9F520450",
+            "name" : "Material_#0",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "4C6DABBB-7BE2-47EE-A27E-A018149D8565",
+            "name" : "Material_#1",
+            "version" : 1
+        }
+    ],
+    "uuid" : "B3D82F39-2CDF-49A0-9973-4894E54F1732",
+    "name" : "backpack",
+    "version" : 1
+}

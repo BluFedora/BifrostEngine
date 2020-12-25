@@ -107,6 +107,8 @@ namespace bf
     m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
+
+    markAsEngineAsset();
   }
 
   EntityRef Scene::addEntity(const StringRange& name)
@@ -252,7 +254,17 @@ namespace bf
         {
           reflect(json_writer);
           json_writer.endDocument();
+
+          markIsLoaded();
         }
+        else
+        {
+          markFailedToLoad();
+        }
+      }
+      else
+      {
+        markFailedToLoad();
       }
     }
     else

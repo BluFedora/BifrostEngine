@@ -121,12 +121,12 @@ namespace bf::string_utils
     }
   }
 
-  StringRange clone(IMemoryManager& allocator, const StringRange& string)
+  BufferLen clone(IMemoryManager& allocator, StringRange str)
   {
-    const std::size_t length = string.length();
+    const std::size_t length = str.length();
     char*             buffer = static_cast<char*>(allocator.allocate(length + 1));
 
-    std::strncpy(buffer, string.begin(), length);
+    std::strncpy(buffer, str.begin(), length);
     buffer[length] = '\0';
 
     return {buffer, length};

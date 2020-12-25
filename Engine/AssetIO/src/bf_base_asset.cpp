@@ -135,6 +135,21 @@ namespace bf
   {
   }
 
+  IBaseAsset::~IBaseAsset()
+  {
+    if (m_ParentAsset)
+    {
+      m_ParentAsset->m_SubAssets.erase(*this);
+    }
+
+    for (IBaseAsset& sub_asset : m_SubAssets)
+    {
+      sub_asset.m_ParentAsset = nullptr;
+    }
+
+    m_SubAssets.clear();
+  }
+
   StringRange IBaseAsset::name() const
   {
     return path::nameWithoutExtension(relativePath());
@@ -173,12 +188,14 @@ namespace bf
 
   void IBaseAsset::acquire()
   {
-    assert((m_Flags + 1) != 0 && "Unsigned overflow check, I suspect that we will never have more than 0xFFFF live references but just to be safe.");
+    assert((m_RefCount + 1) != 0 && "Unsigned overflow check, I suspect that we will never have more than 0xFFFF live references but just to be safe.");
+
+    const std::uint16_t old_ref_count = m_RefCount++;
 
     // Do not continuously try to load an asset that could not be loaded.
     if (!(m_Flags & AssetFlags::FAILED_TO_LOAD))
     {
-      if (m_RefCount++ == 0)  // The ref count WAS zero.
+      if (old_ref_count == 0)  // The ref count WAS zero.
       {
         assert((m_Flags & AssetFlags::IS_LOADED) == 0 && "If the ref count was zero then this asset should not have been loaded.");
 
@@ -211,7 +228,7 @@ namespace bf
   {
     assert(m_RefCount > 0 && "To many release calls for the number of successful acquire calls.");
 
-    if (--m_RefCount)  // This is the last use of this asset.
+    if (--m_RefCount == 0)  // This is the last use of this asset.
     {
       assert((m_Flags & (AssetFlags::IS_LOADED | AssetFlags::FAILED_TO_LOAD)) != 0 && "The asset should have been loaded (or atleast attempted) if we are now unloading it.");
 
@@ -243,7 +260,7 @@ namespace bf
     AssetMetaInfo* const result      = allocator.allocateT<AssetMetaInfo>();
     const StringRange    result_name = name();
 
-    result->name = {static_cast<char*>(allocator.allocate(result_name.length() + 1)), result_name.length()};
+    result->name = string_utils::clone(allocator, result_name);
     result->uuid = m_UUID;
 
     for (const IBaseAsset& sub_asset : m_SubAssets)
@@ -282,7 +299,7 @@ namespace bf
 
   void IBaseAsset::onSaveAsset(ISerializer& serializer)
   {
-    (void)serializer; /* NO-OP */
+    reflect(serializer);
   }
 
   void IBaseAsset::onSaveMeta(ISerializer& serializer)
@@ -316,7 +333,18 @@ namespace bf
 
     IBaseAsset* const result = assets().createAssetFromPath(sub_asset_path);
 
-    m_SubAssets.pushBack(*result);
+    if (result)
+    {
+      result->m_Flags |= AssetFlags::IS_SUBASSET;
+      result->m_ParentAsset = this;
+
+      // This parent keeps it's sub assets alive until destructor.
+      // result->acquire();
+
+      m_SubAssets.pushBack(*result);
+
+      assets().markDirty(result);
+    }
 
     return result;
   }

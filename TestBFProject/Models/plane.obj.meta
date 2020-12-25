@@ -1,0 +1,23 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "FCE1E143-784E-4499-9D42-4824E84AB471",
+            "name" : "Material_#0",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "C0613F5A-F6DD-4422-8A6C-33DA11454052",
+            "name" : "Material_#1",
+            "version" : 1
+        }
+    ],
+    "uuid" : "A0D3932E-5D19-4890-B090-ACCB2B0EC59D",
+    "name" : "plane",
+    "version" : 1
+}

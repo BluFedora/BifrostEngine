@@ -1,0 +1,23 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "A5413AC1-38DB-434B-8AAF-92DFB19DD267",
+            "name" : "Material_#0",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "93DE3E12-529D-4AD4-8329-EAB348D1AB00",
+            "name" : "Material_#1",
+            "version" : 1
+        }
+    ],
+    "uuid" : "70B64926-D2F4-44DE-903C-CE09926A9B92",
+    "name" : "sphere",
+    "version" : 1
+}

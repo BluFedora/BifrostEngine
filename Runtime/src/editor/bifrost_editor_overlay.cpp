@@ -131,7 +131,7 @@ class FixedLinearAllocator final
 };
 
 // clang-format off
-template<std::size_t Size, typename TAllocator = bf::FreeListAllocator>
+template<std::size_t Size, typename TAllocator = FreeListAllocator>
 class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<BlockAllocator<Size>>
 // clang-format on
 {
@@ -193,11 +193,16 @@ class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<Bloc
   {
     MemoryBlock* cursor = &m_SmallBacking;
 
+    const char* const ptr_char = static_cast<const char*>(ptr);
+
     while (cursor)
     {
-      if (cursor->memory_backing >= ptr && ptr < (cursor->memory_backing + Size))
+      const char* const cursor_bgn = cursor->memory_backing;
+      const char* const cursor_end = cursor->memory_backing + Size;
+
+      if (cursor_bgn <= ptr_char && ptr_char < cursor_end)
       {
-        cursor->allocator.deallocate(ptr);
+        cursor->allocator.deallocate(ptr, num_bytes);
         return;
       }
 
@@ -225,7 +230,7 @@ namespace bf::editor
 {
   using namespace intrusive;
 
-  static char              s_EditorMemoryBacking[bfKilobytes(16)];
+  static char              s_EditorMemoryBacking[bfMegabytes(16)];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
 
   IMemoryManager& allocator()
@@ -793,7 +798,7 @@ namespace bf::editor
 
       serializer.serializeT(sprite_animator);
 
-      ARC < SpritesheetAsset> sheet = sprite_animator->spritesheet();
+      ARC<SpritesheetAsset> sheet = sprite_animator->spritesheet();
 
       if (sheet)
       {
@@ -1290,51 +1295,9 @@ namespace bf::editor
         closeProject();
       }
 
-      const StringRange project_dir       = path::directory(path);
-      String            project_meta_path = project_dir;
-
-      project_meta_path.append("/");
-      project_meta_path.append("_meta");
-
-      const TempBuffer project_json_str = project_file.readAll(m_Engine->tempMemoryNoFree());
-
-#if 0
-      bfLogPush("Open This Project:");
-      bfLogPrint("Directory(%.*s)", int(project_dir.length()), project_dir.bgn);
-      bfLogPrint("%.*s", int(project_json_str.size()), project_json_str.buffer());
-      bfLogPop();
-#endif
-
-      const AssetError err = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
-
-      if (!path::doesExist(project_meta_path.cstr()) && !path::createDirectory(project_meta_path.cstr()))
-      {
-        bfLogWarn("Project does not have meta asset files. (%s)", project_meta_path.cstr());
-      }
-      else
-      {
-        FixedLinearAllocator<512> allocator;
-
-        if (path::DirectoryEntry* dir = path::openDirectory(allocator.memory(), project_meta_path))
-        {
-          do
-          {
-            const char* name = entryFilename(dir);
-
-            if (isFile(dir))
-            {
-              const StringRange file_ext = file::extensionOfFile(name);
-
-              if (file_ext != Assets::k_MetaFileExtension)
-              {
-                assets.loadAsset(bfMakeStringRangeC(name));
-              }
-            }
-          } while (readNextEntry(dir));
-
-          closeDirectory(dir);
-        }
-      }
+      const StringRange project_dir      = path::directory(path);
+      const TempBuffer  project_json_str = project_file.readAll(m_Engine->tempMemoryNoFree());
+      const AssetError  err              = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
 
       if (err == AssetError::NONE)
       {
@@ -1348,7 +1311,7 @@ namespace bf::editor
         {
           const auto& project_name_str = project_name->as<json::String>();
 
-          m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), path, project_dir, std::move(project_meta_path)));
+          m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), path, project_dir));
 
           assetRefresh();
           return true;
@@ -1405,8 +1368,9 @@ namespace bf::editor
 
     if (path::doesExist(path.cstr()))
     {
-      FixedLinearAllocator<8192> allocator;
-      List<MetaAssetPath>        metas_to_check{allocator};
+      Assets&              assets = m_Engine->assets();
+      BlockAllocator<8192> allocator{editor::allocator()};
+      List<MetaAssetPath>  metas_to_check{allocator};
 
       m_FileSystem.clear("Assets", path);
       assetFindAssets(metas_to_check, path, "", m_FileSystem, m_FileSystem.root());
@@ -1416,7 +1380,9 @@ namespace bf::editor
         const char* const relative_path_bgn = meta.file_name + path.length() + 1;
         const StringRange relative_path     = {relative_path_bgn, relative_path_bgn + std::strlen(relative_path_bgn)};
 
-        IBaseAsset* const asset = m_Engine->assets().loadAsset(meta.file_name);
+        file::canonicalizePath(meta.file_name, meta.file_name + std::strlen(meta.file_name));
+
+        IBaseAsset* const asset = assets.findAsset(AbsPath(meta.file_name));
 
         if (asset)
         {
@@ -1427,7 +1393,7 @@ namespace bf::editor
             bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
             bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
 
-            // meta.entry->asset_info = handler->handler(m_Engine->assets(), meta.file_name);
+            meta.entry->asset_info = asset;
           }
           bfLogPop();
         }
@@ -1534,9 +1500,9 @@ namespace bf::editor
     {
       do
       {
-        const char* name = entryFilename(dir);
+        const StringRange name = StringRange(entryFilename(dir));
 
-        if (name[0] != '.' && name[0] != '_')
+        if (!path::startWith(name, ".") && file::extensionOfFile(name) != Assets::k_MetaFileExtension)
         {
           const bool   is_directory = isDirectory(dir);
           const String full_path    = path + "/" + name;
@@ -1550,7 +1516,7 @@ namespace bf::editor
           {
             auto& m = metas.emplaceBack();
 
-            m.file_name = string_utils::fmtAlloc(metas.memory(), nullptr, "%s/%s", path.cstr(), name);
+            m.file_name = string_utils::fmtAlloc(metas.memory(), nullptr, "%s/%s", path.cstr(), name.begin());
             m.entry     = &entry;
           }
 
@@ -1697,8 +1663,6 @@ namespace bf::editor
 
   void FileSystem::uiShowImpl(EditorOverlay& editor, FileEntry& entry)
   {
-    auto& assets = editor.engine().assets();
-
     ImGui::TableNextRow();
 
     if (entry.isFile())
@@ -1730,13 +1694,13 @@ namespace bf::editor
         {
           if (entry.file_extension == ".scene")
           {
-            // editor.engine().openScene(assets.makeHandleT<AssetSceneHandle>(*entry.asset_info));
+            editor.engine().openScene(static_cast<SceneAsset*>(entry.asset_info));
           }
         }
 
         if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
         {
-          /// editor.select(assets.makeHandle(*entry.asset_info));
+          editor.select(entry.asset_info);
         }
       }
 
@@ -1977,6 +1941,16 @@ namespace bf::editor
 
     visit_all(
      meta::overloaded{
+      [this, &engine](IBaseAsset* asset) {
+        m_Serializer.beginChangeCheck();
+        asset->reflect(m_Serializer);
+        ImGui::Separator();
+
+        if (m_Serializer.endChangedCheck())
+        {
+          engine.assets().markDirty(asset);
+        }
+      },
       [this](IBaseObject* object) {
         m_Serializer.serialize(*object);
       },
@@ -1987,22 +1961,7 @@ namespace bf::editor
 
         if (m_Serializer.endChangedCheck())
         {
-          //engine.assets().markDirty(current_scene);
-        }
-      },
-      [this, &engine](const auto& asset_handle) {
-        if (asset_handle)
-        {
-          m_Serializer.beginChangeCheck();
-          m_Serializer.serialize(*asset_handle.payload());
-          ImGui::Separator();
-
-          asset_handle.info()->serialize(engine, m_Serializer);
-
-          if (m_Serializer.endChangedCheck())
-          {
-            //engine.assets().markDirty(asset_handle);
-          }
+          engine.assets().markDirty(current_scene.handle());
         }
       },
      },

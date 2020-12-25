@@ -17,12 +17,11 @@
 #ifndef BF_ASSETS_HPP
 #define BF_ASSETS_HPP
 
-#include "bf/asset_io/bf_asset_map.hpp"
+#include "bf/asset_io/bf_asset_map.hpp"              /* AssetMap                                     */
 #include "bf/bf_non_copy_move.hpp"                   /* NonCopyMoveable<T>                           */
 #include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
 #include "bf/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
 #include "bf/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
-#include "bf/utility/bifrost_uuid.hpp"               /* BifrostUUID                                  */
 
 namespace bf
 {
@@ -118,7 +117,7 @@ namespace bf
     friend class IBaseAsset;
 
    public:
-    inline static const char k_MetaFileExtension[] = ".meta";
+    inline static const StringRange k_MetaFileExtension = ".meta";
 
    private:
     Engine&                m_Engine;       //!< The engine this asset system is attached to.
@@ -179,17 +178,17 @@ namespace bf
     String      absPathToMetaPath(const StringRange& abs_path) const;
     String      resolvePath(const StringRange& abs_or_asset_path) const;
 
-    ~Assets();
-
     // TODO: Remove These
     Engine&         engine() const { return m_Engine; }
     IMemoryManager& memory() const { return m_Memory; }
+
+    ~Assets();
 
     IBaseAsset* loadAsset(const StringRange& abs_path);
 
    private:
     IBaseAsset* createAssetFromPath(StringRange path, const bfUUIDNumber& uuid);
-    IBaseAsset* createAssetFromPath(StringRange path); // Creates UUID for you.
+    IBaseAsset* createAssetFromPath(StringRange path);  // Creates UUID for you.
   };
 }  // namespace bf
 

@@ -81,6 +81,8 @@ namespace bf::editor
     void addOnChangeListener(const SelectionOnChangeFn& callback);
     void removeOnChangeListener(const SelectionOnChangeFn& callback);
 
+    ~Selection() { clear(); }
+
    private:
     bool find(const Selectable& object, std::size_t& out_index);
     bool findListener(const SelectionOnChangeFn& callback, std::size_t& out_index);

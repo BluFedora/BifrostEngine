@@ -13,7 +13,6 @@
 #ifndef BIFROST_EDITOR_OVERLAY_HPP
 #define BIFROST_EDITOR_OVERLAY_HPP
 
-#include "bf/Platform.h"
 #include "bf/bifrost.hpp"
 
 #include "bifrost_editor_filesystem.hpp"
@@ -127,7 +126,7 @@ namespace bf::editor
    private:
     StringPoolEntry* grabNewEntry(const StringRange& string)
     {
-      StringRange      cloned_data = string_utils::clone(m_EntryStorage.memory(), string);
+      const BufferLen  cloned_data = string_utils::clone(m_EntryStorage.memory(), string);
       StringPoolEntry* result;
 
       if (m_EntryStorageFreeList != k_StringNPos)
@@ -139,14 +138,14 @@ namespace bf::editor
         //   to this variable because of unioned data.
         const std::size_t free_list_next = result->free_list_next;
 
-        result->data      = cloned_data;
+        result->data      = {cloned_data.buffer, cloned_data.length};
         result->ref_count = 1;
 
         m_EntryStorageFreeList = free_list_next;
       }
       else
       {
-        result = &m_EntryStorage.emplace(cloned_data);
+        result = &m_EntryStorage.emplace(StringRange{cloned_data.buffer, cloned_data.length});
       }
 
       return result;
@@ -296,21 +295,18 @@ namespace bf::editor
     String m_Name;
     String m_ProjectFilePath;
     String m_Path;  // TODO: Make it a StringRange of 'Project::m_ProjectFilePath'
-    String m_MetaPath;
 
    public:
-    explicit Project(String&& name, String&& project_file, String&& path, String&& meta_path) :
+    explicit Project(String&& name, String&& project_file, String&& path) :
       m_Name{name},
       m_ProjectFilePath{project_file},
-      m_Path{path},
-      m_MetaPath{meta_path}
+      m_Path{path}
     {
     }
 
     String&       name() { return m_Name; }
     String&       projectFilePath() { return m_ProjectFilePath; }
     const String& path() const { return m_Path; }
-    const String& metaPath() const { return m_MetaPath; }
   };
 
   using ActionPtr           = UniquePtr<Action>;
@@ -324,23 +320,23 @@ namespace bf::editor
     friend class ARefreshAsset;
 
    private:
-    ui::Dialog*        m_CurrentDialog;
-    bool               m_OpenNewDialog;
-    ActionMap          m_Actions;
-    StringPool         m_MenuNameStringPool;
-    ui::MainMenu       m_MainMenu;
-    Engine*            m_Engine;
-    ProjectPtr         m_OpenProject;
-    float              m_FpsTimer;
-    int                m_CurrentFps;
-    int                m_CurrentMs;
-    FileSystem         m_FileSystem;
-    WindowList         m_OpenWindows;
-    bool               m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
-    bool               m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
-    Selection          m_Selection;
-    UndoRedoStack      m_MainUndoStack;
-    bfWindow*          m_MainWindow;
+    ui::Dialog*   m_CurrentDialog;
+    bool          m_OpenNewDialog;
+    ActionMap     m_Actions;
+    StringPool    m_MenuNameStringPool;
+    ui::MainMenu  m_MainMenu;
+    Engine*       m_Engine;
+    ProjectPtr    m_OpenProject;
+    float         m_FpsTimer;
+    int           m_CurrentFps;
+    int           m_CurrentMs;
+    FileSystem    m_FileSystem;
+    WindowList    m_OpenWindows;
+    bool          m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
+    bool          m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
+    Selection     m_Selection;
+    UndoRedoStack m_MainUndoStack;
+    bfWindow*     m_MainWindow;
 
    protected:
     void onCreate(Engine& engine) override;

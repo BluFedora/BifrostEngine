@@ -565,9 +565,8 @@ namespace bf::string_utils
 
   // Misc //
   //
-  // Caller is responsible for freeing memory from this.
-  // TODO(SR) FIX-ME: This is a bad abstraction since it returns a const view into a string that is OWNED by that view.
-  StringRange clone(IMemoryManager& allocator, const StringRange& string);
+  // Caller is responsible for freeing memory.
+  BufferLen clone(IMemoryManager& allocator, StringRange str);
 }  // namespace bf::string_utils
 
 #endif /* BIFROST_STRING_HPP */

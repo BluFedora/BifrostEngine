@@ -14,8 +14,8 @@
 #ifndef BIFROST_EDITOR_FILESYSTEM_HPP
 #define BIFROST_EDITOR_FILESYSTEM_HPP
 
-#include "bf/data_structures/bifrost_intrusive_list.hpp"  // Node
-#include "bf/data_structures/bifrost_string.hpp"          // String
+#include "bf/ListView.hpp"                        // ListView<T>, Node<T>
+#include "bf/data_structures/bifrost_string.hpp"  // String
 
 namespace bf::editor
 {
@@ -33,7 +33,7 @@ namespace bf::editor
    public:
     FileEntry(String&& name, const String& full_path);
 
-    bool isFile() const { return asset_info == nullptr; }
+    bool isFile() const { return asset_info != nullptr; }
   };
 
   class FileSystem final : NonCopyMoveable<FileSystem>

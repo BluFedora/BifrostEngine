@@ -1,6 +1,5 @@
 #include "bf/core/bifrost_engine.hpp"
 
-#include "bf/Gfx2DPainter.hpp"                // Gfx2DPainter
 #include "bf/Platform.h"                      // BifrostWindow
 #include "bf/anim2D/bf_animation_system.hpp"  // AnimationSystem
 #include "bf/asset_io/bf_gfx_assets.hpp"
@@ -39,7 +38,7 @@ namespace bf
       m_MouseState.button_state = mouse_evt.button_state;
     }
 
-    switch (evt.type)
+    switch (evt.type)  // NOLINT(clang-diagnostic-switch-enum)
     {
       case BIFROST_EVT_ON_MOUSE_MOVE:
       {
@@ -52,7 +51,6 @@ namespace bf
 
         break;
       }
-
       default:
         break;
     }
@@ -93,7 +91,8 @@ namespace bf
     m_TimeStep{},
     m_TimeStepLag{0ns},
     m_CurrentTime{},
-    m_State{EngineState::RUNTIME_PLAYING}
+    m_State{EngineState::RUNTIME_PLAYING},
+    m_IsInMiddleOfFrame{false}
   {
 #if USE_CRT_HEAP
     (void)main_memory;
@@ -235,33 +234,39 @@ namespace bf
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 
-      /*
-      static const FileExtensionHandler s_AssetHandlers[] =
-       {
-        {".scene", &fileExtensionHandlerImpl<AssetSceneInfo>},
-        {".obj", &fileExtensionHandlerImpl<AssetModelInfo>},
-        {".fbx", &fileExtensionHandlerImpl<AssetModelInfo>},
-        {".md5mesh", &fileExtensionHandlerImpl<AssetModelInfo>},
-        {".script", &fileExtensionHandlerImpl<AssetScriptInfo>},
-        {".srsm.bytes", &fileExtensionHandlerImpl<AssetSpritesheetInfo>}};
-    */
-
     m_Assets.registerFileExtensions(
      {".png", ".jpg", ".jpeg", ".ppm", ".pgm", ".bmp", ".tga", ".psd"},
      [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
-       return asset_memory.allocateT<TextureAsset>(bfGfxContext_device(engine.renderer().context()));
+       return asset_memory.allocateT<TextureAsset>(engine.renderer().device());
      });
 
     m_Assets.registerFileExtensions(
      {".material"},
-      &defaultAssetCreate<MaterialAsset>
-    );
+     &defaultAssetCreate<MaterialAsset>);
 
-    /*
+    m_Assets.registerFileExtensions(
+     {".obj", ".fbx", ".md5mesh"},
+     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
+       return asset_memory.allocateT<ModelAsset>(asset_memory, engine.renderer().device());
+     });
+
     m_Assets.registerFileExtensions(
      {".scene"},
-     &defaultAssetCreate<SceneAsset>);
-     */
+     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
+       return asset_memory.allocateT<SceneAsset>(engine);
+     });
+
+    m_Assets.registerFileExtensions(
+     {".srsm.bytes"},
+     &defaultAssetCreate<SpritesheetAsset>);
+
+    m_Assets.registerFileExtensions(
+     {".anim"},
+     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
+       (void)engine;
+
+       return asset_memory.allocateT<Anim3DAsset>(asset_memory);
+     });
 
     gc::init(m_MainMemory);
 
@@ -336,20 +341,25 @@ namespace bf
     m_CurrentTime = new_time;
     m_TimeStepLag += std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time);
 
-    if (beginFrame())
+    if (!m_IsInMiddleOfFrame)
     {
-      while (m_TimeStepLag >= m_TimeStep)
+      m_IsInMiddleOfFrame = true;
+      if (beginFrame())
       {
-        fixedUpdate(m_TimeStep.count() * k_NanoSecToSec);
-        m_TimeStepLag -= m_TimeStep;
+        while (m_TimeStepLag >= m_TimeStep)
+        {
+          fixedUpdate(float(m_TimeStep.count()) * k_NanoSecToSec);
+          m_TimeStepLag -= m_TimeStep;
+        }
+
+        const float dt_seconds   = float(std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time).count()) * k_NanoSecToSec;
+        const float render_alpha = float(m_TimeStepLag.count()) / float(m_TimeStep.count());
+
+        update(dt_seconds);
+        draw(render_alpha);
+        endFrame();
       }
-
-      const float dt_seconds   = std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time).count() * k_NanoSecToSec;
-      const float render_alpha = (float)m_TimeStepLag.count() / m_TimeStep.count();
-
-      update(dt_seconds);
-      draw(render_alpha);
-      endFrame();
+      m_IsInMiddleOfFrame = false;
     }
   }
 

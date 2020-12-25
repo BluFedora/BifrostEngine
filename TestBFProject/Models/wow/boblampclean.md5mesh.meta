@@ -1,0 +1,63 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "3B6BE9F5-F39B-4277-B803-BBA07D689569",
+            "name" : "Material_#0",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "3329B2DF-B7D3-405D-8BA0-96090CAD3625",
+            "name" : "Material_#1",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "58FD76D8-47A3-4FCE-99E8-8644EA8E9197",
+            "name" : "Material_#2",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "03494E1D-7CB2-4F8F-902B-E33DB016A202",
+            "name" : "Material_#3",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "2AB7EE7F-63F6-4878-A20C-ACFC2FFFD841",
+            "name" : "Material_#4",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "89483955-016E-44DB-98E7-86AC44157CEC",
+            "name" : "Material_#5",
+            "version" : 1
+        },
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "7933E6B4-A1EF-4D4A-A4A5-7F1F928CDB31",
+            "name" : "ANIM_#0",
+            "version" : 1
+        }
+    ],
+    "uuid" : "2283D4BB-0DC4-4166-8274-F00FC0EA822E",
+    "name" : "boblampclean",
+    "version" : 1
+}
