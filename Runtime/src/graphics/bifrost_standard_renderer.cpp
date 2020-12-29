@@ -319,13 +319,13 @@ namespace bf
     geometry_buffer.deinit(device);
     bfGfxDevice_release(device, composite_buffer);
 
-    geometry_buffer.init(device, width, height);
-    ssao_buffer.init(device, width, height);
+    geometry_buffer.init(device, width / 2, height / 2);
+    ssao_buffer.init(device, width / 8, height / 8);
 
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      width,
      height,
-     BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,  // BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT, BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
      bfTrue,
      bfFalse);
 
@@ -608,11 +608,17 @@ namespace bf
     }
   }
 
+  template<typename... Ts>
+  constexpr auto orBits(Ts... bit_indices) -> meta::NthTypeOf<0, Ts...>
+  {
+    return (... | bfBit(bit_indices));
+  }
+
   void StandardRenderer::beginGBufferPass(CameraGPUData& camera) const
   {
     static constexpr std::uint16_t k_LoadFlags         = 0x0;
     static constexpr std::uint16_t k_ClearFlags        = bfBit(0) | bfBit(1) | bfBit(2);
-    static constexpr std::uint16_t k_StoreFlags        = bfBit(0) | bfBit(1) | bfBit(2);
+    static constexpr std::uint16_t k_StoreFlags        = orBits(0, 1, 2);
     static constexpr std::uint16_t k_StencilClearFlags = bfBit(k_GfxNumGBufferAttachments);
     static constexpr std::uint16_t k_StencilStoreFlags = bfBit(k_GfxNumGBufferAttachments);
 
@@ -667,7 +673,7 @@ namespace bf
 
     bfGfxCmdList_setCullFace(m_MainCmdList, BF_CULL_FACE_FRONT);
 
-#if 1
+#if 0
     {
       const bfPipelineBarrier barriers[] =
        {
@@ -896,7 +902,7 @@ namespace bf
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, bfBit(0));
+    bfRenderpassInfo_setClearOps(&renderpass_info, 0 * bfBit(0));
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
@@ -904,9 +910,9 @@ namespace bf
     bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     bfClearValue clear_colors[1];
-    clear_colors[0].color.float32[0] = 0.6f;
-    clear_colors[0].color.float32[1] = 0.6f;
-    clear_colors[0].color.float32[2] = 0.75f;
+    clear_colors[0].color.float32[0] = 1.0f;
+    clear_colors[0].color.float32[1] = 0.0f;
+    clear_colors[0].color.float32[2] = 0.0f;
     clear_colors[0].color.float32[3] = 1.0f;
 
     bfTextureHandle attachments[] = {surface_tex};

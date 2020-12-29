@@ -34,7 +34,7 @@ namespace bf
     {
       constexpr int k_MaxNumBitsInT = std::numeric_limits<T>::digits;
 
-      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmatic type.");
+      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmetic type.");
       static_assert(k_NumBits <= k_MaxNumBitsInT, "The num bits overflows the range of T.");
 
       return T((1 << k_NumBits) - 1);
@@ -46,7 +46,7 @@ namespace bf
       constexpr int         k_MaxNumBitsInT  = std::numeric_limits<T>::digits;
       constexpr std::size_t k_LastBitInRange = k_Offset + k_NumBits;
 
-      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmatic type.");
+      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmetic type.");
       static_assert(k_LastBitInRange <= k_MaxNumBitsInT, "The range overflows the range of T.");
 
       return max_value<T, k_NumBits>() << k_Offset;
@@ -60,7 +60,7 @@ namespace bf
       constexpr std::size_t k_LastBitInRange = k_Offset + k_NumBits;
       constexpr T           k_Mask           = mask<T>(range);
 
-      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmatic type.");
+      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmetic type.");
       static_assert(k_LastBitInRange <= k_MaxNumBitsInT, "The range overflows the range of T.");
 
       return bits & ~k_Mask;
@@ -75,16 +75,16 @@ namespace bf
       constexpr std::size_t k_LastBitInRange = k_Offset + k_NumBits;
       constexpr T           k_Mask           = mask<T>(range);
 
-      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmatic type.");
+      static_assert(std::is_unsigned_v<T>, "T must be an unsigned arithmetic type.");
       static_assert(k_LastBitInRange <= k_MaxNumBitsInT, "The range overflows the range of T.");
 
       // NOTE(SR):
       //   This static_assert is annoying to have since by default all integers are signed in C/++.
-      // static_assert(std::is_unsigned_v<U>, "U must be an unsigned arithmatic type.");
+      // static_assert(std::is_unsigned_v<U>, "U must be an unsigned arithmetic type.");
 
       assert((T(value) <= max_value<T, k_NumBits>()) && "Value out of range.");
 
-      return bits | (((std::size_t)value << k_Offset) & k_Mask);
+      return bits | ((static_cast<std::size_t>(value) << k_Offset) & k_Mask);
     }
 
     // Sets the values to the specified range in bits making sure to clear the range prior.
@@ -98,9 +98,8 @@ namespace bf
     To cast(const From& from) noexcept
     {
       static_assert(sizeof(From) == sizeof(To), "The two types must but the same size.");
-      static_assert(std::is_trivially_copyable_v<From>, "memcpy is used to copy.");
-      static_assert(std::is_trivially_copyable_v<To>, "memcpy is used to copy.");
-      static_assert(std::is_trivially_constructible_v<To>, "To can be constrcuted without side effects.");
+      static_assert(std::is_trivially_copyable_v<From> && std::is_trivially_copyable_v<To>, "memcpy is used to copy.");
+      static_assert(std::is_trivially_constructible_v<To>, "'To' must be constructable without side effects.");
 
       To result;
 
@@ -115,11 +114,11 @@ namespace bf
       constexpr std::uint32_t k_HiBitIndex     = 31;
       constexpr std::uint32_t k_HiBit          = (1u << k_HiBitIndex);
 
-      assert(num_hi_bits <= k_NumBitsInFloat);
+      assert(std::uint32_t(num_hi_bits) <= k_NumBitsInFloat);
 
       const std::uint32_t float_bits = cast<std::uint32_t>(value);
 
-      // Handle negative numbers, making it correctly sorable.
+      // Handle negative numbers, making it correctly sortable.
       // Adapted from [http://stereopsis.com/radix.html]
 
       const std::uint32_t float_flip_mask = -std::int32_t(float_bits >> k_HiBitIndex) | k_HiBit;
@@ -180,7 +179,6 @@ namespace bf
 
     delete heap_ptr;
   }
-
 }  // namespace bf
 
 #endif /* BF_RENDER_QUEUE_HPP */

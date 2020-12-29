@@ -1,15 +1,8 @@
 {
     "sub-assets" : [
-        {
-            "sub-assets" : [
 
-            ],
-            "uuid" : "01A1332F-C370-4288-BB7A-3C46BACF2FAC",
-            "name" : "ANIM_Scorpion_Walk#0",
-            "version" : 1
-        }
     ],
     "uuid" : "C2298792-EA73-4BB2-A67E-18B523851DEC",
-    "name" : "Scorpion_Walk",
+    "name" : "Scorpion_Walk.fbx",
     "version" : 1
 }

@@ -12,6 +12,8 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
 
   bfBaseGfxObject_ctor(&renderpass->super, BF_GFX_OBJECT_RENDERPASS);
 
+  // VK_ATTACHMENT_UNUSED
+
   renderpass->info                        = *params;
   const auto              num_attachments = params->num_attachments;
   VkAttachmentDescription attachments[k_bfGfxMaxAttachments];
@@ -47,6 +49,26 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
 
     return VK_ATTACHMENT_STORE_OP_DONT_CARE;
   };
+
+  // For Compat:
+  //  DO NOT NEED TO MATCH:
+  //
+  //  - initialLayout, finalLayout
+  //  - loadOp, storeOp, stencilLoadOp, stencilStoreOp,
+  //  - VkAttachmentReference::layout.
+  //
+  //  Everything else must match.
+  //  AttachmentRef: (format, sample count)
+  //  AttachmentRef[]: All AttachmentRefs, pretty must needs to be same length.
+  //
+  //  Special Case:
+  //
+  //  - If the Renderpass only has one subpass then:
+  //      "the resolve attachment reference and depth/stencil resolve mode compatibility requirements"
+  //
+  // [https://renderdoc.org/vkspec_chunked/chap9.html#renderpass-compatibility]
+
+
 
   const auto bfAttToVkAtt = [](const bfAttachmentRefCache* in) -> VkAttachmentReference {
     VkAttachmentReference out;
@@ -102,8 +124,7 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
     sub->pResolveAttachments     = NULL;  // TODO(Shareef): This is for multisampling.
     sub->pDepthStencilAttachment = has_depth ? depth_atts + i : nullptr;
     sub->preserveAttachmentCount = 0;
-    sub->pPreserveAttachments    = NULL;
-    // NOTE(Shareef): For attachments that must be preserved during this subpass but must not be touched by it.
+    sub->pPreserveAttachments    = NULL;  // NOTE(Shareef): For attachments that must be preserved during this subpass but must not be touched by it.
   }
 
   for (uint32_t i = 0; i < num_dependencies; ++i)
@@ -132,13 +153,14 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   renderpass_create_info.pDependencies   = dependencies;
 
   const auto err = vkCreateRenderPass(self->handle, &renderpass_create_info, CUSTOM_ALLOC, &renderpass->handle);
+
   assert(err == VK_SUCCESS && "Failed to create renderpass.");
 
   return renderpass;
 }
 
 template<typename T>
-static inline void DeleteResource(T* obj)
+static void DeleteResource(T* obj)
 {
   memset(obj, 0xCD, sizeof(*obj));
   delete obj;
@@ -275,7 +297,6 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
             if (config_data.attachments[i] == texture)
             {
               config_data.attachments[i] = nullptr;
-              fb->attachments[i]         = nullptr;
             }
           }
         });

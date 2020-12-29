@@ -281,7 +281,7 @@ namespace bf::editor
      {
       float(value.r) * k_ToFloatingPoint,
       float(value.g) * k_ToFloatingPoint,
-      float(value.g) * k_ToFloatingPoint,
+      float(value.b) * k_ToFloatingPoint,
       float(value.a) * k_ToFloatingPoint,
      };
 
@@ -556,7 +556,7 @@ namespace bf::editor
     const bool result = m_HasChangedStack.back();
     m_HasChangedStack.pop();
 
-    // Adopt the status of enclosed change check scopes.
+    // Adopt the status of enclosed change check scope.
     if (!m_HasChangedStack.isEmpty())
     {
       hasChangedTop() |= result;
@@ -567,7 +567,7 @@ namespace bf::editor
 
   void ImGuiSerializer::setNameBuffer(StringRange key)
   {
-    static_assert(sizeof(m_NameBuffer) == k_FieldNameBufferSize, "Sanity check to make sure I didn't upgrade 'm_NameBuffer' to a String or something.");
+    static_assert(sizeof(m_NameBuffer) == k_FieldNameBufferSize, "Sanity check to make sure I didn't _upgrade_ 'm_NameBuffer' to a String or something.");
 
     using namespace string_utils;
 

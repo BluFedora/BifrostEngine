@@ -4,20 +4,20 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "A5413AC1-38DB-434B-8AAF-92DFB19DD267",
-            "name" : "Material_#0",
+            "uuid" : "D3E5E38B-E234-4C8C-8B89-89766A6F72A0",
+            "name" : "Material_#0.material",
             "version" : 1
         },
         {
             "sub-assets" : [
 
             ],
-            "uuid" : "93DE3E12-529D-4AD4-8329-EAB348D1AB00",
-            "name" : "Material_#1",
+            "uuid" : "064162F3-CA01-4B65-9465-63E74AC1E216",
+            "name" : "Material_#1.material",
             "version" : 1
         }
     ],
-    "uuid" : "70B64926-D2F4-44DE-903C-CE09926A9B92",
-    "name" : "sphere",
+    "uuid" : "A006B553-B1C5-44CE-BA2C-893D83C543E0",
+    "name" : "sphere.obj",
     "version" : 1
 }

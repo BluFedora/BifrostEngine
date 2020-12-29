@@ -13,7 +13,7 @@
 #include <iostream>
 #include <utility>
 
-  using namespace bf;
+using namespace bf;
 
 struct TestClass final
 {
@@ -400,6 +400,8 @@ if (update_fn)
   vm.stackDestroyHandle(update_fn);
 }
 
+#include "bf/gfx/bf_render_queue.hpp"
+
 static constexpr TestCaseFn s_Test[] =
  {
   // &Test2DTransform,
@@ -407,9 +409,10 @@ static constexpr TestCaseFn s_Test[] =
   // &TestApplyReturningVoid,
   // &TestMetaSystem,
   &TestScriptingStuff,
+  &TestStuff,
 };
 
-enum ReturnCode
+enum class ReturnCode
 {
   SUCCESS,
   FAILED_TO_INITIALIZE_PLATFORM,
@@ -423,15 +426,9 @@ GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening co
   err_code = (code);          \
   goto label
 
-#include "bf/gfx/bf_render_queue.hpp"
-
 int main(int argc, char* argv[])
 {
-  using namespace bf;
-
-  TestStuff();
-
-  static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<float>::is_iec559, "Use IEEE754, you weirdo.");
+  static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
 
   for (const auto& test_fn : s_Test)
   {
@@ -460,25 +457,16 @@ int main(int argc, char* argv[])
       const std::size_t             engine_memory_size = bfMegabytes(300);
       const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
       Engine                        engine             = Engine{engine_memory.get(), engine_memory_size, argc, argv};
-      const EngineCreateParams      params             = {argv[0], 0, 60};
+      const EngineCreateParams      params             = {{argv[0], 0}, 60};
 
       main_window->user_data = &engine;
-
-      main_window->event_fn = [](bfWindow* window, bfEvent* event) {
-        static_cast<Engine*>(window->user_data)->onEvent(window, *event);
-      };
-
-      main_window->frame_fn = [](bfWindow* window) {
-        static_cast<Engine*>(window->user_data)->tick();
-      };
+      main_window->event_fn  = [](bfWindow* window, bfEvent* event) { static_cast<Engine*>(window->user_data)->onEvent(window, *event); };
+      main_window->frame_fn  = [](bfWindow* window) { static_cast<Engine*>(window->user_data)->tick(); };
 
       engine.init(params, main_window);
-
       engine.stateMachine().push<MainDemoLayer>();
       engine.stateMachine().addOverlay<editor::EditorOverlay>(main_window);
-
       bfPlatformDoMainLoop(main_window);
-
       engine.deinit();
     }
     catch (std::bad_alloc&)
@@ -494,7 +482,7 @@ quit_platform:
   bfPlatformQuit();
 
 quit_main:
-  return err_code;
+  return int(err_code);
 }
 
 #undef MainQuit

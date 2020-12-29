@@ -193,7 +193,7 @@ namespace bf
   T* GameStateMachine::push(Args&&... args)
   {
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
-                  "T must publicly derive from the 'bifrost::IGameStateLayer'.");
+                  "T must publicly derive from the 'bf::IGameStateLayer'.");
 
     T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     pushImpl(state);
@@ -204,7 +204,7 @@ namespace bf
   T* GameStateMachine::pushAfter(IGameStateLayer& after, Args&&... args)
   {
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
-                  "T must publicly derive from the 'bifrost::IGameStateLayer'.");
+                  "T must publicly derive from the 'bf::IGameStateLayer'.");
 
     T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     pushAfterImpl(after, state);
@@ -215,7 +215,7 @@ namespace bf
   T* GameStateMachine::pushBefore(IGameStateLayer& before, Args&&... args)
   {
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
-                  "T must publicly derive from the 'bifrost::IGameStateLayer'.");
+                  "T must publicly derive from the 'bf::IGameStateLayer'.");
 
     T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     pushBeforeImpl(before, state);
@@ -226,7 +226,7 @@ namespace bf
   T* GameStateMachine::addOverlay(Args&&... args)
   {
     static_assert(std::is_convertible_v<T*, IGameStateLayer*>,
-                  "T must publicly derive from the 'bifrost::IGameStateLayer'.");
+                  "T must publicly derive from the 'bf::IGameStateLayer'.");
 
     T* const state = m_Memory.allocateT<T>(std::forward<Args>(args)...);
     addOverlayImpl(state);

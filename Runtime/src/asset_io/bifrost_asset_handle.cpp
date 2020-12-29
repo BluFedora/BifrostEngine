@@ -1,46 +1,17 @@
-/******************************************************************************/
-/*!
-* @file   bifrost_asset_handle.cpp
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
-* @brief
-*  Asset handle definitions.
-*
-*  Types of Assets:
-*    > Shader Module
-*    > Shader Program
-*    > Texture
-*    > Material
-*    > Spritesheet Animations
-*    > Audio Source
-*    > Scene
-*    > Font
-*    > Script
-*    > Models (Meshes)
-*
-* @version 0.0.1
-* @date    2019-12-26
-*
-* @copyright Copyright (c) 2019
-*/
-/******************************************************************************/
+#include "bf/asset_io/bf_iserializer.hpp"
 
-#include "bf/asset_io/bifrost_json_serializer.hpp"
-#include "bf/core/bifrost_engine.hpp" /* Engine */
-#include "bf/utility/bifrost_json.hpp"
+#include "bf/BaseObject.hpp"                 // IBaseObject
+#include "bf/meta/bifrost_meta_runtime.hpp"  // meta::BaseClassMetaInfo
 
 namespace bf
 {
-  void IBaseObject::reflect(ISerializer& serializer)
-  {
-    serializer.serialize(*this);
-  }
-
   static constexpr int         k_MaxDigitsUInt64 = 20;
   static constexpr StringRange k_EnumValueKey    = "__EnumValue__";
 
   bool ISerializer::hasKey(StringRange key)
   {
     (void)key;
+
     return false;
   }
 
@@ -222,20 +193,21 @@ namespace bf
         {
           const std::size_t size = type_info->numElements(as_variant);
           char              label_buffer[k_MaxDigitsUInt64 + 1];
-          std::size_t       idx_label_length;
 
           for (std::size_t i = 0; i < size; ++i)
           {
-            if (string_utils::fmtBuffer(label_buffer, sizeof(label_buffer), &idx_label_length, "%zu", i))
+            std::size_t label_buffer_length;
+
+            if (string_utils::fmtBuffer(label_buffer, sizeof(label_buffer), &label_buffer_length, "%zu", i))
             {
               auto element = type_info->elementAt(as_variant, i);
-              serialize(StringRange(label_buffer, idx_label_length), element);
+              serialize(StringRange(label_buffer, label_buffer_length), element);
 
               (void)type_info->setElementAt(as_variant, i, element);
             }
             else
             {
-              // TODO(Shareef): This should _never_ happen, and what do you do if it does?
+              assert(!"For some reason this failed. The buffer shoudl always be able to store an integer value.");
             }
           }
 
@@ -282,15 +254,5 @@ namespace bf
   void ISerializer::serialize(StringRange key, Vector3f& value)
   {
     serialize(key, static_cast<Vec3f&>(value));
-  }
-
-  LinearAllocator& ENGINE_TEMP_MEM(Engine& engine)
-  {
-    return engine.tempMemory();
-  }
-
-  IMemoryManager&  ENGINE_TEMP_MEM_NO_FREE(Engine& engine)
-  {
-    return engine.tempMemoryNoFree();
   }
 }  // namespace bf

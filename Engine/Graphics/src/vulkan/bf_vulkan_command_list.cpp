@@ -159,7 +159,7 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue
   for (std::size_t i = 0; i < num_clear_colors; ++i)
   {
     const bfClearValue* const bf_color = clear_values + i;
-    VkClearValue* const            color    = self->clear_colors + i;
+    VkClearValue* const       color    = self->clear_colors + i;
 
     *color = bfVKConvertClearColor(bf_color);
   }
@@ -190,8 +190,7 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
 
     for (uint32_t i = 0; i < num_attachments; ++i)
     {
-      fb->attachments[i] = attachments[i];
-      image_views[i]     = attachments[i]->tex_view;
+      image_views[i] = attachments[i]->tex_view;
     }
 
     VkFramebufferCreateInfo frame_buffer_create_params;
@@ -212,7 +211,10 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
     AddCachedResource(self->parent, &fb->super, hash_code);
   }
 
-  self->framebuffer = fb;
+  self->attachment_size[0] = static_cast<uint32_t>(attachments[0]->image_width);
+  self->attachment_size[1] = static_cast<uint32_t>(attachments[0]->image_height);
+  self->framebuffer        = fb;
+
   UpdateResourceFrame(self->context, &fb->super);
 }
 
@@ -228,11 +230,11 @@ void bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32
   bfGfxCmdList_setScissorRect(self, x, y, width, height);
 }
 
-extern "C" void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandListHandle self, float x, float y, float width, float height);
+extern "C" void bfGfxCmdList_setRenderAreaRelImpl(float fb_width, float fb_height, bfGfxCommandListHandle self, float x, float y, float width, float height);
 
-void bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height)
+ void bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height)
 {
-  bfGfxCmdList_setRenderAreaRelImpl(self->framebuffer->attachments[0], self, x, y, width, height);
+  bfGfxCmdList_setRenderAreaRelImpl(float(self->attachment_size[0]), float(self->attachment_size[1]), self, x, y, width, height);
 }
 
 void bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self)
@@ -647,7 +649,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
   bfShaderProgramHandle program = self->pipeline_state.program;
 
   assert(set_index < program->num_desc_set_layouts);
-  
+
   const std::uint64_t   hash_code = bf::vk::hash(program->desc_set_layout_infos[set_index], desc_set_info);
   bfDescriptorSetHandle desc_set  = self->parent->cache_descriptor_set.find(hash_code, *desc_set_info);
 
@@ -1198,7 +1200,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
 namespace bf::vk
 {
-  using namespace bf::gfx_hash;
+  using namespace gfx_hash;
 
   std::uint64_t hash(std::uint64_t self, const bfPipelineCache* pipeline)
   {

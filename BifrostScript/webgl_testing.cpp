@@ -1,17 +1,3 @@
-/******************************************************************************/
-/*!
- * @file   webgl_testing.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
- * @brief
- *   Tetsing out a web backend for the engine.
- *
- * @version 0.0.1
- * @date    2020-06-30
- *
- * @copyright Copyright (c) 2020
- */
-/******************************************************************************/
-
 #include "bf/Platform.h"                      /* Platform API */
 #include <bifrost/graphics/bifrost_gfx_api.h> /* Graphics API */
 

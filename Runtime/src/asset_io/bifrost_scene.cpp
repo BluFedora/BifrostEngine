@@ -22,7 +22,10 @@
 
 namespace bf
 {
-#define ID_TO_INDEX(id) ((id)-1)
+  static constexpr std::size_t ID_TO_INDEX(bfTransformID id)
+  {
+    return std::size_t(id - 1);
+  }
 
   BifrostTransform* SceneTransformSystem::transformFromIDImpl(IBifrostTransformSystem_t* self, bfTransformID id)
   {
@@ -89,8 +92,6 @@ namespace bf
     m_Transforms[ID_TO_INDEX(transform)].freelist_next = m_FreeList;
     m_FreeList                                         = transform;
   }
-
-#undef ID_TO_INDEX
 
   Scene::Scene(Engine& engine) :
     Base(),
@@ -280,7 +281,6 @@ namespace bf
   Scene::~Scene()
   {
     bfAnimation2D_destroyScene(m_Engine.animationSys().anim2DCtx(), m_AnimationScene);
-
     removeAllEntities();
   }
 }  // namespace bf

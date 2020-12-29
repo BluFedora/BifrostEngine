@@ -2,7 +2,7 @@
 
 namespace bf
 {
-  IGameStateLayer::IGameStateLayer():
+  IGameStateLayer::IGameStateLayer() :
     m_Prev{nullptr},
     m_Next{nullptr},
     m_IsOverlay{false}
@@ -52,4 +52,4 @@ namespace bf
   {
     (void)engine;
   }
-}
+}  // namespace bf

@@ -895,7 +895,7 @@ namespace bf
       // Not at the end
       if (*utf8_text)
       {
-        // TODO(SR): This can be optmized. Since that "utf8Codepoint(utf8_text)" call calulates what we need next time through the loop.
+        // TODO(SR): This can be optimized. Since that "utf8Codepoint(utf8_text)" call calculates what we need next time through the loop.
         current_width += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
       }
     }
@@ -962,7 +962,7 @@ namespace bf
       // Not at the end
       if (*utf8_text)
       {
-        // TODO(SR): This can be optmized. Since that "utf8Codepoint(utf8_text)" call calulates what we need next time through the loop.
+        // TODO(SR): This can be optimized. Since that "utf8Codepoint(utf8_text)" call calculates what we need next time through the loop.
         x += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
       }
 
@@ -970,7 +970,7 @@ namespace bf
     }
 
     const auto&   frame_info    = bfGfxContext_getFrameInfo(render_data.ctx);
-    DynamicAtlas& current_atlas = font->gpu_atlas[frame_info.frame_index];
+    DynamicAtlas& current_atlas = font->gpu_atlas[frame_info.frame_index * 0];
 
     for (DynamicAtlas& atlas : font->gpu_atlas)
     {
@@ -1004,7 +1004,7 @@ namespace bf
       else
       {
         const int32_t  offset[3] = {0, 0, 0};
-        const uint32_t sizes[3]  = {pixmap->width, pixmap->height, 0};
+        const uint32_t sizes[3]  = {pixmap->width, pixmap->height, 1};
 
         bfTexture_loadDataRange(
          current_atlas.handle,

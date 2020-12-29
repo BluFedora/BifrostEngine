@@ -180,7 +180,7 @@ namespace bf
 
     using GCContextPtr = std::unique_ptr<GCContext, GCContext::Deleter>;
 
-    static GCContextPtr g_GCCtx;
+    static GCContextPtr g_GCCtx;  // NOLINT(clang-diagnostic-exit-time-destructors)
 
     void init(IMemoryManager& memory)
     {

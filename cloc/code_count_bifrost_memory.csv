@@ -1,0 +1,28 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (54.0 files/s, 4334.0 lines/s)"
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_imemory_manager.hpp,62,243,228
+C,..\Engine\Memory\src\bf_memory_utils.c,38,23,167
+C++,..\Engine\Memory\src\bf_freelist_allocator.cpp,26,31,107
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_stl_allocator.hpp,18,63,83
+C++,..\Engine\Memory\src\bf_crt_allocator.cpp,17,14,75
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_pool_allocator.hpp,15,16,70
+C++,..\Engine\Memory\src\bf_imemory_manager.cpp,18,13,70
+C++,..\Engine\Memory\src\bf_pool_allocator.cpp,24,14,63
+C++,..\Engine\Memory\src\bf_linear_allocator.cpp,13,17,60
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_memory_utils.h,12,33,51
+C++,..\Engine\Memory\src\bf_stack_allocator.cpp,14,15,44
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_linear_allocator.hpp,16,15,43
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_freelist_allocator.hpp,11,21,33
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_proxy_allocator.hpp,10,14,31
+C++,..\Engine\Memory\src\bf_proxy_allocator.cpp,6,15,29
+CMake,..\Engine\Memory\CMakeLists.txt,8,7,28
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_stack_allocator.hpp,7,15,27
+C/C++ Header,..\Engine\Memory\include\bf\memory\bf_crt_allocator.hpp,6,15,17
+Markdown,..\Engine\Memory\README.md,10,0,10
+C/C++ Header,..\Engine\Memory\include\bf\PoolAllocator.hpp,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\StlAllocator.hpp,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\CRTAllocator.hpp,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\LinearAllocator.hpp,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\MemoryUtils.h,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\TempBuffer.hpp,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\FreeListAllocator.hpp,1,0,1
+C/C++ Header,..\Engine\Memory\include\bf\NoFreeAllocator.hpp,1,0,1

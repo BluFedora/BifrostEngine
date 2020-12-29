@@ -94,7 +94,6 @@ target_sources(
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_assets.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_file.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_json_serializer.cpp"
-   "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_obj_loader.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}asset_io/bifrost_scene.cpp"
 
    # Core

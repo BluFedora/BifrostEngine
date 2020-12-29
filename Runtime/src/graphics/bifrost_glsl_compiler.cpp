@@ -22,6 +22,10 @@
 
 namespace bf
 {
+  const static std::regex           k_IncludeRegex(R"(^(#include)(?:.|)+("|'|<)(\S+)(>|"|');?((.|\n|\r)*)?)",
+                                         std::regex::ECMAScript | std::regex_constants::icase | std::regex_constants::optimize);
+  const static std::sregex_iterator k_IncludeRegexSentinel;
+
   GLSLCompiler::GLSLCompiler(IMemoryManager& memory) :
     m_LoadedFiles{},
     m_CurrentlyCompiling{memory}
@@ -38,10 +42,6 @@ namespace bf
 
   const String& GLSLCompiler::load(const String& filename)
   {
-    const static std::regex           k_IncludeRegex(R"(^(#include)(?:.|)+("|'|<)(\S+)(>|"|');?((.|\n|\r)*)?)",
-                                           std::regex::ECMAScript | std::regex_constants::icase | std::regex_constants::optimize);
-    const static std::sregex_iterator k_IncludeRegexSentinel;
-
     for (const String* const file : m_CurrentlyCompiling)
     {
       if (*file == filename)
@@ -466,7 +466,8 @@ namespace bf
     {
       return createModule(device, filename, BF_SHADER_TYPE_VERTEX);
     }
-    else if (file::pathEndsIn(path.begin(), k_FragmentShaderExt, k_FragmentShaderExtLength, (int)path.length()))
+
+    if (file::pathEndsIn(path.begin(), k_FragmentShaderExt, k_FragmentShaderExtLength, (int)path.length()))
     {
       return createModule(device, filename, BF_SHADER_TYPE_FRAGMENT);
     }

@@ -27,10 +27,10 @@
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
 #define BIFROST_USE_VALIDATION_LAYERS 0
 #else
-#define BIFROST_USE_VALIDATION_LAYERS 0
+#define BIFROST_USE_VALIDATION_LAYERS 1
 #endif
 
-#define BIFROST_ENGINE_NAME "Bifrost Engine"
+#define BIFROST_ENGINE_NAME "BF Engine"
 #define BIFROST_ENGINE_VERSION 0
 #define BIFROST_VULKAN_CUSTOM_ALLOCATOR nullptr
 
@@ -178,7 +178,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
  const char*                msg,
  void*                      userData)
 {
-  bfLogError("validation layer: %s", msg);
+  bfLogError("\n\n\nvalidation layer: %s", msg);
   // __debugbreak();
   assert(!msg);
   return VK_FALSE;
@@ -212,6 +212,7 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
   self->max_frames_in_flight = 2;
   self->frame_count          = 0;
   self->frame_index          = 0;
+
   gfxContextSetupApp(self, params);
   if (!gfxContextSetDebugCallback(self, &gfxContextDbgCallback))
   {
@@ -1501,12 +1502,13 @@ namespace
       const bfTextureHandle image = image_list->images + i;
 
       logical_device->cache_framebuffer.forEach([image](bfFramebufferHandle fb, bfFramebufferState& config_data) {
-        for (uint32_t i = 0; i < config_data.num_attachments; ++i)
+        (void)fb;
+
+        for (uint32_t attachment_index = 0; attachment_index < config_data.num_attachments; ++attachment_index)
         {
-          if (config_data.attachments[i] == image)
+          if (config_data.attachments[attachment_index] == image)
           {
-            config_data.attachments[i] = nullptr;
-            fb->attachments[i]         = nullptr;
+            config_data.attachments[attachment_index] = nullptr;
           }
         }
       });
@@ -1622,28 +1624,31 @@ namespace
     };
   }
 
-  VkBool32 memory_type_from_properties(VkPhysicalDeviceMemoryProperties mem_props, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
-  {
-    // Search memtypes to find first index with those properties
-    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
-    {
-      // Check that the first bit is set
-      if ((typeBits & 1) == 1)
-      {
-        // Type is available, does it match user properties?
-        if ((mem_props.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask)
-        {
-          *typeIndex = i;
-          return VK_TRUE;
-        }
-      }
-      // Move the checked bit over
-      typeBits >>= 1;
-    }
-
-    return VK_FALSE;
-  }
+  
 }  // namespace
+
+extern "C"
+VkBool32 memory_type_from_properties(VkPhysicalDeviceMemoryProperties mem_props, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
+{
+  // Search memtypes to find first index with those properties
+  for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
+  {
+    // Check that the first bit is set
+    if ((typeBits & 1) == 1)
+    {
+      // Type is available, does it match user properties?
+      if ((mem_props.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask)
+      {
+        *typeIndex = i;
+        return VK_TRUE;
+      }
+    }
+    // Move the checked bit over
+    typeBits >>= 1;
+  }
+
+  return VK_FALSE;
+}
 
 /* Buffers */
 bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCreateParams* params)
@@ -1668,7 +1673,7 @@ bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCrea
   buffer_info.queueFamilyIndexCount = 0;
   buffer_info.pQueueFamilyIndices   = NULL;
 
-  VkResult error = vkCreateBuffer(self_->handle, &buffer_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->handle);
+  const VkResult error = vkCreateBuffer(self_->handle, &buffer_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->handle);
   assert(error == VK_SUCCESS);
   VkMemoryRequirements mem_requirements;
   vkGetBufferMemoryRequirements(self_->handle, self->handle, &mem_requirements);
@@ -2179,8 +2184,8 @@ void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlag
       break;
   }
 
-  VkPipelineStageFlagBits src_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-  VkPipelineStageFlagBits dst_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+  VkPipelineStageFlags src_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+  VkPipelineStageFlags dst_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
   if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
   {
@@ -2191,6 +2196,11 @@ void setImageLayout(VkCommandBuffer cmd_buffer, VkImage image, VkImageAspectFlag
   {
     src_flags = VK_PIPELINE_STAGE_TRANSFER_BIT;
     dst_flags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  }
+  else if (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+  {
+    src_flags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dst_flags = VK_PIPELINE_STAGE_TRANSFER_BIT;
   }
 
   vkCmdPipelineBarrier(

@@ -55,7 +55,7 @@ namespace bf
     struct GCContext;
   }
 
-  using EntityList   = intrusive::ListView<Entity>;
+  using EntityList   = ListView<Entity>;
   using BehaviorList = Array<BaseBehavior*>;
 
   // clang-format off
@@ -73,22 +73,22 @@ namespace bf
     static constexpr std::uint8_t IS_ACTIVE              = bfBit(3);  //!<
     static constexpr std::uint8_t IS_SERIALIZABLE        = bfBit(4);  //!<
 
-    // private:
-    Scene&                  m_OwningScene;              //!<
-    String                  m_Name;                     //!<
-    bfTransformID           m_Transform;                //!<
-    Entity*                 m_Parent;                   //!<
-    EntityList              m_Children;                 //!<
-    intrusive::Node<Entity> m_Hierarchy;                //!<
-    ComponentHandleStorage  m_ComponentHandles;         //!<
-    ComponentActiveStorage  m_ComponentActiveStates;    //!<
-    ComponentActiveStorage  m_ComponentInActiveStates;  //!<
-    BVHNodeOffset           m_BHVNode;                  //!<
-    BehaviorList            m_Behaviors;                //!<
-    std::atomic_uint32_t    m_RefCount;                 //!<
-    intrusive::Node<Entity> m_GCList;                   //!<
-    std::uint8_t            m_Flags;                    //!<
-    bfUUIDNumber            m_UUID;                     //!< This uuid will remain unset until the first use through "Entity::uuid".
+   private:
+    Scene&                 m_OwningScene;              //!<
+    String                 m_Name;                     //!<
+    bfTransformID          m_Transform;                //!<
+    Entity*                m_Parent;                   //!<
+    EntityList             m_Children;                 //!<
+    Node<Entity>           m_Hierarchy;                //!<
+    ComponentHandleStorage m_ComponentHandles;         //!<
+    ComponentActiveStorage m_ComponentActiveStates;    //!<
+    ComponentActiveStorage m_ComponentInActiveStates;  //!<
+    BVHNodeOffset          m_BHVNode;                  //!<
+    BehaviorList           m_Behaviors;                //!<
+    std::atomic_uint32_t   m_RefCount;                 //!<
+    Node<Entity>           m_GCList;                   //!<
+    std::uint8_t           m_Flags;                    //!<
+    bfUUIDNumber           m_UUID;                     //!< This uuid will remain unset until the first use through "Entity::uuid".
 
    public:
     Entity(Scene& scene, const StringRange& name);
@@ -171,7 +171,7 @@ namespace bf
     }
 
     //
-    // Returns true if the operation successed to do anything.
+    // Returns true if the operation succeeds to do anything.
     //
     template<typename T>
     bool setComponentActive(bool value)
@@ -291,7 +291,7 @@ namespace bf
 
     void serialize(ISerializer& serializer);
 
-    ~Entity();
+    ~Entity() override;
 
    private:
     void setActiveImpl(bool old_state, bool new_state);

@@ -4,12 +4,12 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "32637262-C0B6-4025-B4CE-876A5CED03F8",
-            "name" : "Material_#0",
+            "uuid" : "D52816D4-4CFF-4A17-9C85-44BDDEDB85DD",
+            "name" : "Material_#0.material",
             "version" : 1
         }
     ],
-    "uuid" : "00DC1DD2-B19A-4F95-BF32-A31B7CC06D08",
-    "name" : "rhino",
+    "uuid" : "145781FB-B657-420C-82DD-B23AB0685E5B",
+    "name" : "rhino.obj",
     "version" : 1
 }

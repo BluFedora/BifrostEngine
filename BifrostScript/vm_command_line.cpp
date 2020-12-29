@@ -14,6 +14,7 @@
 
 #include <bifrost/bifrost_vm.hpp> /* VM C++ API */
 
+#include <cassert>   // assert
 #include <cstdio>    // printf, fopen, flocse, ftell, fseek, fread, malloc
 #include <iostream>  // cin
 
@@ -31,7 +32,7 @@ static void  waitForInput() noexcept;
 
 int main(int argc, char* argv[])
 {
-#if __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) && __EMSCRIPTEN__
   const char* const file_name = "assets/scripts/test_script.bscript";
 #else
   if (argc != 2)
@@ -93,7 +94,7 @@ int main(int argc, char* argv[])
 
 static void errorHandler(BifrostVM* /*vm*/, BifrostVMError err, int line_no, const char* message) noexcept
 {
-  const char* err_type_str;
+  const char* err_type_str = nullptr;
 
   switch (err)
   {
@@ -134,10 +135,11 @@ static void errorHandler(BifrostVM* /*vm*/, BifrostVMError err, int line_no, con
       err_type_str = "Trace End";
       break;
     case BIFROST_VM_ERROR_NONE:
-    default:
       err_type_str = "none";
       break;
   }
+
+  assert(err_type_str != nullptr);
 
   std::printf("%s Error[Line %i]: %s\n", err_type_str, line_no, message);
 }

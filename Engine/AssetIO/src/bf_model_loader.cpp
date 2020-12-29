@@ -13,7 +13,7 @@ namespace bf
   static char* stringRangeToString(IMemoryManager& memory, bfStringRange str) noexcept
   {
     const std::size_t str_length         = str.end - str.bgn;
-    char*             nul_terminated_str = reinterpret_cast<char*>(memory.allocate(str_length + 1u));
+    char*             nul_terminated_str = static_cast<char*>(memory.allocate(str_length + 1u));
 
     std::memcpy(nul_terminated_str, str.bgn, str_length);
     nul_terminated_str[str_length] = '\0';
@@ -64,27 +64,27 @@ namespace bf
 
     for (unsigned i = 0; i < skeleton.num_nodes; ++i)
     {
-      if (std::strcmp(skeleton.nodes[i].name.data, name.data) == 0)
+      if (std::strcmp(skeleton.nodes[int(i)].name.data, name.data) == 0)
       {
         const unsigned id = num_bones++;
 
         assert(num_bones < k_MaxBones && "Too Many Bones");
 
-        skeleton.bones[id].first            = i;
-        skeleton.nodes[i].model_to_bone_idx = id;
-        nodes[id]                           = &skeleton.nodes[i];
+        skeleton.bones[id].first                 = i;
+        skeleton.nodes[int(i)].model_to_bone_idx = std::uint8_t(id);
+        nodes[id]                                = &skeleton.nodes[int(i)];
 
         return id;
       }
     }
 
-    assert(!"Could not find associated bone.");
-    return -1;
+    assert(!"Could not find associated bone.");  // NOLINT(clang-diagnostic-string-conversion)
+    return unsigned(-1);
   }
 
-  static void addBoneDataToVertex(AssetModelVertex* vertex, float weight, int bone_index)
+  static void addBoneDataToVertex(AssetModelVertex* vertex, float weight, std::uint8_t bone_index)
   {
-    for (int i = 0; i < k_MaxVertexBones; ++i)
+    for (std::size_t i = 0; i < k_MaxVertexBones; ++i)
     {
       if (vertex->bone_weights[i] == 0.0f)
       {
@@ -94,7 +94,7 @@ namespace bf
       }
     }
 
-    assert(!"No enough slots for bone data.");
+    assert(!"No enough slots for bone data.");  // NOLINT(clang-diagnostic-string-conversion)
   }
 
   template<typename F>
@@ -213,7 +213,7 @@ namespace bf
     if (!scene /* || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE */)
     {
       result.setError(importer.GetErrorString());
-      goto done;
+      goto done;  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
     }
 
     // Main Loading Routine
@@ -267,9 +267,9 @@ namespace bf
         recurseNodes(
          scene->mRootNode,
          [&load_settings, &skeleton = result.skeleton, node_idx = 0](const aiNode* parent_node, const aiNode* node, int depth, unsigned int parent_index) mutable {
-           if (parent_index != static_cast<unsigned int>(-1) && skeleton.nodes[parent_index].first_child == static_cast<unsigned int>(-1))
+           if (parent_index != static_cast<unsigned int>(-1) && skeleton.nodes[int(parent_index)].first_child == static_cast<unsigned int>(-1))
            {
-             skeleton.nodes[parent_index].first_child = node_idx;
+             skeleton.nodes[int(parent_index)].first_child = node_idx;
            }
 
            AssetNode& model_node = skeleton.nodes[node_idx];
@@ -333,7 +333,6 @@ namespace bf
         for (unsigned int i = 0; i < num_meshes; ++i)
         {
           const aiMesh* const  mesh              = scene->mMeshes[i];
-          Mesh* const          mesh_proto        = result.mesh_list->data + i;
           const unsigned int   num_mesh_vertices = mesh->mNumVertices;
           const unsigned int   num_mesh_faces    = mesh->mNumFaces;
           const AssetIndexType num_mesh_indices  = num_mesh_faces * k_NumIndicesPerFace;
@@ -395,7 +394,7 @@ namespace bf
             const aiBone* const bone       = mesh->mBones[b];
             const unsigned      bone_index = findAssetNode(result.skeleton, bone_to_node, bone->mName);
 
-            if (bone_index != -1)
+            if (bone_index != unsigned(-1))
             {
               aiMat4x4ToMatrix4x4(&bone->mOffsetMatrix, result.skeleton.bones[bone_index].second, load_settings.row_major);
 
@@ -406,7 +405,7 @@ namespace bf
                 addBoneDataToVertex(
                  result.vertices->data + vertex_index,
                  bone->mWeights[bw].mWeight,
-                 bone_index);
+                 std::uint8_t(bone_index));
               }
             }
             else
@@ -426,7 +425,7 @@ namespace bf
 
         result.materials = detail::makeUniqueTempArray<AssetPBRMaterial>(memory, num_materials);
 
-        const auto load_texture = [&memory](const aiMaterial* material, aiTextureType tex_type) -> AssetTempLargeString {
+        const auto load_texture = [](const aiMaterial* material, aiTextureType tex_type) -> AssetTempLargeString {
           if (material->GetTextureCount(tex_type) > 0)
           {
             aiString       tex_path;

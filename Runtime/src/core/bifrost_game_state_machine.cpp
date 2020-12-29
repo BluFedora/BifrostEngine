@@ -94,7 +94,7 @@ namespace bf
       m_OverlayTail = !prev_in_layer ? state->m_Prev : nullptr;
     }
 
-    // List Patchup
+    // List Patch-up
     if (state->m_Next)
     {
       state->m_Next->m_Prev = state->m_Prev;
@@ -140,7 +140,7 @@ namespace bf
   {
     while (m_DeleteList)
     {
-      const auto next = m_DeleteList->m_Next;
+      auto* const next = m_DeleteList->m_Next;
 
       m_DeleteList->onUnload(m_Engine);
       m_DeleteList->onDestroy(m_Engine);
@@ -247,4 +247,4 @@ namespace bf
     state->onCreate(m_Engine);
     state->onLoad(m_Engine);
   }
-}  // namespace bifrost
+}  // namespace bf

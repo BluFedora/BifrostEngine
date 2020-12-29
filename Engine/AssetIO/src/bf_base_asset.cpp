@@ -13,7 +13,6 @@
 /******************************************************************************/
 #include "bf/asset_io/bf_base_asset.hpp"
 
-#include "bf/asset_io/bf_asset_map.hpp"
 #include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
@@ -22,8 +21,6 @@
 
 namespace bf
 {
-  char AssetMap::s_TombstoneSentinel = 0;
-
   void AssetMetaInfo::serialize(IMemoryManager& allocator, ISerializer& serializer)
   {
     const bool is_loading = serializer.mode() == SerializerMode::LOADING;
@@ -34,10 +31,7 @@ namespace bf
 
     if (is_loading)
     {
-      name = {
-       static_cast<char*>(allocator.allocate(name_as_str.length() + 1)),
-       name_as_str.length(),
-      };
+      name = string_utils::clone(allocator, name_as_str);
     }
 
     serializer.serialize("version", version);
@@ -258,7 +252,7 @@ namespace bf
   AssetMetaInfo* IBaseAsset::generateMetaInfo(IMemoryManager& allocator) const
   {
     AssetMetaInfo* const result      = allocator.allocateT<AssetMetaInfo>();
-    const StringRange    result_name = name();
+    const StringRange    result_name = nameWithExt();
 
     result->name = string_utils::clone(allocator, result_name);
     result->uuid = m_UUID;
@@ -312,7 +306,8 @@ namespace bf
     char uuid_as_str[k_bfUUIDStringCapacity];
     bfUUID_numberToString(m_UUID.data, uuid_as_str);
 
-    String result = path::append(path::k_SubAssetsRoot, {uuid_as_str, k_bfUUIDStringLength});
+    String result = path::k_SubAssetsRoot;
+    result.append(StringRange{uuid_as_str, k_bfUUIDStringLength});
 
     result = path::append(result, name_with_ext);
 
@@ -337,10 +332,7 @@ namespace bf
     {
       result->m_Flags |= AssetFlags::IS_SUBASSET;
       result->m_ParentAsset = this;
-
-      // This parent keeps it's sub assets alive until destructor.
-      // result->acquire();
-
+      
       m_SubAssets.pushBack(*result);
 
       assets().markDirty(result);

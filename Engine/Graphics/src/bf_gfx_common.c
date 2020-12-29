@@ -74,6 +74,8 @@ void bfBuffer_flushRange(bfBufferHandle self, bfBufferSize offset, bfBufferSize 
   bfBuffer_flushRanges(self, &offset, &size, 1);
 }
 
+static char* LoadFileIntoMemory(const char* filename, long* out_size);
+
 bfBool32 bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file)
 {
   long  buffer_size;
@@ -407,7 +409,7 @@ void bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self)
   bfGfxCmdList_setSampleMask(self, 0xFFFFFFFF);
 }
 
-void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandListHandle self, float x, float y, float width, float height)
+void bfGfxCmdList_setRenderAreaRelImpl(float fb_width, float fb_height, bfGfxCommandListHandle self, float x, float y, float width, float height)
 {
   assert(x >= 0.0f && x <= 1.0f);
   assert(y >= 0.0f && y <= 1.0f);
@@ -415,9 +417,6 @@ void bfGfxCmdList_setRenderAreaRelImpl(bfTextureHandle texture, bfGfxCommandList
   assert(height >= 0.0f && height <= 1.0f);
   assert((x + width) >= 0.0f && (x + width) <= 1.0f);
   assert((y + height) >= 0.0f && (y + height) <= 1.0f);
-
-  const float fb_width  = (float)(bfTexture_width(texture));
-  const float fb_height = (float)(bfTexture_height(texture));
 
   bfGfxCmdList_setRenderAreaAbs(
    self,

@@ -14,15 +14,12 @@
  */
 #include "bf/asset_io/bifrost_assets.hpp"
 
-#include "bf/LinearAllocator.hpp"                   // LinearAllocator
-#include "bf/asset_io/bifrost_file.hpp"             // File
-#include "bf/asset_io/bifrost_json_serializer.hpp"  //
-#include "bf/meta/bifrost_meta_runtime.hpp"         //
-
-#include "bf/debug/bifrost_dbg_logger.h"
-
+#include "bf/LinearAllocator.hpp"  // LinearAllocator
 #include "bf/Platform.h"
 #include "bf/asset_io/bf_path_manip.hpp"
+#include "bf/asset_io/bifrost_file.hpp"             // File
+#include "bf/asset_io/bifrost_json_serializer.hpp"  //
+#include "bf/debug/bifrost_dbg_logger.h"
 
 #include <filesystem> /* filesystem::* */
 
@@ -37,6 +34,21 @@
 
 namespace bf
 {
+  void IBaseObject::reflect(ISerializer& serializer)
+  {
+    serializer.serialize(*this);
+  }
+
+  LinearAllocator& ENGINE_TEMP_MEM(Engine& engine)
+  {
+    return engine.tempMemory();
+  }
+
+  IMemoryManager& ENGINE_TEMP_MEM_NO_FREE(Engine& engine)
+  {
+    return engine.tempMemoryNoFree();
+  }
+
   namespace files = std::filesystem;
 
   namespace path
@@ -97,8 +109,8 @@ namespace bf
 
     DirectoryEntry* openDirectory(IMemoryManager& memory, const StringRange& path)
     {
-      char        null_terminated_path[path::k_MaxLength] = {'\0'};
-      std::size_t null_terminated_path_length             = std::min(path.length(), bfCArraySize(null_terminated_path) - 3);
+      char        null_terminated_path[k_MaxLength] = {'\0'};
+      std::size_t null_terminated_path_length       = std::min(path.length(), bfCArraySize(null_terminated_path) - 3);
 
       std::strncpy(null_terminated_path, path.bgn, null_terminated_path_length);
 
@@ -342,6 +354,18 @@ namespace bf
   {
     static constexpr std::int32_t k_MaxIterations = 20;
 
+    // Always just save out the meta files.
+    {
+      LinearAllocator& temp_alloc         = m_Engine.tempMemory();
+      IMemoryManager&  temp_alloc_no_free = m_Engine.tempMemoryNoFree();
+
+      m_AssetSet.forEach([this, &temp_alloc, &temp_alloc_no_free](IBaseAsset* asset) {
+        LinearAllocatorScope mem_scope = temp_alloc;
+
+        saveMetaInfo(temp_alloc, temp_alloc_no_free, asset);
+      });
+    }
+
     //
     // This loops through each assets and frees any with a
     // ref count of zero.
@@ -433,7 +457,6 @@ namespace bf
 
     const LinearAllocatorScope asset_mem_scope = {temp_alloc};
     const String&              full_path       = asset->fullPath();
-    const String               meta_file_path  = absPathToMetaPath(asset->fullPath());
 
     // Save Engine Asset
 
@@ -451,23 +474,7 @@ namespace bf
       }
     }
 
-    // Save Meta Info
-    {
-      const LinearAllocatorScope json_writer_scope = {temp_alloc};
-      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
-      AssetMetaInfo* const       meta_info         = asset->generateMetaInfo(temp_alloc);
-
-      if (meta_info)
-      {
-        if (json_writer.beginDocument(false))
-        {
-          meta_info->serialize(temp_alloc, json_writer);
-          json_writer.endDocument();
-
-          writeJsonToFile(meta_file_path, json_writer.document());
-        }
-      }
-    }
+    saveMetaInfo(temp_alloc, temp_alloc_no_free, asset);
   }
 
   void Assets::saveAssetInfo(Engine& engine, IBaseAsset* asset) const
@@ -541,6 +548,20 @@ namespace bf
     if (meta_info)
     {
       result = createAssetFromPath(abs_path, meta_info->uuid);
+
+      if (result)
+      {
+        // NOTE(SR): This loop assumes that only one level nesting of sub assets will happen.
+
+        AssetMetaInfo* child_iterator = meta_info->first_child;
+
+        while (child_iterator)
+        {
+          result->findOrCreateSubAsset(child_iterator->name.toStringRange());
+
+          child_iterator = child_iterator->next_sibling;
+        }
+      }
     }
     else
     {
@@ -584,8 +605,12 @@ namespace bf
       }
       else
       {
-        bfLogWarn("[Assets::loadAsset] Failed to find extension handler for \"%.*s\".", int(path.length()), path.begin());
+        bfLogWarn("[Assets::createAssetFromPath] Failed to find extension handler for \"%.*s\".", int(path.length()), path.begin());
       }
+    }
+    else
+    {
+      bfLogWarn("[Assets::createAssetFromPath] Empty file extension for \"%.*s\".", int(path.length()), path.begin());
     }
 
     return result;
@@ -596,5 +621,29 @@ namespace bf
     const bfUUID uuid = bfUUID_generate();
 
     return createAssetFromPath(path, uuid.as_number);
+  }
+
+  void Assets::saveMetaInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const
+  {
+    // This is so we do not save meta files for assets that failed to load.
+    if (File::exists(asset->fullPath().cstr()))
+    {
+      const LinearAllocatorScope json_writer_scope = {temp_alloc};
+      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+      AssetMetaInfo* const       meta_info         = asset->generateMetaInfo(temp_alloc);
+
+      if (meta_info)
+      {
+        if (json_writer.beginDocument(false))
+        {
+          const String meta_file_path = absPathToMetaPath(asset->fullPath());
+
+          meta_info->serialize(temp_alloc, json_writer);
+          json_writer.endDocument();
+
+          writeJsonToFile(meta_file_path, json_writer.document());
+        }
+      }
+    }
   }
 }  // namespace bf

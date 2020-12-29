@@ -540,8 +540,8 @@ namespace bf::meta
   using member_type_base = typename member_t<MemberType>::type_base;
 }  // namespace bifrost::meta
 
-#define BIFROST_META_FRIEND friend class ::bf::meta::Meta
 #define BF_META_FRIEND friend class ::bf::meta::Meta
+#define BIFROST_META_FRIEND BF_META_FRIEND
 
 #define BIFROST_META_REGISTER(name) \
   template<>                        \

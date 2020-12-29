@@ -1,0 +1,15 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (28.0 files/s, 4666.0 lines/s)"
+C,..\Engine\Platform\src\bf_platform_glfw.c,120,30,479
+C/C++ Header,..\Engine\Platform\include\bf\platform\bf_platform_event.h,63,48,272
+CMake,..\Engine\Platform\CMakeLists.txt,34,11,185
+C,..\Engine\Platform\src\bf_platform_sdl.c,55,31,175
+C/C++ Header,..\Engine\Platform\include\bf\platform\bf_platform.h,31,56,133
+C,..\Engine\Platform\src\bf_platform.c,38,38,122
+Markdown,..\Engine\Platform\README.md,20,0,63
+C/C++ Header,..\Engine\Platform\include\bf\platform\bf_platform_export.h,17,35,35
+C,..\Engine\Platform\test\platform_test.c,16,19,34
+C/C++ Header,..\Engine\Platform\include\bf\platform\bf_platform_gl.h,11,21,29
+C/C++ Header,..\Engine\Platform\include\bf\platform\bf_platform_vulkan.h,15,22,26
+C/C++ Header,..\Engine\Platform\include\bf\platform\bf_platform_fwd.h,10,21,13
+C/C++ Header,..\Engine\Platform\include\bf\Platform.h,1,0,2
+C/C++ Header,..\Engine\Platform\include\bf\PlatformFwd.h,1,0,1

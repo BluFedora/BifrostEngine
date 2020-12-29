@@ -1,0 +1,20 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.76  T=0.50 s (38.0 files/s, 7404.0 lines/s)"
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_rect2.hpp,100,44,494
+C,..\Engine\Math\src\bifrost_transform.c,105,30,493
+C,..\Engine\Math\src\bifrost_mat4x4.c,116,68,487
+C,..\Engine\Math\src\bifrost_camera.c,58,4,303
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_vec3.h,23,24,212
+C,..\Engine\Math\src\bifrost_vec3.c,34,14,165
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_transform.h,23,21,122
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_camera.h,26,23,92
+C/C++ Header,..\Engine\Math\include\bf\bifrost_math.h,22,0,78
+C,..\Engine\Math\src\bifrost_vec2.c,17,0,72
+C/C++ Header,..\Engine\Math\include\bf\bifrost_math.hpp,14,19,60
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_mat4x4.h,13,13,52
+CMake,..\Engine\Math\CMakeLists.txt,15,8,50
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_math_export.h,4,16,35
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_vec2.h,7,1,33
+C/C++ Header,..\Engine\Math\include\bf\math\bifrost_math.h,7,9,29
+C++,..\Engine\Math\src\bifrost_rect2.cpp,4,13,26
+C/C++ Header,..\Engine\Math\include\bf\Quaternion.h,1,0,1
+C/C++ Header,..\Engine\Math\include\bf\Math.hpp,1,0,1

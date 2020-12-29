@@ -210,7 +210,7 @@ static bfBool32 find_free_check_for_alloc(BlockSpanIndexPair* const loc, MemoryP
       {
         const OffsetSize* offset = (const OffsetSize*)bfArray_at((void**)&block->layout, j);
 
-        const bfBool32 valid_offset = (needs_new_page) ? (offset->offset == 0) : bfTrue;
+        const bfBool32 valid_offset = (needs_new_page) ? (offset->offset == 0) && block->pageMapping == nullptr : bfTrue;
 
         if (valid_offset && offset->size >= real_size)
         {

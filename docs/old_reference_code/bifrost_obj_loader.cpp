@@ -1,10 +1,8 @@
 #include "bf/data_structures/bifrost_array.hpp"
+#include "bf/bifrost_math.hpp"        // k_Epsilon
+#include "bf/math/bifrost_rect2.hpp"  // Vector3f
 
-#include "bf/math/bifrost_vec3.h"
-#include "bf/graphics/bifrost_standard_renderer.hpp"
-
-#include <cctype>  // isdigit
-#include <cstdint>
+#include <cctype>   // isdigit
 #include <cstdlib>  // atoi
 
 namespace bf
@@ -96,13 +94,13 @@ namespace bf
 
     skip_until_whitespace(obj_file_data, file_pointer);
     skip_whitespace(obj_file_data, file_pointer);
-    position.x = (float)atof(obj_file_data + *file_pointer);
+    position.x = float(atof(obj_file_data + *file_pointer));
     skip_until_whitespace(obj_file_data, file_pointer);
     skip_whitespace(obj_file_data, file_pointer);
-    position.y = (float)atof(obj_file_data + *file_pointer);
+    position.y = float(atof(obj_file_data + *file_pointer));
     skip_until_whitespace(obj_file_data, file_pointer);
     skip_whitespace(obj_file_data, file_pointer);
-    position.z = (float)atof(obj_file_data + *file_pointer);
+    position.z = float(atof(obj_file_data + *file_pointer));
     skip_line(obj_file_data, file_pointer, obj_file_data_length);
     position.w = default_w;
   }
@@ -117,7 +115,9 @@ namespace bf
     pos_max = vec::max(pos_max, position);
   }
 
-  void loadObj(IMemoryManager &temp_allocator, Array<StandardVertex> &out, const char *obj_file_data, std::size_t obj_file_data_length)
+  using VertexEmitter = void (*)(std::size_t current_vertex_index, std::size_t num_vertices, Vector3f pos, Vector3f normal, Vector3f face_tangent, Vector2f uv);
+
+  void loadObj(IMemoryManager &temp_allocator, const char *obj_file_data, std::size_t obj_file_data_length, VertexEmitter output)
   {
     struct FaceElement final
     {
@@ -144,106 +144,121 @@ namespace bf
 
     while (file_pointer < obj_file_data_length)
     {
-      const char *line = (obj_file_data + file_pointer);
+      const char *      line          = (obj_file_data + file_pointer);
+      const std::size_t num_file_left = obj_file_data_length - file_pointer;
 
-      switch (line[0])
+      if (num_file_left > 0)
       {
-        case '#':
+        switch (line[0])
         {
-          skip_line(obj_file_data, &file_pointer, obj_file_data_length);
-          break;
-        }
-        case 'v':
-        {
-          switch (line[1])
+          case '#':
           {
-            case ' ':
+            skip_line(obj_file_data, &file_pointer, obj_file_data_length);
+            break;
+          }
+          case 'v':
+          {
+            if (num_file_left > 1)
             {
-              load_position(positions, obj_file_data, &file_pointer, obj_file_data_length, min_bounds, max_bounds);
-              break;
+              switch (line[1])
+              {
+                case ' ':
+                {
+                  load_position(positions, obj_file_data, &file_pointer, obj_file_data_length, min_bounds, max_bounds);
+                  break;
+                }
+                case 't':
+                {
+                  Vec2f *const uvs_coords = &uvs.emplace();
+
+                  skip_until_whitespace(obj_file_data, &file_pointer);
+                  skip_whitespace(obj_file_data, &file_pointer);
+                  uvs_coords->x = float(atof(obj_file_data + file_pointer));
+                  skip_until_whitespace(obj_file_data, &file_pointer);
+                  uvs_coords->y = float(atof(obj_file_data + file_pointer));
+                  skip_line(obj_file_data, &file_pointer, obj_file_data_length);
+                  break;
+                }
+                case 'n':
+                {
+                  load_vec3f(normals, obj_file_data, &file_pointer, obj_file_data_length, 0.0f);
+                  break;
+                }
+                default:
+                  ++file_pointer;
+                  break;
+              }
             }
-            case 't':
+            else
             {
-              Vec2f *uvsCoords = (Vec2f *)&uvs.emplace();
+              ++file_pointer;  // Error so just move on over.
+            }
+            break;
+          }
+          case 'f':
+          {
+            skip_non_digit(obj_file_data, &file_pointer);
+
+            face_elements.clear();
+
+            int num_face_elements = 0;
+
+            while (file_pointer < obj_file_data_length)
+            {
+              FaceElement face_element{-1, -1, -1};
+
+              extract_face(obj_file_data, &file_pointer, &face_element.position, &face_element.uv, &face_element.normal);
+
+              face_elements.emplace(face_element);
+
+              ++num_face_elements;
+
+              if (obj_file_data[file_pointer] != ' ')
+              {
+                break;
+              }
 
               skip_until_whitespace(obj_file_data, &file_pointer);
               skip_whitespace(obj_file_data, &file_pointer);
-              uvsCoords->x = (float)atof(obj_file_data + file_pointer);
-              skip_until_whitespace(obj_file_data, &file_pointer);
-              uvsCoords->y = (float)atof(obj_file_data + file_pointer);
-              skip_line(obj_file_data, &file_pointer, obj_file_data_length);
-              break;
             }
-            case 'n':
+
+            skip_line(obj_file_data, &file_pointer, obj_file_data_length);
+
+            for (int i = 1; i < num_face_elements - 1; ++i)
             {
-              load_vec3f(normals, obj_file_data, &file_pointer, obj_file_data_length, 0.0f);
-              break;
-            }
-            default:
-              ++file_pointer;
-              break;
-          }
-          break;
-        }
-        case 'f':
-        {
-          skip_non_digit(obj_file_data, &file_pointer);
+              FaceElement *const fe = face_elements.data() + i;
 
-          int num_face_elements = 0;
+              const Face face =
+               {
+                {face_elements[0].position, fe[0].position, fe[1].position},
+                {face_elements[0].uv, fe[0].uv, fe[1].uv},
+                {face_elements[0].normal, fe[0].normal, fe[1].normal},
+               };
 
-          face_elements.clear();
-
-          while (file_pointer < obj_file_data_length)
-          {
-            FaceElement face_element{-1, -1, -1};
-
-            extract_face(obj_file_data, &file_pointer, &face_element.position, &face_element.uv, &face_element.normal);
-
-            face_elements.emplace(face_element);
-
-            ++num_face_elements;
-
-            if (obj_file_data[file_pointer] != ' ')
-            {
-              break;
+              faces.emplace(face);
             }
 
-            skip_until_whitespace(obj_file_data, &file_pointer);
-            skip_whitespace(obj_file_data, &file_pointer);
+            break;
           }
-
-          skip_line(obj_file_data, &file_pointer, obj_file_data_length);
-
-          for (int i = 1; i < num_face_elements - 1; ++i)
+          default:
           {
-            FaceElement *const fe = face_elements.data() + i;
-
-            Face face =
-             {
-              {face_elements[0].position, fe[0].position, fe[1].position},
-              {face_elements[0].uv, fe[0].uv, fe[1].uv},
-              {face_elements[0].normal, fe[0].normal, fe[1].normal},
-             };
-
-            faces.emplace(face);
+            skip_line(obj_file_data, &file_pointer, obj_file_data_length);
+            break;
           }
-
-          break;
         }
-        default:
-        {
-          skip_line(obj_file_data, &file_pointer, obj_file_data_length);
-          break;
-        }
+      }
+      else
+      {
+        ++file_pointer;  // Error so just move on over.
       }
     }
 
-    out.reserve(faces.size() * 3);
-
-    const Vector3f scale         = max_bounds - min_bounds;
-    const Vector3f center        = (max_bounds + min_bounds) * 0.5f;
-    const float    max_scale     = std::max({scale.x, scale.y, scale.z});
-    const float    inv_max_scale = 1.0f / std::max(max_scale, k_Epsilon);
+    const std::size_t num_total_vertices = faces.size() * 3;
+    const Vector3f    scale              = max_bounds - min_bounds;
+    const Vector3f    center             = (max_bounds + min_bounds) * 0.5f;
+    const float       max_scale          = std::max({scale.x, scale.y, scale.z});
+    const float       inv_max_scale      = 1.0f / std::max(max_scale, k_Epsilon);
+    std::size_t       current_vertex     = 0;
 
     for (std::size_t i = 0; i < faces.size(); ++i)
     {
@@ -288,26 +303,17 @@ namespace bf
 
       for (std::size_t j = 0; j < 3; ++j)
       {
-        StandardVertex *const vertex = &out.emplace();
-
         const Vector3f *const pos    = positions.data() + face->position[j] - 1;
         const Vector3f *const normal = face->normal[j] == -1 ? nullptr : normals.data() + face->normal[j] - 1;
         const Vector2f *const uv     = face->uv[j] == -1 ? nullptr : uvs.data() + face->uv[j] - 1;
 
-        if (pos)
-        {
-          vertex->pos = (*pos - center) * inv_max_scale;
-        }
-
-        vertex->normal  = normal ? *normal : face_normal;
-        vertex->tangent = face_tangent;
-
-        if (uv)
-        {
-          vertex->uv = *uv;
-        }
-
-        vertex->color = bfColor4u_fromUint32(0xFFFFFFFF);
+        output(
+         current_vertex++,
+         num_total_vertices,
+         pos ? (*pos - center) * inv_max_scale : Vector3f{},
+         normal ? *normal : face_normal,
+         face_tangent,
+         uv ? *uv : Vector2f{});
       }
     }
   }

@@ -346,7 +346,7 @@ bfAnim2DSpriteHandle bfAnim2DScene_addSprite(bfAnim2DScene* self)
   bfAnim2DSpriteHandle sprite_handle;
 
   sprite_handle.scene    = self;
-  sprite_handle.id       = self->active_sprites.add().toID();
+  sprite_handle.id       = self->active_sprites.add().id_index;
   sprite_handle.reserved = 0xFF;
 
   std::memset(&self->active_sprites.find(sprite_handle.id), 0x00, sizeof(bfAnim2DSprite_t));

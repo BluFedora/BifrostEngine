@@ -453,6 +453,11 @@ namespace bf
   {
     char*       buffer;
     std::size_t length;
+
+    StringRange toStringRange() const
+    {
+      return {buffer, length};
+    }
   };
 }  // namespace bf
 

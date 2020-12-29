@@ -184,7 +184,7 @@ namespace bf
      &*skeleton.bones + skeleton.num_bones,
      dst_bones,
      [](const auto& src_bone) -> NodeIDBone {
-       NodeIDBone dst_bone;
+       NodeIDBone dst_bone;  // NOLINT(cppcoreguidelines-pro-type-member-init)
 
        dst_bone.node_idx  = src_bone.first;
        dst_bone.transform = src_bone.second;

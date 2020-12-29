@@ -62,7 +62,7 @@ namespace bf
 
       // TODO(SR):
       //   - Sorting based on distance, material, transparency.
-      //   - Culling based on the view fustrum.
+      //   - Culling based on the view frustrum.
       //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/]
       //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/clip-space-approach-implementation-details/]
       //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-source-code/]
@@ -91,15 +91,17 @@ namespace bf
 
       for (SkinnedMeshRenderer& mesh : scene->components<SkinnedMeshRenderer>())
       {
-        if (mesh.material() && mesh.model() /* && mesh.m_Animation*/)
+        if (mesh.material() && mesh.model())
         {
+          auto& model = *mesh.model();
+
           engine_renderer.bindMaterial(cmd_list, *mesh.material());
           engine_renderer.bindObject(cmd_list, camera.gpu_camera, mesh.owner());
 
           auto& uniform_bone_data = anim_sys.getRenderable(engine_renderer, mesh.owner());
 
           const bfBufferSize offset = uniform_bone_data.transform_uniform.offset(frame_info);
-          const bfBufferSize size   = sizeof(ObjectBoneData);
+          const bfBufferSize size   = sizeof(Mat4x4) * model.numBones();
 
           // TODO(SR): Optimize into an immutable DescriptorSet!
           bfDescriptorSetInfo desc_set_object = engine_renderer.bindObject2(camera.gpu_camera, mesh.owner());
@@ -107,7 +109,7 @@ namespace bf
           bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
           bfGfxCmdList_bindDescriptorSet(cmd_list, k_GfxObjectSetIndex, &desc_set_object);
 
-          mesh.model()->draw(cmd_list);
+          model.draw(cmd_list);
         }
       }
 
@@ -115,7 +117,7 @@ namespace bf
 
       // TODO(SR):
       //   - Sorting based on distance, material, transparency.
-      //   - Culling based on the view fustrum.
+      //   - Culling based on the view frustrum.
 
       auto& sprite_renderer_list = scene->components<SpriteRenderer>();
 

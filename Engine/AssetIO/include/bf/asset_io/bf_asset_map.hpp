@@ -14,10 +14,10 @@
 #ifndef BF_ASSET_MAP_HPP
 #define BF_ASSET_MAP_HPP
 
+#include "bf/StringRange.hpp"                         // StringRange
 #include "bf/bf_non_copy_move.hpp"                    // NonCopyMoveable<T>
-#include "bf/data_structures/bifrost_hash_table.hpp"  // HashTable
+#include "bf/data_structures/bifrost_hash_table.hpp"  // HashTable<K, V>
 #include "bf/utility/bifrost_uuid.hpp"                // bfUUIDNumber
-#include "bf_base_asset.hpp"                          // IBaseAsset, StringRange, IMemoryManager
 
 namespace bf
 {
@@ -29,7 +29,7 @@ namespace bf
   // Although this is named `AssetMap` it is really a 'AssetSet'.
   // This class assumes you do not insert a repeated asset.
   //
-  class AssetMap : private NonCopyMoveable<AssetMap>
+  class AssetMap final : private NonCopyMoveable<AssetMap>
   {
    public:
     static char s_TombstoneSentinel;  //!< Used to get a unique `IBaseAsset` pointer value so that Node does not need an extra member like a bool.
@@ -68,75 +68,15 @@ namespace bf
     IMemoryManager& m_Memory;            //!< Where to grab memory from.
 
    public:
-    explicit AssetMap(IMemoryManager& memory) :
-      m_PathToAssetIndex{},
-      m_Assets(memory.allocateArray<Node>(k_InitialCapacity)),
-      m_NumAssets(0),
-      m_AssetsCapacity(k_InitialCapacity),
-      m_NumAssetsMask(k_InitialCapacity - 1),
-      m_MaxProbed{-1},
-      m_Memory{memory}
-    {
-    }
+    explicit AssetMap(IMemoryManager& memory);
 
-    ~AssetMap()
-    {
-      m_Memory.deallocateArray(m_Assets);
-    }
+    ~AssetMap();
 
-    bool isEmpty() const
-    {
-      return m_NumAssets == 0;
-    }
-
-    void clear()
-    {
-      m_PathToAssetIndex.clear();
-      std::fill_n(m_Assets, m_AssetsCapacity, Node());
-      m_NumAssets = 0;
-      m_MaxProbed = -1;
-    }
-
-    void insert(IBaseAsset* key)
-    {
-      reserveSpaceForNewElement();
-
-      const std::size_t dst_slot_idx = findBucketFor(key->uuid());
-
-      m_Assets[dst_slot_idx].value            = key;
-      m_PathToAssetIndex[key->relativePath()] = dst_slot_idx;
-
-      ++m_NumAssets;
-    }
-
-    IBaseAsset* find(StringRange path) const
-    {
-      const auto path_it = m_PathToAssetIndex.find(path);
-
-      if (path_it != m_PathToAssetIndex.end())
-      {
-        return findImpl(
-                path_it->value(),
-                path,
-                [](const StringRange key, IBaseAsset* asset) {
-                  return key == asset->relativePath();
-                })
-         .item;
-      }
-
-      return nullptr;
-    }
-
-    IBaseAsset* find(const bfUUIDNumber& uuid) const
-    {
-      return findImpl(
-              hashUUID(uuid),
-              uuid,
-              [](const bfUUIDNumber& key, IBaseAsset* asset) {
-                return UUIDEqual()(key, asset->uuid());
-              })
-       .item;
-    }
+    bool        isEmpty() const;
+    void        clear();
+    void        insert(IBaseAsset* key);
+    IBaseAsset* find(StringRange path) const;
+    IBaseAsset* find(const bfUUIDNumber& uuid) const;
 
     template<typename F>
     void forEach(F&& callback) const
@@ -191,38 +131,9 @@ namespace bf
       return removed_any;
     }
 
-    bool remove(StringRange path)
-    {
-      const auto path_it = m_PathToAssetIndex.find(path);
-
-      if (path_it != m_PathToAssetIndex.end())
-      {
-        return removeImpl(
-         path_it->value(),
-         path,
-         [](const StringRange key, IBaseAsset* asset) {
-           return key == asset->relativePath();
-         });
-      }
-
-      return false;
-    }
-
-    // ReSharper disable once CppMemberFunctionMayBeConst
-    bool remove(const bfUUIDNumber& uuid)
-    {
-      return removeImpl(
-       hashUUID(uuid),
-       uuid,
-       [](const bfUUIDNumber& key, IBaseAsset* asset) {
-         return UUIDEqual()(key, asset->uuid());
-       });
-    }
-
-    bool remove(const IBaseAsset* key)
-    {
-      return remove(key->uuid());
-    }
+    bool remove(StringRange path);
+    bool remove(const bfUUIDNumber& uuid);
+    bool remove(const IBaseAsset* key);
 
    private:
     template<typename TKey, typename FCmp>
@@ -240,79 +151,9 @@ namespace bf
       return false;
     }
 
-    void removeAt(HashIndex bucket_slot)
-    {
-      const IBaseAsset* const item = m_Assets[bucket_slot].value;
-
-      m_PathToAssetIndex.remove(item->relativePath());
-      m_Assets[bucket_slot].value = reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel);
-      --m_NumAssets;
-    }
-
-    std::size_t findBucketFor(const bfUUIDNumber& uuid)
-    {
-      const std::size_t base_hash = hashUUID(uuid);
-      std::int32_t      offset    = 0;
-
-      while (true)
-      {
-        const std::size_t slot = (base_hash + offset) & m_NumAssetsMask;
-
-        if (!m_Assets[slot].is_active())
-        {
-          if (offset > m_MaxProbed)
-          {
-            m_MaxProbed = offset;
-          }
-
-          return slot;
-        }
-
-        ++offset;
-      }
-    }
-
-    void reserveSpaceForNewElement()
-    {
-      const std::size_t requested_num_elements = (m_NumAssets + 1);
-      const std::size_t required_size          = requested_num_elements + requested_num_elements / 2 + 1;
-
-      // If we do not have the capacity to satisfy optimal number of free spaces.
-      if (required_size > m_AssetsCapacity)
-      {
-        std::size_t required_size_po2 = 4;
-
-        while (required_size_po2 < required_size)
-        {
-          required_size_po2 *= 2;
-        }
-
-        Node* const       old_assets   = m_Assets;
-        const std::size_t old_capacity = m_AssetsCapacity;
-
-        m_PathToAssetIndex.clear();
-        m_Assets         = m_Memory.allocateArray<Node>(required_size_po2);
-        m_NumAssets      = 0u;
-        m_AssetsCapacity = required_size_po2;
-        m_NumAssetsMask  = required_size_po2 - 1;
-
-        for (std::size_t src_slot_idx = 0; src_slot_idx < old_capacity; ++src_slot_idx)
-        {
-          const Node& src_slot = old_assets[src_slot_idx];
-
-          if (src_slot.is_active())
-          {
-            const std::size_t dst_slot_idx = findBucketFor(src_slot.value->uuid());
-
-            m_Assets[dst_slot_idx]                             = src_slot;
-            m_PathToAssetIndex[src_slot.value->relativePath()] = dst_slot_idx;
-            ++m_NumAssets;
-          }
-        }
-
-        m_Memory.deallocateArray(old_assets);
-      }
-    }
+    void        removeAt(HashIndex bucket_slot);
+    std::size_t findBucketFor(const bfUUIDNumber& uuid);
+    void        reserveSpaceForNewElement();
 
     template<typename TKey, typename FCmp>
     FindResult findImpl(HashIndex start_index, TKey&& key, FCmp&& cmp) const
@@ -347,7 +188,6 @@ namespace bf
       return UUIDHasher()(uuid);
     }
   };
-
 }  // namespace bf
 
 #endif /* BF_ASSET_MAP_HPP */

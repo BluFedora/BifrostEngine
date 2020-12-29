@@ -11,7 +11,7 @@
 #if __cplusplus
 extern "C" {
 #endif
-typedef struct Allocation_t
+typedef struct
 {
   VkDeviceMemory handle;
   uint32_t       type;
@@ -22,14 +22,14 @@ typedef struct Allocation_t
 
 } Allocation;
 
-typedef struct OffsetSize_t
+typedef struct
 {
   uint64_t offset;
   uint64_t size;
 
 } OffsetSize;
 
-typedef struct DeviceMemoryBlock_t
+typedef struct
 {
   Allocation  mem;
   OffsetSize* layout;
@@ -41,7 +41,7 @@ typedef struct DeviceMemoryBlock_t
 
 typedef DeviceMemoryBlock* MemoryPool;
 
-typedef struct PoolAllocator_t
+typedef struct
 {
   const bfGfxDevice* m_LogicalDevice;
   uint64_t           m_MinBlockSize;
@@ -51,6 +51,15 @@ typedef struct PoolAllocator_t
   uint32_t           m_NumAllocations;
 
 } PoolAllocator;
+
+BF_DEFINE_GFX_HANDLE(Buffer)
+{
+  bfBaseGfxObject super;
+  PoolAllocator*  alloc_pool;
+  VkBuffer        handle;
+  Allocation      alloc_info;  // This has the aligned size.
+  bfBufferSize    real_size;
+};
 
 void     VkPoolAllocatorCtor(PoolAllocator* self, const bfGfxDevice* const logical_device);
 void     VkPoolAllocator_alloc(PoolAllocator*                self,

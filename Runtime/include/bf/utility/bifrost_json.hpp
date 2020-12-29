@@ -148,6 +148,6 @@ namespace bf::json
     //
     void add(StringRange key, const Value& value);
   };
-}  // namespace bifrost::json
+}  // namespace bf::json
 
 #endif /* BIFROST_JSON_HPP */

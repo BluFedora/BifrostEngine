@@ -16,7 +16,7 @@ namespace bf::editor
 
    public:
     explicit GameView();
-    ~GameView();
+    ~GameView() override;
 
    protected:
     const char* title() const override { return "Game View"; }
@@ -27,6 +27,6 @@ namespace bf::editor
     void startSimulation(Engine& engine, const ARC<SceneAsset>& scene);
     void stopSimulation(Engine& engine, const ARC<SceneAsset>& scene);
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_GAME_HPP */

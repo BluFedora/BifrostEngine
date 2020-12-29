@@ -26,13 +26,6 @@
 #if __cplusplus
 extern "C" {
 #endif
-/* Constants */
-
-enum
-{
-  k_bfGfxMaxFramesDelay = 3, /*!< The max number of frames the CPU and GPU can be out of synce by. */
-};
-
 /* clang-format off */
 #define k_bfBufferWholeSize    ((uint64_t)~0ull)
 #define k_bfTextureUnknownSize ((uint32_t)-1)
@@ -41,6 +34,7 @@ enum
 
 /* Forward Declarations */
 struct bfWindow;
+typedef struct bfRenderpassInfo_t bfRenderpassCreateParams;
 
 typedef uint64_t bfBufferSize;
 
@@ -48,28 +42,27 @@ typedef uint64_t bfBufferSize;
 enum
 {
   /// Best for Device Access to the Memory.
-  BF_BUFFER_PROP_DEVICE_LOCAL = (1 << 0),
+  BF_BUFFER_PROP_DEVICE_LOCAL = bfBit(0),
 
   /// Can be mapped on the host.
-  BF_BUFFER_PROP_HOST_MAPPABLE = (1 << 1),
+  BF_BUFFER_PROP_HOST_MAPPABLE = bfBit(1),
 
   /// You don't need 'vkFlushMappedMemoryRanges' and 'vkInvalidateMappedMemoryRanges' anymore.
-  BF_BUFFER_PROP_HOST_CACHE_MANAGED = (1 << 2),
+  BF_BUFFER_PROP_HOST_CACHE_MANAGED = bfBit(2),
 
   /// Always host coherent, cached on the host for increased host access speed.
-  BF_BUFFER_PROP_HOST_CACHED = (1 << 3),
+  BF_BUFFER_PROP_HOST_CACHED = bfBit(3),
 
   /// Implementation defined lazy allocation of the buffer.
   /// use: vkGetDeviceMemoryCommitment
   ///   Mutually Exclusive To: BPF_HOST_MAPPABLE
-  BF_BUFFER_PROP_DEVICE_LAZY_ALLOC = (1 << 4),
+  BF_BUFFER_PROP_DEVICE_LAZY_ALLOC = bfBit(4),
 
   /// Only device accessible and allows protected queue operations.
   ///   Mutually Exclusive To: BPF_HOST_MAPPABLE, BPF_HOST_CACHE_MANAGED, BPF_HOST_CACHED.
-  BF_BUFFER_PROP_PROTECTED = (1 << 5),
+  BF_BUFFER_PROP_PROTECTED = bfBit(5),
 
 } /* bfBufferPropertyFlags */;
-
 typedef uint16_t bfBufferPropertyBits;
 
 enum
@@ -93,10 +86,9 @@ enum
      Requirements :
        'BF_BUFFER_PROP_HOST_MAPPABLE'
   */
-  BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER = (1 << 9) /*!< Can be used for data that is streamed to the gpu */
+  BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER = bfBit(9) /*!< Can be used for data that is streamed to the gpu */
 
 } /* bfBufferUsageFlags */;
-
 typedef uint16_t bfBufferUsageBits;
 
 typedef enum
@@ -126,7 +118,6 @@ enum
                              BF_SHADER_STAGE_FRAGMENT,
 
 } /* bfShaderStageFlags */;
-
 typedef uint8_t bfShaderStageBits;
 
 typedef enum
@@ -195,8 +186,6 @@ typedef struct
 
 } bfBufferCreateParams;
 
-typedef struct bfRenderpassInfo_t bfRenderpassCreateParams;
-
 typedef struct
 {
   const char* debug_name;
@@ -219,7 +208,6 @@ enum
   BF_TEX_IS_LINEAR             = bfBit(10),
 
 } /* bfTexFeatureBits */;
-
 typedef uint16_t bfTexFeatureFlags;
 
 typedef struct
@@ -287,7 +275,7 @@ typedef enum
   BF_GFX_OBJECT_FRAMEBUFFER    = 6,
   BF_GFX_OBJECT_PIPELINE       = 7,
 
-} bfGfxObjectType;
+} bfGfxObjectType; // 3 bits worth of data.
 
 #define bfFrameCountMax 0xFFFFFFFF
 typedef uint32_t bfFrameCount_t;
@@ -305,9 +293,9 @@ void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type);
 // ^ END Internal ^
 
 /* Logical Device */
-typedef struct  // bfDeviceLimits_t
+typedef struct
 {
-  bfBufferSize uniform_buffer_offset_alignment; /* Worst case is 256 (0x100) */
+  bfBufferSize uniform_buffer_offset_alignment; /*!< Worst case is 256 (0x100) */
 
 } bfDeviceLimits;
 
@@ -324,9 +312,11 @@ BF_GFX_API bfDeviceLimits        bfGfxDevice_limits(bfGfxDeviceHandle self);
  * @brief
  *   Freeing a null handle is valid.
  *
- * @param self 
- * @param resource 
- * @return 
+ * @param self
+ *   The device the resource belongs to.
+ *
+ * @param resource
+ *   The resource that you want to free.
 */
 BF_GFX_API void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
@@ -529,15 +519,15 @@ BF_GFX_API bfPipelineBarrier bfPipelineBarrier_image(bfGfxAccessFlagsBits src_ac
 
 BF_GFX_API bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self);
 BF_GFX_API void                  bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self);
-BF_GFX_API bfBool32              bfGfxCmdList_begin(bfGfxCommandListHandle self);  // True if no error
+BF_GFX_API bfBool32              bfGfxCmdList_begin(bfGfxCommandListHandle self);  // Returns True if no error
 BF_GFX_API void                  bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, bfBool32 reads_same_pixel);
 BF_GFX_API void                  bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel);
 BF_GFX_API void                  bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass);
 BF_GFX_API void                  bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info);
 BF_GFX_API void                  bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue* clear_values);
 BF_GFX_API void                  bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments);
-BF_GFX_API void                  bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
-BF_GFX_API void                  bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);  // Normalized [0.0f, 1.0f] coords
+BF_GFX_API void                  bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);  // 0 => AttachmentWidth, 0 => AttachmentHeight
+BF_GFX_API void                  bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);            // Normalized [0.0f, 1.0f] coords
 BF_GFX_API void                  bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self);
 BF_GFX_API void                  bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self);
 BF_GFX_API void                  bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, bfDrawMode draw_mode);
@@ -598,9 +588,6 @@ BF_GFX_API void                  bfGfxCmdList_end(bfGfxCommandListHandle self);
 BF_GFX_API void                  bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
 BF_GFX_API void                  bfGfxCmdList_submit(bfGfxCommandListHandle self);
 
-// TODO: This function should not be in this file...
-BF_GFX_API char* LoadFileIntoMemory(const char* filename, long* out_size);
-
 #if __cplusplus
 }
 #endif
@@ -608,15 +595,46 @@ BF_GFX_API char* LoadFileIntoMemory(const char* filename, long* out_size);
 #if __cplusplus >= 201703L
 
 template<typename T>
-static constexpr bfGfxIndexType bfIndexTypeFromT()
+static constexpr bfGfxIndexType bfIndexTypeFromT() = delete; /* undefined */
+
+template<>
+constexpr bfGfxIndexType bfIndexTypeFromT<uint16_t>()
 {
-  // TODO(SR): This is not a very robust check, but I mean don't mess up.
+  return BF_INDEX_TYPE_UINT16;
+}
 
-  static_assert(sizeof(T) == 2 || sizeof(T) == 4, "An index type must either be a uint16 or a uint32");
-
-  return sizeof(T) == 2 ? BF_INDEX_TYPE_UINT16 : BF_INDEX_TYPE_UINT32;
+template<>
+constexpr bfGfxIndexType bfIndexTypeFromT<uint32_t>()
+{
+  return BF_INDEX_TYPE_UINT32;
 }
 
 #endif
 
 #endif /* BF_GFX_API_H */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

@@ -269,22 +269,23 @@ namespace bf::json
 
   void toString(const Value& json, String& out)
   {
-    bfJsonWriter* json_writer = bfJsonWriter_new([](size_t size, void*) { return malloc(size); }, nullptr);
+    bfJsonWriter* json_writer = bfJsonWriter_newCRTAlloc();
 
     toStringRec(json_writer, json, 0);
 
-    out.reserve(bfJsonWriter_length(json_writer));
     out.clear();
+    out.reserve(bfJsonWriter_length(json_writer));
 
     bfJsonWriter_forEachBlock(
      json_writer, [](const bfJsonStringBlock* block, void* ud) {
        String* const     out_buffer = static_cast<String*>(ud);
        const StringRange block_str  = fromJsonString(bfJsonStringBlock_string(block));
-       out_buffer->append(block_str.begin(), block_str.length());
+
+       out_buffer->append(block_str);
      },
      &out);
 
-    bfJsonWriter_delete(json_writer, [](void* ptr, void*) { free(ptr); });
+    bfJsonWriter_deleteCRT(json_writer);
   }
 
   Value::Value(detail::ObjectInitializer&& values) :

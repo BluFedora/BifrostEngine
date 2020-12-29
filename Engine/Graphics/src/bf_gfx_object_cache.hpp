@@ -5,6 +5,8 @@
 #include "bf/bf_hash.hpp"                                   /* bf::hash::*     */
 #include "bf/data_structures/bifrost_object_hash_cache.hpp" /* ObjectHashCache */
 
+#include <algorithm>
+
 typedef struct
 {
   bfTextureHandle attachments[k_bfGfxMaxAttachments];
@@ -88,15 +90,7 @@ struct ComparebfFramebufferState
       return false;
     }
 
-    for (std::uint32_t i = 0; i < a.num_attachments; ++i)
-    {
-      if (a.attachments[i] != b.attachments[i])
-      {
-        return false;
-      }
-    }
-
-    return true;
+    return std::equal(a.attachments, a.attachments + a.num_attachments, b.attachments);
   }
 };
 

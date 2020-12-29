@@ -124,7 +124,7 @@ namespace bf::UI
     return g_UI.widget_freelist;
   }
 
-  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Abel.ttf", 22.0f);
+  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Montserrat/Montserrat-Medium.ttf", 22.0f);
 
   static void BringToFront(Widget* widget)
   {
@@ -989,7 +989,7 @@ namespace bf::UI
     {
       PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
       PushPadding(20.0f);
-      if (Button("Hello22222222"))
+      if (Button(u8"Hello22222222 \u0210"))
       {
         std::printf("\nHelloffffffff was pressed.\n");
       }

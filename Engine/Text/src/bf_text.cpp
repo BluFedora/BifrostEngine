@@ -570,6 +570,8 @@ namespace bf
     return TextEncoding::UNKNOWN;
   }
 
+#define READ_CHAR(c) std::uint32_t((c)&0xFF)
+
   TextEncodingResult<TextEncoding::UTF8> utf8Codepoint(const CodeUnit<TextEncoding::UTF8>* characters) noexcept
   {
     static constexpr unsigned int k_InvMask = 0xFFFFFF00;
@@ -577,37 +579,53 @@ namespace bf
     CodePoint result;
     int       num_bytes;
 
-    switch (characters[0] & 0xF8)
+    const std::uint32_t character0 = READ_CHAR(characters[0]);
+
+    switch (character0 & 0xF8)  // 1111 1000
     {
+        // 11110xxx
       case 0xF0:  // 1111 0xxx
       {
-        result    = characters[0] & ~(k_InvMask | 0xF0);
+        result    = character0 & ~(k_InvMask | 0xF0);
         num_bytes = 4;
         break;
       }
+
+        // 1110xxxx
       case 0xE0:  // 1110 0xxx
+      case 0xE8:  // 1110 1xxx
       {
-        result    = characters[0] & ~(k_InvMask | 0xE0);
+        result    = character0 & ~(k_InvMask | 0xE0);
         num_bytes = 3;
         break;
       }
+
+        // 110xxxxx
       case 0xC0:  // 1100 0xxx
+      case 0xD0:  // 1101 0xxx
+      case 0xD8:  // 1101 1xxx
+      case 0xC8:  // 1100 1xxx
       {
-        result    = characters[0] & ~(k_InvMask | 0xC0);
+        result    = character0 & ~(k_InvMask | 0xC0);
         num_bytes = 2;
         break;
       }
       default:
       {
-        result    = characters[0] & 0xFFFFFF7F;
+        result    = character0 & 0xFFFFFF7F;
         num_bytes = 1;
+
+        if ((unsigned(characters[0]) & 0xFFFFFF7F) > 255)
+        {
+          __debugbreak();
+        }
         break;
       }
     }
 
     for (int i = 1; i < num_bytes; ++i)
     {
-      result = (result << 6) | (characters[i] & ~(k_InvMask | 0xC0));
+      result = (result << 6) | (READ_CHAR(characters[i]) & ~(k_InvMask | 0xC0));
     }
 
     return TextEncodingResult<TextEncoding::UTF8>{result, characters + num_bytes};

@@ -24,7 +24,7 @@ namespace
   bf::hash::Hash_t simple_hash_base(const char* p, TPredicate&& f)
   {
     static constexpr std::size_t PRIME  = 31;
-    bf::hash::Hash_t        result = 0;
+    bf::hash::Hash_t             result = 0;
 
     while (f(p))
     {
@@ -38,6 +38,45 @@ namespace
 
 namespace bf::hash
 {
+  //
+  // NOTE(SR):
+  //   Using GodBolt I have found that the compiler
+  //   optimized the mod out and does the equivalent
+  //   using other methods. (Dec 27th, 2020)
+  //
+
+  template<>
+  std::uint8_t reducePointer<std::uint8_t>(const void* ptr)
+  {
+    using namespace LargestPrimeLessThanPo2;
+
+    return std::uint8_t(std::uintptr_t(ptr)) % k_8Bit;
+  }
+
+  template<>
+  std::uint16_t reducePointer<std::uint16_t>(const void* ptr)
+  {
+    using namespace LargestPrimeLessThanPo2;
+
+    return std::uint16_t(std::uintptr_t(ptr)) % k_16Bit;
+  }
+
+  template<>
+  std::uint32_t reducePointer<std::uint32_t>(const void* ptr)
+  {
+    using namespace LargestPrimeLessThanPo2;
+
+    return std::uint32_t(std::uintptr_t(ptr)) % k_32Bit;
+  }
+
+  template<>
+  std::uint64_t reducePointer<std::uint64_t>(const void* ptr)
+  {
+    using namespace LargestPrimeLessThanPo2;
+
+    return std::uint64_t(std::uintptr_t(ptr)) % k_64Bit;
+  }
+
   Hash_t simple(const char* p, std::size_t size)
   {
     return simple_hash_base(p, [end = p + size](const char* p) { return p != end; });
@@ -152,4 +191,4 @@ namespace bf::hash
     static_assert(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8, "Unsupported pointer size.");
     return self;
   }
-}  // namespace bifrost::hash
+}  // namespace bf::hash

@@ -155,7 +155,7 @@ namespace bf
           return true;
         }
 
-        idx = idx + 1 & hash_mask;
+        idx = (idx + 1) & hash_mask;
       }
 
       return false;

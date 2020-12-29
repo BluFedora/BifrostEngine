@@ -13,8 +13,8 @@
   The Input attachment must also be bound with the apporpriate descriptor set.
 */
 
-#ifndef BIFROST_GFX_RENDER_GRAPH_HPP
-#define BIFROST_GFX_RENDER_GRAPH_HPP
+#ifndef BF_GFX_RENDER_GRAPH_HPP
+#define BF_GFX_RENDER_GRAPH_HPP
 
 #pragma warning(disable : 26812)
 
@@ -26,16 +26,16 @@
 
 #define PRINT_OUT(c) std::cout << c << "\n"
 
-#define BIFROST_GFX_RENDER_GRAPH_TEST 1
-#include "bifrost_gfx_api.h"
+#define BF_GFX_RENDER_GRAPH_TEST 1
+#include "bf_gfx_api.h"
 
 namespace bf
 {
   // What 64 Characters look like:
   //   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-  static constexpr unsigned int  BIFROST_RENDERPASS_DEBUG_NAME_LEN = 64u;
-  static constexpr unsigned int  BIFROST_RESOURCE_NAME_LEN         = 128u;
-  static constexpr std::uint32_t INVALID_BARRIER_IDX               = std::numeric_limits<std::uint32_t>::max();
+  static constexpr unsigned int  BF_RENDERPASS_DEBUG_NAME_LEN = 64u;
+  static constexpr unsigned int  BF_RESOURCE_NAME_LEN         = 128u;
+  static constexpr std::uint32_t INVALID_BARRIER_IDX          = std::numeric_limits<std::uint32_t>::max();
 
   class RenderGraph;
   struct GraphResourceBase;
@@ -135,11 +135,11 @@ namespace bf
   //*
   struct BarrierImage final : public BarrierMemory
   {
-    BifrostImageLayout old_layout;
-    BifrostImageLayout new_layout;
-    std::uint32_t      src_queue;
-    std::uint32_t      dst_queue;
-    bfTextureHandle    image;
+    bfGfxImageLayout old_layout;
+    bfGfxImageLayout new_layout;
+    std::uint32_t    src_queue;
+    std::uint32_t    dst_queue;
+    bfTextureHandle  image;
     // std::uint32_t      aspect;
     std::uint32_t base_mip_level;
     std::uint32_t level_count;
@@ -152,7 +152,7 @@ namespace bf
   {
     std::uint32_t src_pass;
     std::uint32_t dst_pass;
-    // .dependencyFlags = BIFROST_DEPENDENCY_BY_REGION_BIT,
+    // .dependencyFlags = BF_DEPENDENCY_BY_REGION_BIT,
 
     explicit BarrierSubpassDep(
      std::uint32_t src_stage,
@@ -231,7 +231,7 @@ namespace bf
   {
     BufferUsage::type usage  = BufferUsage::STORAGE_COMPUTE;
     bfBufferSize      offset = 0;
-    bfBufferSize      size   = BIFROST_BUFFER_WHOLE_SIZE;
+    bfBufferSize      size   = k_bfBufferWholeSize;
 
     std::uint32_t pipelineStage() const
     {
@@ -239,32 +239,32 @@ namespace bf
 
       if (usage & BufferUsage::SHADER_COMPUTE)
       {
-        ret |= BIFROST_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        ret |= BF_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
       }
 
       if (usage & BufferUsage::SHADER_VERTEX)
       {
-        ret |= BIFROST_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        ret |= BF_PIPELINE_STAGE_VERTEX_SHADER_BIT;
       }
 
       if (usage & BufferUsage::SHADER_FRAGMENT)
       {
-        ret |= BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        ret |= BF_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
       }
 
       if (usage & (BufferUsage::VERTEX | BufferUsage::INDEX))
       {
-        ret |= BIFROST_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        ret |= BF_PIPELINE_STAGE_VERTEX_INPUT_BIT;
       }
 
       if (usage & BufferUsage::DRAW_INDIRECT)
       {
-        ret |= BIFROST_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        ret |= BF_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
       }
 
       if (usage & BufferUsage::SHADER_TRANSFER)
       {
-        ret |= BIFROST_PIPELINE_STAGE_TRANSFER_BIT;
+        ret |= BF_PIPELINE_STAGE_TRANSFER_BIT;
       }
 
       return ret;
@@ -276,32 +276,32 @@ namespace bf
 
       if (usage & (BufferUsage::STORAGE_COMPUTE | BufferUsage::STORAGE_VERTEX | BufferUsage::STORAGE_FRAGMENT))
       {
-        ret |= is_read ? BIFROST_ACCESS_SHADER_READ_BIT : BIFROST_ACCESS_SHADER_WRITE_BIT;
+        ret |= is_read ? BF_ACCESS_SHADER_READ_BIT : BF_ACCESS_SHADER_WRITE_BIT;
       }
 
       if (usage & (BufferUsage::UNIFORM_VERTEX | BufferUsage::UNIFORM_FRAGMENT))
       {
-        ret |= BIFROST_ACCESS_UNIFORM_READ_BIT;
+        ret |= BF_ACCESS_UNIFORM_READ_BIT;
       }
 
       if (usage & (BufferUsage::VERTEX))
       {
-        ret |= BIFROST_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+        ret |= BF_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
       }
 
       if (usage & (BufferUsage::INDEX))
       {
-        ret |= BIFROST_ACCESS_INDEX_READ_BIT;
+        ret |= BF_ACCESS_INDEX_READ_BIT;
       }
 
       if (usage & (BufferUsage::DRAW_INDIRECT))
       {
-        ret |= BIFROST_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        ret |= BF_ACCESS_INDIRECT_COMMAND_READ_BIT;
       }
 
       if (usage & (BufferUsage::SHADER_TRANSFER))
       {
-        ret |= is_read ? BIFROST_ACCESS_TRANSFER_READ_BIT : BIFROST_ACCESS_TRANSFER_WRITE_BIT;
+        ret |= is_read ? BF_ACCESS_TRANSFER_READ_BIT : BF_ACCESS_TRANSFER_WRITE_BIT;
       }
 
       return ret;
@@ -324,13 +324,13 @@ namespace bf
           switch (stage)
           {
             case PipelineStage::COMPUTE:
-              ret |= BIFROST_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+              ret |= BF_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
               break;
             case PipelineStage::VERTEX:
-              ret |= BIFROST_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+              ret |= BF_PIPELINE_STAGE_VERTEX_SHADER_BIT;
               break;
             case PipelineStage::FRAGMENT:
-              ret |= BIFROST_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+              ret |= BF_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
               break;
           }
           break;
@@ -338,7 +338,7 @@ namespace bf
         case ImageUsage::READ_COLOR:
         case ImageUsage::WRITE_COLOR:
         {
-          ret |= BIFROST_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+          ret |= BF_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
           break;
         }
         case ImageUsage::READ_DEPTH_READ_STENCIL:
@@ -346,7 +346,7 @@ namespace bf
         case ImageUsage::WRITE_DEPTH_READ_STENCIL:
         case ImageUsage::WRITE_DEPTH_WRITE_STENCIL:
         {
-          ret |= BIFROST_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | BIFROST_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+          ret |= BF_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | BF_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
           break;
         }
         case ImageUsage::WRITE_GENERAL:
@@ -366,42 +366,42 @@ namespace bf
       {
         case ImageUsage::READ_COLOR:
         {
-          ret |= BIFROST_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+          ret |= BF_ACCESS_COLOR_ATTACHMENT_READ_BIT;
           break;
         }
         case ImageUsage::WRITE_COLOR:
         {
-          ret |= BIFROST_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+          ret |= BF_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
           break;
         }
         case ImageUsage::READ_DEPTH_READ_STENCIL:
         {
-          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          ret |= BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
           break;
         }
         case ImageUsage::READ_DEPTH_WRITE_STENCIL:
         {
-          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          ret |= BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
           break;
         }
         case ImageUsage::WRITE_DEPTH_READ_STENCIL:
         {
-          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          ret |= BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
           break;
         }
         case ImageUsage::WRITE_DEPTH_WRITE_STENCIL:
         {
-          ret |= BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BIFROST_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+          ret |= BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | BF_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
           break;
         }
         case ImageUsage::READ_GENERAL:
         {
-          ret |= BIFROST_ACCESS_SHADER_READ_BIT;
+          ret |= BF_ACCESS_SHADER_READ_BIT;
           break;
         }
         case ImageUsage::WRITE_GENERAL:
         {
-          ret |= BIFROST_ACCESS_SHADER_WRITE_BIT;
+          ret |= BF_ACCESS_SHADER_WRITE_BIT;
           break;
         }
       }
@@ -409,29 +409,29 @@ namespace bf
       return ret;
     }
 
-    BifrostImageLayout imageLayout() const
+    bfGfxImageLayout imageLayout() const
     {
       switch (usage)
       {
-        case ImageUsage::READ_COLOR: return BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        case ImageUsage::WRITE_COLOR: return BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        case ImageUsage::READ_DEPTH_READ_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        case ImageUsage::READ_DEPTH_WRITE_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-        case ImageUsage::WRITE_DEPTH_READ_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-        case ImageUsage::WRITE_DEPTH_WRITE_STENCIL: return BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        case ImageUsage::READ_GENERAL: return BIFROST_IMAGE_LAYOUT_GENERAL;
-        case ImageUsage::WRITE_GENERAL: return BIFROST_IMAGE_LAYOUT_GENERAL;
+        case ImageUsage::READ_COLOR: return BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        case ImageUsage::WRITE_COLOR: return BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        case ImageUsage::READ_DEPTH_READ_STENCIL: return BF_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        case ImageUsage::READ_DEPTH_WRITE_STENCIL: return BF_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+        case ImageUsage::WRITE_DEPTH_READ_STENCIL: return BF_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+        case ImageUsage::WRITE_DEPTH_WRITE_STENCIL: return BF_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case ImageUsage::READ_GENERAL: return BF_IMAGE_LAYOUT_GENERAL;
+        case ImageUsage::WRITE_GENERAL: return BF_IMAGE_LAYOUT_GENERAL;
       }
 
-      return BIFROST_IMAGE_LAYOUT_GENERAL;
+      return BF_IMAGE_LAYOUT_GENERAL;
     }
   };
 
   struct GraphResourceBase
   {
-    NameString<BIFROST_RESOURCE_NAME_LEN> name;
-    Vector<RenderpassBase*>               readers;
-    Vector<RenderpassBase*>               writers;
+    NameString<BF_RESOURCE_NAME_LEN> name;
+    Vector<RenderpassBase*>          readers;
+    Vector<RenderpassBase*>          writers;
 
     explicit GraphResourceBase(const char* name) :
       name{name},
@@ -499,9 +499,9 @@ namespace bf
       return ret;
     }
 
-    std::uint32_t      pipeline_stage_flags;
-    BifrostImageLayout image_layout;
-    std::uint32_t      access_flags;
+    std::uint32_t    pipeline_stage_flags;
+    bfGfxImageLayout image_layout;
+    std::uint32_t    access_flags;
 
     // TODO(Shareef): See if I can make the pointer const.
     union
@@ -594,17 +594,17 @@ namespace bf
     friend ResourceRef writeResource(RenderpassBase* pass, TRes* res, const TDesc& desc);
 
    protected:
-    RenderGraph&                                  parent;
-    NameString<BIFROST_RENDERPASS_DEBUG_NAME_LEN> name;
-    Vector<SubpassBase*>                          subpasses;
-    Vector<ResourceRef>                           reads;
-    Vector<ResourceRef>                           writes;
-    Vector<ImageResource*>                        attachments;
-    std::size_t                                   queue_family;
-    BarrierRef                                    barrier_ref;  // TODO: Find a way to only have this variable while compiling.
-    std::uint32_t                                 index;
-    void* const                                   data_ptr;
-    bool                                          is_compute;
+    RenderGraph&                             parent;
+    NameString<BF_RENDERPASS_DEBUG_NAME_LEN> name;
+    Vector<SubpassBase*>                     subpasses;
+    Vector<ResourceRef>                      reads;
+    Vector<ResourceRef>                      writes;
+    Vector<ImageResource*>                   attachments;
+    std::size_t                              queue_family;
+    BarrierRef                               barrier_ref;  // TODO: Find a way to only have this variable while compiling.
+    std::uint32_t                            index;
+    void* const                              data_ptr;
+    bool                                     is_compute;
 
     explicit RenderpassBase(RenderGraph& parent, const char* name, std::uint32_t index, void* data_ptr, bool is_compute) :
       parent{parent},
@@ -631,7 +631,7 @@ namespace bf
    public:
     BufferResource*    readBuffer(const char* name, const BufferDesc& desc);
     BufferResource*    writeBuffer(const char* name, const BufferDesc& desc);
-    ImageResource*     addAttachment(const char* name, BifrostImageLayout final_layout, bfBool32 may_alias);
+    ImageResource*     addAttachment(const char* name, bfGfxImageLayout final_layout, bfBool32 may_alias);
     const ResourceRef& findRef(GraphResourceBase* ptr, bool is_read) const
     {
       auto& list = is_read ? reads : writes;
@@ -1092,7 +1092,7 @@ namespace bf
     return res;
   }
 
-  ImageResource* RenderpassBase::addAttachment(const char* name, BifrostImageLayout final_layout, bfBool32 may_alias)
+  ImageResource* RenderpassBase::addAttachment(const char* name, bfGfxImageLayout final_layout, bfBool32 may_alias)
   {
     auto* const res = getResource<ImageResource>(&parent, name);
     this->attachments.push_back(res);
@@ -1170,9 +1170,9 @@ namespace bf
       }
     }
   }
-}  // namespace bifrost
+}  // namespace bf
 
-#if BIFROST_GFX_RENDER_GRAPH_TEST
+#if BF_GFX_RENDER_GRAPH_TEST
 
 int main()
 {
@@ -1204,10 +1204,10 @@ int main()
   graph.addGraphicsPass<GBufferData>(
    "GBufferPass",
    [](Renderpass<GBufferData>& pass, GBufferData& data) {
-     data.gBufferImages[0] = pass.addAttachment("g_PosRough", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.gBufferImages[1] = pass.addAttachment("g_NormalAO", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.gBufferImages[2] = pass.addAttachment("g_AlbedoMetallic", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
-     data.gBufferImages[3] = pass.addAttachment("g_Depth", BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[0] = pass.addAttachment("g_PosRough", BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[1] = pass.addAttachment("g_NormalAO", BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[2] = pass.addAttachment("g_AlbedoMetallic", BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[3] = pass.addAttachment("g_Depth", BF_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
 
      pass.addPass(
       [](SubpassBase& subpass, GBufferData& data) {
@@ -1224,11 +1224,11 @@ int main()
   graph.addGraphicsPass<GBufferData>(
    "Lighting Compositing Pass",
    [](Renderpass<GBufferData>& pass, GBufferData& data) {
-     data.gBufferImages[0]  = pass.addAttachment("g_PosRough", BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
-     data.gBufferImages[1]  = pass.addAttachment("g_NormalAO", BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
-     data.gBufferImages[2]  = pass.addAttachment("g_AlbedoMetallic", BIFROST_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
-     data.gBufferImages[3]  = pass.addAttachment("g_Depth", BIFROST_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
-     data.lightingComposite = pass.addAttachment("LightingComposite", BIFROST_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
+     data.gBufferImages[0]  = pass.addAttachment("g_PosRough", BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[1]  = pass.addAttachment("g_NormalAO", BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[2]  = pass.addAttachment("g_AlbedoMetallic", BF_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, false);
+     data.gBufferImages[3]  = pass.addAttachment("g_Depth", BF_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, false);
+     data.lightingComposite = pass.addAttachment("LightingComposite", BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
 
      pass.addPass(
       [](SubpassBase& subpass, GBufferData& data) {
@@ -1255,4 +1255,4 @@ int main()
 }
 #endif
 
-#endif /* BIFROST_GFX_RENDER_GRAPH_HPP */
+#endif /* BF_GFX_RENDER_GRAPH_HPP */

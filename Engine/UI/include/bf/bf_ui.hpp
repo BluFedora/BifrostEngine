@@ -198,7 +198,7 @@ namespace bf
     Vector2f       position_from_parent = {200.0f, 200.0f};
     Vector2f       realized_size        = {0.0f, 0.0f};
     WidgetRenderFn render               = nullptr;
-    std::uint64_t  flags                = IsExpanded;
+    std::uint64_t  flags                = 0x0;
     UIElementID    hash                 = 0x0;
     std::uint32_t  zindex               = 0;
     Widget*        hit_test_list        = nullptr;

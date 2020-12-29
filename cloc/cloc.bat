@@ -9,15 +9,26 @@ cloc-1.76 --by-file --csv --exclude-dir=lib ..\BifrostScript\ -out=code_count_bi
 cloc-1.76 --by-file --csv --exclude-dir=lib ..\BifrostUtility\ -out=code_count_bifrost_utility.csv
 
 cloc-1.76 --by-file --csv --exclude-dir=lib ^
-..\BifrostExperiments\ ^
-..\BifrostGraphics\ ^
+..\BifrostScript\ ^
+..\Experiments\ ^
+..\Engine\Anim2D\ ^
+..\Engine\AssetIO\ ^
+..\Engine\Audio\ ^
+..\Engine\Core\ ^
+..\Engine\DataStructures\ ^
+..\Engine\Dispatch\ ^
+..\Engine\Editor\ ^
+..\Engine\Graphics\ ^
+..\Engine\Graphics2D\ ^
+..\Engine\Job\ ^
 ..\Engine\Math\ ^
 ..\Engine\Memory\ ^
-..\BifrostMeta\ ^
+..\Engine\Meta\ ^
+..\Engine\Network\ ^
 ..\Engine\Platform\ ^
-..\BifrostRuntime\ ^
 ..\Engine\Runtime\ ^
-..\BifrostScript\ ^
-..\BifrostUtility\ ^
-..\Bifrost\ ^
+..\Engine\Text\ ^
+..\Engine\TMPUtils\ ^
+..\Engine\UI\ ^
+..\Runtime\ ^
 -out=code_count_bifrost_total.csv

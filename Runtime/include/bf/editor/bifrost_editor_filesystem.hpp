@@ -29,11 +29,12 @@ namespace bf::editor
     ListView<FileEntry> children;
     Node<FileEntry>     next;
     IBaseAsset*         asset_info;
+    bool                is_file;
 
    public:
-    FileEntry(String&& name, const String& full_path);
+    FileEntry(String&& name, const String& full_path, bool is_file);
 
-    bool isFile() const { return asset_info != nullptr; }
+    bool isFile() const { return is_file; }
   };
 
   class FileSystem final : NonCopyMoveable<FileSystem>

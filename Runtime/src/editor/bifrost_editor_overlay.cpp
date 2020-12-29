@@ -22,8 +22,6 @@
 
 #include <utility>
 
-using namespace bf;
-
 namespace bf::editor
 {
   StringPoolRef::StringPoolRef(const StringPoolRef& rhs) noexcept :
@@ -104,6 +102,8 @@ namespace bf::editor
 
 /////////////////////////////////////////////////////////////////////////////////////
 
+using namespace bf;
+
 // TODO(Shareef): This is useful for the engine aswell.
 template<std::size_t size>
 class FixedLinearAllocator final
@@ -131,7 +131,7 @@ class FixedLinearAllocator final
 };
 
 // clang-format off
-template<std::size_t Size, typename TAllocator = FreeListAllocator>
+template<std::size_t Size, typename TAllocator = bf::FreeListAllocator>
 class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<BlockAllocator<Size>>
 // clang-format on
 {
@@ -228,8 +228,6 @@ class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<Bloc
 
 namespace bf::editor
 {
-  using namespace intrusive;
-
   static char              s_EditorMemoryBacking[bfMegabytes(16)];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
 
@@ -327,7 +325,7 @@ namespace bf::editor
    public:
     explicit NewProjectDialog() :
       Dialog("New Project"),
-      m_ProjectName{"New Bifrost Project"},
+      m_ProjectName{"New Game Project"},
       m_ProjectPath{'\0'}
     {
     }
@@ -899,8 +897,6 @@ namespace bf::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
-    StandardRenderer& renderer = engine.renderer();
-
     int window_width, window_height;
     bfWindow_getSize(m_MainWindow, &window_width, &window_height);
 
@@ -1288,7 +1284,6 @@ namespace bf::editor
     if (project_file)
     {
       LinearAllocatorScope temp_mem_scope = m_Engine->tempMemory();
-      Assets&              assets         = m_Engine->assets();
 
       if (currentlyOpenProject())
       {
@@ -1377,27 +1372,13 @@ namespace bf::editor
 
       for (const auto& meta : metas_to_check)
       {
-        const char* const relative_path_bgn = meta.file_name + path.length() + 1;
-        const StringRange relative_path     = {relative_path_bgn, relative_path_bgn + std::strlen(relative_path_bgn)};
-
         file::canonicalizePath(meta.file_name, meta.file_name + std::strlen(meta.file_name));
 
         IBaseAsset* const asset = assets.findAsset(AbsPath(meta.file_name));
 
-        if (asset)
-        {
-          bfLogPush("(%s)", meta.file_name);
-          {
-            const StringRange file_name = file::fileNameOfPath(relative_path);
+        meta.entry->asset_info = asset;
 
-            bfLogPrint("Relative-Path: (%s)", relative_path.bgn);
-            bfLogPrint("File-Name    : (%.*s)", (unsigned)file_name.length(), file_name.bgn);
-
-            meta.entry->asset_info = asset;
-          }
-          bfLogPop();
-        }
-        else
+        if (!asset)
         {
           bfLogWarn("Unknown file type (%s)", meta.file_name);
         }
@@ -1535,13 +1516,14 @@ namespace bf::editor
 
   // bifrost_editor_filesystem.hpp
 
-  FileEntry::FileEntry(String&& name, const String& full_path) :
+  FileEntry::FileEntry(String&& name, const String& full_path, bool is_file) :
     name{name},
     full_path{full_path},
     file_extension{file::extensionOfFile(this->full_path)},
     children{&FileEntry::next},
     next{},
-    asset_info{nullptr}
+    asset_info{nullptr},
+    is_file{is_file}
   {
   }
 
@@ -1562,7 +1544,7 @@ namespace bf::editor
 
   FileEntry& FileSystem::makeNode(String&& name, const String& path, bool is_file)
   {
-    FileEntry* const entry = m_Memory.allocateT<FileEntry>(std::move(name), path);
+    FileEntry* const entry = m_Memory.allocateT<FileEntry>(std::move(name), path, is_file);
     m_AllNodes.push(entry);
 
     return *entry;
@@ -1667,14 +1649,29 @@ namespace bf::editor
 
     if (entry.isFile())
     {
-      ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen;
+      ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth /*| ImGuiTreeNodeFlags_DefaultOpen*/;
+
+      if (entry.asset_info && !entry.asset_info->hasSubAssets())
+      {
+        tree_node_flags |= ImGuiTreeNodeFlags_Bullet;
+      }
 
       if (!entry.asset_info || !entry.asset_info->hasSubAssets())
       {
-        tree_node_flags |= ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_Leaf;
+        tree_node_flags |= ImGuiTreeNodeFlags_Leaf;
+      }
+
+      if (entry.asset_info)
+      {
+        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
       }
 
       const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
+
+      if (entry.asset_info)
+      {
+        ImGui::PopStyleColor();
+      }
 
       if (ImGui::IsItemHovered())
       {
@@ -1706,22 +1703,22 @@ namespace bf::editor
 
       const auto flags = ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
 
-      if (ImGui::BeginDragDropSource(flags))
+      if (entry.asset_info)
       {
-        if constexpr (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
+        if (ImGui::BeginDragDropSource(flags))
         {
-          BifrostUUIDString uuid_str;
-
-          if (entry.asset_info)
+          if constexpr (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
           {
+            BifrostUUIDString uuid_str;
+
             bfUUID_numberToString(entry.asset_info->uuid().data, uuid_str.data);
+
+            ImGui::Text("UUID %s", uuid_str.data);
           }
 
-          ImGui::Text("UUID %s", uuid_str.data);
+          ImGui::SetDragDropPayload("Asset.UUID", &entry.asset_info->uuid(), sizeof(bfUUID));
+          ImGui::EndDragDropSource();
         }
-
-        ImGui::SetDragDropPayload("Asset.UUID", &entry.asset_info->uuid(), sizeof(bfUUID));
-        ImGui::EndDragDropSource();
       }
 
       if (ImGui::BeginPopupContextItem())
@@ -1750,10 +1747,14 @@ namespace bf::editor
           {
             ImGui::TableNextRow();
 
-            if (ImGui::TreeNodeEx(sub_asset.fullPath().cstr(), ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth))
+            ImGui::PushStyleColor(ImGuiCol_Text, 0xFFFF0FF0);
+
+            if (ImGui::TreeNodeEx(sub_asset.name().begin(), ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanFullWidth))
             {
               ImGui::TreePop();
             }
+
+            ImGui::PopStyleColor();
 
             ImGui::TableNextCell();
             ImGui::TextUnformatted("SubAsset");

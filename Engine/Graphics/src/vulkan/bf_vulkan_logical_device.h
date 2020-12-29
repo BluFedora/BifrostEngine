@@ -35,8 +35,6 @@ BF_DEFINE_GFX_HANDLE(Framebuffer)
 {
   bfBaseGfxObject super;
   VkFramebuffer   handle;
-  // uint32_t             num_attachments;
-  bfTextureHandle attachments[k_bfGfxMaxAttachments];
 };
 
 BF_DEFINE_GFX_HANDLE(Pipeline)
@@ -59,8 +57,9 @@ BF_DEFINE_GFX_HANDLE(GfxCommandList)
   bfPipelineHandle    pipeline;
   bfPipelineCache     pipeline_state;
   VkClearValue        clear_colors[k_bfGfxMaxAttachments];
-  bfBool32            has_command;
+  uint32_t            attachment_size[2];
   uint16_t            dynamic_state_dirty;
+  bfBool16            has_command;
 };
 
 BF_DEFINE_GFX_HANDLE(WindowSurface)
@@ -75,15 +74,6 @@ BF_DEFINE_GFX_HANDLE(WindowSurface)
   bfBool32               swapchain_needs_creation;
   bfGfxCommandList       cmd_list_memory[5];
   bfGfxCommandListHandle current_cmd_list;
-};
-
-BF_DEFINE_GFX_HANDLE(Buffer)
-{
-  bfBaseGfxObject super;
-  PoolAllocator*  alloc_pool;
-  VkBuffer        handle;
-  Allocation      alloc_info;  // This has the aligned size.
-  bfBufferSize    real_size;
 };
 
 BF_DEFINE_GFX_HANDLE(ShaderModule)
@@ -258,6 +248,11 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
     return false;
   }
 
+  /*
+
+    NOTE(SR): This check is not needed since if the two pipelines share the same
+      RenderPass as well as subpass_index then of course the number of attachments are the same.
+   
   const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
   const auto num_attachments_b = b.renderpass->info.subpasses[b.state.subpass_index].num_out_attachment_refs;
 
@@ -265,6 +260,9 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
   {
     return false;
   }
+  */
+
+  const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
 
   for (std::uint32_t i = 0; i < num_attachments_a; ++i)
   {

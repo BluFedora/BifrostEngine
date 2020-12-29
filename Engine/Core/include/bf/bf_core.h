@@ -27,7 +27,7 @@
  */
 #define bfPureInterface(T) __declspec(novtable) T
 
-// TODO(SR): 
+// TODO(SR):
 //   [https://stackoverflow.com/questions/44054078/how-to-guide-gcc-optimizations-based-on-assertions-without-runtime-cost]
 #else
 #define bfInvalidDefaultCase() \
@@ -72,9 +72,11 @@ static constexpr T bfBit(T bit_idx)
 extern "C" {
 #endif
 
-typedef uint32_t bfBool32;
-typedef float    bfFloat32;
-typedef double   bfFloat64;
+typedef unsigned char bfByte;
+typedef uint16_t      bfBool16;
+typedef uint32_t      bfBool32;
+typedef float         bfFloat32;
+typedef double        bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
 

@@ -15,7 +15,7 @@
 
 #include "bf/data_structures/bifrost_container_tuple.hpp" /* ContainerTuple<T> */
 #include "bf/data_structures/bifrost_dense_map.hpp"       /* DenseMap<T>       */
-#include "bifrost_component_list.hpp"                          /* ComponentPack     */
+#include "bifrost_component_list.hpp"                     /* ComponentPack     */
 
 //
 // @EngineComponentRegister
@@ -29,6 +29,6 @@ namespace bf
   template<typename... Args>
   using DenseMapTuple    = ContainerTuple<DenseMap, Args...>;
   using ComponentStorage = ComponentPack::apply<DenseMapTuple>;
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_COMPONENT_STORAGE_HPP */

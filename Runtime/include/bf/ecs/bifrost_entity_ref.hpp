@@ -3,7 +3,7 @@
  * @file   bifrost_entity_ref.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *  This is for having safe refences to Entities even if they get _deleted_.
+ *  This is for having safe references to Entities even if they get _deleted_.
  *
  * @version 0.0.1
  * @date    2020-06-09
@@ -14,7 +14,7 @@
 #ifndef BIFROST_REF_HPP
 #define BIFROST_REF_HPP
 
-#include "bf/utility/bifrost_uuid.h" /* BifrostUUIDNumber */
+#include "bf/utility/bifrost_uuid.h" /* bfUUIDNumber */
 
 #include <cstddef> /* nullptr_t */
 

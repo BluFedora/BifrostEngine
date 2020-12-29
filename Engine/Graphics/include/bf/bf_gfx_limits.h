@@ -3,7 +3,7 @@
  * @file   bf_gfx_limits.h
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   Various limits used within the renderer to simplify implemetation details.
+ *   Various limits used within the renderer to simplify implementation details.
  *
  * @version 0.0.1
  * @date    2020-03-22
@@ -41,11 +41,12 @@ enum /* bfGraphicsConstants */
   k_bfGfxShaderEntryPointNameLength      = 32,
   k_bfGfxShaderProgramNameLength         = 32,
   k_bfGfxMaxLayoutBindings               = 16,
-  k_bfGfxDesfcriptorSetMaxLayoutBindings = 16,
+  k_bfGfxDesfcriptorSetMaxLayoutBindings = 8,
   k_bfGfxMaxBufferBindings               = 16,
   k_bfGfxMaxDescriptorSetWrites          = 32,
   k_bfGfxMaxFrameGPUAhead                = 4,
   k_bfGfxMaxPipelineBarrierWrites        = 16,
+  k_bfGfxMaxFramesDelay                  = 3, /*!< The max number of frames the CPU and GPU can be out of sync by. */
 };
 
 /*

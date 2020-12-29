@@ -252,7 +252,7 @@ namespace bf
   class ModelAsset : public BaseAsset<ModelAsset>
   {
    public:
-    struct Node
+    struct Node  // NOLINT(cppcoreguidelines-pro-type-member-init)
     {
       String        name;
       Matrix4x4f    transform;
@@ -279,6 +279,8 @@ namespace bf
 
    public:
     ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device);
+
+    std::size_t numBones() const { return m_BoneToModel.length(); }
 
     // TODO(SR): This is broken.
     void draw(bfGfxCommandListHandle cmd_list)

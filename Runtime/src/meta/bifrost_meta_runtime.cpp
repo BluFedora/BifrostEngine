@@ -1,10 +1,11 @@
 #include "bf/meta/bifrost_meta_runtime.hpp"
 
 #include "bf/core/bifrost_base_object.hpp"
+#include "bf/memory/bf_memory_utils.h"
 
 namespace
 {
-  char s_Storage[32768];
+  char s_Storage[bfKilobytes(32)];
 }  // namespace
 
 namespace bf::meta
@@ -127,7 +128,6 @@ namespace bf::meta
 
     if (class_info->isEnum())
     {
-      // ret.enum_value = *static_cast<std::uint64_t*>(ptr);
       ret.enum_value = 0x0;  // Clear it out.
       std::memcpy(&ret.enum_value, ptr, class_info->size());
     }
@@ -180,7 +180,7 @@ namespace bf::meta
         [&result](IBaseObject* base_obj) -> void {
           result = base_obj->type();
         },
-        [&result](const meta::MetaObject& meta_obj) -> void {
+        [&result](const MetaObject& meta_obj) -> void {
           result = meta_obj.type_info;
         },
        },
@@ -189,4 +189,4 @@ namespace bf::meta
 
     return result;
   }
-}  // namespace bifrost::meta
+}  // namespace bf::meta

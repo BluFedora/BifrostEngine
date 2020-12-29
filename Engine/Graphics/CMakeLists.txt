@@ -120,7 +120,7 @@ endif()
 add_library(
   BF_Graphics_static STATIC
   "${BF_GRAPHICS_SOURCES}"
-)
+ "src/vulkan/bf_vulkan_staging.h" "src/vulkan/bf_vulkan_staging.c")
 
 target_compile_definitions(
   BF_Graphics_static
@@ -148,7 +148,7 @@ target_link_libraries(
 add_library(
   BF_Graphics_shared SHARED
   "${BF_GRAPHICS_SOURCES}"
-)
+ "src/vulkan/bf_vulkan_staging.h" "src/vulkan/bf_vulkan_staging.c")
 
 target_compile_definitions(
   BF_Graphics_shared

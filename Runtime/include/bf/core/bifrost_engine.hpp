@@ -152,7 +152,7 @@ namespace bf
     using CommandLineArgs     = std::pair<int, char**>;
     using CameraRenderMemory  = PoolAllocator<CameraRender, k_MaxNumCamera>;
     using UpdateLoopClock     = std::chrono::high_resolution_clock;
-    using UpdateLoopTimePoint = typename UpdateLoopClock::time_point;
+    using UpdateLoopTimePoint = UpdateLoopClock::time_point;
 
    private:
     // Configuration

@@ -14,20 +14,12 @@
 #ifndef BF_ISERIALIZER_HPP
 #define BF_ISERIALIZER_HPP
 
-#include "bf/Quaternion.h"            // Quaternionf
-#include "bf/StringRange.hpp"         // StringRange
-#include "bf/bifrost_math.h"          // bfColor4f, bfColor4u
-#include "bf/math/bifrost_rect2.hpp"  // Math Types
-#include "bf/meta/bifrost_meta_variant.hpp"
-#include "bf/utility/bifrost_uuid.h"  // bfUUID, bfUUIDNumber
-
-/*
-typedef struct Vec2f_t       Vec2f;
-typedef struct Vec3f_t       Vec3f;
-typedef struct Quaternionf_t Quaternionf;
-typedef struct bfColor4f_t   bfColor4f;
-typedef struct bfColor4u_t   bfColor4u;
-*/
+#include "bf/Quaternion.h"                   // Quaternionf
+#include "bf/StringRange.hpp"                // StringRange
+#include "bf/bifrost_math.h"                 // bfColor4f, bfColor4u
+#include "bf/math/bifrost_rect2.hpp"         // Math Types
+#include "bf/meta/bifrost_meta_variant.hpp"  // MetaVariant
+#include "bf/utility/bifrost_uuid.h"         // bfUUID, bfUUIDNumber
 
 namespace bf
 {
@@ -51,7 +43,7 @@ namespace bf
 
   class ISerializer
   {
-   protected:
+   private:
     SerializerMode m_Mode;
 
    protected:
@@ -77,7 +69,7 @@ namespace bf
     //   * Scopes for 'pushObject' and 'pushArray' are only valid if they return true.
     //     Only call 'popObject' and 'popArray' only if 'pushXXX' returned true.
     //
-    //   * Only begin reading the document if 'beginDocument' returned true.
+    //   * Only begin reading the document if 'beginDocument' returns true.
     //
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -120,6 +112,7 @@ namespace bf
     virtual void endDocument() = 0;
 
     // Helpers
+
     void serialize(StringRange key, Vector2f& value);
     void serialize(StringRange key, Vector3f& value);
 
@@ -129,6 +122,7 @@ namespace bf
       if (pushObject(key))
       {
         serializeT(value);
+
         popObject();
       }
     }
@@ -137,12 +131,12 @@ namespace bf
     void serializeT(T* value)
     {
       auto variant = meta::makeVariant(value);
+
       serialize(variant);
     }
 
     virtual ~ISerializer() = default;
   };
-
 }  // namespace bf
 
 #endif /* BF_ISERIALIZER_HPP */

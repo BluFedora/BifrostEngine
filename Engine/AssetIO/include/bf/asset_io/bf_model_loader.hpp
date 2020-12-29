@@ -20,7 +20,6 @@ namespace bf
     std::uint32_t  material_idx;
   };
 
-
   static constexpr std::size_t k_MaxVertexBones = 4;
   static constexpr std::size_t k_MaxBones       = 128;
 
@@ -94,7 +93,6 @@ namespace bf
     }
 #else
     std::uninitialized_fill_n(result->data, num_elements, default_value);
-    // std::uninitialized_fill(result->begin(), result->end(), default_value);
 #endif
 
     return result;
@@ -170,8 +168,6 @@ namespace bf
     float        bone_weights[k_MaxVertexBones];
     std::uint8_t bone_indices[k_MaxVertexBones];
   };
-
-  
 
   namespace detail
   {
@@ -272,8 +268,8 @@ namespace bf
   struct ModelAnimation
   {
     AssetTempSmallString                   name             = {};
-    double                                 duration         = 0.0f;  // Duration in ticks.
-    double                                 ticks_per_second = 0.0f;  // Ticks per second. 0 if not specified in the imported file
+    double                                 duration         = 0.0;  // Duration in ticks.
+    double                                 ticks_per_second = 0.0;  // Ticks per second. 0 if not specified in the imported file
     AssetTempArray<ModelAnimationChannel>* channels         = {};
   };
 

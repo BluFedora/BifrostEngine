@@ -4,20 +4,20 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "05070C12-A1B3-455C-A853-8C6E9F520450",
-            "name" : "Material_#0",
+            "uuid" : "90A9A4DE-13FA-49BF-BE12-ABDD8B137C9E",
+            "name" : "Material_#0.material",
             "version" : 1
         },
         {
             "sub-assets" : [
 
             ],
-            "uuid" : "4C6DABBB-7BE2-47EE-A27E-A018149D8565",
-            "name" : "Material_#1",
+            "uuid" : "A42971A9-6B94-4E81-B28B-033C640E3C35",
+            "name" : "Material_#1.material",
             "version" : 1
         }
     ],
     "uuid" : "B3D82F39-2CDF-49A0-9973-4894E54F1732",
-    "name" : "backpack",
+    "name" : "backpack.obj",
     "version" : 1
 }

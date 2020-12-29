@@ -17,11 +17,10 @@
 #ifndef BF_ASSETS_HPP
 #define BF_ASSETS_HPP
 
-#include "bf/asset_io/bf_asset_map.hpp"              /* AssetMap                                     */
-#include "bf/bf_non_copy_move.hpp"                   /* NonCopyMoveable<T>                           */
-#include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>                              */
-#include "bf/data_structures/bifrost_string.hpp"     /* BifrostStringHasher, BifrostStringComparator */
-#include "bf/meta/bifrost_meta_runtime_impl.hpp"     /* BaseClassMetaInfo, TypeInfo                  */
+#include "bf/asset_io/bf_asset_map.hpp"          /* AssetMap                    */
+#include "bf/asset_io/bf_base_asset.hpp"         /* AssetMetaInfo, IBaseAsset   */
+#include "bf/bf_non_copy_move.hpp"               /* NonCopyMoveable<T>          */
+#include "bf/meta/bifrost_meta_runtime_impl.hpp" /* BaseClassMetaInfo, TypeInfo */
 
 namespace bf
 {
@@ -189,6 +188,7 @@ namespace bf
    private:
     IBaseAsset* createAssetFromPath(StringRange path, const bfUUIDNumber& uuid);
     IBaseAsset* createAssetFromPath(StringRange path);  // Creates UUID for you.
+    void        saveMetaInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const;
   };
 }  // namespace bf
 

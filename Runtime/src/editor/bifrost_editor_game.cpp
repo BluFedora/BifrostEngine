@@ -77,17 +77,17 @@ namespace bf::editor
         ImGui::EndMenuBar();
       }
 
-      const auto   color_buffer        = m_Camera->gpu_camera.composite_buffer;
-      const auto   color_buffer_width  = bfTexture_width(color_buffer);
-      const auto   color_buffer_height = bfTexture_height(color_buffer);
-      const auto   content_area        = ImGui::GetContentRegionAvail();
-      const auto   draw_region         = rect::aspectRatioDrawRegion(color_buffer_width, color_buffer_height, uint32_t(content_area.x), uint32_t(content_area.y));
-      auto* const  window_draw         = ImGui::GetWindowDrawList();
-      const ImVec2 window_pos          = ImGui::GetWindowPos();
-      const ImVec2 cursor_offset       = ImGui::GetCursorPos();
-      const ImVec2 full_offset         = window_pos + cursor_offset;
-      const ImVec2 position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
-      const ImVec2 position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
+      const bfTextureHandle color_buffer        = m_Camera->gpu_camera.composite_buffer;
+      const std::uint32_t   color_buffer_width  = bfTexture_width(color_buffer);
+      const std::uint32_t   color_buffer_height = bfTexture_height(color_buffer);
+      const ImVec2          content_area        = ImGui::GetContentRegionAvail();
+      const Rect2i          draw_region         = rect::aspectRatioDrawRegion(color_buffer_width, color_buffer_height, uint32_t(content_area.x), uint32_t(content_area.y));
+      auto* const           window_draw         = ImGui::GetWindowDrawList();
+      const ImVec2          window_pos          = ImGui::GetWindowPos();
+      const ImVec2          cursor_offset       = ImGui::GetCursorPos();
+      const ImVec2          full_offset         = window_pos + cursor_offset;
+      const ImVec2          position_min        = ImVec2{float(draw_region.left()), float(draw_region.top())} + full_offset;
+      const ImVec2          position_max        = ImVec2{float(draw_region.right()), float(draw_region.bottom())} + full_offset;
 
       if (scene)
       {
@@ -149,4 +149,4 @@ namespace bf::editor
       engine.setState(EngineState::EDITOR_PLAYING);
     }
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor
