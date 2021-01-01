@@ -239,7 +239,7 @@ namespace bf
       m_Memory.deallocate(m_Channels, m_NumChannels * sizeof(Channel));
     }
 
-  private:
+   private:
     void onLoad() override;
     void onUnload() override;
   };
@@ -268,37 +268,21 @@ namespace bf
     };
 
    public:
-    bfGfxDeviceHandle m_GraphicsDevice;
-    bfBufferHandle    m_VertexBuffer;
-    bfBufferHandle    m_IndexBuffer;
-    bfBufferHandle    m_VertexBoneData;
-    Array<Mesh>       m_Meshes;
-    Array<Node>       m_Nodes;
-    Array<NodeIDBone> m_BoneToModel;
-    Matrix4x4f        m_GlobalInvTransform;
+    bfGfxDeviceHandle     m_GraphicsDevice;
+    bfBufferHandle        m_VertexBuffer;
+    bfBufferHandle        m_IndexBuffer;
+    bfBufferHandle        m_VertexBoneData;
+    Array<Mesh>           m_Meshes;
+    Array<Node>           m_Nodes;
+    Array<NodeIDBone>     m_BoneToModel;
+    Array<MaterialAsset*> m_Materials;
+    Matrix4x4f            m_GlobalInvTransform;
 
    public:
     ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device);
 
     std::size_t numBones() const { return m_BoneToModel.length(); }
-
-    // TODO(SR): This is broken.
-    void draw(bfGfxCommandListHandle cmd_list)
-    {
-      uint64_t       buffer_offsets[2] = {0, 0};
-      bfBufferHandle buffer_handles[2] = {m_VertexBuffer, m_VertexBoneData};
-
-      bfGfxCmdList_bindVertexBuffers(cmd_list, 0, buffer_handles, uint32_t(bfCArraySize(buffer_offsets)), buffer_offsets);
-      bfGfxCmdList_bindIndexBuffer(cmd_list, m_IndexBuffer, 0u, BF_INDEX_TYPE_UINT32);
-
-      for (const Mesh& mesh : m_Meshes)
-      {
-        // TODO(SR): Support binding of various materials per mesh.
-
-        bfGfxCmdList_drawIndexed(cmd_list, mesh.num_indices, mesh.index_offset, 0);
-      }
-    }
-
+    
    private:
     void onLoad() override;
     void loadSkeleton(const ModelSkeleton& skeleton);

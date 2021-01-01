@@ -397,7 +397,7 @@ BF_DEFINE_GFX_HANDLE(Pipeline)
 
 BF_DEFINE_GFX_HANDLE(WindowSurface)
 {
-  struct bfWindow_t*     window;
+  struct bfWindow*       window;
   bfGfxCommandListHandle current_cmd_list;
   bfTexture              surface_dummy;
 };
@@ -2153,6 +2153,8 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_
 
   for (uint32_t i = 0; i < num_buffers; ++i)
   {
+    // TODO(SR): OpenGL 4.4 has `glBindVertexBuffer`
+    // [https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindVertexBuffer.xhtml]
     assert(offsets[i] == 0 && "VBO Offsets not supported by the graphics backend.");
 
     glBindBuffer(buffers[i]->target, buffers[i]->handle);

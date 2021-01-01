@@ -14,7 +14,8 @@
 #ifndef BF_GFX_PIPELINE_STATE_H
 #define BF_GFX_PIPELINE_STATE_H
 
-#include "bf_gfx_handle.h" /* bf*Handle */
+#include "bf_gfx_export.h" /* BF_GFX_API */
+#include "bf_gfx_handle.h" /* bf*Handle  */
 
 #include <stdint.h> /* uint64_t, uint32_t, int32_t */
 
@@ -68,9 +69,9 @@ typedef enum
 
 typedef enum
 {
-  BF_CULL_FACE_NONE  = 0ull,
-  BF_CULL_FACE_FRONT = 1ull,
-  BF_CULL_FACE_BACK  = 2ull,
+  BF_CULL_FACE_NONE  = 0,
+  BF_CULL_FACE_FRONT = 1,
+  BF_CULL_FACE_BACK  = 2,
   BF_CULL_FACE_BOTH  = BF_CULL_FACE_FRONT | BF_CULL_FACE_BACK,  // (3ull)
 
 } bfCullFaceFlags;  // Requires 2-bits
@@ -80,14 +81,14 @@ typedef enum
 
 typedef enum
 {
-  BF_COMPARE_OP_NEVER            = 0ull,
-  BF_COMPARE_OP_LESS_THAN        = 1ull,
-  BF_COMPARE_OP_EQUAL            = 2ull,
-  BF_COMPARE_OP_LESS_OR_EQUAL    = 3ull,
-  BF_COMPARE_OP_GREATER          = 4ull,
-  BF_COMPARE_OP_NOT_EQUAL        = 5ull,
-  BF_COMPARE_OP_GREATER_OR_EQUAL = 6ull,
-  BF_COMPARE_OP_ALWAYS           = 7ull,
+  BF_COMPARE_OP_NEVER            = 0,
+  BF_COMPARE_OP_LESS_THAN        = 1,
+  BF_COMPARE_OP_EQUAL            = 2,
+  BF_COMPARE_OP_LESS_OR_EQUAL    = 3,
+  BF_COMPARE_OP_GREATER          = 4,
+  BF_COMPARE_OP_NOT_EQUAL        = 5,
+  BF_COMPARE_OP_GREATER_OR_EQUAL = 6,
+  BF_COMPARE_OP_ALWAYS           = 7,
 
 } bfCompareOp;  // Requires 3-bits
 
@@ -207,14 +208,14 @@ typedef enum
 typedef struct
 {
   // 30 Bits
-  uint32_t color_write_mask : 4; // (bfColorMask)
-  uint32_t color_blend_op : 3;
+  uint32_t color_write_mask : 4;                                   // (bfColorMask)
+  uint32_t color_blend_op : 3;                                     // (bfBlendOp)
   uint32_t color_blend_src : BF_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
   uint32_t color_blend_dst : BF_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
-  uint32_t alpha_blend_op : 3;
+  uint32_t alpha_blend_op : 3;                                     // (bfBlendOp)
   uint32_t alpha_blend_src : BF_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
   uint32_t alpha_blend_dst : BF_PIPELINE_STATE_BLEND_FACTOR_BITS;  // 5
-  uint32_t _pad : 2;
+  uint32_t _pad : 2;                                               // must be set to zero.
 
 } bfFramebufferBlending;
 
@@ -229,23 +230,23 @@ typedef struct
   /**********************************************************************************************************/
   /* BITS:                                                        ||               Size            | Offset */
   uint64_t draw_mode : BF_PIPELINE_STATE_DRAW_MODE_BITS;          /*  3 (bfDrawMode)               |     0  */
-  uint64_t front_face : BF_PIPELINE_STATE_FRONT_FACE_BITS;        /*  1                            |     3  */
-  uint64_t cull_face : BF_PIPELINE_STATE_CULL_FACE_BITS;          /*  2                            |     4  */
-  uint64_t do_depth_test : BF_PIPELINE_STATE_DEPTH_TEST_BITS;     /*  1                            |     6  */
-  uint64_t do_depth_clamp : 1;                                    /*  1                            |     7  */
-  uint64_t do_depth_bounds_test : 1;                              /*  1                            |     8  */
-  uint64_t depth_write : BF_PIPELINE_STATE_DEPTH_WRITE_BITS;      /*  1                            |     9  */
+  uint64_t front_face : BF_PIPELINE_STATE_FRONT_FACE_BITS;        /*  1 (bfFrontFace)              |     3  */
+  uint64_t cull_face : BF_PIPELINE_STATE_CULL_FACE_BITS;          /*  2 (bfCullFaceFlags)          |     4  */
+  uint64_t do_depth_test : BF_PIPELINE_STATE_DEPTH_TEST_BITS;     /*  1 (bool)                     |     6  */
+  uint64_t do_depth_clamp : 1;                                    /*  1 (bool)                     |     7  */
+  uint64_t do_depth_bounds_test : 1;                              /*  1 (bool)                     |     8  */
+  uint64_t do_depth_write : BF_PIPELINE_STATE_DEPTH_WRITE_BITS;   /*  1 (bool)                     |     9  */
   uint64_t depth_test_op : BF_PIPELINE_STATE_DEPTH_OP_BITS;       /*  3 (bfCompareOp)              |    10  */
-  uint64_t do_stencil_test : BF_PIPELINE_STATE_STENCIL_TEST_BITS; /*  1                            |    13  */
-  uint64_t primitive_restart : 1;                                 /*  1                            |    14  */
-  uint64_t rasterizer_discard : 1;                                /*  1                            |    15  */
-  uint64_t do_depth_bias : 1;                                     /*  1                            |    16  */
-  uint64_t do_sample_shading : 1;                                 /*  1                            |    17  */
-  uint64_t alpha_to_coverage : 1;                                 /*  1                            |    18  */
-  uint64_t alpha_to_one : 1;                                      /*  1                            |    19  */
-  uint64_t do_logic_op : 1;                                       /*  1                            |    20  */
+  uint64_t do_stencil_test : BF_PIPELINE_STATE_STENCIL_TEST_BITS; /*  1 (bool)                     |    13  */
+  uint64_t do_primitive_restart : 1;                              /*  1 (bool)                     |    14  */
+  uint64_t do_rasterizer_discard : 1;                             /*  1 (bool)                     |    15  */
+  uint64_t do_depth_bias : 1;                                     /*  1 (bool)                     |    16  */
+  uint64_t do_sample_shading : 1;                                 /*  1 (bool)                     |    17  */
+  uint64_t do_alpha_to_coverage : 1;                              /*  1 (bool)                     |    18  */
+  uint64_t do_alpha_to_one : 1;                                   /*  1 (bool)                     |    19  */
+  uint64_t do_logic_op : 1;                                       /*  1 (bool)                     |    20  */
   uint64_t logic_op : 4;                                          /*  4 (bfLogicOp)                |    21  */
-  uint64_t fill_mode : 2;                                         /*  2                            |    25  */
+  uint64_t fill_mode : 2;                                         /*  2 (bfPolygonFillMode)        |    25  */
   uint64_t stencil_face_front_fail_op : 3;                        /*  3 (bfStencilOp)              |    27  */
   uint64_t stencil_face_front_pass_op : 3;                        /*  3 (bfStencilOp)              |    30  */
   uint64_t stencil_face_front_depth_fail_op : 3;                  /*  3 (bfStencilOp)              |    33  */
@@ -273,7 +274,7 @@ typedef struct
   uint64_t _pad : 17;                                             /* 17 (zeroed-out)               |   110  */
   /**********************************************************************************************************/
 
-} bfPipelineState; /* 110 used bits (17 extra bits) */
+} bfPipelineState; /* 111 used bits (17 extra bits), totals 16bytes */
 
 typedef struct
 {
@@ -322,23 +323,38 @@ typedef struct
 
 typedef struct
 {
-  bfPipelineState         state;
-  bfViewport              viewport;
-  bfScissorRect           scissor_rect;
-  float                   blend_constants[4];
-  float                   line_width;
-  bfPipelineDepthInfo     depth;
-  float                   min_sample_shading;
-  uint32_t                sample_mask; /* must default to 0xFFFFFFFF */
-  bfFramebufferBlending   blending[k_bfGfxMaxAttachments];
-  bfShaderProgramHandle   program;
-  bfRenderpassHandle      renderpass;
-  bfVertexLayoutSetHandle vertex_set_layout;
+  bfPipelineState         state;                           /* 16 bytes                           */
+  bfViewport              viewport;                        /* 24 bytes                           */
+  bfScissorRect           scissor_rect;                    /* 16 bytes                           */
+  float                   blend_constants[4];              /* 4 * 4 bytes                        */
+  float                   line_width;                      /* 4 bytes                            */
+  bfPipelineDepthInfo     depth;                           /* 5 * 4 bytes                        */
+  float                   min_sample_shading;              /* 4 bytes                            */
+  uint32_t                sample_mask;                     /* 4 bytes must default to 0xFFFFFFFF */
+  bfFramebufferBlending   blending[k_bfGfxMaxAttachments]; /* 8 * 4 bytes                        */
+  bfShaderProgramHandle   program;                         /* sizeof(void*)                      */
+  bfRenderpassHandle      renderpass;                      /* sizeof(void*)                      */
+  bfVertexLayoutSetHandle vertex_layout;                   /* sizeof(void*)                      */
 
-} bfPipelineCache;
+} bfPipelineCache; /* total of 160 bytes (x64) */
+
+// This struct is just a subset of `bfPipelineCache` that we allow draw calls to set.
+typedef struct
+{
+  bfPipelineState         state;                           /* 16 bytes                           */
+  float                   blend_constants[4];              /* 4 * 4 bytes                        */
+  float                   line_width;                      /* 4 bytes                            */
+  bfFramebufferBlending   blending[k_bfGfxMaxAttachments]; /* 8 * 4 bytes                        */
+  bfShaderProgramHandle   program;                         /* sizeof(void*)                      */
+  bfVertexLayoutSetHandle vertex_layout;                   /* sizeof(void*)                      */
+
+} bfDrawCallPipeline; /* total of 84 bytes (x64) */
 
 uint64_t bfPipelineCache_state0Mask(const bfPipelineState* self);
 uint64_t bfPipelineCache_state1Mask(const bfPipelineState* self);
+
+BF_GFX_API void bfDrawCallPipeline_defaultOpaque(bfDrawCallPipeline* self);
+BF_GFX_API void bfDrawCallPipeline_defaultAlphaBlending(bfDrawCallPipeline* self);
 
 #if __cplusplus
 }

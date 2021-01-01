@@ -124,7 +124,7 @@ namespace bf::UI
     return g_UI.widget_freelist;
   }
 
-  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Montserrat/Montserrat-Medium.ttf", 22.0f);
+  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Montserrat/Montserrat-Medium.ttf", 20.0f);
 
   static void BringToFront(Widget* widget)
   {

@@ -155,7 +155,7 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
     return false;
   }
 
-  if (a.vertex_set_layout != b.vertex_set_layout)
+  if (a.vertex_layout != b.vertex_layout)
   {
     return false;
   }
@@ -249,22 +249,22 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
   }
 
   /*
-
-    NOTE(SR): This check is not needed since if the two pipelines share the same
+    NOTE(SR):
+      This check is not needed since if the two pipelines share the same
       RenderPass as well as subpass_index then of course the number of attachments are the same.
    
-  const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
-  const auto num_attachments_b = b.renderpass->info.subpasses[b.state.subpass_index].num_out_attachment_refs;
+    const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
+    const auto num_attachments_b = b.renderpass->info.subpasses[b.state.subpass_index].num_out_attachment_refs;
 
-  if (num_attachments_a != num_attachments_b)
-  {
-    return false;
-  }
+    if (num_attachments_a != num_attachments_b)
+    {
+      return false;
+    }
   */
 
-  const auto num_attachments_a = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
+  const auto num_attachments = a.renderpass->info.subpasses[a.state.subpass_index].num_out_attachment_refs;
 
-  for (std::uint32_t i = 0; i < num_attachments_a; ++i)
+  for (std::uint32_t i = 0; i < num_attachments; ++i)
   {
     uint32_t blend_state_bits_a;
     uint32_t blend_state_bits_b;

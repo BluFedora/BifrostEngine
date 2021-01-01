@@ -41,7 +41,6 @@ static void CreateStagingManager(bfVkStagingManager* self, VkQueue gfx_queue, ui
   self->gfx_queue        = gfx_queue;
 
   // Create Buffers
-
   {
     VkBufferCreateInfo buffer_create_info;
     buffer_create_info.sType                 = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

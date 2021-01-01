@@ -323,7 +323,7 @@ namespace bf::imgui
 
     // Renderer Setup: Font Texture
 
-    const float font_size = 18.0f * dpi_scale_factor;
+    const float font_size = 20.0f * dpi_scale_factor;
 
     ImGui::GetStyle().ScaleAllSizes(dpi_scale_factor);
 

@@ -4,12 +4,15 @@
 #ifndef BF_RENDER_QUEUE_HPP
 #define BF_RENDER_QUEUE_HPP
 
+#include "bf/Array.hpp"            // Array<T>
+#include "bf/LinearAllocator.hpp"  // LinearAllocator
+#include "bf/MemoryUtils.h"        // bfMegabytes
+#include "bf/bf_gfx_api.h"         // Graphics
+
 #include <cassert>     /* assert         */
 #include <cstdint>     /* uint64_t       */
 #include <limits>      /* numeric_limits */
 #include <type_traits> /* is_unsigned_v  */
-
-#include <iostream>
 
 // https://www.fluentcpp.com/2016/12/08/strong-types-for-strong-interfaces/
 
@@ -18,9 +21,12 @@ namespace bf
   //
   // Tag type for the bit manipulation functions.
   //
-  template<std::size_t k_Offset, std::size_t k_NumBits>
+  template<std::size_t k_Offset_, std::size_t k_NumBits_>
   struct BitRange
   {
+    static constexpr std::size_t k_Offset  = k_Offset_;
+    static constexpr std::size_t k_NumBits = k_NumBits_;
+    static constexpr std::size_t k_LastBit = k_Offset + k_NumBits;
   };
 
   namespace Bits
@@ -108,7 +114,10 @@ namespace bf
       return result;
     }
 
-    inline std::uint32_t hi_bits(float value, int num_hi_bits) noexcept
+    //
+    //
+    //
+    inline std::uint32_t depth_to_bits(float value, int num_hi_bits) noexcept
     {
       constexpr std::uint32_t k_NumBitsInFloat = 32;
       constexpr std::uint32_t k_HiBitIndex     = 31;
@@ -141,44 +150,165 @@ namespace bf
     }
   }  // namespace Bits
 
+  enum class RenderCommandType
+  {
+    DrawIndexed,
+    DrawArrays,
+  };
+
+  struct BaseRenderCommand
+  {
+    RenderCommandType  type;
+    BaseRenderCommand* next;  // optional continuation command that will not be sorted globally.
+
+    BaseRenderCommand(RenderCommandType type) :
+      type{type},
+      next{nullptr}
+    {
+    }
+  };
+
   struct RenderSortKey
   {
-    std::uint64_t value;
+    std::uint64_t      key;
+    BaseRenderCommand* command;
   };
 
-  struct RenderItem
+  template<RenderCommandType k_Type>
+  struct RenderCommandT : public BaseRenderCommand
   {
-    RenderSortKey sort_key;
-    RenderItem*   next_in_ground;
+    RenderCommandT() :
+      BaseRenderCommand(k_Type)
+    {
+    }
   };
 
-  inline void TestStuff()
+  struct DescSetBind
   {
-    std::uint64_t value = 0x0;
+    enum
+    {
+      IMMEDIATE,
+      RETAINED,
 
-    std::cout << std::showbase;
+    } mode;
 
-    std::cout << std::hex << value << '\n';
+    union
+    {
+      bfDescriptorSetHandle retained_mode_set;
+      bfDescriptorSetInfo   immediate_mode_set;
+    };
 
-    value = Bits::set(value, 0xF0FF, BitRange<16, 16>{});
+    void set(const bfDescriptorSetInfo& info)
+    {
+      mode               = IMMEDIATE;
+      immediate_mode_set = info;
+    }
 
-    std::cout << std::hex << value << '\n';
+    void set(bfDescriptorSetHandle handle)
+    {
+      mode              = RETAINED;
+      retained_mode_set = handle;
+    }
 
-    value = Bits::cleared(value, BitRange<16, 16>{});
+    void bind(bfGfxCommandListHandle command_list, std::uint32_t index);
+  };
 
-    std::cout << std::hex << value << '\n';
+  struct RC_DrawArrays : public RenderCommandT<RenderCommandType::DrawArrays>
+  {
+    bfDrawCallPipeline pipeline               = {};
+    DescSetBind        material_binding       = {DescSetBind::RETAINED, {nullptr}};
+    DescSetBind        object_binding         = {DescSetBind::RETAINED, {nullptr}};
+    std::uint32_t      num_vertex_buffers     = 0u;
+    bfBufferHandle*    vertex_buffers         = nullptr;
+    bfBufferSize*      vertex_binding_offsets = nullptr;
+    std::uint32_t      first_vertex           = 0u;
+    std::uint32_t      num_vertices           = 0u;
+  };
 
-    value = Bits::cleared_set(value, 0xABEF, BitRange<16, 16>{});
+  struct RC_DrawIndexed : public RenderCommandT<RenderCommandType::DrawIndexed>
+  {
+    bfDrawCallPipeline pipeline                    = {};
+    DescSetBind        material_binding            = {DescSetBind::RETAINED, {nullptr}};
+    DescSetBind        object_binding              = {DescSetBind::RETAINED, {nullptr}};
+    std::uint32_t      num_vertex_buffers          = 0u;
+    bfBufferHandle*    vertex_buffers              = nullptr;
+    bfBufferSize*      vertex_binding_offsets      = nullptr;
+    bfBufferHandle     index_buffer                = nullptr;
+    std::uint32_t      vertex_offset               = 0u;
+    std::uint32_t      index_offset                = 0u;
+    std::uint32_t      num_indices                 = 0u;
+    std::uint64_t      index_buffer_binding_offset = 0u;
+    bfGfxIndexType     index_type                  = BF_INDEX_TYPE_UINT32;
+  };
 
-    std::cout << std::hex << value << '\n';
+  //
+  // TODO(SR): A user sort key would be nice to have.
+  //
+  // The sort keys are very basic and need tuning.
+  //   Opaque       Sort Key: [shader(16bit), vertex-format(16bit), material(16bit), depth f-to-b(16bit)]
+  //   Transparency Sort Key: [depth b-to-f(24bit), shader(16bit), vertex-format(16bit), material(8bit)]
+  //
+  // *material here means texture bindings change through descriptor set.
+  //
 
-    int* heap_ptr = new int();
+  enum class RenderQueueType
+  {
+    NO_BLENDING,
+    ALPHA_BLENDING,
+  };
 
-    std::cout << "Hashed Stack Pointer: " << &value << " => " << Bits::basic_pointer_hash(&value) << "\n";
-    std::cout << "Hashed Heap  Pointer: " << heap_ptr << " => " << Bits::basic_pointer_hash(heap_ptr) << "\n";
+  struct RenderView;
 
-    delete heap_ptr;
-  }
+  struct RenderQueue
+  {
+    static constexpr std::size_t k_KeyBufferSize     = bfMegabytes(1);
+    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(2);
+
+    RenderQueueType                           type;
+    RenderView&                               render_view;
+    FixedLinearAllocator<k_KeyBufferSize>     key_stream_memory;
+    FixedLinearAllocator<k_CommandBufferSize> command_stream_memory;
+    std::size_t                               num_keys;
+
+    RenderQueue(RenderQueueType type, RenderView& view);
+
+    void clear()
+    {
+      command_stream_memory.clear();
+      key_stream_memory.clear();
+      num_keys = 0;
+    }
+
+    void            execute(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info);
+    RenderSortKey*  firstKey() const { return reinterpret_cast<RenderSortKey*>(key_stream_memory.begin()); }
+    RC_DrawArrays*  drawArrays(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers);
+    RC_DrawIndexed* drawIndexed(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers, bfBufferHandle index_buffer);
+    void            submit(RC_DrawIndexed* command, float distance_to_camera);
+    void            submit(RC_DrawArrays* command, float distance_to_camera);
+
+   protected:
+    void pushKey(std::uint64_t key, BaseRenderCommand* command)
+    {
+      RenderSortKey* const sort_key = key_stream_memory.allocateT<RenderSortKey>();
+
+      sort_key->key     = key;
+      sort_key->command = command;
+
+      ++num_keys;
+    }
+
+    template<typename T, typename... Args>
+    T* pushAlloc(Args&&... args)
+    {
+      return command_stream_memory.allocateT<T>(std::forward<Args>(args)...);
+    }
+
+    template<typename T>
+    T* pushAllocArray(std::size_t num_items)
+    {
+      return command_stream_memory.allocateArrayTrivial<T>(num_items);
+    }
+  };
 }  // namespace bf
 
 #endif /* BF_RENDER_QUEUE_HPP */

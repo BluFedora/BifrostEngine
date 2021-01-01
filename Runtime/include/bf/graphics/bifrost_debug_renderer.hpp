@@ -1,11 +1,11 @@
 #pragma once
 
 #include "bf/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
-#include "bifrost_standard_renderer.hpp" 
+#include "bifrost_standard_renderer.hpp"
 
 namespace bf
 {
-  struct CameraRender;
+  struct RenderView;
 
   static constexpr int k_DebugRendererNumLinesInBatch   = 256;
   static constexpr int k_DebugRendererNumVerticesInLine = 6;
@@ -23,8 +23,6 @@ namespace bf
 
   class DebugRenderer final
   {
-    // using VertexBuffer = TransientVertexBuffer<VertexDebugLine, k_DebugRendererLineBatchSize, BIFROST_BUF_VERTEX_BUFFER>;
-
     using DebugVertexBuffer = VertexDebugLine[k_DebugRendererLineBatchSize];
 
     struct BufferLink final
@@ -95,7 +93,7 @@ namespace bf
     void addLine(const Vector3f& a, const Vector3f& b, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
     void addAABB(const Vector3f& center, const Vector3f& extents, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
 
-    void draw(bfGfxCommandListHandle command_list, CameraRender& camera, const bfGfxFrameInfo& frame_info, bool overlay);
+    void draw(RenderView& camera, const bfGfxFrameInfo& frame_info);
 
     void deinit();
 
@@ -103,9 +101,9 @@ namespace bf
     List<DrawCommand>& grabCommandList(bool is_overlay);
     BufferLink*        grabFreeLink(const bfGfxFrameInfo& frame_info);
     void               clearLineBuffer(Array<BufferLink*>& buffer_link_list);
-    void               updateDrawCommands(List<DrawCommand>& list, float delta_time);
     void               addVertices(Array<BufferLink*>& buffer, const Vector3f& a, const Vector3f& b, const bfColor4u& color, const bfGfxFrameInfo& frame_info);
     void               addTriangle(Array<BufferLink*>& buffer, const VertexDebugLine& a, const VertexDebugLine& b, const VertexDebugLine& c, const bfGfxFrameInfo& frame_info);
     IMemoryManager&    memory() const { return m_DepthDrawCommands.memory(); }
+    static void        updateDrawCommands(List<DrawCommand>& list, float delta_time);
   };
-}  // namespace bifrost
+}  // namespace bf

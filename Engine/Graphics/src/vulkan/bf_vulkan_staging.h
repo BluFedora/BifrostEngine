@@ -59,6 +59,20 @@ typedef struct
 
 } bfVkStagingResult;
 
+/*
+    VkBufferCopy buffer_copy = {};
+    buffer_copy.srcOffset = bfVkStagingResult::buffer_offset;
+    buffer_copy.dstOffset = <dst-offset>;
+    buffer_copy.size      = size;
+
+    vkCmdCopyBuffer(
+      bfVkStagingResult::cmd_buffer,
+      bfVkStagingResult::buffer,
+      <dst-buffer>,
+      1,
+      &buffer_copy);
+*/
+
 void              bfVkStagingManager_initialize(bfVkStagingManager* self, size_t num_frames_delay);
 bfVkStagingResult bfVkStagingManager_stage(bfVkStagingManager* self, size_t size, size_t alignment);
 void              bfVkStagingManager_flush(bfVkStagingManager* self);

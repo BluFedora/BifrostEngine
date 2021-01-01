@@ -1,7 +1,8 @@
 #ifndef BF_ENGINE_HPP
 #define BF_ENGINE_HPP
 
-#include "bf/LinearAllocator.hpp"
+#include "bf/gfx/bf_render_queue.hpp"
+
 #include "bf/PoolAllocator.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
@@ -11,6 +12,9 @@
 #include "bifrost/bifrost_vm.hpp"
 #include "bifrost_game_state_machine.hpp"
 #include "bifrost_igame_state_layer.hpp"
+
+#include <chrono>   // high_resolution_clock
+#include <utility>  // pair
 
 #define USE_CRT_HEAP 0
 
@@ -47,7 +51,7 @@ namespace bf
     int height;
   };
 
-  struct CameraRender
+  struct RenderView
   {
     friend class Engine;
 
@@ -58,11 +62,14 @@ namespace bf
     int               old_height;
     int               new_width;
     int               new_height;
-    CameraRender*     prev;
-    CameraRender*     next;
-    CameraRender*     resize_list_next;
+    RenderQueue       opaque_render_queue;
+    RenderQueue       transparent_render_queue;
+    RenderQueue       overlay_render_queue;
+    RenderView*       prev;
+    RenderView*       next;
+    RenderView*       resize_list_next;
 
-    CameraRender(CameraRender*& head, bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, const CameraRenderCreateParams& params) :
+    RenderView(RenderView*& head, bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, const CameraRenderCreateParams& params) :
       device{device},
       cpu_camera{},
       gpu_camera{},
@@ -70,6 +77,9 @@ namespace bf
       old_height{params.height},
       new_width{params.width},
       new_height{params.height},
+      opaque_render_queue{RenderQueueType::NO_BLENDING, *this},
+      transparent_render_queue{RenderQueueType::ALPHA_BLENDING, *this},
+      overlay_render_queue{RenderQueueType::NO_BLENDING, *this},
       prev{nullptr},
       next{head},
       resize_list_next{nullptr}
@@ -87,7 +97,14 @@ namespace bf
       gpu_camera.init(device, frame_info, params.width, params.height);
     }
 
-    ~CameraRender()
+    void clearCommandQueues()
+    {
+      opaque_render_queue.clear();
+      transparent_render_queue.clear();
+      overlay_render_queue.clear();
+    }
+
+    ~RenderView()
     {
       gpu_camera.deinit(device);
     }
@@ -141,16 +158,13 @@ namespace bf
   };
 }  // namespace bf
 
-#include <chrono>   // high_resolution_clock
-#include <utility>  // pair
-
 namespace bf
 {
   class Engine : private NonCopyMoveable<Engine>
   {
    private:
     using CommandLineArgs     = std::pair<int, char**>;
-    using CameraRenderMemory  = PoolAllocator<CameraRender, k_MaxNumCamera>;
+    using CameraRenderMemory  = PoolAllocator<RenderView, k_MaxNumCamera>;
     using UpdateLoopClock     = std::chrono::high_resolution_clock;
     using UpdateLoopTimePoint = UpdateLoopClock::time_point;
 
@@ -179,9 +193,9 @@ namespace bf
     DebugRenderer      m_DebugRenderer;
     Gfx2DPainter*      m_Renderer2D;
     CameraRenderMemory m_CameraMemory;
-    CameraRender*      m_CameraList;
-    CameraRender*      m_CameraResizeList;
-    CameraRender*      m_CameraDeleteList;
+    RenderView*        m_CameraList;
+    RenderView*        m_CameraResizeList;
+    RenderView*        m_CameraDeleteList;
 
     // IECSSystem (High Level Systems)
 
@@ -227,14 +241,14 @@ namespace bf
 
     // Low Level Camera API
 
-    CameraRender* borrowCamera(const CameraRenderCreateParams& params);
-    void          resizeCamera(CameraRender* camera, int width, int height);
-    void          returnCamera(CameraRender* camera);
+    RenderView* borrowCamera(const CameraRenderCreateParams& params);
+    void        resizeCamera(RenderView* camera, int width, int height);
+    void        returnCamera(RenderView* camera);
 
     template<typename F>
     void forEachCamera(F&& callback)
     {
-      CameraRender* camera = m_CameraList;
+      RenderView* camera = m_CameraList;
 
       while (camera)
       {

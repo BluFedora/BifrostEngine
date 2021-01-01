@@ -543,6 +543,7 @@ BF_GFX_API void                  bfGfxCmdList_setDepthBias(bfGfxCommandListHandl
 BF_GFX_API void                  bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value);
 BF_GFX_API void                  bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value);
 BF_GFX_API void                  bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void                  bfGfxCmdList_setLogicOpEnabled(bfGfxCommandListHandle self, bfBool32 value);
 BF_GFX_API void                  bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op);
 BF_GFX_API void                  bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, bfPolygonFillMode fill_mode);
 BF_GFX_API void                  bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output_attachment_idx, uint8_t color_mask);
@@ -572,6 +573,7 @@ BF_GFX_API void                  bfGfxCmdList_setDepthBiasClamp(bfGfxCommandList
 BF_GFX_API void                  bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value);
 BF_GFX_API void                  bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value);
 BF_GFX_API void                  bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mask);
+BF_GFX_API void                  bfGfxCmdList_bindDrawCallPipeline(bfGfxCommandListHandle self, const bfDrawCallPipeline* pipeline_state);
 BF_GFX_API void                  bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout);
 BF_GFX_API void                  bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
 BF_GFX_API void                  bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, bfGfxIndexType idx_type);

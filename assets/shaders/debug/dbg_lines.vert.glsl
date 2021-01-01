@@ -10,10 +10,10 @@
 
 const bool k_DoMiterJoin = true;
 
-layout(location = 0) in vec4 in_CurrPosition;
-layout(location = 1) in vec4 in_NextPosition;
-layout(location = 2) in vec4 in_PrevPosition;
-layout(location = 3) in vec4 in_Color;
+layout(location = 0) in vec4  in_CurrPosition;
+layout(location = 1) in vec4  in_NextPosition;
+layout(location = 2) in vec4  in_PrevPosition;
+layout(location = 3) in vec4  in_Color;
 layout(location = 4) in float in_Direction;
 layout(location = 5) in float in_Thickness;
 

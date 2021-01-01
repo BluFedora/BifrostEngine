@@ -22,6 +22,8 @@
 
 #include <utility>
 
+#include "bf/CRTAllocator.hpp"
+
 namespace bf::editor
 {
   StringPoolRef::StringPoolRef(const StringPoolRef& rhs) noexcept :
@@ -103,32 +105,6 @@ namespace bf::editor
 /////////////////////////////////////////////////////////////////////////////////////
 
 using namespace bf;
-
-// TODO(Shareef): This is useful for the engine aswell.
-template<std::size_t size>
-class FixedLinearAllocator final
-{
- private:
-  char            m_MemoryBacking[size];
-  LinearAllocator m_LinearAllocator;
-  NoFreeAllocator m_NoFreeAdapter;
-
- public:
-  FixedLinearAllocator() :
-    m_MemoryBacking{},
-    m_LinearAllocator{m_MemoryBacking, size},
-    m_NoFreeAdapter{m_LinearAllocator}
-  {
-  }
-
-  LinearAllocator& linear() { return m_LinearAllocator; }
-  IMemoryManager&  memory() { return m_NoFreeAdapter; }
-
-  operator IMemoryManager&()
-  {
-    return memory();
-  }
-};
 
 // clang-format off
 template<std::size_t Size, typename TAllocator = bf::FreeListAllocator>
@@ -1474,8 +1450,8 @@ namespace bf::editor
 
   static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry)
   {
-    FixedLinearAllocator<512> dir_allocator;
-    path::DirectoryEntry*     dir = path::openDirectory(dir_allocator, path);
+    CRTAllocator          mallocator;
+    path::DirectoryEntry* dir = path::openDirectory(mallocator, path);
 
     if (dir)
     {

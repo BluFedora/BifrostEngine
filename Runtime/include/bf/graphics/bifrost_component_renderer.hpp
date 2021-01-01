@@ -56,7 +56,7 @@ namespace bf
 
    public:
     void onInit(Engine& engine) override;
-    void onFrameDraw(Engine& engine, CameraRender& camera, float alpha) override;
+    void onFrameDraw(Engine& engine, RenderView& camera, float alpha) override;
     void onDeinit(Engine& engine) override;
   };
 }  // namespace bf

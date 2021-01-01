@@ -15,7 +15,7 @@
 
 namespace bf
 {
-  struct CameraRender;
+  struct RenderView;
   class Engine;
 
   class IECSSystem
@@ -37,7 +37,7 @@ namespace bf
     virtual void onFrameBegin(Engine& engine, float dt)   { (void)engine; (void)dt;    }
     virtual void onFrameUpdate(Engine& engine, float dt)  { (void)engine; (void)dt;    }
     virtual void onFrameEnd(Engine& engine, float dt)     { (void)engine; (void)dt;    }
-    virtual void onFrameDraw(Engine& engine, CameraRender& camera, float alpha) { (void)engine; (void)camera; (void)alpha; }
+    virtual void onFrameDraw(Engine& engine, RenderView& camera, float alpha) { (void)engine; (void)camera; (void)alpha; }
     virtual void onDeinit(Engine& engine) { (void)engine; }
             // clang-format on
 

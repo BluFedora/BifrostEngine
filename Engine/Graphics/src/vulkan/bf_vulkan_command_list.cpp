@@ -158,10 +158,10 @@ void bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue
 
   for (std::size_t i = 0; i < num_clear_colors; ++i)
   {
-    const bfClearValue* const bf_color = clear_values + i;
-    VkClearValue* const       color    = self->clear_colors + i;
+    const bfClearValue* const src_color = clear_values + i;
+    VkClearValue* const       dst_color = self->clear_colors + i;
 
-    *color = bfVKConvertClearColor(bf_color);
+    *dst_color = bfVKConvertClearColor(src_color);
   }
 }
 
@@ -232,7 +232,7 @@ void bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32
 
 extern "C" void bfGfxCmdList_setRenderAreaRelImpl(float fb_width, float fb_height, bfGfxCommandListHandle self, float x, float y, float width, float height);
 
- void bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height)
+void bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height)
 {
   bfGfxCmdList_setRenderAreaRelImpl(float(self->attachment_size[0]), float(self->attachment_size[1]), self, x, y, width, height);
 }
@@ -283,7 +283,7 @@ void bfGfxCmdList_setDepthTesting(bfGfxCommandListHandle self, bfBool32 value)
 
 void bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).depth_write = value;
+  state(self).do_depth_write = value;
 }
 
 void bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, bfCompareOp op)
@@ -298,12 +298,12 @@ void bfGfxCmdList_setStencilTesting(bfGfxCommandListHandle self, bfBool32 value)
 
 void bfGfxCmdList_setPrimitiveRestart(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).primitive_restart = value;
+  state(self).do_primitive_restart = value;
 }
 
 void bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).rasterizer_discard = value;
+  state(self).do_rasterizer_discard = value;
 }
 
 void bfGfxCmdList_setDepthBias(bfGfxCommandListHandle self, bfBool32 value)
@@ -318,12 +318,17 @@ void bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value)
 
 void bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).alpha_to_coverage = value;
+  state(self).do_alpha_to_coverage = value;
 }
 
 void bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).alpha_to_one = value;
+  state(self).do_alpha_to_one = value;
+}
+
+void bfGfxCmdList_setLogicOpEnabled(bfGfxCommandListHandle self, bfBool32 value)
+{
+  state(self).do_logic_op = value;
 }
 
 void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op)
@@ -581,9 +586,28 @@ void bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mas
   self->pipeline_state.sample_mask = sample_mask;
 }
 
+void bfGfxCmdList_bindDrawCallPipeline(bfGfxCommandListHandle self, const bfDrawCallPipeline* pipeline_state)
+{
+  const std::uint64_t old_subpass_idx = self->pipeline_state.state.subpass_index;
+
+  self->pipeline_state.state               = pipeline_state->state;
+  self->pipeline_state.state.subpass_index = old_subpass_idx;
+  self->pipeline_state.line_width          = pipeline_state->line_width;
+  self->pipeline_state.program             = pipeline_state->program;
+  self->pipeline_state.vertex_layout       = pipeline_state->vertex_layout;
+  std::memcpy(self->pipeline_state.blend_constants, pipeline_state->blend_constants, sizeof(pipeline_state->blend_constants));
+  std::memcpy(self->pipeline_state.blending, pipeline_state->blending, sizeof(pipeline_state->blending));  // TODO(SR): This can be optimized to copy less.
+
+  self->dynamic_state_dirty = BF_PIPELINE_DYNAMIC_LINE_WIDTH |
+                              BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS |
+                              BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK |
+                              BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK |
+                              BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
+}
+
 void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout)
 {
-  self->pipeline_state.vertex_set_layout = vertex_set_layout;
+  self->pipeline_state.vertex_layout = vertex_set_layout;
 }
 
 void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
@@ -622,8 +646,8 @@ void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t bindi
   const VkPipelineBindPoint   bind_point = self->pipeline_state.renderpass ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
   const bfShaderProgramHandle program    = self->pipeline_state.program;
 
-  assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not fully supported yet.");
-  assert((binding + num_desc_sets) <= program->num_desc_set_layouts);
+  assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && "Compute not supported yet.");
+  assert(binding + num_desc_sets <= program->num_desc_set_layouts);
   assert(num_desc_sets <= k_bfGfxDescriptorSets);
 
   VkDescriptorSet sets[k_bfGfxDescriptorSets];
@@ -636,7 +660,7 @@ void bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t bindi
   vkCmdBindDescriptorSets(
    self->handle,
    bind_point,
-   self->pipeline_state.program->layout,
+   program->layout,
    binding,
    num_desc_sets,
    sets,
@@ -668,7 +692,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            desc_set,
            binding_info->binding,
            binding_info->array_element_start,
-           (bfTextureHandle*)binding_info->handles,
+           (bfTextureHandle*)binding_info->handles,  // NOLINT(clang-diagnostic-cast-qual)
            binding_info->num_handles);
           break;
         case BF_DESCRIPTOR_ELEMENT_BUFFER:
@@ -677,7 +701,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
            binding_info->binding,
            binding_info->offsets,
            binding_info->sizes,
-           (bfBufferHandle*)binding_info->handles,
+           (bfBufferHandle*)binding_info->handles,  // NOLINT(clang-diagnostic-cast-qual)
            binding_info->num_handles);
           break;
         case BF_DESCRIPTOR_ELEMENT_BUFFER_VIEW:
@@ -734,17 +758,17 @@ static void flushPipeline(bfGfxCommandListHandle self)
     vertex_input.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input.pNext                           = nullptr;
     vertex_input.flags                           = 0x0;
-    vertex_input.vertexBindingDescriptionCount   = state.vertex_set_layout->num_buffer_bindings;
-    vertex_input.pVertexBindingDescriptions      = state.vertex_set_layout->buffer_bindings;
-    vertex_input.vertexAttributeDescriptionCount = state.vertex_set_layout->num_attrib_bindings;
-    vertex_input.pVertexAttributeDescriptions    = state.vertex_set_layout->attrib_bindings;
+    vertex_input.vertexBindingDescriptionCount   = state.vertex_layout->num_buffer_bindings;
+    vertex_input.pVertexBindingDescriptions      = state.vertex_layout->buffer_bindings;
+    vertex_input.vertexAttributeDescriptionCount = state.vertex_layout->num_attrib_bindings;
+    vertex_input.pVertexAttributeDescriptions    = state.vertex_layout->attrib_bindings;
 
     VkPipelineInputAssemblyStateCreateInfo input_asm;
     input_asm.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     input_asm.pNext                  = nullptr;
     input_asm.flags                  = 0x0;
     input_asm.topology               = bfVkConvertTopology((bfDrawMode)state.state.draw_mode);
-    input_asm.primitiveRestartEnable = state.state.primitive_restart;
+    input_asm.primitiveRestartEnable = state.state.do_primitive_restart;
 
     VkPipelineTessellationStateCreateInfo tess;
     tess.sType              = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
@@ -774,7 +798,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     rasterization.pNext                   = nullptr;
     rasterization.flags                   = 0x0;
     rasterization.depthClampEnable        = state.state.do_depth_clamp;
-    rasterization.rasterizerDiscardEnable = state.state.rasterizer_discard;
+    rasterization.rasterizerDiscardEnable = state.state.do_rasterizer_discard;
     rasterization.polygonMode             = bfVkConvertPolygonMode((bfPolygonFillMode)state.state.fill_mode);
     rasterization.cullMode                = bfVkConvertCullModeFlags(state.state.cull_face);
     rasterization.frontFace               = bfVkConvertFrontFace((bfFrontFace)state.state.front_face);
@@ -792,8 +816,8 @@ static void flushPipeline(bfGfxCommandListHandle self)
     multisample.sampleShadingEnable   = state.state.do_sample_shading;
     multisample.minSampleShading      = state.min_sample_shading;
     multisample.pSampleMask           = &state.sample_mask;
-    multisample.alphaToCoverageEnable = state.state.alpha_to_coverage;
-    multisample.alphaToOneEnable      = state.state.alpha_to_one;
+    multisample.alphaToCoverageEnable = state.state.do_alpha_to_coverage;
+    multisample.alphaToOneEnable      = state.state.do_alpha_to_one;
 
     const auto ConvertStencilOpState = [](VkStencilOpState& out, uint64_t fail, uint64_t pass, uint64_t depth_fail, uint64_t cmp_op, uint32_t cmp_mask, uint32_t write_mask, uint32_t ref) {
       out.failOp      = bfVkConvertStencilOp((bfStencilOp)fail);
@@ -810,7 +834,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
     depth_stencil.pNext                 = nullptr;
     depth_stencil.flags                 = 0x0;
     depth_stencil.depthTestEnable       = state.state.do_depth_test;
-    depth_stencil.depthWriteEnable      = state.state.depth_write;
+    depth_stencil.depthWriteEnable      = state.state.do_depth_write;
     depth_stencil.depthCompareOp        = bfVkConvertCompareOp((bfCompareOp)state.state.depth_test_op);
     depth_stencil.depthBoundsTestEnable = state.state.do_depth_bounds_test;
     depth_stencil.stencilTestEnable     = state.state.do_stencil_test;
@@ -891,10 +915,10 @@ static void flushPipeline(bfGfxCommandListHandle self)
 
     auto& s = state.state;
 
-    const auto addDynamicState = [&dynamic_state](VkDynamicState* states, uint64_t flag, VkDynamicState state) {
+    const auto addDynamicState = [&dynamic_state](VkDynamicState* states, uint64_t flag, VkDynamicState vk_state) {
       if (flag)
       {
-        states[dynamic_state.dynamicStateCount++] = state;
+        states[dynamic_state.dynamicStateCount++] = vk_state;
       }
     };
 
@@ -1255,7 +1279,7 @@ namespace bf::vk
 
     self = hash::addPointer(self, pipeline->program);
     self = hash::addPointer(self, pipeline->renderpass);
-    self = hash::addPointer(self, pipeline->vertex_set_layout);
+    self = hash::addPointer(self, pipeline->vertex_layout);
 
     return self;
   }

@@ -365,6 +365,7 @@ void bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self)
   bfGfxCmdList_setSampleShading(self, bfFalse);
   bfGfxCmdList_setAlphaToCoverage(self, bfFalse);
   bfGfxCmdList_setAlphaToOne(self, bfFalse);
+  bfGfxCmdList_setLogicOpEnabled(self, bfFalse);
   bfGfxCmdList_setLogicOp(self, BF_LOGIC_OP_CLEAR);
   bfGfxCmdList_setPolygonFillMode(self, BF_POLYGON_MODE_FILL);
 
@@ -426,6 +427,101 @@ void bfGfxCmdList_setRenderAreaRelImpl(float fb_width, float fb_height, bfGfxCom
    (uint32_t)(fb_height * height));
 }
 
+// bf_gfx_pipeline_state.h
+
+static void bfDrawCallPipeline_defaultX(bfDrawCallPipeline* self)
+{
+  bfPipelineState* const state = &self->state;
+
+  state->draw_mode                        = BF_DRAW_MODE_TRIANGLE_LIST;
+  state->front_face                       = BF_FRONT_FACE_CCW;
+  state->cull_face                        = BF_CULL_FACE_BACK;
+  state->do_depth_test                    = bfFalse;
+  state->do_depth_clamp                   = bfFalse;
+  state->do_depth_write                   = bfFalse;
+  state->depth_test_op                    = BF_COMPARE_OP_LESS_OR_EQUAL;
+  state->do_stencil_test                  = bfFalse;
+  state->do_primitive_restart             = bfFalse;
+  state->do_rasterizer_discard            = bfFalse;
+  state->do_depth_bias                    = bfFalse;
+  state->do_alpha_to_coverage             = bfFalse;
+  state->do_alpha_to_one                  = bfFalse;
+  state->do_logic_op                      = bfFalse;
+  state->logic_op                         = BF_LOGIC_OP_CLEAR;
+  state->fill_mode                        = BF_POLYGON_MODE_FILL;
+  state->stencil_face_front_fail_op       = BF_STENCIL_OP_KEEP;
+  state->stencil_face_front_pass_op       = BF_STENCIL_OP_REPLACE;
+  state->stencil_face_front_depth_fail_op = BF_STENCIL_OP_KEEP;
+  state->stencil_face_front_compare_op    = BF_COMPARE_OP_ALWAYS;
+  state->stencil_face_front_compare_mask  = 0xFF;
+  state->stencil_face_front_write_mask    = 0xFF;
+  state->stencil_face_front_reference     = 0xFF;
+  state->stencil_face_back_fail_op        = BF_STENCIL_OP_KEEP;
+  state->stencil_face_back_pass_op        = BF_STENCIL_OP_REPLACE;
+  state->stencil_face_back_depth_fail_op  = BF_STENCIL_OP_KEEP;
+  state->stencil_face_back_compare_op     = BF_COMPARE_OP_ALWAYS;
+  state->stencil_face_back_compare_mask   = 0xFF;
+  state->stencil_face_back_write_mask     = 0xFF;
+  state->stencil_face_back_reference      = 0xFF;
+  state->dynamic_viewport                 = bfFalse;
+  state->dynamic_scissor                  = bfFalse;
+  state->dynamic_line_width               = bfFalse;
+  state->dynamic_depth_bias               = bfFalse;
+  state->dynamic_blend_constants          = bfFalse;
+  state->dynamic_depth_bounds             = bfFalse;
+  state->dynamic_stencil_cmp_mask         = bfFalse;
+  state->dynamic_stencil_write_mask       = bfFalse;
+  state->dynamic_stencil_reference        = bfFalse;
+  state->_pad                             = 0;
+  self->blend_constants[0]                = 1.0f;
+  self->blend_constants[1]                = 1.0f;
+  self->blend_constants[2]                = 1.0f;
+  self->blend_constants[3]                = 1.0f;
+  self->line_width                        = 1.0f;
+  self->program                           = BF_NULL_GFX_HANDLE;
+  self->vertex_layout                     = BF_NULL_GFX_HANDLE;
+}
+
+void bfDrawCallPipeline_defaultOpaque(bfDrawCallPipeline* self)
+{
+  bfDrawCallPipeline_defaultX(self);
+
+  for (int i = 0; i < k_bfGfxMaxAttachments; ++i)
+  {
+    bfFramebufferBlending* blending = self->blending + i;
+
+    blending->color_write_mask = BF_COLOR_MASK_RGBA;
+    blending->color_blend_op   = BF_BLEND_OP_ADD;
+    blending->color_blend_src  = BF_BLEND_FACTOR_NONE;
+    blending->color_blend_dst  = BF_BLEND_FACTOR_NONE;
+    blending->alpha_blend_op   = BF_BLEND_OP_ADD;
+    blending->alpha_blend_src  = BF_BLEND_FACTOR_NONE;
+    blending->alpha_blend_dst  = BF_BLEND_FACTOR_NONE;
+    blending->_pad             = 0;
+  }
+}
+
+void bfDrawCallPipeline_defaultAlphaBlending(bfDrawCallPipeline* self)
+{
+  bfDrawCallPipeline_defaultX(self);
+
+  for (int i = 0; i < k_bfGfxMaxAttachments; ++i)
+  {
+    bfFramebufferBlending* blending = self->blending + i;
+
+    blending->color_write_mask = BF_COLOR_MASK_RGBA;
+    blending->color_blend_op   = BF_BLEND_OP_ADD;
+    blending->color_blend_src  = BF_BLEND_FACTOR_SRC_ALPHA;
+    blending->color_blend_dst  = BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    blending->alpha_blend_op   = BF_BLEND_OP_ADD;
+    blending->alpha_blend_src  = BF_BLEND_FACTOR_SRC_ALPHA;
+    blending->alpha_blend_dst  = BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    blending->_pad             = 0;
+  }
+}
+
+// Helpers
+
 #include <stdio.h>
 
 char* LoadFileIntoMemory(const char* const filename, long* out_size)
@@ -455,6 +551,8 @@ char* LoadFileIntoMemory(const char* const filename, long* out_size)
 
   return buffer;
 }
+
+// Misc
 
 /* Prefer Dedicated GPU On Windows */
 #ifdef _WIN32

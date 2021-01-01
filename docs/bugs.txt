@@ -2,17 +2,10 @@
 - Game View should not have debug lines being drawn.
 
 
+
 More Misc Cuz Im Disorganized.
-
-
-
-
-
-
-
 
 References:
   (DISPLAYING GROUPS HIERARCHICALLY By CASEY MURATORI)[https://caseymuratori.com/blog_0020]
 
-
-you can skip transpose/inverse part if your model matrix does not do non-uniform scaling
+you can skip transpose/inverse part of your model matrix does not do non-uniform scaling

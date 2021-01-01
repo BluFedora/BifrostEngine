@@ -146,6 +146,7 @@ namespace bf
     m_Meshes{memory},
     m_Nodes{memory},
     m_BoneToModel{memory},
+    m_Materials{memory},
     m_GlobalInvTransform{}
   {
   }
@@ -253,11 +254,9 @@ namespace bf
       };
 
       // Load Skeleton
-
       loadSkeleton(model_result.skeleton);
 
       // Load Materials
-
       forEachWithIndex(*model_result.materials, [&](const AssetPBRMaterial& src_mat, std::size_t index) {
         string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "Material_#%i.material", int(index));
 
@@ -269,10 +268,13 @@ namespace bf
         assign_texture(material->m_MetallicTexture, src_mat, PBRTextureType::METALLIC);
         assign_texture(material->m_RoughnessTexture, src_mat, PBRTextureType::ROUGHNESS);
         assign_texture(material->m_AmbientOcclusionTexture, src_mat, PBRTextureType::AO);
+
+        m_Materials.push(material);
+        // Keep the materials alive with the model
+        material->acquire();
       });
 
       // Load Animations
-
       forEachWithIndex(*model_result.animations, [&](const ModelAnimation& src_animation, std::size_t anim_index) {
         string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "ANIM_%s#%i.anim", src_animation.name.data, int(anim_index));
 
@@ -437,6 +439,13 @@ namespace bf
   {
     // TODO(SR): This will not scale well.
     bfGfxDevice_flush(m_GraphicsDevice);
+
+    for (MaterialAsset* material : m_Materials)
+    {
+      material->release();
+    }
+
+    m_Materials.clear();
 
     bfGfxDevice_release(m_GraphicsDevice, m_VertexBuffer);
     bfGfxDevice_release(m_GraphicsDevice, m_IndexBuffer);

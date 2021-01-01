@@ -10,13 +10,12 @@
 #include "bf/graphics/bifrost_standard_renderer.hpp"
 
 #include "bf/MemoryUtils.h"
-#include "bf/Platform.h"  // BifrostWindow
+#include "bf/Platform.h"              // BifrostWindow
 #include "bf/ecs/bifrost_entity.hpp"  // Entity
 #include "bf/ecs/bifrost_light.hpp"   // LightType
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */
-
 
 #include "bf/asset_io/bf_gfx_assets.hpp"
 #include "bf/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
@@ -52,18 +51,11 @@ namespace bf
 
     for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
     {
-      for (int j = 0; j < 3; ++j)
-      {
-        clear_values[i].color.float32[j] = 0.0f;
-      }
-
-      clear_values[i].color.float32[3] = 1.0f;
+      clear_values[i].color = gfx::makeClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     }
 
     // A Brighter ambient background color for editor "Scene View"
-    clear_values[1].color.float32[0] = 1.0f;
-    clear_values[1].color.float32[1] = 1.0f;
-    clear_values[1].color.float32[2] = 1.0f;
+    clear_values[1].color = gfx::makeClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     clear_values[k_GfxNumGBufferAttachments].depthStencil.depth   = 1.0f;
     clear_values[k_GfxNumGBufferAttachments].depthStencil.stencil = 0;
@@ -319,8 +311,8 @@ namespace bf
     geometry_buffer.deinit(device);
     bfGfxDevice_release(device, composite_buffer);
 
-    geometry_buffer.init(device, width / 2, height / 2);
-    ssao_buffer.init(device, width / 8, height / 8);
+    geometry_buffer.init(device, width, height);
+    ssao_buffer.init(device, width / 2, height / 2);
 
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      width,
@@ -439,111 +431,6 @@ namespace bf
     return false;
   }
 
-  void StandardRenderer::bindMaterial(bfGfxCommandListHandle command_list, const MaterialAsset& material)
-  {
-    const auto defaultTexture = [this](const ARC<TextureAsset>& handle) -> bfTextureHandle {
-      return handle ? handle->handle() : m_WhiteTexture;
-    };
-
-    bfTextureHandle albedo            = defaultTexture(material.albedoTexture());
-    bfTextureHandle normal            = defaultTexture(material.normalTexture());
-    bfTextureHandle metallic          = defaultTexture(material.metallicTexture());
-    bfTextureHandle roughness         = defaultTexture(material.roughnessTexture());
-    bfTextureHandle ambient_occlusion = defaultTexture(material.ambientOcclusionTexture());
-
-    // Update Bindings
-    {
-      bfDescriptorSetInfo desc_set_material = bfDescriptorSetInfo_make();
-
-      bfDescriptorSetInfo_addTexture(&desc_set_material, 0, 0, &albedo, 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_material, 1, 0, &normal, 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_material, 2, 0, &metallic, 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_material, 3, 0, &roughness, 1);
-      bfDescriptorSetInfo_addTexture(&desc_set_material, 4, 0, &ambient_occlusion, 1);
-
-      bfGfxCmdList_bindDescriptorSet(command_list, k_GfxMaterialSetIndex, &desc_set_material);
-    }
-  }
-
-  void StandardRenderer::bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity)
-  {
-    const auto key = CameraObjectPair{&camera, &entity};
-
-    auto it = m_RenderableMapping.find(key);
-
-    Renderable<ObjectUniformData>* renderable;
-
-    if (it == m_RenderableMapping.end())
-    {
-      renderable = &m_RenderablePool.emplaceFront();
-      renderable->create(m_GfxDevice, m_FrameInfo);
-      m_RenderableMapping.emplace(key, renderable);
-    }
-    else
-    {
-      renderable = it->value();
-    }
-
-    const bfBufferSize offset = renderable->transform_uniform.offset(m_FrameInfo);
-    const bfBufferSize size   = sizeof(ObjectUniformData);
-
-    // Upload Data
-    {
-      ObjectUniformData* const obj_data = (ObjectUniformData*)bfBuffer_map(renderable->transform_uniform.handle(), offset, size);
-
-      Mat4x4& model = entity.transform().world_transform;
-
-      Mat4x4 model_view_proj;
-      Mat4x4_mult(&camera.view_projection_cache, &model, &model_view_proj);
-
-      obj_data->u_ModelViewProjection = model_view_proj;
-      obj_data->u_Model               = model;
-      obj_data->u_NormalModel         = entity.transform().normal_transform;
-
-      renderable->transform_uniform.flushCurrent(m_FrameInfo, size);
-      bfBuffer_unMap(renderable->transform_uniform.handle());
-    }
-
-    // Update Bindings
-    {
-      // TODO(SR): Optimize into an immutable DescriptorSet!
-      bfDescriptorSetInfo desc_set_object = bfDescriptorSetInfo_make();
-
-      bfDescriptorSetInfo_addUniform(&desc_set_object, 0, 0, &offset, &size, &renderable->transform_uniform.handle(), 1);
-
-      bfGfxCmdList_bindDescriptorSet(command_list, k_GfxObjectSetIndex, &desc_set_object);
-    }
-  }
-
-  bfDescriptorSetInfo StandardRenderer::bindObject2(const CameraGPUData& camera, Entity& entity)
-  {
-    const auto key = CameraObjectPair{&camera, &entity};
-
-    auto it = m_RenderableMapping.find(key);
-
-    Renderable<ObjectUniformData>* renderable;
-
-    if (it == m_RenderableMapping.end())
-    {
-      renderable = &m_RenderablePool.emplaceFront();
-      renderable->create(m_GfxDevice, m_FrameInfo);
-      m_RenderableMapping.emplace(key, renderable);
-    }
-    else
-    {
-      renderable = it->value();
-    }
-
-    const bfBufferSize offset = renderable->transform_uniform.offset(m_FrameInfo);
-    const bfBufferSize size   = sizeof(ObjectUniformData);
-
-    bfDescriptorSetInfo desc_set_object = bfDescriptorSetInfo_make();
-
-    bfDescriptorSetInfo_addUniform(&desc_set_object, 0, 0, &offset, &size, &renderable->transform_uniform.handle(), 1);
-
-    return desc_set_object;
-  }
-
   void StandardRenderer::addLight(Light& light)
   {
     LightGPUData* gpu_light = nullptr;
@@ -654,7 +541,7 @@ namespace bf
     bfGfxCmdList_setDepthTestOp(m_MainCmdList, BF_COMPARE_OP_LESS_OR_EQUAL);
     bfGfxCmdList_setCullFace(m_MainCmdList, BF_CULL_FACE_BACK);
 
-    for (int i = 0; i < k_GfxNumGBufferAttachments; ++i)
+    for (int i = 0; i < k_GfxNumGBufferAttachments + 1; ++i)
     {
       bfGfxCmdList_setBlendSrc(m_MainCmdList, i, BF_BLEND_FACTOR_NONE);
       bfGfxCmdList_setBlendDst(m_MainCmdList, i, BF_BLEND_FACTOR_NONE);
@@ -805,18 +692,15 @@ namespace bf
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, bfBit(0));
+    bfRenderpassInfo_setClearOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
     bfRenderpassInfo_addAttachment(&renderpass_info, &deferred_composite);
     bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    bfClearValue clear_colors[1];
-    clear_colors[0].color.float32[0] = 0.2f;
-    clear_colors[0].color.float32[1] = 0.2f;
-    clear_colors[0].color.float32[2] = 0.2f;
-    clear_colors[0].color.float32[3] = 1.0f;
+    bfClearValue clear_colors[1] = {
+     {gfx::makeClearColor(0.2f, 0.2f, 0.2f, 1.0f)}};
 
     bfTextureHandle attachments[] = {deferred_composite.texture};
 
@@ -873,6 +757,7 @@ namespace bf
     baseLightingBegin(m_AmbientLighting);
     baseLightingEnd();
 
+    // Additive Blending
     bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
     bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
     bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
@@ -882,6 +767,7 @@ namespace bf
     lightingDraw(m_LightShaders[LightShaders::POINT], m_PunctualLightBuffers[0]);
     lightingDraw(m_LightShaders[LightShaders::SPOT], m_PunctualLightBuffers[1]);
 
+    // Normal Alpha Blending
     bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BF_BLEND_FACTOR_SRC_ALPHA);
     bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
     bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
@@ -910,10 +796,7 @@ namespace bf
     bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     bfClearValue clear_colors[1];
-    clear_colors[0].color.float32[0] = 1.0f;
-    clear_colors[0].color.float32[1] = 0.0f;
-    clear_colors[0].color.float32[2] = 0.0f;
-    clear_colors[0].color.float32[3] = 1.0f;
+    clear_colors[0].color = gfx::makeClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 
     bfTextureHandle attachments[] = {surface_tex};
 
@@ -927,6 +810,12 @@ namespace bf
     bfGfxCmdList_beginRenderpass(command_list);
 
     bfGfxCmdList_bindVertexDesc(command_list, m_StandardVertexLayout);
+
+    // Normal Alpha Blending
+    bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BF_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ZERO);
   }
 
   void StandardRenderer::endPass(bfGfxCommandListHandle command_list) const
@@ -977,6 +866,97 @@ namespace bf
 
     m_GfxDevice  = nullptr;
     m_GfxBackend = nullptr;
+  }
+
+  bfDescriptorSetInfo StandardRenderer::makeMaterialInfo(const MaterialAsset& material)
+  {
+    const auto defaultTexture = [this](const ARC<TextureAsset>& handle) -> bfTextureHandle {
+      return handle ? handle->handle() : m_WhiteTexture;
+    };
+
+    bfTextureHandle albedo            = defaultTexture(material.albedoTexture());
+    bfTextureHandle normal            = defaultTexture(material.normalTexture());
+    bfTextureHandle metallic          = defaultTexture(material.metallicTexture());
+    bfTextureHandle roughness         = defaultTexture(material.roughnessTexture());
+    bfTextureHandle ambient_occlusion = defaultTexture(material.ambientOcclusionTexture());
+
+    bfDescriptorSetInfo desc_set_material = bfDescriptorSetInfo_make();
+
+    bfDescriptorSetInfo_addTexture(&desc_set_material, 0, 0, &albedo, 1);
+    bfDescriptorSetInfo_addTexture(&desc_set_material, 1, 0, &normal, 1);
+    bfDescriptorSetInfo_addTexture(&desc_set_material, 2, 0, &metallic, 1);
+    bfDescriptorSetInfo_addTexture(&desc_set_material, 3, 0, &roughness, 1);
+    bfDescriptorSetInfo_addTexture(&desc_set_material, 4, 0, &ambient_occlusion, 1);
+
+    return desc_set_material;
+  }
+
+  bfDescriptorSetInfo StandardRenderer::makeObjectTransformInfo(const CameraGPUData& camera, Entity& entity)
+  {
+    const auto key = CameraObjectPair{&camera, &entity};
+
+    auto it = m_RenderableMapping.find(key);
+
+    Renderable<ObjectUniformData>* renderable;
+
+    if (it == m_RenderableMapping.end())
+    {
+      renderable = &m_RenderablePool.emplaceFront();
+      renderable->create(m_GfxDevice, m_FrameInfo);
+      m_RenderableMapping.emplace(key, renderable);
+    }
+    else
+    {
+      renderable = it->value();
+    }
+
+    const bfBufferSize offset = renderable->transform_uniform.offset(m_FrameInfo);
+    const bfBufferSize size   = sizeof(ObjectUniformData);
+
+    // Upload Data
+    {
+      ObjectUniformData* const obj_data = (ObjectUniformData*)bfBuffer_map(renderable->transform_uniform.handle(), offset, size);
+
+      Mat4x4& model = entity.transform().world_transform;
+
+      Mat4x4 model_view_proj;
+      Mat4x4_mult(&camera.view_projection_cache, &model, &model_view_proj);
+
+      obj_data->u_ModelViewProjection = model_view_proj;
+      obj_data->u_Model               = model;
+      obj_data->u_NormalModel         = entity.transform().normal_transform;
+
+      renderable->transform_uniform.flushCurrent(m_FrameInfo, size);
+      bfBuffer_unMap(renderable->transform_uniform.handle());
+    }
+
+    bfDescriptorSetInfo desc_set_object = bfDescriptorSetInfo_make();
+
+    bfDescriptorSetInfo_addUniform(&desc_set_object, 0, 0, &offset, &size, &renderable->transform_uniform.handle(), 1);
+
+    return desc_set_object;
+  }
+
+  void StandardRenderer::renderCameraTo(RenderView& view)
+  {
+    BifrostCamera& camera          = view.cpu_camera;
+    CameraGPUData& camera_gpu_data = view.gpu_camera;
+
+    camera_gpu_data.updateBuffers(camera, m_FrameInfo, m_GlobalTime, AmbientColor);
+
+    // GBuffer
+    beginGBufferPass(camera_gpu_data);
+    view.opaque_render_queue.execute(m_MainCmdList, m_FrameInfo);
+    endPass(m_MainCmdList);
+
+    // SSAO
+    beginSSAOPass(camera_gpu_data);
+    endPass(m_MainCmdList);
+
+    // Lighting
+    beginLightingPass(camera_gpu_data);
+    view.overlay_render_queue.execute(m_MainCmdList, m_FrameInfo);
+    endPass(m_MainCmdList);
   }
 
   namespace bindings
@@ -1153,6 +1133,42 @@ namespace bf
       bfShaderProgram_link(shader);
 
       return shader;
+    }
+
+    bfClearColor makeClearColor(float r, float g, float b, float a)
+    {
+      bfClearColor result;
+
+      result.float32[0] = r;
+      result.float32[1] = g;
+      result.float32[2] = b;
+      result.float32[3] = a;
+
+      return result;
+    }
+
+    bfClearColor makeClearColor(int32_t r, int32_t g, int32_t b, int32_t a)
+    {
+      bfClearColor result;
+
+      result.int32[0] = r;
+      result.int32[1] = g;
+      result.int32[2] = b;
+      result.int32[3] = a;
+
+      return result;
+    }
+
+    bfClearColor makeClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a)
+    {
+      bfClearColor result;
+
+      result.uint32[0] = r;
+      result.uint32[1] = g;
+      result.uint32[2] = b;
+      result.uint32[3] = a;
+
+      return result;
     }
   }  // namespace gfx
 }  // namespace bf

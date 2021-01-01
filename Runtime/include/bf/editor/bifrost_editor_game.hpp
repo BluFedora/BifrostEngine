@@ -11,7 +11,7 @@ namespace bf::editor
   {
    private:
     EditorOverlay* m_Editor;
-    CameraRender*  m_Camera;
+    RenderView*    m_Camera;
     json::Value    m_SerializedScene;
 
    public:

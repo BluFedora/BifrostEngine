@@ -108,7 +108,7 @@ namespace bf::meta
     template<std::size_t N>
     struct num
     {
-      static const constexpr auto value = N;
+      static constexpr auto value = N;
     };
 
     template<class F, std::size_t... Is>

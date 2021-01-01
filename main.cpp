@@ -207,7 +207,7 @@ static void Test2DTransform()
   {
     if (points0[i] != points1[i])
     {
-#if BIFROST_PLATFORM_WINDOWS
+#if defined(_MSC_VER)
       // This test failed.
       __debugbreak();
       // DebugBreak();
@@ -400,8 +400,6 @@ if (update_fn)
   vm.stackDestroyHandle(update_fn);
 }
 
-#include "bf/gfx/bf_render_queue.hpp"
-
 static constexpr TestCaseFn s_Test[] =
  {
   // &Test2DTransform,
@@ -409,7 +407,6 @@ static constexpr TestCaseFn s_Test[] =
   // &TestApplyReturningVoid,
   // &TestMetaSystem,
   &TestScriptingStuff,
-  &TestStuff,
 };
 
 enum class ReturnCode
@@ -428,54 +425,56 @@ GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening co
 
 int main(int argc, char* argv[])
 {
-  static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
-
   for (const auto& test_fn : s_Test)
   {
     test_fn();
   }
 
+  static_assert(std::numeric_limits<double>::is_iec559, "Use IEEE754, you weirdo.");
+
   ReturnCode err_code = ReturnCode::SUCCESS;
 
-  if (!bfPlatformInit({argc, argv, nullptr, nullptr}))
-  {
-    MainQuit(ReturnCode::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
-  }
-
+  if (bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
     bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, k_bfWindowFlagsDefault);
 
-    if (!main_window)
+    if (main_window)
+    {
+      g_Window = (GLFWwindow*)main_window->handle;
+
+      try
+      {
+        const std::size_t             engine_memory_size = bfMegabytes(300);
+        const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
+        std::unique_ptr<Engine>       engine             = std::make_unique<Engine>(engine_memory.get(), engine_memory_size, argc, argv);
+        const EngineCreateParams      params             = {{argv[0], 0}, 60};
+
+        main_window->user_data = engine.get();
+        main_window->event_fn  = [](bfWindow* window, bfEvent* event) { static_cast<Engine*>(window->user_data)->onEvent(window, *event); };
+        main_window->frame_fn  = [](bfWindow* window) { static_cast<Engine*>(window->user_data)->tick(); };
+
+        engine->init(params, main_window);
+        engine->stateMachine().push<MainDemoLayer>();
+        engine->stateMachine().addOverlay<editor::EditorOverlay>(main_window);
+        bfPlatformDoMainLoop(main_window);
+        engine->deinit();
+      }
+      catch (std::bad_alloc&)
+      {
+        MainQuit(ReturnCode::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
+      }
+
+    quit_window:
+      bfPlatformDestroyWindow(main_window);
+    }
+    else
     {
       MainQuit(ReturnCode::FAILED_TO_CREATE_MAIN_WINDOW, quit_platform);
     }
-
-    g_Window = (GLFWwindow*)main_window->handle;
-
-    try
-    {
-      const std::size_t             engine_memory_size = bfMegabytes(300);
-      const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
-      Engine                        engine             = Engine{engine_memory.get(), engine_memory_size, argc, argv};
-      const EngineCreateParams      params             = {{argv[0], 0}, 60};
-
-      main_window->user_data = &engine;
-      main_window->event_fn  = [](bfWindow* window, bfEvent* event) { static_cast<Engine*>(window->user_data)->onEvent(window, *event); };
-      main_window->frame_fn  = [](bfWindow* window) { static_cast<Engine*>(window->user_data)->tick(); };
-
-      engine.init(params, main_window);
-      engine.stateMachine().push<MainDemoLayer>();
-      engine.stateMachine().addOverlay<editor::EditorOverlay>(main_window);
-      bfPlatformDoMainLoop(main_window);
-      engine.deinit();
-    }
-    catch (std::bad_alloc&)
-    {
-      MainQuit(ReturnCode::FAILED_TO_ALLOCATE_ENGINE_MEMORY, quit_window);
-    }
-
-  quit_window:
-    bfPlatformDestroyWindow(main_window);
+  }
+  else
+  {
+    MainQuit(ReturnCode::FAILED_TO_INITIALIZE_PLATFORM, quit_main);
   }
 
 quit_platform:

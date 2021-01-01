@@ -47,7 +47,7 @@ namespace bf
 #endif
   }
 
-  void ComponentRenderer::onFrameDraw(Engine& engine, CameraRender& camera, float alpha)
+  void ComponentRenderer::onFrameDraw(Engine& engine, RenderView& camera, float alpha)
   {
     const auto scene = engine.currentScene();
 
@@ -61,63 +61,91 @@ namespace bf
       // 3D Models
 
       // TODO(SR):
-      //   - Sorting based on distance, material, transparency.
-      //   - Culling based on the view frustrum.
+      //   - Culling based on the view frustum.
       //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/]
       //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/clip-space-approach-implementation-details/]
       //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-source-code/]
       //     - [https://github.com/gametutorials/tutorials/blob/master/OpenGL/Frustum%20Culling/Frustum.cpp]
       //     - [http://www.rastertek.com/dx10tut16.html]
 
-      bfGfxCmdList_bindProgram(engine_renderer.m_MainCmdList, engine_renderer.m_GBufferShader);
-      bfGfxCmdList_bindVertexDesc(engine_renderer.m_MainCmdList, engine_renderer.m_StandardVertexLayout);
-      camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
+      RenderQueue& render_queue = camera.opaque_render_queue;
+
+      bfDrawCallPipeline pipeline;
+      bfDrawCallPipeline_defaultOpaque(&pipeline);
+
+      pipeline.state.do_depth_test  = bfTrue;
+      pipeline.state.do_depth_write = bfTrue;
+
+      pipeline.program       = engine_renderer.m_GBufferShader;
+      pipeline.vertex_layout = engine_renderer.m_StandardVertexLayout;
 
       for (MeshRenderer& renderer : scene->components<MeshRenderer>())
       {
         if (renderer.material() && renderer.model())
         {
-          engine_renderer.bindMaterial(cmd_list, *renderer.material());
-          engine_renderer.bindObject(cmd_list, camera.gpu_camera, renderer.owner());
-          renderer.model()->draw(cmd_list);
+          ModelAsset& model = *renderer.model();
+
+          for (Mesh& mesh : model.m_Meshes)
+          {
+            RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
+            MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
+
+            render_command->material_binding.set(
+             engine_renderer.makeMaterialInfo(*material));
+            render_command->object_binding.set(
+             engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner()));
+
+            render_command->vertex_buffers[0]         = model.m_VertexBuffer;
+            render_command->vertex_buffers[1]         = model.m_VertexBoneData;
+            render_command->vertex_binding_offsets[0] = 0u;
+            render_command->vertex_binding_offsets[1] = 0u;
+            render_command->index_offset              = mesh.index_offset;
+            render_command->num_indices               = mesh.num_indices;
+
+            render_queue.submit(render_command, 0.0f);
+          }
         }
       }
 
       auto& anim_sys = engine.animationSys();
 
-      bfGfxCmdList_bindProgram(engine_renderer.m_MainCmdList, engine_renderer.m_GBufferSkinnedShader);
-      bfGfxCmdList_bindVertexDesc(engine_renderer.m_MainCmdList, engine_renderer.m_SkinnedVertexLayout);
-      camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
+      pipeline.program       = engine_renderer.m_GBufferSkinnedShader;
+      pipeline.vertex_layout = engine_renderer.m_SkinnedVertexLayout;
 
-      for (SkinnedMeshRenderer& mesh : scene->components<SkinnedMeshRenderer>())
+      for (SkinnedMeshRenderer& renderer : scene->components<SkinnedMeshRenderer>())
       {
-        if (mesh.material() && mesh.model())
+        if (renderer.material() && renderer.model())
         {
-          auto& model = *mesh.model();
+          auto&       uniform_bone_data = anim_sys.getRenderable(engine_renderer, renderer.owner());
+          ModelAsset& model             = *renderer.model();
 
-          engine_renderer.bindMaterial(cmd_list, *mesh.material());
-          engine_renderer.bindObject(cmd_list, camera.gpu_camera, mesh.owner());
+          for (Mesh& mesh : model.m_Meshes)
+          {
+            RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
+            MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
 
-          auto& uniform_bone_data = anim_sys.getRenderable(engine_renderer, mesh.owner());
+            bfDescriptorSetInfo desc_set_object = engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner());
+            const bfBufferSize  offset          = uniform_bone_data.transform_uniform.offset(frame_info);
+            const bfBufferSize  size            = sizeof(Mat4x4) * model.numBones();
 
-          const bfBufferSize offset = uniform_bone_data.transform_uniform.offset(frame_info);
-          const bfBufferSize size   = sizeof(Mat4x4) * model.numBones();
+            bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
 
-          // TODO(SR): Optimize into an immutable DescriptorSet!
-          bfDescriptorSetInfo desc_set_object = engine_renderer.bindObject2(camera.gpu_camera, mesh.owner());
+            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+            render_command->object_binding.set(desc_set_object);
 
-          bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
-          bfGfxCmdList_bindDescriptorSet(cmd_list, k_GfxObjectSetIndex, &desc_set_object);
+            render_command->vertex_buffers[0]         = model.m_VertexBuffer;
+            render_command->vertex_buffers[1]         = model.m_VertexBoneData;
+            render_command->vertex_binding_offsets[0] = 0u;
+            render_command->vertex_binding_offsets[1] = 0u;
+            render_command->index_offset              = mesh.index_offset;
+            render_command->num_indices               = mesh.num_indices;
 
-          model.draw(cmd_list);
+            render_queue.submit(render_command, 0.0f);
+          }
         }
       }
 
       // 2D Sprites
-
-      // TODO(SR):
-      //   - Sorting based on distance, material, transparency.
-      //   - Culling based on the view frustrum.
 
       auto& sprite_renderer_list = scene->components<SpriteRenderer>();
 
@@ -127,7 +155,7 @@ namespace bf
       for (SpriteRenderer& renderer : sprite_renderer_list)
       {
         // TODO(SR): Culling would go here.
-        if (renderer.material() && renderer.size().x > 0.0f && renderer.size().y > 0.0f)
+        if (renderer.size().x > 0.0f && renderer.size().y > 0.0f && renderer.material())
         {
           sprite_list[sprite_list_size++] = &renderer;
         }
@@ -149,8 +177,8 @@ namespace bf
         struct SpriteBatch final
         {
           MaterialAsset*      material;
-          int                 vertex_offset;
-          int                 num_vertices;
+          SpriteIndexType     vertex_offset;
+          SpriteIndexType     num_vertices;
           VertexBuffer::Link* vertex_buffer;
 #if k_UseIndexBufferForSprites
           int                index_offset;
@@ -179,7 +207,7 @@ namespace bf
           {
             last_batch                = tmp_memory.allocateT<SpriteBatch>();
             last_batch->material      = sprite_mat;
-            last_batch->vertex_offset = vertices_offset.second;
+            last_batch->vertex_offset = SpriteIndexType(vertices_offset.second);
             last_batch->num_vertices  = 0;
             last_batch->vertex_buffer = m_SpriteVertexBuffer->currentLink();
 #if k_UseIndexBufferForSprites
@@ -270,60 +298,42 @@ namespace bf
         m_SpriteIndexBuffer->flushLinks(frame_info);
 #endif
 
-        bfGfxCmdList_setCullFace(cmd_list, BF_CULL_FACE_NONE);
-        bfGfxCmdList_bindProgram(cmd_list, m_ShaderProgram);
-        bfGfxCmdList_bindVertexDesc(cmd_list, engine_renderer.standardVertexLayout());
-
-        camera.gpu_camera.bindDescriptorSet(cmd_list, frame_info);
-
-        VertexBuffer::Link* last_vertex_buffer = nullptr;
-        MaterialAsset*      last_material      = nullptr;
-
-#if k_UseIndexBufferForSprites
-        IndexBuffer::Link* last_index_buffer = nullptr;
-#endif
+        pipeline.state.cull_face = BF_CULL_FACE_NONE;
+        pipeline.program         = m_ShaderProgram;
+        pipeline.vertex_layout   = engine_renderer.standardVertexLayout();
 
         while (batches)
         {
           if (batches->num_vertices)
           {
-            if (batches->vertex_buffer != last_vertex_buffer)
-            {
-              last_vertex_buffer = batches->vertex_buffer;
-
-              const bfBufferSize offset = last_vertex_buffer->gpu_buffer.offset(frame_info);
-
-              bfGfxCmdList_bindVertexBuffers(cmd_list, 0, &last_vertex_buffer->gpu_buffer.handle(), 1, &offset);
-            }
-
-            if (batches->material != last_material)
-            {
-              last_material = batches->material;
-
-              engine_renderer.bindMaterial(cmd_list, *last_material);
-            }
-
 #if k_UseIndexBufferForSprites
+            RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 1, batches->index_buffer->gpu_buffer.handle());
+            MaterialAsset*        material       = batches->material;
 
-            if (last_index_buffer != batches->index_buffer)
-            {
-              last_index_buffer = batches->index_buffer;
-
-              const bfBufferSize offset = last_index_buffer->gpu_buffer.offset(frame_info);
-
-              bfGfxCmdList_bindIndexBuffer(cmd_list, last_index_buffer->gpu_buffer.handle(), offset, k_SpriteIndexType);
-            }
-
-            bfGfxCmdList_drawIndexed(cmd_list, batches->num_indices, batches->index_offset, 0);
+            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+            render_command->vertex_buffers[0]           = batches->vertex_buffer->gpu_buffer.handle();
+            render_command->vertex_binding_offsets[0]   = batches->vertex_buffer->gpu_buffer.offset(frame_info);
+            render_command->index_buffer_binding_offset = batches->index_buffer->gpu_buffer.offset(frame_info);
+            render_command->index_offset                = batches->index_offset;
+            render_command->num_indices                 = batches->num_indices;
 #else
-            bfGfxCmdList_draw(cmd_list, batches->vertex_offset, batches->num_vertices);
+            RC_DrawArrays* const render_command = render_queue.drawArrays(pipeline, 1);
+            MaterialAsset*        material       = batches->material;
+
+            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+            render_command->vertex_buffers[0]           = batches->vertex_buffer->gpu_buffer.handle();
+            render_command->vertex_binding_offsets[0]   = batches->vertex_buffer->gpu_buffer.offset(frame_info);
+            render_command->first_vertex                = batches->vertex_offset;
+            render_command->num_vertices                = batches->num_vertices;
 #endif
+
+            render_queue.submit(render_command, 0.0f);
           }
 
           batches = batches->next_batch;
         }
 
-        bfGfxCmdList_setCullFace(cmd_list, BF_CULL_FACE_BACK);
+        // bfGfxCmdList_setCullFace(cmd_list, BF_CULL_FACE_BACK);
       }
     }
   }

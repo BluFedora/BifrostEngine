@@ -95,7 +95,7 @@ namespace bf
 
     //
     // TODO(SR): The `value` can be compressed by
-    //   using Relative as a uint16 remap(0.0f, 1.0f => 0u => 0xFF)
+    //   using Relative as a uint16 remap(0.0f, 1.0f => 0u => 0xFFFF)
     //   And the Other values as normal.
     //
     //   But how will it works with animations???
@@ -397,52 +397,6 @@ namespace bf
   {
     Brush brush;
   };
-
-  // Helper API for an Array of Bytes
-  namespace ByteBuffer
-  {
-    struct Reader
-    {
-      Array<char>& bytes;
-      char*        current_pos;
-    };
-
-    template<typename T>
-    T* Push(Array<char>& bytes)
-    {
-      static_assert(std::is_nothrow_destructible_v<T>, "We only support simple types.");
-
-      char* const bytes = bytes.emplaceN(sizeof(T), ArrayEmplaceUninitializedTag{});
-
-      return static_cast<T*>(bytes.emplaceN(sizeof(T)));
-    }
-
-    inline Reader BeginRead(Array<char>& bytes)
-    {
-      Reader result = {bytes, bytes.data()};
-
-      return result;
-    }
-
-    template<typename T>
-    T* Peek(Reader& reader)
-    {
-      return static_cast<T*>(reader.current_pos);
-    }
-
-    template<typename T>
-    T* Read(Reader& reader)
-    {
-      T* const result = Peek<T>(reader);
-
-      assert((reader.current_pos + sizeof(T)) <= reader.bytes.end());
-
-      reader.current_pos += sizeof(T);
-
-      return result;
-    }
-
-  }  // namespace ByteBuffer
 }  // namespace bf
 
 #endif /* BF_UI_HPP */

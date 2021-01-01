@@ -28,6 +28,7 @@
 
 namespace bf
 {
+  struct RenderView;
   //
   // Constants
   //
@@ -513,40 +514,22 @@ namespace bf
     GLSLCompiler&           glslCompiler() { return m_GLSLCompiler; }
     bfGfxFrameInfo          frameInfo() const { return m_FrameInfo; }
 
-    void                init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
-    [[nodiscard]] bool  frameBegin();
-    void                bindMaterial(bfGfxCommandListHandle command_list, const MaterialAsset& material);
-    void                bindObject(bfGfxCommandListHandle command_list, const CameraGPUData& camera, Entity& entity);
-    bfDescriptorSetInfo bindObject2(const CameraGPUData& camera, Entity& entity);
-    void                addLight(Light& light);
-    void                beginGBufferPass(CameraGPUData& camera) const;
-    void                beginSSAOPass(CameraGPUData& camera) const;
-    void                beginLightingPass(CameraGPUData& camera);
-    void                beginScreenPass(bfGfxCommandListHandle command_list) const;
-    void                endPass(bfGfxCommandListHandle command_list) const;
-    void                drawEnd() const;
-    void                frameEnd() const;
-    void                deinit();
+    void               init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window);
+    [[nodiscard]] bool frameBegin();
+    void               addLight(Light& light);
+    void               beginGBufferPass(CameraGPUData& camera) const;
+    void               beginSSAOPass(CameraGPUData& camera) const;
+    void               beginLightingPass(CameraGPUData& camera);
+    void               beginScreenPass(bfGfxCommandListHandle command_list) const;
+    void               endPass(bfGfxCommandListHandle command_list) const;
+    void               drawEnd() const;
+    void               frameEnd() const;
+    void               deinit();
 
-    template<typename FGBufferPass, typename FLightOverlayPass>
-    void renderCameraTo(BifrostCamera& camera, CameraGPUData& camera_gpu_data, FGBufferPass&& gbuffer_callback, FLightOverlayPass&& overlay_callback)
-    {
-      camera_gpu_data.updateBuffers(camera, m_FrameInfo, m_GlobalTime, AmbientColor);
+    bfDescriptorSetInfo makeMaterialInfo(const MaterialAsset& material);
+    bfDescriptorSetInfo makeObjectTransformInfo(const CameraGPUData& camera, Entity& entity);
 
-      // GBuffer
-      beginGBufferPass(camera_gpu_data);
-      gbuffer_callback();
-      endPass(m_MainCmdList);
-
-      // SSAO
-      beginSSAOPass(camera_gpu_data);
-      endPass(m_MainCmdList);
-
-      // Lighting
-      beginLightingPass(camera_gpu_data);
-      overlay_callback();
-      endPass(m_MainCmdList);
-    }
+    void renderCameraTo(RenderView& view);
 
    private:
     void initShaders();
@@ -580,6 +563,10 @@ namespace bf
      bfShaderModuleHandle vertex_module,
      bfShaderModuleHandle fragment_module,
      const char*          debug_name = nullptr);
+
+    bfClearColor makeClearColor(float r, float g, float b, float a);
+    bfClearColor makeClearColor(int32_t r, int32_t g, int32_t b, int32_t a);
+    bfClearColor makeClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a);
   }  // namespace gfx
 
   //

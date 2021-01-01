@@ -10,7 +10,7 @@ namespace bf::editor
    private:
     Rect2i         m_SceneViewViewport;  // Global Window Coordinates
     bool           m_IsSceneViewHovered;
-    CameraRender*  m_Camera;
+    RenderView*    m_Camera;
     Vector2f       m_OldMousePos;
     Vector2f       m_MousePos;
     bool           m_IsDraggingMouse;
@@ -35,6 +35,6 @@ namespace bf::editor
     void        onEvent(EditorOverlay& editor, Event& event) override;
     void        onUpdate(EditorOverlay& editor, float dt) override;
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_SCENE_HPP */

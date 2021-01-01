@@ -104,12 +104,12 @@ namespace bf
     return m_SceneStack.isEmpty() ? ARC<SceneAsset>{} : m_SceneStack.back();
   }
 
-  CameraRender* Engine::borrowCamera(const CameraRenderCreateParams& params)
+  RenderView* Engine::borrowCamera(const CameraRenderCreateParams& params)
   {
-    return m_CameraMemory.allocateT<CameraRender>(m_CameraList, m_Renderer.device(), m_Renderer.m_FrameInfo, params);
+    return m_CameraMemory.allocateT<RenderView>(m_CameraList, m_Renderer.device(), m_Renderer.m_FrameInfo, params);
   }
 
-  void Engine::resizeCamera(CameraRender* camera, int width, int height)
+  void Engine::resizeCamera(RenderView* camera, int width, int height)
   {
     camera->new_width  = width;
     camera->new_height = height;
@@ -122,16 +122,16 @@ namespace bf
     }
   }
 
-  void Engine::returnCamera(CameraRender* camera)
+  void Engine::returnCamera(RenderView* camera)
   {
     // Remove Camera from resize list.
     if (camera->resize_list_next)
     {
-      CameraRender* prev_cam = m_CameraResizeList;
+      RenderView* prev_cam = m_CameraResizeList;
 
       while (prev_cam)
       {
-        CameraRender* const next = prev_cam->resize_list_next;
+        RenderView* const next = prev_cam->resize_list_next;
 
         if (next == camera)
         {
@@ -432,10 +432,13 @@ namespace bf
 
   void Engine::update(float delta_time)
   {
+    // NOTE(SR):
+    //   The Debug Renderer must update before submission of debug draw commands
+    //   to allow a duration of 0.0f seconds we removed the debug lines in the
+    //   _next_ update loop.
     m_DebugRenderer.update(delta_time);
-    UI::Update(delta_time);
 
-    m_Renderer.m_GlobalTime += delta_time;  // TODO: Not very encapsolated.
+    UI::Update(delta_time);
 
     for (auto& system : m_Systems)
     {
@@ -472,12 +475,14 @@ namespace bf
         system->onFrameEnd(*this, delta_time);
       }
     }
+
+    m_Renderer.m_GlobalTime += delta_time;
   }
 
   void Engine::draw(float render_alpha)
   {
-    const auto cmd_list = m_Renderer.mainCommandList();
-    auto       scene    = currentScene();
+    const bfGfxCommandListHandle cmd_list = m_Renderer.mainCommandList();
+    auto                         scene    = currentScene();
 
     if (scene)
     {
@@ -487,31 +492,25 @@ namespace bf
       }
     }
 
-    forEachCamera([this, &cmd_list, render_alpha](CameraRender* camera) {
+    forEachCamera([this, render_alpha](RenderView* camera) {
+      camera->clearCommandQueues();
+
       Camera_update(&camera->cpu_camera);
 
-      m_Renderer.renderCameraTo(
-       camera->cpu_camera,
-       camera->gpu_camera,
-       [this, &cmd_list, render_alpha, camera]() {
-         for (auto& system : m_Systems)
-         {
-           if (system->isEnabled())
-           {
-             system->onFrameDraw(*this, *camera, render_alpha);
-           }
-         }
+      m_DebugRenderer.draw(*camera, m_Renderer.m_FrameInfo);
 
-         m_DebugRenderer.draw(cmd_list, *camera, m_Renderer.m_FrameInfo, false);
-       },
-       [this, &cmd_list, camera]() {
-         m_DebugRenderer.draw(cmd_list, *camera, m_Renderer.m_FrameInfo, true);
-       });
+      for (auto& system : m_Systems)
+      {
+        if (system->isEnabled())
+        {
+          system->onFrameDraw(*this, *camera, render_alpha);
+        }
+      }
+
+      m_Renderer.renderCameraTo(*camera);
     });
 
-    m_Renderer.beginScreenPass(m_Renderer.mainCommandList());
-
-    // Custom Fullscreen Drawing would go here...
+    m_Renderer.beginScreenPass(cmd_list);
 
     const bfTextureHandle main_surface = renderer().surface();
     auto&                 painter      = renderer2D();
@@ -539,11 +538,11 @@ namespace bf
 
   void Engine::resizeCameras()
   {
-    CameraRender* camera = m_CameraResizeList;
+    RenderView* camera = m_CameraResizeList;
 
     while (camera)
     {
-      CameraRender* const next = camera->resize_list_next;
+      RenderView* const next   = camera->resize_list_next;
       camera->resize_list_next = nullptr;
 
       camera->resize();
@@ -560,11 +559,11 @@ namespace bf
     {
       bfGfxDevice_flush(m_Renderer.device());
 
-      CameraRender* camera = m_CameraDeleteList;
+      RenderView* camera = m_CameraDeleteList;
 
       while (camera)
       {
-        CameraRender* const next = camera->next;
+        RenderView* const next = camera->next;
 
         m_CameraMemory.deallocateT(camera);
 
