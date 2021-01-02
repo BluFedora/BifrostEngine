@@ -1078,4 +1078,9 @@ namespace bf::UI
     g_UI.old_mouse_state = g_UI.new_mouse_state;
     g_UI.current_widget  = nullptr;
   }
+
+  void ShutDown()
+  {
+    delete TEST_FONT;
+  }
 }  // namespace bf::UI

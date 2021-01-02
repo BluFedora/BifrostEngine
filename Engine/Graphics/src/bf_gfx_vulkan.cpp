@@ -1624,11 +1624,9 @@ namespace
     };
   }
 
-  
 }  // namespace
 
-extern "C"
-VkBool32 memory_type_from_properties(VkPhysicalDeviceMemoryProperties mem_props, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
+extern "C" VkBool32 memory_type_from_properties(VkPhysicalDeviceMemoryProperties mem_props, uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex)
 {
   // Search memtypes to find first index with those properties
   for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
@@ -1660,6 +1658,7 @@ bfBufferHandle bfGfxDevice_newBuffer(bfGfxDeviceHandle self_, const bfBufferCrea
   self->alloc_pool            = &self_->device_memory_allocator;
   self->alloc_info.mapped_ptr = NULL;
   self->real_size             = params->allocation.size;
+  self->usage                 = params->usage;
 
   VkBufferCreateInfo buffer_info;
   buffer_info.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1711,11 +1710,14 @@ void* bfBuffer_mappedPtr(bfBufferHandle self)
 
 void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 {
-  // assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
-
-  if (self->alloc_info.mapped_ptr == NULL)
+  if (!(self->usage & BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER))
   {
-    vkMapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle, offset, size, 0, &self->alloc_info.mapped_ptr);
+    assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
+
+    if (self->alloc_info.mapped_ptr == NULL)
+    {
+      vkMapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle, offset, size, 0, &self->alloc_info.mapped_ptr);
+    }
   }
 
   return self->alloc_info.mapped_ptr;
@@ -1775,8 +1777,11 @@ void bfBuffer_flushRanges(bfBufferHandle self, const bfBufferSize* offsets, cons
 
 void bfBuffer_unMap(bfBufferHandle self)
 {
-  vkUnmapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle);
-  self->alloc_info.mapped_ptr = nullptr;
+  if (!(self->usage & BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER))
+  {
+    vkUnmapMemory(self->alloc_pool->m_LogicalDevice->handle, self->alloc_info.handle);
+    self->alloc_info.mapped_ptr = nullptr;
+  }
 }
 
 /* Shader Program + Module */

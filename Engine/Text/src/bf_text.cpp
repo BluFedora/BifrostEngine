@@ -614,11 +614,6 @@ namespace bf
       {
         result    = character0 & 0xFFFFFF7F;
         num_bytes = 1;
-
-        if ((unsigned(characters[0]) & 0xFFFFFF7F) > 255)
-        {
-          __debugbreak();
-        }
         break;
       }
     }

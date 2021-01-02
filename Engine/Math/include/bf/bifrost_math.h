@@ -33,12 +33,12 @@ typedef struct bfColor4u_t
 
 typedef uint32_t bfColor32u;
 
-static inline bfColor32u bfColor4u_toUint32(bfColor4u color)
+static bfColor32u bfColor4u_toUint32(bfColor4u color)
 {
   return (color.r << 0) | (color.g << 8) | (color.b << 16) | (color.a << 24);
 }
 
-static inline bfColor4u bfColor4u_fromUint32(bfColor32u color)
+static bfColor4u bfColor4u_fromUint32(bfColor32u color)
 {
   bfColor4u ret;
 
@@ -50,17 +50,28 @@ static inline bfColor4u bfColor4u_fromUint32(bfColor32u color)
   return ret;
 }
 
-static inline float bfMathAlignf(float value, float size)
+static bfColor4u bfColor4u_fromColor4f(bfColor4f color)
+{
+#define MUL_AND_SHIFT(c, s) ((uint)((c)*255.0f) << (s))
+  return bfColor4u_fromUint32(
+   MUL_AND_SHIFT(color.r, 0) |
+   MUL_AND_SHIFT(color.g, 8) |
+   MUL_AND_SHIFT(color.b, 16) |
+   MUL_AND_SHIFT(color.a, 24));
+#undef MUL_AND_SHIFT
+}
+
+static float bfMathAlignf(float value, float size)
 {
   return floorf(value / size) * size;
 }
 
-static inline float bfMathLerpf(float a, float b, float t)
+static float bfMathLerpf(float a, float b, float t)
 {
   return (1.0f - t) * a + t * b;
 }
 
-static inline bfColor4f bfMathLerpColor4f(bfColor4f a, bfColor4f b, float t)
+static bfColor4f bfMathLerpColor4f(bfColor4f a, bfColor4f b, float t)
 {
   bfColor4f result;
 
@@ -72,7 +83,7 @@ static inline bfColor4f bfMathLerpColor4f(bfColor4f a, bfColor4f b, float t)
   return result;
 }
 
-static inline bfColor4u bfMathLerpColor4u(bfColor4u a, bfColor4u b, float t)
+static bfColor4u bfMathLerpColor4u(bfColor4u a, bfColor4u b, float t)
 {
   bfColor4u result;
 
@@ -84,12 +95,12 @@ static inline bfColor4u bfMathLerpColor4u(bfColor4u a, bfColor4u b, float t)
   return result;
 }
 
-static inline float bfMathInvLerpf(float min, float max, float value)
+static float bfMathInvLerpf(float min, float max, float value)
 {
   return (value - min) / (max - min);
 }
 
-static inline float bfMathRemapf(float old_min, float old_max, float new_min, float new_max, float value)
+static float bfMathRemapf(float old_min, float old_max, float new_min, float new_max, float value)
 {
   return bfMathLerpf(new_min, new_max, bfMathInvLerpf(old_min, old_max, value));
 }

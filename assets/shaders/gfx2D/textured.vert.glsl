@@ -4,7 +4,7 @@ layout(location = 0) in vec2 position;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 color;
 
-layout(std140, binding = 1) uniform u_Set0
+layout(std140, set = 0, binding = 0) uniform u_Set0
 {
   mat4 u_Projection;
 };

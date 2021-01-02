@@ -271,7 +271,7 @@ namespace bf
 
         m_Materials.push(material);
         // Keep the materials alive with the model
-        material->acquire();
+        //material->acquire();
       });
 
       // Load Animations
@@ -439,11 +439,6 @@ namespace bf
   {
     // TODO(SR): This will not scale well.
     bfGfxDevice_flush(m_GraphicsDevice);
-
-    for (MaterialAsset* material : m_Materials)
-    {
-      material->release();
-    }
 
     m_Materials.clear();
 

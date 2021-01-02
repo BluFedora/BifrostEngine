@@ -168,8 +168,6 @@ add_executable(
 
   # Runtime
 
-  "${PROJECT_SOURCE_DIR}/Runtime/src/bifrost_script_behavior.cpp"
-  "${PROJECT_SOURCE_DIR}/Runtime/src/bifrost_script.cpp"
   "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code

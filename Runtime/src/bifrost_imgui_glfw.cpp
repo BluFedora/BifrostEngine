@@ -507,8 +507,6 @@ namespace bf::imgui
       if (fb_width <= 0 || fb_height <= 0)
         return;
 
-      const bfGfxFrameInfo info = bfGfxContext_getFrameInfo(s_RenderData.ctx);
-
       const size_t vertex_size = draw_data->TotalVtxCount * sizeof(ImDrawVert);
       const size_t index_size  = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
 

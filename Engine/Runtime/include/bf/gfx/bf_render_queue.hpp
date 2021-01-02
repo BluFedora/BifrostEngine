@@ -198,6 +198,12 @@ namespace bf
       bfDescriptorSetInfo   immediate_mode_set;
     };
 
+    DescSetBind() :
+      mode{RETAINED},
+      retained_mode_set{nullptr}
+    {
+    }
+
     void set(const bfDescriptorSetInfo& info)
     {
       mode               = IMMEDIATE;
@@ -213,11 +219,13 @@ namespace bf
     void bind(bfGfxCommandListHandle command_list, std::uint32_t index);
   };
 
-  struct RC_DrawArrays : public RenderCommandT<RenderCommandType::DrawArrays>
+#define DECLARE_RENDER_CMD(name) struct RC_##name : public RenderCommandT<RenderCommandType::name>
+
+  DECLARE_RENDER_CMD(DrawArrays)
   {
     bfDrawCallPipeline pipeline               = {};
-    DescSetBind        material_binding       = {DescSetBind::RETAINED, {nullptr}};
-    DescSetBind        object_binding         = {DescSetBind::RETAINED, {nullptr}};
+    DescSetBind        material_binding       = {};
+    DescSetBind        object_binding         = {};
     std::uint32_t      num_vertex_buffers     = 0u;
     bfBufferHandle*    vertex_buffers         = nullptr;
     bfBufferSize*      vertex_binding_offsets = nullptr;
@@ -225,11 +233,11 @@ namespace bf
     std::uint32_t      num_vertices           = 0u;
   };
 
-  struct RC_DrawIndexed : public RenderCommandT<RenderCommandType::DrawIndexed>
+  DECLARE_RENDER_CMD(DrawIndexed)
   {
     bfDrawCallPipeline pipeline                    = {};
-    DescSetBind        material_binding            = {DescSetBind::RETAINED, {nullptr}};
-    DescSetBind        object_binding              = {DescSetBind::RETAINED, {nullptr}};
+    DescSetBind        material_binding            = {};
+    DescSetBind        object_binding              = {};
     std::uint32_t      num_vertex_buffers          = 0u;
     bfBufferHandle*    vertex_buffers              = nullptr;
     bfBufferSize*      vertex_binding_offsets      = nullptr;
@@ -240,6 +248,8 @@ namespace bf
     std::uint64_t      index_buffer_binding_offset = 0u;
     bfGfxIndexType     index_type                  = BF_INDEX_TYPE_UINT32;
   };
+
+#undef DECLARE_RENDER_CMD
 
   //
   // TODO(SR): A user sort key would be nice to have.
@@ -255,6 +265,7 @@ namespace bf
   {
     NO_BLENDING,
     ALPHA_BLENDING,
+    SCREEN_OVERLAY,
   };
 
   struct RenderView;

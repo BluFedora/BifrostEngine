@@ -156,6 +156,11 @@ namespace bf
     Vector3f u_CameraAmbient;
   };
 
+  struct CameraOverlayUniformData final
+  {
+    Mat4x4 u_CameraProjection;
+  };
+
   struct ObjectUniformData final
   {
     Mat4x4 u_ModelViewProjection;
@@ -444,15 +449,19 @@ namespace bf
 
   struct CameraGPUData final
   {
-    GBuffer                        geometry_buffer;
-    SSAOBuffer                     ssao_buffer;
-    bfTextureHandle                composite_buffer;
-    MultiBuffer<CameraUniformData> camera_uniform_buffer;
-    Mat4x4                         view_projection_cache;
+    using SceneUBO   = MultiBuffer<CameraUniformData>;
+    using OverlayUBO = MultiBuffer<CameraOverlayUniformData>;
+
+    GBuffer         geometry_buffer;
+    SSAOBuffer      ssao_buffer;
+    bfTextureHandle composite_buffer;
+    SceneUBO        camera_uniform_buffer;
+    OverlayUBO      camera_screen_uniform_buffer;
+    Mat4x4          view_projection_cache;
 
     void init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height);
     void updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient);
-    void bindDescriptorSet(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info);  // Has to be called after a shader program change.
+    void bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info);
     void resize(bfGfxDeviceHandle device, int width, int height);
     void deinit(bfGfxDeviceHandle device);
   };

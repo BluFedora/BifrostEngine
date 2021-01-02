@@ -54,11 +54,12 @@ typedef struct
 
 BF_DEFINE_GFX_HANDLE(Buffer)
 {
-  bfBaseGfxObject super;
-  PoolAllocator*  alloc_pool;
-  VkBuffer        handle;
-  Allocation      alloc_info;  // This has the aligned size.
-  bfBufferSize    real_size;
+  bfBaseGfxObject   super;
+  PoolAllocator*    alloc_pool;
+  VkBuffer          handle;
+  Allocation        alloc_info;  // This has the aligned size.
+  bfBufferSize      real_size;
+  bfBufferUsageBits usage;
 };
 
 void     VkPoolAllocatorCtor(PoolAllocator* self, const bfGfxDevice* const logical_device);

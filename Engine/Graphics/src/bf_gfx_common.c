@@ -218,7 +218,7 @@ bfDescriptorSetInfo bfDescriptorSetInfo_make(void)
   return self;
 }
 
-void bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures)
+void bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const bfTextureHandle* textures, uint32_t num_textures)
 {
   assert(self->num_bindings < k_bfGfxDesfcriptorSetMaxLayoutBindings);
 

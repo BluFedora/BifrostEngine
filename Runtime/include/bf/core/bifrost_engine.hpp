@@ -44,6 +44,7 @@ namespace bf
   class ComponentRenderer;
   class BehaviorSystem;
   struct Gfx2DPainter;
+  struct CommandBuffer2D;
 
   struct CameraRenderCreateParams
   {
@@ -64,7 +65,8 @@ namespace bf
     int               new_height;
     RenderQueue       opaque_render_queue;
     RenderQueue       transparent_render_queue;
-    RenderQueue       overlay_render_queue;
+    RenderQueue       overlay_scene_render_queue;
+    RenderQueue       screen_overlay_render_queue;
     RenderView*       prev;
     RenderView*       next;
     RenderView*       resize_list_next;
@@ -79,7 +81,8 @@ namespace bf
       new_height{params.height},
       opaque_render_queue{RenderQueueType::NO_BLENDING, *this},
       transparent_render_queue{RenderQueueType::ALPHA_BLENDING, *this},
-      overlay_render_queue{RenderQueueType::NO_BLENDING, *this},
+      overlay_scene_render_queue{RenderQueueType::NO_BLENDING, *this},
+      screen_overlay_render_queue{RenderQueueType::SCREEN_OVERLAY, *this},
       prev{nullptr},
       next{head},
       resize_list_next{nullptr}
@@ -101,7 +104,8 @@ namespace bf
     {
       opaque_render_queue.clear();
       transparent_render_queue.clear();
-      overlay_render_queue.clear();
+      overlay_scene_render_queue.clear();
+      screen_overlay_render_queue.clear();
     }
 
     ~RenderView()
@@ -192,6 +196,7 @@ namespace bf
     StandardRenderer   m_Renderer;
     DebugRenderer      m_DebugRenderer;
     Gfx2DPainter*      m_Renderer2D;
+    CommandBuffer2D*   m_Gfx2D;
     CameraRenderMemory m_CameraMemory;
     RenderView*        m_CameraList;
     RenderView*        m_CameraResizeList;
@@ -229,6 +234,7 @@ namespace bf
     StandardRenderer&  renderer() { return m_Renderer; }
     DebugRenderer&     debugDraw() { return m_DebugRenderer; }
     Gfx2DPainter&      renderer2D() const { return *m_Renderer2D; }
+    CommandBuffer2D&   gfx2D() const { return *m_Gfx2D; }
     Assets&            assets() { return m_Assets; }
     Input&             input() { return m_Input; }
     AnimationSystem&   animationSys() const { return *m_AnimationSystem; }

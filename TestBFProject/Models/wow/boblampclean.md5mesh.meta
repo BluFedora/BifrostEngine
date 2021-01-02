@@ -4,7 +4,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "334A27F7-9780-41B8-8355-338979AC7078",
+            "uuid" : "61DEF88F-E462-49E3-9834-82EEB677C25F",
             "name" : "Material_#0.material",
             "version" : 1
         },
@@ -12,7 +12,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "6F8A281F-F5B8-4773-8201-B670487DAB15",
+            "uuid" : "30A2CB94-FDFA-4846-8A60-3978DFDAE652",
             "name" : "Material_#1.material",
             "version" : 1
         },
@@ -20,7 +20,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "3DB78D0F-BA8B-437F-84E6-3EC8C644F347",
+            "uuid" : "6A111D23-468C-407F-A80C-904424FEF1A9",
             "name" : "Material_#2.material",
             "version" : 1
         },
@@ -28,7 +28,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "3173F3DD-DEF9-43E8-9004-B44E735AEB1B",
+            "uuid" : "A76D59C8-FE40-41BB-B7AC-F22E6F66B023",
             "name" : "Material_#3.material",
             "version" : 1
         },
@@ -36,7 +36,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "C39FE900-873C-4247-90D8-DB901727A348",
+            "uuid" : "2BA9CF61-B7AB-4222-9D21-8FDD6F398A20",
             "name" : "Material_#4.material",
             "version" : 1
         },
@@ -44,7 +44,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "39D1F6D4-E0B4-4645-89E0-F3B72A53EE11",
+            "uuid" : "6B1DBD7A-5D49-45FD-8ACC-582635BC3463",
             "name" : "Material_#5.material",
             "version" : 1
         },
@@ -52,7 +52,7 @@
             "sub-assets" : [
 
             ],
-            "uuid" : "3EC65774-1AFE-4E5C-8243-9504D79E7399",
+            "uuid" : "EFADAD68-12DE-42F6-8936-DC2FF64E0E22",
             "name" : "ANIM_#0.anim",
             "version" : 1
         }

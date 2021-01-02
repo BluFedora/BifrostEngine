@@ -135,6 +135,7 @@ namespace bf
     String createSubAssetPath(StringRange name_with_ext) const;
 
     IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext);
+    IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext, bfUUIDNumber uuid);
 
     void markFailedToLoad()
     {

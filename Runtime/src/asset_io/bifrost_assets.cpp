@@ -402,8 +402,8 @@ namespace bf
       bfLogPush("Count not free all assets in %i iterations.", iteration_count);
 
       m_AssetSet.forEach([this](IBaseAsset* asset) {
-        const StringRange name      = asset->fullPath();
-        const int         ref_count = asset->refCount();
+        const StringRange name              = asset->fullPath();
+        const int         ref_count         = asset->refCount();
 
         bfLogWarn("[%.*s]: RefCount(%i).", int(name.length()), name.begin(), ref_count);
       });
@@ -557,7 +557,7 @@ namespace bf
 
         while (child_iterator)
         {
-          result->findOrCreateSubAsset(child_iterator->name.toStringRange());
+          result->findOrCreateSubAsset(child_iterator->name.toStringRange(), child_iterator->uuid);
 
           child_iterator = child_iterator->next_sibling;
         }

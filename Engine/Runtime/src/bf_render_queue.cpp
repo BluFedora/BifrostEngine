@@ -169,16 +169,21 @@ namespace bf
       return;
     }
 
+    const bool            is_overlay   = type == RenderQueueType::SCREEN_OVERLAY;
     bfShaderProgramHandle last_program = nullptr;
     RenderSortKey* const  keys_bgn     = firstKey();
 
-    radix_sort(key_stream_memory, keys_bgn, num_keys);
+    // The overlay is assumed to be correctly back to front
+    if (!is_overlay)
+    {
+      radix_sort(key_stream_memory, keys_bgn, num_keys);
 
-    /*
+      /*
     assert(std::is_sorted(keys_bgn, keys_bgn + num_keys, [](const RenderSortKey& a, const RenderSortKey& b) {
              return a.key < b.key;
            }) == true);
     */
+    }
 
     for (std::size_t i = 0; i < num_keys; ++i)
     {
@@ -197,7 +202,7 @@ namespace bf
 
             if (last_program != draw_arrays->pipeline.program)
             {
-              render_view.gpu_camera.bindDescriptorSet(command_list, frame_info);
+              render_view.gpu_camera.bindDescriptorSet(command_list, is_overlay, frame_info);
               last_program = draw_arrays->pipeline.program;
             }
 
@@ -221,7 +226,7 @@ namespace bf
 
             if (last_program != draw_elements->pipeline.program)
             {
-              render_view.gpu_camera.bindDescriptorSet(command_list, frame_info);
+              render_view.gpu_camera.bindDescriptorSet(command_list, is_overlay, frame_info);
               last_program = draw_elements->pipeline.program;
             }
 
@@ -273,6 +278,7 @@ namespace bf
          OpaqueDepthBits{});
       }
       case RenderQueueType::ALPHA_BLENDING:
+      case RenderQueueType::SCREEN_OVERLAY:
       {
         const std::uint64_t material_bits   = material_to_bits(material_state);
         const std::uint64_t vertex_fmt_bits = hash::reducePointer<std::uint16_t>(pipeline.vertex_layout);

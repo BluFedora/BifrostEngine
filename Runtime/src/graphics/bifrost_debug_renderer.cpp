@@ -125,7 +125,7 @@ namespace bf
            command.data);
         }
 
-        RenderQueue& render_queue = is_overlay ? camera.overlay_render_queue : camera.opaque_render_queue;
+        RenderQueue& render_queue = is_overlay ? camera.overlay_scene_render_queue : camera.opaque_render_queue;
 
         pipeline.program              = m_Shaders[i];
         pipeline.state.do_depth_test  = !is_overlay;

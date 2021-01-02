@@ -8,7 +8,7 @@ layout(location = 2) in float in_CornerRadius;
 layout(location = 3) in vec4  in_Rect; // {min-x, min-y, max-x, max-y}
 layout(location = 4) in vec4  in_Color;
 
-layout(std140, binding = 0) uniform u_Set0
+layout(std140, set = 0, binding = 0) uniform u_Set0
 {
   mat4 u_Projection;
 };

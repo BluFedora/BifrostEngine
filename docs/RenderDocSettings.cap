@@ -10,7 +10,7 @@
         "numQueuedFrames": 0,
         "options": {
             "allowFullscreen": true,
-            "allowVSync": true,
+            "allowVSync": false,
             "apiValidation": false,
             "captureAllCmdLists": false,
             "captureCallstacks": false,

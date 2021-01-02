@@ -1105,6 +1105,8 @@ namespace bf::editor
         ImGui::EndPopup();
       }
     }
+
+    
   }
 
   void EditorOverlay::onDraw2D(Engine& engine, Gfx2DPainter& painter)

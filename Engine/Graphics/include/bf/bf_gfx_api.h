@@ -450,7 +450,7 @@ typedef struct
 } bfDescriptorSetInfo;
 
 BF_GFX_API bfDescriptorSetInfo bfDescriptorSetInfo_make(void);
-BF_GFX_API void                bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
+BF_GFX_API void                bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const bfTextureHandle* textures, uint32_t num_textures);
 BF_GFX_API void                bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
 
 /* The Descriptor Set API is for 'Immutable' Bindings otherwise use the bfDescriptorSetInfo API */

@@ -12,6 +12,7 @@ set(
   "${PROJECT_SOURCE_DIR}/include/"
 
   # TODO(SR): These are hacks.
+  "${CMAKE_SOURCE_DIR}/Engine/Runtime/include/"
   "${CMAKE_SOURCE_DIR}/Engine/Graphics2D/include/"
   "${CMAKE_SOURCE_DIR}/Runtime/include/"
 )

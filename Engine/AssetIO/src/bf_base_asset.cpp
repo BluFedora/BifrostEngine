@@ -233,6 +233,13 @@ namespace bf
       else
       {
         onUnload();
+
+        // An unloaded non-sub asset implies non of the sub assets are still referenced.
+
+        for (IBaseAsset& sub_asset : m_SubAssets)
+        {
+          sub_asset.onUnload();
+        }
       }
 
       m_Flags &= ~(AssetFlags::IS_LOADED | AssetFlags::FAILED_TO_LOAD);
@@ -332,10 +339,33 @@ namespace bf
     {
       result->m_Flags |= AssetFlags::IS_SUBASSET;
       result->m_ParentAsset = this;
-      
-      m_SubAssets.pushBack(*result);
 
-      assets().markDirty(result);
+      m_SubAssets.pushBack(*result);
+    }
+
+    return result;
+  }
+
+  IBaseAsset* IBaseAsset::findOrCreateSubAsset(StringRange name_with_ext, bfUUIDNumber uuid)
+  {
+    for (IBaseAsset& item : m_SubAssets)
+    {
+      if (item.nameWithExt() == name_with_ext)
+      {
+        return &item;
+      }
+    }
+
+    const String sub_asset_path = createSubAssetPath(name_with_ext);
+
+    IBaseAsset* const result = assets().createAssetFromPath(sub_asset_path, uuid);
+
+    if (result)
+    {
+      result->m_Flags |= AssetFlags::IS_SUBASSET;
+      result->m_ParentAsset = this;
+
+      m_SubAssets.pushBack(*result);
     }
 
     return result;

@@ -263,6 +263,7 @@ namespace bf
     ssao_buffer.init(device, initial_width, initial_height);
     composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
     camera_uniform_buffer.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
+    camera_screen_uniform_buffer.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
   }
 
   void CameraGPUData::updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient)
@@ -285,22 +286,50 @@ namespace bf
     camera_uniform_buffer.flushCurrent(frame_info);
 
     Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_projection_cache);
+
+    {
+      const float k_ScaleFactorDPI = 1.0f;  // TODO(SR): Need to grab this value based on what window is being drawn onto.
+
+      CameraOverlayUniformData* const cam_screen_data = camera_screen_uniform_buffer.currentElement(frame_info);
+
+      static constexpr decltype(&Mat4x4_orthoVk) orthos_fns[] = {&Mat4x4_orthoVk, &Mat4x4_ortho};
+
+      const float framebuffer_width  = float(bfTexture_width(composite_buffer));
+      const float framebuffer_height = float(bfTexture_height(composite_buffer));
+
+      orthos_fns[bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL](
+       &cam_screen_data->u_CameraProjection,
+       0.0f,
+       framebuffer_width / k_ScaleFactorDPI,
+       framebuffer_height / k_ScaleFactorDPI,
+       0.0f,
+       0.0f,
+       1.0f);
+
+      camera_screen_uniform_buffer.flushCurrent(frame_info);
+    }
   }
 
-  void CameraGPUData::bindDescriptorSet(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info)
+  void CameraGPUData::bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info)
   {
-    const bfBufferSize offset = camera_uniform_buffer.offset(frame_info);
-    const bfBufferSize size   = camera_uniform_buffer.elementSize();
+    bfDescriptorSetInfo desc_set_camera = bfDescriptorSetInfo_make();
 
-    // Update Bindings
+    if (is_overlay)
     {
-      // TODO(SR): Optimize into an immutable DescriptorSet!
-      bfDescriptorSetInfo desc_set_camera = bfDescriptorSetInfo_make();
+      const bfBufferSize offset = camera_screen_uniform_buffer.offset(frame_info);
+      const bfBufferSize size   = camera_screen_uniform_buffer.elementSize();
+
+      bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &camera_screen_uniform_buffer.handle(), 1);
+    }
+    else
+    {
+      const bfBufferSize offset = camera_uniform_buffer.offset(frame_info);
+      const bfBufferSize size   = camera_uniform_buffer.elementSize();
 
       bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &camera_uniform_buffer.handle(), 1);
-
-      bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &desc_set_camera);
     }
+
+    bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &desc_set_camera);
   }
 
   void CameraGPUData::resize(bfGfxDeviceHandle device, int width, int height)
@@ -312,7 +341,7 @@ namespace bf
     bfGfxDevice_release(device, composite_buffer);
 
     geometry_buffer.init(device, width, height);
-    ssao_buffer.init(device, width / 2, height / 2);
+    ssao_buffer.init(device, width, height);
 
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      width,
@@ -326,6 +355,7 @@ namespace bf
 
   void CameraGPUData::deinit(bfGfxDeviceHandle device)
   {
+    camera_screen_uniform_buffer.destroy(device);
     camera_uniform_buffer.destroy(device);
     ssao_buffer.deinit(device);
     geometry_buffer.deinit(device);
@@ -606,7 +636,7 @@ namespace bf
 
     bfGfxCmdList_bindProgram(m_MainCmdList, m_SSAOBufferShader);
 
-    camera.bindDescriptorSet(m_MainCmdList, m_FrameInfo);
+    camera.bindDescriptorSet(m_MainCmdList, false, m_FrameInfo);
 
     {
       bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
@@ -655,7 +685,7 @@ namespace bf
 
     bfGfxCmdList_bindProgram(m_MainCmdList, m_SSAOBlurShader);
 
-    camera.bindDescriptorSet(m_MainCmdList, m_FrameInfo);
+    camera.bindDescriptorSet(m_MainCmdList, false, m_FrameInfo);
 
     {
       bfDescriptorSetInfo desc_set_textures = bfDescriptorSetInfo_make();
@@ -692,7 +722,7 @@ namespace bf
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, 0x0);
+    bfRenderpassInfo_setClearOps(&renderpass_info, orBits(0));
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
@@ -719,7 +749,7 @@ namespace bf
 
     const auto baseLightingBegin = [this, &camera](auto& shader) {
       bfGfxCmdList_bindProgram(m_MainCmdList, shader);
-      camera.bindDescriptorSet(m_MainCmdList, m_FrameInfo);
+      camera.bindDescriptorSet(m_MainCmdList, false, m_FrameInfo);
     };
 
     const auto baseLightingEnd = [this, &gbuffer, &ssoa_buffer]() {
@@ -770,8 +800,10 @@ namespace bf
     // Normal Alpha Blending
     bfGfxCmdList_setBlendSrc(m_MainCmdList, 0, BF_BLEND_FACTOR_SRC_ALPHA);
     bfGfxCmdList_setBlendDst(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
-    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE);
-    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ZERO);
+    bfGfxCmdList_setBlendSrcAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_SRC_ALPHA);
+    bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA);
+    bfGfxCmdList_setDepthTesting(m_MainCmdList, bfFalse);
+    bfGfxCmdList_setDepthWrite(m_MainCmdList, bfFalse);
 
     // TODO: Post process pass.
   }
@@ -955,8 +987,9 @@ namespace bf
 
     // Lighting
     beginLightingPass(camera_gpu_data);
-    view.overlay_render_queue.execute(m_MainCmdList, m_FrameInfo);
-    endPass(m_MainCmdList);
+    view.overlay_scene_render_queue.execute(m_MainCmdList, m_FrameInfo);
+    view.screen_overlay_render_queue.execute(m_MainCmdList, m_FrameInfo);
+    //endPass(m_MainCmdList);
   }
 
   namespace bindings
