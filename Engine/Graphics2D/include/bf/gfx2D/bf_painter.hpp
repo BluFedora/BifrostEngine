@@ -1,11 +1,22 @@
-//
-// Shareef Abdoul-Raheem
-//
+/******************************************************************************/
+/*!
+ * @file   bf_painter.hpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   API for drawing fancy 2D graphics.
+ *
+ * @version 0.0.1
+ * @date    2021-03-03
+ *
+ * @copyright Copyright (c) 2019-2021
+ */
+/******************************************************************************/
 #ifndef BF_PAINTER_HPP
 #define BF_PAINTER_HPP
 
-#include "bf/gfx/bf_render_queue.hpp"                 // RenderQueue
-#include "bf/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics
+#include "bf/LinearAllocator.hpp"                     // FixedLinearAllocator
+#include "bf/MemoryUtils.h"                           // bfKilobytes, bfMegabytes
+#include "bf/graphics/bifrost_standard_renderer.hpp"  // Math and Graphics (namely the GlslCompiler)
 
 namespace bf
 {
@@ -14,6 +25,8 @@ namespace bf
   //
 
   struct Font;
+  struct RenderQueue;
+  struct DescSetBind;
 
   //
   // Type Aliases
@@ -42,15 +55,6 @@ namespace bf
   };
 
   //
-  // Uniform Data
-  //
-
-  struct Gfx2DUniformData
-  {
-    Mat4x4 ortho_matrix;
-  };
-
-  //
   // Low Level Graphics Definitions
   //
 
@@ -68,19 +72,18 @@ namespace bf
 
   struct Gfx2DRenderData : private NonCopyMoveable<Gfx2DRenderData>
   {
-    bfGfxContextHandle            ctx;
-    bfGfxDeviceHandle             device;
-    bfVertexLayoutSetHandle       vertex_layouts[2];
-    bfShaderModuleHandle          vertex_shader;
-    bfShaderModuleHandle          fragment_shader;
-    bfShaderProgramHandle         shader_program;
-    bfShaderModuleHandle          shadow_modules[3];
-    bfShaderProgramHandle         rect_shadow_program;
-    bfShaderProgramHandle         rounded_rect_shadow_program;
-    bfTextureHandle               white_texture;
-    int                           num_frame_datas;
-    Gfx2DPerFrameRenderData       frame_datas[k_bfGfxMaxFramesDelay];
-    MultiBuffer<Gfx2DUniformData> uniform;
+    bfGfxContextHandle      ctx;
+    bfGfxDeviceHandle       device;
+    bfVertexLayoutSetHandle vertex_layouts[2];
+    bfShaderModuleHandle    vertex_shader;
+    bfShaderModuleHandle    fragment_shader;
+    bfShaderProgramHandle   shader_program;
+    bfShaderModuleHandle    shadow_modules[3];
+    bfShaderProgramHandle   rect_shadow_program;
+    bfShaderProgramHandle   rounded_rect_shadow_program;
+    bfTextureHandle         white_texture;
+    int                     num_frame_datas;
+    Gfx2DPerFrameRenderData frame_datas[k_bfGfxMaxFramesDelay];
 
     explicit Gfx2DRenderData(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
 
@@ -118,20 +121,6 @@ namespace bf
     SQUARE,
     ROUND,
     CONNECTED,
-  };
-
-  struct Gfx2DDrawCommand
-  {
-    bfTextureHandle texture;
-    UIIndexType     first_index;
-    UIIndexType     num_indices;
-
-    explicit Gfx2DDrawCommand(bfTextureHandle texture) :
-      texture{texture},
-      first_index{0u},
-      num_indices{0u}
-    {
-    }
   };
 
   struct DynamicAtlas
@@ -500,15 +489,18 @@ namespace bf
   //
   struct CommandBuffer2D
   {
-    static const UIIndexType k_MemorySize                 = bfKilobytes(400);
+   private:
+    static const UIIndexType k_CommandStreamMemorySize    = bfKilobytes(400);
+    static const UIIndexType k_AuxiliaryMemorySize        = bfKilobytes(400);
     static const UIIndexType k_TempVertexStreamMemorySize = bfMegabytes(5);
     static const UIIndexType k_TempIndexStreamMemorySize  = bfMegabytes(2);
 
-    using AuxMem           = FixedLinearAllocator<k_MemorySize>;
-    using CommandStreamMem = FixedLinearAllocator<k_MemorySize>;
+    using AuxMem           = FixedLinearAllocator<k_AuxiliaryMemorySize>;
+    using CommandStreamMem = FixedLinearAllocator<k_CommandStreamMemorySize>;
     using VertexStreamMem  = FixedLinearAllocator<k_TempVertexStreamMemorySize>;
     using IndexStreamMem   = FixedLinearAllocator<k_TempIndexStreamMemorySize>;
 
+   private:
     Gfx2DRenderData  render_data;     //!< Stores GPU Resources.
     AuxMem           aux_memory;      //!< For any intermediate calculations.
     CommandStreamMem command_stream;  //!< Dense stream of `BaseRender2DCommand`s.
@@ -516,6 +508,7 @@ namespace bf
     IndexStreamMem   index_stream;    //!< For commands that need to pre-calculate their vertices.
     std::size_t      num_commands;    //!< The number of commands we have.
 
+   public:
     CommandBuffer2D(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
 
     //
@@ -553,6 +546,12 @@ namespace bf
       num_commands = 0u;
     }
 
+    void renderToQueue(RenderQueue& render_queue, const DescSetBind& object_binding);
+    void renderToQueue(RenderQueue& render_queue);
+
+    static Rect2f calcCommandBounds(const BaseRender2DCommand_* command);
+
+   private:
     struct VertIdxCountResult
     {
       UIVertex2D*  precalculated_vertices = nullptr;
@@ -602,19 +601,41 @@ namespace bf
       UIIndexType       shadow_vertex_offset;
     };
 
-    void TEST(RenderQueue& render_queue, const DescSetBind& object_binding = {});
-
-    static Rect2f      calcCommandBounds(const BaseRender2DCommand_* command);
     VertIdxCountResult calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand_* command);
     void               writeVertices(const DestVerts& dest, const BaseRender2DCommand_* command, VertIdxCountResult& counts);
   };
 
   //
-  //
+  // Misc Helpers
   //
 
-  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType& num_codepoints);
-  Vector2f calculateTextSize(const char* utf8_text, PainterFont* font);
+  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType* num_codepoints = nullptr);
 }  // namespace bf
 
 #endif  // BF_PAINTER_HPP
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

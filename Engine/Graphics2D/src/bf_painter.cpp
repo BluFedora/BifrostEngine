@@ -1,32 +1,77 @@
-//
-// Shareef Abdoul-Raheem
-//
+/******************************************************************************/
+/*!
+ * @file   bf_painter.cpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   API for drawing fancy 2D graphics.
+ *
+ * @version 0.0.1
+ * @date    2021-03-03
+ *
+ * @copyright Copyright (c) 2019-2021
+ */
+/******************************************************************************/
 #include "bf/gfx2D/bf_painter.hpp"
 
-#include "bf/NoFreeAllocator.hpp"  // NoFreeAllocator
-#include "bf/Platform.h"           // bfPlatformGetGfxAPI
-#include "bf/Text.hpp"             // CodePoint, Font
+#include "bf/Text.hpp"                 // CodePoint, Font
+#include "bf/gfx/bf_render_queue.hpp"  // RenderQueue
 
-#include <cmath>
+#include <cmath>  // round
 
 namespace bf
 {
+  //
+  // Constants
+  //
+
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
   static constexpr float                  k_ArcSmoothingFactor        = 2.2f; /*!< This is just about the minimum before quality of the curves degrade. */
   static constexpr std::size_t            k_NumVertRect               = 4;
   static constexpr std::size_t            k_NumIdxRect                = 6;
 
+  //
+  // Helpers
+  //
+
+  static Rect2f boundsFromPoints(const Vector2f* points, std::size_t num_points)
+  {
+    Vector2f min_point = points[0];
+    Vector2f max_point = points[0];
+
+    for (std::size_t i = 1; i < num_points; ++i)
+    {
+      min_point = vec::min(min_point, points[i]);
+      max_point = vec::max(max_point, points[i]);
+    }
+
+    return {min_point, max_point};
+  }
+
+  static UIIndexType calculateNumSegmentsForArc(float radius)
+  {
+    return UIIndexType(k_ArcSmoothingFactor * std::sqrt(radius));
+  }
+
+  static Vector2f remapUV(const AxisQuad& uv_remap, Vector2f uv)
+  {
+    return {
+     vec::inverseLerp(uv_remap.position, uv_remap.position + uv_remap.x_axis, uv),
+     vec::inverseLerp(uv_remap.position, uv_remap.position + uv_remap.y_axis, uv),
+    };
+  }
+
   void Gfx2DPerFrameRenderData::reserve(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size)
   {
+    bfBufferCreateParams buffer_params;
+    buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
+
     if (!vertex_buffer || bfBuffer_size(vertex_buffer) < vertex_size)
     {
       bfGfxDevice_release(device, vertex_buffer);
 
-      bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
-      buffer_params.allocation.size       = vertex_size;
-      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
+      buffer_params.allocation.size = vertex_size;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
       vertex_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -35,10 +80,8 @@ namespace bf
     {
       bfGfxDevice_release(device, index_buffer);
 
-      bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
-      buffer_params.allocation.size       = indices_size;
-      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
+      buffer_params.allocation.size = indices_size;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
       index_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -46,14 +89,15 @@ namespace bf
 
   void Gfx2DPerFrameRenderData::reserveShadow(bfGfxDeviceHandle device, size_t vertex_size, size_t indices_size)
   {
+    bfBufferCreateParams buffer_params;
+    buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
+
     if (!vertex_shadow_buffer || bfBuffer_size(vertex_shadow_buffer) < vertex_size)
     {
       bfGfxDevice_release(device, vertex_shadow_buffer);
 
-      bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
-      buffer_params.allocation.size       = vertex_size;
-      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
+      buffer_params.allocation.size = vertex_size;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
       vertex_shadow_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -62,10 +106,8 @@ namespace bf
     {
       bfGfxDevice_release(device, index_shadow_buffer);
 
-      bfBufferCreateParams buffer_params;
-      buffer_params.allocation.properties = BF_BUFFER_PROP_HOST_MAPPABLE | BF_BUFFER_PROP_HOST_CACHE_MANAGED;
-      buffer_params.allocation.size       = indices_size;
-      buffer_params.usage                 = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
+      buffer_params.allocation.size = indices_size;
+      buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
       index_shadow_buffer = bfGfxDevice_newBuffer(device, &buffer_params);
     }
@@ -83,8 +125,7 @@ namespace bf
     rounded_rect_shadow_program{nullptr},
     white_texture{nullptr},
     num_frame_datas{0},
-    frame_datas{},
-    uniform{}
+    frame_datas{}
   {
     // Vertex Layout
     vertex_layouts[0] = bfVertexLayout_new();
@@ -134,11 +175,6 @@ namespace bf
     {
       frame_datas[i] = Gfx2DPerFrameRenderData();
     }
-
-    // Uniform Buffer
-    const auto device_info = bfGfxDevice_limits(device);
-
-    uniform.create(device, BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_UNIFORM_BUFFER, frame_info, device_info.uniform_buffer_offset_alignment);
   }
 
   void Gfx2DRenderData::reserve(int index, size_t vertex_size, size_t indices_size)
@@ -177,8 +213,6 @@ namespace bf
 
   Gfx2DRenderData::~Gfx2DRenderData()
   {
-    uniform.destroy(device);
-
     forEachBuffer([this](const Gfx2DPerFrameRenderData& data) {
       bfGfxDevice_release(device, data.vertex_buffer);
       bfGfxDevice_release(device, data.index_buffer);
@@ -227,14 +261,6 @@ namespace bf
     }
   }
 
-  static Vector2f remapUV(const AxisQuad& uv_remap, Vector2f uv)
-  {
-    return {
-     vec::inverseLerp(uv_remap.position, uv_remap.position + uv_remap.x_axis, uv),
-     vec::inverseLerp(uv_remap.position, uv_remap.position + uv_remap.y_axis, uv),
-    };
-  }
-
   BrushSampleResult Brush::sample(Vector2f uv, UIIndexType vertex_index) const
   {
     (void)vertex_index;  // For future use.
@@ -275,11 +301,11 @@ namespace bf
            return gradient_stop.percent < sample_location;
          });
 
-        if (it == stops_bgn)
+        if (it == stops_bgn)  // Clamp To Start of gradient.
         {
           result.color = stops_bgn->value;
         }
-        else if (it == stops_end)
+        else if (it == stops_end)  // Clamp To End of gradient.
         {
           result.color = stops_end[-1].value;
         }
@@ -299,12 +325,8 @@ namespace bf
                                                        new_max_lerp,
                                                        result.remapped_uv.x);
 
-          result.color = bfMathLerpColor4f(
-           color_a,
-           color_b,
-           local_lerp_factor);
+          result.color = bfMathLerpColor4f(color_a, color_b, local_lerp_factor);
         }
-
         break;
       }
       case Textured:
@@ -324,44 +346,6 @@ namespace bf
 
     return result;
   }
-
-  // TODO(SR): This should be in the data structures lib.
-  template<typename T>
-  struct TempList
-  {
-    T* first = nullptr;
-    T* last  = nullptr;
-
-    template<typename F>
-    void forEach(F&& callback)
-    {
-      T* it = first;
-
-      while (it)
-      {
-        T* const next = it->next;
-
-        callback(it);
-
-        it = next;
-      }
-    }
-
-    void add(T* item)
-    {
-      if (!first)
-      {
-        first = item;
-      }
-
-      if (last)
-      {
-        last->next = item;
-      }
-
-      last = item;
-    }
-  };
 
   CommandBuffer2D::CommandBuffer2D(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics) :
     render_data{glsl_compiler, graphics},
@@ -527,7 +511,7 @@ namespace bf
 
     result->brush          = brush;
     result->utf8_text      = cloned_string.toStringRange();
-    result->bounds_size    = calculateTextSize(utf8_text, brush->font_data.font, num_codepoints);
+    result->bounds_size    = calculateTextSize(utf8_text, brush->font_data.font, &num_codepoints);
     result->num_codepoints = num_codepoints;
     result->position       = position;
 
@@ -535,7 +519,37 @@ namespace bf
     return result;
   }
 
-  void CommandBuffer2D::TEST(RenderQueue& render_queue, const DescSetBind& object_binding)
+  template<typename T>
+  struct TempList
+  {
+    T* first = nullptr;
+    T* last  = nullptr;
+
+    template<typename F>
+    void forEach(F&& callback) const
+    {
+      T* it = first;
+
+      while (it)
+      {
+        T* const next = it->next;
+
+        callback(it);
+
+        it = next;
+      }
+    }
+
+    void add(T* item)
+    {
+      if (!first) { first = item; }
+      if (last) { last->next = item; }
+
+      last = item;
+    }
+  };
+
+  void CommandBuffer2D::renderToQueue(RenderQueue& render_queue, const DescSetBind& object_binding)
   {
     if (!num_commands)
     {
@@ -872,18 +886,9 @@ namespace bf
     });
   }
 
-  Rect2f boundsFromPoints(const Vector2f* points, std::size_t num_points)
+  void CommandBuffer2D::renderToQueue(RenderQueue& render_queue)
   {
-    Vector2f min_point = points[0];
-    Vector2f max_point = points[0];
-
-    for (std::size_t i = 1; i < num_points; ++i)
-    {
-      min_point = vec::min(min_point, points[i]);
-      max_point = vec::max(max_point, points[i]);
-    }
-
-    return {min_point, max_point};
+    renderToQueue(render_queue, {});
   }
 
   Rect2f CommandBuffer2D::calcCommandBounds(const BaseRender2DCommand_* command)
@@ -924,11 +929,6 @@ namespace bf
       }
         bfInvalidDefaultCase();
     }
-  }
-
-  static UIIndexType calculateNumSegmentsForArc(float radius)
-  {
-    return UIIndexType(k_ArcSmoothingFactor * std::sqrt(radius));
   }
 
   CommandBuffer2D::VertIdxCountResult CommandBuffer2D::calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand_* command)
@@ -1109,9 +1109,6 @@ namespace bf
               {
                 PolylineSegment* new_segment = memory.allocateT<PolylineSegment>(LineSegment{*p0, *p1}, half_thickness);
 
-                // TODO(SR):
-                //   Rather than asserting (also this assert should never happen because of an earlier check but...)
-                //   we could just truncate the polyline and give off a warning.
                 assert(new_segment && "Failed to allocate a new segment.");
 
                 if (tail)
@@ -1705,62 +1702,69 @@ namespace bf
 
         assert(typed_command->brush->type == Brush::Font);
 
-        const Vector2f& pos       = typed_command->position;
-        const char*     utf8_text = typed_command->utf8_text.bgn;
-        float           x         = pos.x;
-        float           y         = pos.y;
-        PainterFont*    font      = typed_command->brush->font_data.font;
-        const bfColor4u color     = bfColor4u_fromColor4f(typed_command->brush->font_data.tint);
+        // NOTE(SR):
+        //  `x` and `y` are rounded because to have good text
+        //  rendering we must be aligned to a pixel exactly.
 
-        while (*utf8_text)
+        const Vector2f& pos            = typed_command->position;
+        const char*     utf8_text      = typed_command->utf8_text.begin();
+        const char*     utf8_text_end  = typed_command->utf8_text.end();
+        float           x              = std::round(pos.x);
+        float           y              = std::round(pos.y);
+        PainterFont*    font           = typed_command->brush->font_data.font;
+        const bfColor4u color          = bfColor4u_fromColor4f(typed_command->brush->font_data.tint);
+        const float     newline_height = fontNewlineHeight(font->font);
+
+        if (utf8_text != utf8_text_end)
         {
-          const bool is_backslash_r = *utf8_text == '\r';
+          TextEncodingResult<TextEncoding::UTF8> res = utf8Codepoint(utf8_text);
 
-          if (is_backslash_r || *utf8_text == '\n')
+          while (utf8_text < utf8_text_end)
           {
-            x = pos.x;
-            y += fontNewlineHeight(font->font);
+            const bool is_backslash_r = *utf8_text == '\r';
 
-            ++utf8_text;
-
-            // Handle Window's '\r\n'
-            if (is_backslash_r && *utf8_text == '\n')
+            if (is_backslash_r || *utf8_text == '\n')
             {
+              x = pos.x;
+              y += newline_height;
+
               ++utf8_text;
+
+              if (is_backslash_r && *utf8_text == '\n')  // Handle Window's '\r\n'
+              {
+                ++utf8_text;
+              }
+
+              continue;
             }
 
-            continue;
-          }
+            const CodePoint   codepoint = res.codepoint;
+            const GlyphInfo&  glyph     = fontGetGlyphInfo(font->font, codepoint);
+            const VertexWrite v         = writer.getVerts(4);
+            const Vector2f    size_x    = {float(glyph.bmp_box[1].x), 0.0f};
+            const Vector2f    size_y    = {0.0f, float(glyph.bmp_box[1].y)};
+            const Vector2f    size_xy   = {size_x.x, size_y.y};
+            const Vector2f    p0        = Vector2f{x, y} + Vector2f{glyph.offset[0], glyph.offset[1]};
+            const Vector2f    p1        = p0 + size_x;
+            const Vector2f    p2        = p0 + size_xy;
+            const Vector2f    p3        = p0 + size_y;
 
-          const auto        res       = utf8Codepoint(utf8_text);
-          const CodePoint   codepoint = res.codepoint;
-          const GlyphInfo&  glyph     = fontGetGlyphInfo(font->font, codepoint);
-          const VertexWrite v         = writer.getVerts(4);
-          const Vector2f    p         = Vector2f{x, y} + Vector2f{glyph.offset[0], glyph.offset[1]};
-          const Vector2f    size_x    = {float(glyph.bmp_box[1].x), 0.0f};
-          const Vector2f    size_y    = {0.0f, float(glyph.bmp_box[1].y)};
-          const Vector2f    size_xy   = {size_x.x, size_y.y};
-          const Vector2f    p0        = p;
-          const Vector2f    p1        = p + size_x;
-          const Vector2f    p2        = p + size_xy;
-          const Vector2f    p3        = p + size_y;
+            v.v[0] = {p0, {glyph.uvs[0], glyph.uvs[1]}, color};
+            v.v[1] = {p1, {glyph.uvs[2], glyph.uvs[1]}, color};
+            v.v[2] = {p2, {glyph.uvs[2], glyph.uvs[3]}, color};
+            v.v[3] = {p3, {glyph.uvs[0], glyph.uvs[3]}, color};
 
-          v.v[0] = {p0, {glyph.uvs[0], glyph.uvs[1]}, color};
-          v.v[1] = {p1, {glyph.uvs[2], glyph.uvs[1]}, color};
-          v.v[2] = {p2, {glyph.uvs[2], glyph.uvs[3]}, color};
-          v.v[3] = {p3, {glyph.uvs[0], glyph.uvs[3]}, color};
+            writer.pushTriIndex(v.id + 0, v.id + 3, v.id + 2);
+            writer.pushTriIndex(v.id + 0, v.id + 2, v.id + 1);
 
-          writer.pushTriIndex(v.id + 0, v.id + 3, v.id + 2);
-          writer.pushTriIndex(v.id + 0, v.id + 2, v.id + 1);
+            utf8_text = res.endpos;
+            x += glyph.advance_x;
 
-          utf8_text = res.endpos;
-          x += glyph.advance_x;
-
-          // Not at the end
-          if (*utf8_text)
-          {
-            // TODO(SR): This can be optimized. Since that "utf8Codepoint(utf8_text)" call calculates what we need next time through the loop.
-            x += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
+            if (utf8_text < utf8_text_end)  // Not at the end
+            {
+              res = utf8Codepoint(utf8_text);
+              x += fontAdditionalAdvance(font->font, codepoint, res.codepoint);
+            }
           }
         }
 
@@ -1819,97 +1823,90 @@ namespace bf
     }
   }
 
-  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType& num_codepoints)
+  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType* num_codepoints)
   {
-    float       max_width      = 0.0f;
-    float       current_width  = 0.0f;
-    float       current_height = fontNewlineHeight(font->font);
-    const char* utf8_text      = utf8_string.begin();
-    const char* utf8_text_end  = utf8_string.end();
+    float       max_width            = 0.0f;
+    float       current_width        = 0.0f;
+    float       current_height       = 0.0f;
+    const char* utf8_text            = utf8_string.begin();
+    const char* utf8_text_end        = utf8_string.end();
+    UIIndexType num_codepoints_local = 0;
 
-    num_codepoints = 0;
-
-    while (utf8_text != utf8_text_end)
+    if (utf8_text != utf8_text_end)
     {
-      const bool is_backslash_r = *utf8_text == '\r';
+      const float newline_height = fontNewlineHeight(font->font);
+      auto        res            = utf8Codepoint(utf8_text);
 
-      if (is_backslash_r || *utf8_text == '\n')
+      current_height += newline_height;
+
+      while (utf8_text < utf8_text_end)
       {
-        max_width     = std::max(current_width, max_width);
-        current_width = 0.0f;
-        current_height += fontNewlineHeight(font->font);
+        const bool is_backslash_r = *utf8_text == '\r';
 
-        ++utf8_text;
-
-        // Handle Window's '\r\n'
-        if (is_backslash_r && *utf8_text == '\n')
+        if (is_backslash_r || *utf8_text == '\n')
         {
+          max_width     = std::max(current_width, max_width);
+          current_width = 0.0f;
+          current_height += newline_height;
+
           ++utf8_text;
+
+          // Handle Window's '\r\n'
+          if (is_backslash_r && *utf8_text == '\n')
+          {
+            ++utf8_text;
+          }
+
+          continue;
         }
 
-        continue;
+        const CodePoint  codepoint = res.codepoint;
+        const GlyphInfo& glyph     = fontGetGlyphInfo(font->font, codepoint);
+
+        utf8_text = res.endpos;
+        current_width += glyph.advance_x;
+
+        if (utf8_text < utf8_text_end)  // Not at the end
+        {
+          res = utf8Codepoint(utf8_text);
+          current_width += fontAdditionalAdvance(font->font, codepoint, res.codepoint);
+        }
+
+        ++num_codepoints_local;
       }
-
-      const auto       res       = utf8Codepoint(utf8_text);
-      const CodePoint  codepoint = res.codepoint;
-      const GlyphInfo& glyph     = fontGetGlyphInfo(font->font, codepoint);
-
-      utf8_text = res.endpos;
-      current_width += glyph.advance_x;
-
-      if (utf8_text != utf8_text_end)  // Not at the end
-      {
-        // TODO(SR): This can be optimized. Since that "utf8Codepoint(utf8_text)" call calculates what we need next time through the loop.
-        current_width += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
-      }
-
-      ++num_codepoints;
     }
 
-    return {std::max(current_width, max_width), current_height};
-  }
-
-  Vector2f calculateTextSize(const char* utf8_text, PainterFont* font)
-  {
-    float max_width      = 0.0f;
-    float current_width  = 0.0f;
-    float current_height = fontNewlineHeight(font->font);
-
-    while (*utf8_text)
+    if (num_codepoints)
     {
-      const bool is_backslash_r = *utf8_text == '\r';
-
-      if (is_backslash_r || *utf8_text == '\n')
-      {
-        max_width     = std::max(current_width, max_width);
-        current_width = 0.0f;
-        current_height += fontNewlineHeight(font->font);
-
-        ++utf8_text;
-
-        // Handle Window's '\r\n'
-        if (is_backslash_r && *utf8_text == '\n')
-        {
-          ++utf8_text;
-        }
-
-        continue;
-      }
-
-      const auto       res       = utf8Codepoint(utf8_text);
-      const CodePoint  codepoint = res.codepoint;
-      const GlyphInfo& glyph     = fontGetGlyphInfo(font->font, codepoint);
-
-      utf8_text = res.endpos;
-      current_width += glyph.advance_x;
-
-      if (*utf8_text)  // Not at the end
-      {
-        // TODO(SR): This can be optimized. Since that "utf8Codepoint(utf8_text)" call calculates what we need next time through the loop.
-        current_width += fontAdditionalAdvance(font->font, codepoint, utf8Codepoint(utf8_text).codepoint);
-      }
+      *num_codepoints = num_codepoints_local;
     }
 
     return {std::max(current_width, max_width), current_height};
   }
 }  // namespace bf
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

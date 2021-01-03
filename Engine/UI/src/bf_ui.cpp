@@ -124,7 +124,7 @@ namespace bf::UI
     return g_UI.widget_freelist;
   }
 
-  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Montserrat/Montserrat-Medium.ttf", 20.0f);
+  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Montserrat/Montserrat-Medium.ttf", -20.0f);
 
   static void BringToFront(Widget* widget)
   {
@@ -193,9 +193,9 @@ namespace bf::UI
 
   static Vector2f RealizeSize(const Widget* widget, const LayoutConstraints& constraints)
   {
-    assert(widget->parent && "Only windows have no parent and they do not call this function.");
+    // assert(widget->parent && "Only windows have no parent and they do not call this function.");
 
-    const Vector2f parent_size = widget->parent->realized_size;
+    const Vector2f parent_size = widget->parent ? widget->parent->realized_size : Vector2f{0.0f, 0.0f};
     const Size&    size        = widget->desired_size;
 
     return {
@@ -325,6 +325,8 @@ namespace bf::UI
       }
       case LayoutType::Column:
       {
+        Vector2f self_desired_size = RealizeSize(widget, constraints); // @Temp
+
         layout_result.desired_size.x = constraints.min_size.x;
         layout_result.desired_size.y = 0.0f;
 
@@ -334,6 +336,11 @@ namespace bf::UI
         my_constraints.max_size   = constraints.max_size;
         my_constraints.min_size.y = 0.0f;
         my_constraints.max_size.y = constraints.max_size.y;
+
+        if (self_desired_size.x != 0.0f && self_desired_size.y != 0.0f) // @Temp
+        {
+          my_constraints.max_size = self_desired_size; // @Temp
+        }
 
         float total_flex_factor = 0.0f;
 
@@ -381,6 +388,9 @@ namespace bf::UI
             }
           });
         }
+
+        // @Temp
+        layout_result.desired_size = vec::max(layout_result.desired_size, self_desired_size);
         break;
       }
       case LayoutType::Grid:
@@ -511,10 +521,19 @@ namespace bf::UI
 
     if (self->flags & Widget::IsWindow)
     {
-      Brush* beige_brush        = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
-      Brush* burlywood_brush    = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
-      Brush* brown_brush        = gfx2D.makeBrush(bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BURLYWOOD)),
+      Brush* beige_brush     = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
+      Brush* burlywood_brush = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
+      Brush* brown_brush     = gfx2D.makeBrush(bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BURLYWOOD)),
                                            bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BROWN)));
+
+      bfQuaternionf gradient_rot = bfQuaternionf_fromEulerDeg(0.0f, 45.0f, 0.0f);
+      Vec3f         rot_right    = bfQuaternionf_rightVec(&gradient_rot);
+      Vec3f         rot_up       = bfQuaternionf_upVec(&gradient_rot);
+
+      brown_brush->linear_gradient_data.uv_remap.position = {0.0f, 1.0f};
+      brown_brush->linear_gradient_data.uv_remap.x_axis   = {rot_right.x, rot_right.y};
+      brown_brush->linear_gradient_data.uv_remap.y_axis   = {rot_up.x, rot_up.y};
+
       Brush* floral_white_brush = gfx2D.makeBrush(BIFROST_COLOR_FLORALWHITE);
 
       Rect2f main_rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
@@ -537,8 +556,6 @@ namespace bf::UI
         gfx2D.fillRect(
          brown_brush,
          AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
-
-        gfx2D.fillArc(brown_brush, self->position_from_parent, 200.0f);
       }
       else
       {
@@ -761,9 +778,23 @@ namespace bf::UI
     return button;
   }
 
+  static bool     XXX_SetNextWindowPos = false;
+  static Vector2f XXX_NextWindowPos    = {0.0f, 0.0f};
+
   bool BeginWindow(const char* title)
   {
     Widget* const window = CreateWidget(title, LayoutType::Column);
+
+    bool has_close_button = true;
+
+    if (XXX_SetNextWindowPos)
+    {
+      window->flags |= Widget::IsExpanded;
+      window->position_from_parent = XXX_NextWindowPos;
+      XXX_SetNextWindowPos         = false;
+
+      has_close_button = false;
+    }
 
     window->flags |= Widget::BlocksInput | Widget::IsWindow;
 
@@ -778,7 +809,7 @@ namespace bf::UI
     Widget* const titlebar = CreateWidget("__WindowTitlebar__", LayoutType::Row);
 
     titlebar->desired_size.width  = {SizeUnitType::Flex, 1.0f};
-    titlebar->desired_size.height = {SizeUnitType::Absolute, 32.0f};
+    titlebar->desired_size.height = {SizeUnitType::Absolute, 25.0f};
     titlebar->flags |= Widget::Clickable;
 
     const auto behavior = WidgetBehavior(titlebar);
@@ -798,19 +829,22 @@ namespace bf::UI
 
       AddWidget(title_spacing);
 
-      Widget* const x_button = CreateButton(
-       window->flags & Widget::IsExpanded ? "  --  " : "OPEN",
-       {titlebar->desired_size.height, titlebar->desired_size.height});
-
-      x_button->flags |= Widget::DrawBackground | Widget::IsWindow;
-
-      AddWidget(x_button);
-
-      const auto behavior = WidgetBehavior(x_button);
-
-      if (behavior.flags & WidgetBehaviorResult::IsClicked)
+      if (has_close_button)
       {
-        window->flags ^= Widget::IsExpanded;  // Toggle
+        Widget* const x_button = CreateButton(
+         window->flags & Widget::IsExpanded ? "C" : "O",
+         {titlebar->desired_size.height, titlebar->desired_size.height});
+
+        x_button->flags |= Widget::DrawBackground | Widget::IsWindow;
+
+        AddWidget(x_button);
+
+        const auto behavior = WidgetBehavior(x_button);
+
+        if (behavior.flags & WidgetBehaviorResult::IsClicked)
+        {
+          window->flags ^= Widget::IsExpanded;  // Toggle
+        }
       }
     }
     PopWidget();
@@ -956,6 +990,23 @@ namespace bf::UI
   {
     // Test Code
 
+    XXX_SetNextWindowPos = true;
+    XXX_NextWindowPos    = {5.0f, 5.0f};
+
+    if (BeginWindow("Tool Bar"))
+    {
+      g_UI.current_widget->flags |= Widget::DrawBackground;
+      g_UI.current_widget->desired_size = {{SizeUnitType::Absolute, 50.0f}, {SizeUnitType::Absolute, 600.0f}};
+
+      #if 0
+      if (Button("Hello"))
+      {
+        std::printf("\nHello was pressed.\n");
+      }
+      #endif
+      EndWindow();
+    }
+
     if (BeginWindow("Test Window"))
     {
       g_UI.current_widget->flags |= Widget::DrawBackground;
@@ -1044,7 +1095,7 @@ namespace bf::UI
     LayoutConstraints main_constraints = {
      {0.0f, 0.0f},
      //{std::min(g_UI.mouse_pos.x, 600.0f), std::min(g_UI.mouse_pos.y, 500.0f)},
-     {600.0f, 500.0f},
+     {400.0f, 600.0f},
     };
 
     for (Widget* const window : g_UI.root_widgets)
@@ -1053,23 +1104,6 @@ namespace bf::UI
       WidgetDoLayoutPositioning(window);
       WidgetDoRender(window, gfx2D);
     }
-
-    /* HitTest Debugging
-    auto     hw  = g_UI.hovered_widgets;
-    Vector2f pos = g_UI.mouse_pos;
-
-    while (hw)
-    {
-      painter.pushText(
-       pos,
-       hw->name,
-       TEST_FONT);
-
-      pos.y += fontNewlineHeight(TEST_FONT->font);
-
-      hw = hw->hit_test_list;
-    }
-    //*/
 
     if (ClickedDownThisFrame(BIFROST_BUTTON_LEFT) &&
         g_UI.next_hover_root &&

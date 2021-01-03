@@ -291,7 +291,7 @@ namespace bf
     m_Scripting.create(vm_params);
 
     m_Scripting.stackResize(1);
-    m_Scripting.moduleMake(0, "bifrost");
+    m_Scripting.moduleMake(0, "bf");
 
     const BifrostVMClassBind behavior_clz_bindings = vmMakeClassBinding<BaseBehavior>(
      "Behavior"  //,
@@ -328,7 +328,7 @@ namespace bf
       it->onEvent(*this, evt);
     }
 
-    UI::PumpEvents(&evt);
+    // UI::PumpEvents(&evt);
   }
 
   void Engine::tick()
@@ -503,7 +503,7 @@ namespace bf
 
       m_DebugRenderer.draw(*camera, m_Renderer.m_FrameInfo);
 
-      m_Gfx2D->TEST(camera->screen_overlay_render_queue);
+      m_Gfx2D->renderToQueue(camera->screen_overlay_render_queue);
 
       for (auto& system : m_Systems)
       {

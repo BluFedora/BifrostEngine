@@ -2,6 +2,8 @@
 
 #include "bf/StlAllocator.hpp"  // StlAllocator
 
+#include "bf/bf_ui.hpp"
+
 #include <ImGuizmo/ImGuizmo.h>
 
 #include <list>
@@ -111,7 +113,7 @@ namespace bf::editor
       window_draw->AddImage(
        color_buffer,
        position_min,
-       position_max/* + ImVec2(1.0f, 1.0f)*/,
+       position_max /* + ImVec2(1.0f, 1.0f)*/,
        ImVec2(0.0f, 0.0f),
        ImVec2(1.0f, 1.0f),
        0xFFFFFFFF);
@@ -161,7 +163,8 @@ namespace bf::editor
 
   void SceneView::onEvent(EditorOverlay& editor, Event& event)
   {
-    auto& mouse_evt = event.mouse;
+    ImGuiIO& io        = ImGui::GetIO();
+    auto&    mouse_evt = event.mouse;
 
     if (!ImGuizmo::IsUsing())
     {
@@ -179,7 +182,7 @@ namespace bf::editor
             if (scene)
             {
               // Ray cast Hit Begin
-              auto&       io           = ImGui::GetIO();
+
               const auto& window_mouse = io.MousePos;
               Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
 
@@ -217,7 +220,7 @@ namespace bf::editor
               });
 
               editor.select(nullptr);
-              
+
               if (!clicked_nodes.empty())
               {
                 clicked_nodes.sort([](const ClickResult& a, const ClickResult& b) {
@@ -271,6 +274,16 @@ namespace bf::editor
           m_OldMousePos.y = newy;
         }
       }
+    }
+
+    if (event.isMouseEvent())
+    {
+      Vector2i local_mouse = Vector2i(int(event.mouse.x), int(event.mouse.y)) - m_SceneViewViewport.topLeft();
+      bfEvent  ui_event    = event;
+      ui_event.mouse.x     = local_mouse.x;
+      ui_event.mouse.y     = local_mouse.y;
+
+      UI::PumpEvents(&ui_event);
     }
 
     if ((m_IsDraggingMouse || ImGuizmo::IsOver()) && event.isMouseEvent())

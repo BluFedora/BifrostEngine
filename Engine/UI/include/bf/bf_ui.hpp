@@ -90,15 +90,7 @@ namespace bf
   struct SizeUnit
   {
     SizeUnitType type  = SizeUnitType::Absolute;
-    float        value = 100.0f;
-
-    //
-    // TODO(SR): The `value` can be compressed by
-    //   using Relative as a uint16 remap(0.0f, 1.0f => 0u => 0xFFFF)
-    //   And the Other values as normal.
-    //
-    //   But how will it works with animations???
-    //
+    float        value = 0.0f;
   };
 
   struct Size
