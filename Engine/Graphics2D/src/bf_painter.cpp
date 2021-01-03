@@ -13,7 +13,7 @@ namespace bf
 {
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
-  static constexpr float                  k_ArcSmoothingFactor        = 3.5f; /*!< This is just about the minimum before quality of the curves degrade. */
+  static constexpr float                  k_ArcSmoothingFactor        = 2.2f; /*!< This is just about the minimum before quality of the curves degrade. */
   static constexpr std::size_t            k_NumVertRect               = 4;
   static constexpr std::size_t            k_NumIdxRect                = 6;
 
@@ -1466,8 +1466,8 @@ namespace bf
          {
           {0.0f, 1.0f},
           {1.0f, 1.0f},
-          {0.0f, 0.0f},
           {1.0f, 0.0f},
+          {0.0f, 0.0f},
          };
 
         bfColor4u colors[4];
@@ -1511,7 +1511,7 @@ namespace bf
           const UIIndexType p0_index = current_vertex;
           {
             const Vector2f          p0        = Vector2f{x + pos.x, y + pos.y};
-            const Vector2f          p0_uv     = {x_uv, y_uv};
+            const Vector2f          p0_uv     = {(x_uv + 1.0f) * 0.5f, (y_uv + 1.0f) * 0.5f};
             const BrushSampleResult p0_sample = brush->sample(p0_uv, i);
             v.v[current_vertex++]             = {p0, p0_uv, bfColor4u_fromColor4f(p0_sample.color)};
           }
@@ -1534,7 +1534,7 @@ namespace bf
           const UIIndexType p1_index = current_vertex;
           {
             const Vector2f          p1        = Vector2f{x + pos.x, y + pos.y};
-            const Vector2f          p1_uv     = {x_uv, y_uv};
+            const Vector2f          p1_uv     = {(x_uv + 1.0f) * 0.5f, (y_uv + 1.0f) * 0.5f};
             const BrushSampleResult p1_sample = brush->sample(p1_uv, i);
 
             v.v[current_vertex++] = {p1, {0.0f, 0.0f}, bfColor4u_fromColor4f(p1_sample.color)};

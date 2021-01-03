@@ -513,7 +513,8 @@ namespace bf::UI
     {
       Brush* beige_brush        = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
       Brush* burlywood_brush    = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
-      Brush* brown_brush        = gfx2D.makeBrush(BIFROST_COLOR_BROWN);
+      Brush* brown_brush        = gfx2D.makeBrush(bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BURLYWOOD)),
+                                           bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BROWN)));
       Brush* floral_white_brush = gfx2D.makeBrush(BIFROST_COLOR_FLORALWHITE);
 
       Rect2f main_rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
@@ -536,6 +537,8 @@ namespace bf::UI
         gfx2D.fillRect(
          brown_brush,
          AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
+
+        gfx2D.fillArc(brown_brush, self->position_from_parent, 200.0f);
       }
       else
       {
@@ -854,7 +857,7 @@ namespace bf::UI
       const bfColor4u  hover_color  = bfColor4u_fromUint32(BIFROST_COLOR_CYAN);
       const bfColor32u final_color  = bfColor4u_toUint32(bfMathLerpColor4u(normal_color, hover_color, hover_lerp_factor));
 
-      Brush* button_brush        = gfx2D.makeBrush(final_color);
+      Brush* button_brush = gfx2D.makeBrush(final_color);
       Brush* font_brush   = gfx2D.makeBrush(TEST_FONT);
 
       Rect2f rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
