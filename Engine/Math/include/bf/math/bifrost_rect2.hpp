@@ -356,6 +356,18 @@ namespace bf
         setHeight(old_h);
       }
 
+      Rect2T expandedFromCenter(float amount_pad) const
+      {
+        const VectorT pad_v = {amount_pad, amount_pad};
+
+        Rect2T result = *this;
+
+        result.m_Min -= pad_v;
+        result.m_Max += pad_v;
+
+        return result;
+      }
+
       template<typename F>
       [[nodiscard]] Rect2T<T> merge(const Rect2T<F>& rhs) const
       {

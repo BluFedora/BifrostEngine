@@ -211,6 +211,28 @@ namespace bf
     const CodeUnit<encoding>* endpos;     //!< The new location of the passed in code unit after reading a single codepoint.
   };
 
+  //
+  // ***************************** Ascent (The hieght of the text above Baseline)
+  //   _____
+  //  / ____|
+  // | |  __  __ _
+  // | | |_ |/ _` |
+  // | |__| | (_| |
+  //  \_____|\__, |
+  // ***************************** Baseline
+  //          __/ |
+  //         |___/
+  // ***************************** Descent (Negative Number Ralative To Baseline)
+  //          ~Line Gap~
+  // *****************************
+  //
+  struct FontBaselineInfo
+  {
+    float ascent_px;
+    float descent_px;
+    float line_gap_px;
+  };
+
   Font*                                      makeFont(IMemoryManager& memory, const char* filename, float size) noexcept;
   bool                                       isAscii(const char* bytes, std::size_t bytes_size) noexcept;
   TextEncoding                               guessEncodingFromBOM(const char* bytes, std::size_t bytes_size) noexcept;
@@ -226,6 +248,7 @@ namespace bf
   void                                       fontResetAtlasStatus(Font* self) noexcept;
   float                                      fontAdditionalAdvance(const Font* self, CodePoint from, CodePoint to) noexcept;
   float                                      fontNewlineHeight(const Font* self) noexcept;
+  FontBaselineInfo                           fontBaselineInfo(const Font* self) noexcept;
   const PixelMap*                            fontPixelMap(const Font* self) noexcept;
   void                                       destroyFont(Font* font) noexcept;
 }  // namespace bf

@@ -50,6 +50,20 @@ static bfColor4u bfColor4u_fromUint32(bfColor32u color)
   return ret;
 }
 
+static bfColor4f bfColor4f_fromColor4u(bfColor4u color)
+{
+  static const float k_ConvertionFacotr = 1.0f / 255.0f;
+
+  bfColor4f ret;
+
+  ret.r = color.r * k_ConvertionFacotr;
+  ret.g = color.g * k_ConvertionFacotr;
+  ret.b = color.b * k_ConvertionFacotr;
+  ret.a = color.a * k_ConvertionFacotr;
+
+  return ret;
+}
+
 static bfColor4u bfColor4u_fromColor4f(bfColor4f color)
 {
 #define MUL_AND_SHIFT(c, s) ((uint)((c)*255.0f) << (s))

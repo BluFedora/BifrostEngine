@@ -78,7 +78,6 @@ namespace bf
     m_Input{},
     m_Renderer{m_MainMemory},
     m_DebugRenderer{m_MainMemory},
-    m_Renderer2D{nullptr},
     m_Gfx2D{nullptr},
     m_CameraMemory{},
     m_CameraList{nullptr},
@@ -273,8 +272,7 @@ namespace bf
 
     m_Renderer.init(params, main_window);
     m_DebugRenderer.init(m_Renderer);
-    m_Renderer2D = m_MainMemory.allocateT<Gfx2DPainter>(m_MainMemory, m_Renderer.glslCompiler(), m_Renderer.context());
-    m_Gfx2D      = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler(), m_Renderer.context());
+    m_Gfx2D = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler(), m_Renderer.context());
 
     VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
@@ -401,7 +399,6 @@ namespace bf
     m_Systems.clear();
 
     m_MainMemory.deallocateT(m_Gfx2D);
-    m_MainMemory.deallocateT(m_Renderer2D);
     m_DebugRenderer.deinit();
     m_Renderer.deinit();
 
@@ -420,7 +417,6 @@ namespace bf
     deleteCameras();
     resizeCameras();
     m_StateMachine.purgeStates();
-    renderer2D().reset();
     UI::BeginFrame();
 
     return m_Renderer.frameBegin();
@@ -487,7 +483,8 @@ namespace bf
   {
     const bfGfxCommandListHandle cmd_list = m_Renderer.mainCommandList();
     auto                         scene    = currentScene();
-    auto&                        painter  = renderer2D();
+
+    m_Gfx2D->clear();
 
     if (scene)
     {
@@ -497,81 +494,15 @@ namespace bf
       }
     }
 
-    UI::Render(painter);
+    UI::Render(*m_Gfx2D);
 
-    bool once = true;
-
-    m_Gfx2D->clear();
-
-    Brush* red = m_Gfx2D->makeBrush({1.0f, 0.0f, 0.0, 1.0f});
-
-    m_Gfx2D->fillRect(red, AxisQuad::make(Rect2f{10.0f, 10.0f, 100.0f, 50.0f}));
-
-    m_Gfx2D->fillArc(red, {165.0f, 60.0f}, 50.0f);
-
-    {
-      static PainterFont* const TEST_FONT = new PainterFont(mainMemory(), "assets/fonts/Abel.ttf", -12.0f);
-
-      const auto mouse_pos = vec::convert<float>(input().mousePos());
-
-      int w = 1280, h = 720;
-
-      const float angle_map   = bfMathRemapf(0.0f, float(w), 0.0f, k_TwoPI, mouse_pos.x);
-      const float rounded_map = bfMathRemapf(0.0f, float(w), 2.0f, 100.0f, mouse_pos.x);
-      const float thick_map   = bfMathRemapf(0.0f, float(w), 5.0f, 40.0f, mouse_pos.x);
-
-      for (int y = 0; y < 8; ++y)
-      {
-        const float offset_y = 150.0f * float(y);
-
-        for (int x = 0; x < 8; ++x)
-        {
-          const float    offset_x      = 150.0f * float(x);
-          const Vector2f box_pos       = mouse_pos + Vector2f{20.0f, 0.0f} + Vector2f{offset_x, offset_y};
-          const float    blur_amount   = (float(x + y * 8) / 64.0f) * 25.0f;
-          const float    border_radius = std::min(rounded_map, 50.0f);
-
-          m_Gfx2D->blurredRect(red, Rect2f{box_pos.x, box_pos.y, 100, 100}, blur_amount, border_radius);
-          m_Gfx2D->fillRoundedRect(red, AxisQuad::make(Rect2f{box_pos.x, box_pos.y, 100, 100}), border_radius);
-        }
-      }
-
-      // painter.pushRect(mouse_pos, 100, 100, BIFROST_COLOR_ROYALBLUE);
-      //painter.pushFilledCircle(mouse_pos + Vector2f{200.0f, 0.0f}, 55.0f, BIFROST_COLOR_SALMON);
-      //painter.pushFilledArc(mouse_pos + Vector2f{260.0f, 100.0f}, 22.0f, 0.0f, angle_map, BIFROST_COLOR_NAVY);
-      //painter.pushFillRoundedRect(Vector2f{500.0f, 200.0f} - Vector2f{5.0f}, 310.0f, 230.0f, rounded_map, BIFROST_COLOR_LIGHTYELLOW);
-      //painter.pushFillRoundedRect({500.0f, 200.0f}, 300.0f, 220.0f, rounded_map, BIFROST_COLOR_LIME);
-
-      Vector2f points[] = {
-       {20.0f, 20.0f},
-       {200.0f, 20.0f},
-       {300.0f, 600.0f},
-       {800.0f, 500.0f},
-       mouse_pos,
-      };
-
-      m_Gfx2D->polyline(red, points, UIIndexType(bfCArraySize(points)), thick_map, PolylineJoinStyle::BEVEL, PolylineEndStyle::ROUND, false);
-
-      // painter.pushLinedArc(mouse_pos + Vector2f{-260.0f, 100.0f}, thick_map * 2.0f, 0.3f, angle_map * 1.2f, BIFROST_COLOR_SALMON);
-
-      Vector2f sine_wave[800];
-
-      for (int i = 0; i < int(bfCArraySize(sine_wave)); ++i)
-      {
-        const float percent = float(i) / (float(bfCArraySize(sine_wave)) - 1.0f);
-
-        sine_wave[i] = Vector2f{percent * float(w), 300 + 20.0f * std::sin(percent * k_TwoPI * 10)};
-      }
-
-      m_Gfx2D->polyline(red, sine_wave, UIIndexType(bfCArraySize(sine_wave)), 2.0f, PolylineJoinStyle::ROUND, PolylineEndStyle::ROUND, false);
-    }
-
-    forEachCamera([this, render_alpha, &once, &painter](RenderView* camera) {
+    forEachCamera([this, render_alpha](RenderView* camera) {
       camera->clearCommandQueues();
 
       Camera_update(&camera->cpu_camera);
 
       m_DebugRenderer.draw(*camera, m_Renderer.m_FrameInfo);
+
       m_Gfx2D->TEST(camera->screen_overlay_render_queue);
 
       for (auto& system : m_Systems)
@@ -583,15 +514,6 @@ namespace bf
       }
 
       m_Renderer.renderCameraTo(*camera);
-
-      if (false && once)
-      {
-        painter.render(
-         m_Renderer.m_MainCmdList,
-         bfTexture_width(camera->gpu_camera.composite_buffer),
-         bfTexture_height(camera->gpu_camera.composite_buffer));
-        once = false;
-      }
       m_Renderer.endPass(m_Renderer.m_MainCmdList);
     });
 
@@ -599,7 +521,7 @@ namespace bf
 
     for (auto& state : m_StateMachine)
     {
-      state.onDraw2D(*this, painter);  // This is here because of my DearImGui implementation.
+      state.onDraw2D(*this);  // This is here because of my DearImGui implementation.
     }
 #if 0
     const bfTextureHandle main_surface = renderer().surface();

@@ -500,54 +500,58 @@ namespace bf::UI
     }
   }
 
-  static void WidgetDoRender(Widget* self, Gfx2DPainter& painter)
+  static void WidgetDoRender(Widget* self, CommandBuffer2D& gfx2D)
   {
-    self->render(self, painter);
+    self->render(self, gfx2D);
   }
 
-  static void DefaultRender(Widget* self, Gfx2DPainter& painter)
+  static void DefaultRender(Widget* self, CommandBuffer2D& gfx2D)
   {
+    Brush* font_brush = gfx2D.makeBrush(TEST_FONT);
+
     if (self->flags & Widget::IsWindow)
     {
+      Brush* beige_brush        = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
+      Brush* burlywood_brush    = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
+      Brush* brown_brush        = gfx2D.makeBrush(BIFROST_COLOR_BROWN);
+      Brush* floral_white_brush = gfx2D.makeBrush(BIFROST_COLOR_FLORALWHITE);
+
+      Rect2f main_rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+
       if (IsFocusedWindow(self))
       {
-        painter.pushRectShadow(10.0f, self->position_from_parent, self->realized_size.x, self->realized_size.y, 4.0f, BIFROST_COLOR_BEIGE);
+        gfx2D.blurredRect(
+         beige_brush,
+         main_rect,
+         10.0f,
+         4.0f);
       }
 
       if (self->flags & Widget::DrawBackground)
       {
-        painter.pushRect(
-         self->position_from_parent,
-         self->realized_size.x,
-         self->realized_size.y,
-         BIFROST_COLOR_BURLYWOOD);
+        gfx2D.fillRect(
+         burlywood_brush,
+         AxisQuad::make(main_rect));
 
-        painter.pushRect(
-         self->position_from_parent + Vector2f{1.0f},
-         self->realized_size.x - 2.0f,
-         self->realized_size.y - 2.0f,
-         BIFROST_COLOR_BROWN);
+        gfx2D.fillRect(
+         brown_brush,
+         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
       }
       else
       {
-        painter.pushRect(
-         self->position_from_parent,
-         self->realized_size.x,
-         self->realized_size.y,
-         BIFROST_COLOR_FLORALWHITE);
+        gfx2D.fillRect(
+         floral_white_brush,
+         AxisQuad::make(main_rect));
       }
     }
 
     if (self->flags & Widget::DrawName)
     {
-      painter.pushText(
-       self->position_from_parent + Vector2f{1.0f, 16.0f},
-       self->name,
-       TEST_FONT);
+      gfx2D.text(font_brush, self->position_from_parent + Vector2f{1.0f, 16.0f}, {self->name, self->name_len});
     }
 
-    self->ForEachChild([&painter](Widget* const child) {
-      WidgetDoRender(child, painter);
+    self->ForEachChild([&gfx2D](Widget* const child) {
+      WidgetDoRender(child, gfx2D);
     });
   }
 
@@ -842,7 +846,7 @@ namespace bf::UI
 
     WidgetParam(button, WidgetParams::HoverTime) = math::clamp(0.0f, hover_time, 1.0f);
 
-    button->render = [](Widget* self, Gfx2DPainter& painter) {
+    button->render = [](Widget* self, CommandBuffer2D& gfx2D) {
       const float max_hover_time    = 0.3f;
       const float hover_lerp_factor = math::clamp(0.0f, WidgetParam(self, WidgetParams::HoverTime) / max_hover_time, 1.0f);
 
@@ -850,16 +854,18 @@ namespace bf::UI
       const bfColor4u  hover_color  = bfColor4u_fromUint32(BIFROST_COLOR_CYAN);
       const bfColor32u final_color  = bfColor4u_toUint32(bfMathLerpColor4u(normal_color, hover_color, hover_lerp_factor));
 
-      painter.pushRectShadow(3.0f, self->position_from_parent, self->realized_size.x, self->realized_size.y, 10.0f, final_color);
-      painter.pushFillRoundedRect(self->position_from_parent, self->realized_size.x, self->realized_size.y, 10.0f, final_color);
+      Brush* button_brush        = gfx2D.makeBrush(final_color);
+      Brush* font_brush   = gfx2D.makeBrush(TEST_FONT);
+
+      Rect2f rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+
+      gfx2D.blurredRect(button_brush, rect, 3.0f, 10.0f);
+      gfx2D.fillRoundedRect(button_brush, AxisQuad::make(rect), 10.0f);
 
       auto text_size = calculateTextSize(self->name, TEST_FONT);
       auto text_pos  = self->position_from_parent + Vector2f{(self->realized_size.x - text_size.x) * 0.5f, 16.0f};
 
-      painter.pushText(
-       text_pos,
-       self->name,
-       TEST_FONT);
+      gfx2D.text(font_brush, text_pos, {self->name, self->name_len});
     };
 
     return behavior.Is(WidgetBehaviorResult::IsClicked);
@@ -943,7 +949,7 @@ namespace bf::UI
     g_UI.delta_time = delta_time;
   }
 
-  void Render(Gfx2DPainter& painter)
+  void Render(CommandBuffer2D& gfx2D)
   {
     // Test Code
 
@@ -1042,7 +1048,7 @@ namespace bf::UI
     {
       WidgetDoLayout(window, main_constraints);
       WidgetDoLayoutPositioning(window);
-      WidgetDoRender(window, painter);
+      WidgetDoRender(window, gfx2D);
     }
 
     /* HitTest Debugging

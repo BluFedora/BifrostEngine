@@ -43,7 +43,6 @@ namespace bf
   class CollisionSystem;
   class ComponentRenderer;
   class BehaviorSystem;
-  struct Gfx2DPainter;
   struct CommandBuffer2D;
 
   struct CameraRenderCreateParams
@@ -195,7 +194,6 @@ namespace bf
 
     StandardRenderer   m_Renderer;
     DebugRenderer      m_DebugRenderer;
-    Gfx2DPainter*      m_Renderer2D;
     CommandBuffer2D*   m_Gfx2D;
     CameraRenderMemory m_CameraMemory;
     RenderView*        m_CameraList;
@@ -233,7 +231,6 @@ namespace bf
     VM&                scripting() { return m_Scripting; }
     StandardRenderer&  renderer() { return m_Renderer; }
     DebugRenderer&     debugDraw() { return m_DebugRenderer; }
-    Gfx2DPainter&      renderer2D() const { return *m_Renderer2D; }
     CommandBuffer2D&   gfx2D() const { return *m_Gfx2D; }
     Assets&            assets() { return m_Assets; }
     Input&             input() { return m_Input; }

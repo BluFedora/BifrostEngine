@@ -31,10 +31,9 @@ namespace bf
     (void)delta_time;
   }
 
-  void IGameStateLayer::onDraw2D(Engine& engine, Gfx2DPainter& painter)
+  void IGameStateLayer::onDraw2D(Engine& engine)
   {
     (void)engine;
-    (void)painter;
   }
 
   void IGameStateLayer::onUpdate(Engine& engine, float delta_time)

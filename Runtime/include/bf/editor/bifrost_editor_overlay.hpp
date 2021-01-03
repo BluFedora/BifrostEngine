@@ -343,7 +343,7 @@ namespace bf::editor
     void onLoad(Engine& engine) override;
     void onEvent(Engine& engine, bfEvent& event) override;
     void onUpdate(Engine& engine, float delta_time) override;
-    void onDraw2D(Engine& engine, Gfx2DPainter& painter) override;
+    void onDraw2D(Engine& engine) override;
     void onUnload(Engine& engine) override;
     void onDestroy(Engine& engine) override;
 

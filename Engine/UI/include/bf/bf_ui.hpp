@@ -21,7 +21,6 @@ namespace bf
   // Forward Declarations
   //
 
-  struct Gfx2DPainter;
   struct Widget;
 
   template<typename T>
@@ -121,7 +120,7 @@ namespace bf
 
   using WidgetLayoutFn      = LayoutOutput (*)(Widget* self, const LayoutConstraints& constraints);
   using WidgetPositioningFn = void (*)(Widget* self);  // Positioning of Children
-  using WidgetRenderFn      = void (*)(Widget* self, Gfx2DPainter& painter);
+  using WidgetRenderFn      = void (*)(Widget* self, CommandBuffer2D& gfx2D);
 
   // [https://flutter.dev/docs/development/ui/widgets/layout]
 
@@ -234,7 +233,7 @@ namespace bf
     void PumpEvents(bfEvent* event);
     void BeginFrame();
     void Update(float delta_time);
-    void Render(Gfx2DPainter& painter);
+    void Render(CommandBuffer2D& gfx2D);
     void ShutDown();
   }  // namespace UI
 }  // namespace bf

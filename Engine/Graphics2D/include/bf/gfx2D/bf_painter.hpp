@@ -524,6 +524,7 @@ namespace bf
 
     // Brush Making //
 
+    Brush* makeBrush(bfColor32u color);
     Brush* makeBrush(bfColor4f color);
     Brush* makeBrush(bfColor4f color_a, bfColor4f color_b);
     Brush* makeBrushGradient(std::size_t num_gradient_stops);
@@ -571,10 +572,7 @@ namespace bf
 
         num_vertices += count;
 
-        return {
-         result_offset,
-         result_vertices,
-        };
+        return {result_offset, result_vertices};
       }
 
       void pushTriIndex(UIIndexType global_index_offset, IndexStreamMem& index_memory, UIIndexType index0, UIIndexType index1, UIIndexType index2)
@@ -606,7 +604,6 @@ namespace bf
 
     void TEST(RenderQueue& render_queue, const DescSetBind& object_binding = {});
 
-   private:
     static Rect2f      calcCommandBounds(const BaseRender2DCommand_* command);
     VertIdxCountResult calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand_* command);
     void               writeVertices(const DestVerts& dest, const BaseRender2DCommand_* command, VertIdxCountResult& counts);
@@ -618,60 +615,6 @@ namespace bf
 
   Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType& num_codepoints);
   Vector2f calculateTextSize(const char* utf8_text, PainterFont* font);
-
-  struct Gfx2DPainter : private NonCopyMoveable<Gfx2DPainter>
-  {
-    static const UIIndexType k_TempMemorySize = bfMegabytes(2);
-
-   private:
-    Gfx2DRenderData                        render_data;
-    Array<UIVertex2D>                      vertices;
-    Array<UIIndexType>                     indices;
-    Array<DropShadowVertex>                shadow_vertices;
-    Array<UIIndexType>                     shadow_indices;
-    FixedLinearAllocator<k_TempMemorySize> tmp_memory;
-    Array<Gfx2DDrawCommand>                draw_commands;
-
-   public:
-    explicit Gfx2DPainter(IMemoryManager& memory, GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
-
-    void reset();
-
-    Gfx2DDrawCommand& currentDrawCommand() { return draw_commands.back(); }
-
-    void bindTexture(bfTextureHandle texture);
-
-    void pushRectShadow(float shadow_sigma, const Vector2f& pos, float width, float height, float border_radius, bfColor32u color);
-    void pushRect(const Vector2f& pos, float width, float height, bfColor4u color);
-    void pushRect(const Vector2f& pos, float width, float height, bfColor32u color = BIFROST_COLOR_PINK);
-    void pushFillRoundedRect(const Vector2f& pos, float width, float height, float border_radius, bfColor32u color);
-    void pushFilledArc(const Vector2f& pos, float radius, float start_angle, float arc_angle, bfColor32u color);
-    void pushFilledCircle(const Vector2f& pos, float radius, bfColor32u color);
-    void pushLinedArc(const Vector2f& pos, float radius, float start_angle, float arc_angle, bfColor32u color);
-    void pushPolyline(const Vector2f* points, UIIndexType num_points, float thickness, PolylineJoinStyle join_style, PolylineEndStyle end_style, bfColor32u color, bool is_overlap_allowed = false);
-    void pushPolyline(ArrayView<const Vector2f> points, float thickness, PolylineJoinStyle join_style, PolylineEndStyle end_style, bfColor32u color);
-    void pushText(const Vector2f& pos, const char* utf8_text, PainterFont* font);
-
-    void render(bfGfxCommandListHandle command_list, int fb_width, int fb_height);
-
-   private:
-    // TODO(SR): Delete Me
-    template<typename T>
-    struct SafeVertexIndexer
-    {
-      UIIndexType num_verts;
-      T*          verts;
-      T&          operator[](UIIndexType index) const noexcept { return verts[index]; }
-    };
-
-    template<typename VertexType>
-    using RequestVerticesResult = std::pair<UIIndexType, SafeVertexIndexer<VertexType>>;
-
-    RequestVerticesResult<UIVertex2D>       requestVertices(UIIndexType num_verts);
-    void                                    pushTriIndex(UIIndexType index0, UIIndexType index1, UIIndexType index2);
-    RequestVerticesResult<DropShadowVertex> requestVertices2(UIIndexType num_verts);
-    void                                    pushTriIndex2(UIIndexType index0, UIIndexType index1, UIIndexType index2);
-  };
 }  // namespace bf
 
 #endif  // BF_PAINTER_HPP

@@ -775,6 +775,17 @@ namespace bf
     return (self->ascent - self->descent + self->line_gap) * k_ScaleFactorToPixels;
   }
 
+  FontBaselineInfo fontBaselineInfo(const Font* self) noexcept
+  {
+    FontBaselineInfo result;
+
+    result.ascent_px   = self->ascent * k_ScaleFactorToPixels;
+    result.descent_px  = self->descent * k_ScaleFactorToPixels;
+    result.line_gap_px = self->line_gap * k_ScaleFactorToPixels;
+
+    return result;
+  }
+
   const PixelMap* fontPixelMap(const Font* self) noexcept
   {
     return self->atlas;
@@ -841,13 +852,6 @@ namespace bf
     // Codepoint -> GlyphSet  index : Codepoint % k_NumCharsPerPlane / k_NumGlyphSetPerPlane
     // Codepoint -> GlyphInfo index : codepoint % k_NumCharsPerGlyphSet
     //
-
-    /* Sanity Checks
-      const unsigned codepoint = 0x102A2;
-      const unsigned i0        = codepoint / k_NumCharsPerPlane;
-      const unsigned i1        = codepoint % k_NumCharsPerPlane / k_NumGlyphSetPerPlane;
-      const unsigned i2        = codepoint % k_NumCharsPerGlyphSet;
-    */
 
     std::uint32_t codepointToPlaneIndex(CodePoint codepoint)
     {

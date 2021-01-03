@@ -21,7 +21,6 @@
 namespace bf
 {
   class Engine;
-  struct Gfx2DPainter;
   using Event = ::bfEvent;
 
   class GameStateMachine;
@@ -44,7 +43,7 @@ namespace bf
     virtual void onLoad(Engine& engine);
     virtual void onEvent(Engine& engine, bfEvent& event);
     virtual void onFixedUpdate(Engine& engine, float delta_time);
-    virtual void onDraw2D(Engine& engine, Gfx2DPainter& painter);
+    virtual void onDraw2D(Engine& engine);
     virtual void onUpdate(Engine& engine, float delta_time);
     virtual void onUnload(Engine& engine);
     virtual void onDestroy(Engine& engine);
