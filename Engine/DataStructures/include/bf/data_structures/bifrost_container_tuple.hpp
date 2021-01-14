@@ -56,8 +56,9 @@ namespace bf
    *    Thin wrapper around a tuple of 'TContainer' of differing types.
    */
   template<template<typename...> class TContainer, typename... Args>
-  class ContainerTuple : private detail::unique_types<Args...>
-  {
+  class ContainerTuple  // : private detail::unique_types<Args...>
+  {                     // TODO(SR): MSVC seems not to be able to apply EBO this this??? event with `__declspec(empty_bases)`
+
    public:
     template<typename F>
     static void forEachType(F&& f)
@@ -65,8 +66,11 @@ namespace bf
       meta::for_each_template<Args...>(std::forward<F>(f));
     }
 
+    template<typename T>
+    using StorageFor = std::aligned_storage_t<sizeof(T), alignof(T)>;
+
    private:
-    using ContainerTupleImpl = std::tuple<std::aligned_storage_t<sizeof(Args), alignof(Args)>...>;
+    using ContainerTupleImpl = std::tuple<StorageFor<TContainer<Args>>...>;
 
    private:
     ContainerTupleImpl m_Impl;
@@ -139,6 +143,6 @@ namespace bf
       return detail::get_index_of_element_from_tuple_by_type_impl<T, 0, Args...>::value;
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BIFROST_CONTAINER_TUPLE_HPP */

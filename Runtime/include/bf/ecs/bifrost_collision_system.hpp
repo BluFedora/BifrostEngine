@@ -17,21 +17,16 @@
 #ifndef BIFROST_COLLISION_SYSTEM
 #define BIFROST_COLLISION_SYSTEM
 
-#include "bf/Core.h"                             // bfInvalidDefaultCase
 #include "bf/LinearAllocator.hpp"                // LinearAllocator
-#include "bf/bifrost_math.hpp"                   // isAlmostEqual
+#include "bf/asset_io/bf_model_loader.hpp"       // AABB
 #include "bf/data_structures/bifrost_array.hpp"  // Array<T>
 #include "bifrost_iecs_system.hpp"               // IECSSystem
-
-#include "bf/asset_io/bf_model_loader.hpp"
 
 #include <cfloat>   // FLT_MAX
 #include <cstdint>  // uint16_t
 
 namespace bf
 {
-  
-
   using BVHNodeOffset                                   = std::uint16_t;
   static constexpr BVHNodeOffset k_BVHNodeInvalidOffset = 0xFFFFu;
   static constexpr float         k_BVHRotationBenefit   = 0.3f;
@@ -224,11 +219,6 @@ namespace bf
       const bool          has_grandparent = !bvh_node::isNull(grandparent);
       const BVHNodeOffset sibling         = nodes[parent].children[(leaf == nodes[parent].children[0] ? 1 : 0)];
 
-      if (!has_grandparent)
-      {
-        //__debugbreak();
-      }
-
       if (has_grandparent)
       {
         const int child_idx = nodes[grandparent].children[0] == parent ? 0 : 1;
@@ -242,11 +232,6 @@ namespace bf
 
       nodes[sibling].depth  = parent_depth;
       nodes[sibling].parent = grandparent;
-
-      if (!has_grandparent)
-      {
-        //__debugbreak();
-      }
 
       refitChildren(has_grandparent ? grandparent : root_idx, true);
     }

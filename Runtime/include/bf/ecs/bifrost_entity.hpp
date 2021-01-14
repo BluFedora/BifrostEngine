@@ -78,16 +78,16 @@ namespace bf
    private:
     Scene&                 m_OwningScene;            //!<
     String                 m_Name;                   //!<
-    bfTransformID          m_Transform;              //!<
     Entity*                m_Parent;                 //!<
     EntityList             m_Children;               //!<
     Node<Entity>           m_Hierarchy;              //!<
-    ComponentHandleStorage m_ComponentHandles;       //!<
-    ComponentActiveStorage m_ComponentActiveStates;  //!<
-    BVHNodeOffset          m_BHVNode;                //!<
-    BehaviorList           m_Behaviors;              //!<
-    std::atomic_uint32_t   m_RefCount;               //!<
     Node<Entity>           m_GCList;                 //!<
+    BehaviorList           m_Behaviors;              //!<
+    ComponentHandleStorage m_ComponentHandles;       //!<
+    bfTransformID          m_Transform;              //!<
+    std::atomic_uint32_t   m_RefCount;               //!<
+    BVHNodeOffset          m_BHVNode;                //!<
+    ComponentActiveStorage m_ComponentActiveStates;  //!<
     std::uint8_t           m_Flags;                  //!<
     bfUUIDNumber           m_UUID;                   //!< This uuid will remain unset until the first use through "Entity::uuid".
 

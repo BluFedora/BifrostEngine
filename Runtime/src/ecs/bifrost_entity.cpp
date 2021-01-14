@@ -30,16 +30,16 @@ namespace bf
   Entity::Entity(Scene& scene, StringRange name) :
     m_OwningScene{scene},
     m_Name{name},
-    m_Transform{scene.m_TransformSystem.createTransform()},
     m_Parent{nullptr},
     m_Children{&Entity::m_Hierarchy},
     m_Hierarchy{},
-    m_ComponentHandles{},
-    m_ComponentActiveStates{},
-    m_BHVNode{scene.m_BVHTree.insert(this, transform())},
-    m_Behaviors{sceneMemoryManager()},
-    m_RefCount{ATOMIC_VAR_INIT(0)},
     m_GCList{},
+    m_Behaviors{sceneMemoryManager()},
+    m_ComponentHandles{},
+    m_Transform{scene.m_TransformSystem.createTransform()},
+    m_RefCount{ATOMIC_VAR_INIT(0)},
+    m_BHVNode{scene.m_BVHTree.insert(this, transform())},
+    m_ComponentActiveStates{},
     m_Flags{IS_ACTIVE | IS_SERIALIZABLE},
     m_UUID{bfUUID_makeEmpty().as_number}
   {
