@@ -10,15 +10,9 @@ namespace
 
 namespace bf::meta
 {
-  RttiAllocatorBackingType& gRttiMemoryBacking()
-  {
-    static RttiAllocatorBackingType s_BackingAllocator{s_Storage, sizeof(s_Storage)};
-    return s_BackingAllocator;
-  }
-
   RttiAllocatorType& gRttiMemory()
   {
-    static RttiAllocatorType s_RttiMemory{gRttiMemoryBacking()};
+    static RttiAllocatorType s_RttiMemory{s_Storage, sizeof(s_Storage)};
     return s_RttiMemory;
   }
 

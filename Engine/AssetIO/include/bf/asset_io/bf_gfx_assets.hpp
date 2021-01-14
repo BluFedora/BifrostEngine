@@ -24,12 +24,12 @@ namespace bf
 
   class TextureAsset final : public BaseAsset<TextureAsset>
   {
-   private:
+   public:
     bfGfxDeviceHandle m_ParentDevice;
     bfTextureHandle   m_TextureHandle;
 
    public:
-    explicit TextureAsset(bfGfxDeviceHandle gfx_device);
+    explicit TextureAsset(bfGfxDeviceHandle gfx_device = nullptr);
 
     bfGfxDeviceHandle gfxDevice() const { return m_ParentDevice; }
     bfTextureHandle   handle() const { return m_TextureHandle; }
@@ -53,7 +53,7 @@ namespace bf
     BF_META_FRIEND;
     friend class ModelAsset;
 
-   private:
+   public:
     ARC<TextureAsset> m_AlbedoTexture;
     ARC<TextureAsset> m_NormalTexture;
     ARC<TextureAsset> m_MetallicTexture;
@@ -124,7 +124,7 @@ namespace bf
         return keys = mem.allocateArrayTrivial<Key>(num_keys);
       }
 
-      // Dont call this function when only one key exists
+      // Don`t call this function when only one key exists
       std::size_t findKey(AnimationTimeType time, IMemoryManager& mem) const
       {
         const std::size_t num_keys = numKeys(mem);

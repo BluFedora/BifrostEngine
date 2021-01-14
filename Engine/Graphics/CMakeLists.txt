@@ -66,6 +66,8 @@ if (BF_OPT_GRAPHICS_VULKAN)
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_physical_device.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_renderpass.cpp"
     "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.c"
   )
 
   find_package(Vulkan)
@@ -119,8 +121,7 @@ endif()
 
 add_library(
   BF_Graphics_static STATIC
-  "${BF_GRAPHICS_SOURCES}"
- "src/vulkan/bf_vulkan_staging.h" "src/vulkan/bf_vulkan_staging.c")
+  "${BF_GRAPHICS_SOURCES}")
 
 target_compile_definitions(
   BF_Graphics_static
@@ -147,8 +148,7 @@ target_link_libraries(
 
 add_library(
   BF_Graphics_shared SHARED
-  "${BF_GRAPHICS_SOURCES}"
- "src/vulkan/bf_vulkan_staging.h" "src/vulkan/bf_vulkan_staging.c")
+  "${BF_GRAPHICS_SOURCES}")
 
 target_compile_definitions(
   BF_Graphics_shared

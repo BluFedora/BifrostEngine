@@ -126,7 +126,7 @@ namespace bf
     [[nodiscard]] reverse_iterator       rend() { return std::make_reverse_iterator(begin()); }
     [[nodiscard]] const_reverse_iterator rbegin() const { return std::make_reverse_iterator(end()); }
     [[nodiscard]] const_reverse_iterator rend() const { return std::make_reverse_iterator(begin()); }
-    [[nodiscard]] const_reverse_iterator crbegin() const { std::make_reverse_iterator(end()); }
+    [[nodiscard]] const_reverse_iterator crbegin() const { return std::make_reverse_iterator(end()); }
     [[nodiscard]] const_reverse_iterator crend() const { return std::make_reverse_iterator(begin()); }
     [[nodiscard]] reference              back() { return *static_cast<T*>(::bfArray_back(rawData())); }
     [[nodiscard]] const_reference        back() const { return *static_cast<const T*>(::bfArray_back(rawData())); }

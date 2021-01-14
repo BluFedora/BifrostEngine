@@ -142,7 +142,7 @@ namespace bf::editor
   template<typename FUndo, typename FRedo>
   IUndoRedoCommandPtr makeLambdaCommand(FUndo&& u, FRedo&& r)
   {
-    return makeCommand<LambdaUndoRedoCmd<FUndo, FRedo>>(std::forward(u), std::forward(r));
+    return makeCommand<LambdaUndoRedoCmd<FUndo, FRedo>>(std::forward<FUndo>(u), std::forward<FRedo>(r));
   }
 
   template<typename State, typename FUndo, typename FRedo>
@@ -155,7 +155,6 @@ namespace bf::editor
   {
     IUndoRedoCommandPtr deleteEntity(Entity& entity);
   }
-
 }  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_UNDO_REDO_HPP */

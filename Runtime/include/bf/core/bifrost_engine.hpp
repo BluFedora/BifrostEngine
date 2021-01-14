@@ -1,12 +1,11 @@
 #ifndef BF_ENGINE_HPP
 #define BF_ENGINE_HPP
 
-#include "bf/gfx/bf_render_queue.hpp"
-
 #include "bf/PoolAllocator.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/ecs/bifrost_iecs_system.hpp"
+#include "bf/gfx/bf_render_queue.hpp"
 #include "bf/graphics/bifrost_debug_renderer.hpp"
 #include "bf/graphics/bifrost_standard_renderer.hpp"
 #include "bifrost/bifrost_vm.hpp"
@@ -55,6 +54,9 @@ namespace bf
   {
     friend class Engine;
 
+    // Flags
+    static constexpr std::uint8_t DO_DRAW = bfBit(0);
+
     bfGfxDeviceHandle device;
     BifrostCamera     cpu_camera;
     CameraGPUData     gpu_camera;
@@ -69,6 +71,7 @@ namespace bf
     RenderView*       prev;
     RenderView*       next;
     RenderView*       resize_list_next;
+    std::uint8_t      flags;
 
     RenderView(RenderView*& head, bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, const CameraRenderCreateParams& params) :
       device{device},
@@ -84,7 +87,8 @@ namespace bf
       screen_overlay_render_queue{RenderQueueType::SCREEN_OVERLAY, *this},
       prev{nullptr},
       next{head},
-      resize_list_next{nullptr}
+      resize_list_next{nullptr},
+      flags{DO_DRAW}
     {
       if (head)
       {
@@ -96,6 +100,7 @@ namespace bf
 
       const Vec3f cam_pos = {0.0f, 0.0f, 4.0f, 1.0f};
       Camera_init(&cpu_camera, &cam_pos, nullptr, 0.0f, 0.0f);
+      Camera_onResize(&cpu_camera, params.width, params.height);
       gpu_camera.init(device, frame_info, params.width, params.height);
     }
 
@@ -126,7 +131,6 @@ namespace bf
     }
   };
 
-  // using Window      = bfWindow;
   using ButtonFlags = std::uint8_t;
 
   struct MouseInputState
@@ -159,10 +163,7 @@ namespace bf
     EDITOR_PLAYING,
     PAUSED,
   };
-}  // namespace bf
 
-namespace bf
-{
   class Engine : private NonCopyMoveable<Engine>
   {
    private:
@@ -180,7 +181,6 @@ namespace bf
 
     MainHeap        m_MainMemory;
     LinearAllocator m_TempMemory;
-    NoFreeAllocator m_TempAdapter;
 
     // Core Low Level Systems
 
@@ -226,7 +226,6 @@ namespace bf
 
     MainHeap&          mainMemory() { return m_MainMemory; }
     LinearAllocator&   tempMemory() { return m_TempMemory; }
-    IMemoryManager&    tempMemoryNoFree() { return m_TempAdapter; }
     GameStateMachine&  stateMachine() { return m_StateMachine; }
     VM&                scripting() { return m_Scripting; }
     StandardRenderer&  renderer() { return m_Renderer; }

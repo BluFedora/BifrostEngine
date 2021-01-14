@@ -72,12 +72,12 @@ void bfCameraFrustum_set(bfCameraFrustum* self, const Mat4x4* view_proj);
 typedef struct BifrostCamera_t
 {
   Vec3f            position;
-  Vec3f            forward;
-  Vec3f            up;
-  Vec3f            _worldUp;
-  Vec3f            _right;
-  float            _yaw;    // Radians
-  float            _pitch;  // Radians
+  Vec3f            forward;   // This is normalized.
+  Vec3f            up;        // This is normalized.
+  Vec3f            _worldUp;  // This is normalized.
+  Vec3f            _right;    // This is normalized.
+  float            _yaw;      // Radians
+  float            _pitch;    // Radians
   CameraModeParams camera_mode;
   Mat4x4           proj_cache;
   Mat4x4           view_cache;

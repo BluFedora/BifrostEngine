@@ -14,12 +14,12 @@ namespace bf
   {
     if (change_event.type == bfAnim2DChange_Texture)
     {
-      Engine* const               engine      = static_cast<Engine*>(bfAnimation2D_userData(ctx));
-      SpritesheetAsset* const     ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
-      const StringRange           ss_dir      = path::directory(ss_info->fullPath());
-      const String                texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
-      Assets&                     assets      = engine->assets();
-      TextureAsset* const         texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
+      Engine* const           engine      = static_cast<Engine*>(bfAnimation2D_userData(ctx));
+      SpritesheetAsset* const ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
+      const StringRange       ss_dir      = path::directory(ss_info->fullPath());
+      const String            texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
+      Assets&                 assets      = engine->assets();
+      TextureAsset* const     texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
 
       // This only needs a texture if it is currently being used.
       if (texture && texture->refCount())
@@ -222,9 +222,8 @@ namespace bf
 
     if (scene)
     {
-      auto&      engine_renderer = engine.renderer();
-      const auto cmd_list        = engine_renderer.mainCommandList();
-      auto&      anim_sprites    = scene->components<SpriteAnimator>();
+      auto& engine_renderer = engine.renderer();
+      auto& anim_sprites    = scene->components<SpriteAnimator>();
 
       for (auto& anim_sprite : anim_sprites)
       {
@@ -262,7 +261,7 @@ namespace bf
           const AnimationTimeType current_time_in_ticks = current_time * animation->m_TicksPerSecond;
           const AnimationTimeType animation_time        = std::fmod(current_time_in_ticks, duration);
 
-          mesh.m_CurrentTime += dt;
+          mesh.m_CurrentTime += double(dt);
 
           //
           // TODO(SR): This can be baked once \/\/\/\/\/
@@ -299,7 +298,7 @@ namespace bf
           Renderable<ObjectBoneData>& uniform_bone_data = getRenderable(engine_renderer, mesh.owner());
           const bfBufferSize          offset            = uniform_bone_data.transform_uniform.offset(engine_renderer.frameInfo());
           const bfBufferSize          size              = sizeof(ObjectBoneData);
-          ObjectBoneData* const       obj_data          = (ObjectBoneData*)bfBuffer_map(uniform_bone_data.transform_uniform.handle(), offset, size);
+          ObjectBoneData* const       obj_data          = static_cast<ObjectBoneData*>(bfBuffer_map(uniform_bone_data.transform_uniform.handle(), offset, size));
           Matrix4x4f*                 output_bones      = obj_data->bones;
 
           std::for_each_n(

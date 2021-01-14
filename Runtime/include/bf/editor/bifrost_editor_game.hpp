@@ -20,7 +20,9 @@ namespace bf::editor
 
    protected:
     const char* title() const override { return "Game View"; }
-    void        onDrawGUI(EditorOverlay& editor) override;
+
+    void onPreDrawGUI(EditorOverlay& editor) override;
+    void onDrawGUI(EditorOverlay& editor) override;
 
    private:
     void toggleEngineState(Engine& engine, const ARC<SceneAsset>& scene);

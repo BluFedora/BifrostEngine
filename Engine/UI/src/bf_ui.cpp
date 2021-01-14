@@ -193,7 +193,7 @@ namespace bf::UI
 
   static Vector2f RealizeSize(const Widget* widget, const LayoutConstraints& constraints)
   {
-    // assert(widget->parent && "Only windows have no parent and they do not call this function.");
+    // assert(widget->parent && "Only windows have no parent and they do not call this function."); @Temp
 
     const Vector2f parent_size = widget->parent ? widget->parent->realized_size : Vector2f{0.0f, 0.0f};
     const Size&    size        = widget->desired_size;
@@ -224,7 +224,7 @@ namespace bf::UI
       }
       case LayoutType::Padding:
       {
-        const float padding = 10.0f;  // TODO(SR): Real padding value.
+        const float padding = WidgetParam(widget, WidgetParams::Padding);
 
         LayoutConstraints child_constraints;
 
@@ -325,8 +325,6 @@ namespace bf::UI
       }
       case LayoutType::Column:
       {
-        Vector2f self_desired_size = RealizeSize(widget, constraints); // @Temp
-
         layout_result.desired_size.x = constraints.min_size.x;
         layout_result.desired_size.y = 0.0f;
 
@@ -336,11 +334,6 @@ namespace bf::UI
         my_constraints.max_size   = constraints.max_size;
         my_constraints.min_size.y = 0.0f;
         my_constraints.max_size.y = constraints.max_size.y;
-
-        if (self_desired_size.x != 0.0f && self_desired_size.y != 0.0f) // @Temp
-        {
-          my_constraints.max_size = self_desired_size; // @Temp
-        }
 
         float total_flex_factor = 0.0f;
 
@@ -388,9 +381,6 @@ namespace bf::UI
             }
           });
         }
-
-        // @Temp
-        layout_result.desired_size = vec::max(layout_result.desired_size, self_desired_size);
         break;
       }
       case LayoutType::Grid:
@@ -413,6 +403,7 @@ namespace bf::UI
         bfInvalidDefaultCase();
     }
 
+    // widget->realized_size = vec::min(vec::max(constraints.min_size, layout_result.desired_size), constraints.max_size);
     widget->realized_size = layout_result.desired_size;
 
     return layout_result;
@@ -442,7 +433,7 @@ namespace bf::UI
       }
       case LayoutType::Padding:
       {
-        const float padding = 10.0f;  // TODO(SR): Real padding value.
+        const float padding = WidgetParam(widget, WidgetParams::Padding);
 
         widget->ForEachChild([widget, position_offset = Vector2f{padding}](Widget* child) {
           child->position_from_parent = widget->position_from_parent + position_offset;
@@ -519,9 +510,11 @@ namespace bf::UI
   {
     Brush* font_brush = gfx2D.makeBrush(TEST_FONT);
 
+    Brush* beige_brush = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
+    Rect2f main_rect   = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+
     if (self->flags & Widget::IsWindow)
     {
-      Brush* beige_brush     = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
       Brush* burlywood_brush = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
       Brush* brown_brush     = gfx2D.makeBrush(bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BURLYWOOD)),
                                            bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BROWN)));
@@ -534,10 +527,6 @@ namespace bf::UI
       brown_brush->linear_gradient_data.uv_remap.x_axis   = {rot_right.x, rot_right.y};
       brown_brush->linear_gradient_data.uv_remap.y_axis   = {rot_up.x, rot_up.y};
 
-      Brush* floral_white_brush = gfx2D.makeBrush(BIFROST_COLOR_FLORALWHITE);
-
-      Rect2f main_rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
-
       if (IsFocusedWindow(self))
       {
         gfx2D.blurredRect(
@@ -549,25 +538,31 @@ namespace bf::UI
 
       if (self->flags & Widget::DrawBackground)
       {
-        gfx2D.fillRect(
+        gfx2D.fillRoundedRect(
          burlywood_brush,
-         AxisQuad::make(main_rect));
+         AxisQuad::make(main_rect),
+         5.0f);
 
-        gfx2D.fillRect(
+        gfx2D.fillRoundedRect(
          brown_brush,
-         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
+         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)),
+         5.0f);
       }
-      else
-      {
-        gfx2D.fillRect(
-         floral_white_brush,
-         AxisQuad::make(main_rect));
-      }
+    }
+    else if (self->flags & Widget::DrawBackground)
+    {
+      Brush* peach_brush = gfx2D.makeBrush(BIFROST_COLOR_PEACHPUFF);
+
+      gfx2D.fillRect(beige_brush, AxisQuad::make(main_rect));
+      gfx2D.fillRect(peach_brush, AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
     }
 
     if (self->flags & Widget::DrawName)
     {
-      gfx2D.text(font_brush, self->position_from_parent + Vector2f{1.0f, 16.0f}, {self->name, self->name_len});
+      auto text_cmd = gfx2D.text(font_brush, self->position_from_parent + Vector2f{1.0f, 16.0f}, {self->name, self->name_len});
+
+      text_cmd->position.x = self->position_from_parent.x + (main_rect.width() - text_cmd->bounds_size.x) * 0.5f;
+      text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y;
     }
 
     self->ForEachChild([&gfx2D](Widget* const child) {
@@ -599,6 +594,8 @@ namespace bf::UI
     }
 
     g_UI.current_widget = widget;
+
+    PushID(widget->hash);
   }
 
   static void AddWidget(Widget* widget)
@@ -778,25 +775,11 @@ namespace bf::UI
     return button;
   }
 
-  static bool     XXX_SetNextWindowPos = false;
-  static Vector2f XXX_NextWindowPos    = {0.0f, 0.0f};
-
   bool BeginWindow(const char* title)
   {
     Widget* const window = CreateWidget(title, LayoutType::Column);
 
-    bool has_close_button = true;
-
-    if (XXX_SetNextWindowPos)
-    {
-      window->flags |= Widget::IsExpanded;
-      window->position_from_parent = XXX_NextWindowPos;
-      XXX_SetNextWindowPos         = false;
-
-      has_close_button = false;
-    }
-
-    window->flags |= Widget::BlocksInput | Widget::IsWindow;
+    window->flags |= Widget::BlocksInput | Widget::IsWindow | Widget::DrawBackground;
 
     g_UI.root_widgets.push(window);
 
@@ -806,11 +789,14 @@ namespace bf::UI
 
     PushWidget(window);
 
+    PushPadding(5.0f);
+    PushColumn();
+
     Widget* const titlebar = CreateWidget("__WindowTitlebar__", LayoutType::Row);
 
     titlebar->desired_size.width  = {SizeUnitType::Flex, 1.0f};
     titlebar->desired_size.height = {SizeUnitType::Absolute, 25.0f};
-    titlebar->flags |= Widget::Clickable;
+    titlebar->flags |= Widget::Clickable | Widget::DrawBackground;
 
     const auto behavior = WidgetBehavior(titlebar);
 
@@ -829,27 +815,29 @@ namespace bf::UI
 
       AddWidget(title_spacing);
 
-      if (has_close_button)
+      Widget* const x_button = CreateButton(
+       window->flags & Widget::IsExpanded ? "C" : "O",
+       {titlebar->desired_size.height, titlebar->desired_size.height});
+
+      x_button->flags |= Widget::DrawBackground;
+
+      AddWidget(x_button);
+
+      const auto behavior = WidgetBehavior(x_button);
+
+      if (behavior.flags & WidgetBehaviorResult::IsClicked)
       {
-        Widget* const x_button = CreateButton(
-         window->flags & Widget::IsExpanded ? "C" : "O",
-         {titlebar->desired_size.height, titlebar->desired_size.height});
+        window->flags ^= Widget::IsExpanded;  // Toggle
 
-        x_button->flags |= Widget::DrawBackground | Widget::IsWindow;
-
-        AddWidget(x_button);
-
-        const auto behavior = WidgetBehavior(x_button);
-
-        if (behavior.flags & WidgetBehaviorResult::IsClicked)
-        {
-          window->flags ^= Widget::IsExpanded;  // Toggle
-        }
+        window->realized_size.y = 0.0f;
       }
     }
     PopWidget();
 
     const bool is_expanded = window->flags & Widget::IsExpanded;
+
+    PushPadding(is_expanded ? 5.0f : 0.0f);
+    PushColumn();
 
     if (!is_expanded)
     {
@@ -861,6 +849,10 @@ namespace bf::UI
 
   void EndWindow()
   {
+    PopWidget();  // Column
+    PopWidget();  // Padding
+    PopWidget();  // Column
+    PopWidget();  // Padding
     PopWidget();
     PopID();
   }
@@ -869,7 +861,7 @@ namespace bf::UI
   {
     Widget* const button = CreateButton(
      name,
-     {{SizeUnitType::Flex, 1.0f}, {SizeUnitType::Absolute, 20.0f}});
+     {{SizeUnitType::Flex, 1.0f}, {SizeUnitType::Absolute, 40.0f}});
 
     button->flags |= Widget::DrawName | Widget::Clickable;
 
@@ -894,15 +886,15 @@ namespace bf::UI
       Brush* button_brush = gfx2D.makeBrush(final_color);
       Brush* font_brush   = gfx2D.makeBrush(TEST_FONT);
 
-      Rect2f rect = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+      Rect2f rect = {self->position_from_parent.x, self->position_from_parent.y + 3.0f, self->realized_size.x, self->realized_size.y - 6.0f};
 
-      gfx2D.blurredRect(button_brush, rect, 3.0f, 10.0f);
-      gfx2D.fillRoundedRect(button_brush, AxisQuad::make(rect), 10.0f);
+      gfx2D.blurredRect(button_brush, rect, 3.0f, 3.0f);
+      gfx2D.fillRoundedRect(button_brush, AxisQuad::make(rect), 3.0f);
 
-      auto text_size = calculateTextSize(self->name, TEST_FONT);
-      auto text_pos  = self->position_from_parent + Vector2f{(self->realized_size.x - text_size.x) * 0.5f, 16.0f};
+      auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len});
 
-      gfx2D.text(font_brush, text_pos, {self->name, self->name_len});
+      text_cmd->position.x = self->position_from_parent.x + (rect.width() - text_cmd->bounds_size.x) * 0.5f;
+      text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y + (rect.height() - text_cmd->bounds_size.y) * 0.5f;
     };
 
     return behavior.Is(WidgetBehaviorResult::IsClicked);
@@ -939,13 +931,20 @@ namespace bf::UI
 
   void PushPadding(float value)
   {
-    Widget* const padding = CreateWidget("__PADDING__", LayoutType::Padding);
+    Widget* const widget = CreateWidget("__PADDING__", LayoutType::Padding);
 
-    PushWidget(padding);
+    widget->desired_size.width  = {SizeUnitType::Flex, 1.0f};
+    widget->desired_size.height = {SizeUnitType::Flex, 1.0f};
+
+    WidgetParam(widget, WidgetParams::Padding) = value;
+
+    PushWidget(widget);
   }
 
   void PopWidget()
   {
+    PopID();
+
     g_UI.current_widget = g_UI.current_widget->parent;
   }
 
@@ -990,23 +989,38 @@ namespace bf::UI
   {
     // Test Code
 
-    XXX_SetNextWindowPos = true;
-    XXX_NextWindowPos    = {5.0f, 5.0f};
-
-    if (BeginWindow("Tool Bar"))
+    if (BeginWindow("Test Window"))
     {
-      g_UI.current_widget->flags |= Widget::DrawBackground;
-      g_UI.current_widget->desired_size = {{SizeUnitType::Absolute, 50.0f}, {SizeUnitType::Absolute, 600.0f}};
+      Button("Button 0");
+      Button("Button 1");
+      Button("Button 2");
+      Button("Button 3");
+      Button("Button 4");
+      Button("Button 5");
+      Button("Button 6");
+      Button("Button 7");
+      Button("Button 8");
+      Button("Button 9");
+      Button("Button 10");
+      Button("Button 11");
+      Button("Button 12");
+      Button("Button 13");
+      Button("Button 14");
+      Button("Button 15");
+      Button("Button 16");
+      Button("Button 17");
+      Button("Button 18");
+      Button("Button 19");
+      Button("Button 20");
+      Button("Button 21");
+      Button("Button 22");
+      Button("Button 23");
+      Button("Button 24");
 
-      #if 0
-      if (Button("Hello"))
-      {
-        std::printf("\nHello was pressed.\n");
-      }
-      #endif
       EndWindow();
     }
 
+    /*
     if (BeginWindow("Test Window"))
     {
       g_UI.current_widget->flags |= Widget::DrawBackground;
@@ -1026,19 +1040,15 @@ namespace bf::UI
         std::printf("\nButton2 was pressed.\n");
       }
 
-      PushID("__FIXME__");
       PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
       PopWidget();
-      PopID();
 
-      PushID("__FIXME2__");
       PushPadding(5.0f);
       if (Button("Button 3"))
       {
         std::printf("\nButton3 was pressed.\n");
       }
       PopWidget();
-      PopID();
 
       PopWidget();
 
@@ -1062,24 +1072,22 @@ namespace bf::UI
         std::printf("\nButton2ffffffff was pressed.\n");
       }
 
-      PushID("__FIXME__");
       PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
       PopWidget();
-      PopID();
 
-      PushID("__FIXME2__");
       PushPadding(5.0f);
       if (Button("Button 32222222"))
       {
         std::printf("\nButton3fffffffff was pressed.\n");
       }
       PopWidget();
-      PopID();
 
       PopWidget();
 
       EndWindow();
     }
+    */
+    assert(g_UI.current_widget == nullptr && "Missing a PopWidget to a corresponding PushWidget.");
 
     // Test End
 
@@ -1092,14 +1100,13 @@ namespace bf::UI
 
     // Layout, Position and Render Top Level Widgets
 
-    LayoutConstraints main_constraints = {
-     {0.0f, 0.0f},
-     //{std::min(g_UI.mouse_pos.x, 600.0f), std::min(g_UI.mouse_pos.y, 500.0f)},
-     {400.0f, 600.0f},
-    };
-
     for (Widget* const window : g_UI.root_widgets)
     {
+      LayoutConstraints main_constraints = {
+       {320.0f, 0.0f},
+       window->realized_size,
+      };
+
       WidgetDoLayout(window, main_constraints);
       WidgetDoLayoutPositioning(window);
       WidgetDoRender(window, gfx2D);

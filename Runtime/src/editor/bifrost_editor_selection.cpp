@@ -30,6 +30,18 @@ namespace bf::editor
     }
   }
 
+  void Selection::toggle(const Selectable& object)
+  {
+    if (contains(object))
+    {
+      deselect(object);
+    }
+    else
+    {
+      select(object);
+    }
+  }
+
   void Selection::deselect(const Selectable& object)
   {
     std::size_t index;

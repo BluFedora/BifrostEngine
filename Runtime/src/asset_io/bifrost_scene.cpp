@@ -110,6 +110,8 @@ namespace bf
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
 
     markAsEngineAsset();
+
+    m_DoDebugDraw = false;
   }
 
   EntityRef Scene::addEntity(const StringRange& name)
@@ -154,27 +156,27 @@ namespace bf
     }
 
     m_BVHTree.endFrame(temp, true);
-#if 1
-    m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
-      // Don't draw inactive entities.
-      if (bvh_node::isLeaf(node))
-      {
-        Entity* const entity = (Entity*)node.user_data;
 
-        if (!entity->isActive())
+    if (m_DoDebugDraw)
+    {
+      m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
+        if (bvh_node::isLeaf(node))
         {
-          return;
-        }
-      }
+          Entity* const entity = static_cast<Entity*>(node.user_data);
 
-      dbg_renderer.addAABB(
-       (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
-       Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
-       bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
-    });
-#else
-    (void)dbg_renderer;
-#endif
+          // Don't draw inactive entities.
+          if (!entity->isActive())
+          {
+            return;
+          }
+        }
+
+        dbg_renderer.addAABB(
+         (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
+         Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
+         bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
+      });
+    }
   }
 
   void Scene::markEntityTransformDirty(Entity* entity)
@@ -225,12 +227,28 @@ namespace bf
       {
         if (serializer.pushObject(entity->name()))
         {
-          entity->serialize(serializer);
+          entity->reflect(serializer);
           serializer.popObject();
         }
       }
 
       serializer.popArray();
+    }
+  }
+
+  void Scene::startup()
+  {
+    for (Entity* entity : m_RootEntities)
+    {
+      entity->startup();
+    }
+  }
+
+  void Scene::shutdown()
+  {
+    for (Entity* entity : m_RootEntities)
+    {
+      entity->startup();
     }
   }
 
@@ -242,14 +260,13 @@ namespace bf
 
     if (file_in)
     {
-      auto&                alloc_no_free = engine().tempMemoryNoFree();
-      LinearAllocatorScope scope         = {engine().tempMemory()};
-      const TempBuffer     json_buffer   = file_in.readAll(alloc_no_free);
-      json::Value          json_value    = json::fromString(json_buffer.buffer(), json_buffer.size());
+      LinearAllocatorScope scope       = {engine().tempMemory()};
+      const TempBuffer     json_buffer = file_in.readAll(engine().tempMemory());
+      json::Value          json_value  = json::fromString(json_buffer.buffer(), json_buffer.size());
 
       if (json_value.isObject())
       {
-        JsonSerializerReader json_writer{assets, alloc_no_free, json_value};
+        JsonSerializerReader json_writer{assets, engine().tempMemory(), json_value};
 
         if (json_writer.beginDocument(false))
         {

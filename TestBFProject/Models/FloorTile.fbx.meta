@@ -1,0 +1,15 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "3EDACEF6-F87C-4DC0-B103-6D6BAB91ADD2",
+            "name" : "Material_#0.material",
+            "version" : 1
+        }
+    ],
+    "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32",
+    "name" : "FloorTile.fbx",
+    "version" : 1
+}

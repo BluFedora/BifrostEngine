@@ -65,7 +65,11 @@ namespace bf
     bfDrawCallPipeline pipeline;
     bfDrawCallPipeline_defaultOpaque(&pipeline);
 
-    pipeline.vertex_layout = m_DbgVertexLayout;
+    // NOTE(SR):
+    //   The winding of the lines swap based on the
+    //   view to the camera in the vertex shader.
+    pipeline.state.cull_face = BF_CULL_FACE_NONE;
+    pipeline.vertex_layout   = m_DbgVertexLayout;
 
     for (int i = 0; i < 2; ++i)  // 0 = world space, 1 = overlay
     {

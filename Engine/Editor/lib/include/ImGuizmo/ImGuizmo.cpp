@@ -844,7 +844,9 @@ namespace ImGuizmo
    void SetDrawlist()
    {
       gContext.mDrawList = ImGui::GetWindowDrawList();
-}
+   }
+
+   static void ComputeContext(const float* view, const float* projection, float* matrix, MODE mode);
 
    void BeginFrame()
    {
@@ -869,6 +871,12 @@ namespace ImGuizmo
       ImGui::End();
       ImGui::PopStyleVar();
       ImGui::PopStyleColor(2);
+
+      float view[16]       = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0, 0.0f, 0.0, 0.0f, 1.0f, 0.0f, 0.0, 0.0, 0.0, 1.0f};
+      float projection[16] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0, 0.0f, 0.0, 0.0f, 1.0f, 0.0f, 0.0, 0.0, 0.0, 1.0f};
+      float matrix[16]     = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0, 0.0f, 0.0, 0.0f, 1.0f, 0.0f, 0.0, 0.0, 0.0, 1.0f};
+
+      ComputeContext(view, projection, matrix, LOCAL);
    }
 
    bool IsUsing()

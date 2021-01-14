@@ -1,0 +1,15 @@
+{
+    "sub-assets" : [
+        {
+            "sub-assets" : [
+
+            ],
+            "uuid" : "93AA9A32-FCA2-4643-B130-1CDD55B6323E",
+            "name" : "Material_#0.material",
+            "version" : 1
+        }
+    ],
+    "uuid" : "CAFB9535-AB61-4FB3-B2D6-A9CA86977E3E",
+    "name" : "Player.fbx",
+    "version" : 1
+}

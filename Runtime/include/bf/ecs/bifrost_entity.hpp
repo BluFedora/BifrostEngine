@@ -4,7 +4,7 @@
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *   This engine's concept of a GameObject / Actor.
- *   An entity is a bag of components with a 'BifrostTransform' and a name.
+ *   An entity is a bag of components with a Transform and a name.
  *
  * @version 0.0.1
  * @date    2019-12-22
@@ -12,12 +12,12 @@
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#ifndef BIFROST_ENTITY_HPP
-#define BIFROST_ENTITY_HPP
+#ifndef BF_ENTITY_HPP
+#define BF_ENTITY_HPP
 
 #include "bf/core/bifrost_base_object.hpp"                // BaseObject
 #include "bf/data_structures/bifrost_intrusive_list.hpp"  // ListView
-#include "bf/math/bifrost_transform.h"                    // BifrostTransform
+#include "bf/math/bifrost_transform.h"                    // bfTransform
 #include "bifrost_collision_system.hpp"                   // BVHNodeOffset
 #include "bifrost_component_handle_storage.hpp"           // ComponentHandleStorage, ComponentActiveStorage
 #include "bifrost_component_storage.hpp"                  // ComponentStorage
@@ -47,6 +47,7 @@ namespace bf
   class BaseBehavior;
   class ISerializer;
   class Entity;
+  class EntityRef;
   class Scene;
   class bfPureInterface(IBehavior);
 
@@ -65,6 +66,7 @@ namespace bf
     BIFROST_META_FRIEND;
     friend class Scene;
     friend struct gc::GCContext;
+    friend class EntityRef;
 
    public:
     static constexpr std::uint8_t IS_PENDING_DELETED     = bfBit(0);  //!<
@@ -74,24 +76,23 @@ namespace bf
     static constexpr std::uint8_t IS_SERIALIZABLE        = bfBit(4);  //!<
 
    private:
-    Scene&                 m_OwningScene;              //!<
-    String                 m_Name;                     //!<
-    bfTransformID          m_Transform;                //!<
-    Entity*                m_Parent;                   //!<
-    EntityList             m_Children;                 //!<
-    Node<Entity>           m_Hierarchy;                //!<
-    ComponentHandleStorage m_ComponentHandles;         //!<
-    ComponentActiveStorage m_ComponentActiveStates;    //!<
-    ComponentActiveStorage m_ComponentInActiveStates;  //!<
-    BVHNodeOffset          m_BHVNode;                  //!<
-    BehaviorList           m_Behaviors;                //!<
-    std::atomic_uint32_t   m_RefCount;                 //!<
-    Node<Entity>           m_GCList;                   //!<
-    std::uint8_t           m_Flags;                    //!<
-    bfUUIDNumber           m_UUID;                     //!< This uuid will remain unset until the first use through "Entity::uuid".
+    Scene&                 m_OwningScene;            //!<
+    String                 m_Name;                   //!<
+    bfTransformID          m_Transform;              //!<
+    Entity*                m_Parent;                 //!<
+    EntityList             m_Children;               //!<
+    Node<Entity>           m_Hierarchy;              //!<
+    ComponentHandleStorage m_ComponentHandles;       //!<
+    ComponentActiveStorage m_ComponentActiveStates;  //!<
+    BVHNodeOffset          m_BHVNode;                //!<
+    BehaviorList           m_Behaviors;              //!<
+    std::atomic_uint32_t   m_RefCount;               //!<
+    Node<Entity>           m_GCList;                 //!<
+    std::uint8_t           m_Flags;                  //!<
+    bfUUIDNumber           m_UUID;                   //!< This uuid will remain unset until the first use through "Entity::uuid".
 
    public:
-    Entity(Scene& scene, const StringRange& name);
+    Entity(Scene& scene, StringRange name);
 
     // Accessors
 
@@ -100,6 +101,7 @@ namespace bf
     [[nodiscard]] const String&       name() const { return m_Name; }
     [[nodiscard]] BifrostTransform&   transform() const;
     [[nodiscard]] BVHNode&            bvhNode() const;
+    [[nodiscard]] Entity*             parent() const { return m_Parent; }
     [[nodiscard]] EntityList&         children() { return m_Children; }
     [[nodiscard]] BVHNodeOffset       bvhID() const { return m_BHVNode; }
     [[nodiscard]] const BehaviorList& behaviors() const { return m_Behaviors; }
@@ -111,7 +113,7 @@ namespace bf
     [[nodiscard]] bool isActive() const { return isActiveParent() && isActiveSelf(); }
     [[nodiscard]] bool isActiveParent() const { return (!m_Parent || m_Parent->isActive()); }
     [[nodiscard]] bool isActiveSelf() const { return isFlagSet(IS_ACTIVE); }
-    void               setActive(bool is_active);
+    void               setActiveSelf(bool is_active_value);
 
     // Child API
 
@@ -138,7 +140,11 @@ namespace bf
 
         if (is_active)
         {
-          get<T>()->privateOnEnable(engine());
+          Engine&  engine    = this->engine();
+          T* const component = get<T>();
+
+          ComponentTraits::onCreate(*component, engine);
+          ComponentTraits::onEnable(*component, engine);
         }
       }
 
@@ -148,20 +154,13 @@ namespace bf
     template<typename T>
     T* get() const
     {
-      const auto& handle = componentHandle<T>();
-
-      if (handle.handle.isValid())
-      {
-        return &getComponentList<T>(getComponentActiveState<T>()).find(handle.handle);
-      }
-
-      return nullptr;
+      return getImpl<T>(isActive());
     }
 
     template<typename T>
     bool has() const
     {
-      return get<T>() != nullptr;
+      return hasImpl<T>(isActive());
     }
 
     template<typename T>
@@ -170,54 +169,13 @@ namespace bf
       return getComponentActiveState<T>() && componentHandle<T>().handle.isValid();
     }
 
-    //
-    // Returns true if the operation succeeds to do anything.
-    //
     template<typename T>
-    bool setComponentActive(bool value)
+    void setComponentActive(bool value)
     {
-      if (isActive())
-      {
-        if (has<T>() && value != isComponentActive<T>())
-        {
-          auto& handle     = componentHandle<T>();
-          T&    old_data   = *get<T>();
-          auto& new_list   = getComponentList<T>(value);
-          auto  new_handle = new_list.add(*this);
-          T&    new_data   = new_list.find(new_handle);
+      const bool is_active = isActive();
 
-          new_data = std::move(old_data);
-
-          if (value)
-          {
-            new_data.privateOnEnable(engine());
-          }
-          else
-          {
-            new_data.privateOnDisable(engine());
-          }
-
-          // remove<T>();
-          getComponentList<T>(!value).remove(handle.handle);
-
-          handle.handle = new_handle;
-
-          setComponentActiveState<T>(value);
-
-          return true;
-        }
-      }
-
-      return false;
+      setComponentActiveImpl<T>(is_active, is_active, value);
     }
-
-    //
-    // These functions returns the active state of components before calling this function.
-    //
-
-    ComponentActiveStorage activateComponents();
-    ComponentActiveStorage applyComponentActiveState(const ComponentActiveStorage& state);
-    ComponentActiveStorage deactivateComponents();
 
     template<typename T>
     bool remove()
@@ -226,7 +184,12 @@ namespace bf
 
       if (handle.handle.isValid())
       {
-        get<T>()->privateOnDisable(engine());
+        Engine&  engine    = this->engine();
+        T* const component = get<T>();
+
+        ComponentTraits::onDisable(*component, engine);
+        ComponentTraits::onDestroy(*component, engine);
+
         getComponentList<T>(getComponentActiveState<T>()).remove(handle.handle);
         handle.handle = {};
         setComponentActiveState<T>(false);
@@ -244,7 +207,7 @@ namespace bf
     {
       static_assert(std::is_base_of_v<IBehavior, T>, "T must derive from the Behavior<T> class.");
 
-      return (T*)addBehavior(meta::typeInfoGet<T>());
+      return static_cast<T*>(addBehavior(meta::typeInfoGet<T>()));
     }
 
     IBehavior*    addBehavior(const StringRange& name);
@@ -253,7 +216,7 @@ namespace bf
     template<typename T>
     T* findBehavior()
     {
-      return (T*)findBehaviorByType(meta::typeInfoGet<T>());
+      return static_cast<T*>(findBehaviorByType(meta::typeInfoGet<T>()));
     }
 
     IBehavior* findBehavior(const StringRange& name) const;
@@ -272,35 +235,107 @@ namespace bf
     bool removeBehavior(const StringRange& name);
     bool removeBehavior(IBehavior* behavior);
 
+    // Flags
+
+    [[nodiscard]] bool isFlagSet(std::uint8_t flag) const { return m_Flags & flag; }
+
     // GC / Ref Count API
 
     [[nodiscard]] std::uint32_t refCount() const;
     void                        acquire();
     void                        release();
 
-    void destroy();
-
-    // Flags
-
-    [[nodiscard]] bool isFlagSet(std::uint8_t flag) const { return m_Flags & flag; }
-    void               setFlags(std::uint8_t flags) { m_Flags = flags; }
-    void               addFlags(std::uint8_t flags) { m_Flags |= flags; }
-    void               clearFlags(std::uint8_t flags) { m_Flags &= ~flags; }
-
     // Meta
 
-    void serialize(ISerializer& serializer);
+    Entity* clone();
+    void    reflect(ISerializer& serializer) override;
+
+    // Runtime
+
+    void startup();
+    void shutdown();
+    void destroy();
+
+    // Misc
 
     ~Entity() override;
 
    private:
-    void setActiveImpl(bool old_state, bool new_state);
+    // Flags
+    void setFlags(std::uint8_t flags) { m_Flags = flags; }
+    void addFlags(std::uint8_t flags) { m_Flags |= flags; }
+    void clearFlags(std::uint8_t flags) { m_Flags &= ~flags; }
+
+    void reevaluateActiveState(bool was_active, bool is_active);
 
     const BifrostTransform& metaGetTransform() const { return transform(); }
     // ReSharper disable once CppMemberFunctionMayBeConst
     void metaSetTransform(const BifrostTransform& value)
     {
       bfTransform_copyFrom(&transform(), &value);
+    }
+
+    template<typename T>
+    T* getImpl(bool was_active) const
+    {
+      const auto& handle = componentHandle<T>();
+
+      if (handle.handle.isValid())
+      {
+        const bool active_list = was_active && getComponentActiveState<T>();
+
+        return &getComponentList<T>(active_list).find(handle.handle);
+      }
+
+      return nullptr;
+    }
+
+    template<typename T>
+    bool hasImpl(bool was_active) const
+    {
+      return getImpl<T>(was_active) != nullptr;
+    }
+
+    // Returns whether or not the component changed lists.
+    template<typename T>
+    bool setComponentActiveImpl(bool was_active, bool is_active, bool value)
+    {
+      if (hasImpl<T>(was_active))
+      {
+        const bool src_list     = was_active && isComponentActive<T>();
+        const bool dst_list     = is_active && value;
+        const bool needs_change = src_list != dst_list;
+
+        if (needs_change)
+        {
+          auto& handle     = componentHandle<T>();
+          T&    old_data   = *getImpl<T>(was_active);
+          auto& new_list   = getComponentList<T>(dst_list);
+          auto  new_handle = new_list.add(*this);
+          T&    new_data   = new_list.find(new_handle);
+
+          new_data = std::move(old_data);
+
+          if (value)
+          {
+            ComponentTraits::onEnable(new_data, engine());
+          }
+          else
+          {
+            ComponentTraits::onDisable(new_data, engine());
+          }
+
+          getComponentList<T>(src_list).remove(handle.handle);
+
+          handle.handle = new_handle;
+        }
+
+        setComponentActiveState<T>(value);
+
+        return needs_change;
+      }
+
+      return false;
     }
 
     template<typename T>
@@ -359,8 +394,7 @@ BIFROST_META_REGISTER(bf::Entity)
 {
   BIFROST_META_BEGIN()
     BIFROST_META_MEMBERS(
-     class_info<Entity>("Entity"),  //
-     // ctor<Scene&, const StringRange&>(),                                            // TODO(Shareef): Tries to Register Scene before it is fully defined :(
+     class_info<Entity>("Entity"),                                                  //
      field("m_Name", &Entity::m_Name),                                              //
      field("m_Flags", &Entity::m_Flags),                                            //
      field("m_UUID", &Entity::m_UUID),                                              //
@@ -369,4 +403,4 @@ BIFROST_META_REGISTER(bf::Entity)
   BIFROST_META_END()
 }
 
-#endif /* BIFROST_ENTITY_HPP */
+#endif /* BF_ENTITY_HPP */

@@ -778,42 +778,56 @@ namespace bf::editor
       {
         bfSpritesheet* const ss            = sheet->spritesheet();
         const auto           sprite_handle = sprite_animator->animatedSprite();
-        const char*          preview_str   = "No Animation Selected";
 
-        bfAnim2DSpriteState sprite_state;
-
-        if (bfAnim2DSprite_grabState(sprite_handle, &sprite_state))
+        if (!bfAnim2DSprite_isInvalidHandle(sprite_handle))
         {
-          preview_str = sprite_state.animation->name.str;
-        }
+          const char* preview_str = "No Animation Selected";
 
-        if (ImGui::BeginCombo("Animations", preview_str, ImGuiComboFlags_None))
-        {
-          for (uint32_t i = 0; i < ss->num_animations; ++i)
+          bfAnim2DSpriteState sprite_state;
+
+          if (bfAnim2DSprite_grabState(sprite_handle, &sprite_state))
           {
-            const bfAnimation* const anim = ss->animations + i;
-
-            if (ImGui::Selectable(anim->name.str))
-            {
-              bfAnim2DSprite_setSpritesheet(sprite_handle, ss);
-
-              bfAnim2DPlayExOptions play_options;
-
-              play_options.animation         = anim;
-              play_options.playback_speed    = 1.0f;
-              play_options.start_frame       = 0;
-              play_options.is_looping        = true;
-              play_options.does_ping_ponging = false;
-              play_options.force_restart     = false;
-
-              bfAnim2DSprite_playAnimationEx(sprite_handle, &play_options);
-            }
+            preview_str = sprite_state.animation->name.str;
           }
 
-          ImGui::EndCombo();
+          if (ImGui::BeginCombo("Animations", preview_str, ImGuiComboFlags_None))
+          {
+            for (uint32_t i = 0; i < ss->num_animations; ++i)
+            {
+              const bfAnimation* const anim = ss->animations + i;
+
+              if (ImGui::Selectable(anim->name.str))
+              {
+                bfAnim2DSprite_setSpritesheet(sprite_handle, ss);
+
+                bfAnim2DPlayExOptions play_options;
+
+                play_options.animation         = anim;
+                play_options.playback_speed    = 1.0f;
+                play_options.start_frame       = 0;
+                play_options.is_looping        = true;
+                play_options.does_ping_ponging = false;
+                play_options.force_restart     = false;
+
+                bfAnim2DSprite_playAnimationEx(sprite_handle, &play_options);
+              }
+            }
+
+            ImGui::EndCombo();
+          }
         }
       }
     });
+
+    auto& assets = engine.assets();
+
+    m_SceneLightTexture.m_ParentDevice = engine.renderer().device();
+
+    m_SceneLightTexture.setup("editor/images/Scene_Light.png", assets);
+    m_SceneLightMaterial.setup("__InMemory__", assets);
+    m_SceneLightMaterial.acquire();
+
+    m_SceneLightMaterial.m_AlbedoTexture = &m_SceneLightTexture;
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -866,7 +880,8 @@ namespace bf::editor
           m_IsKeyDown[event.keyboard.key] = is_key_down;
         }
 
-        m_IsShiftDown = event.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
+        m_IsControlDown = event.keyboard.modifiers & BIFROST_KEY_FLAG_CONTROL;
+        m_IsShiftDown   = event.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
       }
     }
   }
@@ -1005,14 +1020,15 @@ namespace bf::editor
     }
 
     // TODO(SR): These two loops can probably be combined.
-    for (BaseEditorWindowPtr& window : m_OpenWindows)
-    {
-      window->update(*this, delta_time);
-    }
 
     for (BaseEditorWindowPtr& window : m_OpenWindows)
     {
       window->uiShow(*this);
+    }
+
+    for (BaseEditorWindowPtr& window : m_OpenWindows)
+    {
+      window->update(*this, delta_time);
     }
 
     auto       open_windows_bgn = m_OpenWindows.begin();
@@ -1105,8 +1121,6 @@ namespace bf::editor
         ImGui::EndPopup();
       }
     }
-
-    
   }
 
   void EditorOverlay::onDraw2D(Engine& engine)
@@ -1126,6 +1140,8 @@ namespace bf::editor
 
   void EditorOverlay::onDestroy(Engine& engine)
   {
+    m_SceneLightMaterial.release();
+
     imgui::shutdown();
     enqueueDialog(nullptr);
   }
@@ -1145,6 +1161,7 @@ namespace bf::editor
     m_OpenWindows{allocator()},
     m_IsKeyDown{false},
     m_IsShiftDown{false},
+    m_IsControlDown{false},
     m_Selection{allocator()},
     m_MainUndoStack{},
     m_MainWindow{main_window}
@@ -1206,7 +1223,7 @@ namespace bf::editor
       }
 
       const StringRange project_dir      = path::directory(path);
-      const TempBuffer  project_json_str = project_file.readAll(m_Engine->tempMemoryNoFree());
+      const TempBuffer  project_json_str = project_file.readAll(m_Engine->tempMemory());
       const AssetError  err              = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
 
       if (err == AssetError::NONE)
@@ -1359,7 +1376,7 @@ namespace bf::editor
   void EditorOverlay::addMenuItem(const StringRange& menu_path, const char* action_name)
   {
     LinearAllocatorScope mem_scope        = {m_Engine->tempMemory()};
-    IMemoryManager&      token_allocator  = m_Engine->tempMemoryNoFree();
+    IMemoryManager&      token_allocator  = m_Engine->tempMemory();
     ui::MenuDropdown*    current_dropdown = &m_MainMenu;
     const TokenizeResult tokens           = string_utils::tokenizeAlloc(token_allocator, menu_path, '/');
     StringLink*          link_start       = tokens.head;

@@ -23,144 +23,14 @@
 #include "bf/data_structures/bifrost_array.hpp"  // Array<T>
 #include "bifrost_iecs_system.hpp"               // IECSSystem
 
+#include "bf/asset_io/bf_model_loader.hpp"
+
 #include <cfloat>   // FLT_MAX
 #include <cstdint>  // uint16_t
 
 namespace bf
 {
-  struct AABB final
-  {
-    float min[3];
-    float max[3];
-
-    AABB() = default;
-
-    AABB(const BifrostTransform& transform)
-    {
-      Vector3f coords[] = {
-       {+0.5f, -0.5f, -0.5f, 1.0f},
-       {-0.5f, +0.5f, -0.5f, 1.0f},
-       {-0.5f, -0.5f, +0.5f, 1.0f},
-
-       {+0.5f, +0.5f, -0.5f, 1.0f},
-       {-0.5f, +0.5f, +0.5f, 1.0f},
-       {+0.5f, -0.5f, +0.5f, 1.0f},
-
-       {-0.5f, -0.5f, -0.5f, 1.0f},
-       {+0.5f, +0.5f, +0.5f, 1.0f},
-      };
-
-      for (Vector3f& point : coords)
-      {
-        Vec3f_mulMat(&point, &transform.world_transform);
-      }
-
-      min[0] = max[0] = coords[0].x;
-      min[1] = max[1] = coords[0].y;
-      min[2] = max[2] = coords[0].z;
-
-      for (int i = 1; i < 8; ++i)
-      {
-        const Vector3f& point = coords[i];
-
-        min[0] = std::min(min[0], point.x);
-        min[1] = std::min(min[1], point.y);
-        min[2] = std::min(min[2], point.z);
-        max[0] = std::max(max[0], point.x);
-        max[1] = std::max(max[1], point.y);
-        max[2] = std::max(max[2], point.z);
-      }
-    }
-
-    bool operator==(const AABB& rhs) const
-    {
-      for (int i = 0; i < 3; ++i)
-      {
-        if (!math::isAlmostEqual(min[i], rhs.min[i]) || !math::isAlmostEqual(max[i], rhs.max[i]))
-        {
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-    bool operator!=(const AABB& rhs) const
-    {
-      return !(*this == rhs);
-    }
-  };
-
-  namespace math
-  {
-    static inline float min(const float a, const float b)
-    {
-      return a < b ? a : b;
-    }
-  }  // namespace math
-
-  namespace aabb
-  {
-    /**
-     * @brief
-     *   Creates a new bounding box that contains both \p a and \p b.
-     *
-     * @param out
-     *   The result of this function.
-     *
-     * @param a
-     *   The first AABB to merge.
-     * 
-     * @param b
-     *   The second AABB to merge.
-     */
-    static void mergeBounds(AABB& out, const AABB& a, const AABB& b)
-    {
-      for (int i = 0; i < 3; ++i)
-      {
-        out.min[i] = a.min[i] < b.min[i] ? a.min[i] : b.min[i];
-        out.max[i] = a.max[i] > b.max[i] ? a.max[i] : b.max[i];
-      }
-    }
-
-    /**
-     * @copydoc mergeBounds(AABB&, const AABB&, const AABB&)
-     */
-    static AABB mergeBounds(const AABB& a, const AABB& b)
-    {
-      AABB out;  // NOLINT
-      mergeBounds(out, a, b);
-      return out;
-    }
-
-    static void expandBy(AABB& self, float amount)
-    {
-      for (int i = 0; i < 3; ++i)
-      {
-        self.min[i] = self.min[i] - amount;
-        self.max[i] = self.max[i] + amount;
-      }
-    }
-
-    static AABB expandedBy(const AABB& self, float amount)
-    {
-      AABB clone = self;
-      expandBy(clone, amount);
-      return clone;
-    }
-
-    static float surfaceArea(const AABB& self)
-    {
-      const float d[3] =
-       {
-        self.max[0] - self.min[0],
-        self.max[1] - self.min[1],
-        self.max[2] - self.min[2],
-       };
-
-      return 2.0f * (d[0] * d[1] + d[1] * d[2] + d[2] * d[0]);
-    }
-  }  // namespace aabb
+  
 
   using BVHNodeOffset                                   = std::uint16_t;
   static constexpr BVHNodeOffset k_BVHNodeInvalidOffset = 0xFFFFu;
@@ -181,7 +51,7 @@ namespace bf
         BVHNodeOffset parent;       // Only needed by rotation code, so really leaves don't need this.
         BVHNodeOffset depth;        // For avl rotation balancing.
       };
-      BVHNodeOffset next;  // Freelist, can be unioned with other data since if it is on the reelist then all node members are unused.
+      BVHNodeOffset next;  // Freelist, can be unioned with other data since if it is on the freelist then all node members are unused.
     };
   };
 

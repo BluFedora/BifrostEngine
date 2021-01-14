@@ -8,7 +8,6 @@ namespace bf
 {
   // TODO(SR): We dont want this.
   LinearAllocator& ENGINE_TEMP_MEM(Engine& engine);
-  IMemoryManager&  ENGINE_TEMP_MEM_NO_FREE(Engine& engine);
 
   SpritesheetAsset::SpritesheetAsset() :
     Base(),
@@ -26,13 +25,13 @@ namespace bf
     if (file_in)
     {
       LinearAllocatorScope scope       = {ENGINE_TEMP_MEM(engine)};
-      const TempBuffer     json_buffer = file_in.readAll(engine.tempMemoryNoFree());
+      const TempBuffer     json_buffer = file_in.readAll(ENGINE_TEMP_MEM(engine));
       const auto           file_name   = nameWithExt();
 
       m_Anim2DSpritesheet = bfAnimation2D_loadSpritesheet(
        engine.animationSys().anim2DCtx(),
        bfStringSpan{file_name.begin(), file_name.length()},
-       (const uint8_t*)json_buffer.buffer(),
+       reinterpret_cast<const uint8_t*>(json_buffer.buffer()),
        json_buffer.size());
 
       m_Anim2DSpritesheet->user_data = this;

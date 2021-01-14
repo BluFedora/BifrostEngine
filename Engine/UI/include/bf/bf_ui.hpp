@@ -160,6 +160,7 @@ namespace bf
   {
     HoverTime,
     ActiveTime,
+    Padding,
 
     WidgetParams_Max,
   };

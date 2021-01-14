@@ -1803,7 +1803,7 @@ void bfGfxCmdList_setDepthTesting(bfGfxCommandListHandle self, bfBool32 value)
 
 void bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).depth_write = value;
+  state(self).do_depth_write = value;
 
   glDepthMask(value ? GL_TRUE : GL_FALSE);
 }
@@ -1831,14 +1831,14 @@ void bfGfxCmdList_setStencilTesting(bfGfxCommandListHandle self, bfBool32 value)
 
 void bfGfxCmdList_setPrimitiveRestart(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).primitive_restart = value;
+  state(self).do_primitive_restart = value;
 
   assert(!value && "I need to do some research on primitive restart for OpenGL.");
 }
 
 void bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).rasterizer_discard = value;
+  state(self).do_rasterizer_discard = value;
 
 #if USE_WEBGL_STANDARD
   assert(!value && "Not supported on WebGL");
@@ -1868,12 +1868,26 @@ void bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value)
 
 void bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).alpha_to_coverage = value;
+  state(self).do_alpha_to_coverage = value;
 }
 
 void bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value)
 {
-  state(self).alpha_to_one = value;
+  state(self).do_alpha_to_one = value;
+}
+
+void bfGfxCmdList_setLogicOpEnabled(bfGfxCommandListHandle self, bfBool32 value)
+{
+  state(self).do_logic_op = value;
+
+  if (value)
+  {
+    glEnable(GL_COLOR_LOGIC_OP);
+  }
+  else
+  {
+    glDisable(GL_COLOR_LOGIC_OP);
+  }
 }
 
 void bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op)
@@ -2140,16 +2154,35 @@ void bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mas
   self->pipeline_state.sample_mask = sample_mask;
 }
 
+void bfGfxCmdList_bindDrawCallPipeline(bfGfxCommandListHandle self, const bfDrawCallPipeline* pipeline_state)
+{
+  const std::uint64_t old_subpass_idx = self->pipeline_state.state.subpass_index;
+
+  self->pipeline_state.state               = pipeline_state->state;
+  self->pipeline_state.state.subpass_index = old_subpass_idx;
+  self->pipeline_state.line_width          = pipeline_state->line_width;
+  self->pipeline_state.program             = pipeline_state->program;
+  self->pipeline_state.vertex_layout       = pipeline_state->vertex_layout;
+  std::memcpy(self->pipeline_state.blend_constants, pipeline_state->blend_constants, sizeof(pipeline_state->blend_constants));
+  std::memcpy(self->pipeline_state.blending, pipeline_state->blending, sizeof(pipeline_state->blending));  // TODO(SR): This can be optimized to copy less.
+
+  self->dynamic_state_dirty = BF_PIPELINE_DYNAMIC_LINE_WIDTH |
+                              BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS |
+                              BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK |
+                              BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK |
+                              BF_PIPELINE_DYNAMIC_STENCIL_REFERENCE;
+}
+
 void bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout)
 {
-  self->pipeline_state.vertex_set_layout = vertex_set_layout;
+  self->pipeline_state.vertex_layout = vertex_set_layout;
 }
 
 void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets)
 {
   assert(num_buffers < k_bfGfxMaxBufferBindings);
 
-  self->pipeline_state.vertex_set_layout->bind();
+  self->pipeline_state.vertex_layout->bind();
 
   for (uint32_t i = 0; i < num_buffers; ++i)
   {
@@ -2158,7 +2191,7 @@ void bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_
     assert(offsets[i] == 0 && "VBO Offsets not supported by the graphics backend.");
 
     glBindBuffer(buffers[i]->target, buffers[i]->handle);
-    self->pipeline_state.vertex_set_layout->apply(buffers[i], first_binding + i, offsets[i]);
+    self->pipeline_state.vertex_layout->apply(buffers[i], first_binding + i, offsets[i]);
   }
 }
 
@@ -2403,7 +2436,7 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
 
   if (vertex_offset != 0)
   {
-    const auto vertex_state = self->pipeline_state.vertex_set_layout;
+    const auto vertex_state = self->pipeline_state.vertex_layout;
 
     bfBufferCreateParams create_params = {{0, 0}, BF_BUFFER_USAGE_VERTEX_BUFFER};
 
@@ -2437,7 +2470,7 @@ void bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices,
 
   if (vertex_offset != 0)
   {
-    const auto vertex_state = self->pipeline_state.vertex_set_layout;
+    const auto vertex_state = self->pipeline_state.vertex_layout;
 
     for (uint32_t i = 0; i < vertex_state->num_vertex_buffers; ++i)
     {
@@ -2803,7 +2836,7 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
     return false;
   }
 
-  if (a.vertex_set_layout != b.vertex_set_layout)
+  if (a.vertex_layout != b.vertex_layout)
   {
     return false;
   }

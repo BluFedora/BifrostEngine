@@ -83,7 +83,7 @@ namespace bf
     {
       static_assert(std::is_base_of_v<Base, TSelf>, "TSelf must be the same as the type deriving from this class.");
     }
-
+    /*
    private:
     template<typename T, typename = void>
     struct HasOnEnable : std::false_type
@@ -101,6 +101,14 @@ namespace bf
     struct HasOnDisable<T, std::void_t<decltype(std::declval<T>().onDisable(std::declval<Engine&>()))>> : std::true_type
     {};
 
+    template<typename T, typename = void>
+    struct HasOnDestroy : std::false_type
+    {};
+
+    template<typename T>
+    struct HasOnDestroy<T, std::void_t<decltype(std::declval<T>().onDestroy(std::declval<Engine&>()))>> : std::true_type
+    {};
+
     void privateOnEnable(Engine& engine)
     {
       if constexpr (HasOnEnable<TSelf>::value)
@@ -116,7 +124,33 @@ namespace bf
         static_cast<TSelf*>(this)->onDisable(engine);
       }
     }
+
+    void privateOnDestroy(Engine& engine)
+    {
+      if constexpr (HasOnDestroy<TSelf>::value)
+      {
+        static_cast<TSelf*>(this)->onDestroy(engine);
+      }
+    }
+    */
   };
+
+  //
+  // Allows for customizing the behavior of a component
+  // on certain events without introducing significant runtime
+  // overhead.
+  //
+  namespace ComponentTraits
+  {
+    // clang-format off
+
+    template<typename T> void onCreate(T& component, Engine& engine)  { (void)component; (void)engine; }
+    template<typename T> void onEnable(T& component, Engine& engine)  { (void)component; (void)engine; }
+    template<typename T> void onDisable(T& component, Engine& engine) { (void)component; (void)engine; }
+    template<typename T> void onDestroy(T& component, Engine& engine) { (void)component; (void)engine; }
+
+    // clang-format on
+  }  // namespace ComponentTraits
 }  // namespace bf
 
 #endif /* BF_BASE_COMPONENT_HPP */

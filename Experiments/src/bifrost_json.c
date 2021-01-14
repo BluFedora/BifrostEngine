@@ -137,7 +137,6 @@ bfJsonType bfJsonParser_valueType(const bfJsonParserContext* ctx)
     case BF_JSON_QUOTE:
       return BF_JSON_VALUE_STRING;
     case BF_JSON_TRUE:
-      return BF_JSON_VALUE_BOOLEAN;
     case BF_JSON_FALSE:
       return BF_JSON_VALUE_BOOLEAN;
     case BF_JSON_NULL:
@@ -287,12 +286,6 @@ void bfJsonWriter_valueString(bfJsonWriter* self, bfJsonString value)
       case '"':
       {
         write        = "\\\"";
-        write_length = 2;
-        break;
-      }
-      case '\'':
-      {
-        write        = "\\\'";
         write_length = 2;
         break;
       }

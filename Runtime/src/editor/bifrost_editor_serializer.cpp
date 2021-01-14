@@ -619,7 +619,7 @@ namespace bf::editor
   {
     ImGui::PushID(&entity);
 
-    entity.serialize(serializer);
+    entity.reflect(serializer);
 
     bool has_missing_component = false;
 
@@ -688,7 +688,7 @@ namespace bf::editor
       {
         ImGui::Indent();
 
-        behavior->serialize(serializer);
+        behavior->reflect(serializer);
 
         ImGui::Unindent();
 

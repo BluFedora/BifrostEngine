@@ -185,7 +185,7 @@ typedef struct
 } bfAnim2DSpriteState;
 
 BF_ANIM2D_API bfAnim2DSpriteHandle bfAnim2DSprite_invalidHandle(void);
-BF_ANIM2D_API bfBool8              bfAnim2DSprite_isInvalidHandle(const bfAnim2DSpriteHandle* handle);
+BF_ANIM2D_API bfBool8              bfAnim2DSprite_isInvalidHandle(bfAnim2DSpriteHandle handle);
 BF_ANIM2D_API void                 bfAnim2DSprite_setSpritesheet(bfAnim2DSpriteHandle self, bfSpritesheet* sheet);
 BF_ANIM2D_API void                 bfAnim2DSprite_playAnimationEx(bfAnim2DSpriteHandle self, const bfAnim2DPlayExOptions* options);
 BF_ANIM2D_API void                 bfAnim2DSprite_pause(bfAnim2DSpriteHandle self);

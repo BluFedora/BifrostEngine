@@ -45,6 +45,13 @@ namespace bf
     m_SpriteIndexBuffer = memory.allocateT<IndexBuffer>(memory);
     m_SpriteIndexBuffer->init(gfx_device);
 #endif
+
+    m_PerFrameSprites = engine.mainMemory().allocateT<Array<Renderable2DPrimitive>>(engine.mainMemory());
+  }
+
+  void ComponentRenderer::onFrameBegin(Engine& engine, float dt)
+  {
+    m_PerFrameSprites->clear();
   }
 
   void ComponentRenderer::onFrameDraw(Engine& engine, RenderView& camera, float alpha)
@@ -55,7 +62,6 @@ namespace bf
     {
       auto&      engine_renderer = engine.renderer();
       auto&      tmp_memory      = engine.tempMemory();
-      const auto cmd_list        = engine_renderer.mainCommandList();
       const auto frame_info      = engine_renderer.frameInfo();
 
       // 3D Models
@@ -68,7 +74,8 @@ namespace bf
       //     - [https://github.com/gametutorials/tutorials/blob/master/OpenGL/Frustum%20Culling/Frustum.cpp]
       //     - [http://www.rastertek.com/dx10tut16.html]
 
-      RenderQueue& render_queue = camera.opaque_render_queue;
+      RenderQueue& opaque_render_queue      = camera.opaque_render_queue;
+      RenderQueue& transparent_render_queue = camera.transparent_render_queue;
 
       bfDrawCallPipeline pipeline;
       bfDrawCallPipeline_defaultOpaque(&pipeline);
@@ -87,13 +94,11 @@ namespace bf
 
           for (Mesh& mesh : model.m_Meshes)
           {
-            RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
+            RC_DrawIndexed* const render_command = opaque_render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
             MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
 
-            render_command->material_binding.set(
-             engine_renderer.makeMaterialInfo(*material));
-            render_command->object_binding.set(
-             engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner()));
+            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+            render_command->object_binding.set(engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner()));
 
             render_command->vertex_buffers[0]         = model.m_VertexBuffer;
             render_command->vertex_buffers[1]         = model.m_VertexBoneData;
@@ -102,7 +107,7 @@ namespace bf
             render_command->index_offset              = mesh.index_offset;
             render_command->num_indices               = mesh.num_indices;
 
-            render_queue.submit(render_command, 0.0f);
+            opaque_render_queue.submit(render_command, 0.0f);
           }
         }
       }
@@ -116,49 +121,70 @@ namespace bf
       {
         if (renderer.material() && renderer.model())
         {
-          auto&       uniform_bone_data = anim_sys.getRenderable(engine_renderer, renderer.owner());
-          ModelAsset& model             = *renderer.model();
+          const ModelAsset& model = *renderer.model();
 
-          for (Mesh& mesh : model.m_Meshes)
+          if (model.numBones() > 0)  // A DescriptorSet write with size of 0 is not allowed.
           {
-            RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
-            MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
+            auto&              uniform_bone_data = anim_sys.getRenderable(engine_renderer, renderer.owner());
+            const bfBufferSize offset            = uniform_bone_data.transform_uniform.offset(frame_info);
 
-            bfDescriptorSetInfo desc_set_object = engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner());
-            const bfBufferSize  offset          = uniform_bone_data.transform_uniform.offset(frame_info);
-            const bfBufferSize  size            = sizeof(Mat4x4) * model.numBones();
+            for (const Mesh& mesh : model.m_Meshes)
+            {
+              RC_DrawIndexed* const render_command  = opaque_render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
+              MaterialAsset*        material        = model.m_Materials[mesh.material_idx];
+              bfDescriptorSetInfo   desc_set_object = engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner());
+              const bfBufferSize    size            = sizeof(Mat4x4) * model.numBones();
 
-            bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
+              bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
 
-            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
-            render_command->object_binding.set(desc_set_object);
+              render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+              render_command->object_binding.set(desc_set_object);
 
-            render_command->vertex_buffers[0]         = model.m_VertexBuffer;
-            render_command->vertex_buffers[1]         = model.m_VertexBoneData;
-            render_command->vertex_binding_offsets[0] = 0u;
-            render_command->vertex_binding_offsets[1] = 0u;
-            render_command->index_offset              = mesh.index_offset;
-            render_command->num_indices               = mesh.num_indices;
+              render_command->vertex_buffers[0]         = model.m_VertexBuffer;
+              render_command->vertex_buffers[1]         = model.m_VertexBoneData;
+              render_command->vertex_binding_offsets[0] = 0u;
+              render_command->vertex_binding_offsets[1] = 0u;
+              render_command->index_offset              = mesh.index_offset;
+              render_command->num_indices               = mesh.num_indices;
 
-            render_queue.submit(render_command, 0.0f);
+              opaque_render_queue.submit(render_command, 0.0f);
+            }
           }
         }
       }
 
       // 2D Sprites
 
-      auto& sprite_renderer_list = scene->components<SpriteRenderer>();
+      auto&                  sprite_renderer_list  = scene->components<SpriteRenderer>();
+      const std::size_t      num_per_frame_sprites = m_PerFrameSprites->size();
+      Renderable2DPrimitive* sprite_list           = tmp_memory.allocateArray<Renderable2DPrimitive>(sprite_renderer_list.size() + num_per_frame_sprites);
+      std::size_t            sprite_list_size      = 0;
 
-      SpriteRenderer** sprite_list      = tmp_memory.allocateArray<SpriteRenderer*>(sprite_renderer_list.size());
-      int              sprite_list_size = 0;
-
-      for (SpriteRenderer& renderer : sprite_renderer_list)
-      {
+      const auto add_sprite_to_list = [sprite_list, &sprite_list_size](SpriteRenderer& renderer) {
         // TODO(SR): Culling would go here.
         if (renderer.size().x > 0.0f && renderer.size().y > 0.0f && renderer.material())
         {
-          sprite_list[sprite_list_size++] = &renderer;
+          Renderable2DPrimitive&  dst_sprite = sprite_list[sprite_list_size++];
+          const BifrostTransform& transform  = renderer.owner().transform();
+
+          dst_sprite.transform = transform.world_transform;
+          dst_sprite.material  = &*renderer.material();
+          dst_sprite.origin    = transform.world_position;
+          dst_sprite.size      = renderer.size();
+          dst_sprite.color     = renderer.color();
+          dst_sprite.uv_rect   = renderer.uvRect();
         }
+      };
+
+      for (SpriteRenderer& renderer : sprite_renderer_list)
+      {
+        add_sprite_to_list(renderer);
+      }
+
+      if (num_per_frame_sprites)
+      {
+        std::memcpy(sprite_list + sprite_list_size, m_PerFrameSprites->data(), num_per_frame_sprites * sizeof(Renderable2DPrimitive));
+        sprite_list_size += num_per_frame_sprites;
       }
 
       if (sprite_list_size)
@@ -170,13 +196,14 @@ namespace bf
         std::sort(
          sprite_list,
          sprite_list + sprite_list_size,
-         [](SpriteRenderer* a, SpriteRenderer* b) -> bool {
-           return &*a->material() < &*b->material();
+         [](const Renderable2DPrimitive& a, const Renderable2DPrimitive& b) -> bool {
+           return a.material < b.material;
          });
 
         struct SpriteBatch final
         {
           MaterialAsset*      material;
+          bfDescriptorSetInfo material_desc;
           SpriteIndexType     vertex_offset;
           SpriteIndexType     num_vertices;
           VertexBuffer::Link* vertex_buffer;
@@ -193,20 +220,24 @@ namespace bf
 
         for (int i = 0; i < sprite_list_size; ++i)
         {
-          SpriteRenderer&                       sprite          = *sprite_list[i];
-          MaterialAsset* const                  sprite_mat      = &*sprite.material();
+          Renderable2DPrimitive&                sprite          = sprite_list[i];
+          MaterialAsset* const                  sprite_mat      = sprite.material;
           const std::pair<StandardVertex*, int> vertices_offset = m_SpriteVertexBuffer->requestVertices(frame_info, k_NumVerticesPerSprite);
 #if k_UseIndexBufferForSprites
           const std::pair<SpriteIndexType*, int> index_offset = m_SpriteIndexBuffer->requestVertices(frame_info, k_NumIndicesPerSprite);
 #endif
           StandardVertex* const vertices     = vertices_offset.first;
-          const Vector2f&       sprite_size  = sprite.size();
-          const bfColor4u&      sprite_color = sprite.color();
+          const Vector2f&       sprite_size  = sprite.size;
+          const bfColor4u&      sprite_color = sprite.color;
 
           if (!last_batch || last_batch->material != sprite_mat)
           {
-            last_batch                = tmp_memory.allocateT<SpriteBatch>();
+            last_batch = tmp_memory.allocateT<SpriteBatch>();
+
+            assert(last_batch != nullptr);
+
             last_batch->material      = sprite_mat;
+            last_batch->material_desc = engine_renderer.makeMaterialInfo(*sprite_mat);
             last_batch->vertex_offset = SpriteIndexType(vertices_offset.second);
             last_batch->num_vertices  = 0;
             last_batch->vertex_buffer = m_SpriteVertexBuffer->currentLink();
@@ -219,11 +250,10 @@ namespace bf
             batches                = last_batch;
           }
 
-          const BifrostTransform& transform     = sprite.owner().transform();
-          const Mat4x4&           transform_mat = transform.world_transform;
-          const Vector3f&         origin        = transform.world_position;
-          Vector3f                x_axis        = {sprite_size.x, 0.0f, 0.0f, 0.0f};
-          Vector3f                y_axis        = {0.0f, sprite_size.y, 0.0f, 0.0f};
+          const Mat4x4&   transform_mat = sprite.transform;
+          const Vector3f& origin        = sprite.origin;
+          Vector3f        x_axis        = {sprite_size.x, 0.0f, 0.0f, 0.0f};
+          Vector3f        y_axis        = {0.0f, sprite_size.y, 0.0f, 0.0f};
 
           Mat4x4_multVec(&transform_mat, &x_axis, &x_axis);
           Mat4x4_multVec(&transform_mat, &y_axis, &y_axis);
@@ -232,7 +262,6 @@ namespace bf
           const Vector3f half_y_axis = y_axis * 0.5f;
 
           // TODO(SR): This can probably be micro-optimized to do less redundant math ops.
-
           const Vector3f positions[] =
            {
             origin - half_x_axis - half_y_axis,
@@ -241,7 +270,7 @@ namespace bf
             origin + half_x_axis + half_y_axis,
            };
 
-          const auto& uv_rect = sprite.uvRect();
+          const auto& uv_rect = sprite.uv_rect;
 
           const Vector2f uvs[] =
            {
@@ -266,7 +295,7 @@ namespace bf
           };
 
 #if k_UseIndexBufferForSprites
-          const SpriteIndexType index_vertex_offset = last_batch->vertex_offset;
+          const SpriteIndexType index_vertex_offset = last_batch->vertex_offset + last_batch->num_vertices;
           SpriteIndexType*      indices             = index_offset.first;
 
           addVertex(positions[0], uvs[0]);
@@ -307,33 +336,32 @@ namespace bf
           if (batches->num_vertices)
           {
 #if k_UseIndexBufferForSprites
-            RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 1, batches->index_buffer->gpu_buffer.handle());
-            MaterialAsset*        material       = batches->material;
+            RC_DrawIndexed* const render_command = transparent_render_queue.drawIndexed(pipeline, 1, batches->index_buffer->gpu_buffer.handle());
 
-            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+            render_command->material_binding.set(batches->material_desc);
             render_command->vertex_buffers[0]           = batches->vertex_buffer->gpu_buffer.handle();
             render_command->vertex_binding_offsets[0]   = batches->vertex_buffer->gpu_buffer.offset(frame_info);
             render_command->index_buffer_binding_offset = batches->index_buffer->gpu_buffer.offset(frame_info);
             render_command->index_offset                = batches->index_offset;
             render_command->num_indices                 = batches->num_indices;
+            render_command->index_type                  = k_SpriteIndexType;
+
 #else
             RC_DrawArrays* const render_command = render_queue.drawArrays(pipeline, 1);
-            MaterialAsset*        material       = batches->material;
 
-            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
-            render_command->vertex_buffers[0]           = batches->vertex_buffer->gpu_buffer.handle();
-            render_command->vertex_binding_offsets[0]   = batches->vertex_buffer->gpu_buffer.offset(frame_info);
-            render_command->first_vertex                = batches->vertex_offset;
-            render_command->num_vertices                = batches->num_vertices;
+            render_command->material_binding.set(batches->material_desc);
+            render_command->vertex_buffers[0]         = batches->vertex_buffer->gpu_buffer.handle();
+            render_command->vertex_binding_offsets[0] = batches->vertex_buffer->gpu_buffer.offset(frame_info);
+            render_command->first_vertex              = batches->vertex_offset;
+            render_command->num_vertices              = batches->num_vertices;
+
 #endif
 
-            render_queue.submit(render_command, 0.0f);
+            transparent_render_queue.submit(render_command, 0.0f);
           }
 
           batches = batches->next_batch;
         }
-
-        // bfGfxCmdList_setCullFace(cmd_list, BF_CULL_FACE_BACK);
       }
     }
   }
@@ -354,5 +382,12 @@ namespace bf
 
     m_SpriteVertexBuffer->deinit();
     memory.deallocateT(m_SpriteVertexBuffer);
+
+    engine.mainMemory().deallocateT(m_PerFrameSprites);
+  }
+
+  void ComponentRenderer::pushSprite(const Renderable2DPrimitive& sprite) const
+  {
+    m_PerFrameSprites->push(sprite);
   }
 }  // namespace bf

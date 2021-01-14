@@ -319,7 +319,7 @@ namespace bf::editor
   {
     friend class ARefreshAsset;
 
-   private:
+   public:
     ui::Dialog*   m_CurrentDialog;
     bool          m_OpenNewDialog;
     ActionMap     m_Actions;
@@ -334,9 +334,12 @@ namespace bf::editor
     WindowList    m_OpenWindows;
     bool          m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
     bool          m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
+    bool          m_IsControlDown;                // TODO(SR): This should be stored in a shared Engine Input Module.
     Selection     m_Selection;
     UndoRedoStack m_MainUndoStack;
     bfWindow*     m_MainWindow;
+    TextureAsset  m_SceneLightTexture;
+    MaterialAsset m_SceneLightMaterial;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -350,7 +353,7 @@ namespace bf::editor
    public:
     EditorOverlay(bfWindow* main_window);
 
-    const char*       name() override { return "Bifrost Editor"; }
+    const char*       name() override { return "Editor"; }
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     Engine&           engine() const { return *m_Engine; }
     FileSystem&       fileSystem() { return m_FileSystem; }
@@ -359,6 +362,7 @@ namespace bf::editor
 
     bool isKeyDown(int key) const { return m_IsKeyDown[key]; }
     bool isShiftDown() const { return m_IsShiftDown; }
+    bool isControlDown() const { return m_IsControlDown; }
 
     Action* findAction(const char* name) const;
     void    enqueueDialog(ui::Dialog* dlog);

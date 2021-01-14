@@ -60,8 +60,8 @@ namespace bf
     // Before calling this function it is expected that no resources are currently being owned.
     // (Eg: Either default constructed or after a call to `freeResources` is fine)
     void serialize(IMemoryManager& allocator, ISerializer& serializer);
-    void addChild(AssetMetaInfo* child);
 
+    void addChild(AssetMetaInfo* child);
     void freeResources(IMemoryManager& allocator);
   };
 
@@ -112,6 +112,8 @@ namespace bf
     // Misc //
 
     AssetMetaInfo* generateMetaInfo(IMemoryManager & allocator) const;
+
+    void setup(const String& full_path, Assets& assets);
 
    private:
     void setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid, Assets& assets);

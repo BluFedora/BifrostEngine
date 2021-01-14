@@ -405,7 +405,6 @@ void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* 
   self->system          = system;
   self->dirty_list_next = NULL;
   self->flags           = BIFROST_TRANSFORM_DIRTY;
-  // bfTransform_flushChanges(self);
 }
 
 void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value)
@@ -413,6 +412,17 @@ void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value)
   self->origin = *value;
   self->flags |= BIFROST_TRANSFORM_ORIGIN_DIRTY;
   bfTransform_flushChanges(self);
+}
+
+Vec3f bfTransform_position(const BifrostTransform* self)
+{
+  Vec3f result;
+
+  result.x = 0.0f;
+
+  assert(0);
+
+  return result;
 }
 
 void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value)
@@ -525,11 +535,11 @@ static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f
 
   // TODO(SR): 
   //   Multiplication by the `translation_mat` can probably be optimized
-  //   since it alwys just adds (/ sets) the tranlation part of the matrix.
+  //   since it always just adds (/ sets) the translation part of the matrix.
   //
   //   This overall can be optimized since `scale_mat` and `origin_mat` operate of diff parts of the matrix.
   //
-  //  This info is kinda wrong but there ARE optimizatuions to be made.
+  //  This info is kinda wrong but there ARE optimizations to be made.
 
   Mat4x4_mult(&scale_mat, &origin_mat, out);
   Mat4x4_mult(&rotation_mat, out, out);

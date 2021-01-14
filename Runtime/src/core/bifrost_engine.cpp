@@ -1,8 +1,8 @@
 #include "bf/core/bifrost_engine.hpp"
 
-#include "bf/Platform.h"                      // BifrostWindow
-#include "bf/anim2D/bf_animation_system.hpp"  // AnimationSystem
-#include "bf/asset_io/bf_gfx_assets.hpp"
+#include "bf/Platform.h"                               // BifrostWindow
+#include "bf/anim2D/bf_animation_system.hpp"           // AnimationSystem
+#include "bf/asset_io/bf_gfx_assets.hpp"               // ***Asset
 #include "bf/bf_ui.hpp"                                // UI::
 #include "bf/bf_version.h"                             // BF_VERSION_STR
 #include "bf/debug/bifrost_dbg_logger.h"               // bfLog*
@@ -70,7 +70,6 @@ namespace bf
     m_MainMemory{main_memory, main_memory_size},
 #endif
     m_TempMemory{static_cast<char*>(m_MainMemory.allocate(main_memory_size / 4)), main_memory_size / 4},
-    m_TempAdapter{m_TempMemory},
     m_Assets{*this, m_MainMemory},
     m_StateMachine{*this, m_MainMemory},
     m_Scripting{},
@@ -225,7 +224,7 @@ namespace bf
          std::printf("%*c", TAB_SIZE * info->indent_level, ' ');
 
 #endif
-         std::vprintf(info->format, args);
+         std::vprintf(info->format, args);  // NOLINT(clang-diagnostic-format-nonliteral)
          std::printf("\n");
        }
      }};
@@ -264,7 +263,6 @@ namespace bf
      {".anim"},
      [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
        (void)engine;
-
        return asset_memory.allocateT<Anim3DAsset>(asset_memory);
      });
 
@@ -323,12 +321,13 @@ namespace bf
 
     m_Input.onEvent(evt);
 
-    for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != m_StateMachine.rend(); ++it)
+    // Loops backwards through the state machine stopping when the even gets accepted.
+    const auto rend_state_machine_it = m_StateMachine.rend();
+
+    for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != rend_state_machine_it; ++it)
     {
       it->onEvent(*this, evt);
     }
-
-    // UI::PumpEvents(&evt);
   }
 
   void Engine::tick()
@@ -434,8 +433,8 @@ namespace bf
   {
     // NOTE(SR):
     //   The Debug Renderer must update before submission of debug draw commands
-    //   to allow a duration of 0.0f seconds we removed the debug lines in the
-    //   _next_ update loop.
+    //   to allow a duration of 0.0f seconds for debug primitives that we will remove
+    //   _next_ frame.
     m_DebugRenderer.update(delta_time);
 
     UI::Update(delta_time);
@@ -497,41 +496,35 @@ namespace bf
     UI::Render(*m_Gfx2D);
 
     forEachCamera([this, render_alpha](RenderView* camera) {
-      camera->clearCommandQueues();
-
       Camera_update(&camera->cpu_camera);
 
-      m_DebugRenderer.draw(*camera, m_Renderer.m_FrameInfo);
-
-      m_Gfx2D->renderToQueue(camera->screen_overlay_render_queue);
-
-      for (auto& system : m_Systems)
+      if (camera->flags & RenderView::DO_DRAW)
       {
-        if (system->isEnabled())
-        {
-          system->onFrameDraw(*this, *camera, render_alpha);
-        }
-      }
+        camera->clearCommandQueues();
+        m_DebugRenderer.draw(*camera, m_Renderer.m_FrameInfo);
 
-      m_Renderer.renderCameraTo(*camera);
-      m_Renderer.endPass(m_Renderer.m_MainCmdList);
+        m_Gfx2D->renderToQueue(camera->screen_overlay_render_queue);
+
+        for (auto& system : m_Systems)
+        {
+          if (system->isEnabled())
+          {
+            system->onFrameDraw(*this, *camera, render_alpha);
+          }
+        }
+
+        m_Renderer.renderCameraTo(*camera);
+      }
     });
 
     m_Renderer.beginScreenPass(cmd_list);
 
     for (auto& state : m_StateMachine)
     {
-      state.onDraw2D(*this);  // This is here because of my DearImGui implementation.
+      state.onDraw2D(*this);  // This is here because of my Dear ImGui implementation.
     }
-#if 0
-    const bfTextureHandle main_surface = renderer().surface();
 
-    painter.render(
-     m_Renderer.m_MainCmdList,
-     bfTexture_width(main_surface),
-     bfTexture_height(main_surface));
-#endif
-    m_Renderer.endPass(cmd_list);
+    m_Renderer.endPass();
     m_Renderer.drawEnd();
   }
 
@@ -549,8 +542,7 @@ namespace bf
 
     while (camera)
     {
-      RenderView* const next   = camera->resize_list_next;
-      camera->resize_list_next = nullptr;
+      RenderView* const next = std::exchange(camera->resize_list_next, nullptr);
 
       camera->resize();
 

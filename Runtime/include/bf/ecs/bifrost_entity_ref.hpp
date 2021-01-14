@@ -14,6 +14,7 @@
 #ifndef BIFROST_REF_HPP
 #define BIFROST_REF_HPP
 
+#include "bf/DenseMap.hpp"           // DenseMap<T>
 #include "bf/utility/bifrost_uuid.h" /* bfUUIDNumber */
 
 #include <cstddef> /* nullptr_t */
@@ -23,6 +24,19 @@ namespace bf
   class Entity;
   class IMemoryManager;
 
+  class EntityStorage
+  {
+   private:
+    DenseMap<Entity*> m_Entities;
+
+   public:
+    EntityStorage(IMemoryManager& memory) :
+      m_Entities{memory}
+    {
+    }
+  };
+
+  
   class EntityRef final
   {
     friend class JsonSerializerWriter;

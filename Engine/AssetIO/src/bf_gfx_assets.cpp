@@ -28,7 +28,6 @@ namespace bf
 
   // TODO(SR): We dont want this.
   LinearAllocator& ENGINE_TEMP_MEM(Engine& engine);
-  IMemoryManager&  ENGINE_TEMP_MEM_NO_FREE(Engine& engine);
 
   TextureAsset::TextureAsset(bfGfxDeviceHandle gfx_device) :
     Base(),
@@ -102,7 +101,7 @@ namespace bf
       LinearAllocatorScope mem_scope  = allocator;
       const BufferLen      buffer     = file_in.readEntireFile(allocator);
       json::Value          json_value = json::fromString(buffer.buffer, buffer.length);
-      JsonSerializerReader reader     = {assets(), ENGINE_TEMP_MEM_NO_FREE(engine), json_value};
+      JsonSerializerReader reader     = {assets(), allocator, json_value};
 
       if (reader.beginDocument(false))
       {
@@ -230,10 +229,9 @@ namespace bf
   {
     Engine&              engine        = assets().engine();
     LinearAllocatorScope mem_scope0    = ENGINE_TEMP_MEM(engine);
-    auto&                no_free_alloc = ENGINE_TEMP_MEM_NO_FREE(engine);
     const String&        full_path     = fullPath();
     const StringRange    file_dir      = path::directory(full_path);
-    AssetModelLoadResult model_result  = loadModel(AssetModelLoadSettings(full_path, no_free_alloc));
+    AssetModelLoadResult model_result  = loadModel(AssetModelLoadSettings(full_path, ENGINE_TEMP_MEM(engine)));
 
     if (model_result)
     {
@@ -348,8 +346,8 @@ namespace bf
       /// Vertex / Index Buffer Marshalling
 
       const uint32_t        num_vertices = uint32_t(model_result.vertices->length);
-      Array<StandardVertex> vertices{no_free_alloc};
-      Array<VertexBoneData> bone_vertices{no_free_alloc};
+      Array<StandardVertex> vertices{ENGINE_TEMP_MEM(engine)};
+      Array<VertexBoneData> bone_vertices{ENGINE_TEMP_MEM(engine)};
 
       vertices.resize(num_vertices);
       bone_vertices.resize(num_vertices);

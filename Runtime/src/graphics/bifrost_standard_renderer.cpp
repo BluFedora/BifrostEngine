@@ -9,21 +9,22 @@
 */
 #include "bf/graphics/bifrost_standard_renderer.hpp"
 
-#include "bf/MemoryUtils.h"
-#include "bf/Platform.h"              // BifrostWindow
-#include "bf/ecs/bifrost_entity.hpp"  // Entity
-#include "bf/ecs/bifrost_light.hpp"   // LightType
+// #include "bf/MemoryUtils.h"               // bfAlignUpSize
+#include "bf/Platform.h"                  // BifrostWindow
+#include "bf/asset_io/bf_gfx_assets.hpp"  // TextureAsset
+#include "bf/ecs/bifrost_entity.hpp"      // Entity
+#include "bf/ecs/bifrost_light.hpp"       // LightType
 
 #include <chrono> /* system_clock              */
 #include <random> /* uniform_real_distribution */
 
-#include "bf/asset_io/bf_gfx_assets.hpp"
-#include "bf/core/bifrost_engine.hpp"  // TODO(SR): Removed this include, needed by "AssetTextureInfo"
+#include "bf/core/bifrost_engine.hpp"  // TODO(SR): Remove me, need because of RenderView
 
 namespace bf
 {
   static const bfTextureSamplerProperties k_SamplerNearestRepeat      = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
+  static const bfTextureSamplerProperties k_SamplerLinearClampToEdge  = bfTextureSamplerProperties_init(BF_SFM_LINEAR, BF_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
 
   void GBuffer::init(bfGfxDeviceHandle device, int width, int height)
@@ -112,7 +113,7 @@ namespace bf
         BF_IMAGE_FORMAT_R8_UNORM,
         bfTrue,
         bfFalse),
-       k_SamplerNearestClampToEdge);
+       k_SamplerLinearClampToEdge);
     }
 
     // TODO(Shareef): Should probably add a Random Module to Bifrost.
@@ -317,14 +318,14 @@ namespace bf
     if (is_overlay)
     {
       const bfBufferSize offset = camera_screen_uniform_buffer.offset(frame_info);
-      const bfBufferSize size   = camera_screen_uniform_buffer.elementSize();
+      const bfBufferSize size   = OverlayUBO::elementSize();
 
       bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &camera_screen_uniform_buffer.handle(), 1);
     }
     else
     {
       const bfBufferSize offset = camera_uniform_buffer.offset(frame_info);
-      const bfBufferSize size   = camera_uniform_buffer.elementSize();
+      const bfBufferSize size   = SceneUBO::elementSize();
 
       bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &camera_uniform_buffer.handle(), 1);
     }
@@ -394,7 +395,7 @@ namespace bf
     m_GfxBackend               = bfGfxContext_new(&gfx_create_params);
     m_GfxDevice                = bfGfxContext_device(m_GfxBackend);
     main_window->renderer_data = bfGfxContext_createWindow(m_GfxBackend, main_window);
-    m_MainWindow               = (bfWindowSurfaceHandle)main_window->renderer_data;
+    m_MainWindow               = static_cast<bfWindowSurfaceHandle>(main_window->renderer_data);
     m_FrameInfo                = bfGfxContext_getFrameInfo(m_GfxBackend);
 
     m_StandardVertexLayout = bfVertexLayout_new();
@@ -653,7 +654,7 @@ namespace bf
 
     bfGfxCmdList_draw(m_MainCmdList, 0, 3);
 
-    endPass(m_MainCmdList);
+    endPass();
 
 #if 1
     {
@@ -850,9 +851,9 @@ namespace bf
     bfGfxCmdList_setBlendDstAlpha(m_MainCmdList, 0, BF_BLEND_FACTOR_ZERO);
   }
 
-  void StandardRenderer::endPass(bfGfxCommandListHandle command_list) const
+  void StandardRenderer::endPass() const
   {
-    bfGfxCmdList_endRenderpass(command_list);
+    bfGfxCmdList_endRenderpass(m_MainCmdList);
   }
 
   void StandardRenderer::drawEnd() const
@@ -881,8 +882,6 @@ namespace bf
       bfGfxDevice_release(m_GfxDevice, resource);
     }
     m_AutoRelease.clear();
-
-    deinitShaders();
 
     m_DirectionalLightBuffer.destroy(m_GfxDevice);
 
@@ -947,7 +946,7 @@ namespace bf
 
     // Upload Data
     {
-      ObjectUniformData* const obj_data = (ObjectUniformData*)bfBuffer_map(renderable->transform_uniform.handle(), offset, size);
+      ObjectUniformData* const obj_data = static_cast<ObjectUniformData*>(bfBuffer_map(renderable->transform_uniform.handle(), offset, size));
 
       Mat4x4& model = entity.transform().world_transform;
 
@@ -979,17 +978,18 @@ namespace bf
     // GBuffer
     beginGBufferPass(camera_gpu_data);
     view.opaque_render_queue.execute(m_MainCmdList, m_FrameInfo);
-    endPass(m_MainCmdList);
+    view.transparent_render_queue.execute(m_MainCmdList, m_FrameInfo); // TODO(SR): This is not correct
+    endPass();
 
     // SSAO
     beginSSAOPass(camera_gpu_data);
-    endPass(m_MainCmdList);
+    endPass();
 
     // Lighting
     beginLightingPass(camera_gpu_data);
     view.overlay_scene_render_queue.execute(m_MainCmdList, m_FrameInfo);
     view.screen_overlay_render_queue.execute(m_MainCmdList, m_FrameInfo);
-    //endPass(m_MainCmdList);
+    endPass();
   }
 
   namespace bindings
@@ -1115,11 +1115,6 @@ namespace bf
     m_AutoRelease.push(m_LightShaders[LightShaders::DIR]);
     m_AutoRelease.push(m_LightShaders[LightShaders::POINT]);
     m_AutoRelease.push(m_LightShaders[LightShaders::SPOT]);
-  }
-
-  void StandardRenderer::deinitShaders()
-  {
-    // Shaders are using 'm_AutoRelease'...
   }
 
   namespace gfx

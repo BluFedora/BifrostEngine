@@ -24,7 +24,7 @@ namespace bf
   {
   }
 
-  void BaseBehavior::serialize(ISerializer& serializer)
+  void BaseBehavior::reflect(ISerializer& serializer)
   {
     (void)serializer;
   }
@@ -40,7 +40,7 @@ namespace bf
       if (is_active)
       {
         behavior_list.push(this);
-        clearEventFlags(ON_ENABLE_CALLED);
+        onEnable();
       }
       else
       {
@@ -52,9 +52,7 @@ namespace bf
       }
     }
   }
-}  // namespace bifrost
-
-using namespace bf;
+}  // namespace bf
 
 void game::ExampleBehavior::onEnable()
 {
@@ -65,7 +63,7 @@ void game::ExampleBehavior::onUpdate(float dt)
 {
   auto& transform = owner().transform();
 
-  const Vector3f scale = {(std::sin(time) + 1.0f) * (3.0f * 0.5f)};
+  const bf::Vector3f scale = {(std::sin(time) + 1.0f) * (3.0f * 0.5f)};
 
   bfTransform_setScale(&transform, &scale);
 

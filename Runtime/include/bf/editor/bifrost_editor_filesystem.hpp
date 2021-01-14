@@ -31,7 +31,6 @@ namespace bf::editor
     IBaseAsset*         asset_info;
     bool                is_file;
 
-   public:
     FileEntry(String&& name, const String& full_path, bool is_file);
 
     bool isFile() const { return is_file; }

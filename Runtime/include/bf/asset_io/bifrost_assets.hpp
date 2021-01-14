@@ -166,7 +166,7 @@ namespace bf
     void       setRootPath(std::nullptr_t);
     bool       writeJsonToFile(const StringRange& path, const json::Value& value) const;
     void       saveAssets();
-    void       saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const;
+    void       saveAssetInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const;
     void       saveAssetInfo(Engine& engine, IBaseAsset* asset) const;
     void       clearDirtyList();
 
@@ -188,7 +188,7 @@ namespace bf
    private:
     IBaseAsset* createAssetFromPath(StringRange path, const bfUUIDNumber& uuid);
     IBaseAsset* createAssetFromPath(StringRange path);  // Creates UUID for you.
-    void        saveMetaInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const;
+    void        saveMetaInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const;
   };
 }  // namespace bf
 

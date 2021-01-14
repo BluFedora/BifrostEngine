@@ -193,6 +193,12 @@ namespace bf
     }
 
     template<typename T>
+    Vec3T<T> operator/(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
+    {
+      return Vec3T<T>{lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z};
+    }
+
+    template<typename T>
     Vec3T<T> operator+(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
     {
       return Vec3T<T>{lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w};

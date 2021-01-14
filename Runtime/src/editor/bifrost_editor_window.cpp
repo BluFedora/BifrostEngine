@@ -9,6 +9,7 @@ namespace bf::editor
   BaseEditorWindow::BaseEditorWindow() :
     m_IsOpen{true},
     m_IsFocused{false},
+    m_IsVisible{true},
     m_DockID{0},
     m_InstanceID{s_IDCounter++}
   {
@@ -31,32 +32,32 @@ namespace bf::editor
 
   void BaseEditorWindow::uiShow(EditorOverlay& editor)
   {
-    LinearAllocator&     temp_allocator = editor.engine().tempMemory();
-    LinearAllocatorScope mem_scope      = {temp_allocator};
-    const char*          title_id       = fullImGuiTitle(temp_allocator);
-
     if (m_DockID)
     {
       ImGui::SetNextWindowDockID(m_DockID, ImGuiCond_Once);
     }
 
-     const auto old_window_padding = ImGui::GetStyle().WindowPadding;
+    const auto old_window_padding = ImGui::GetStyle().WindowPadding;
 
     onPreDrawGUI(editor);
 
-    if (ImGui::Begin(title_id, &m_IsOpen, ImGuiWindowFlags_MenuBar))
     {
-      m_IsFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+      LinearAllocator&     temp_allocator = editor.engine().tempMemory();
+      LinearAllocatorScope mem_scope      = {temp_allocator};
+      const char*          title_id       = fullImGuiTitle(temp_allocator);
 
-      const auto is_docked = ImGui::IsWindowDocked();
+      m_IsVisible = ImGui::Begin(title_id, &m_IsOpen, ImGuiWindowFlags_MenuBar);
+    }
 
-      if (is_docked)
+    if (m_IsVisible)
+    {
+      if (ImGui::IsWindowDocked())
       {
         const auto dock_id = ImGui::GetWindowDockID();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, old_window_padding);
 
-        // TODO(SR): editor.addWindow<T> should not be callded here
+        // TODO(SR): editor.addWindow<T> should not be called here
         // since it may invalidate pointers while iterating the window array.
 
         if (ImGui::BeginMenuBar())
@@ -93,6 +94,7 @@ namespace bf::editor
         ImGui::PopStyleVar(1);
       }
 
+      m_IsFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
       onDrawGUI(editor);
     }
     else
@@ -103,4 +105,4 @@ namespace bf::editor
     ImGui::End();
     onPostDrawGUI(editor);
   }
-}  // namespace bifrost::editor
+}  // namespace bf::editor

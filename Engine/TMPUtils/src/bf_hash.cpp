@@ -16,34 +16,47 @@
 #include <cstring>     // memcpy
 #include <functional>  // hash
 
-namespace
-{
-  // This is a very simple hash (same one that Java uses for String.hashCode())
-  // It is NOT cryptographically secure but is fairly fast.
-  template<typename TPredicate>
-  bf::hash::Hash_t simple_hash_base(const char* p, TPredicate&& f)
-  {
-    static constexpr std::size_t PRIME  = 31;
-    bf::hash::Hash_t             result = 0;
-
-    while (f(p))
-    {
-      result = *p + result * PRIME;
-      ++p;
-    }
-
-    return result;
-  }
-}  // namespace
-
 namespace bf::hash
 {
+  namespace
+  {
+    // This is a very simple hash (same one that Java uses for String.hashCode())
+    // It is NOT cryptographically secure but is fairly fast.
+    template<typename TPredicate>
+    Hash_t simple_hash_base(const char* p, TPredicate&& f)
+    {
+      static constexpr std::size_t k_Prime = 31;
+
+      Hash_t result = 0;
+
+      while (f(p))
+      {
+        result = *p + result * k_Prime;
+        ++p;
+      }
+
+      return result;
+    }
+  }  // namespace
+
+  //
   //
   // NOTE(SR):
-  //   Using GodBolt I have found that the compiler
-  //   optimized the mod out and does the equivalent
-  //   using other methods. (Dec 27th, 2020)
+  //   Using Godbolt I have found that the compiler
+  //   optimized the mod out of the `reducePointer` functions. (Dec 27th, 2020)
   //
+
+  // NOTE(SR):
+  //   Good resource on getting these numbers:
+  //     [https://primes.utm.edu/lists/2small/0bit.html]
+  namespace LargestPrimeLessThanPo2
+  {
+    static constexpr std::uint8_t  k_8Bit  = 251u;                     // (1 << 8) - 5;
+    static constexpr std::uint16_t k_16Bit = 65521u;                   // (1 << 16) - 15;
+    static constexpr std::uint32_t k_32Bit = 4294967291u;              // (1 << 32) - 5;
+    static constexpr std::uint64_t k_64Bit = 18446744073709551557ull;  // (1 << 64) - 59;
+
+  }  // namespace LargestPrimeLessThanPo2
 
   template<>
   std::uint8_t reducePointer<std::uint8_t>(const void* ptr)
@@ -79,14 +92,14 @@ namespace bf::hash
 
   Hash_t simple(const char* p, std::size_t size)
   {
-    return simple_hash_base(p, [end = p + size](const char* p) { return p != end; });
+    return simple_hash_base(p, [end = p + size](const char* pp) { return pp != end; });
   }
 
   // (h * 0x100000001b3ull) ^ value
 
   Hash_t simple(const char* p)
   {
-    return simple_hash_base(p, [](const char* p) { return *p != '\0'; });
+    return simple_hash_base(p, [](const char* pp) { return *pp != '\0'; });
   }
 
   // This is what boost::hash_combine does
@@ -189,6 +202,6 @@ namespace bf::hash
     }
 
     static_assert(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8, "Unsupported pointer size.");
-    return self;
+    // return self;
   }
 }  // namespace bf::hash

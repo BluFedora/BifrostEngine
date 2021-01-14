@@ -65,7 +65,6 @@ namespace bf::editor
 
         if (ImGui::Button("clear"))
         {
-
           m_SearchQuery.clear();
         }
       }
@@ -159,7 +158,7 @@ namespace bf::editor
     {
       if (ImGui::Selectable("Toggle Active"))
       {
-        entity->setActive(!entity->isActiveSelf());
+        entity->setActiveSelf(!entity->isActiveSelf());
       }
 
       if (ImGui::Selectable("Delete"))
@@ -214,12 +213,9 @@ namespace bf::editor
 
     if (is_opened)
     {
-      if (has_children)
+      for (Entity& child : entity->children())
       {
-        for (Entity& child : entity->children())
-        {
-          guiEntityList(editor, &child);
-        }
+        guiEntityList(editor, &child);
       }
 
       ImGui::TreePop();

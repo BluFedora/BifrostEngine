@@ -78,6 +78,9 @@ namespace bf
     friend class Entity;
     BF_META_FRIEND;
 
+  public:
+    bool m_DoDebugDraw = true;
+
    private:
     Engine&              m_Engine; // TODO(SR): Remove this.
     IMemoryManager&      m_Memory;
@@ -138,6 +141,11 @@ namespace bf
     // Meta
 
     void reflect(ISerializer& serializer) override;
+
+    // Runtime
+
+    void startup();
+    void shutdown();
 
     ~Scene() override;
 

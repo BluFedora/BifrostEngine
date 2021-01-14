@@ -5,6 +5,9 @@
  * @brief
  *   Non-owning callable wrapper with the most basic of type erasure.
  *
+ *   A limitation is that to bind a member function pointer it must be
+ *   known at compile time.
+ *
  * @version 0.0.1
  * @date    2019-12-28
  *
@@ -14,10 +17,24 @@
 #ifndef BF_FUNCTION_VIEW_HPP
 #define BF_FUNCTION_VIEW_HPP
 
-#include <optional> /* optional<T>  */
+#include <type_traits> /* aligned_storage_t */
 
 namespace bf
 {
+  template<typename T>
+  struct OptionalResult
+  {
+    std::aligned_storage_t<sizeof(T), alignof(T)> storage;
+
+    T*   as() { return reinterpret_cast<T*>(&storage); }
+    void destroy() { as()->~T(); }
+  };
+
+  template<>
+  struct OptionalResult<void>
+  {
+  };
+
   template<typename>
   class FunctionView; /* undefined */
 
@@ -30,9 +47,11 @@ namespace bf
 
     template<typename C>
     using MemberFunctionPtr = R (C::*)(Args...);
+
     template<typename C>
     using ConstMemberFunctionPtr = R (C::*)(Args...) const;
-    using ErasedFunctionPtr      = R (*)(InstancePtr, Args...);
+
+    using ErasedFunctionPtr = R (*)(InstancePtr, Args...);
 
     struct FunctionPair final
     {
@@ -80,15 +99,8 @@ namespace bf
     {
     }
 
-    R operator()(Args... args)
-    {
-      return call(std::forward<Args>(args)...);
-    }
-
-    operator bool() const
-    {
-      return (m_Callback.second != nullptr);
-    }
+    R operator()(Args... args) { return call(std::forward<Args>(args)...); }
+    operator bool() const { return m_Callback.second != nullptr; }
 
     void bind(FunctionPtr fn_ptr)
     {
@@ -123,28 +135,31 @@ namespace bf
       m_Callback.second = nullptr;
     }
 
-    // This function returns an empty optional if there is not a
-    // valid callback stored in this delegate.
-    decltype(auto) safeCall(Args... args) const
+    // This function returns false if there is not a valid
+    // function stored in this view and leaves `result` as
+    // uninitialized.
+    bool safeCall(OptionalResult<R>& result, Args... args)
     {
-      if constexpr (std::is_same_v<void, R>)
+      const bool is_valid = m_Callback.second;
+
+      if (is_valid)
       {
-        if (m_Callback.second)
+        if constexpr (std::is_same_v<void, R>)
         {
           call(std::forward<Args>(args)...);
         }
+        else
+        {
+          new (&result.storage) R(call(std::forward<Args>(args)...));
+        }
       }
-      else
-      {
-        using OptionalReturn = std::optional<R>;
 
-        return m_Callback.second ? OptionalReturn{call(std::forward<Args>(args)...)} : std::nullopt;
-      }
+      return is_valid;
     }
 
-    R call(Args&&... args) const
+    R call(Args... args) const
     {
-      return (m_Callback.second)(this->m_Callback.first, std::forward<Args>(args)...);
+      return (m_Callback.second)(m_Callback.first, std::forward<Args>(args)...);
     }
 
     bool operator==(const FunctionView& rhs) const
@@ -160,14 +175,19 @@ namespace bf
    private:
     static decltype(auto) c_ptr_function_wrapper(InstancePtr instance, Args... args)
     {
-      return reinterpret_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
+      return static_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
     }
 
+    /*
+      // Removed since it made the API very dangerous being able to accept lambdas
+      // since this class is non owning.
+      
     template<typename F>
     static decltype(auto) lambda_function_wrapper(InstancePtr instance, Args... args)
     {
-      return (*reinterpret_cast<F*>(instance))(std::forward<Args>(args)...);
+      return (*static_cast<F*>(instance))(std::forward<Args>(args)...);
     }
+    //*/
 
     template<FunctionPtr callback>
     static decltype(auto) c_function_wrapper(InstancePtr instance, Args... args)

@@ -81,7 +81,7 @@ typedef struct IBifrostTransformSystem_t IBifrostTransformSystem;
 
 typedef uint32_t bfTransformID;
 
-typedef enum bfTransformFlags_t
+typedef enum
 {
   BIFROST_TRANSFORM_ORIGIN_DIRTY     = (1 << 0),
   BIFROST_TRANSFORM_POSITION_DIRTY   = (1 << 1),
@@ -108,13 +108,13 @@ typedef enum bfTransformFlags_t
 
 /*!
   All of these fields are considered 'read-only' unless you
-  manually call 'bfTransform_flushChanges' after maniplulating the fields.
+  manually call 'bfTransform_flushChanges' after manipulating the fields.
 
   You may only modify:
-      - 'BifrostTransform::origin'
-      - 'BifrostTransform::local_position'
-      - 'BifrostTransform::local_rotation'
-      - 'BifrostTransform::local_scale'
+      - 'bfTransform::origin'
+      - 'bfTransform::local_position'
+      - 'bfTransform::local_rotation'
+      - 'bfTransform::local_scale'
 
   Or use the "Transform_set*" API for automatic flushing of changes.
 */
@@ -140,11 +140,12 @@ typedef struct BifrostTransform_t
 
 } BifrostTransform;
 
-BF_MATH_API void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* system);
-BF_MATH_API void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value);
-BF_MATH_API void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value);
-BF_MATH_API void bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value);
-BF_MATH_API void bfTransform_setScale(BifrostTransform* self, const Vec3f* value);
+BF_MATH_API void  bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* system);
+BF_MATH_API void  bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value);
+BF_MATH_API Vec3f bfTransform_position(const BifrostTransform* self);
+BF_MATH_API void  bfTransform_setPosition(BifrostTransform* self, const Vec3f* value);
+BF_MATH_API void  bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value);
+BF_MATH_API void  bfTransform_setScale(BifrostTransform* self, const Vec3f* value);
 BF_MATH_API BifrostTransform* bfTransform_parent(const BifrostTransform* self);
 BF_MATH_API void              bfTransform_setParent(BifrostTransform* self, BifrostTransform* value);
 BF_MATH_API void              bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value); /* Copies over the local values, parent relationships are unchanged. */

@@ -283,6 +283,11 @@ namespace bf
     m_Assets = &assets;
   }
 
+  void IBaseAsset::setup(const String& full_path, Assets& assets)
+  {
+    setup(full_path, 0u, bfUUID_makeEmpty().as_number, assets);
+  }
+
   void IBaseAsset::onReload()
   {
     const AssetStatus current_status = status();

@@ -46,30 +46,30 @@ namespace bf::string_utils
   {
     assert(fmt != nullptr && "A null format is not allowed.");
 
-    char*        buffer = nullptr;
     std::va_list args_cpy;
-
     va_copy(args_cpy, args);
-    const int string_len = std::vsnprintf(nullptr, 0, fmt, args);
 
-    if (string_len > 0)
+    char*       buffer = nullptr;
+    std::size_t require_str_len;
+    fmtBufferV(nullptr, 0u, &require_str_len, fmt, args);
+
+    if (require_str_len != 0)
     {
-      buffer = static_cast<char*>(allocator.allocate(sizeof(char) * (string_len + std::size_t(1u))));
+      const std::size_t buffer_size = require_str_len + std::size_t(1u);
+      buffer                        = static_cast<char*>(allocator.allocate(buffer_size));
 
-      if (buffer)
+      if (buffer)  // Only do work if the allocation did not fail.
       {
-        std::vsprintf(buffer, fmt, args_cpy);
-
-        buffer[string_len] = '\0';
+        fmtBufferV(buffer, buffer_size, &require_str_len, fmt, args_cpy);
       }
     }
 
-    va_end(args_cpy);
-
     if (out_size)
     {
-      *out_size = buffer ? string_len : 0u;
+      *out_size = require_str_len;
     }
+
+    va_end(args_cpy);
 
     return buffer;
   }
@@ -82,11 +82,22 @@ namespace bf::string_utils
 
   bool fmtBuffer(char* buffer, const size_t buffer_size, std::size_t* out_size, const char* fmt, ...)
   {
+    assert(fmt != nullptr && "A null format is not allowed.");
+
     std::va_list args;
 
     va_start(args, fmt);
-    const int string_len = std::vsnprintf(buffer, buffer_size, fmt, args);
+    const bool result = fmtBufferV(buffer, buffer_size, out_size, fmt, args);
     va_end(args);
+
+    return result;
+  }
+
+  bool fmtBufferV(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, std::va_list args)
+  {
+    assert(fmt != nullptr && "A null format is not allowed.");
+
+    const int string_len = std::vsnprintf(buffer, buffer_size, fmt, args);
 
     if (out_size)
     {

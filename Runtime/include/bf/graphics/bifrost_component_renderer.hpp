@@ -11,8 +11,8 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_COMPONENT_RENDERER_HPP
-#define BIFROST_COMPONENT_RENDERER_HPP
+#ifndef BF_COMPONENT_RENDERER_HPP
+#define BF_COMPONENT_RENDERER_HPP
 
 #include "bf/ecs/bifrost_iecs_system.hpp" /* IECSSystem                            */
 #include "bifrost_standard_renderer.hpp"  /* TransientVertexBuffer, StandardVertex */
@@ -21,6 +21,16 @@
 
 namespace bf
 {
+  struct Renderable2DPrimitive
+  {
+    Mat4x4         transform;
+    MaterialAsset* material;
+    Vector3f       origin;
+    Vector2f       size;
+    bfColor4u      color;
+    Rect2f         uv_rect;
+  };
+
 #if k_UseIndexBufferForSprites
   static constexpr std::size_t k_NumVerticesPerSprite = 4;
   static constexpr std::size_t k_NumIndicesPerSprite  = 6;
@@ -33,7 +43,7 @@ namespace bf
   static constexpr std::size_t k_MaxVerticesInSpriteBatch = k_MaxSpritesInBatch * k_NumVerticesPerSprite;
   static constexpr std::size_t k_MaxIndicesInSpriteBatch  = (k_MaxVerticesInSpriteBatch / k_NumVerticesPerSprite) * k_NumIndicesPerSprite;
 
-  using SpriteIndexType                               = std::uint16_t;
+  using SpriteIndexType                             = std::uint16_t;
   static constexpr bfGfxIndexType k_SpriteIndexType = sizeof(SpriteIndexType) == 2 ? BF_INDEX_TYPE_UINT16 : BF_INDEX_TYPE_UINT32;
 
   static_assert(k_MaxVerticesInSpriteBatch % k_NumVerticesPerSprite == 0, "The number of vertices in a batch is most optimal as a multiple of 4.");
@@ -46,9 +56,10 @@ namespace bf
     using IndexBuffer  = GfxLinkedBuffer<SpriteIndexType, k_MaxVerticesInSpriteBatch, BF_BUFFER_USAGE_INDEX_BUFFER>;
 
    private:
-    bfShaderModuleHandle  m_ShaderModules[2]   = {};       //!< [Sprite-Vertex, Sprite-Fragment]
-    bfShaderProgramHandle m_ShaderProgram      = nullptr;  //!< Sprite Program
-    VertexBuffer*         m_SpriteVertexBuffer = nullptr;
+    bfShaderModuleHandle          m_ShaderModules[2]   = {};       //!< [Sprite-Vertex, Sprite-Fragment]
+    bfShaderProgramHandle         m_ShaderProgram      = nullptr;  //!< Sprite Program
+    VertexBuffer*                 m_SpriteVertexBuffer = nullptr;
+    Array<Renderable2DPrimitive>* m_PerFrameSprites    = nullptr;
 
 #if k_UseIndexBufferForSprites
     IndexBuffer* m_SpriteIndexBuffer = nullptr;
@@ -56,9 +67,14 @@ namespace bf
 
    public:
     void onInit(Engine& engine) override;
+    void onFrameBegin(Engine& engine, float dt) override;
     void onFrameDraw(Engine& engine, RenderView& camera, float alpha) override;
     void onDeinit(Engine& engine) override;
+
+    // Immediate Mode Sprite Submission
+
+    void pushSprite(const Renderable2DPrimitive& sprite) const;
   };
 }  // namespace bf
 
-#endif /* BIFROST_COMPONENT_RENDERER_HPP */
+#endif /* BF_COMPONENT_RENDERER_HPP */

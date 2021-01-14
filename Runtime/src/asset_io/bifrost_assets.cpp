@@ -44,11 +44,6 @@ namespace bf
     return engine.tempMemory();
   }
 
-  IMemoryManager& ENGINE_TEMP_MEM_NO_FREE(Engine& engine)
-  {
-    return engine.tempMemoryNoFree();
-  }
-
   namespace files = std::filesystem;
 
   namespace path
@@ -285,10 +280,9 @@ namespace bf
 
     if (meta_file_in)
     {
-      IMemoryManager&      temp_no_free  = m_Engine.tempMemoryNoFree();
       const BufferLen      json_data_str = meta_file_in.readEntireFile(temp_allocator);
       json::Value          json_value    = json::fromString(json_data_str.buffer, json_data_str.length);
-      JsonSerializerReader reader        = {*this, temp_no_free, json_value};
+      JsonSerializerReader reader        = {*this, temp_allocator, json_value};
 
       if (reader.beginDocument(false))
       {
@@ -356,13 +350,12 @@ namespace bf
 
     // Always just save out the meta files.
     {
-      LinearAllocator& temp_alloc         = m_Engine.tempMemory();
-      IMemoryManager&  temp_alloc_no_free = m_Engine.tempMemoryNoFree();
+      LinearAllocator& temp_alloc = m_Engine.tempMemory();
 
-      m_AssetSet.forEach([this, &temp_alloc, &temp_alloc_no_free](IBaseAsset* asset) {
+      m_AssetSet.forEach([this, &temp_alloc](IBaseAsset* asset) {
         LinearAllocatorScope mem_scope = temp_alloc;
 
-        saveMetaInfo(temp_alloc, temp_alloc_no_free, asset);
+        saveMetaInfo(temp_alloc, asset);
       });
     }
 
@@ -402,8 +395,8 @@ namespace bf
       bfLogPush("Count not free all assets in %i iterations.", iteration_count);
 
       m_AssetSet.forEach([this](IBaseAsset* asset) {
-        const StringRange name              = asset->fullPath();
-        const int         ref_count         = asset->refCount();
+        const StringRange name      = asset->fullPath();
+        const int         ref_count = asset->refCount();
 
         bfLogWarn("[%.*s]: RefCount(%i).", int(name.length()), name.begin(), ref_count);
       });
@@ -437,18 +430,17 @@ namespace bf
 
   void Assets::saveAssets()
   {
-    LinearAllocator& temp_alloc         = m_Engine.tempMemory();
-    IMemoryManager&  temp_alloc_no_free = m_Engine.tempMemoryNoFree();
+    LinearAllocator& temp_alloc = m_Engine.tempMemory();
 
     for (auto& asset : m_DirtyAssets)
     {
-      saveAssetInfo(temp_alloc, temp_alloc_no_free, &asset);
+      saveAssetInfo(temp_alloc, &asset);
     }
 
     clearDirtyList();
   }
 
-  void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const
+  void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const
   {
     if (asset->isSubAsset())
     {
@@ -463,7 +455,7 @@ namespace bf
     if (asset->m_Flags & AssetFlags::IS_ENGINE_ASSET)
     {
       const LinearAllocatorScope json_writer_scope = {temp_alloc};
-      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc};
 
       if (json_writer.beginDocument(false))
       {
@@ -474,12 +466,12 @@ namespace bf
       }
     }
 
-    saveMetaInfo(temp_alloc, temp_alloc_no_free, asset);
+    saveMetaInfo(temp_alloc, asset);
   }
 
   void Assets::saveAssetInfo(Engine& engine, IBaseAsset* asset) const
   {
-    saveAssetInfo(engine.tempMemory(), engine.tempMemoryNoFree(), asset);
+    saveAssetInfo(engine.tempMemory(), asset);
   }
 
   void Assets::clearDirtyList()
@@ -623,13 +615,13 @@ namespace bf
     return createAssetFromPath(path, uuid.as_number);
   }
 
-  void Assets::saveMetaInfo(LinearAllocator& temp_alloc, IMemoryManager& temp_alloc_no_free, IBaseAsset* asset) const
+  void Assets::saveMetaInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const
   {
     // This is so we do not save meta files for assets that failed to load.
     if (File::exists(asset->fullPath().cstr()))
     {
       const LinearAllocatorScope json_writer_scope = {temp_alloc};
-      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc_no_free};
+      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc};
       AssetMetaInfo* const       meta_info         = asset->generateMetaInfo(temp_alloc);
 
       if (meta_info)

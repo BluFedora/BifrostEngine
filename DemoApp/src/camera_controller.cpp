@@ -19,7 +19,7 @@ class CameraController final : public Behavior<CameraController>
   void onEnable() override;
   void onUpdate(float dt) override;
   void onDisable() override;
-  void serialize(ISerializer& serializer) override;
+  void reflect(ISerializer& serializer) override;
 };
 
 bfRegisterBehavior(CameraController);
@@ -56,7 +56,7 @@ void CameraController::onDisable()
 {
 }
 
-void CameraController::serialize(ISerializer& serializer)
+void CameraController::reflect(ISerializer& serializer)
 {
   serializer.serialize("m_Player", m_Player);
 }
@@ -233,31 +233,34 @@ class IkDemo final : public Behavior<IkDemo>
   }
 
  private:
-  void serialize(ISerializer& serializer) override
+  void reflect(ISerializer& serializer) override
   {
-    std::size_t joints_size = m_Joints.size();
-
-    float ARM_SIZE = float(joints_size) * k_ChainLinkLen;
-
-    serializer.serialize("m_DistToTarget", m_DistToTarget);
-    serializer.serialize("ARM_SIZE", ARM_SIZE);
-    serializer.serialize("m_TargetPoint", m_TargetPoint);
-    serializer.serialize("m_IsOverlay", m_IsOverlay);
-
-    if (serializer.pushArray("Joints", joints_size))
+    if (serializer.mode() == SerializerMode::INSPECTING)
     {
-      for (IKJoint& j : m_Joints)
+      std::size_t joints_size = m_Joints.size();
+
+      float ARM_SIZE = float(joints_size) * k_ChainLinkLen;
+
+      serializer.serialize("m_DistToTarget", m_DistToTarget);
+      serializer.serialize("ARM_SIZE", ARM_SIZE);
+      serializer.serialize("m_TargetPoint", m_TargetPoint);
+      serializer.serialize("m_IsOverlay", m_IsOverlay);
+
+      if (serializer.pushArray("Joints", joints_size))
       {
-        if (serializer.pushObject(nullptr))
+        for (IKJoint& j : m_Joints)
         {
-          serializer.serialize("Rotation", j.rotation);
-          serializer.serialize("Length", j.length);
+          if (serializer.pushObject(nullptr))
+          {
+            serializer.serialize("Rotation", j.rotation);
+            serializer.serialize("Length", j.length);
 
-          serializer.popObject();
+            serializer.popObject();
+          }
         }
-      }
 
-      serializer.popArray();
+        serializer.popArray();
+      }
     }
   }
 };

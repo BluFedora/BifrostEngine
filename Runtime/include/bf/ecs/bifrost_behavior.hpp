@@ -60,20 +60,12 @@ namespace bf
   protected:
     friend class BehaviorSystem;
 
-    //
-    // Event Flags For Internal Use
-    //
-
-    //! This is a flag to indicate that this behavior has had it's 'IBehavior::onEnable' function called.
-    static constexpr BehaviorEventFlags ON_ENABLE_CALLED = static_cast<BehaviorEventFlags>(bfBit(13));
-
    public:
-    virtual void serialize(ISerializer & serializer) { (void)serializer; }
-    virtual void onEnable()                          {}
-    virtual void onUpdate(float dt)                  { (void)dt; }
-    virtual void onDisable()                         {}
+    virtual void onEnable()         {}
+    virtual void onUpdate(float dt) { (void)dt; }
+    virtual void onDisable()        {}
 
-    virtual ~IBehavior() = default;
+    ~IBehavior() override = default;
   };
 
   // clang-format on
@@ -91,6 +83,8 @@ namespace bf
     explicit BaseBehavior(PrivateCtorTag);
 
    public:
+    bool isActive() const { return isEventFlagSet(IS_ACTIVE); }
+
     // Event Flags API
     BehaviorEventFlags eventFlags() const { return m_EventFlags; }
     bool               isEventFlagSet(BehaviorEventFlags flags) const { return (m_EventFlags & flags) == flags; }
@@ -101,7 +95,7 @@ namespace bf
     void setOwner(Entity& owner) { m_Owner = &owner; }
 
    public:
-    void serialize(ISerializer& serializer) override;
+    void reflect(ISerializer& serializer) override;
 
     void setActive(bool is_active);
   };

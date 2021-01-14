@@ -20,7 +20,6 @@ namespace bf::editor
 
    private:
     void guiEntityList(EditorOverlay& editor, Entity* entity) const;
-    void actionReparent(Entity* entity, Entity* new_parent);
   };
 }  // namespace bf::editor
 

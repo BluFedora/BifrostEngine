@@ -53,6 +53,7 @@ namespace bf::editor
    private:
     bool    m_IsOpen;
     bool    m_IsFocused;
+    bool    m_IsVisible;
     ImGuiID m_DockID;
     int     m_InstanceID;
 
@@ -62,6 +63,7 @@ namespace bf::editor
    public:
     bool                   isOpen() const { return m_IsOpen; }
     bool                   isFocused() const { return m_IsFocused; }
+    bool                   isVisible() const { return m_IsVisible; }
     const char*            fullImGuiTitle(IMemoryManager& memory) const;
     void                   handleEvent(EditorOverlay& editor, Event& event);
     void                   update(EditorOverlay& editor, float delta_time);

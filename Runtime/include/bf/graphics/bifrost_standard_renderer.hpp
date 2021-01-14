@@ -530,7 +530,7 @@ namespace bf
     void               beginSSAOPass(CameraGPUData& camera) const;
     void               beginLightingPass(CameraGPUData& camera);
     void               beginScreenPass(bfGfxCommandListHandle command_list) const;
-    void               endPass(bfGfxCommandListHandle command_list) const;
+    void               endPass() const;
     void               drawEnd() const;
     void               frameEnd() const;
     void               deinit();
@@ -542,7 +542,6 @@ namespace bf
 
    private:
     void initShaders();
-    void deinitShaders();
   };
 
   //

@@ -365,3 +365,28 @@ add_subdirectory(BifrostScript)
 add_subdirectory(Games/DungeonSwiper)
 
 add_subdirectory(BuildTimeAnalyzerGUI)
+
+add_library(
+  BF_JsonCpp
+  STATIC
+  
+  "Runtime/include/bf/utility/bifrost_json.hpp"
+  "Runtime/src/utility/bifrost_json.cpp"
+  "Experiments/src/bifrost_json.c"
+)
+
+target_include_directories(
+  BF_JsonCpp
+  PRIVATE
+    "${PROJECT_SOURCE_DIR}/Runtime/include"
+    "${PROJECT_SOURCE_DIR}/Experiments/include"
+)
+
+target_link_libraries(
+  BF_JsonCpp
+  PUBLIC
+    BF_DataStructuresCxx
+    BF_Memory_interface
+    BF_TMPUtils
+    BF_DataStructuresC_static
+)

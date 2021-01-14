@@ -14,7 +14,9 @@
 /******************************************************************************/
 #include "bf/ecs/bifrost_entity.hpp"
 
+#include "bf/Engine.hpp"
 #include "bf/asset_io/bf_iserializer.hpp"
+#include "bf/asset_io/bifrost_json_serializer.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/debug/bifrost_dbg_logger.h"
 #include "bf/ecs/bifrost_behavior.hpp"
@@ -25,7 +27,7 @@ namespace bf
   static constexpr StringRange k_SerializeBehaviorClassNameKey = "__BehaviorClass__";
   static constexpr StringRange k_SerializeArrayIndexKey        = "__Idx__";
 
-  Entity::Entity(Scene& scene, const StringRange& name) :
+  Entity::Entity(Scene& scene, StringRange name) :
     m_OwningScene{scene},
     m_Name{name},
     m_Transform{scene.m_TransformSystem.createTransform()},
@@ -34,7 +36,6 @@ namespace bf
     m_Hierarchy{},
     m_ComponentHandles{},
     m_ComponentActiveStates{},
-    m_ComponentInActiveStates{},
     m_BHVNode{scene.m_BVHTree.insert(this, transform())},
     m_Behaviors{sceneMemoryManager()},
     m_RefCount{ATOMIC_VAR_INIT(0)},
@@ -84,17 +85,15 @@ namespace bf
     return m_UUID;
   }
 
-  void Entity::setActive(bool is_active)
+  void Entity::setActiveSelf(bool is_active_value)
   {
-    if (isActiveSelf() != is_active)
+    if (isActiveSelf() != is_active_value)
     {
-      const bool old_active_state = isActive();
-
+      const bool was_active = isActive();
       toggleFlags(IS_ACTIVE);
+      const bool is_active = isActive();
 
-      const bool new_active_state = isActive();
-
-      setActiveImpl(old_active_state, new_active_state);
+      reevaluateActiveState(was_active, is_active);
     }
   }
 
@@ -114,42 +113,6 @@ namespace bf
       detachFromParent();
       attachToParent(new_parent);
     }
-  }
-
-  ComponentActiveStorage Entity::activateComponents()
-  {
-    ComponentActiveStorage old_state = m_ComponentActiveStates;
-
-    ComponentStorage::forEachType([this](auto t) {
-      using T = bfForEachTemplateT(t);
-      setComponentActive<T>(true);
-    });
-
-    return old_state;
-  }
-
-  ComponentActiveStorage Entity::applyComponentActiveState(const ComponentActiveStorage& state)
-  {
-    ComponentActiveStorage old_state = m_ComponentActiveStates;
-
-    ComponentStorage::forEachType([this, &state](auto t) {
-      using T = bfForEachTemplateT(t);
-      setComponentActive<T>(state.get<T>().is_active);
-    });
-
-    return old_state;
-  }
-
-  ComponentActiveStorage Entity::deactivateComponents()
-  {
-    ComponentActiveStorage old_state = m_ComponentActiveStates;
-
-    ComponentStorage::forEachType([this](auto t) {
-      using T = bfForEachTemplateT(t);
-      setComponentActive<T>(false);
-    });
-
-    return old_state;
   }
 
   IBehavior* Entity::addBehavior(const StringRange& name)
@@ -259,24 +222,39 @@ namespace bf
     --m_RefCount;
   }
 
-  void Entity::destroy()
+  Entity* Entity::clone()
   {
-    if (!isFlagSet(IS_PENDING_DELETED))
+    Engine& engine   = this->engine();
+    Assets& assets   = engine.assets();
+    auto&   temp_mem = engine.tempMemory();
+
+    JsonSerializerWriter serializer{temp_mem};
+
+    if (serializer.beginDocument(false))
     {
-      setFlags(IS_PENDING_DELETED);
+      reflect(serializer);
+      serializer.endDocument();
 
-      while (!m_Children.isEmpty())
+      JsonSerializerReader deserializer{assets, temp_mem, serializer.document()};
+
+      if (deserializer.beginDocument(false))
       {
-        m_Children.back().destroy();
+        Entity* const clone = parent() ? parent()->addChild(name()) : scene().addEntity(name());
+
+        clone->reflect(deserializer);
+        deserializer.endDocument();
+
+        // TODO(SR): This should not be needed for the runtime, this is purely an editor thing.
+        assets.markDirty(&scene());
+
+        return clone;
       }
-
-      detachFromParent();
-
-      gc::removeEntity(*this);
     }
+
+    return nullptr;
   }
 
-  void Entity::serialize(ISerializer& serializer)
+  void Entity::reflect(ISerializer& serializer)
   {
     serializer.serializeT(this);
 
@@ -300,7 +278,7 @@ namespace bf
             if (serializer.pushObject(k_SerializeArrayIndexKey))
             {
               Entity* const child = addChild(nullptr);
-              child->serialize(serializer);
+              child->reflect(serializer);
               serializer.popObject();
             }
           }
@@ -311,7 +289,7 @@ namespace bf
           {
             if (serializer.pushObject(k_SerializeArrayIndexKey))
             {
-              child.serialize(serializer);
+              child.reflect(serializer);
               serializer.popObject();
             }
           }
@@ -368,7 +346,7 @@ namespace bf
 
               if (behavior)
               {
-                behavior->serialize(serializer);
+                behavior->reflect(serializer);
               }
 
               serializer.popObject();
@@ -386,7 +364,7 @@ namespace bf
               String                 class_name_str = class_name_sr;
 
               serializer.serialize(k_SerializeBehaviorClassNameKey, class_name_str);
-              behavior->serialize(serializer);
+              behavior->reflect(serializer);
 
               serializer.popObject();
             }
@@ -395,6 +373,52 @@ namespace bf
 
         serializer.popArray();
       }
+    }
+  }
+
+  void Entity::startup()
+  {
+    for (BaseBehavior* behavior : m_Behaviors)
+    {
+      if (behavior->isActive())
+      {
+        behavior->onEnable();
+      }
+    }
+
+    for (Entity& child : m_Children)
+    {
+      child.startup();
+    }
+  }
+
+  void Entity::shutdown()
+  {
+    for (BaseBehavior* behavior : m_Behaviors)
+    {
+      behavior->setActive(false);
+    }
+
+    for (Entity& child : m_Children)
+    {
+      child.shutdown();
+    }
+  }
+
+  void Entity::destroy()
+  {
+    if (!isFlagSet(IS_PENDING_DELETED))
+    {
+      addFlags(IS_PENDING_DELETED);
+
+      while (!m_Children.isEmpty())
+      {
+        m_Children.back().destroy();
+      }
+
+      detachFromParent();
+
+      gc::removeEntity(*this);
     }
   }
 
@@ -430,26 +454,23 @@ namespace bf
     scene().m_BVHTree.remove(m_BHVNode);
   }
 
-  void Entity::setActiveImpl(bool old_state, bool new_state)
+  void Entity::reevaluateActiveState(bool was_active, bool is_active)
   {
-    if (old_state != new_state)
+    if (was_active != is_active)
     {
-      if (new_state)
-      {
-        applyComponentActiveState(m_ComponentInActiveStates);
-        activateBehaviors();
-      }
-      else
-      {
-        m_ComponentInActiveStates = deactivateComponents();
-        deactivateBehaviors();
-      }
+      ComponentStorage::forEachType([this, was_active, is_active](auto t) {
+        using T = bfForEachTemplateT(t);
+        // A component is active if both the Entity itself is active and it is active.
+        setComponentActiveImpl<T>(was_active, is_active, isComponentActive<T>());
+      });
 
-      for (Entity& child : children())
+      for (Entity& child : m_Children)
       {
         const bool is_child_active_self = child.isActiveSelf();
+        const bool was_child_active     = was_active && is_child_active_self;
+        const bool is_child_active      = is_active && is_child_active_self;
 
-        child.setActiveImpl(old_state && is_child_active_self, new_state && is_child_active_self);
+        child.reevaluateActiveState(was_child_active, is_child_active);
       }
     }
   }
@@ -458,7 +479,11 @@ namespace bf
   {
     if (m_Parent)
     {
+      const bool was_active = isActive();
       m_Parent->removeChild(this);
+      const bool is_active = isActive();
+
+      reevaluateActiveState(was_active, is_active);
     }
     else
     {

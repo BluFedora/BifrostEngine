@@ -29,6 +29,9 @@
 ## C++ Standard Library ("STL")
 
 - As of C++17 `std::vector`, `std::list`, `std::forward_list` can be template instantiated with an incomplete type:
+- Algorithms:
+  - `std::copy`          can handle overlapping ranges if you are copying to the left  (<==)
+  - `std::copy_backward` can handle overlapping ranges if you are copying to the right (==>)
 
 ## Memory
 

@@ -1,10 +1,7 @@
 ﻿#define NOMINMAX
 
-#include "bf/MemoryUtils.h"  // bfMegabytes
 #include "main_demo.hpp"
-
 #include <bf/bifrost.hpp>
-#include <bf/bifrost_imgui_glfw.hpp>
 #include <bf/editor/bifrost_editor_overlay.hpp>
 
 #include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
@@ -436,7 +433,7 @@ int main(int argc, char* argv[])
 
   if (bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
-    bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2020", 1280, 720, k_bfWindowFlagsDefault);
+    bfWindow* const main_window = bfPlatformCreateWindow("Mjolnir Editor 2021", 1280, 720, k_bfWindowFlagsDefault);
 
     if (main_window)
     {

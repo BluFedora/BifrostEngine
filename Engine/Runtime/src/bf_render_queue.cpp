@@ -83,6 +83,13 @@ namespace bf
   {
   }
 
+  void RenderQueue::clear()
+  {
+    command_stream_memory.clear();
+    key_stream_memory.clear();
+    num_keys = 0;
+  }
+
   static const RenderSortKey* find_max_key(const RenderSortKey* keys, std::size_t num_keys)
   {
     const RenderSortKey* best_key = keys;
@@ -173,7 +180,7 @@ namespace bf
     bfShaderProgramHandle last_program = nullptr;
     RenderSortKey* const  keys_bgn     = firstKey();
 
-    // The overlay is assumed to be correctly back to front
+    // The overlay is assumed to be correctly submitted back to front
     if (!is_overlay)
     {
       radix_sort(key_stream_memory, keys_bgn, num_keys);
@@ -299,10 +306,8 @@ namespace bf
          depth_bits,
          AlphaBlendDepthBits{});
       }
+        bfInvalidDefaultCase();
     }
-
-    assert(!"Should never get here.");  // NOLINT(clang-diagnostic-string-conversion)
-    return 0x0;
   }
 
   RC_DrawArrays* RenderQueue::drawArrays(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers)

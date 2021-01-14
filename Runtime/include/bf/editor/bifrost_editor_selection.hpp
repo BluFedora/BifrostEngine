@@ -1,5 +1,5 @@
-#ifndef BIFROST_EDITOR_SELECTION_HPP
-#define BIFROST_EDITOR_SELECTION_HPP
+#ifndef BF_EDITOR_SELECTION_HPP
+#define BF_EDITOR_SELECTION_HPP
 
 #include "bf/bf_function_view.hpp"    // FunctionView<R(Args...)>
 #include "bifrost_editor_window.hpp"  // Selectable
@@ -24,15 +24,12 @@ namespace bf::editor
     template<typename T>
     bool hasType() const
     {
-      for (const Selectable& selectable : m_Selectables)
-      {
-        if (selectable.is<T>())
-        {
-          return true;
-        }
-      }
-
-      return false;
+      return std::any_of(
+       m_Selectables.begin(),
+       m_Selectables.end(),
+       [](const Selectable& selectable) {
+         return selectable.is<T>();
+       });
     }
 
     template<typename T, typename F>
@@ -46,6 +43,21 @@ namespace bf::editor
           break;
         }
       }
+    }
+
+    template<typename T>
+    T firstOfType() const
+    {
+      for (const Selectable& selectable : m_Selectables)
+      {
+        if (selectable.is<T>())
+        {
+          return selectable.as<T>();
+        }
+      }
+
+      assert(!"You must check if the type exists first.");
+      return {};
     }
 
     template<typename T, typename F>
@@ -75,6 +87,7 @@ namespace bf::editor
 
     bool contains(const Selectable& object);
     void select(const Selectable& object);
+    void toggle(const Selectable& object);
     void deselect(const Selectable& object);
     void clear();
 
@@ -90,4 +103,4 @@ namespace bf::editor
   };
 }  // namespace bf::editor
 
-#endif /* BIFROST_EDITOR_SELECTION_HPP */
+#endif /* BF_EDITOR_SELECTION_HPP */

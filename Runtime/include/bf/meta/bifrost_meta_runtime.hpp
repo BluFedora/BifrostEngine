@@ -21,14 +21,11 @@ namespace bf::meta
   class BaseClassMetaInfo;
 
 #if BIFROST_META_USE_FREELIST
-  using RttiAllocatorBackingType = FreeListAllocator;
-  using RttiAllocatorType        = ProxyAllocator;
+  using RttiAllocatorType = FreeListAllocator;
 #else
-  using RttiAllocatorBackingType = LinearAllocator;
-  using RttiAllocatorType        = NoFreeAllocator;
+  using RttiAllocatorType = LinearAllocator;
 #endif
 
-  RttiAllocatorBackingType&                        gRttiMemoryBacking();
   RttiAllocatorType&                               gRttiMemory();
   HashTable<std::string_view, BaseClassMetaInfo*>& gRegistry();
 
@@ -197,6 +194,6 @@ namespace bf::meta
   using BaseStructMetaInfo = BaseClassMetaInfo;
 
   BaseClassMetaInfo* TypeInfoFromName(std::string_view name);
-}  // namespace bifrost::meta
+}  // namespace bf::meta
 
 #endif /* BIFROST_META_RUNTIME_HPP */

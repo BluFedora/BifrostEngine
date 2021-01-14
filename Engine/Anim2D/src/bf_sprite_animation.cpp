@@ -371,9 +371,9 @@ bfAnim2DSpriteHandle bfAnim2DSprite_invalidHandle(void)
   return handle;
 }
 
-bfBool8 bfAnim2DSprite_isInvalidHandle(const bfAnim2DSpriteHandle* handle)
+bfBool8 bfAnim2DSprite_isInvalidHandle(bfAnim2DSpriteHandle handle)
 {
-  return handle->scene == NULL || handle->id == k_bfAnim2DInvalidSpriteHandleID;
+  return handle.scene == NULL || handle.id == k_bfAnim2DInvalidSpriteHandleID;
 }
 
 void bfAnim2DSprite_setSpritesheet(bfAnim2DSpriteHandle self, bfSpritesheet* sheet)

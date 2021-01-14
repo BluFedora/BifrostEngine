@@ -16,15 +16,6 @@ namespace bf
       {
         for (BaseBehavior* const behavior : scene->behaviors())
         {
-          if (!behavior->isEventFlagSet(IBehavior::ON_ENABLE_CALLED))
-          {
-            behavior->onEnable();
-            behavior->setEventFlags(IBehavior::ON_ENABLE_CALLED);
-          }
-        }
-
-        for (BaseBehavior* const behavior : scene->behaviors())
-        {
           if (behavior->isEventFlagSet(IBehavior::ON_UPDATE))
           {
             behavior->onUpdate(dt);
@@ -33,4 +24,4 @@ namespace bf
       }
     }
   }
-}  // namespace bifrost
+}  // namespace bf

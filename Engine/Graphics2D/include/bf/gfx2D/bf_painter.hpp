@@ -352,7 +352,7 @@ namespace bf
     Text,
   };
 
-  struct BaseRender2DCommand_
+  struct BaseRender2DCommand
   {
     // Internal Command State
 
@@ -363,29 +363,26 @@ namespace bf
 
     const Brush* brush;
 
-    BaseRender2DCommand_(Render2DCommandType type, std::uint32_t size) :
+    BaseRender2DCommand(Render2DCommandType type, std::uint32_t size) :
       type{type},
       size{size},
       brush{nullptr}
     {
     }
 
-    bool isBlurred() const
-    {
-      return type == Render2DCommandType::BlurredRect;
-    }
+    bool isBlurred() const { return type == Render2DCommandType::BlurredRect; }
   };
 
   template<Render2DCommandType k_Type, typename TDerived>
-  struct BaseRender2DCommand : public BaseRender2DCommand_
+  struct BaseRender2DCommandT : public BaseRender2DCommand
   {
-    BaseRender2DCommand() :
-      BaseRender2DCommand_{k_Type, std::uint32_t(sizeof(TDerived))}
+    BaseRender2DCommandT() :
+      BaseRender2DCommand{k_Type, std::uint32_t(sizeof(TDerived))}
     {
     }
   };
 
-#define DECLARE_COMMAND(name) struct Render2D##name : public BaseRender2DCommand<Render2DCommandType::name, Render2D##name>
+#define DECLARE_COMMAND(name) struct Render2D##name : public BaseRender2DCommandT<Render2DCommandType::name, Render2D##name>
 
   DECLARE_COMMAND(FillRect)
   {
@@ -549,7 +546,7 @@ namespace bf
     void renderToQueue(RenderQueue& render_queue, const DescSetBind& object_binding);
     void renderToQueue(RenderQueue& render_queue);
 
-    static Rect2f calcCommandBounds(const BaseRender2DCommand_* command);
+    static Rect2f calcCommandBounds(const BaseRender2DCommand* command);
 
    private:
     struct VertIdxCountResult
@@ -601,15 +598,15 @@ namespace bf
       UIIndexType       shadow_vertex_offset;
     };
 
-    VertIdxCountResult calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand_* command);
-    void               writeVertices(const DestVerts& dest, const BaseRender2DCommand_* command, VertIdxCountResult& counts);
+    VertIdxCountResult calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand* command);
+    void               writeVertices(const DestVerts& dest, const BaseRender2DCommand* command, VertIdxCountResult& counts, const Rect2f& bounds);
   };
 
   //
   // Misc Helpers
   //
 
-  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType* num_codepoints = nullptr);
+  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, std::uint32_t* num_codepoints = nullptr);
 }  // namespace bf
 
 #endif  // BF_PAINTER_HPP

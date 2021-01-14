@@ -225,7 +225,7 @@ namespace bf
 
       auto& gc_list = g_GCCtx->gc_list;
 
-      intrusive::ListView<Entity> free_list{&Entity::m_GCList};
+      ListView<Entity> free_list{&Entity::m_GCList};
 
       for (auto it = gc_list.begin(); it != gc_list.end(); /* NO-OP */)
       {

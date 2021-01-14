@@ -19,6 +19,12 @@
 namespace bf
 {
   //
+  // Forward Declarations
+  //
+  enum class RenderCommandType;
+  struct BaseRenderCommand;
+
+  //
   // Tag type for the bit manipulation functions.
   //
   template<std::size_t k_Offset_, std::size_t k_NumBits_>
@@ -150,37 +156,10 @@ namespace bf
     }
   }  // namespace Bits
 
-  enum class RenderCommandType
-  {
-    DrawIndexed,
-    DrawArrays,
-  };
-
-  struct BaseRenderCommand
-  {
-    RenderCommandType  type;
-    BaseRenderCommand* next;  // optional continuation command that will not be sorted globally.
-
-    BaseRenderCommand(RenderCommandType type) :
-      type{type},
-      next{nullptr}
-    {
-    }
-  };
-
   struct RenderSortKey
   {
     std::uint64_t      key;
     BaseRenderCommand* command;
-  };
-
-  template<RenderCommandType k_Type>
-  struct RenderCommandT : public BaseRenderCommand
-  {
-    RenderCommandT() :
-      BaseRenderCommand(k_Type)
-    {
-    }
   };
 
   struct DescSetBind
@@ -217,6 +196,33 @@ namespace bf
     }
 
     void bind(bfGfxCommandListHandle command_list, std::uint32_t index);
+  };
+
+  enum class RenderCommandType
+  {
+    DrawIndexed,
+    DrawArrays,
+  };
+
+  struct BaseRenderCommand
+  {
+    RenderCommandType  type;
+    BaseRenderCommand* next;  // optional continuation command that will not be sorted globally.
+
+    BaseRenderCommand(RenderCommandType type) :
+      type{type},
+      next{nullptr}
+    {
+    }
+  };
+
+  template<RenderCommandType k_Type>
+  struct RenderCommandT : public BaseRenderCommand
+  {
+    RenderCommandT() :
+      BaseRenderCommand(k_Type)
+    {
+    }
   };
 
 #define DECLARE_RENDER_CMD(name) struct RC_##name : public RenderCommandT<RenderCommandType::name>
@@ -283,21 +289,16 @@ namespace bf
 
     RenderQueue(RenderQueueType type, RenderView& view);
 
-    void clear()
-    {
-      command_stream_memory.clear();
-      key_stream_memory.clear();
-      num_keys = 0;
-    }
-
+    void            clear();
     void            execute(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info);
-    RenderSortKey*  firstKey() const { return reinterpret_cast<RenderSortKey*>(key_stream_memory.begin()); }
     RC_DrawArrays*  drawArrays(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers);
     RC_DrawIndexed* drawIndexed(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers, bfBufferHandle index_buffer);
     void            submit(RC_DrawIndexed* command, float distance_to_camera);
     void            submit(RC_DrawArrays* command, float distance_to_camera);
 
-   protected:
+   private:
+    RenderSortKey* firstKey() const { return reinterpret_cast<RenderSortKey*>(key_stream_memory.begin()); }
+
     void pushKey(std::uint64_t key, BaseRenderCommand* command)
     {
       RenderSortKey* const sort_key = key_stream_memory.allocateT<RenderSortKey>();

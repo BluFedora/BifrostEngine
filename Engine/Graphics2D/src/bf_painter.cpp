@@ -574,7 +574,7 @@ namespace bf
 
       Rect2f                      bounds;
       std::uint8_t                flags;
-      const BaseRender2DCommand_* command;
+      const BaseRender2DCommand* command;
       Gfx2DElement*               next;
       VertIdxCountResult          vertex_idx_count;
 
@@ -600,7 +600,7 @@ namespace bf
         while (compatible_batch)
         {
           Batch2D* const                    it_next = compatible_batch->next;
-          const BaseRender2DCommand_* const command = compatible_batch->commands.first->command;
+          const BaseRender2DCommand* const command = compatible_batch->commands.first->command;
 
           if (
            command->isBlurred() == item->command->isBlurred() &&
@@ -631,7 +631,7 @@ namespace bf
 
     for (std::size_t i = 0u; i < num_elements; ++i)
     {
-      BaseRender2DCommand_* command = reinterpret_cast<BaseRender2DCommand_*>(byte_stream);
+      BaseRender2DCommand* command = reinterpret_cast<BaseRender2DCommand*>(byte_stream);
 
       elements[i].bounds  = calcCommandBounds(command);
       elements[i].flags   = 0x0;
@@ -780,7 +780,7 @@ namespace bf
       batch->first_index   = is_shadow ? shadow_index_count : normal_index_count;
 
       batch->commands.forEach([this, is_shadow, &dest, &normal_index_count, &shadow_index_count](Gfx2DElement* element) {
-        writeVertices(dest, element->command, element->vertex_idx_count);
+        writeVertices(dest, element->command, element->vertex_idx_count, element->bounds);
 
         if (!is_shadow)
         {
@@ -832,7 +832,7 @@ namespace bf
     pipeline.state.dynamic_viewport = bfTrue;
 
     final_batches.forEach([this, &pipeline, &render_queue, &frame_data, &object_binding, &frame_info](Batch2D* batch) {
-      const BaseRender2DCommand_* command = batch->commands.first->command;
+      const BaseRender2DCommand* command = batch->commands.first->command;
       bfBufferHandle              index_buffer;
       bfBufferHandle              vertex_buffer;
 
@@ -891,7 +891,7 @@ namespace bf
     renderToQueue(render_queue, {});
   }
 
-  Rect2f CommandBuffer2D::calcCommandBounds(const BaseRender2DCommand_* command)
+  Rect2f CommandBuffer2D::calcCommandBounds(const BaseRender2DCommand* command)
   {
     switch (command->type)
     {
@@ -931,7 +931,7 @@ namespace bf
     }
   }
 
-  CommandBuffer2D::VertIdxCountResult CommandBuffer2D::calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand_* command)
+  CommandBuffer2D::VertIdxCountResult CommandBuffer2D::calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand* command)
   {
     VertIdxCountResult result = {};
 
@@ -1440,7 +1440,7 @@ namespace bf
     return result;
   }
 
-  void CommandBuffer2D::writeVertices(const DestVerts& dest, const BaseRender2DCommand_* command, VertIdxCountResult& counts)
+  void CommandBuffer2D::writeVertices(const DestVerts& dest, const BaseRender2DCommand* command, VertIdxCountResult& counts, const Rect2f& bounds)
   {
     struct VertexWrite
     {
@@ -1454,33 +1454,43 @@ namespace bf
       UIVertex2D*  next_vertex;
       UIIndexType* next_index;
       const Brush* brush;
+      float        pos_to_uv[4]; /* x, y, inv_width, inv_height */
+
+      Vector2f mapPosUV(Vector2f pos) const
+      {
+        return {
+         (pos.x - pos_to_uv[0]) * pos_to_uv[2],
+         (pos.y - pos_to_uv[1]) * pos_to_uv[3],
+        };
+      }
 
       void addRect(AxisQuad rect)
       {
         const VertexWrite v = getVerts(k_NumVertRect);
 
-        Vector2f uvs[] =
+        const Vector2f positions[] =
          {
-          {0.0f, 1.0f},
-          {1.0f, 1.0f},
-          {1.0f, 0.0f},
-          {0.0f, 0.0f},
+          rect.v0(),
+          rect.v1(),
+          rect.v2(),
+          rect.v3(),
          };
 
+        Vector2f  uvs[4];
         bfColor4u colors[4];
 
         for (int i = 0; i < int(k_NumVertRect); ++i)
         {
-          const BrushSampleResult brush_sample = brush->sample(uvs[i], i);
+          const BrushSampleResult brush_sample = brush->sample(mapPosUV(positions[i]), i);
 
           uvs[i]    = brush_sample.remapped_uv;
           colors[i] = bfColor4u_fromColor4f(brush_sample.color);
         }
 
-        v.v[0] = {rect.v0(), uvs[0], colors[0]};
-        v.v[1] = {rect.v1(), uvs[1], colors[1]};
-        v.v[2] = {rect.v2(), uvs[2], colors[2]};
-        v.v[3] = {rect.v3(), uvs[3], colors[3]};
+        v.v[0] = {positions[0], uvs[0], colors[0]};
+        v.v[1] = {positions[1], uvs[1], colors[1]};
+        v.v[2] = {positions[2], uvs[2], colors[2]};
+        v.v[3] = {positions[3], uvs[3], colors[3]};
 
         pushTriIndex(v.id + 0, v.id + 2, v.id + 1);
         pushTriIndex(v.id + 0, v.id + 3, v.id + 2);
@@ -1493,48 +1503,38 @@ namespace bf
         const float             tangential_factor = std::tan(theta);
         const float             radial_factor     = std::cos(theta);
         const VertexWrite       v                 = getVerts(num_segments * 2 + 1);
-        float                   x_uv              = std::cos(start_angle);
-        float                   y_uv              = std::sin(start_angle);
-        float                   x                 = x_uv * radius;
-        float                   y                 = y_uv * radius;
+        float                   x                 = std::cos(start_angle) * radius;
+        float                   y                 = std::sin(start_angle) * radius;
         UIIndexType             current_vertex    = 0;
-        const Vector2f          middle_uv         = {0.5f, 0.5f};
-        const BrushSampleResult middle_sample     = brush->sample(middle_uv, 0);
+        const BrushSampleResult middle_sample     = brush->sample(mapPosUV(pos), current_vertex);
 
-        v.v[current_vertex++] = {pos, middle_uv, bfColor4u_fromColor4f(middle_sample.color)};
+        v.v[current_vertex++] = {pos, middle_sample.remapped_uv, bfColor4u_fromColor4f(middle_sample.color)};
 
         for (UIIndexType i = 0; i < num_segments; ++i)
         {
           const UIIndexType p0_index = current_vertex;
           {
             const Vector2f          p0        = Vector2f{x + pos.x, y + pos.y};
-            const Vector2f          p0_uv     = {(x_uv + 1.0f) * 0.5f, (y_uv + 1.0f) * 0.5f};
-            const BrushSampleResult p0_sample = brush->sample(p0_uv, i);
-            v.v[current_vertex++]             = {p0, p0_uv, bfColor4u_fromColor4f(p0_sample.color)};
+            const Vector2f          p0_uv     = mapPosUV(p0);
+            const BrushSampleResult p0_sample = brush->sample(p0_uv, current_vertex);
+            v.v[current_vertex++]             = {p0, p0_sample.remapped_uv, bfColor4u_fromColor4f(p0_sample.color)};
           }
 
-          const float tx    = -y;
-          const float ty    = x;
-          const float tx_uv = -y_uv;
-          const float ty_uv = x_uv;
+          const float tx = -y;
+          const float ty = x;
 
           x += tx * tangential_factor;
           y += ty * tangential_factor;
           x *= radial_factor;
           y *= radial_factor;
 
-          x_uv += tx_uv * tangential_factor;
-          y_uv += ty_uv * tangential_factor;
-          x_uv *= radial_factor;
-          y_uv *= radial_factor;
-
           const UIIndexType p1_index = current_vertex;
           {
             const Vector2f          p1        = Vector2f{x + pos.x, y + pos.y};
-            const Vector2f          p1_uv     = {(x_uv + 1.0f) * 0.5f, (y_uv + 1.0f) * 0.5f};
-            const BrushSampleResult p1_sample = brush->sample(p1_uv, i);
+            const Vector2f          p1_uv     = mapPosUV(p1);
+            const BrushSampleResult p1_sample = brush->sample(p1_uv, current_vertex);
 
-            v.v[current_vertex++] = {p1, {0.0f, 0.0f}, bfColor4u_fromColor4f(p1_sample.color)};
+            v.v[current_vertex++] = {p1, p1_sample.remapped_uv, bfColor4u_fromColor4f(p1_sample.color)};
           }
 
           pushTriIndex(v.id, v.id + p1_index, v.id + p0_index);
@@ -1561,6 +1561,14 @@ namespace bf
     };
 
     VertexWriter writer = {dest.vertex_offset, dest.vertex_buffer_ptr, dest.index_buffer_ptr, command->brush};
+
+    const float bounds_width  = bounds.width();
+    const float bounds_height = bounds.height();
+
+    writer.pos_to_uv[0] = bounds.left();
+    writer.pos_to_uv[1] = bounds.top();
+    writer.pos_to_uv[2] = bounds_width != 0.0f ? 1.0f / bounds_width : 0.0f;
+    writer.pos_to_uv[3] = bounds_height != 0.0f ? 1.0f / bounds_height : 0.0f;
 
     switch (command->type)
     {
@@ -1823,14 +1831,14 @@ namespace bf
     }
   }
 
-  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, UIIndexType* num_codepoints)
+  Vector2f calculateTextSize(StringRange utf8_string, PainterFont* font, std::uint32_t* num_codepoints)
   {
-    float       max_width            = 0.0f;
-    float       current_width        = 0.0f;
-    float       current_height       = 0.0f;
-    const char* utf8_text            = utf8_string.begin();
-    const char* utf8_text_end        = utf8_string.end();
-    UIIndexType num_codepoints_local = 0;
+    float         max_width            = 0.0f;
+    float         current_width        = 0.0f;
+    float         current_height       = 0.0f;
+    const char*   utf8_text            = utf8_string.begin();
+    const char*   utf8_text_end        = utf8_string.end();
+    std::uint32_t num_codepoints_local = 0;
 
     if (utf8_text != utf8_text_end)
     {

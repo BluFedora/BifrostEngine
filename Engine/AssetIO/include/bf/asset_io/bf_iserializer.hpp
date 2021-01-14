@@ -116,6 +116,46 @@ namespace bf
     void serialize(StringRange key, Vector2f& value);
     void serialize(StringRange key, Vector3f& value);
 
+    template<typename... Ts>
+    void serializeVariant(Variant<Ts...>& value)
+    {
+      std::size_t type = std::size_t(value.type());
+
+      serialize("__Type__", type);
+
+      if (value.valid())
+      {
+        if (m_Mode == SerializerMode::LOADING)
+        {
+          using VariantT     = Variant<Ts...>;
+          using DeserializeT = void (*)(ISerializer&, VariantT&);
+
+          static constexpr DeserializeT s_DeserializeTable[] = {
+           deserializeVariantHelperVoid,
+           deserializeVariantHelper<VariantT, Ts>...,
+          };
+
+          if (type < std::size(s_DeserializeTable))
+          {
+            s_DeserializeTable[type](*this, value);
+          }
+          else
+          {
+            assert(!"Invalid type serialized into this variant.");
+          }
+        }
+        else
+        {
+          visit_all(
+           meta::overloaded{
+            [this](auto& typed_value) {
+              serialize("__Value__", typed_value);
+            }},
+           value);
+        }
+      }
+    }
+
     template<typename T>
     void serializeT(StringRange key, T* value)
     {
@@ -136,6 +176,20 @@ namespace bf
     }
 
     virtual ~ISerializer() = default;
+
+   private:
+    template<typename VariantT, typename T>
+    static void deserializeVariantHelper(ISerializer& self, VariantT& value)
+    {
+      T& typed_value = value.template set<T>();
+
+      self.serialize("__Value__", typed_value);
+    }
+
+    template<typename VariantT>
+    static void deserializeVariantHelperVoid(ISerializer& /* self */, VariantT& /* value */)
+    {
+    }
   };
 }  // namespace bf
 

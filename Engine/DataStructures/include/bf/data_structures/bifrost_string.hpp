@@ -11,12 +11,11 @@
  * @copyright Copyright (c) 2019
  */
 /******************************************************************************/
-#ifndef BIFROST_STRING_HPP
-#define BIFROST_STRING_HPP
+#ifndef BF_STRING_HPP
+#define BF_STRING_HPP
 
+#include "bf/StringRange.h"         /* bfStringRange      */
 #include "bifrost_dynamic_string.h" /* ConstBifrostString */
-
-#include "bf/StringRange.h" /* bfStringRange */
 
 #include <cstdarg>   /* va_list        */
 #include <cstddef>   /* size_t         */
@@ -240,7 +239,7 @@ namespace bf
         m_Handle = String_new("");
       }
 
-      ::String_reserve(&m_Handle, new_capacity);
+      String_reserve(&m_Handle, new_capacity);
     }
 
     void resize(const std::size_t new_size)
@@ -250,7 +249,7 @@ namespace bf
         m_Handle = String_new("");
       }
 
-      ::String_resize(&m_Handle, new_size);
+      String_resize(&m_Handle, new_size);
     }
 
     char* begin()
@@ -380,7 +379,10 @@ namespace bf
     // This is non-const by design.
     void unescape()  // const
     {
-      String_unescape(m_Handle);
+      if (m_Handle)
+      {
+        String_unescape(m_Handle);
+      }
     }
 
     [[nodiscard]] std::size_t hash() const
@@ -401,7 +403,7 @@ namespace bf
     {
       if (m_Handle)
       {
-        ::String_clear(&m_Handle);
+        String_clear(&m_Handle);
       }
     }
 
@@ -517,34 +519,34 @@ namespace bf::string_utils
   // Use 'fmtFree' to deallocate memory.
   char* fmtAlloc(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, ...);
 
-  // caller is resposible for va_start / va_end
+  // caller is responsible for calling va_start / va_end before and after this function respectively.
   char* fmtAllocV(IMemoryManager& allocator, std::size_t* out_size, const char* fmt, std::va_list args);
 
-  // Deallocates memory from 'fmtAlloc'
+  // Deallocates memory from `fmtAlloc` / `fmtAllocV`
   void fmtFree(IMemoryManager& allocator, char* ptr);
 
   // Uses the passed in buffer for the formatting.
   //
-  //   if the buffer is nullptr then this is a good way to get the size needed (excluding nul terminator.)
+  // if the buffer is nullptr then this is a good way to get the size needed (excluding nul terminator.)
   // Returns true if the buffer was big enough.
-  //   if the buffer is too small nothing is written.
   bool fmtBuffer(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, ...);
+  bool fmtBufferV(char* buffer, size_t buffer_size, std::size_t* out_size, const char* fmt, std::va_list args);
 
   // String Tokenizing //
 
   //
-  // If the strig ends in the delimter then you will get an empty string as the last element.
+  // If the string ends in the delimiter then you will get an empty string as the last element.
   //
 
   // Callers job to either free each 'StringLink' themselves or call 'tokenizeFree' with the same allocator.
   TokenizeResult tokenizeAlloc(IMemoryManager& allocator, const StringRange& string, char delimiter = '/');
-  // Deallocates memory from 'tokenizeAlloc'
+  // Deallocates memory from `tokenizeAlloc`
   void tokenizeFree(IMemoryManager& allocator, const TokenizeResult& tokenized_list);
 
   //
   // The callback is passed in a 'StringRange' for each tokenized element.
   // The StringRange does not include the delimiter character.
-  // Except for the first call you can assume the StringRange is preceeded by the delimiter.
+  // You can assume the StringRange is preceded by the delimiter (except for the first call).
   //
   template<typename F>
   void tokenize(const StringRange& string, const char delimiter, F&& callback)
@@ -569,9 +571,9 @@ namespace bf::string_utils
   }
 
   // Misc //
-  //
+
   // Caller is responsible for freeing memory.
   BufferLen clone(IMemoryManager& allocator, StringRange str);
 }  // namespace bf::string_utils
 
-#endif /* BIFROST_STRING_HPP */
+#endif /* BF_STRING_HPP */

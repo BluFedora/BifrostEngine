@@ -32,26 +32,42 @@ namespace bf::editor
     }
   }
 
+  void GameView::onPreDrawGUI(EditorOverlay& editor)
+  {
+    if (m_Camera)
+    {
+      std::uint8_t view_flags = 0x0;
+
+      if (isVisible())
+      {
+        view_flags |= RenderView::DO_DRAW;
+      }
+
+      m_Camera->flags = view_flags;
+    }
+  }
+
   void GameView::onDrawGUI(EditorOverlay& editor)
   {
     auto& engine       = editor.engine();
     auto& open_project = editor.currentlyOpenProject();
 
-    if (!m_Camera)
-    {
-      m_Editor = &editor;
-      m_Camera = engine.borrowCamera({1280, 720});
-
-      if (!m_Camera)
-      {
-        return;
-      }
-    }
-
     const auto scene = engine.currentScene();
+
+    m_Editor = &editor;
 
     if (open_project)
     {
+      if (!m_Camera)
+      {
+        m_Camera = engine.borrowCamera({1280, 720});
+
+        if (!m_Camera)
+        {
+          return;
+        }
+      }
+
       LinearAllocatorScope mem_scope{engine.tempMemory()};
 
       if (ImGui::BeginMenuBar())
@@ -120,7 +136,7 @@ namespace bf::editor
   {
     if (engine.state() == EngineState::EDITOR_PLAYING)
     {
-      JsonSerializerWriter serializer{engine.tempMemoryNoFree()};
+      JsonSerializerWriter serializer{engine.tempMemory()};
 
       if (serializer.beginDocument(false))
       {
@@ -131,6 +147,7 @@ namespace bf::editor
       m_SerializedScene = serializer.document();
 
       engine.setState(EngineState::RUNTIME_PLAYING);
+      scene->startup();
     }
   }
 
@@ -138,15 +155,16 @@ namespace bf::editor
   {
     if (engine.state() != EngineState::EDITOR_PLAYING)
     {
-      JsonSerializerReader serializer{engine.assets(), engine.tempMemoryNoFree(), m_SerializedScene};
+      scene->shutdown();
+      engine.setState(EngineState::EDITOR_PLAYING);
+
+      JsonSerializerReader serializer{engine.assets(), engine.tempMemory(), m_SerializedScene};
 
       if (serializer.beginDocument(false))
       {
         scene->reflect(serializer);
         serializer.endDocument();
       }
-
-      engine.setState(EngineState::EDITOR_PLAYING);
     }
   }
 }  // namespace bf::editor

@@ -13,8 +13,134 @@ namespace bf
 {
   using AssetIndexType = std::uint32_t;
 
+  ////////////////////
+
+  struct AABB final
+  {
+    float min[3];
+    float max[3];
+
+    AABB() = default;
+
+    AABB(const BifrostTransform& transform);
+
+    AABB(const Vector3f& vmin, const Vector3f& vmax)
+    {
+      min[0] = vmin.x;
+      min[1] = vmin.y;
+      min[2] = vmin.z;
+      max[0] = vmax.x;
+      max[1] = vmax.y;
+      max[2] = vmax.z;
+    }
+
+    Vector3f center() const
+    {
+      return {
+       (max[0] + min[0]) * 0.5f,
+       (max[1] + min[1]) * 0.5f,
+       (max[2] + min[2]) * 0.5f,
+       1.0f,
+      };
+    }
+
+    Vector3f dimensions() const
+    {
+      return {
+       (max[0] - min[0]),
+       (max[1] - min[1]),
+       (max[2] - min[2]),
+       0.0f,
+      };
+    }
+
+    bool operator==(const AABB& rhs) const
+    {
+      for (int i = 0; i < 3; ++i)
+      {
+        if (!math::isAlmostEqual(min[i], rhs.min[i]) || !math::isAlmostEqual(max[i], rhs.max[i]))
+        {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    bool operator!=(const AABB& rhs) const
+    {
+      return !(*this == rhs);
+    }
+  };
+
+  namespace aabb
+  {
+    /*!
+     * @brief
+     *   Creates a new bounding box that contains both \p a and \p b.
+     *
+     * @param out
+     *   The result of this function.
+     *
+     * @param a
+     *   The first AABB to merge.
+     * 
+     * @param b
+     *   The second AABB to merge.
+     */
+    static void mergeBounds(AABB& out, const AABB& a, const AABB& b)
+    {
+      for (int i = 0; i < 3; ++i)
+      {
+        out.min[i] = a.min[i] < b.min[i] ? a.min[i] : b.min[i];
+        out.max[i] = a.max[i] > b.max[i] ? a.max[i] : b.max[i];
+      }
+    }
+
+    /*!
+     * @copydoc mergeBounds(AABB&, const AABB&, const AABB&)
+     */
+    static AABB mergeBounds(const AABB& a, const AABB& b)
+    {
+      AABB out;  // NOLINT
+      mergeBounds(out, a, b);
+      return out;
+    }
+
+    static void expandBy(AABB& self, float amount)
+    {
+      for (int i = 0; i < 3; ++i)
+      {
+        self.min[i] = self.min[i] - amount;
+        self.max[i] = self.max[i] + amount;
+      }
+    }
+
+    static AABB expandedBy(const AABB& self, float amount)
+    {
+      AABB clone = self;
+      expandBy(clone, amount);
+      return clone;
+    }
+
+    static float surfaceArea(const AABB& self)
+    {
+      const float d[3] =
+       {
+        self.max[0] - self.min[0],
+        self.max[1] - self.min[1],
+        self.max[2] - self.min[2],
+       };
+
+      return 2.0f * (d[0] * d[1] + d[1] * d[2] + d[2] * d[0]);
+    }
+  }  // namespace aabb
+
+  ////////////////////
+
   struct Mesh
   {
+    // AABB           bounds;
     AssetIndexType index_offset;
     AssetIndexType num_indices;
     std::uint32_t  material_idx;
@@ -315,9 +441,9 @@ namespace bf
     AssetModelLoadResult(const AssetModelLoadResult& rhs) noexcept = delete;
     AssetModelLoadResult(AssetModelLoadResult&& rhs) noexcept      = default;
     AssetModelLoadResult& operator=(const AssetModelLoadResult& rhs) noexcept = delete;
-    AssetModelLoadResult& operator=(AssetModelLoadResult&& rhs) noexcept = default;
+    AssetModelLoadResult& operator=(AssetModelLoadResult&& rhs) noexcept = delete;
 
-    operator bool() noexcept
+    operator bool() const noexcept
     {
       return error.bgn == nullptr;
     }

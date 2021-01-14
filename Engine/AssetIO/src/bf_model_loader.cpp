@@ -184,6 +184,43 @@ namespace bf
   }
 #endif
 
+  AABB::AABB(const BifrostTransform& transform)
+  {
+    Vector3f coords[] = {
+     {+0.5f, -0.5f, -0.5f, 1.0f},
+     {-0.5f, +0.5f, -0.5f, 1.0f},
+     {-0.5f, -0.5f, +0.5f, 1.0f},
+
+     {+0.5f, +0.5f, -0.5f, 1.0f},
+     {-0.5f, +0.5f, +0.5f, 1.0f},
+     {+0.5f, -0.5f, +0.5f, 1.0f},
+
+     {-0.5f, -0.5f, -0.5f, 1.0f},
+     {+0.5f, +0.5f, +0.5f, 1.0f},
+    };
+
+    for (Vector3f& point : coords)
+    {
+      Vec3f_mulMat(&point, &transform.world_transform);
+    }
+
+    min[0] = max[0] = coords[0].x;
+    min[1] = max[1] = coords[0].y;
+    min[2] = max[2] = coords[0].z;
+
+    for (int i = 1; i < 8; ++i)
+    {
+      const Vector3f& point = coords[i];
+
+      min[0] = std::min(min[0], point.x);
+      min[1] = std::min(min[1], point.y);
+      min[2] = std::min(min[2], point.z);
+      max[0] = std::max(max[0], point.x);
+      max[1] = std::max(max[1], point.y);
+      max[2] = std::max(max[2], point.z);
+    }
+  }
+
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept
   {
     AssetModelLoadResult result              = {};
@@ -200,7 +237,9 @@ namespace bf
                                 aiProcess_LimitBoneWeights |
                                 aiProcess_SplitByBoneCount |
                                 aiProcess_GenUVCoords |
-                                aiProcess_CalcTangentSpace;
+                                aiProcess_CalcTangentSpace |
+                                aiProcess_OptimizeMeshes |
+                                aiProcess_GlobalScale;
 
     import_flags |= load_settings.smooth_normals ? aiProcess_GenSmoothNormals : aiProcess_GenNormals;
 
@@ -325,7 +364,10 @@ namespace bf
       }
 
       // Merging All Vertices Into One Buffer
+
       {
+        Vector3f        bounds_min    = {std::numeric_limits<float>::infinity()};
+        Vector3f        bounds_max    = {-std::numeric_limits<float>::infinity()};
         AssetIndexType  index_offset  = 0;
         AssetIndexType  vertex_offset = 0;
         AssetIndexType* output_index  = result.indices->data;
@@ -337,7 +379,7 @@ namespace bf
           const unsigned int   num_mesh_faces    = mesh->mNumFaces;
           const AssetIndexType num_mesh_indices  = num_mesh_faces * k_NumIndicesPerFace;
 
-          if (!(mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE))
+          if (!(mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE) || num_mesh_vertices == 0)
           {
             continue;
           }
@@ -367,6 +409,9 @@ namespace bf
             aiVector3ToArray(tangent, output_vertex->tangent);
             aiVector3ToArray(bitangent, output_vertex->bitangent);
             aiColor4DToArray(color, output_vertex->color);
+
+            bounds_min = vec::min(bounds_min, output_vertex->position);
+            bounds_max = vec::max(bounds_max, output_vertex->position);
 
             output_vertex->uv.x = uv->x;
             output_vertex->uv.y = uv->y;
@@ -416,6 +461,21 @@ namespace bf
 
           vertex_offset += num_mesh_vertices;
           index_offset += num_mesh_indices;
+        }
+
+        const AABB              bounds         = {bounds_min, bounds_max};
+        const Vector3f          bounds_center  = bounds.center();
+        const Vector3f          bounds_dim = bounds.dimensions();
+        const std::size_t       num_verts      = result.vertices->length;
+        AssetModelVertex* const vertex_start   = result.vertices->data;
+        const float             scale          = (1.0f / std::max({bounds_dim.x, bounds_dim.y, bounds_dim.z})) * load_settings.scale_factor;
+
+        for (std::size_t v = 0; v < num_verts; ++v)
+        {
+          AssetModelVertex* const vertex = vertex_start + v;
+
+          vertex->position   = (vertex->position - bounds_center) * scale;
+          vertex->position.w = 1.0f;
         }
       }
 
