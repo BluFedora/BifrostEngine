@@ -27,43 +27,6 @@ namespace bf
   class Entity;
   class bfPureInterface(IBehavior);
 
-  class SceneTransformSystem : public IBifrostTransformSystem
-  {
-   private:
-    struct TransformNode final : public BifrostTransform
-    {
-      bfTransformID freelist_next;  // TODO(SR): To save space this could probably be unioned with the BifrostTransform.
-    };
-
-   private:
-    static BifrostTransform* transformFromIDImpl(struct IBifrostTransformSystem_t* self, bfTransformID id);
-    static bfTransformID     transformToIDImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
-    static void              addToDirtyListImpl(struct IBifrostTransformSystem_t* self, BifrostTransform* transform);
-
-   private:
-    Array<TransformNode> m_Transforms;
-    bfTransformID        m_FreeList;
-
-   public:
-    explicit SceneTransformSystem(IMemoryManager& memory);
-
-    bfTransformID createTransform();
-    void          destroyTransform(bfTransformID transform);
-
-    template<typename F>
-    void forEachDirty(F&& callback)
-    {
-      while (dirty_list)
-      {
-        BifrostTransform* const next = dirty_list->dirty_list_next;
-
-        callback(*dirty_list);
-
-        dirty_list = next;
-      }
-    }
-  };
-
   using Camera     = BifrostCamera;
   using EntityList = ListView<Entity>;
 
@@ -90,7 +53,6 @@ namespace bf
     ComponentStorage     m_InactiveComponents;
     Array<BaseBehavior*> m_ActiveBehaviors;
     BVH                  m_BVHTree;
-    SceneTransformSystem m_TransformSystem;
     Camera               m_Camera;
     bfAnim2DScene*       m_AnimationScene;
 

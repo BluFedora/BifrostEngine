@@ -17,6 +17,8 @@
 #include "bf/ecs/bifrost_entity.hpp"
 #include "bf/ecs/bifrost_renderer_component.hpp"  // MeshRenderer
 
+int g_NumDrawnObjects;
+
 namespace bf
 {
   void ComponentRenderer::onInit(Engine& engine)
@@ -30,7 +32,6 @@ namespace bf
 
     bfShaderProgram_link(m_ShaderProgram);
 
-    // bindings::addObject(m_ShaderProgram, BF_SHADER_STAGE_VERTEX);
     bindings::addMaterial(m_ShaderProgram, BF_SHADER_STAGE_FRAGMENT);
     bindings::addCamera(m_ShaderProgram, BF_SHADER_STAGE_VERTEX);
 
@@ -56,6 +57,8 @@ namespace bf
 
   void ComponentRenderer::onFrameDraw(Engine& engine, RenderView& camera, float alpha)
   {
+    g_NumDrawnObjects = 0;
+
     const auto scene = engine.currentScene();
 
     if (scene)
@@ -63,16 +66,59 @@ namespace bf
       auto&      engine_renderer = engine.renderer();
       auto&      tmp_memory      = engine.tempMemory();
       const auto frame_info      = engine_renderer.frameInfo();
+      auto&      bvh             = scene->bvh();
+
+      // Mark Visibility
+
+      //
+      // NOTE(SR): This can be optimized with Plane masking:
+      //   [https://cesium.com/blog/2015/08/04/fast-hierarchical-culling/]
+      //
+
+      bvh.traverseConditionally([&cpu_camera = camera.cpu_camera, &bvh](BVHNode& node) {
+        if (bvh_node::isLeaf(node))
+        {
+          node.is_visible = true;
+          return false;
+        }
+
+        const AABB& bounds = node.bounds;
+
+        Vector3f aabb_min;
+        Vector3f aabb_max;
+
+        memcpy(&aabb_min, &bounds.min, sizeof(float) * 3);
+        memcpy(&aabb_max, &bounds.max, sizeof(float) * 3);
+
+        const auto hit_result = bfFrustum_isAABBInside(&cpu_camera.frustum, aabb_min, aabb_max);
+
+        switch (hit_result)
+        {
+          case BF_FRUSTUM_TEST_OUTSIDE:
+          {
+            bvh.traverse(bvh.nodeToIndex(node), [](BVHNode& node) {
+              node.is_visible = false;
+            });
+
+            return false;
+          }
+          case BF_FRUSTUM_TEST_INTERSECTING:
+          {
+            return true;
+          }
+          case BF_FRUSTUM_TEST_INSIDE:
+          {
+            bvh.traverse(bvh.nodeToIndex(node), [](BVHNode& node) {
+              node.is_visible = true;
+            });
+
+            return false;
+          }
+            bfInvalidDefaultCase();
+        }
+      });
 
       // 3D Models
-
-      // TODO(SR):
-      //   - Culling based on the view frustum.
-      //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/]
-      //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/clip-space-approach-implementation-details/]
-      //     - [http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-source-code/]
-      //     - [https://github.com/gametutorials/tutorials/blob/master/OpenGL/Frustum%20Culling/Frustum.cpp]
-      //     - [http://www.rastertek.com/dx10tut16.html]
 
       RenderQueue& opaque_render_queue      = camera.opaque_render_queue;
       RenderQueue& transparent_render_queue = camera.transparent_render_queue;
@@ -88,7 +134,7 @@ namespace bf
 
       for (MeshRenderer& renderer : scene->components<MeshRenderer>())
       {
-        if (renderer.material() && renderer.model())
+        if (renderer.material() && renderer.model() && bvh.nodes[renderer.m_BHVNode].is_visible)
         {
           ModelAsset& model = *renderer.model();
 
@@ -98,7 +144,7 @@ namespace bf
             MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
 
             render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
-            render_command->object_binding.set(engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner()));
+            render_command->object_binding.set(engine_renderer.makeObjectTransformInfo(camera.cpu_camera.view_proj_cache, camera.gpu_camera, renderer.owner()));
 
             render_command->vertex_buffers[0]         = model.m_VertexBuffer;
             render_command->vertex_buffers[1]         = model.m_VertexBoneData;
@@ -108,6 +154,8 @@ namespace bf
             render_command->num_indices               = mesh.num_indices;
 
             opaque_render_queue.submit(render_command, 0.0f);
+
+            ++g_NumDrawnObjects;
           }
         }
       }
@@ -119,7 +167,7 @@ namespace bf
 
       for (SkinnedMeshRenderer& renderer : scene->components<SkinnedMeshRenderer>())
       {
-        if (renderer.material() && renderer.model())
+        if (renderer.material() && renderer.model() && bvh.nodes[renderer.m_BHVNode].is_visible)
         {
           const ModelAsset& model = *renderer.model();
 
@@ -132,7 +180,7 @@ namespace bf
             {
               RC_DrawIndexed* const render_command  = opaque_render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
               MaterialAsset*        material        = model.m_Materials[mesh.material_idx];
-              bfDescriptorSetInfo   desc_set_object = engine_renderer.makeObjectTransformInfo(camera.gpu_camera, renderer.owner());
+              bfDescriptorSetInfo   desc_set_object = engine_renderer.makeObjectTransformInfo(camera.cpu_camera.view_proj_cache, camera.gpu_camera, renderer.owner());
               const bfBufferSize    size            = sizeof(Mat4x4) * model.numBones();
 
               bfDescriptorSetInfo_addUniform(&desc_set_object, 1, 0, &offset, &size, &uniform_bone_data.transform_uniform.handle(), 1);
@@ -148,6 +196,8 @@ namespace bf
               render_command->num_indices               = mesh.num_indices;
 
               opaque_render_queue.submit(render_command, 0.0f);
+
+              ++g_NumDrawnObjects;
             }
           }
         }
@@ -160,12 +210,11 @@ namespace bf
       Renderable2DPrimitive* sprite_list           = tmp_memory.allocateArray<Renderable2DPrimitive>(sprite_renderer_list.size() + num_per_frame_sprites);
       std::size_t            sprite_list_size      = 0;
 
-      const auto add_sprite_to_list = [sprite_list, &sprite_list_size](SpriteRenderer& renderer) {
-        // TODO(SR): Culling would go here.
-        if (renderer.size().x > 0.0f && renderer.size().y > 0.0f && renderer.material())
+      const auto add_sprite_to_list = [sprite_list, &sprite_list_size, &bvh](SpriteRenderer& renderer) {
+        if (renderer.size().x > 0.0f && renderer.size().y > 0.0f && renderer.material() && bvh.nodes[renderer.m_BHVNode].is_visible)
         {
-          Renderable2DPrimitive&  dst_sprite = sprite_list[sprite_list_size++];
-          const BifrostTransform& transform  = renderer.owner().transform();
+          Renderable2DPrimitive& dst_sprite = sprite_list[sprite_list_size++];
+          const bfTransform&     transform  = renderer.owner().transform();
 
           dst_sprite.transform = transform.world_transform;
           dst_sprite.material  = &*renderer.material();
@@ -173,6 +222,8 @@ namespace bf
           dst_sprite.size      = renderer.size();
           dst_sprite.color     = renderer.color();
           dst_sprite.uv_rect   = renderer.uvRect();
+
+          ++g_NumDrawnObjects;
         }
       };
 
@@ -218,7 +269,7 @@ namespace bf
         SpriteBatch* batches    = nullptr;
         SpriteBatch* last_batch = nullptr;
 
-        for (int i = 0; i < sprite_list_size; ++i)
+        for (std::size_t i = 0; i < sprite_list_size; ++i)
         {
           Renderable2DPrimitive&                sprite          = sprite_list[i];
           MaterialAsset* const                  sprite_mat      = sprite.material;

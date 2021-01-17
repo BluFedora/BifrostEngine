@@ -84,7 +84,6 @@ namespace bf
     m_CameraDeleteList{nullptr},
     m_Systems{m_MainMemory},
     m_AnimationSystem{nullptr},
-    m_CollisionSystem{nullptr},
     m_ComponentRenderer{nullptr},
     m_BehaviorSystem{nullptr},
     m_TimeStep{},
@@ -300,7 +299,6 @@ namespace bf
 
     m_Scripting.stackStore(0, behavior_clz_bindings);
 
-    m_CollisionSystem   = addECSSystem<CollisionSystem>();
     m_BehaviorSystem    = addECSSystem<BehaviorSystem>();
     m_AnimationSystem   = addECSSystem<AnimationSystem>(m_MainMemory);
     m_ComponentRenderer = addECSSystem<ComponentRenderer>();

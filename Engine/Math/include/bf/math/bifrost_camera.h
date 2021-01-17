@@ -9,6 +9,89 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Frustum API */
+
+//
+// Points on the plane satisfy Dot(point, Vec3f{nx, ny, nz, 0.0f}) == d
+//
+// Equation of a Plane: Ax + By + Cz = D => Ax + By + Cz - D = 0
+//
+
+typedef struct
+{
+  float nx, ny, nz;  //!< Plane normal
+  float d;           //!< Distance from the origin.
+
+} bfPlane;
+
+inline bfPlane bfPlane_fromPoints(Vec3f p0, Vec3f p1, Vec3f p2)
+{
+  bfPlane result;
+
+  Vec3f p1_to_p0 = p1;
+  Vec3f_sub(&p1_to_p0, &p0);
+
+  Vec3f p2_to_p1 = p2;
+  Vec3f_sub(&p2_to_p1, &p1);
+
+  Vec3f normal;
+  Vec3f_cross(&p1_to_p0, &p2_to_p1, &normal);
+
+  result.nx = normal.x;
+  result.ny = normal.y;
+  result.nz = normal.z;
+  result.d  = Vec3f_dot(&normal, &p0);
+
+  return result;
+}
+
+inline Vec3f bfPlane_normal(bfPlane plane)
+{
+  const Vec3f result = {plane.nx, plane.ny, plane.nz, 0.0f};
+
+  return result;
+}
+
+inline float bfPlane_dot(bfPlane plane, Vec3f point)
+{
+  const Vec3f normal = bfPlane_normal(plane);
+
+  return bfV3f_dot(normal, point) + plane.d;
+}
+
+enum
+{
+  k_bfPlaneIdx_Near,
+  k_bfPlaneIdx_Far,
+  k_bfPlaneIdx_Left,
+  k_bfPlaneIdx_Right,
+  k_bfPlaneIdx_Top,
+  k_bfPlaneIdx_Bottom,
+  k_bfPlaneIdx_Max,
+};
+
+typedef enum
+{
+  BF_FRUSTUM_TEST_OUTSIDE      = 0,  //!< This is a falsy value to allow for this to be treated as a boolean.
+  BF_FRUSTUM_TEST_INTERSECTING = 1,  //!< Partially inside of one of the planes
+  BF_FRUSTUM_TEST_INSIDE       = 2,  //!< Completely inside all of the planes.
+
+} bfFrustumTestResult;
+
+typedef struct
+{
+  bfPlane planes[k_bfPlaneIdx_Max];
+
+} bfFrustum;
+
+BF_MATH_API void                bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* matrix);
+BF_MATH_API bfFrustumTestResult bfFrustum_isPointInside(const bfFrustum* self, Vec3f point);
+BF_MATH_API bfFrustumTestResult bfFrustum_isSphereInside(const bfFrustum* self, Vec3f center, float radius);
+BF_MATH_API bfFrustumTestResult bfFrustum_isAABBInside(const bfFrustum* self, Vec3f aabb_min, Vec3f aabb_max);
+
+/* Camera API */
+
 typedef enum
 {
   BIFROST_CAMERA_MODE_ORTHOGRAPHIC,
@@ -24,7 +107,7 @@ typedef struct
 
   union
   {
-    // NOTE(Shareef):
+    // NOTE(SR):
     //   Used by:
     //     BIFROST_CAMERA_MODE_ORTHOGRAPHIC
     //     BIFROST_CAMERA_MODE_FRUSTRUM
@@ -33,14 +116,14 @@ typedef struct
 
     struct
     {
-      // NOTE(Shareef):
+      // NOTE(SR):
       //   Used by:
       //     BIFROST_CAMERA_MODE_PRESPECTIVE
       //     BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
       //   Units = Degrees
       float field_of_view_y;
 
-      // NOTE(Shareef):
+      // NOTE(SR):
       //   Used by:
       //     BIFROST_CAMERA_MODE_PRESPECTIVE
       //     BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
@@ -49,28 +132,20 @@ typedef struct
     };
   };
 
-  // NOTE(Shareef):
+  // NOTE(SR):
   //   Units = Arbitrary World Space Units
   float near_plane;
-  // NOTE(Shareef):
+  // NOTE(SR):
+  //   Units = Arbitrary World Space Units
   //   Ignored by:
   //     BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
   float far_plane;
 
 } CameraModeParams;
 
-typedef Vec3f Plane;
-
-typedef struct bfCameraFrustum_t
-{
-  Plane planes[6];
-
-} bfCameraFrustum;
-
-void bfCameraFrustum_set(bfCameraFrustum* self, const Mat4x4* view_proj);
-
 typedef struct BifrostCamera_t
 {
+  bfFrustum        frustum;
   Vec3f            position;
   Vec3f            forward;   // This is normalized.
   Vec3f            up;        // This is normalized.
@@ -81,6 +156,7 @@ typedef struct BifrostCamera_t
   CameraModeParams camera_mode;
   Mat4x4           proj_cache;
   Mat4x4           view_cache;
+  Mat4x4           view_proj_cache;
   Mat4x4           inv_proj_cache;       // The inverse cached for 3D picking.
   Mat4x4           inv_view_cache;       // The inverse cached for 3D picking.
   Mat4x4           inv_view_proj_cache;  //

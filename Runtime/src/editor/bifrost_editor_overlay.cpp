@@ -24,6 +24,8 @@
 
 #include "bf/CRTAllocator.hpp"
 
+extern int g_NumDrawnObjects;
+
 namespace bf::editor
 {
   StringPoolRef::StringPoolRef(const StringPoolRef& rhs) noexcept :
@@ -1006,6 +1008,8 @@ namespace bf::editor
 
       if (ImGui::Begin("Project View"))
       {
+        ImGui::Text("g_NumDrawnObjects(%i)", g_NumDrawnObjects);
+
         if (imgui_ext::inspect("Project Name", m_OpenProject->name()))
         {
         }

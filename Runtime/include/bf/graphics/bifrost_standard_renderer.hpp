@@ -457,7 +457,6 @@ namespace bf
     bfTextureHandle composite_buffer;
     SceneUBO        camera_uniform_buffer;
     OverlayUBO      camera_screen_uniform_buffer;
-    Mat4x4          view_projection_cache;
 
     void init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height);
     void updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient);
@@ -536,7 +535,7 @@ namespace bf
     void               deinit();
 
     bfDescriptorSetInfo makeMaterialInfo(const MaterialAsset& material);
-    bfDescriptorSetInfo makeObjectTransformInfo(const CameraGPUData& camera, Entity& entity);
+    bfDescriptorSetInfo makeObjectTransformInfo(const Mat4x4& view_proj_cache, const CameraGPUData& camera, Entity& entity);
 
     void renderCameraTo(RenderView& view);
 

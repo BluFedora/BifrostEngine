@@ -158,7 +158,7 @@ find_package(OpenCL)
 add_executable(
   BifrostEngineOLD
   ${BIFROST_ENGINE_SOURCE_FILES}
-  "Runtime/src/ecs/bifrost_collision_system.cpp"
+  
   "Runtime/src/graphics/bifrost_debug_renderer.cpp"
   "Runtime/src/core/bifrost_engine.cpp"
   "DemoApp/src/main_demo.cpp"

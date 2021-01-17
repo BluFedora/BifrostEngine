@@ -150,11 +150,6 @@ namespace bf::editor
   {
     return makeCommand<StatefulLambdaUndoRedoCmd<State, FUndo, FRedo>>(std::forward<State>(state), std::forward<FUndo>(u), std::forward<FRedo>(r));
   }
-
-  namespace cmd
-  {
-    IUndoRedoCommandPtr deleteEntity(Entity& entity);
-  }
 }  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_UNDO_REDO_HPP */

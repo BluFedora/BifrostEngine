@@ -39,7 +39,6 @@ namespace bf
   static constexpr int k_MaxNumCamera = 16;
 
   class AnimationSystem;
-  class CollisionSystem;
   class ComponentRenderer;
   class BehaviorSystem;
   struct CommandBuffer2D;
@@ -204,7 +203,6 @@ namespace bf
 
     Array<IECSSystem*> m_Systems;
     AnimationSystem*   m_AnimationSystem;
-    CollisionSystem*   m_CollisionSystem;
     ComponentRenderer* m_ComponentRenderer;
     BehaviorSystem*    m_BehaviorSystem;
 
@@ -234,7 +232,6 @@ namespace bf
     Assets&            assets() { return m_Assets; }
     Input&             input() { return m_Input; }
     AnimationSystem&   animationSys() const { return *m_AnimationSystem; }
-    CollisionSystem&   collisionSys() const { return *m_CollisionSystem; }
     ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
     BehaviorSystem&    behaviorSys() const { return *m_BehaviorSystem; }
     ARC<SceneAsset>    currentScene() const;

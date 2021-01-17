@@ -24,8 +24,7 @@ ScriptableObject.CreateInstance<ScriptableObjectType>();
 Gotchas
 
 - The subAsset with the name the same as the asset turns into main asset.
-- ScriptableObject must be difined in a file with the same name as the class.
+- ScriptableObject must be defined in a file with the same name as the class.
 
 References:
   [All the places a ScriptableObject is stored](https://blog.eyas.sh/2020/09/where-scriptableobjects-live/)
-

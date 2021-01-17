@@ -1,3 +1,37 @@
+
+EDITOR OPERATIONS
+
+- Edit Entity Property
+- Edit Entity Component Property
+- Edit Base Asset Property.
+- Edit Entity Transform
+- Delete Entity
+- Create Entity
+- Selection Change
+- Add Component to Entity
+- Remove Component to Entity
+- Change Entity Parent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Need to have a good tweening lib. Easy to use with built in ways to tween: ("position", "scale", "rotation")
 With a callback: OnComplete(DestroyPopup)
 
@@ -314,7 +348,6 @@ int reg_slot = vm.registerMakeSlot();
 vm.registryLoadFromStack(reg_slot, slot_idx);
 vm.stackLoadFromRegistry(slot_idx, reg_slot);
 vm.registryDestoySlot(reg_slot);
-
 
 ----- GameObject Lifetime -----
 

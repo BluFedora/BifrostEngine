@@ -87,7 +87,7 @@ BF_MATH_API void  Vec3f_add(Vec3f* self, const Vec3f* other);
 BF_MATH_API void  Vec3f_addScaled(Vec3f* self, const Vec3f* other, const float factor);
 BF_MATH_API void  Vec3f_sub(Vec3f* self, const Vec3f* other);
 BF_MATH_API void  Vec3f_mul(Vec3f* self, const float scalar);
-BF_MATH_API void  Vec3f_multV(Vec3f* self, const Vec3f* other);  // Component wise mult
+BF_MATH_API void  Vec3f_multV(Vec3f* self, const Vec3f* other);  // Component wise multiply
 BF_MATH_API void  Vec3f_div(Vec3f* self, const float scalar);
 BF_MATH_API float Vec3f_lenSq(const Vec3f* self);
 BF_MATH_API float Vec3f_len(const Vec3f* self);
@@ -96,6 +96,72 @@ BF_MATH_API float Vec3f_dot(const Vec3f* self, const Vec3f* other);
 BF_MATH_API void  Vec3f_cross(const Vec3f* self, const Vec3f* other, Vec3f* output);
 BF_MATH_API void  Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix);
 BF_MATH_API Color Vec3f_toColor(Vec3f self);
+
+// New API
+
+typedef Vec3f Vec4f;
+
+// V3
+
+inline float bfV3f_len(Vec3f self)
+{
+  return Vec3f_len(&self);
+}
+
+inline float bfV3f_dot(Vec3f lhs, Vec4f rhs)
+{
+  return Vec3f_dot(&lhs, &rhs);
+}
+
+// V4
+
+inline Vec4f bfV4f_add(Vec4f lhs, Vec4f rhs)
+{
+  Vec4f result;
+
+  result.x = lhs.x + rhs.x;
+  result.y = lhs.y + rhs.y;
+  result.z = lhs.z + rhs.z;
+  result.w = lhs.w + rhs.w;
+
+  return result;
+}
+
+inline Vec4f bfV4f_sub(Vec4f lhs, Vec4f rhs)
+{
+  Vec4f result;
+
+  result.x = lhs.x - rhs.x;
+  result.y = lhs.y - rhs.y;
+  result.z = lhs.z - rhs.z;
+  result.w = lhs.w - rhs.w;
+
+  return result;
+}
+
+inline Vec4f bfV4f_div(Vec4f lhs, float rhs)
+{
+  Vec4f result;
+
+  result.x = lhs.x / rhs;
+  result.y = lhs.y / rhs;
+  result.z = lhs.z / rhs;
+  result.w = lhs.w / rhs;
+
+  return result;
+}
+
+inline Vec3f bfV4f_toV3f(Vec4f value)
+{
+  Vec3f result;
+
+  result.x = value.x;
+  result.y = value.y;
+  result.z = value.z;
+  result.w = value.w;
+
+  return result;
+}
 
 // Color API
 

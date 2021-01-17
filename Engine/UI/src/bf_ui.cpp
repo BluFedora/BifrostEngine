@@ -10,7 +10,6 @@
 
 #include "bf/FreeListAllocator.hpp"
 #include "bf/Platform.h"
-#include "bf/Text.hpp"
 #include "bf/bf_hash.hpp"
 
 #include <algorithm>
@@ -31,16 +30,8 @@ namespace bf
       T   value;
     };
 
-    struct Comparator
-    {
-      bool operator()(const ArrayItem& item, const Key& key) const
-      {
-        return item.key < key;
-      }
-    };
-
    private:
-    Array<ArrayItem> m_Table;
+    Array<ArrayItem> m_Table;  //!< Sorted on the key from least to greatest.
 
    public:
     SortedArrayTable(IMemoryManager& memory) :
@@ -50,7 +41,7 @@ namespace bf
 
     void insert(Key key, const T& value)
     {
-      const auto it = std::lower_bound(m_Table.begin(), m_Table.end(), key, Comparator{});
+      const auto it = search(key);
 
       if (it == m_Table.end() || it->key != key)
       {
@@ -64,7 +55,7 @@ namespace bf
 
     T find(Key key) const
     {
-      const auto it = std::lower_bound(m_Table.begin(), m_Table.end(), key, Comparator{});
+      const auto it = search(key);
 
       if (it == m_Table.end() || it->key != key)
       {
@@ -74,12 +65,37 @@ namespace bf
       return it->value;
     }
 
-    // TODO(SR): Add `remove` function when need be.
+    bool remove(Key key)
+    {
+      const auto it             = search(key);
+      const bool has_found_item = it != m_Table.end();
+
+      if (has_found_item)
+      {
+        m_Table.removeAt(m_Table.indexOf(it));
+      }
+
+      return has_found_item;
+    }
+
+   private:
+    typename Array<ArrayItem>::const_iterator search(Key key) const
+    {
+      return std::lower_bound(m_Table.begin(), m_Table.end(), key, [](const ArrayItem& item, const Key& key) { return item.key < key; });
+    }
+
+    typename Array<ArrayItem>::iterator search(Key key)
+    {
+      return std::lower_bound(m_Table.begin(), m_Table.end(), key, [](const ArrayItem& item, const Key& key) { return item.key < key; });
+    }
   };
 
   struct UIContext
   {
     static constexpr int k_WidgetMemorySize = bfMegabytes(10);
+
+    using WidgetMemoryBacking = std::array<char, k_WidgetMemorySize>;
+    using WidgetTable         = SortedArrayTable<UIElementID, Widget*>;
 
     // Input State
 
@@ -90,9 +106,9 @@ namespace bf
 
     // Widget Memory
 
-    std::array<char, k_WidgetMemorySize>   widget_freelist_backing = {'\0'};
-    FreeListAllocator                      widget_freelist         = {widget_freelist_backing.data(), widget_freelist_backing.size()};
-    SortedArrayTable<UIElementID, Widget*> widgets                 = {widget_freelist};
+    WidgetMemoryBacking widget_freelist_backing = {'\0'};
+    FreeListAllocator   widget_freelist         = {widget_freelist_backing.data(), widget_freelist_backing.size()};
+    WidgetTable         widgets                 = {widget_freelist};
 
     // State Tracking
 
@@ -178,17 +194,15 @@ namespace bf::UI
       bfInvalidDefaultCase();
     }
     // clang-format on
-
-    return {0.0f};
   }
 
   //
   // Small little article on the words Actualize vs Realize:
   //   [https://cohering.net/blog/2010/09/realization_vs_actualization.html]
-  // I could be using the wrong one here but the differnce is subtle and
-  // not of much importance since there is no gramatical incorrectness.
+  // I could be using the wrong one here but the difference is subtle and
+  // not of much importance since there is no grammatical incorrectness.
   //
-  // Honorabled Mentions: "crystalize" and "materialize". :)
+  // Honorable Mentions: "crystallize" and "materialize". :)
   //
 
   static Vector2f RealizeSize(const Widget* widget, const LayoutConstraints& constraints)
@@ -268,7 +282,7 @@ namespace bf::UI
         layout_result.desired_size.x = 0.0f;
         layout_result.desired_size.y = constraints.min_size.y;
 
-        LayoutConstraints child_constraints = {};
+        LayoutConstraints child_constraints;
 
         child_constraints.min_size   = constraints.min_size;
         child_constraints.max_size   = constraints.max_size;
@@ -328,7 +342,7 @@ namespace bf::UI
         layout_result.desired_size.x = constraints.min_size.x;
         layout_result.desired_size.y = 0.0f;
 
-        LayoutConstraints my_constraints = {};
+        LayoutConstraints my_constraints;
 
         my_constraints.min_size   = constraints.min_size;
         my_constraints.max_size   = constraints.max_size;
@@ -358,8 +372,8 @@ namespace bf::UI
           widget->ForEachChild([flex_space_unit, &constraints, &layout_result](Widget* child) {
             if (child->desired_size.height.type == SizeUnitType::Flex)
             {
-              float             child_height     = flex_space_unit * child->desired_size.height.value;
-              LayoutConstraints flex_constraints = {
+              const float             child_height     = flex_space_unit * child->desired_size.height.value;
+              const LayoutConstraints flex_constraints = {
                {0.0f, child_height},
                {constraints.max_size.x, child_height},
               };
@@ -415,7 +429,7 @@ namespace bf::UI
   // `Widget::position_from_parent` to be relative to.
   //
   // When you do it within the `WidgetDoLayout` function
-  // there is a noticable frame delay of the children not
+  // there is a noticeable frame delay of the children not
   // keeping up with parents when quick motion happens.
   //
 
@@ -532,12 +546,13 @@ namespace bf::UI
         gfx2D.blurredRect(
          beige_brush,
          main_rect,
-         10.0f,
+         4.0f,
          4.0f);
       }
 
       if (self->flags & Widget::DrawBackground)
       {
+#if 0
         gfx2D.fillRoundedRect(
          burlywood_brush,
          AxisQuad::make(main_rect),
@@ -547,6 +562,15 @@ namespace bf::UI
          brown_brush,
          AxisQuad::make(main_rect.expandedFromCenter(-1.0f)),
          5.0f);
+#else
+        gfx2D.fillRect(
+         burlywood_brush,
+         AxisQuad::make(main_rect));
+
+        gfx2D.fillRect(
+         brown_brush,
+         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
+#endif
       }
     }
     else if (self->flags & Widget::DrawBackground)
@@ -798,11 +822,13 @@ namespace bf::UI
     titlebar->desired_size.height = {SizeUnitType::Absolute, 25.0f};
     titlebar->flags |= Widget::Clickable | Widget::DrawBackground;
 
-    const auto behavior = WidgetBehavior(titlebar);
+    const auto titlebar_behavior = WidgetBehavior(titlebar);
 
-    if (behavior.Is(WidgetBehaviorResult::IsActive))
+    if (titlebar_behavior.Is(WidgetBehaviorResult::IsActive))
     {
-      window->position_from_parent = g_UI.mouse_pos - g_UI.drag_offset;
+      const Vector2f titlebar_offset_from_window = titlebar->position_from_parent - window->position_from_parent;
+
+      window->position_from_parent = g_UI.mouse_pos - g_UI.drag_offset - titlebar_offset_from_window;
     }
 
     PushWidget(titlebar);
@@ -823,20 +849,19 @@ namespace bf::UI
 
       AddWidget(x_button);
 
-      const auto behavior = WidgetBehavior(x_button);
+      const auto x_button_behavior = WidgetBehavior(x_button);
 
-      if (behavior.flags & WidgetBehaviorResult::IsClicked)
+      if (x_button_behavior.flags & WidgetBehaviorResult::IsClicked)
       {
-        window->flags ^= Widget::IsExpanded;  // Toggle
-
-        window->realized_size.y = 0.0f;
+        window->flags ^= Widget::IsExpanded;
+        window->realized_size.y = 0.0f;  // TODO(SR): This is a hack for a more pressing issue of window expanding to biggest size.
       }
     }
     PopWidget();
 
     const bool is_expanded = window->flags & Widget::IsExpanded;
 
-    PushPadding(is_expanded ? 5.0f : 0.0f);
+    PushPadding(is_expanded ? 2.0f : 0.0f);
     PushColumn();
 
     if (!is_expanded)
@@ -859,9 +884,15 @@ namespace bf::UI
 
   bool Button(const char* name)
   {
+    static const float max_hover_time = 0.1f;
+
     Widget* const button = CreateButton(
      name,
      {{SizeUnitType::Flex, 1.0f}, {SizeUnitType::Absolute, 40.0f}});
+
+    const float hover_lerp_factor = math::clamp(0.0f, WidgetParam(button, WidgetParams::HoverTime) / max_hover_time, 1.0f);
+
+    button->desired_size.height.value += hover_lerp_factor * 6.0f;
 
     button->flags |= Widget::DrawName | Widget::Clickable;
 
@@ -873,23 +904,25 @@ namespace bf::UI
     const float hover_time = WidgetParam(button, WidgetParams::HoverTime) +
                              (is_hovered ? +g_UI.delta_time : -g_UI.delta_time);
 
-    WidgetParam(button, WidgetParams::HoverTime) = math::clamp(0.0f, hover_time, 1.0f);
+    WidgetParam(button, WidgetParams::HoverTime) = math::clamp(0.0f, hover_time, max_hover_time);
 
     button->render = [](Widget* self, CommandBuffer2D& gfx2D) {
-      const float max_hover_time    = 0.3f;
       const float hover_lerp_factor = math::clamp(0.0f, WidgetParam(self, WidgetParams::HoverTime) / max_hover_time, 1.0f);
 
       const bfColor4u  normal_color = bfColor4u_fromUint32(BIFROST_COLOR_AQUAMARINE);
-      const bfColor4u  hover_color  = bfColor4u_fromUint32(BIFROST_COLOR_CYAN);
+      const bfColor4u  hover_color  = bfColor4u_fromUint32(BIFROST_COLOR_DODGERBLUE);
       const bfColor32u final_color  = bfColor4u_toUint32(bfMathLerpColor4u(normal_color, hover_color, hover_lerp_factor));
 
-      Brush* button_brush = gfx2D.makeBrush(final_color);
-      Brush* font_brush   = gfx2D.makeBrush(TEST_FONT);
+      Brush* button_brush       = gfx2D.makeBrush(final_color);
+      Brush* button_inner_brush = gfx2D.makeBrush(bfColor4u_toUint32(normal_color));
+      Brush* font_brush         = gfx2D.makeBrush(TEST_FONT);
 
       Rect2f rect = {self->position_from_parent.x, self->position_from_parent.y + 3.0f, self->realized_size.x, self->realized_size.y - 6.0f};
 
-      gfx2D.blurredRect(button_brush, rect, 3.0f, 3.0f);
-      gfx2D.fillRoundedRect(button_brush, AxisQuad::make(rect), 3.0f);
+      // gfx2D.blurredRect(button_brush, rect, 3.0f, 3.0f);
+      // gfx2D.fillRoundedRect(button_brush, AxisQuad::make(rect), 3.0f);
+      gfx2D.fillRect(button_brush, AxisQuad::make(rect));
+      gfx2D.fillRect(button_inner_brush, AxisQuad::make(rect.expandedFromCenter(-2.0f)));
 
       auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len});
 
@@ -989,38 +1022,24 @@ namespace bf::UI
   {
     // Test Code
 
-    if (BeginWindow("Test Window"))
+    if (BeginWindow("Buttons Galore"))
     {
-      Button("Button 0");
-      Button("Button 1");
-      Button("Button 2");
-      Button("Button 3");
-      Button("Button 4");
-      Button("Button 5");
-      Button("Button 6");
-      Button("Button 7");
-      Button("Button 8");
-      Button("Button 9");
-      Button("Button 10");
-      Button("Button 11");
-      Button("Button 12");
-      Button("Button 13");
-      Button("Button 14");
-      Button("Button 15");
-      Button("Button 16");
-      Button("Button 17");
-      Button("Button 18");
-      Button("Button 19");
-      Button("Button 20");
-      Button("Button 21");
-      Button("Button 22");
-      Button("Button 23");
-      Button("Button 24");
+      char button_label_buffer[128];
+
+      for (int i = 0; i < 25; ++i)
+      {
+        string_utils::fmtBuffer(button_label_buffer, sizeof(button_label_buffer), nullptr, "Button(%i)", i);
+
+        if (Button(button_label_buffer))
+        {
+          std::printf("\nButton %i has been pressed\n", i);
+        }
+      }
 
       EndWindow();
     }
 
-    /*
+    //*
     if (BeginWindow("Test Window"))
     {
       g_UI.current_widget->flags |= Widget::DrawBackground;
@@ -1086,7 +1105,7 @@ namespace bf::UI
 
       EndWindow();
     }
-    */
+    //*/
     assert(g_UI.current_widget == nullptr && "Missing a PopWidget to a corresponding PushWidget.");
 
     // Test End

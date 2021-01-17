@@ -108,7 +108,6 @@ target_sources(
 
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}ecs/bifrost_behavior.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}ecs/bifrost_behavior_system.cpp"
-   "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}ecs/bifrost_collision_system.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}ecs/bifrost_entity.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}ecs/bifrost_entity_ref.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}ecs/bifrost_iecs_system.cpp"

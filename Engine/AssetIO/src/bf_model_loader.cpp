@@ -184,7 +184,7 @@ namespace bf
   }
 #endif
 
-  AABB::AABB(const BifrostTransform& transform)
+  AABB::AABB(const bfTransform& transform)
   {
     Vector3f coords[] = {
      {+0.5f, -0.5f, -0.5f, 1.0f},

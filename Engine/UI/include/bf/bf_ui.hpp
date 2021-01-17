@@ -185,9 +185,10 @@ namespace bf
     WidgetLayout   layout               = {};
     char*          name                 = nullptr;
     std::size_t    name_len             = 0u;
+    BufferLen      name_;
     ParamList      params               = {0.0f};
     Size           desired_size         = {};
-    Vector2f       position_from_parent = {200.0f, 200.0f};
+    Vector2f       position_from_parent = {5.0f, 5.0f};
     Vector2f       realized_size        = {0.0f, 0.0f};
     WidgetRenderFn render               = nullptr;
     std::uint64_t  flags                = 0x0;
@@ -198,6 +199,9 @@ namespace bf
     // TODO(SR): WidgetNavigationFn do_nav;
   };
 
+  constexpr int k_WidgetSize = sizeof(Widget);
+  static_assert(k_WidgetSize <= 200, "This is just for keeping track of the size TODO(SR): Delete me!");
+
   namespace UI
   {
     // State Manipulation
@@ -206,7 +210,7 @@ namespace bf
     UIElementID PushID(StringRange string_value);
     void        PopID();
 
-    // Interactable Widgets
+    // Interact-able Widgets
 
     bool BeginWindow(const char* title);
     void EndWindow();

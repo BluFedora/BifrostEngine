@@ -36,25 +36,19 @@ namespace bf
     m_GCList{},
     m_Behaviors{sceneMemoryManager()},
     m_ComponentHandles{},
-    m_Transform{scene.m_TransformSystem.createTransform()},
+    m_Transform{},
     m_RefCount{ATOMIC_VAR_INIT(0)},
     m_BHVNode{scene.m_BVHTree.insert(this, transform())},
     m_ComponentActiveStates{},
     m_Flags{IS_ACTIVE | IS_SERIALIZABLE},
     m_UUID{bfUUID_makeEmpty().as_number}
   {
+    bfTransform_ctor(&m_Transform);
   }
 
   Engine& Entity::engine() const
   {
     return scene().engine();
-  }
-
-  BifrostTransform& Entity::transform() const
-  {
-    IBifrostTransformSystem& transform_system = scene().m_TransformSystem;
-
-    return *transform_system.transformFromID(&transform_system, m_Transform);
   }
 
   BVHNode& Entity::bvhNode() const
@@ -83,6 +77,11 @@ namespace bf
     }
 
     return m_UUID;
+  }
+
+  bool Entity::isActiveParent() const
+  {
+    return isFlagSet(IS_ADOPTS_PARENT_ACTIVE) || (!m_Parent || m_Parent->isActive());
   }
 
   void Entity::setActiveSelf(bool is_active_value)
@@ -450,7 +449,7 @@ namespace bf
     }
 
     // Transform
-    scene().m_TransformSystem.destroyTransform(m_Transform);
+    bfTransform_dtor(&m_Transform);
     scene().m_BVHTree.remove(m_BHVNode);
   }
 
@@ -463,6 +462,11 @@ namespace bf
         // A component is active if both the Entity itself is active and it is active.
         setComponentActiveImpl<T>(was_active, is_active, isComponentActive<T>());
       });
+
+      for (BaseBehavior* behavior : m_Behaviors)
+      {
+        behavior->setActive(is_active);
+      }
 
       for (Entity& child : m_Children)
       {
@@ -495,7 +499,9 @@ namespace bf
 
   void Entity::attachToParent(Entity* new_parent)
   {
-    m_Parent = new_parent;
+    const bool was_active = isActive();
+    m_Parent              = new_parent;
+    const bool is_active  = isActive();
 
     if (new_parent)
     {
@@ -507,6 +513,8 @@ namespace bf
       bfTransform_setParent(&transform(), nullptr);
       scene().m_RootEntities.push(this);
     }
+
+    reevaluateActiveState(was_active, is_active);
   }
 
   void Entity::removeChild(Entity* child)
@@ -593,29 +601,5 @@ namespace bf
   void Entity::toggleFlags(std::uint8_t flags)
   {
     m_Flags ^= flags;
-  }
-
-  void Entity::editorLinkEntity(Entity* old_parent)
-  {
-    if (old_parent)
-    {
-      bfTransform_setParent(&transform(), &old_parent->transform());
-      old_parent->m_Children.pushBack(*this);
-    }
-    else
-    {
-      m_OwningScene.m_RootEntities.push(this);
-    }
-
-    m_Parent = old_parent;
-  }
-
-  Entity* Entity::editorUnlinkEntity()
-  {
-    Entity* old_parent = m_Parent;
-
-    detachFromParent();
-
-    return old_parent;
   }
 }  // namespace bf

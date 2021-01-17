@@ -15,8 +15,7 @@
 #include "bf/ecs/bf_base_component.hpp"
 
 #include "bf/asset_io/bifrost_scene.hpp" /* Scene  */
-#include "bf/debug/bifrost_dbg_logger.h"
-#include "bf/ecs/bifrost_entity.hpp" /* Entity */
+#include "bf/ecs/bifrost_entity.hpp"     /* Entity */
 
 namespace bf
 {
@@ -30,44 +29,57 @@ namespace bf
   {
   }
 
-  Entity& BaseComponent::owner() const
+  Entity& BaseComponent::owner() const { return *m_Owner; }
+  Scene&  BaseComponent::scene() const { return owner().scene(); }
+  Engine& BaseComponent::engine() const { return scene().engine(); }
+
+  template<>
+  void ComponentTraits::onEnable<MeshRenderer>(MeshRenderer& comp, Engine& engine)
   {
-    return *m_Owner;
+    comp.m_BHVNode = comp.scene().bvh().insert(&comp.owner(), comp.owner().transform());
   }
 
-  Scene& BaseComponent::scene() const
+  template<>
+  void ComponentTraits::onDisable<MeshRenderer>(MeshRenderer& comp, Engine& engine)
   {
-    return owner().scene();
+    comp.scene().bvh().remove(comp.m_BHVNode);
   }
 
-  Engine& BaseComponent::engine() const
+  template<>
+  void ComponentTraits::onEnable<SkinnedMeshRenderer>(SkinnedMeshRenderer& comp, Engine& engine)
   {
-    return scene().engine();
+    comp.m_BHVNode = comp.scene().bvh().insert(&comp.owner(), comp.owner().transform());
   }
 
-  template <> void ComponentTraits::onEnable<SpriteRenderer>(SpriteRenderer& comp, Engine& engine)
+  template<>
+  void ComponentTraits::onDisable<SkinnedMeshRenderer>(SkinnedMeshRenderer& comp, Engine& engine)
   {
-    bfLogPrint("void bf::SpriteRenderer::onEnable(Engine& engine)");
+    comp.scene().bvh().remove(comp.m_BHVNode);
+  }
 
+  template<>
+  void ComponentTraits::onEnable<SpriteRenderer>(SpriteRenderer& comp, Engine& engine)
+  {
+    comp.m_BHVNode = comp.scene().bvh().insert(&comp.owner(), comp.owner().transform());
+  }
+
+  template<>
+  void ComponentTraits::onDisable<SpriteRenderer>(SpriteRenderer& comp, Engine& engine)
+  {
+    comp.scene().bvh().remove(comp.m_BHVNode);
   }
 
   SpriteAnimator::SpriteAnimator(Entity& owner) :
     Base(owner),
     m_Spritesheet{nullptr},
-    m_SpriteHandle{bfAnim2DScene_addSprite(scene().anim2DScene())}
+    m_SpriteHandle{bfAnim2DSprite_invalidHandle()}
   {
   }
 
   template<>
-  void ComponentTraits::onEnable<SpriteAnimator>(SpriteAnimator& comp, Engine& engine)
+  void ComponentTraits::onCreate<SpriteAnimator>(SpriteAnimator& comp, Engine& engine)
   {
-    bfLogPrint("void bf::SpriteAnimator::onEnable(Engine& engine)");
-  }
-
-  template<>
-  void ComponentTraits::onDisable<SpriteAnimator>(SpriteAnimator& comp, Engine& engine)
-  {
-    bfLogPrint("void bf::SpriteAnimator::onDisable(Engine& engine)");
+    comp.m_SpriteHandle = bfAnim2DScene_addSprite(comp.scene().anim2DScene());
   }
 
   template<>

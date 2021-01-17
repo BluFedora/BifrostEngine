@@ -3,7 +3,7 @@
  * @file   bifrost_array.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *    Safe(-ish) C++ wrapper around the bifrost_array_t.h API.
+ *    Safe(-ish) C++ wrapper around the bf_array_t.h API.
  *
  * @version 0.0.1
  * @date    
@@ -24,7 +24,7 @@ namespace bf
 {
   // NOTE(SR):
   //   This tag is used with `Array<T>::emplaceN` to allow
-  //   for an emplace that does not initialze the memory.
+  //   for an emplace that does not initialize the memory.
   struct ArrayEmplaceUninitializedTag
   {};
 
@@ -138,16 +138,6 @@ namespace bf
     [[nodiscard]] const_pointer          cdata() const { return begin(); }
     [[nodiscard]] bool                   isEmpty() const { return size() == 0u; }
 
-    /*
-    void copy(Array<T>& src, std::size_t num_elements)
-    {
-      // ::bfArray_copy(rawData(), &src.m_Data, num_elements);
-      // TODO: This function sucks, what to make it better?
-      resize(num_elements);
-      std::copy(src.m_Data, src.m_Data + num_elements, m_Data);
-    }
-    */
-
     void clear()
     {
       if constexpr (!std::is_trivially_destructible_v<T>)
@@ -158,7 +148,7 @@ namespace bf
         }
       }
 
-      ::bfArray_clear(rawData());
+      bfArray_clear(rawData());
     }
 
     void reserve(std::size_t num_elements)
@@ -408,54 +398,6 @@ namespace bf
     decltype(auto) end() const
     {
       return container.rend();
-    }
-  };
-
-  template<typename T>
-  struct ReverseLoopWithIndex final
-  {
-    struct iterator
-    {
-      typename T::reverse_iterator iter;
-      std::size_t                  index;
-
-      auto operator*()
-      {
-        return std::pair(*iter, index);
-      }
-
-      void operator++()
-      {
-        ++iter;
-        --index;
-      }
-
-      bool operator==(const iterator& other) const
-      {
-        return iter == other.iter;
-      }
-
-      bool operator!=(const iterator& other) const
-      {
-        return iter != other.iter;
-      }
-    };
-
-    T& container;
-
-    explicit ReverseLoopWithIndex(T& container) :
-      container(container)
-    {
-    }
-
-    iterator begin()
-    {
-      return {container.rbegin(), container.size() - 1};
-    }
-
-    iterator end()
-    {
-      return {container.rend(), 0};
     }
   };
 }  // namespace bf

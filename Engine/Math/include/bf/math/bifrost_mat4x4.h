@@ -3,6 +3,8 @@
 
 #include "bifrost_math_export.h" /* BIFROST_MATH_API */
 
+#include "bifrost_vec3.h"
+
 #if _MSC_VER
 #define ALIGN_STRUCT(n) __declspec(align(n))
 #else  // Clang and GCC
@@ -32,8 +34,6 @@ extern "C" {
 #define Mat4x4_get(self, x, y) (&((self)->data[(y) + ((x) << 2)]))
 #define Mat4x4_at(self, x, y) ((self)->data[(y) + ((x) << 2)])
 #endif
-
-typedef struct Vec3f_t Vec3f;
 
 typedef struct /*ALIGN_STRUCT(16)*/ Mat4x4_t
 {
@@ -70,6 +70,23 @@ BF_MATH_API float Mat4x4_trace(const Mat4x4* self);
 // Ex: 'out = self * other'
 BF_MATH_API void Mat4x4_mult(const Mat4x4* self, const Mat4x4* other, Mat4x4* out);
 BF_MATH_API void Mat4x4_multVec(const Mat4x4* self, const Vec3f* vec, Vec3f* outVec);
+
+// New API
+
+//
+// index must be in the range [0, 4)
+//
+inline Vec4f bfMat4x4_row(const Mat4x4* self, int row_index)
+{
+  Vec4f result;
+
+  result.x = Mat4x4_at(self, 0, row_index);
+  result.y = Mat4x4_at(self, 1, row_index);
+  result.z = Mat4x4_at(self, 2, row_index);
+  result.w = Mat4x4_at(self, 3, row_index);
+
+  return result;
+}
 
 #if __cplusplus
 }

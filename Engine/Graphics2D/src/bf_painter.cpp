@@ -931,6 +931,37 @@ namespace bf
     }
   }
 
+  std::pair<UIIndexType, UIVertex2D*> CommandBuffer2D::VertIdxCountResult::requestVertices(VertexStreamMem& vertex_memory, UIIndexType count)
+  {
+    const UIIndexType result_offset = num_vertices;
+    UIVertex2D* const result_vertices = static_cast<UIVertex2D*>(vertex_memory.allocate(sizeof(UIVertex2D) * count));
+
+    if (!precalculated_vertices)
+    {
+      precalculated_vertices = result_vertices;
+    }
+
+    num_vertices += count;
+
+    return {result_offset, result_vertices};
+  }
+
+  void CommandBuffer2D::VertIdxCountResult::pushTriIndex(UIIndexType global_index_offset, IndexStreamMem& index_memory, UIIndexType index0, UIIndexType index1, UIIndexType index2)
+  {
+    UIIndexType* const indices = static_cast<UIIndexType*>(index_memory.allocate(sizeof(UIIndexType) * 3));
+
+    if (!precalculated_indices)
+    {
+      precalculated_indices = indices;
+    }
+
+    num_indices += 3;
+
+    indices[0] = index0 + global_index_offset;
+    indices[1] = index1 + global_index_offset;
+    indices[2] = index2 + global_index_offset;
+  }
+
   CommandBuffer2D::VertIdxCountResult CommandBuffer2D::calcVertexCount(UIIndexType global_index_offset, const BaseRender2DCommand* command)
   {
     VertIdxCountResult result = {};

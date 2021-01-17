@@ -2,6 +2,8 @@
 
 #include <math.h> /* cosf, sinf */
 
+/* Camera API */
+
 static const Vec3f k_DefaultPosition = {0.0f, 0.0f, 0.0f, 1.0f};
 static const Vec3f k_DefaultWorldUp  = {0.0f, 1.0f, 0.0f, 0.0f};
 
@@ -124,8 +126,9 @@ void Camera_update(BifrostCamera* cam)
 
   if (needed_update)
   {
-    Mat4x4_mult(&cam->proj_cache, &cam->view_cache, &cam->inv_view_proj_cache);
-    Mat4x4_inverse(&cam->inv_view_proj_cache, &cam->inv_view_proj_cache);
+    Mat4x4_mult(&cam->proj_cache, &cam->view_cache, &cam->view_proj_cache);
+    Mat4x4_inverse(&cam->view_proj_cache, &cam->inv_view_proj_cache);
+    bfFrustum_fromMatrix(&cam->frustum, &cam->view_proj_cache);
   }
 }
 
@@ -296,6 +299,139 @@ void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos)
   cam->position = *pos;
   Camera_setViewModified(cam);
 }
+
+/* Frustum API */
+
+static bfPlane bfV4_toPlane(Vec4f value)
+{
+  bfPlane result;
+
+  result.nx = value.x;
+  result.ny = value.y;
+  result.nz = value.z;
+  result.d  = value.w;
+
+  return result;
+}
+
+// Interesting Reads on Math Library Design:
+//   [https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/]
+//   [http://www.codersnotes.com/notes/maths-lib-2016/]
+//   [http://www.reedbeta.com/blog/on-vector-math-libraries/]
+
+void bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* matrix)
+{
+  // Method from "Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix"
+  //  [https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf]
+  //  [https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/]
+
+  const Vec4f row0 = bfMat4x4_row(matrix, 0);
+  const Vec4f row1 = bfMat4x4_row(matrix, 1);
+  const Vec4f row2 = bfMat4x4_row(matrix, 2);
+  const Vec4f row3 = bfMat4x4_row(matrix, 3);
+
+  const Vec4f planes[k_bfPlaneIdx_Max] =
+   {
+    bfV4f_add(row3, row2),  // k_bfPlaneIdx_Near
+    bfV4f_sub(row3, row2),  // k_bfPlaneIdx_Far
+    bfV4f_add(row3, row0),  // k_bfPlaneIdx_Left
+    bfV4f_sub(row3, row0),  // k_bfPlaneIdx_Right
+    bfV4f_sub(row3, row1),  // k_bfPlaneIdx_Top
+    bfV4f_add(row3, row1),  // k_bfPlaneIdx_Bottom
+   };
+
+  // Normalize the planes.
+  for (int i = 0; i < k_bfPlaneIdx_Max; ++i)
+  {
+    self->planes[i] = bfV4_toPlane(bfV4f_div(planes[i], bfV3f_len(bfV4f_toV3f(planes[i]))));
+  }
+}
+
+bfFrustumTestResult bfFrustum_isPointInside(const bfFrustum* self, Vec3f point)
+{
+  for (int i = 0; i < k_bfPlaneIdx_Max; ++i)
+  {
+    if (bfPlane_dot(self->planes[i], point) < 0.0f)
+    {
+      return BF_FRUSTUM_TEST_OUTSIDE;
+    }
+  }
+
+  return BF_FRUSTUM_TEST_INSIDE;
+}
+
+bfFrustumTestResult bfFrustum_isSphereInside(const bfFrustum* self, Vec3f center, float radius)
+{
+  for (int i = 0; i < k_bfPlaneIdx_Max; ++i)
+  {
+    const float distance = bfPlane_dot(self->planes[i], center);
+
+    if (distance < -radius)
+    {
+      return BF_FRUSTUM_TEST_OUTSIDE;
+    }
+
+    // The distance in in the range of [-radius, +radius]
+    if (fabsf(distance) < radius)
+    {
+      return BF_FRUSTUM_TEST_INTERSECTING;
+    }
+  }
+
+  return BF_FRUSTUM_TEST_INSIDE;
+}
+
+bfFrustumTestResult bfFrustum_isAABBInside(const bfFrustum* self, Vec3f aabb_min, Vec3f aabb_max)
+{
+  // References:
+  //   [https://cgvr.cs.uni-bremen.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html]
+
+  bfFrustumTestResult result = BF_FRUSTUM_TEST_INSIDE;
+
+  for (int i = 0; i < k_bfPlaneIdx_Max; ++i)
+  {
+    const Vec3f normal         = bfPlane_normal(self->planes[i]);
+    Vec3f       positive_point = aabb_min;
+    Vec3f       negative_point = aabb_max;
+
+    if (normal.x >= 0.0f)
+    {
+      positive_point.x = aabb_max.x;
+      negative_point.x = aabb_min.x;
+    }
+
+    if (normal.y >= 0.0f)
+    {
+      positive_point.y = aabb_max.y;
+      negative_point.y = aabb_min.y;
+    }
+
+    if (normal.z >= 0.0f)
+    {
+      positive_point.z = aabb_max.z;
+      negative_point.z = aabb_min.z;
+    }
+
+    const float distance_to_positive = bfPlane_dot(self->planes[i], positive_point);
+
+    if (distance_to_positive < 0.0f)
+    {
+      result = BF_FRUSTUM_TEST_OUTSIDE;
+      break;
+    }
+
+    const float negative_to_positive = bfPlane_dot(self->planes[i], negative_point);
+
+    if (negative_to_positive < 0.0f)
+    {
+      result = BF_FRUSTUM_TEST_INTERSECTING;
+    }
+  }
+
+  return result;
+}
+
+/* Ray API */
 
 enum
 {

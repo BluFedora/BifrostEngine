@@ -27,12 +27,12 @@
 
 namespace bf
 {
-  using BVHNodeOffset                                   = std::uint16_t;
+  using BVHNodeOffset = std::uint16_t;
+
   static constexpr BVHNodeOffset k_BVHNodeInvalidOffset = 0xFFFFu;
   static constexpr float         k_BVHRotationBenefit   = 0.3f;
   static constexpr float         k_BVHMergeDownBenefit  = 0.35f;
-  static constexpr float         k_BVHBoundsSkin        = 0.0f;
-  // static constexpr float         k_BVHBoundsSkin        = 0.1f;
+  static constexpr float         k_BVHBoundsSkin        = 0.1f;
 
   struct BVHNode final
   {
@@ -45,6 +45,7 @@ namespace bf
         BVHNodeOffset children[2];  // isLeaf = children[0] == children[1] (aka both k_BVHNodeInvalidOffset)
         BVHNodeOffset parent;       // Only needed by rotation code, so really leaves don't need this.
         BVHNodeOffset depth;        // For avl rotation balancing.
+        bool          is_visible;   // TODO(SR): TEMP bool just for testing an idea.
       };
       BVHNodeOffset next;  // Freelist, can be unioned with other data since if it is on the freelist then all node members are unused.
     };
@@ -59,8 +60,11 @@ namespace bf
 
     static bool isLeaf(const BVHNode& node)
     {
-      // TODO: add assert.
-      return node.children[0] == node.children[1];
+      const bool result = node.children[0] == node.children[1];
+
+      assert((!result || node.children[0] == k_BVHNodeInvalidOffset) && "Either they do not match or both children are k_BVHNodeInvalidOffset.");
+
+      return result;
     }
   }  // namespace bvh_node
 
@@ -97,8 +101,8 @@ namespace bf
     template<typename F>
     void traverse(BVHNodeOffset node, F&& callback)
     {
-      traverseConditionally(node, [&callback](auto&& node) -> bool {
-        callback(std::forward<decltype(node)>(node));
+      traverseConditionally(node, [&callback](BVHNode& node) -> bool {
+        callback(node);
         return true;
       });
     }
@@ -188,18 +192,21 @@ namespace bf
     // Call when the object associated with this leaf has moved.
     void markLeafDirty(BVHNodeOffset leaf, const AABB& bounds)
     {
-      const AABB object_bounds = aabb::expandedBy(bounds, k_BVHBoundsSkin);
-
-      nodes[leaf].bounds = object_bounds;
-
-      if (leaf == root_idx)
+      if (!nodes[leaf].bounds.canContain(bounds))
       {
-        return;
-      }
+        const AABB object_bounds = aabb::expandedBy(bounds, k_BVHBoundsSkin);
 
-      if (refitChildren(nodes[leaf].parent, true))
-      {
-        addNodeToRefit(nodes[leaf].parent);
+        nodes[leaf].bounds = object_bounds;
+
+        if (leaf == root_idx)
+        {
+          return;
+        }
+
+        if (refitChildren(nodes[leaf].parent, true))
+        {
+          addNodeToRefit(nodes[leaf].parent);
+        }
       }
     }
 
@@ -527,12 +534,6 @@ namespace bf
       }
     }
 
-   private:
-    void addNodeToRefit(BVHNodeOffset node)
-    {
-      nodes_to_optimize.push(node);
-    }
-
     BVHNode& nodeAt(BVHNodeOffset index)
     {
       return nodes[index];
@@ -541,6 +542,12 @@ namespace bf
     BVHNodeOffset nodeToIndex(const BVHNode& node) const
     {
       return BVHNodeOffset(&node - nodes.data());
+    }
+
+   private:
+    void addNodeToRefit(BVHNodeOffset node)
+    {
+      nodes_to_optimize.push(node);
     }
 
     void adoptNode(BVHNodeOffset self, BVHNodeOffset child, int index)
@@ -575,7 +582,7 @@ namespace bf
       return false;
     }
 
-    void updateDepth(BVHNodeOffset self, int depth)
+    void updateDepth(BVHNodeOffset self, std::uint16_t depth)
     {
       BVHNode& node = nodeAt(self);
 
@@ -598,6 +605,7 @@ namespace bf
       node.parent      = k_BVHNodeInvalidOffset;
       node.children[0] = k_BVHNodeInvalidOffset;
       node.children[1] = k_BVHNodeInvalidOffset;
+      node.is_visible  = false;
     }
 
     BVHNodeOffset createNode(void* user_data, const AABB& bounds)
@@ -626,15 +634,6 @@ namespace bf
       nodes[index].next = freelist;
       freelist          = index;
     }
-  };
-
-  class CollisionSystem final : public IECSSystem
-  {
-   private:
-   protected:
-    void onFrameBegin(Engine& engine, float dt) override;
-    void onFrameUpdate(Engine& engine, float dt) override;
-    void onFrameEnd(Engine& engine, float dt) override;
   };
 }  // namespace bf
 

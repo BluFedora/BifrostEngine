@@ -23,19 +23,6 @@ namespace bf
 {
   class Entity;
   class IMemoryManager;
-
-  class EntityStorage
-  {
-   private:
-    DenseMap<Entity*> m_Entities;
-
-   public:
-    EntityStorage(IMemoryManager& memory) :
-      m_Entities{memory}
-    {
-    }
-  };
-
   
   class EntityRef final
   {
@@ -66,9 +53,6 @@ namespace bf
     [[nodiscard]] Entity& operator*() noexcept;
 
     ~EntityRef() noexcept;
-
-   public: /* 'Private' Editor API */
-    Entity* editorCachedEntity() const { return m_CachedEntity; }
 
    private:
     void unref(bool reset_id = true);

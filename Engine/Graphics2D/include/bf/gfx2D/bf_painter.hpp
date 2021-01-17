@@ -477,7 +477,7 @@ namespace bf
   // - There is an attempt to efficiently batch up draw commands -
   //
   //   * To make the algorithm work better submitting items
-  //     with batch compatible `Brush` and not overlapping
+  //     with batch compatible `Brush`es and not overlapping
   //     non compatible Brushes helps.
   //
   // - Rendering Detail.
@@ -487,7 +487,7 @@ namespace bf
   struct CommandBuffer2D
   {
    private:
-    static const UIIndexType k_CommandStreamMemorySize    = bfKilobytes(400);
+    static const UIIndexType k_CommandStreamMemorySize    = bfKilobytes(300);
     static const UIIndexType k_AuxiliaryMemorySize        = bfKilobytes(400);
     static const UIIndexType k_TempVertexStreamMemorySize = bfMegabytes(5);
     static const UIIndexType k_TempIndexStreamMemorySize  = bfMegabytes(2);
@@ -556,36 +556,8 @@ namespace bf
       UIIndexType  num_vertices           = 0u;
       UIIndexType  num_indices            = 0u;
 
-      std::pair<UIIndexType, UIVertex2D*> requestVertices(VertexStreamMem& vertex_memory, UIIndexType count)
-      {
-        const UIIndexType result_offset   = num_vertices;
-        UIVertex2D* const result_vertices = static_cast<UIVertex2D*>(vertex_memory.allocate(sizeof(UIVertex2D) * count));
-
-        if (!precalculated_vertices)
-        {
-          precalculated_vertices = result_vertices;
-        }
-
-        num_vertices += count;
-
-        return {result_offset, result_vertices};
-      }
-
-      void pushTriIndex(UIIndexType global_index_offset, IndexStreamMem& index_memory, UIIndexType index0, UIIndexType index1, UIIndexType index2)
-      {
-        UIIndexType* const indices = static_cast<UIIndexType*>(index_memory.allocate(sizeof(UIIndexType) * 3));
-
-        if (!precalculated_indices)
-        {
-          precalculated_indices = indices;
-        }
-
-        num_indices += 3;
-
-        indices[0] = index0 + global_index_offset;
-        indices[1] = index1 + global_index_offset;
-        indices[2] = index2 + global_index_offset;
-      }
+      std::pair<UIIndexType, UIVertex2D*> requestVertices(VertexStreamMem& vertex_memory, UIIndexType count);
+      void                                pushTriIndex(UIIndexType global_index_offset, IndexStreamMem& index_memory, UIIndexType index0, UIIndexType index1, UIIndexType index2);
     };
 
     struct DestVerts

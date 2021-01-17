@@ -10,7 +10,7 @@
 #include "bf/math/bifrost_transform.h"
 
 #include <assert.h>  // assert
-#include <math.h>    // quat::sqrt
+#include <math.h>    // sqrt
 #include <stddef.h>  // NULL
 
 #define k_PI (3.14159265359f)
@@ -113,6 +113,10 @@ Quaternionf bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll)
 
 Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll)
 {
+  // yaw is roll rn.
+  // roll is pitch rn
+  // thus pitch is yaw rn
+
   const float half_roll  = roll * 0.5f;
   const float half_pitch = pitch * 0.5f;
   const float half_yaw   = yaw * 0.5f;
@@ -358,8 +362,8 @@ bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf*
 
   if ((1.0f - cosom) > k_Epsilonf)
   {
-    const float omega = (float)acos(cosom);
-    const float sinom = (float)sin(omega);
+    const float omega = (float)acosf(cosom);
+    const float sinom = (float)sinf(omega);
 
     sclp = sinf((1.0f - factor) * omega) / sinom;
     sclq = sinf(factor * omega) / sinom;
@@ -379,16 +383,8 @@ bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf*
 
 // Transform
 
-/* TODO(SR): Decide if these should be in the public interface. */
-static BifrostTransform* bfTransformParent(const BifrostTransform* self);
-static BifrostTransform* bfTransformFirstChild(const BifrostTransform* self);
-static BifrostTransform* bfTransformNextSibling(const BifrostTransform* self);
-static BifrostTransform* bfTransformPrevSibling(const BifrostTransform* self);
-
-void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* system)
+void bfTransform_ctor(bfTransform* self)
 {
-  assert(system && "All transforms must have a valid system it is a part of.");
-
   Vec3f_set(&self->origin, 0.0f, 0.0f, 0.0f, 1.0f);
   Vec3f_set(&self->local_position, 0.0f, 0.0f, 0.0f, 1.0f);
   self->local_rotation = bfQuaternionf_identity();
@@ -398,74 +394,65 @@ void bfTransform_ctor(BifrostTransform* self, struct IBifrostTransformSystem_t* 
   Vec3f_set(&self->world_scale, 1.0f, 1.0f, 1.0f, 0.0f);
   Mat4x4_identity(&self->local_transform);
   Mat4x4_identity(&self->world_transform);
-  self->parent          = k_TransformInvalidID;
-  self->first_child     = k_TransformInvalidID;
-  self->next_sibling    = k_TransformInvalidID;
-  self->prev_sibling    = k_TransformInvalidID;
-  self->system          = system;
-  self->dirty_list_next = NULL;
-  self->flags           = BIFROST_TRANSFORM_DIRTY;
+  self->parent       = NULL;
+  self->first_child  = NULL;
+  self->next_sibling = NULL;
+  self->prev_sibling = NULL;
+  self->flags        = BF_TRANSFORM_DIRTY;
 }
 
-void bfTransform_setOrigin(BifrostTransform* self, const Vec3f* value)
+void bfTransform_setOrigin(bfTransform* self, const Vec3f* value)
 {
   self->origin = *value;
-  self->flags |= BIFROST_TRANSFORM_ORIGIN_DIRTY;
+  self->flags |= BF_TRANSFORM_ORIGIN_DIRTY;
   bfTransform_flushChanges(self);
 }
 
-Vec3f bfTransform_position(const BifrostTransform* self)
+/*
+Vec3f bfTransform_localPosition(const bfTransform* self)
 {
   Vec3f result;
 
-  result.x = 0.0f;
-
-  assert(0);
+  result.x = Mat4x4_at(&self->local_transform, 3, 0);
+  result.y = Mat4x4_at(&self->local_transform, 3, 1);
+  result.z = Mat4x4_at(&self->local_transform, 3, 2);
+  result.w = 1.0f;
 
   return result;
 }
+*/
 
-void bfTransform_setPosition(BifrostTransform* self, const Vec3f* value)
+void bfTransform_setPosition(bfTransform* self, const Vec3f* value)
 {
   self->local_position = *value;
-  self->flags |= BIFROST_TRANSFORM_POSITION_DIRTY;
+  self->flags |= BF_TRANSFORM_POSITION_DIRTY;
   bfTransform_flushChanges(self);
 }
 
-void bfTransform_setRotation(BifrostTransform* self, const Quaternionf* value)
+void bfTransform_setRotation(bfTransform* self, const Quaternionf* value)
 {
   self->local_rotation = *value;
-  self->flags |= BIFROST_TRANSFORM_ROTATION_DIRTY;
+  self->flags |= BF_TRANSFORM_ROTATION_DIRTY;
   bfTransform_flushChanges(self);
 }
 
-void bfTransform_setScale(BifrostTransform* self, const Vec3f* value)
+void bfTransform_setScale(bfTransform* self, const Vec3f* value)
 {
   self->local_scale = *value;
-  self->flags |= BIFROST_TRANSFORM_SCALE_DIRTY;
+  self->flags |= BF_TRANSFORM_SCALE_DIRTY;
   bfTransform_flushChanges(self);
 }
 
-BifrostTransform* bfTransform_parent(const BifrostTransform* self)
+void bfTransform_setParent(bfTransform* self, bfTransform* value)
 {
-  return bfTransformParent(self);
-}
-
-void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value)
-{
-  assert((!value || self->system == value->system) && "Both transforms must be part of the same system.");
-
-  const bfTransformID value_id = self->system->transformToID(self->system, value);
-
-  if (self->parent != value_id)
+  if (self->parent != value)
   {
-    const bfTransformID self_id = self->system->transformToID(self->system, self);
-    BifrostTransform* const  parent  = bfTransformParent(self);
+    bfTransform* const parent = self->parent;
 
     if (parent)
     {
-      BifrostTransform* const prev_sibling = bfTransformPrevSibling(self);
-      BifrostTransform* const next_sibling = bfTransformNextSibling(self);
+      bfTransform* const prev_sibling = self->prev_sibling;
+      bfTransform* const next_sibling = self->next_sibling;
 
       if (prev_sibling)
       {
@@ -485,24 +472,24 @@ void bfTransform_setParent(BifrostTransform* self, BifrostTransform* value)
     if (value)
     {
       self->next_sibling = value->first_child;
-      self->prev_sibling = k_TransformInvalidID;
+      self->prev_sibling = NULL;
 
       if (value->first_child)
       {
-        bfTransformFirstChild(value)->prev_sibling = self_id;
+        value->first_child->prev_sibling = self;
         // value->first_child->next_sibling = /*same */;
       }
 
-      value->first_child = self_id;
+      value->first_child = self;
     }
 
-    self->parent = value_id;
-    self->flags |= BIFROST_TRANSFORM_PARENT_DIRTY;
+    self->parent = value;
+    self->flags |= BF_TRANSFORM_PARENT_DIRTY;
     bfTransform_flushChanges(self);
   }
 }
 
-void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value)
+void bfTransform_copyFrom(bfTransform* self, const bfTransform* value)
 {
   if (self != value)
   {
@@ -511,7 +498,7 @@ void bfTransform_copyFrom(BifrostTransform* self, const BifrostTransform* value)
     self->local_rotation = value->local_rotation;
     self->local_scale    = value->local_scale;
 
-    self->flags |= BIFROST_TRANSFORM_LOCAL_DIRTY;
+    self->flags |= BF_TRANSFORM_LOCAL_DIRTY;
 
     bfTransform_flushChanges(self);
   }
@@ -533,7 +520,7 @@ static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f
   Mat4x4_initScalef(&scale_mat, scale.x, scale.y, scale.z);
   Mat4x4_initTranslatef(&origin_mat, -origin.x, -origin.y, -origin.z);
 
-  // TODO(SR): 
+  // TODO(SR):
   //   Multiplication by the `translation_mat` can probably be optimized
   //   since it always just adds (/ sets) the translation part of the matrix.
   //
@@ -546,18 +533,18 @@ static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f
   Mat4x4_mult(&translation_mat, out, out);
 }
 
-void bfTransform_flushChanges(BifrostTransform* self)
+void bfTransform_flushChanges(bfTransform* self)
 {
-  BifrostTransform* work_stack[k_TransformQueueStackMax] = {NULL}; /* TODO(Shareef): Make this dynamic? */
-  int               work_stack_top                       = 0;
+  bfTransform* work_stack[k_TransformQueueStackMax] = {NULL}; /* TODO(Shareef): Make this dynamic? */
+  int          work_stack_top                       = 0;
 
   work_stack[work_stack_top++] = self;
 
   while (work_stack_top)
   {
-    BifrostTransform*       node        = work_stack[--work_stack_top];
-    const BifrostTransform* node_parent = bfTransformParent(node);
-    BifrostTransform*       child       = bfTransformFirstChild(node);
+    bfTransform*       node        = work_stack[--work_stack_top];
+    const bfTransform* node_parent = node->parent;
+    bfTransform*       child       = node->first_child;
 
     bfTransform_flushMatrix(
      &node->local_transform,
@@ -595,44 +582,19 @@ void bfTransform_flushChanges(BifrostTransform* self)
       assert(work_stack_top < k_TransformQueueStackMax);
 
       work_stack[work_stack_top++] = child;
-      child                        = bfTransformNextSibling(child);
+      child                        = child->next_sibling;
     }
 
-    if (!node->flags)
-    {
-      node->system->addToDirtyList(node->system, node);
-    }
-
-    node->flags |= BIFROST_TRANSFORM_NEEDS_GPU_UPLOAD;
+    node->flags |= BF_TRANSFORM_NEEDS_GPU_UPLOAD;
 
     if (node != self)
     {
-      node->flags |= BIFROST_TRANSFORM_PARENT_DIRTY;
+      node->flags |= BF_TRANSFORM_PARENT_DIRTY;
     }
   }
 }
 
-void bfTransform_dtor(BifrostTransform* self)
+void bfTransform_dtor(bfTransform* self)
 {
   bfTransform_setParent(self, NULL);
-}
-
-static BifrostTransform* bfTransformParent(const BifrostTransform* self)
-{
-  return self->system->transformFromID(self->system, self->parent);
-}
-
-static BifrostTransform* bfTransformFirstChild(const BifrostTransform* self)
-{
-  return self->system->transformFromID(self->system, self->first_child);
-}
-
-static BifrostTransform* bfTransformNextSibling(const BifrostTransform* self)
-{
-  return self->system->transformFromID(self->system, self->next_sibling);
-}
-
-static BifrostTransform* bfTransformPrevSibling(const BifrostTransform* self)
-{
-  return self->system->transformFromID(self->system, self->prev_sibling);
 }

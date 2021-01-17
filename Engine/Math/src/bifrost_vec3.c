@@ -148,6 +148,7 @@ void Vec3f_cross(const Vec3f* self, const Vec3f* other, Vec3f* output)
   output->x = x;
   output->y = y;
   output->z = z;
+  output->w = 0.0f;
 }
 
 void Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix)

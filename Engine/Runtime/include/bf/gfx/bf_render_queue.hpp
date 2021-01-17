@@ -1,6 +1,11 @@
 //
 // Shareef Abdoul-Raheem
 //
+// References:
+//   [https://blog.molecular-matters.com/2014/11/06/stateless-layered-multi-threaded-rendering-part-1/]
+//   [https://realtimecollisiondetection.net/blog/?p=86]
+//   [https://www.fluentcpp.com/2016/12/08/strong-types-for-strong-interfaces/]
+//
 #ifndef BF_RENDER_QUEUE_HPP
 #define BF_RENDER_QUEUE_HPP
 
@@ -9,12 +14,10 @@
 #include "bf/MemoryUtils.h"        // bfMegabytes
 #include "bf/bf_gfx_api.h"         // Graphics
 
-#include <cassert>     /* assert         */
-#include <cstdint>     /* uint64_t       */
-#include <limits>      /* numeric_limits */
-#include <type_traits> /* is_unsigned_v  */
-
-// https://www.fluentcpp.com/2016/12/08/strong-types-for-strong-interfaces/
+#include <cassert>      // assert
+#include <cstdint>      // uint64_t
+#include <limits>       // numeric_limits
+#include <type_traits>  // is_unsigned_v
 
 namespace bf
 {
@@ -120,9 +123,6 @@ namespace bf
       return result;
     }
 
-    //
-    //
-    //
     inline std::uint32_t depth_to_bits(float value, int num_hi_bits) noexcept
     {
       constexpr std::uint32_t k_NumBitsInFloat = 32;

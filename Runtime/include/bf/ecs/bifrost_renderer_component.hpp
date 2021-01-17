@@ -24,21 +24,31 @@ namespace bf
   {
     BF_META_FRIEND;
 
-   private:
+   public:
     ARC<MaterialAsset> m_Material;  // TODO(SR): Needs to be an array.
     ARC<ModelAsset>    m_Model;
+    BVHNodeOffset      m_BHVNode;
 
    public:
     explicit MeshRenderer(Entity& owner) :
       Base(owner),
       m_Material{nullptr},
-      m_Model{nullptr}
+      m_Model{nullptr},
+      m_BHVNode{k_BVHNodeInvalidOffset}
     {
     }
 
     ARC<MaterialAsset>& material() { return m_Material; }
     ARC<ModelAsset>&    model() { return m_Model; }
   };
+
+  namespace ComponentTraits
+  {
+    template<>
+    void onEnable<MeshRenderer>(MeshRenderer& comp, Engine& engine);
+    template<>
+    void onDisable<MeshRenderer>(MeshRenderer& comp, Engine& engine);
+  }  // namespace ComponentTraits
 
   BIFROST_META_REGISTER(bf::MeshRenderer)
   {
@@ -60,6 +70,7 @@ namespace bf
     ARC<ModelAsset>    m_Model;
     ARC<Anim3DAsset>   m_Animation;
     AnimationTimeType  m_CurrentTime;
+    BVHNodeOffset      m_BHVNode;
 
    public:
     explicit SkinnedMeshRenderer(Entity& owner) :
@@ -67,13 +78,22 @@ namespace bf
       m_Material{nullptr},
       m_Model{nullptr},
       m_Animation{nullptr},
-      m_CurrentTime{AnimationTimeType(0)}
+      m_CurrentTime{AnimationTimeType(0)},
+      m_BHVNode{k_BVHNodeInvalidOffset}
     {
     }
 
     ARC<MaterialAsset>& material() { return m_Material; }
     ARC<ModelAsset>&    model() { return m_Model; }
   };
+
+  namespace ComponentTraits
+  {
+    template<>
+    void onEnable<SkinnedMeshRenderer>(SkinnedMeshRenderer& comp, Engine& engine);
+    template<>
+    void onDisable<SkinnedMeshRenderer>(SkinnedMeshRenderer& comp, Engine& engine);
+  }  // namespace ComponentTraits
 
   BIFROST_META_REGISTER(bf::SkinnedMeshRenderer)
   {
@@ -98,12 +118,13 @@ namespace bf
     static constexpr SpriteRendererFlags FLAG_FLIP_X  = bfBit(0);
     static constexpr SpriteRendererFlags FLAG_FLIP_Y  = bfBit(1);
 
-   private:
+   public:
     ARC<MaterialAsset>  m_Material;
     Vector2f            m_Size;
     Rect2f              m_UVRect;
     bfColor4u           m_Color;
     SpriteRendererFlags m_Flags;
+    BVHNodeOffset       m_BHVNode;
 
    public:
     explicit SpriteRenderer(Entity& owner) :
@@ -112,7 +133,8 @@ namespace bf
       m_Size{1.0f, 1.0f},
       m_UVRect{0.0f, 0.0f, 1.0f, 1.0f},
       m_Color{255, 255, 255, 255},
-      m_Flags{FLAG_DEFAULT}
+      m_Flags{FLAG_DEFAULT},
+      m_BHVNode{k_BVHNodeInvalidOffset}
     {
     }
 
@@ -127,6 +149,8 @@ namespace bf
   {
     template<>
     void onEnable<SpriteRenderer>(SpriteRenderer& comp, Engine& engine);
+    template<>
+    void onDisable<SpriteRenderer>(SpriteRenderer& comp, Engine& engine);
   }  // namespace ComponentTraits
 
   BIFROST_META_REGISTER(bf::SpriteRenderer)
@@ -162,9 +186,7 @@ namespace bf
   namespace ComponentTraits
   {
     template<>
-    void onEnable<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
-    template<>
-    void onDisable<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
+    void onCreate<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
     template<>
     void onDestroy<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
   }  // namespace ComponentTraits

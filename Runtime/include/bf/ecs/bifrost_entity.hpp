@@ -27,15 +27,15 @@
 namespace bf::meta
 {
   template<>
-  inline const auto& Meta::registerMembers<BifrostTransform>()
+  inline const auto& Meta::registerMembers<bfTransform>()
   {
     static auto member_ptrs = members(
-     class_info<BifrostTransform>("Transform"),
+     class_info<bfTransform>("Transform"),
      ctor<>(),
-     field("Origin", &BifrostTransform::origin),            //
-     field("Position", &BifrostTransform::local_position),  //
-     field("Rotation", &BifrostTransform::local_rotation),  //
-     field("Scale", &BifrostTransform::local_scale)         //
+     field("Origin", &bfTransform::origin),            //
+     field("Position", &bfTransform::local_position),  //
+     field("Rotation", &bfTransform::local_rotation),  //
+     field("Scale", &bfTransform::local_scale)         //
     );
 
     return member_ptrs;
@@ -69,11 +69,12 @@ namespace bf
     friend class EntityRef;
 
    public:
-    static constexpr std::uint8_t IS_PENDING_DELETED     = bfBit(0);  //!<
-    static constexpr std::uint8_t IS_HIDDEN_IN_HIERARCHY = bfBit(1);  //!<
-    static constexpr std::uint8_t IS_PREFAB_INSTANCE     = bfBit(2);  //!<
-    static constexpr std::uint8_t IS_ACTIVE              = bfBit(3);  //!<
-    static constexpr std::uint8_t IS_SERIALIZABLE        = bfBit(4);  //!<
+    static constexpr std::uint8_t IS_PENDING_DELETED      = bfBit(0);  //!<
+    static constexpr std::uint8_t IS_HIDDEN_IN_HIERARCHY  = bfBit(1);  //!<
+    static constexpr std::uint8_t IS_PREFAB_INSTANCE      = bfBit(2);  //!<
+    static constexpr std::uint8_t IS_ACTIVE               = bfBit(3);  //!<
+    static constexpr std::uint8_t IS_SERIALIZABLE         = bfBit(4);  //!<
+    static constexpr std::uint8_t IS_ADOPTS_PARENT_ACTIVE = bfBit(5);  //!<
 
    private:
     Scene&                 m_OwningScene;            //!<
@@ -84,7 +85,7 @@ namespace bf
     Node<Entity>           m_GCList;                 //!<
     BehaviorList           m_Behaviors;              //!<
     ComponentHandleStorage m_ComponentHandles;       //!<
-    bfTransformID          m_Transform;              //!<
+    bfTransform            m_Transform;              //!<
     std::atomic_uint32_t   m_RefCount;               //!<
     BVHNodeOffset          m_BHVNode;                //!<
     ComponentActiveStorage m_ComponentActiveStates;  //!<
@@ -99,7 +100,8 @@ namespace bf
     [[nodiscard]] Engine&             engine() const;
     [[nodiscard]] Scene&              scene() const { return m_OwningScene; }
     [[nodiscard]] const String&       name() const { return m_Name; }
-    [[nodiscard]] BifrostTransform&   transform() const;
+    [[nodiscard]] bfTransform&        transform() { return m_Transform; }
+    [[nodiscard]] const bfTransform&  transform() const { return m_Transform; }
     [[nodiscard]] BVHNode&            bvhNode() const;
     [[nodiscard]] Entity*             parent() const { return m_Parent; }
     [[nodiscard]] EntityList&         children() { return m_Children; }
@@ -111,7 +113,7 @@ namespace bf
     // General API
 
     [[nodiscard]] bool isActive() const { return isActiveParent() && isActiveSelf(); }
-    [[nodiscard]] bool isActiveParent() const { return (!m_Parent || m_Parent->isActive()); }
+    [[nodiscard]] bool isActiveParent() const;
     [[nodiscard]] bool isActiveSelf() const { return isFlagSet(IS_ACTIVE); }
     void               setActiveSelf(bool is_active_value);
 
@@ -247,14 +249,14 @@ namespace bf
 
     // Meta
 
-    Entity* clone();
-    void    reflect(ISerializer& serializer) override;
+    void reflect(ISerializer& serializer) override;
 
     // Runtime
 
-    void startup();
-    void shutdown();
-    void destroy();
+    Entity* clone();
+    void    startup();
+    void    shutdown();
+    void    destroy();
 
     // Misc
 
@@ -268,9 +270,9 @@ namespace bf
 
     void reevaluateActiveState(bool was_active, bool is_active);
 
-    const BifrostTransform& metaGetTransform() const { return transform(); }
+    const bfTransform& metaGetTransform() const { return transform(); }
     // ReSharper disable once CppMemberFunctionMayBeConst
-    void metaSetTransform(const BifrostTransform& value)
+    void metaSetTransform(const bfTransform& value)
     {
       bfTransform_copyFrom(&transform(), &value);
     }
@@ -383,10 +385,6 @@ namespace bf
 
    private:
     friend void gc::collect(IMemoryManager& entity_memory);
-
-   public: /* 'Private' Editor API */
-    void    editorLinkEntity(Entity* old_parent);
-    Entity* editorUnlinkEntity();
   };
 }  // namespace bf
 

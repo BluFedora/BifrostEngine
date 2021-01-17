@@ -27,8 +27,7 @@ namespace bf::editor
           if (ImGui::MenuItem("Create Empty"))
           {
             current_scene->addEntity();
-
-            // engine.assets().markDirty(current_scene);
+            engine.assets().markDirty(current_scene.handle());
           }
 
           ImGui::EndMenu();
@@ -71,11 +70,13 @@ namespace bf::editor
 
       ImGui::Separator();
 
-#if 0
+#if 1
       if (ImGui::Selectable("Undo", false, editor.undoRedo().canUndo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))
       {
         editor.undoRedo().undo();
       }
+
+      ImGui::SameLine();
 
       if (ImGui::Selectable("Redo", false, editor.undoRedo().canRedo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))
       {
@@ -154,7 +155,7 @@ namespace bf::editor
                                                                // src_flags |= ImGuiDragDropFlags_SourceNoPreviewTooltip; // Hide
                                                                // the tooltip
 
-    if (ImGui::BeginPopupContextItem(NULL))
+    if (ImGui::BeginPopupContextItem(nullptr))
     {
       if (ImGui::Selectable("Toggle Active"))
       {
@@ -163,7 +164,7 @@ namespace bf::editor
 
       if (ImGui::Selectable("Delete"))
       {
-        editor.undoRedo().doCommand(cmd::deleteEntity(*entity));
+        // editor.undoRedo().doCommand(cmd::deleteEntity(*entity));
       }
 
       ImGui::EndPopup();

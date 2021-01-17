@@ -270,13 +270,10 @@ namespace bf
   void CameraGPUData::updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient)
   {
     CameraUniformData* const buffer_data = camera_uniform_buffer.currentElement(frame_info);
-
-    Mat4x4 view_proj;
-    Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_proj);
-
+    
     buffer_data->u_CameraProjection        = camera.proj_cache;
     buffer_data->u_CameraInvViewProjection = camera.inv_view_proj_cache;
-    buffer_data->u_CameraViewProjection    = view_proj;
+    buffer_data->u_CameraViewProjection    = camera.view_proj_cache;
     buffer_data->u_CameraView              = camera.view_cache;
     buffer_data->u_CameraForwardAndTime    = camera.forward;
     buffer_data->u_CameraForwardAndTime.w  = global_time;
@@ -285,8 +282,6 @@ namespace bf
     buffer_data->u_CameraAmbient           = ambient;
 
     camera_uniform_buffer.flushCurrent(frame_info);
-
-    Mat4x4_mult(&camera.proj_cache, &camera.view_cache, &view_projection_cache);
 
     {
       const float k_ScaleFactorDPI = 1.0f;  // TODO(SR): Need to grab this value based on what window is being drawn onto.
@@ -922,7 +917,7 @@ namespace bf
     return desc_set_material;
   }
 
-  bfDescriptorSetInfo StandardRenderer::makeObjectTransformInfo(const CameraGPUData& camera, Entity& entity)
+  bfDescriptorSetInfo StandardRenderer::makeObjectTransformInfo(const Mat4x4& view_proj_cache, const CameraGPUData& camera, Entity& entity)
   {
     const auto key = CameraObjectPair{&camera, &entity};
 
@@ -951,7 +946,7 @@ namespace bf
       Mat4x4& model = entity.transform().world_transform;
 
       Mat4x4 model_view_proj;
-      Mat4x4_mult(&camera.view_projection_cache, &model, &model_view_proj);
+      Mat4x4_mult(&view_proj_cache, &model, &model_view_proj);
 
       obj_data->u_ModelViewProjection = model_view_proj;
       obj_data->u_Model               = model;

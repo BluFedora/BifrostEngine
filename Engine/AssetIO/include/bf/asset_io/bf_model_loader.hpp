@@ -22,7 +22,7 @@ namespace bf
 
     AABB() = default;
 
-    AABB(const BifrostTransform& transform);
+    AABB(const bfTransform& transform);
 
     AABB(const Vector3f& vmin, const Vector3f& vmax)
     {
@@ -52,6 +52,19 @@ namespace bf
        (max[2] - min[2]),
        0.0f,
       };
+    }
+
+    bool canContain(const AABB& rhs) const
+    {
+      for (int i = 0; i < 3; ++i)
+      {
+        if (rhs.min[i] < min[i] || rhs.max[i] > max[i])
+        {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     bool operator==(const AABB& rhs) const

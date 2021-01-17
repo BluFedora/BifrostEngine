@@ -1,9 +1,7 @@
 /******************************************************************************/
 /*!
-* @file   bifrost_math_export.h
+* @file   bf_math_export.h
 * @author Shareef Raheem (http://blufedora.github.io)
-* @par
-*    Bifrost Scripting Language
 *
 * @brief
 *  Contains the macros for exporting symbols for the dll.

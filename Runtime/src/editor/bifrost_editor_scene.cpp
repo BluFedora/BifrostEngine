@@ -149,7 +149,7 @@ namespace bf::editor
         engine.resizeCamera(m_Camera, std::max(int(content_area.x), 1), std::max(int(content_area.y), 1));
       }
 
-#if 0
+#if 1
       window_draw->AddImage(
        color_buffer,
        position_min,
@@ -240,7 +240,7 @@ namespace bf::editor
 
           Mat4x4_mult(&delta_mat, &entity_mat, &entity_mat);
 
-          auto* const transform_parent = bfTransform_parent(&entity_transform);
+          auto* const transform_parent = entity_transform.parent;
 
           if (transform_parent)
           {
@@ -570,17 +570,19 @@ namespace bf::editor
         }
       }
 
+      // Highlight Selected Objects
+
       const auto& selection = editor.selection();
 
       selection.forEachOfType<Entity*>([this, &dbg_rendrer](Entity* entity) {
-        auto& entity_transform = entity->transform();
-        auto& node             = entity->bvhNode();
+        auto&       entity_transform = entity->transform();
+        const AABB& bounds           = entity_transform;
 
         Vector3f aabb_min;
         Vector3f aabb_max;
 
-        memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
-        memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
+        memcpy(&aabb_min, &bounds.min, sizeof(float) * 3);
+        memcpy(&aabb_max, &bounds.max, sizeof(float) * 3);
 
         dbg_rendrer.addAABB(
          entity_transform.world_position,

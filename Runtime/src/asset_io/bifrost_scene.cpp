@@ -22,77 +22,6 @@
 
 namespace bf
 {
-  static constexpr std::size_t ID_TO_INDEX(bfTransformID id)
-  {
-    return std::size_t(id - 1);
-  }
-
-  BifrostTransform* SceneTransformSystem::transformFromIDImpl(IBifrostTransformSystem_t* self, bfTransformID id)
-  {
-    SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
-
-    return id == k_TransformInvalidID ? nullptr : &system->m_Transforms[ID_TO_INDEX(id)];
-  }
-
-  bfTransformID SceneTransformSystem::transformToIDImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
-  {
-    SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
-
-    if (transform == nullptr)
-    {
-      return k_TransformInvalidID;
-    }
-
-    return bfTransformID(system->m_Transforms.indexOf(static_cast<TransformNode*>(transform))) + 1;
-  }
-
-  void SceneTransformSystem::addToDirtyListImpl(IBifrostTransformSystem_t* self, BifrostTransform* transform)
-  {
-    SceneTransformSystem* const system = static_cast<SceneTransformSystem*>(self);
-
-    if (system->dirty_list)
-    {
-      system->dirty_list->dirty_list_next = transform;
-    }
-
-    system->dirty_list = transform;
-  }
-
-  SceneTransformSystem::SceneTransformSystem(IMemoryManager& memory) :
-    IBifrostTransformSystem{nullptr, &transformFromIDImpl, &transformToIDImpl, &addToDirtyListImpl},
-    m_Transforms{memory},
-    m_FreeList{k_TransformInvalidID}
-  {
-  }
-
-  bfTransformID SceneTransformSystem::createTransform()
-  {
-    bfTransformID id;
-
-    if (m_FreeList)
-    {
-      id         = m_FreeList;
-      m_FreeList = m_Transforms[ID_TO_INDEX(id)].freelist_next;
-    }
-    else
-    {
-      m_Transforms.emplace();
-      id                                          = bfTransformID(m_Transforms.size());
-      m_Transforms[ID_TO_INDEX(id)].freelist_next = k_TransformInvalidID;
-    }
-
-    bfTransform_ctor(&m_Transforms[ID_TO_INDEX(id)], this);
-    return id;
-  }
-
-  void SceneTransformSystem::destroyTransform(bfTransformID transform)
-  {
-    bfTransform_dtor(&m_Transforms[ID_TO_INDEX(transform)]);
-
-    m_Transforms[ID_TO_INDEX(transform)].freelist_next = m_FreeList;
-    m_FreeList                                         = transform;
-  }
-
   Scene::Scene(Engine& engine) :
     Base(),
     m_Engine{engine},
@@ -103,7 +32,6 @@ namespace bf
     m_InactiveComponents{m_Memory},
     m_ActiveBehaviors{m_Memory},
     m_BVHTree{m_Memory},
-    m_TransformSystem{m_Memory},
     m_Camera{},
     m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())}
   {
@@ -186,7 +114,28 @@ namespace bf
       markEntityTransformDirty(&child);
     }
 
-    m_BVHTree.markLeafDirty(entity->bvhID(), entity->transform());
+    const auto& transform = entity->transform();
+
+    // m_BVHTree.markLeafDirty(entity->bvhID(), transform);
+
+    auto* const mesh         = entity->get<MeshRenderer>();
+    auto* const skinned_mesh = entity->get<SkinnedMeshRenderer>();
+    auto* const sprite       = entity->get<SpriteRenderer>();
+
+    if (mesh)
+    {
+      m_BVHTree.markLeafDirty(mesh->m_BHVNode, transform);
+    }
+
+    if (skinned_mesh)
+    {
+      m_BVHTree.markLeafDirty(skinned_mesh->m_BHVNode, transform);
+    }
+
+    if (sprite)
+    {
+      m_BVHTree.markLeafDirty(sprite->m_BHVNode, transform);
+    }
   }
 
   void Scene::reflect(ISerializer& serializer)

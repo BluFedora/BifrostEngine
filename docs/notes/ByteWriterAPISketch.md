@@ -115,7 +115,7 @@ struct ByteReader
 
 static Result refill_null(ByteReader* self)
 {
-  static const uint8_t s_ZeroBuffer[16] = {0};
+  static const uint8_t s_ZeroBuffer[16] = {0}; // If the size is set to 1 then refil will be called more often but than is still valid.
 
   self->buffer_start = s_ZeroBuffer;
   self->cursor       = s_ZeroBuffer;
