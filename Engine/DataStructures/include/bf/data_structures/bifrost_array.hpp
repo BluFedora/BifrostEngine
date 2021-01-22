@@ -29,7 +29,7 @@ namespace bf
   {};
 
   template<typename T>
-  class Array final
+  class Array
   {
    private:
     static void* allocate(void* user_data, void* ptr, std::size_t size)
@@ -400,6 +400,11 @@ namespace bf
       return container.rend();
     }
   };
+
+  // C++17 Deduction guide.
+
+  template<typename T>
+  ReverseLoop(T& container) -> ReverseLoop<T>;
 }  // namespace bf
 
 #endif /* BIFROST_ARRAY_HPP */

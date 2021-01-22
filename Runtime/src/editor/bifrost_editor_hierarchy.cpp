@@ -70,20 +70,6 @@ namespace bf::editor
 
       ImGui::Separator();
 
-#if 1
-      if (ImGui::Selectable("Undo", false, editor.undoRedo().canUndo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))
-      {
-        editor.undoRedo().undo();
-      }
-
-      ImGui::SameLine();
-
-      if (ImGui::Selectable("Redo", false, editor.undoRedo().canRedo() ? ImGuiSelectableFlags_None : ImGuiSelectableFlags_Disabled))
-      {
-        editor.undoRedo().redo();
-      }
-#endif
-
       const ImVec2 old_item_spacing = ImGui::GetStyle().ItemSpacing;
 
       ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{old_item_spacing.x, 0.0f});

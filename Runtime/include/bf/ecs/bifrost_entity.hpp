@@ -15,12 +15,12 @@
 #ifndef BF_ENTITY_HPP
 #define BF_ENTITY_HPP
 
-#include "bf/core/bifrost_base_object.hpp"                // BaseObject
-#include "bf/data_structures/bifrost_intrusive_list.hpp"  // ListView
-#include "bf/math/bifrost_transform.h"                    // bfTransform
-#include "bifrost_collision_system.hpp"                   // BVHNodeOffset
-#include "bifrost_component_handle_storage.hpp"           // ComponentHandleStorage, ComponentActiveStorage
-#include "bifrost_component_storage.hpp"                  // ComponentStorage
+#include "bf/ListView.hpp"                       // ListView
+#include "bf/core/bifrost_base_object.hpp"       // BaseObject
+#include "bf/math/bifrost_transform.h"           // bfTransform
+#include "bifrost_collision_system.hpp"          // BVHNodeOffset
+#include "bifrost_component_handle_storage.hpp"  // ComponentHandleStorage, ComponentActiveStorage
+#include "bifrost_component_storage.hpp"         // ComponentStorage
 
 #include <atomic>  // std::atomic_uint32_t
 
@@ -100,6 +100,7 @@ namespace bf
     [[nodiscard]] Engine&             engine() const;
     [[nodiscard]] Scene&              scene() const { return m_OwningScene; }
     [[nodiscard]] const String&       name() const { return m_Name; }
+    void                              setName(StringRange value);
     [[nodiscard]] bfTransform&        transform() { return m_Transform; }
     [[nodiscard]] const bfTransform&  transform() const { return m_Transform; }
     [[nodiscard]] BVHNode&            bvhNode() const;
@@ -139,13 +140,13 @@ namespace bf
 
         handle.handle = getComponentList<T>(is_active).add(*this);
         setComponentActiveState<T>(is_active);
+        Engine&  engine    = this->engine();
+        T* const component = get<T>();
+
+        ComponentTraits::onCreate(*component, engine);
 
         if (is_active)
         {
-          Engine&  engine    = this->engine();
-          T* const component = get<T>();
-
-          ComponentTraits::onCreate(*component, engine);
           ComponentTraits::onEnable(*component, engine);
         }
       }
@@ -189,6 +190,7 @@ namespace bf
         Engine&  engine    = this->engine();
         T* const component = get<T>();
 
+        // TODO(SR): This should not be called if the component was already inactive.
         ComponentTraits::onDisable(*component, engine);
         ComponentTraits::onDestroy(*component, engine);
 

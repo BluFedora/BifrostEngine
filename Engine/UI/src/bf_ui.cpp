@@ -267,7 +267,7 @@ namespace bf::UI
         child_constraints.max_size.x = MutateFloat(constraints.max_size.x, -padding * 2.0f);
         child_constraints.max_size.y = MutateFloat(constraints.max_size.y, -padding * 2.0f);
 
-        widget->ForEachChild([&layout_result, &child_constraints](Widget* child) {
+        widget->ForEachChild([&child_constraints](Widget* child) {
           WidgetDoLayout(child, child_constraints);
         });
 
@@ -1005,6 +1005,7 @@ namespace bf::UI
 
         break;
       }
+      default: break;
     }
   }
 

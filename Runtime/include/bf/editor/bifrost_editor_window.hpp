@@ -31,7 +31,7 @@ namespace bf::editor
 {
   class EditorOverlay;
 
-  using Selectable = Variant<IBaseAsset*, IBaseObject*, Entity*>;
+  using Selectable = Variant<IBaseAsset*, Entity*>;
 
   // TODO(SR):
   //   The title ID stuff could be more efficient since it assumes changing titles but most likely case is that the title string stays the same...

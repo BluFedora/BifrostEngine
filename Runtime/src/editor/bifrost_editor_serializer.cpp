@@ -14,9 +14,9 @@
 
 #include "bf/LinearAllocator.hpp"  // LinearAllocator
 #include "bf/asset_io/bf_base_asset.hpp"
+#include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/bifrost_math.h"
-#include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/core/bifrost_engine.hpp"
 #include "bf/ecs/bifrost_behavior.hpp"
 #include "bf/ecs/bifrost_entity.hpp"
@@ -61,7 +61,7 @@ namespace bf::editor
     obj.is_array = is_array;
     string_utils::fmtBuffer(obj.name, k_FieldNameBufferSize, nullptr, "__DOCUMENT");
 
-    beginChangeCheck();
+    beginChangedCheck();
     return true;
   }
 
@@ -108,67 +108,78 @@ namespace bf::editor
   void ImGuiSerializer::serialize(StringRange key, bool& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::Checkbox(m_NameBuffer, &value);
+    ImGui::Checkbox(m_NameBuffer, &value);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int8_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S8, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S8, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint8_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U8, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U8, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int16_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S16, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S16, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint16_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U16, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U16, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int32_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S32, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S32, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint32_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U32, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U32, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::int64_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S64, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_S64, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, std::uint64_t& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U64, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_U64, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, float& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Float, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Float, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, double& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value, s_DragSpeed);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value, s_DragSpeed);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, long double& value)
@@ -176,14 +187,16 @@ namespace bf::editor
     double value_d = double(value);
 
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
     value = value_d;
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, Vec2f& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, Vec3f& value)
@@ -205,11 +218,12 @@ namespace bf::editor
     }
     else
     {
-      hasChangedTop() |= ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+      ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+      updateTopChangedStackItem();
     }
 
 #if 0
-    if (did_change)
+    if (has_changed)
     {
       bfLogPrint("Editing: %s", m_NameBuffer);
     }
@@ -233,7 +247,7 @@ namespace bf::editor
 
     bfQuaternionf_toEulerDeg(&value, &euler_deg);
 
-    beginChangeCheck();
+    beginChangedCheck();
 
     serialize(key, euler_deg);
 
@@ -257,7 +271,8 @@ namespace bf::editor
 
     setNameBuffer(key);
 
-    hasChangedTop() |= ImGui::ColorEdit4(m_NameBuffer, &value.r, color_picker_flags);
+    ImGui::ColorEdit4(m_NameBuffer, &value.r, color_picker_flags);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, bfColor4u& value)
@@ -286,6 +301,7 @@ namespace bf::editor
      };
 
     const bool has_changed = ImGui::ColorEdit4(m_NameBuffer, &value4f.r, color_picker_flags);
+    updateTopChangedStackItem();
 
     if (has_changed)
     {
@@ -294,15 +310,14 @@ namespace bf::editor
       value.b = std::uint8_t(std::round(value4f.b * k_ToUint8Point));
       value.a = std::uint8_t(std::round(value4f.a * k_ToUint8Point));
     }
-
-    hasChangedTop() |= has_changed;
   }
 
   void ImGuiSerializer::serialize(StringRange key, String& value)
   {
     setNameBuffer(key);
 
-    hasChangedTop() |= imgui_ext::inspect(m_NameBuffer, value);
+    imgui_ext::inspect(m_NameBuffer, value);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, bfUUIDNumber& value)
@@ -318,7 +333,8 @@ namespace bf::editor
   void ImGuiSerializer::serialize(StringRange key, bfUUID& value)
   {
     setNameBuffer(key);
-    hasChangedTop() |= ImGui::InputText(m_NameBuffer, value.as_string.data, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText(m_NameBuffer, value.as_string.data, sizeof(value.as_string), ImGuiInputTextFlags_ReadOnly);
+    updateTopChangedStackItem();
   }
 
   void ImGuiSerializer::serialize(StringRange key, IARCHandle& value)
@@ -332,7 +348,7 @@ namespace bf::editor
       if (ImGui::Button("clear"))
       {
         value.assign(nullptr);
-        hasChangedTop() |= true;
+        setTopChangedStackItemFlags(SerializerChangeInfo::HAS_BEEN_CHANGED);
       }
 
       ImGui::SameLine();
@@ -386,7 +402,7 @@ namespace bf::editor
     if (assigned_asset)
     {
       value.assign(assigned_asset);
-      hasChangedTop() |= true;
+      setTopChangedStackItemFlags(SerializerChangeInfo::HAS_BEEN_CHANGED);
     }
 
     ImGui::PopID();
@@ -403,7 +419,7 @@ namespace bf::editor
       if (ImGui::Button("clear"))
       {
         value = nullptr;
-        hasChangedTop() |= true;
+        setTopChangedStackItemFlags(SerializerChangeInfo::HAS_BEEN_CHANGED);
       }
 
       ImGui::SameLine();
@@ -454,8 +470,7 @@ namespace bf::editor
     if (assigned_entity != entity)
     {
       value = EntityRef(assigned_entity);
-
-      hasChangedTop() |= true;
+      setTopChangedStackItemFlags(SerializerChangeInfo::HAS_BEEN_CHANGED);
     }
 
     ImGui::PopID();
@@ -496,7 +511,10 @@ namespace bf::editor
         ImGui::EndCombo();
       }
 
-      hasChangedTop() |= original_value != value.enum_value;
+      if (original_value != value.enum_value)
+      {
+        setTopChangedStackItemFlags(SerializerChangeInfo::HAS_BEEN_CHANGED);
+      }
     }
     else
     {
@@ -546,20 +564,20 @@ namespace bf::editor
     m_IsOpenStack.pop();
   }
 
-  void ImGuiSerializer::beginChangeCheck()
+  void ImGuiSerializer::beginChangedCheck()
   {
-    m_HasChangedStack.emplace(false);
+    m_HasChangedStack.emplace(SerializerChangeInfo{});
   }
 
-  bool ImGuiSerializer::endChangedCheck()
+  SerializerChangeInfo ImGuiSerializer::endChangedCheck()
   {
-    const bool result = m_HasChangedStack.back();
+    const SerializerChangeInfo result = m_HasChangedStack.back();
     m_HasChangedStack.pop();
 
     // Adopt the status of enclosed change check scope.
     if (!m_HasChangedStack.isEmpty())
     {
-      hasChangedTop() |= result;
+      m_HasChangedStack.back().set(result.flags);
     }
 
     return result;
@@ -594,6 +612,46 @@ namespace bf::editor
     }
   }
 
+  void ImGuiSerializer::updateTopChangedStackItem()
+  {
+    if (!m_HasChangedStack.isEmpty())
+    {
+      SerializerChangeInfo& info = m_HasChangedStack.back();
+
+      const bool   has_started_edit = ImGui::IsItemActivated();
+      const bool   has_changed      = ImGui::IsItemEdited();
+      const bool   has_ended_edit   = ImGui::IsItemDeactivatedAfterEdit();
+      std::uint8_t flags_to_set     = 0x0;
+
+      if (has_started_edit)
+      {
+        flags_to_set |= SerializerChangeInfo::HAS_BEGAN_CHANGING;
+      }
+
+      if (has_changed)
+      {
+        flags_to_set |= SerializerChangeInfo::HAS_BEEN_CHANGED;
+      }
+
+      if (has_ended_edit)
+      {
+        flags_to_set |= SerializerChangeInfo::HAS_FINISHED_CHANGING;
+      }
+
+      info.set(flags_to_set);
+    }
+  }
+
+  void ImGuiSerializer::setTopChangedStackItemFlags(std::uint8_t flags)
+  {
+    if (!m_HasChangedStack.isEmpty())
+    {
+      SerializerChangeInfo& info = m_HasChangedStack.back();
+
+      info.set(flags);
+    }
+  }
+
   static int ImGuiStringCallback(ImGuiInputTextCallbackData* data);
   static int ImGuiStdStringCallback(ImGuiInputTextCallbackData* data);
 
@@ -615,7 +673,7 @@ namespace bf::editor
     return ImGui::InputText(label, const_cast<char*>(string.c_str()), string.capacity(), flags, &ImGuiStdStringCallback, static_cast<void*>(&string));
   }
 
-  bool imgui_ext::inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer)
+  void imgui_ext::inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer)
   {
     ImGui::PushID(&entity);
 
@@ -642,7 +700,7 @@ namespace bf::editor
 
           bool is_active = entity.isComponentActive<T>();
 
-          serializer.beginChangeCheck();
+          serializer.beginChangedCheck();
           serializer.serialize("Is Active", is_active);
 
           if (serializer.endChangedCheck())
@@ -658,6 +716,9 @@ namespace bf::editor
 
         if (!is_open)
         {
+          serializer.setTopChangedStackItemFlags(SerializerChangeInfo::HAS_BEGAN_CHANGING |
+                                                 SerializerChangeInfo::HAS_BEEN_CHANGED |
+                                                 SerializerChangeInfo::HAS_FINISHED_CHANGING);
           entity.remove<T>();
           has_missing_component = true;
         }
@@ -759,6 +820,27 @@ namespace bf::editor
       }
 
       ImGui::EndCombo();
+    }
+  }
+
+  bool imgui_ext::inspect(History& history, Engine& engine, Entity& entity, ImGuiSerializer& serializer)
+  {
+    serializer.beginChangedCheck();
+    auto* edit = history.makePotentialSerializeEdit(engine.assets(), entity);
+    inspect(engine, entity, serializer);
+
+    const auto end_check = serializer.endChangedCheck();
+
+    if (end_check.hasBeganChanging() && !end_check.hasFinishedChanging() && !edit->wasJustCreated())
+    {
+      edit->cancel();
+      edit = nullptr;
+    }
+
+    if (end_check.hasFinishedChanging())
+    {
+      edit->commit("Edit Entity");
+      return true;
     }
 
     return false;

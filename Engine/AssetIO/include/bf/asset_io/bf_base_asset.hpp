@@ -3,7 +3,7 @@
  * @file   bf_base_asset.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   Interface for creating asset type the engine can use.
+ *   Interface for creating asset types the engine can use.
  *
  * @version 0.0.1
  * @date    2020-12-19
@@ -123,7 +123,7 @@ namespace bf
     virtual void onLoad()   = 0;  // Called when the asset should be loaded. (Will never be called if the asset is already loaded or the asset is a subasset)
     virtual void onUnload() = 0;  // Called when the asset should be unloaded from memory. (Will never be called if the asset is not loaded or the asset is a subasset)
 
-    // These have default implementations.
+    // These have default implementations but can be re-implemented by subclasses.
 
     virtual void onReload();                             // By Default calls "unload" then "load" but allows for subclasses to optimize the "reload" operation.
     virtual void onSaveAsset(ISerializer & serializer);  // Called when the asset should save to the source asset file, default calls `IBaseObject::reflect`.

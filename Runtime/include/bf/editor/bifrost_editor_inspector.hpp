@@ -3,7 +3,7 @@
 * @file   bifrost_editor_inspector.hpp
 * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
 * @brief
-*   Object Editing managment for the editor.
+*   Object Editing management for the editor.
 *
 * @version 0.0.1
 * @date    2020-03-21
@@ -34,8 +34,8 @@ namespace bf::editor
     void        onDrawGUI(EditorOverlay& editor) override;
 
    private:
-    void guiDrawSelection(Engine& engine, const Selectable& selectable);
+    void guiDrawSelection(EditorOverlay& editor, Engine& engine, const Selectable& selectable);
   };
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_INSPECTOR_HPP */

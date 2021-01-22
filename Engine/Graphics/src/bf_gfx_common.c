@@ -269,28 +269,30 @@ static bfSubpassCache* grabSubpass(bfRenderpassInfo* self, uint16_t subpass_inde
 
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, bfGfxImageFormat format, uint32_t num_layers)
 {
-  self->type             = BF_TEX_TYPE_2D;
-  self->format           = format;
-  self->width            = width;
-  self->height           = height;
-  self->depth            = 1;
-  self->generate_mipmaps = bfTrue;
-  self->num_layers       = num_layers;
-  self->flags            = BF_TEX_IS_TRANSFER_DST | BF_TEX_IS_SAMPLED;
-  self->sample_count     = BF_SAMPLE_1;
+  self->type              = BF_TEX_TYPE_2D;
+  self->format            = format;
+  self->width             = width;
+  self->height            = height;
+  self->depth             = 1;
+  self->generate_mipmaps  = bfTrue;
+  self->num_layers        = num_layers;
+  self->flags             = BF_TEX_IS_TRANSFER_DST | BF_TEX_IS_SAMPLED;
+  self->sample_count      = BF_SAMPLE_1;
+  self->memory_properties = BF_BUFFER_PROP_DEVICE_LOCAL;
 }
 
 static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_t height, bfGfxImageFormat format, bfBool32 can_be_input, bfBool32 is_transient)
 {
-  self->type             = BF_TEX_TYPE_2D;
-  self->format           = format;
-  self->width            = width;
-  self->height           = height;
-  self->depth            = 1;
-  self->generate_mipmaps = bfFalse;
-  self->num_layers       = 1;
-  self->flags            = 0x0;
-  self->sample_count     = BF_SAMPLE_1;
+  self->type              = BF_TEX_TYPE_2D;
+  self->format            = format;
+  self->width             = width;
+  self->height            = height;
+  self->depth             = 1;
+  self->generate_mipmaps  = bfFalse;
+  self->num_layers        = 1;
+  self->flags             = 0x0;
+  self->sample_count      = BF_SAMPLE_1;
+  self->memory_properties = BF_BUFFER_PROP_DEVICE_LOCAL;
 
   if (can_be_input)
   {

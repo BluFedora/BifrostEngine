@@ -13,7 +13,8 @@
 #ifndef BIFROST_EDITOR_SERIALIZER_HPP
 #define BIFROST_EDITOR_SERIALIZER_HPP
 
-#include "bf/asset_io/bf_iserializer.hpp" // ISerializer
+#include "bf/asset_io/bf_iserializer.hpp"  // ISerializer
+#include "bifrost_editor_undo_redo.hpp"
 
 #include <imgui/imgui.h>  // ImGui::*
 
@@ -21,13 +22,30 @@ namespace bf
 {
   class Entity;
   class Assets;
-}  // namespace bifrost
+}  // namespace bf
 
 namespace bf::editor
 {
-  static constexpr int k_FieldNameBufferSize = 256;  //!< You shouldn't have a field with a name bigger than this right?
+  static constexpr int k_FieldNameBufferSize = 128;  //!< You shouldn't have a field with a name bigger than this right?
 
   class ImGuiSerializer;
+
+  struct SerializerChangeInfo
+  {
+    static constexpr std::uint8_t HAS_BEGAN_CHANGING    = bfBit(0);
+    static constexpr std::uint8_t HAS_BEEN_CHANGED      = bfBit(1);
+    static constexpr std::uint8_t HAS_FINISHED_CHANGING = bfBit(2);
+
+    std::uint8_t flags = 0x0;
+
+    // The default checks is just if it has changed this frame.
+    operator bool() const { return hasChanged(); }
+    bool hasBeganChanging() const { return check(HAS_BEGAN_CHANGING); }
+    bool hasChanged() const { return check(HAS_BEEN_CHANGED); }
+    bool hasFinishedChanging() const { return check(HAS_FINISHED_CHANGING); }
+    bool check(std::uint8_t flag) const { return flags & flag; }
+    void set(std::uint8_t flag) { flags |= flag; }
+  };
 
   //
   // For adding custom callbacks for certain types.
@@ -55,11 +73,11 @@ namespace bf::editor
     };
 
    private:
-    Array<ObjectStackInfo> m_IsOpenStack;
-    Array<bool>            m_HasChangedStack;
-    char                   m_NameBuffer[k_FieldNameBufferSize];
-    Assets*                m_Assets;
-    bool                   m_IsInCustomCallback;
+    Array<ObjectStackInfo>      m_IsOpenStack;
+    Array<SerializerChangeInfo> m_HasChangedStack;
+    char                        m_NameBuffer[k_FieldNameBufferSize];
+    Assets*                     m_Assets;
+    bool                        m_IsInCustomCallback;
 
    public:
     explicit ImGuiSerializer(IMemoryManager& memory);
@@ -98,13 +116,14 @@ namespace bf::editor
     void popArray() override;
     void endDocument() override;
 
-    void beginChangeCheck();
-    bool endChangedCheck();
+    void                 beginChangedCheck();
+    SerializerChangeInfo endChangedCheck();
 
-   private:
+   public: /* private: */
     ObjectStackInfo& top() { return m_IsOpenStack.back(); }
-    bool&            hasChangedTop() { return m_HasChangedStack.back(); }
     void             setNameBuffer(StringRange key);
+    void             updateTopChangedStackItem();
+    void             setTopChangedStackItemFlags(std::uint8_t flags);
   };
 
   namespace imgui_ext
@@ -112,8 +131,9 @@ namespace bf::editor
     bool inspect(const char* label, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(const char* label, const char* hint, String& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
     bool inspect(const char* label, std::string& string, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
-    bool inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer);
+    void inspect(Engine& engine, Entity& entity, ImGuiSerializer& serializer);
+    bool inspect(History& history, Engine& engine, Entity& entity, ImGuiSerializer& serializer);
   }  // namespace imgui_ext
-}  // namespace bifrost::editor
+}  // namespace bf::editor
 
 #endif /* BIFROST_EDITOR_SERIALIZER_HPP */

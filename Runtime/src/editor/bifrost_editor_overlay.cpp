@@ -1,5 +1,6 @@
 ﻿#include "bf/editor/bifrost_editor_overlay.hpp"
 
+#include "bf/CRTAllocator.hpp"
 #include "bf/FreeListAllocator.hpp"
 #include "bf/Gfx2DPainter.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
@@ -13,16 +14,13 @@
 #include "bf/editor/bifrost_editor_scene.hpp"
 #include "bf/utility/bifrost_json.hpp"
 
-#include <imgui/imgui.h>          /* ImGUI::* */
-#include <nativefiledialog/nfd.h> /* nfd**    */
-
+#include <imgui/imgui.h>           /* ImGUI::* */
 #include <imgui/imgui_internal.h>  // Must appear after '<imgui/imgui.h>'
+#include <nativefiledialog/nfd.h>  /* nfd**    */
 
 #include <ImGuizmo/ImGuizmo.h>
 
 #include <utility>
-
-#include "bf/CRTAllocator.hpp"
 
 extern int g_NumDrawnObjects;
 
@@ -201,6 +199,16 @@ class BlockAllocator final : public IMemoryManager, private NonCopyMoveable<Bloc
       m_BlockAllocator.deallocateT(cursor);
       cursor = next;
     }
+  }
+};
+
+template<typename T>
+class EditorArray : public bf::Array<T>
+{
+ public:
+  EditorArray() :
+    bf::Array<T>(bf::editor::allocator())
+  {
   }
 };
 
@@ -821,15 +829,15 @@ namespace bf::editor
       }
     });
 
-    auto& assets = engine.assets();
-
-    m_SceneLightTexture.m_ParentDevice = engine.renderer().device();
-
-    m_SceneLightTexture.setup("editor/images/Scene_Light.png", assets);
-    m_SceneLightMaterial.setup("__InMemory__", assets);
-    m_SceneLightMaterial.acquire();
-
-    m_SceneLightMaterial.m_AlbedoTexture = &m_SceneLightTexture;
+    // TODO(SR): API for making on Assets owned assets sucks.
+    {
+      auto& assets                       = engine.assets();
+      m_SceneLightTexture.m_ParentDevice = engine.renderer().device();
+      m_SceneLightTexture.setup("editor/images/Scene_Light.png", assets);
+      m_SceneLightMaterial.setup("__InMemory__", assets);
+      m_SceneLightMaterial.acquire();
+      m_SceneLightMaterial.m_AlbedoTexture = &m_SceneLightTexture;
+    }
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -884,6 +892,64 @@ namespace bf::editor
 
         m_IsControlDown = event.keyboard.modifiers & BIFROST_KEY_FLAG_CONTROL;
         m_IsShiftDown   = event.keyboard.modifiers & BIFROST_KEY_FLAG_SHIFT;
+
+        if (m_IsControlDown && is_key_down)
+        {
+          if (event.keyboard.key == BIFROST_KEY_Z)
+          {
+            if (history().canUndo())
+            {
+              history().undo();
+            }
+            else
+            {
+              bfLogPrint("Cannot undo");
+            }
+          }
+          else if (event.keyboard.key == BIFROST_KEY_Y)
+          {
+            if (history().canRedo())
+            {
+              history().redo();
+            }
+            else
+            {
+              bfLogPrint("Cannot Redo");
+            }
+          }
+        }
+
+        if (isKeyDown(BIFROST_KEY_H))
+        {
+          struct RenameData
+          {
+            String  old_name;
+            Entity* entity;
+          };
+
+          EditorArray<RenameData> rename_datas = {};
+
+          selection().forEachOfType<Entity*>([&rename_datas](Entity* e) {
+            rename_datas.emplace(RenameData{e->name(), e});
+          });
+
+          history().performLambdaAction("Make All Selectables Named Something", [rename_datas](UndoRedoEventType evt) mutable {
+            if (evt == UndoRedoEventType::ON_UNDO)
+            {
+              for (RenameData& rd : rename_datas)
+              {
+                rd.entity->setName(rd.old_name);
+              }
+            }
+            else if (evt == UndoRedoEventType::ON_REDO)
+            {
+              for (RenameData& rd : rename_datas)
+              {
+                rd.entity->setName("Bob");
+              }
+            }
+          });
+        }
       }
     }
   }
@@ -1019,6 +1085,25 @@ namespace bf::editor
         m_FileSystem.uiShow(*this);
 
         ImGui::Separator();
+      }
+      ImGui::End();
+
+      if (ImGui::Begin("History View"))
+      {
+        const auto& cmds = m_History.stack().commands();
+        const auto  stack_top = m_History.stack().stackTop();
+
+        ImGui::Selectable("Clean State", 0 == stack_top);
+
+        for (std::size_t i = 0; i < cmds.size(); ++i)
+        {
+          StringRange name          = cmds[i]->name();
+          char*       name_nul_term = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "%.*s", int(name.length()), name.bgn);
+
+          if (ImGui::Selectable(name_nul_term, (i + 1) == stack_top))
+          {
+          }
+        }
       }
       ImGui::End();
     }
@@ -1167,8 +1252,8 @@ namespace bf::editor
     m_IsShiftDown{false},
     m_IsControlDown{false},
     m_Selection{allocator()},
-    m_MainUndoStack{},
-    m_MainWindow{main_window}
+    m_MainWindow{main_window},
+    m_History{}
   {
   }
 
@@ -1842,7 +1927,7 @@ namespace bf::editor
     }
     else if (selection.size() == 1)
     {
-      guiDrawSelection(engine, selection[0]);
+      guiDrawSelection(editor, engine, selection[0]);
     }
     else
     {
@@ -1853,7 +1938,7 @@ namespace bf::editor
 
         if (ImGui::TreeNode(number_buffer))
         {
-          guiDrawSelection(engine, selection[i]);
+          guiDrawSelection(editor, engine, selection[i]);
           ImGui::Separator();
 
           ImGui::TreePop();
@@ -1872,14 +1957,14 @@ namespace bf::editor
     m_Serializer.endDocument();
   }
 
-  void Inspector::guiDrawSelection(Engine& engine, const Selectable& selectable)
+  void Inspector::guiDrawSelection(EditorOverlay& editor, Engine& engine, const Selectable& selectable)
   {
     ARC<SceneAsset> current_scene = engine.currentScene();
 
     visit_all(
      meta::overloaded{
       [this, &engine](IBaseAsset* asset) {
-        m_Serializer.beginChangeCheck();
+        m_Serializer.beginChangedCheck();
         asset->reflect(m_Serializer);
         ImGui::Separator();
 
@@ -1891,10 +1976,10 @@ namespace bf::editor
       [this](IBaseObject* object) {
         m_Serializer.serialize(*object);
       },
-      [this, &current_scene, &engine](Entity* object) {
-        m_Serializer.beginChangeCheck();
+      [this, &editor, &current_scene, &engine](Entity* object) {
+        m_Serializer.beginChangedCheck();
 
-        imgui_ext::inspect(engine, *object, m_Serializer);
+        imgui_ext::inspect(editor.history(), engine, *object, m_Serializer);
 
         if (m_Serializer.endChangedCheck())
         {

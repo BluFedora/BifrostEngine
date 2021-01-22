@@ -107,7 +107,7 @@ elseif (BF_OPT_GRAPHICS_OPENGL)
   set(
     BF_GRAPHICS_SOURCES
     "${BF_GRAPHICS_SOURCES}"
-    "src/bf_gfx_opengl.cpp"
+    "${PROJECT_SOURCE_DIR}/src/bf_gfx_opengl.cpp"
   )
 
   set(

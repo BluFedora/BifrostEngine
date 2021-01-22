@@ -336,10 +336,10 @@ namespace bf::editor
     bool          m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
     bool          m_IsControlDown;                // TODO(SR): This should be stored in a shared Engine Input Module.
     Selection     m_Selection;
-    UndoRedoStack m_MainUndoStack;
     bfWindow*     m_MainWindow;
     TextureAsset  m_SceneLightTexture;
     MaterialAsset m_SceneLightMaterial;
+    History       m_History;
 
    protected:
     void onCreate(Engine& engine) override;
@@ -351,14 +351,14 @@ namespace bf::editor
     void onDestroy(Engine& engine) override;
 
    public:
-    EditorOverlay(bfWindow* main_window);
+    explicit EditorOverlay(bfWindow* main_window);
 
     const char*       name() override { return "Editor"; }
     const ProjectPtr& currentlyOpenProject() const { return m_OpenProject; }
     Engine&           engine() const { return *m_Engine; }
     FileSystem&       fileSystem() { return m_FileSystem; }
     Selection&        selection() { return m_Selection; }
-    UndoRedoStack&    undoRedo() { return m_MainUndoStack; }
+    History&          history() { return m_History; }
 
     bool isKeyDown(int key) const { return m_IsKeyDown[key]; }
     bool isShiftDown() const { return m_IsShiftDown; }

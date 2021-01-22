@@ -36,6 +36,10 @@ namespace bf
     {
       T* const child_casted = child->DownCast();
 
+      child->parent       = DownCast();
+      child->prev_sibling = last_child;
+      child->next_sibling = nullptr;
+
       if (!first_child)
       {
         first_child = child_casted;
@@ -45,10 +49,6 @@ namespace bf
       {
         last_child->next_sibling = child_casted;
       }
-
-      child->parent       = DownCast();
-      child->prev_sibling = last_child;
-      child->next_sibling = NULL;
 
       last_child = child_casted;
     }
@@ -84,7 +84,12 @@ namespace bf
   {
     Absolute,  //!< Size in points (DPI * pixels)
     Relative,  //!< The float is in a 0.0f => 1.0f range representing the % of the parent size you are.
-    Flex,      //!< The ratio of how much free space to take up raltive to other flex children.
+    Flex,      //!< The ratio of how much free space to take up relative to other flex children.
+
+#if defined(SR_META_COMPILER)
+    ExtraSpecialMetaFeild,
+#endif
+
   };
 
   struct SizeUnit
@@ -182,9 +187,9 @@ namespace bf
       IsWindow       = (1 << 6),
     };
 
-    WidgetLayout   layout               = {};
-    char*          name                 = nullptr;
-    std::size_t    name_len             = 0u;
+    WidgetLayout   layout   = {};
+    char*          name     = nullptr;
+    std::size_t    name_len = 0u;
     BufferLen      name_;
     ParamList      params               = {0.0f};
     Size           desired_size         = {};

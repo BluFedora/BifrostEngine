@@ -2062,20 +2062,21 @@ bfTextureHandle bfGfxDevice_newTexture(bfGfxDeviceHandle self_, const bfTextureC
 
   bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_TEXTURE);
 
-  self->parent          = self_;
-  self->flags           = params->flags;
-  self->image_type      = params->type;
-  self->image_width     = params->width;
-  self->image_height    = params->height;
-  self->image_depth     = params->depth;
-  self->image_miplevels = params->generate_mipmaps;
-  self->tex_image       = VK_NULL_HANDLE;
-  self->tex_memory      = VK_NULL_HANDLE;
-  self->tex_view        = VK_NULL_HANDLE;
-  self->tex_sampler     = VK_NULL_HANDLE;
-  self->tex_layout      = BF_IMAGE_LAYOUT_UNDEFINED;
-  self->tex_format      = bfVkConvertFormat(params->format);
-  self->tex_samples     = params->sample_count;
+  self->parent            = self_;
+  self->flags             = params->flags;
+  self->image_type        = params->type;
+  self->image_width       = params->width;
+  self->image_height      = params->height;
+  self->image_depth       = params->depth;
+  self->image_miplevels   = params->generate_mipmaps;
+  self->tex_image         = VK_NULL_HANDLE;
+  self->tex_memory        = VK_NULL_HANDLE;
+  self->tex_view          = VK_NULL_HANDLE;
+  self->tex_sampler       = VK_NULL_HANDLE;
+  self->tex_layout        = BF_IMAGE_LAYOUT_UNDEFINED;
+  self->tex_format        = bfVkConvertFormat(params->format);
+  self->tex_samples       = params->sample_count;
+  self->memory_properties = params->memory_properties;
 
   if (self->image_miplevels)
   {
@@ -2349,7 +2350,7 @@ static void bfTexture__allocMemory(bfTextureHandle self)
   alloc_info.allocationSize = memRequirements.size;
   // alloc_info.memoryTypeIndex = 0;
 
-  memory_type_from_properties(self->parent->parent->memory_properties, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_info.memoryTypeIndex);
+  memory_type_from_properties(self->parent->parent->memory_properties, memRequirements.memoryTypeBits, bfVkConvertBufferPropertyFlags(self->memory_properties), &alloc_info.memoryTypeIndex);
 
   vkAllocateMemory(self->parent->handle, &alloc_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->tex_memory);
   vkBindImageMemory(self->parent->handle, self->tex_image, self->tex_memory, 0);

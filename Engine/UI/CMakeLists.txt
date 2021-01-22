@@ -25,6 +25,9 @@ set(
 
   # Sources
   "${PROJECT_SOURCE_DIR}/src/bf_ui.cpp"
+
+  # Hacks
+  "${CMAKE_SOURCE_DIR}/Engine/Graphics2D/src/bf_painter.cpp" 
 )
 
 set(

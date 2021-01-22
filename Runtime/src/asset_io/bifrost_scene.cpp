@@ -116,7 +116,8 @@ namespace bf
 
     const auto& transform = entity->transform();
 
-    // m_BVHTree.markLeafDirty(entity->bvhID(), transform);
+    // TEMP: NEEDED FOR LIGHTS
+    m_BVHTree.markLeafDirty(entity->bvhID(), transform);
 
     auto* const mesh         = entity->get<MeshRenderer>();
     auto* const skinned_mesh = entity->get<SkinnedMeshRenderer>();

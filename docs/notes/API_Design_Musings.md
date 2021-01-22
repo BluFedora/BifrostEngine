@@ -183,7 +183,6 @@ inspector.addAfter("field_name", []()
 
 inspector.onChange<T>("field_name", [](const T& old_value, const T& new_value)
 {
-
 });
 
 inspector.bitfieldNames("field_name", BITFIELD_NAMES_ARRAY);
@@ -192,13 +191,11 @@ inspector.combo<String>("field_names", OPTIONS_ARRAY);
 // custom would be an implicit "inspector::hide".
 inspector.custom("field_name", [](const auto& raw_member)
 {
-
 });
 inspector.hide("field_name");
 
 inspector.onAnyChange([](const Array<String>& field_path, const Variant<...>& data)
 {
-
 });
 inspector.pop();
 

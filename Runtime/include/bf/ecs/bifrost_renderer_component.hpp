@@ -215,19 +215,19 @@ namespace bf
     ARC<MaterialAsset>   m_Material;
     Vector2f             m_Size;
     Rect2f               m_UVRect;
-    bfColor4f            m_Color;
-    std::uint32_t        m_MaxParticles;
-    ParticleEmitterFlags m_Flags;
+    //bfColor4f            m_Color;
+    //std::uint32_t        m_MaxParticles;
+    //ParticleEmitterFlags m_Flags;
 
    public:
     explicit ParticleEmitter(Entity& owner) :
       Base(owner),
       m_Material{nullptr},
       m_Size{1.0f, 1.0f},
-      m_UVRect{0.0f, 0.0f, 1.0f, 1.0f},
-      m_Color{1.0f, 1.0f, 1.0f, 1.0f},
-      m_MaxParticles{100},
-      m_Flags{FLAG_DEFAULT}
+      m_UVRect{0.0f, 0.0f, 1.0f, 1.0f}//,
+      //m_Color{1.0f, 1.0f, 1.0f, 1.0f},
+     // m_MaxParticles{100},
+      //m_Flags{FLAG_DEFAULT}
     {
     }
   };

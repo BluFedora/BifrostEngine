@@ -279,14 +279,6 @@ void bfLexer_skipWhile(BifrostLexer* self, bfBool32 (*condition)(char c))
   while (condition(bfLexer_peek(self, 0)) && self->source_bgn + self->cursor < self->source_end)
   {
     bfLexer_advance(self, 1);
-
-#if 0
-    // @StringQuote
-    if (bfLexer_peek(self, 0) == '\\')
-    {
-      bfLexer_advance(self, 1);
-    }
-#endif
   }
 }
 
@@ -423,7 +415,7 @@ bfToken bfLexer_parseID(BifrostLexer* self)
     }
   }
 
-  return BIFROST_TOKEN_MAKE_STR2(IDENTIFIER, bgn, bgn + length);
+  return BIFROST_TOKEN_MAKE_STR_RANGE(IDENTIFIER, bgn, bgn + length);
 }
 
 static bfBool32 bfLexer_isNotQuote(char c)
@@ -437,16 +429,25 @@ static bfBool32 bfLexer_isNotQuote(char c)
 // This also makes it so I can make this Lexer non allocating which is awesome.
 bfToken bfLexer_parseString(BifrostLexer* self)
 {
-  // TODO(Shareef):
-  //   Escaped Quote is probrably broken.
-  //   Search: @StringQuote
-  bfLexer_advance(self, 1);  // '"'
-  const char* bgn = bfLexer_peekStr(self, 0);
-  bfLexer_skipWhile(self, &bfLexer_isNotQuote);
-  const char* end = bfLexer_peekStr(self, 0);
   bfLexer_advance(self, 1);  // '"'
 
-  return BIFROST_TOKEN_MAKE_STR2(CONST_STR, bgn, end);
+  const char* bgn = bfLexer_peekStr(self, 0);
+
+  while (bfLexer_isNotQuote(bfLexer_peek(self, 0)) && self->source_bgn + self->cursor < self->source_end)
+  {
+    bfLexer_advance(self, 1);
+
+    if (bfLexer_peek(self, 0) == '\\' && bfLexer_peek(self, 1) == '\"')
+    {
+      bfLexer_advance(self, 2);
+    }
+  }
+  
+  const char* end = bfLexer_peekStr(self, 0);
+
+  bfLexer_advance(self, 1);  // '"'
+
+  return BIFROST_TOKEN_MAKE_STR_RANGE(CONST_STR, bgn, end);
 }
 
 void bfLexer_dtor(BifrostLexer* self)

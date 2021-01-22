@@ -16,7 +16,7 @@
 
 #include "bf/Core.h" /* bfStringRange */
 
-// #include <stdint.h> /* uint32_t */
+#include <stdint.h> /* uint32_t */
 #include <stddef.h> /* size_t   */
 
 #if __cplusplus
@@ -207,7 +207,7 @@ bfToken       bfLexer_parseString(BifrostLexer* self);
     .type = t, .as = {.str = s }     \
   }
 
-#define BIFROST_TOKEN_MAKE_STR2(t, s, e)    \
+#define BIFROST_TOKEN_MAKE_STR_RANGE(t, s, e)    \
   (bfToken)                                 \
   {                                         \
     .type = t, .as = {.str_range = {s, e} } \

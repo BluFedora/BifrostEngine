@@ -544,12 +544,12 @@ namespace bf
       return a;
     }
 
-    static float length(const Vector2f& a)
+    inline float length(const Vector2f& a)
     {
       return Vec2f_len(&a);
     }
 
-    static float angleBetween0ToPI(const Vector2f& a, const Vector2f& b)
+    inline float angleBetween0ToPI(const Vector2f& a, const Vector2f& b)
     {
       return std::acos(Vec2f_dot(&a, &b) / (Vec2f_len(&a) * Vec2f_len(&b)));
     }
@@ -582,12 +582,12 @@ namespace bf
       };
     }
 
-    static float dot(Vector2f a, Vector2f b)
+    inline float dot(Vector2f a, Vector2f b)
     {
       return Vec2f_dot(&a, &b);
     }
 
-    static float inverseLerp(Vector2f a, Vector2f b, Vector2f value)
+    inline float inverseLerp(Vector2f a, Vector2f b, Vector2f value)
     {
       const Vector2f a_to_b        = b - a;
       const float    a_to_b_mag_sq = dot(a_to_b, a_to_b);
@@ -605,18 +605,18 @@ namespace bf
 
     // Vec3
 
-    static Vector3f normalized(Vector3f a)
+    inline Vector3f normalized(Vector3f a)
     {
       Vec3f_normalize(&a);
       return a;
     }
 
-    static float length(const Vector3f& a)
+    inline float length(const Vector3f& a)
     {
       return Vec3f_len(&a);
     }
 
-    static Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
+    inline Vector3f cross(const Vector3f& a, const Vector3f& b, float w = 0.0f)
     {
       Vector3f result;
       Vec3f_cross(&a, &b, &result);
@@ -625,7 +625,7 @@ namespace bf
       return result;
     }
 
-    static float dot(const Vector3f& a, const Vector3f& b)
+    inline float dot(const Vector3f& a, const Vector3f& b)
     {
       return Vec3f_dot(&a, &b);
     }
@@ -678,7 +678,7 @@ namespace bf
       return {static_cast<To>(p0.x), static_cast<To>(p0.y)};
     }
 
-    static float inverseLerp(Vector3f a, Vector3f b, Vector3f value)
+    inline float inverseLerp(Vector3f a, Vector3f b, Vector3f value)
     {
       const Vector3f a_to_b        = b - a;
       const float    a_to_b_mag_sq = dot(a_to_b, a_to_b);

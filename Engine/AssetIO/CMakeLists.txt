@@ -68,6 +68,7 @@ else()
   message(SEND_ERROR "Linux needs a build of the Assimp Model Loading Library.")
 endif()
 
+# add_subdirectory(lib/assimp)
 
 target_link_libraries(
   "${PROJECT_NAME}_static"
@@ -79,7 +80,7 @@ target_link_libraries(
     BF_TMPUtils
 
     BF_DataStructuresCxx
-
+    
   PRIVATE
     "${BF_ASSETIO_LIBS}"
 )

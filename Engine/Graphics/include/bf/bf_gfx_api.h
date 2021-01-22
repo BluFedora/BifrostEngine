@@ -212,15 +212,16 @@ typedef uint16_t bfTexFeatureFlags;
 
 typedef struct
 {
-  bfTextureType     type;
-  bfGfxImageFormat  format;
-  uint32_t          width;
-  uint32_t          height;
-  uint32_t          depth;
-  bfBool32          generate_mipmaps;
-  uint32_t          num_layers;
-  bfTexFeatureFlags flags;
-  bfGfxSampleFlags  sample_count;
+  bfTextureType        type;
+  bfGfxImageFormat     format;
+  uint32_t             width;
+  uint32_t             height;
+  uint32_t             depth;
+  bfBool32             generate_mipmaps;
+  uint32_t             num_layers;
+  bfTexFeatureFlags    flags;
+  bfGfxSampleFlags     sample_count;
+  bfBufferPropertyBits memory_properties;
 
 } bfTextureCreateParams;
 
@@ -275,7 +276,7 @@ typedef enum
   BF_GFX_OBJECT_FRAMEBUFFER    = 6,
   BF_GFX_OBJECT_PIPELINE       = 7,
 
-} bfGfxObjectType; // 3 bits worth of data.
+} bfGfxObjectType;  // 3 bits worth of data.
 
 #define bfFrameCountMax 0xFFFFFFFF
 typedef uint32_t bfFrameCount_t;

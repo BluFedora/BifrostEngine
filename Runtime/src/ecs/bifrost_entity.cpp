@@ -51,6 +51,11 @@ namespace bf
     return scene().engine();
   }
 
+  void Entity::setName(StringRange value)
+  {
+    m_Name = value;
+  }
+
   BVHNode& Entity::bvhNode() const
   {
     return m_OwningScene.m_BVHTree.nodes[m_BHVNode];
@@ -306,9 +311,17 @@ namespace bf
 
           T* component;
 
-          if (serializer.mode() == SerializerMode::LOADING && serializer.hasKey(name))
+          if (serializer.mode() == SerializerMode::LOADING)
           {
-            component = &add<T>();
+            if (serializer.hasKey(name))
+            {
+              component = &add<T>();
+            }
+            else
+            {
+              component = nullptr;
+              remove<T>();
+            }
           }
           else
           {

@@ -11,9 +11,11 @@ extern "C" {
 
 BF_DEFINE_GFX_HANDLE(Texture)
 {
-  bfBaseGfxObject   super;
-  bfGfxDeviceHandle parent;
-  bfTexFeatureFlags flags;
+  // General Metadata
+  bfBaseGfxObject      super;
+  bfGfxDeviceHandle    parent;
+  bfTexFeatureFlags    flags;
+  bfBufferPropertyBits memory_properties;
 
   // CPU Side Data
   bfTextureType image_type;

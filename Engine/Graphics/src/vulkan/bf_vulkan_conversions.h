@@ -24,7 +24,7 @@ VkCullModeFlags       bfVkConvertCullModeFlags(uint32_t cull_face_flags);  // bf
 VkFrontFace           bfVkConvertFrontFace(bfFrontFace front_face);
 VkFormat              bfVkConvertVertexFormatAttrib(bfGfxVertexFormatAttribute vertex_format_attrib);
 VkFlags               bfVkConvertBufferUsageFlags(uint16_t flags);     // bfBufferUsageFlags
-VkFlags               bfVkConvertBufferPropertyFlags(uint16_t flags);  // bfBufferProperyFlags
+VkFlags               bfVkConvertBufferPropertyFlags(uint16_t flags);  // bfBufferPropertyFlags
 VkImageType           bfVkConvertTextureType(bfTextureType type);
 VkFilter              bfVkConvertSamplerFilterMode(bfTexSamplerFilterMode mode);
 VkSamplerAddressMode  bfVkConvertSamplerAddressMode(bfTexSamplerAddressMode mode);

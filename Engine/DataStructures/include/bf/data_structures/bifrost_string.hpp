@@ -573,6 +573,7 @@ namespace bf::string_utils
   // Misc //
 
   // Caller is responsible for freeing memory.
+  // The returned length is one less than the actual buffer size.
   BufferLen clone(IMemoryManager& allocator, StringRange str);
 }  // namespace bf::string_utils
 

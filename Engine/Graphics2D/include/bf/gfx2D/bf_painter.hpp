@@ -3,7 +3,7 @@
  * @file   bf_painter.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
- *   API for drawing fancy 2D graphics.
+ *   API for efficient drawing `fancy` vector 2D graphics.
  *
  * @version 0.0.1
  * @date    2021-03-03
@@ -534,18 +534,14 @@ namespace bf
     // Command Buffer Owner API
     //
 
-    void clear()
-    {
-      aux_memory.clear();
-      command_stream.clear();
-      vertex_stream.clear();
-      index_stream.clear();
-      num_commands = 0u;
-    }
-
+    void clear();
     void renderToQueue(RenderQueue& render_queue, const DescSetBind& object_binding);
     void renderToQueue(RenderQueue& render_queue);
 
+    // Returns you the screen bounds that the graphic drawn by
+    // the command will take up.
+    // Some of the calculations may be expensive depending on the type
+    // of command.
     static Rect2f calcCommandBounds(const BaseRender2DCommand* command);
 
    private:

@@ -175,14 +175,17 @@ namespace bf
     {
       const meta::MetaVariant as_variant = {value};
 
-      for (auto& prop : type_info->properties())
+      for (const auto& prop : type_info->properties())
       {
         const StringRange field_name  = StringRange(prop->name().data(), prop->name().size());
         auto              field_value = prop->get(as_variant);
 
         serialize(field_name, field_value);
 
-        prop->set(as_variant, field_value);
+        if (prop->set(as_variant, field_value))
+        {
+          // NOTE(SR): This would be the place to do something with undo/redo.
+        }
       }
 
       if (type_info->isArray())
@@ -203,11 +206,10 @@ namespace bf
               auto element = type_info->elementAt(as_variant, i);
               serialize(StringRange(label_buffer, label_buffer_length), element);
 
-              (void)type_info->setElementAt(as_variant, i, element);
-            }
-            else
-            {
-              assert(!"For some reason this failed. The buffer shoudl always be able to store an integer value.");
+              if (type_info->setElementAt(as_variant, i, element))
+              {
+                // NOTE(SR): This would be the place to do something with undo/redo.
+              }
             }
           }
 

@@ -35,21 +35,17 @@ namespace bf
     };
 
     // TODO(SR): These path helpers can probably be in a separate header file.
-
     // TODO(SR): This function should be _modernized_ to use 'StringRange' as that would make things a bit clearer in usage.
     //           Also this has nothing to do with 'Paths' this is just a string algorithm!?!
     bool pathEndsIn(const char* path, const char* ending, int ending_len = -1, int path_len = -1);
     bool isValidName(const StringRange& path);
-
     /// Returns the new length of the path.
     std::size_t canonicalizePath(char* path_bgn, const char* path_end);
     std::size_t canonicalizePath(char* path_bgn);  // Gives you the length
-
     // These functions assumes a canonical path by the calling of 'canonicalizePath'.
     StringRange extensionOfFile(const StringRange& path);  // Includes the (dot) e.g '.ext', if no extension a null path is returned.
     StringRange fileNameOfPath(const StringRange& path);   // 'filename.ext'
-
-  }  // namespace file
+  }                                                        // namespace file
 
   class File final : NonCopyMoveable<File>
   {

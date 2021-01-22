@@ -323,14 +323,14 @@ namespace bf::imgui
 
     // Renderer Setup: Font Texture
 
-    const float font_size = 20.0f * dpi_scale_factor;
+    const float font_size = 18.0f * dpi_scale_factor;
 
     ImGui::GetStyle().ScaleAllSizes(dpi_scale_factor);
 
     //io.Fonts->AddFontDefault();
 
     io.Fonts->AddFontFromFileTTF(
-     "assets/fonts/Abel.ttf",
+     "assets/fonts/Ropa_Sans/RopaSans-Regular.ttf",  // "assets/fonts/Abel.ttf",
      font_size,
      nullptr,
      nullptr);
@@ -700,9 +700,9 @@ namespace bf::imgui
   {
     bfWindow* const window = bfPlatformCreateWindow(
      "__Untitled__",
-     (int)vp->Size.x,
-     (int)vp->Size.y,
-     (vp->Flags & ImGuiViewportFlags_NoDecoration ? 0x0 : k_bfWindowFlagIsDecorated) |
+     int(vp->Size.x),
+     int(vp->Size.y),
+     convertVpFlag(vp, ImGuiViewportFlags_NoDecoration, k_bfWindowFlagIsDecorated) |
       convertVpFlag(vp, ImGuiViewportFlags_TopMost, k_bfWindowFlagIsFloating));
 
     window->event_fn = [](bfWindow* window, bfEvent* event) {

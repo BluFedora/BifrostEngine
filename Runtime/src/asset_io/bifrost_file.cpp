@@ -1,8 +1,9 @@
 #include "bf/asset_io/bifrost_file.hpp"
 
 #include "bf/IMemoryManager.hpp" /* IMemoryManager */
-
 #include "bf/asset_io/bf_path_manip.hpp"
+
+#include <cstring> /* strlen */
 
 #if _WIN32 /* Windows */
 #ifndef NOMINMAX
@@ -16,8 +17,6 @@
 #include <sys/stat.h>
 #include <unistd.h> /* access, F_OK */
 #endif
-
-#include <cstring> /* strlen */
 
 namespace bf
 {
@@ -397,8 +396,7 @@ namespace bf
   char* File::readAll(IMemoryManager& allocator, std::size_t& out_size)
   {
     const std::size_t expected_size = size();
-
-    char* const buffer = static_cast<char*>(allocator.allocate(expected_size + 1));
+    char* const       buffer        = static_cast<char*>(allocator.allocate(expected_size + 1));
 
     std::istreambuf_iterator<char>       file_stream_bgn = m_FileStream;
     const std::istreambuf_iterator<char> file_stream_end = std::istreambuf_iterator<char>();

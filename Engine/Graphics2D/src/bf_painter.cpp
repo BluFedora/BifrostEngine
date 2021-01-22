@@ -519,8 +519,20 @@ namespace bf
     return result;
   }
 
+  void CommandBuffer2D::clear()
+  {
+    aux_memory.clear();
+    command_stream.clear();
+    vertex_stream.clear();
+    index_stream.clear();
+    num_commands = 0u;
+  }
+
+  //
+  // Assumes `T` has a member named 'next' of type `T*`.
+  //
   template<typename T>
-  struct TempList
+  struct TempFwdList
   {
     T* first = nullptr;
     T* last  = nullptr;
@@ -572,26 +584,26 @@ namespace bf
       //   (3) Vertex GPU Upload:    `command`, `vertex_idx_count`, `next`.
       //
 
-      Rect2f                      bounds;
-      std::uint8_t                flags;
-      const BaseRender2DCommand* command;
-      Gfx2DElement*               next;
-      VertIdxCountResult          vertex_idx_count;
+      Rect2f                     bounds;            //!< Cached screen bounds of element.
+      std::uint8_t               flags;             //!< Some flags for batc/sort-ing algorithm.
+      const BaseRender2DCommand* command;           //!< The command that corresponds to this element.
+      Gfx2DElement*              next;              //!< Intrusive linked list used by `Batch2D`.
+      VertIdxCountResult         vertex_idx_count;  //!< Cached vertex count results.
 
-      bool hasDrawn() const { return flags & HAS_BEEN_DRAWN; }
+      bool hasBeenDrawn() const { return flags & HAS_BEEN_DRAWN; }
       bool isInCurrentBatch() const { return flags & IS_IN_CURRENT_BATCH; }
     };
 
     // All batches have at least one command.
     struct Batch2D
     {
-      TempList<Gfx2DElement> commands    = {};
-      Batch2D*               next        = nullptr;
-      UIIndexType            first_index = 0u;
-      UIIndexType            num_indices = 0u;
+      TempFwdList<Gfx2DElement> commands    = {};
+      Batch2D*                  next        = nullptr;
+      UIIndexType               first_index = 0u;
+      UIIndexType               num_indices = 0u;
     };
 
-    struct BatchList : public TempList<Batch2D>
+    struct BatchList : public TempFwdList<Batch2D>
     {
       void findOrAdd(LinearAllocator& alloc, Gfx2DElement* item)
       {
@@ -599,12 +611,11 @@ namespace bf
 
         while (compatible_batch)
         {
-          Batch2D* const                    it_next = compatible_batch->next;
+          Batch2D* const                   it_next = compatible_batch->next;
           const BaseRender2DCommand* const command = compatible_batch->commands.first->command;
 
-          if (
-           command->isBlurred() == item->command->isBlurred() &&
-           command->brush->canBeBatchedWith(*item->command->brush))
+          if (command->isBlurred() == item->command->isBlurred() &&
+              command->brush->canBeBatchedWith(*item->command->brush))
           {
             break;
           }
@@ -627,11 +638,12 @@ namespace bf
     std::size_t       num_elements_left_to_sort = num_elements;
     BatchList         final_batches             = {};
 
-    char* byte_stream = command_stream.begin();
+    const char* byte_stream = command_stream.begin();
 
     for (std::size_t i = 0u; i < num_elements; ++i)
     {
-      BaseRender2DCommand* command = reinterpret_cast<BaseRender2DCommand*>(byte_stream);
+      const BaseRender2DCommand* command = reinterpret_cast<const BaseRender2DCommand*>(byte_stream);
+      byte_stream += command->size;
 
       elements[i].bounds  = calcCommandBounds(command);
       elements[i].flags   = 0x0;
@@ -639,7 +651,13 @@ namespace bf
       elements[i].next    = nullptr;
       // elements[i].vertex_idx_count = /* ---, this will be written to later */
 
-      byte_stream += command->size;
+      // We do not want to actually draw zero size objects.
+      // So we mark it as drawn so it never gets added to a batch.
+      if (elements[i].bounds.area() == 0.0f)
+      {
+        elements[i].flags |= HAS_BEEN_DRAWN;
+        --num_elements_left_to_sort;
+      }
     }
 
     //
@@ -656,7 +674,7 @@ namespace bf
         {
           Gfx2DElement& element = elements[i];
 
-          if (!element.hasDrawn())
+          if (!element.hasBeenDrawn())
           {
             bool can_add_to_batch = true;
 
@@ -664,8 +682,8 @@ namespace bf
             {
               const Gfx2DElement& behind_element = elements[j];
 
-              // The first two checks are cheaper than the intersection.
-              if ((behind_element.isInCurrentBatch() || !behind_element.hasDrawn()) &&
+              // The first two checks are cheaper than the intersection test.
+              if ((behind_element.isInCurrentBatch() || !behind_element.hasBeenDrawn()) &&
                   element.bounds.intersectsRect(behind_element.bounds))
               {
                 can_add_to_batch = false;
@@ -704,7 +722,7 @@ namespace bf
           it = it_next;
         }
 
-        // Merging with the last active batch is preferable.
+        // Merging with the last active batch can happen in the next iteration of the loop.
         working_list.first = working_list.last;
       }
 
@@ -833,8 +851,8 @@ namespace bf
 
     final_batches.forEach([this, &pipeline, &render_queue, &frame_data, &object_binding, &frame_info](Batch2D* batch) {
       const BaseRender2DCommand* command = batch->commands.first->command;
-      bfBufferHandle              index_buffer;
-      bfBufferHandle              vertex_buffer;
+      bfBufferHandle             index_buffer;
+      bfBufferHandle             vertex_buffer;
 
       if (command->isBlurred())
       {
@@ -933,7 +951,7 @@ namespace bf
 
   std::pair<UIIndexType, UIVertex2D*> CommandBuffer2D::VertIdxCountResult::requestVertices(VertexStreamMem& vertex_memory, UIIndexType count)
   {
-    const UIIndexType result_offset = num_vertices;
+    const UIIndexType result_offset   = num_vertices;
     UIVertex2D* const result_vertices = static_cast<UIVertex2D*>(vertex_memory.allocate(sizeof(UIVertex2D) * count));
 
     if (!precalculated_vertices)
@@ -1025,12 +1043,12 @@ namespace bf
         const auto* const typed_command = static_cast<const Render2DPolyline*>(command);
 
         // Inputs:
-        const auto points             = typed_command->points;
-        const auto num_points         = typed_command->num_points;
-        const auto thickness          = typed_command->thickness;
-        const auto join_style         = typed_command->join_style;
-        const auto end_style          = typed_command->end_style;
-        const auto is_overlap_allowed = typed_command->is_overlap_allowed;
+        auto* const points             = typed_command->points;
+        const auto  num_points         = typed_command->num_points;
+        const auto  thickness          = typed_command->thickness;
+        const auto  join_style         = typed_command->join_style;
+        const auto  end_style          = typed_command->end_style;
+        const auto  is_overlap_allowed = typed_command->is_overlap_allowed;
 
         if (num_points >= 2)
         {
@@ -1591,15 +1609,22 @@ namespace bf
       }
     };
 
-    VertexWriter writer = {dest.vertex_offset, dest.vertex_buffer_ptr, dest.index_buffer_ptr, command->brush};
-
+    // Bounds are guaranteed to be non zero size at this point in the code.
     const float bounds_width  = bounds.width();
     const float bounds_height = bounds.height();
 
-    writer.pos_to_uv[0] = bounds.left();
-    writer.pos_to_uv[1] = bounds.top();
-    writer.pos_to_uv[2] = bounds_width != 0.0f ? 1.0f / bounds_width : 0.0f;
-    writer.pos_to_uv[3] = bounds_height != 0.0f ? 1.0f / bounds_height : 0.0f;
+    VertexWriter writer = {
+     dest.vertex_offset,
+     dest.vertex_buffer_ptr,
+     dest.index_buffer_ptr,
+     command->brush,
+     {
+      bounds.left(),
+      bounds.top(),
+      1.0f / bounds_width,
+      1.0f / bounds_height,
+     },
+    };
 
     switch (command->type)
     {
@@ -1717,9 +1742,16 @@ namespace bf
       }
       case Render2DCommandType::Polyline:
       {
-        // const auto* const typed_command = static_cast<const Render2DPolyline*>(command);
+        const auto* const typed_command = static_cast<const Render2DPolyline*>(command);
 
-        // TODO(SR): UV Mapping and brush sampling
+        for (UIIndexType i = 0; i < counts.num_vertices; ++i)
+        {
+          UIVertex2D& vertex       = counts.precalculated_vertices[i];
+          const auto  brush_sample = typed_command->brush->sample(writer.mapPosUV(vertex.pos), i);
+
+          vertex.color = bfColor4u_fromColor4f(brush_sample.color);
+          vertex.uv    = brush_sample.remapped_uv;
+        }
 
         std::memcpy(dest.vertex_buffer_ptr, counts.precalculated_vertices, sizeof(UIVertex2D) * counts.num_vertices);
         std::memcpy(dest.index_buffer_ptr, counts.precalculated_indices, sizeof(UIIndexType) * counts.num_indices);
@@ -1743,7 +1775,7 @@ namespace bf
 
         // NOTE(SR):
         //  `x` and `y` are rounded because to have good text
-        //  rendering we must be aligned to a pixel exactly.
+        //  rendering we must be aligned to a pixel boundary.
 
         const Vector2f& pos            = typed_command->position;
         const char*     utf8_text      = typed_command->utf8_text.begin();
