@@ -54,6 +54,11 @@ namespace bf
       };
     }
 
+    Vector3f extents() const
+    {
+      return dimensions() * 0.5f;
+    }
+
     bool canContain(const AABB& rhs) const
     {
       for (int i = 0; i < 3; ++i)
@@ -101,7 +106,7 @@ namespace bf
      * @param b
      *   The second AABB to merge.
      */
-    static void mergeBounds(AABB& out, const AABB& a, const AABB& b)
+    inline void mergeBounds(AABB& out, const AABB& a, const AABB& b)
     {
       for (int i = 0; i < 3; ++i)
       {
@@ -110,17 +115,14 @@ namespace bf
       }
     }
 
-    /*!
-     * @copydoc mergeBounds(AABB&, const AABB&, const AABB&)
-     */
-    static AABB mergeBounds(const AABB& a, const AABB& b)
+    inline AABB mergeBounds(const AABB& a, const AABB& b)
     {
       AABB out;  // NOLINT
       mergeBounds(out, a, b);
       return out;
     }
 
-    static void expandBy(AABB& self, float amount)
+    inline void expandBy(AABB& self, float amount)
     {
       for (int i = 0; i < 3; ++i)
       {
@@ -129,14 +131,14 @@ namespace bf
       }
     }
 
-    static AABB expandedBy(const AABB& self, float amount)
+    inline AABB expandedBy(const AABB& self, float amount)
     {
       AABB clone = self;
       expandBy(clone, amount);
       return clone;
     }
 
-    static float surfaceArea(const AABB& self)
+    inline float surfaceArea(const AABB& self)
     {
       const float d[3] =
        {
@@ -147,13 +149,37 @@ namespace bf
 
       return 2.0f * (d[0] * d[1] + d[1] * d[2] + d[2] * d[0]);
     }
+
+    inline AABB fromPoints(const Vector3f* points, std::size_t num_points)
+    {
+      AABB result;
+
+      result.min[0] = result.max[0] = points[0].x;
+      result.min[1] = result.max[1] = points[0].y;
+      result.min[2] = result.max[2] = points[0].z;
+
+      for (std::size_t i = 1; i < num_points; ++i)
+      {
+        const Vector3f& point = points[i];
+
+        result.min[0] = std::min(result.min[0], point.x);
+        result.min[1] = std::min(result.min[1], point.y);
+        result.min[2] = std::min(result.min[2], point.z);
+        result.max[0] = std::max(result.max[0], point.x);
+        result.max[1] = std::max(result.max[1], point.y);
+        result.max[2] = std::max(result.max[2], point.z);
+      }
+
+      return result;
+    }
+
+    AABB transform(const AABB& aabb, const Mat4x4& matrix);
   }  // namespace aabb
 
   ////////////////////
 
   struct Mesh
   {
-    // AABB           bounds;
     AssetIndexType index_offset;
     AssetIndexType num_indices;
     std::uint32_t  material_idx;
@@ -167,7 +193,7 @@ namespace bf
 
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept;
 
-  // Lovely Simple Datastructures that lend themselves to a linear allocator.
+  // Lovely Simple DataStructures that lend themselves to a linear allocator.
 
   //
   // Due to this using a 'Variable Length Member' anytime you store an object of
@@ -440,15 +466,16 @@ namespace bf
 
   struct AssetModelLoadResult
   {
-    IMemoryManager*                  memory       = nullptr;
-    detail::Ptr<AssetMeshArray>      mesh_list    = nullptr;
-    detail::Ptr<AssetVertexArray>    vertices     = nullptr;
-    detail::Ptr<AssetIndexArray>     indices      = nullptr;
-    detail::Ptr<AssetMaterialArray>  materials    = nullptr;
-    detail::Ptr<AssetAnimationArray> animations   = nullptr;
-    ModelSkeleton                    skeleton     = {};
-    bfStringRange                    error        = {nullptr, nullptr};
-    std::array<char, 128>            error_buffer = {'\0'};  //!< Private Do not use. Read from 'AssetModelLoadResult::error' instead.
+    IMemoryManager*                  memory              = nullptr;
+    detail::Ptr<AssetMeshArray>      mesh_list           = nullptr;
+    detail::Ptr<AssetVertexArray>    vertices            = nullptr;
+    detail::Ptr<AssetIndexArray>     indices             = nullptr;
+    detail::Ptr<AssetMaterialArray>  materials           = nullptr;
+    detail::Ptr<AssetAnimationArray> animations          = nullptr;
+    ModelSkeleton                    skeleton            = {};
+    AABB                             object_space_bounds = {};
+    bfStringRange                    error               = {nullptr, nullptr};
+    std::array<char, 128>            error_buffer        = {'\0'};  //!< Private Do not use. Read from 'AssetModelLoadResult::error' instead.
 
     AssetModelLoadResult()                                         = default;
     AssetModelLoadResult(const AssetModelLoadResult& rhs) noexcept = delete;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bf/PoolAllocator.hpp"
 #include "bf/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
 #include "bifrost_standard_renderer.hpp"
 
@@ -70,14 +71,17 @@ namespace bf
     };
 
    private:
-    StandardRenderer*       m_Gfx;
-    BufferLink*             m_LineBufferPool;
-    List<DrawCommand>       m_DepthDrawCommands;
-    List<DrawCommand>       m_OverlayDrawCommands;
-    Array<BufferLink*>      m_LineBuffers[2];    // world, overlay
-    bfShaderModuleHandle    m_ShaderModules[3];  // vertex, world-fragment, overlay-fragment
-    bfShaderProgramHandle   m_Shaders[2];        // world, overlay
-    bfVertexLayoutSetHandle m_DbgVertexLayout;
+    using CommandList = List<DrawCommand>;
+
+    PoolAllocator<CommandList::Node, 32768> m_DrawCommandMemory;
+    StandardRenderer*                       m_Gfx;
+    BufferLink*                             m_LineBufferPool;
+    CommandList                             m_DepthDrawCommands;
+    CommandList                             m_OverlayDrawCommands;
+    Array<BufferLink*>                      m_LineBuffers[2];    // world, overlay
+    bfShaderModuleHandle                    m_ShaderModules[3];  // vertex, world-fragment, overlay-fragment
+    bfShaderProgramHandle                   m_Shaders[2];        // world, overlay
+    bfVertexLayoutSetHandle                 m_DbgVertexLayout;
 
    public:
     explicit DebugRenderer(IMemoryManager& memory);
@@ -91,7 +95,7 @@ namespace bf
     }
 
     void addLine(const Vector3f& a, const Vector3f& b, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
-    void addAABB(const Vector3f& center, const Vector3f& extents, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
+    void addAABB(const Vector3f& center, const Vector3f& size, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
 
     void draw(RenderView& camera, const bfGfxFrameInfo& frame_info);
 

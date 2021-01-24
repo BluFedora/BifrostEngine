@@ -87,6 +87,22 @@ inline Vec4f bfMat4x4_row(const Mat4x4* self, int row_index)
 
   return result;
 }
+//
+// Returns the absolute value of each element.
+//
+inline Mat4x4 bfMat4x4f_abs(const Mat4x4* self)
+{
+  Mat4x4 result;
+
+  for (int i = 0; i < 16; ++i)
+  {
+    const float value = self->data[i];
+
+    result.data[i] = value < 0.0f ? -value : value;
+  }
+
+  return result;
+}
 
 #if __cplusplus
 }

@@ -1,6 +1,13 @@
 {
     "sub-assets" : [
+        {
+            "sub-assets" : [
 
+            ],
+            "uuid" : "89812C73-DC75-4C3B-A4FD-76F362ABBAAC",
+            "name" : "Material_#0.material",
+            "version" : 1
+        }
     ],
     "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E",
     "name" : "Scorpion_AnimRig.fbx",

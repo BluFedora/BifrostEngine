@@ -204,21 +204,42 @@ namespace bf
       Vec3f_mulMat(&point, &transform.world_transform);
     }
 
-    min[0] = max[0] = coords[0].x;
-    min[1] = max[1] = coords[0].y;
-    min[2] = max[2] = coords[0].z;
+    *this = aabb::fromPoints(coords, std::size(coords));
+  }
 
-    for (int i = 1; i < 8; ++i)
-    {
-      const Vector3f& point = coords[i];
+  AABB aabb::transform(const AABB& aabb, const Mat4x4& matrix)
+  {
+#if 0
+      Vector3f coords[] = {
+       {aabb.max[0], aabb.min[1], aabb.min[2], 1.0f},
+       {aabb.min[0], aabb.max[1], aabb.min[2], 1.0f},
+       {aabb.min[0], aabb.min[1], aabb.max[2], 1.0f},
+       {aabb.max[0], aabb.max[1], aabb.min[2], 1.0f},
+       {aabb.min[0], aabb.max[1], aabb.max[2], 1.0f},
+       {aabb.max[0], aabb.min[1], aabb.max[2], 1.0f},
+       {aabb.min[0], aabb.min[1], aabb.min[2], 1.0f},
+       {aabb.max[0], aabb.max[1], aabb.max[2], 1.0f},
+      };
 
-      min[0] = std::min(min[0], point.x);
-      min[1] = std::min(min[1], point.y);
-      min[2] = std::min(min[2], point.z);
-      max[0] = std::max(max[0], point.x);
-      max[1] = std::max(max[1], point.y);
-      max[2] = std::max(max[2], point.z);
-    }
+      for (Vector3f& point : coords)
+      {
+        Vec3f_mulMat(&point, &matrix);
+      }
+
+      return fromPoints(coords, std::size(coords));
+#else
+    Vector3f     new_center = aabb.center();
+    Vector3f     new_extent = aabb.extents();
+    const Mat4x4 abs_mat    = bfMat4x4f_abs(&matrix);
+
+    Mat4x4_multVec(&matrix, &new_center, &new_center);
+    Mat4x4_multVec(&abs_mat, &new_extent, &new_extent);
+
+    return AABB{
+     new_center - new_extent,
+     new_center + new_extent,
+    };
+#endif
   }
 
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept
@@ -244,6 +265,11 @@ namespace bf
     import_flags |= load_settings.smooth_normals ? aiProcess_GenSmoothNormals : aiProcess_GenNormals;
 
     assert(importer.ValidateFlags(import_flags));
+
+    if (!importer.ValidateFlags(import_flags))
+    {
+      *(volatile int*)nullptr = 0;
+    }
 
     const aiScene* const scene = importer.ReadFile(nul_terminated_path, import_flags);
 
@@ -463,12 +489,14 @@ namespace bf
           index_offset += num_mesh_indices;
         }
 
-        const AABB              bounds         = {bounds_min, bounds_max};
-        const Vector3f          bounds_center  = bounds.center();
-        const Vector3f          bounds_dim = bounds.dimensions();
-        const std::size_t       num_verts      = result.vertices->length;
-        AssetModelVertex* const vertex_start   = result.vertices->data;
-        const float             scale          = (1.0f / std::max({bounds_dim.x, bounds_dim.y, bounds_dim.z})) * load_settings.scale_factor;
+        // Scale the model to fit in Unit Cube.
+
+        const AABB              bounds        = {bounds_min, bounds_max};
+        const Vector3f          bounds_center = bounds.center();
+        const Vector3f          bounds_dim    = bounds.dimensions();
+        const std::size_t       num_verts     = result.vertices->length;
+        AssetModelVertex* const vertex_start  = result.vertices->data;
+        const float             scale         = (1.0f / std::max({bounds_dim.x, bounds_dim.y, bounds_dim.z})) * load_settings.scale_factor;
 
         for (std::size_t v = 0; v < num_verts; ++v)
         {
@@ -476,6 +504,18 @@ namespace bf
 
           vertex->position   = (vertex->position - bounds_center) * scale;
           vertex->position.w = 1.0f;
+        }
+
+        result.object_space_bounds = bounds;
+
+        for (int i = 0; i < 3; ++i)
+        {
+          const float offset = (&bounds_center.x)[i];
+
+          result.object_space_bounds.min[i] -= offset;
+          result.object_space_bounds.max[i] -= offset;
+          result.object_space_bounds.min[i] *= scale;
+          result.object_space_bounds.max[i] *= scale;
         }
       }
 

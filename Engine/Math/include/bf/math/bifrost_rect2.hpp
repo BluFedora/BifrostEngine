@@ -146,7 +146,7 @@ namespace bf
     }
 
     template<typename T>
-    bool operator-(const Vec2T<T>& lhs)
+    Vec2T<T> operator-(const Vec2T<T>& lhs)
     {
       return Vec2T<T>{-lhs.x, -lhs.y};
     }
@@ -177,13 +177,13 @@ namespace bf
     template<typename T>
     Vec3T<T> operator*(const Vec3T<T>& lhs, const Vec3T<T>& rhs)
     {
-      return Vec3T<T>{lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z};
+      return Vec3T<T>{lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w};
     }
 
     template<typename T>
     Vec3T<T> operator*(const Vec3T<T>& lhs, T rhs)
     {
-      return Vec3T<T>{lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
+      return Vec3T<T>{lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs};
     }
 
     template<typename T>

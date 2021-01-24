@@ -62,12 +62,12 @@ BF_MATH_API void          bfQuaternionf_normalize(Quaternionf* self);
 BF_MATH_API void          bfQuaternionf_toMatrix(Quaternionf self, Mat4x4* out_rot_mat);
 BF_MATH_API void          bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
 BF_MATH_API void          bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
-BF_MATH_API Vec3f         bfQuaternionf_upVec(const Quaternionf* self);
-BF_MATH_API Vec3f         bfQuaternionf_downVec(const Quaternionf* self);
-BF_MATH_API Vec3f         bfQuaternionf_leftVec(const Quaternionf* self);
-BF_MATH_API Vec3f         bfQuaternionf_rightVec(const Quaternionf* self);
-BF_MATH_API Vec3f         bfQuaternionf_forwardVec(const Quaternionf* self);
-BF_MATH_API Vec3f         bfQuaternionf_backwardVec(const Quaternionf* self);
+BF_MATH_API Vec3f         bfQuaternionf_up(const Quaternionf* self);                            // positive y-axis
+BF_MATH_API Vec3f         bfQuaternionf_down(const Quaternionf* self);                          // negative y-axis
+BF_MATH_API Vec3f         bfQuaternionf_left(const Quaternionf* self);                          // negative x-axis
+BF_MATH_API Vec3f         bfQuaternionf_right(const Quaternionf* self);                         // positive x-xis
+BF_MATH_API Vec3f         bfQuaternionf_forward(const Quaternionf* self);                       // positive z-axis
+BF_MATH_API Vec3f         bfQuaternionf_backward(const Quaternionf* self);                      // negative z-axis
 BF_MATH_API bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf* rhs, float factor);
 
 enum
@@ -111,28 +111,28 @@ typedef enum
     Or use the "Transform_set*" API for automatic flushing of changes.
 */
 typedef struct bfTransform bfTransform;
-
 struct bfTransform
 {
   /* World Transform */
-  Vec3f       world_position;   /*!< Cached position in world coordinates.                         */
-  Quaternionf world_rotation;   /*!< Cached rotation in world coordinates.                         */
-  Vec3f       world_scale;      /*!< Cached scale in world coordinates.                            */
-  Mat4x4      world_transform;  /*!< Cached matrix representing the world transform.               */
-  Mat4x4      normal_transform; /*!< The inverse transpose of `world_transform`.                   */
+  Vec3f       world_position;      /*!< Cached position in world coordinates.                         */
+  Quaternionf world_rotation;      /*!< Cached rotation in world coordinates.                         */
+  Vec3f       world_scale;         /*!< Cached scale in world coordinates.                            */
+  Mat4x4      world_transform;     /*!< Cached matrix representing the world transform.               */
+  Mat4x4      inv_world_transform; /*!< Cached matrix representing the inverse world transform.       */
+  Mat4x4      normal_transform;    /*!< The inverse transpose of `world_transform`.                   */
 
   /* Local Transform */
-  Vec3f       origin;          /*!< The pivot point from which the entity will rotate from.       */
-  Vec3f       local_position;  /*!< Position relative to parent coordinate system.                */
-  Quaternionf local_rotation;  /*!< Rotation relative to parent coordinate system.                */
-  Vec3f       local_scale;     /*!< Scale relative to parent coordinate system.                   */
-  Mat4x4      local_transform; /*!< Cached matrix representing the local transform.               */
+  Vec3f       origin;          /*!< The pivot point from which the entity will rotate and scale from. */
+  Vec3f       local_position;  /*!< Position relative to parent coordinate system.                    */
+  Quaternionf local_rotation;  /*!< Rotation relative to parent coordinate system.                    */
+  Vec3f       local_scale;     /*!< Scale relative to parent coordinate system.                       */
+  Mat4x4      local_transform; /*!< Cached matrix representing the local transform.                   */
 
   /* Hierarchy */
-  bfTransform* parent;       /*!< Parent transform object.                                      */
-  bfTransform* first_child;  /*!< First child of this transform.                                */
-  bfTransform* next_sibling; /*!< The next sibling of this transform.                           */
-  bfTransform* prev_sibling; /*!< The previous sibling of this transform.                       */
+  bfTransform* parent;       /*!< Parent transform object.                                            */
+  bfTransform* first_child;  /*!< First child of this transform.                                      */
+  bfTransform* next_sibling; /*!< The next sibling of this transform.                                 */
+  bfTransform* prev_sibling; /*!< The previous sibling of this transform.                             */
 
   /* Misc */
   uint32_t flags; /*!< bfTransformFlags, flags for various feature and dirty states. */

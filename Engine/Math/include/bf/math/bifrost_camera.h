@@ -1,5 +1,5 @@
-#ifndef BIFROST_CAMERA_H
-#define BIFROST_CAMERA_H
+#ifndef BF_CAMERA_H
+#define BF_CAMERA_H
 
 #include "bifrost_mat4x4.h"      /* Mat4x4       */
 #include "bifrost_math_export.h" /* BF_MATH_API  */
@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-/* Frustum API */
+/* Plane API */
 
 //
 // Points on the plane satisfy Dot(point, Vec3f{nx, ny, nz, 0.0f}) == d
@@ -25,10 +25,20 @@ typedef struct
 
 } bfPlane;
 
-inline bfPlane bfPlane_fromPoints(Vec3f p0, Vec3f p1, Vec3f p2)
+inline bfPlane bfPlane_make(Vec3f normal, float distance)
 {
   bfPlane result;
 
+  result.nx = normal.x;
+  result.ny = normal.y;
+  result.nz = normal.z;
+  result.d  = distance;
+
+  return result;
+}
+
+inline bfPlane bfPlane_fromPoints(Vec3f p0, Vec3f p1, Vec3f p2)
+{
   Vec3f p1_to_p0 = p1;
   Vec3f_sub(&p1_to_p0, &p0);
 
@@ -38,12 +48,7 @@ inline bfPlane bfPlane_fromPoints(Vec3f p0, Vec3f p1, Vec3f p2)
   Vec3f normal;
   Vec3f_cross(&p1_to_p0, &p2_to_p1, &normal);
 
-  result.nx = normal.x;
-  result.ny = normal.y;
-  result.nz = normal.z;
-  result.d  = Vec3f_dot(&normal, &p0);
-
-  return result;
+  return bfPlane_make(normal, Vec3f_dot(&normal, &p0));
 }
 
 inline Vec3f bfPlane_normal(bfPlane plane)
@@ -55,10 +60,10 @@ inline Vec3f bfPlane_normal(bfPlane plane)
 
 inline float bfPlane_dot(bfPlane plane, Vec3f point)
 {
-  const Vec3f normal = bfPlane_normal(plane);
-
-  return bfV3f_dot(normal, point) + plane.d;
+  return bfV3f_dot(bfPlane_normal(plane), point) - plane.d;
 }
+
+/* Plane API */
 
 enum
 {
@@ -100,6 +105,13 @@ typedef enum
   BIFROST_CAMERA_MODE_PRESPECTIVE_INFINITY
 
 } CameraMode;
+
+typedef struct
+{
+  float min[2];
+  float max[2];
+
+} Rectf;
 
 typedef struct
 {
@@ -184,34 +196,60 @@ BF_MATH_API void  Camera_setProjectionModified(BifrostCamera* cam);
 BF_MATH_API void  Camera_setViewModified(BifrostCamera* cam);
 BF_MATH_API Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size);
 
-// 'New' API
+// 'New' Camera API
 
 BF_MATH_API void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos);
 
 /* Ray API */
 
+typedef int bfRay3DBool; /*!< Typedef for clarity in what the int is being used for. */
+
 typedef struct
 {
-  Vec3f origin;              /* Required                   */
-  Vec3f direction;           /* Required                   */
-  Vec3f inv_direction;       /* Derived From direction     */
-  int   inv_direction_signs; /* Derived From inv_direction */
+  Vec3f origin;              /*!< Required                                                      */
+  Vec3f direction;           /*!< Required                                                      */
+  Vec3f inv_direction;       /*!< Derived From direction     (used by `bfRay3D_intersectsAABB`) */
+  int   inv_direction_signs; /*!< Derived From inv_direction (used by `bfRay3D_intersectsAABB`) */
 
 } bfRay3D;
 
 typedef struct
 {
-  int   did_hit;  /* Check this to se if the ray hit anything.      */
-  float min_time; /* Set To An Undefined Value if did_hit is false. */
-  float max_time; /* Set To An Undefined Value if did_hit is false. */
+  bfRay3DBool did_hit;  /*!< Check this to see if the ray hit anything.     */
+  float       min_time; /*!< Set To An Undefined Value if did_hit is false. */
+  float       max_time; /*!< Set To An Undefined Value if did_hit is false. */
 
-} bfRayCastResult;
+} bfRaycastAABBResult;
 
-BF_MATH_API bfRay3D         bfRay3D_make(Vec3f origin, Vec3f direction);
-BF_MATH_API bfRayCastResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f aabb_max);
+typedef struct
+{
+  bfRay3DBool did_hit; /*!< Check this to see if the ray hit anything.                                           */
+  float       time;    /*!< `t` along the segment that makes hit. Set To An Undefined Value if did_hit is false. */
+  float       u, v, w; /*!< Barycentric coordinates of triangle. Set To An Undefined Value if did_hit is false.  */
+
+} bfRaycastTriangleResult;
+
+typedef struct
+{
+  bfRay3DBool did_hit; /*!< Check this to see if the ray hit anything.                                                              */
+  float       time;    /*!< `t` along the segment that makes hit. Set to how far behind plane if did_hit is false (negative value). */
+
+} bfRaycastPlaneResult;
+
+// NOTE(SR):
+//   - All ray functions assume the passed in ray has a normalized direction vector.
+//   - `bfRay3D_make` calculates extra information only needed for `bfRay3D_intersectsAABB` otherwise
+//      just setting the `origin` and `direction` is ok.
+
+BF_MATH_API bfRay3D                 bfRay3D_make(Vec3f origin, Vec3f direction);
+BF_MATH_API bfRaycastAABBResult     bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f aabb_max);
+BF_MATH_API bfRaycastTriangleResult bfRay3D_intersectsTriangle(const bfRay3D* ray, Vec3f triangle_a, Vec3f triangle_b, Vec3f triangle_c);
+BF_MATH_API bfRaycastTriangleResult bfSegment3D_intersectsTriangle(Vec3f p, Vec3f q, Vec3f triangle_a, Vec3f triangle_b, Vec3f triangle_c);
+BF_MATH_API bfRaycastPlaneResult    bfRay3D_intersectsPlane(const bfRay3D* ray, bfPlane plane);
+BF_MATH_API bfRaycastPlaneResult    bfSegment3D_intersectsPlane(Vec3f p, Vec3f q, bfPlane plane);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BIFROST_CAMERA_H */
+#endif /* BF_CAMERA_H */

@@ -113,25 +113,21 @@ Quaternionf bfQuaternionf_fromEulerDeg(float pitch, float yaw, float roll)
 
 Quaternionf bfQuaternionf_fromEulerRad(float pitch, float yaw, float roll)
 {
-  // yaw is roll rn.
-  // roll is pitch rn
-  // thus pitch is yaw rn
-
-  const float half_roll  = roll * 0.5f;
   const float half_pitch = pitch * 0.5f;
   const float half_yaw   = yaw * 0.5f;
-  const float cos_yaw    = cosf(half_yaw);
-  const float cos_pitch  = cosf(half_pitch);
-  const float cos_roll   = cosf(half_roll);
-  const float sin_yaw    = sinf(half_yaw);
-  const float sin_pitch  = sinf(half_pitch);
-  const float sin_roll   = sinf(half_roll);
+  const float half_roll  = roll * 0.5f;
+  const float x_axis_cos = cosf(half_pitch);
+  const float x_axis_sin = sinf(half_pitch);
+  const float y_axis_cos = cosf(half_yaw);
+  const float y_axis_sin = sinf(half_yaw);
+  const float z_axis_cos = cosf(half_roll);
+  const float z_axis_sin = sinf(half_roll);
 
   return bfQuaternionf_init(
-   cos_yaw * cos_pitch * sin_roll - sin_yaw * sin_pitch * cos_roll,
-   cos_yaw * sin_pitch * cos_roll + sin_yaw * cos_pitch * sin_roll,
-   sin_yaw * cos_pitch * cos_roll - cos_yaw * sin_pitch * sin_roll,
-   cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll);
+   z_axis_cos * y_axis_cos * x_axis_sin - z_axis_sin * y_axis_sin * x_axis_cos,
+   z_axis_cos * y_axis_sin * x_axis_cos + z_axis_sin * y_axis_cos * x_axis_sin,
+   z_axis_sin * y_axis_cos * x_axis_cos - z_axis_cos * y_axis_sin * x_axis_sin,
+   z_axis_cos * y_axis_cos * x_axis_cos + z_axis_sin * y_axis_sin * x_axis_sin);
 }
 
 Quaternionf bfQuaternionf_multQ(const Quaternionf* lhs, const Quaternionf* rhs)
@@ -250,30 +246,17 @@ void bfQuaternionf_toMatrix(Quaternionf self, Mat4x4* out_rot_mat)
 
 void bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler)
 {
-  /* pitch */
-
-  const float sin_pitch = 2.0f * (self->w * self->y - self->z * self->x);
+  const float sin_y_axis = 2.0f * (self->w * self->y - self->z * self->x);
   const float y_sq      = self->y * self->y;
 
-  if (fabsf(sin_pitch) >= 1.0f)
-  {
-    /* If Out of Range use 90 deg. */
-    out_rot_euler->x = copysignf(k_HalfPI, sin_pitch);
-  }
-  else
-  {
-    out_rot_euler->x = asinf(sin_pitch);
-  }
+  /* X-Axis (Pitch) */
+  out_rot_euler->x = atan2f(2.0f * (self->x * self->w + self->y * self->z), 1.0f - 2.0f * (self->x * self->x + y_sq));
 
-  /* yaw */
+  /* Y-Axis (Yaw) */
+  out_rot_euler->y = fabsf(sin_y_axis) >= 1.0f ? copysignf(k_HalfPI, sin_y_axis) : asinf(sin_y_axis); /* If Out of Range use 90 deg. */
 
-  out_rot_euler->y = atan2f(2.0f * (self->w * self->z + self->x * self->y), 1.0f - 2.0f * (y_sq + self->z * self->z));
-
-  /* roll */
-
-  out_rot_euler->z = atan2f(
-   2.0f * (self->x * self->w + self->y * self->z),
-   1.0f - 2.0f * (self->x * self->x + y_sq));
+  /* Z-Axis (Roll) */
+  out_rot_euler->z = atan2f(2.0f * (self->w * self->z + self->x * self->y), 1.0f - 2.0f * (y_sq + self->z * self->z));
 }
 
 void bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler)
@@ -284,58 +267,58 @@ void bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler)
   out_rot_euler->z *= k_RadToDegf;
 }
 
-Vec3f bfQuaternionf_upVec(const Quaternionf* self)
+Vec3f bfQuaternionf_up(const Quaternionf* self)
 {
   return (Vec3f){
-   2.0f * (self->x * self->y + self->w * self->z),
+   2.0f * (self->x * self->y - self->w * self->z),
    1.0f - 2.0f * (self->x * self->x + self->z * self->z),
-   2.0f * (self->y * self->z - self->w * self->x),
+   2.0f * (self->y * self->z + self->w * self->x),
    0.0f,
   };
 }
 
-Vec3f bfQuaternionf_downVec(const Quaternionf* self)
+Vec3f bfQuaternionf_down(const Quaternionf* self)
 {
-  Vec3f ret = bfQuaternionf_upVec(self);
+  Vec3f ret = bfQuaternionf_up(self);
   Vec3f_mul(&ret, -1.0f);
   return ret;
 }
 
-Vec3f bfQuaternionf_leftVec(const Quaternionf* self)
+Vec3f bfQuaternionf_left(const Quaternionf* self)
 {
-  Vec3f ret = bfQuaternionf_rightVec(self);
+  Vec3f ret = bfQuaternionf_right(self);
   Vec3f_mul(&ret, -1.0f);
   return ret;
 }
 
-Vec3f bfQuaternionf_rightVec(const Quaternionf* self)
+Vec3f bfQuaternionf_right(const Quaternionf* self)
 {
   return (Vec3f){
    1.0f - 2.0f * (self->y * self->y + self->z * self->z),
-   2.0f * (self->x * self->y - self->w * self->z),
-   2.0f * (self->x * self->z + self->w * self->y),
+   2.0f * (self->x * self->y + self->w * self->z),
+   2.0f * (self->x * self->z - self->w * self->y),
    0.0f,
   };
 }
 
-Vec3f bfQuaternionf_forwardVec(const Quaternionf* self)
+Vec3f bfQuaternionf_forward(const Quaternionf* self)
 {
   return (Vec3f){
-   2.0f * (self->x * self->z - self->w * self->y),
-   2.0f * (self->y * self->z + self->w * self->x),
+   2.0f * (self->x * self->z + self->w * self->y),
+   2.0f * (self->y * self->z - self->w * self->x),
    1.0f - 2.0f * (self->x * self->x + self->y * self->y),
    0.0f,
   };
 }
 
-Vec3f bfQuaternionf_backwardVec(const Quaternionf* self)
+Vec3f bfQuaternionf_backward(const Quaternionf* self)
 {
-  Vec3f ret = bfQuaternionf_forwardVec(self);
+  Vec3f ret = bfQuaternionf_forward(self);
   Vec3f_mul(&ret, -1.0f);
   return ret;
 }
 
-static inline float bfQuaternionf_dot(const bfQuaternionf* lhs, const bfQuaternionf* rhs)
+static float bfQuaternionf_dot(const bfQuaternionf* lhs, const bfQuaternionf* rhs)
 {
   return lhs->x * rhs->x + lhs->y * rhs->y + lhs->z * rhs->z + lhs->w * rhs->w;
 }
@@ -343,7 +326,7 @@ static inline float bfQuaternionf_dot(const bfQuaternionf* lhs, const bfQuaterni
 bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf* rhs, float factor)
 {
   //
-  // Adopted from Assimp / gmtl
+  // Adapted from Assimp / gmtl
   //
 
   bfQuaternionf end   = *rhs;
@@ -535,7 +518,7 @@ static void bfTransform_flushMatrix(Mat4x4* out, const Vec3f origin, const Vec3f
 
 void bfTransform_flushChanges(bfTransform* self)
 {
-  bfTransform* work_stack[k_TransformQueueStackMax] = {NULL}; /* TODO(Shareef): Make this dynamic? */
+  bfTransform* work_stack[k_TransformQueueStackMax] = {NULL}; /* TODO(SR): Make this dynamically sized? */
   int          work_stack_top                       = 0;
 
   work_stack[work_stack_top++] = self;
@@ -572,8 +555,9 @@ void bfTransform_flushChanges(bfTransform* self)
       node->world_transform = node->local_transform;
     }
 
-    if (Mat4x4_inverse(&node->world_transform, &node->normal_transform))
+    if (Mat4x4_inverse(&node->world_transform, &node->inv_world_transform))
     {
+      node->normal_transform = node->inv_world_transform;
       Mat4x4_transpose(&node->normal_transform);
     }
 

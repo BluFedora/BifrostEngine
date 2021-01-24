@@ -8,10 +8,11 @@
 namespace bf
 {
   DebugRenderer::DebugRenderer(IMemoryManager& memory) :
+    m_DrawCommandMemory{},
     m_Gfx{nullptr},
     m_LineBufferPool{nullptr},
-    m_DepthDrawCommands{memory},
-    m_OverlayDrawCommands{memory},
+    m_DepthDrawCommands{m_DrawCommandMemory},
+    m_OverlayDrawCommands{m_DrawCommandMemory},
     m_LineBuffers{Array<BufferLink*>{memory}, Array<BufferLink*>{memory}},
     m_ShaderModules{nullptr, nullptr, nullptr},
     m_Shaders{nullptr, nullptr},
@@ -55,9 +56,9 @@ namespace bf
     grabCommandList(is_overlay).emplaceBack().init(duration, DrawLine{a, b, color});
   }
 
-  void DebugRenderer::addAABB(const Vector3f& center, const Vector3f& extents, const bfColor4u& color, float duration, bool is_overlay)
+  void DebugRenderer::addAABB(const Vector3f& center, const Vector3f& size, const bfColor4u& color, float duration, bool is_overlay)
   {
-    grabCommandList(is_overlay).emplaceBack().init(duration, DrawAABB{center, extents, color});
+    grabCommandList(is_overlay).emplaceBack().init(duration, DrawAABB{center, size, color});
   }
 
   void DebugRenderer::draw(RenderView& camera, const bfGfxFrameInfo& frame_info)
@@ -248,7 +249,7 @@ namespace bf
 
   void DebugRenderer::addVertices(Array<BufferLink*>& buffer, const Vector3f& a, const Vector3f& b, const bfColor4u& color, const bfGfxFrameInfo& frame_info)
   {
-    static constexpr float k_Thickness = 0.04f;
+    static constexpr float k_Thickness = 0.03f; // ToDO(SR): This width should be customizable.
 
     const VertexDebugLine vertices[] =
      {
@@ -268,7 +269,7 @@ namespace bf
 
     if (buffer.isEmpty() || buffer.back()->vertices_left < k_NumVerticesInTriangle)
     {
-      BufferLink* new_link = grabFreeLink(frame_info);
+      BufferLink* const new_link = grabFreeLink(frame_info);
 
       buffer.push(new_link);
 

@@ -343,7 +343,11 @@ void bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* matrix)
   // Normalize the planes.
   for (int i = 0; i < k_bfPlaneIdx_Max; ++i)
   {
-    self->planes[i] = bfV4_toPlane(bfV4f_div(planes[i], bfV3f_len(bfV4f_toV3f(planes[i]))));
+    Vec4f plane = bfV4f_div(planes[i], bfV3f_len(bfV4f_toV3f(planes[i])));
+
+    plane.w *= -1.0f;
+
+    self->planes[i] = bfV4_toPlane(plane);
   }
 }
 
@@ -446,7 +450,9 @@ bfRay3D bfRay3D_make(Vec3f origin, Vec3f direction)
 
   bfRay3D self;
   self.origin          = origin;
+  self.origin.w        = 1.0f;
   self.direction       = direction;
+  self.direction.w     = 0.0f;
   self.inv_direction.x = 1.0f / self.direction.x;
   self.inv_direction.y = 1.0f / self.direction.y;
   self.inv_direction.z = 1.0f / self.direction.z;
@@ -465,14 +471,14 @@ inline int bfRay3D_sign(const bfRay3D* ray, int bit)
 }
 
 // [https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection]
-bfRayCastResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f aabb_max)
+bfRaycastAABBResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f aabb_max)
 {
-  bfRayCastResult result   = (bfRayCastResult){0, 0.0f, 0.0f};
-  const Vec3f     bounds[] = {aabb_min, aabb_max};
-  const int       r_sign_x = bfRay3D_sign(ray, k_RayXSignBit);
-  const int       r_sign_y = bfRay3D_sign(ray, k_RayYSignBit);
-  const float     tymin    = (bounds[r_sign_y].y - ray->origin.y) * ray->inv_direction.y;
-  const float     tymax    = (bounds[1 - r_sign_y].y - ray->origin.y) * ray->inv_direction.y;
+  bfRaycastAABBResult result   = (bfRaycastAABBResult){0, 0.0f, 0.0f};
+  const Vec3f         bounds[] = {aabb_min, aabb_max};
+  const int           r_sign_x = bfRay3D_sign(ray, k_RayXSignBit);
+  const int           r_sign_y = bfRay3D_sign(ray, k_RayYSignBit);
+  const float         tymin    = (bounds[r_sign_y].y - ray->origin.y) * ray->inv_direction.y;
+  const float         tymax    = (bounds[1 - r_sign_y].y - ray->origin.y) * ray->inv_direction.y;
 
   float tmin = (bounds[r_sign_x].x - ray->origin.x) * ray->inv_direction.x;
   float tmax = (bounds[1 - r_sign_x].x - ray->origin.x) * ray->inv_direction.x;
@@ -496,6 +502,155 @@ bfRayCastResult bfRay3D_intersectsAABB(const bfRay3D* ray, Vec3f aabb_min, Vec3f
   result.did_hit  = 1;
   result.min_time = tzmin > tmin ? tzmin : tmin;
   result.max_time = tzmax < tmax ? tzmax : tmax;
+
+  return result;
+}
+
+// ReSharper disable CppSomeObjectMembersMightNotBeInitialized
+
+bfRaycastTriangleResult bfRay3D_intersectsTriangle(const bfRay3D* ray, Vec3f triangle_a, Vec3f triangle_b, Vec3f triangle_c)
+{
+  bfRaycastTriangleResult result;
+
+  const Vec3f p               = ray->origin;
+  const Vec3f p_to_q          = bfV3f_mulS(ray->direction, -1.0f);
+  const Vec3f b_to_a          = bfV3f_sub(triangle_b, triangle_a);
+  const Vec3f c_to_a          = bfV3f_sub(triangle_c, triangle_a);
+  const Vec3f triangle_normal = bfV3f_cross(b_to_a, c_to_a);
+  const float d               = bfV3f_dot(p_to_q, triangle_normal);
+
+  if (d <= 0.0f)  // Segment does not point toward the triangle (either away or parallel)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  const Vec3f ap = bfV3f_sub(p, triangle_a);
+  const float t  = bfV3f_dot(ap, triangle_normal);
+
+  if (t < 0.0f)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  const Vec3f e = bfV3f_cross(p_to_q, ap);
+  const float v = bfV3f_dot(c_to_a, e);
+
+  if (v < 0.0f || v > d)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  const float u = -bfV3f_dot(b_to_a, e);
+
+  if (u < 0.0f || (u + v) > d)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  const float inv_d = 1.0f / d;
+
+  result.did_hit = 1;
+  result.time    = t * inv_d;
+  result.v       = v * inv_d;
+  result.u       = u * inv_d;
+  result.w       = 1.0f - (result.v + result.u);
+
+  return result;
+}
+
+bfRaycastTriangleResult bfSegment3D_intersectsTriangle(Vec3f p, Vec3f q, Vec3f triangle_a, Vec3f triangle_b, Vec3f triangle_c)
+{
+  bfRaycastTriangleResult result;
+
+  const Vec3f q_to_p          = bfV3f_sub(q, p);
+  const Vec3f b_to_a          = bfV3f_sub(triangle_b, triangle_a);
+  const Vec3f c_to_a          = bfV3f_sub(triangle_c, triangle_a);
+  const Vec3f triangle_normal = bfV3f_cross(b_to_a, c_to_a);
+  const float d               = bfV3f_dot(q_to_p, triangle_normal);
+
+  if (d <= 0.0f)  // Segment does not point toward the triangle (either away or parallel)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+  // Ray intersection: T >= 0
+
+  const Vec3f ap = bfV3f_sub(p, triangle_a);
+  const float t  = bfV3f_dot(ap, triangle_normal);
+
+  if (t < 0.0f)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  // This part is special for segments since they can exit early due to limited range.
+  if (t > d)
+  {
+    result.did_hit = 0;
+
+    return result;
+  }
+
+  const Vec3f e = bfV3f_cross(q_to_p, ap);
+  const float v = bfV3f_dot(c_to_a, e);
+
+  if (v < 0.0f || v > d)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  const float u = -bfV3f_dot(b_to_a, e);
+
+  if (u < 0.0f || (u + v) > d)
+  {
+    result.did_hit = 0;
+    return result;
+  }
+
+  const float inv_d = 1.0f / d;
+
+  result.did_hit = 1;
+  result.time    = t * inv_d;
+  result.v       = v * inv_d;
+  result.u       = u * inv_d;
+  result.w       = 1.0f - (result.v + result.u);
+
+  return result;
+}
+
+// ReSharper restore CppSomeObjectMembersMightNotBeInitialized
+
+bfRaycastPlaneResult bfRay3D_intersectsPlane(const bfRay3D* ray, bfPlane plane)
+{
+  bfRaycastPlaneResult result;
+
+  const Vec3f plane_normal = bfPlane_normal(plane);
+  const float n_dot_a      = bfV3f_dot(plane_normal, ray->origin);
+  const float n_dot_ba     = bfV3f_dot(plane_normal, ray->direction);
+  const float t            = -(n_dot_a - plane.d) / n_dot_ba;
+
+  result.time    = t;
+  result.did_hit = t >= 0.0f;
+
+  return result;
+}
+
+bfRaycastPlaneResult bfSegment3D_intersectsPlane(Vec3f p, Vec3f q, bfPlane plane)
+{
+  bfRay3D ray;
+  ray.origin    = p;
+  ray.direction = bfV3f_sub(q, p);
+
+  bfRaycastPlaneResult result = bfRay3D_intersectsPlane(&ray, plane);
+
+  // The Segment has a max length to be considered a hit.
+  result.did_hit = result.did_hit && result.time <= 1.0f;
 
   return result;
 }

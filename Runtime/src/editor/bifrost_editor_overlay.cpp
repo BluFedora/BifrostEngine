@@ -523,7 +523,7 @@ namespace bf::editor
     }
   };
 
-  template<typename TAssetInfo>
+  // template<typename TAssetInfo>
   class NewAssetDialog : public ui::Dialog
   {
    private:
@@ -1842,6 +1842,13 @@ namespace bf::editor
           if (ImGui::MenuItem("Folder"))
           {
             editor.enqueueDialog(make<NewFolderDialog>(entry.full_path));
+          }
+
+          if (ImGui::MenuItem("Material"))
+          {
+            // const char* dialog_name, FileEntry& file_entry, const StringRange& default_name, const StringRange& ext
+
+            editor.enqueueDialog(make<NewAssetDialog>("New Material", entry, "Material", ".material"));
           }
 
           ImGui::EndMenu();

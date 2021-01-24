@@ -439,6 +439,7 @@ static void bfDrawCallPipeline_defaultX(bfDrawCallPipeline* self)
   state->front_face                       = BF_FRONT_FACE_CCW;
   state->cull_face                        = BF_CULL_FACE_BACK;
   state->do_depth_test                    = bfFalse;
+  state->do_depth_bounds_test             = bfFalse;
   state->do_depth_clamp                   = bfFalse;
   state->do_depth_write                   = bfFalse;
   state->depth_test_op                    = BF_COMPARE_OP_LESS_OR_EQUAL;
@@ -446,6 +447,7 @@ static void bfDrawCallPipeline_defaultX(bfDrawCallPipeline* self)
   state->do_primitive_restart             = bfFalse;
   state->do_rasterizer_discard            = bfFalse;
   state->do_depth_bias                    = bfFalse;
+  state->do_sample_shading                = bfFalse;
   state->do_alpha_to_coverage             = bfFalse;
   state->do_alpha_to_one                  = bfFalse;
   state->do_logic_op                      = bfFalse;

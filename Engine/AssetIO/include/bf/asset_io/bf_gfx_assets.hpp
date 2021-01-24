@@ -20,6 +20,7 @@
 
 namespace bf
 {
+  struct StandardVertex;
   static constexpr std::uint8_t k_InvalidBoneID = static_cast<std::uint8_t>(-1);
 
   class TextureAsset final : public BaseAsset<TextureAsset>
@@ -277,12 +278,15 @@ namespace bf
     Array<NodeIDBone>     m_BoneToModel;
     Array<MaterialAsset*> m_Materials;
     Matrix4x4f            m_GlobalInvTransform;
+    AABB                  m_ObjectSpaceBounds;
+    Array<AssetIndexType> m_Triangles;
+    Array<StandardVertex> m_Vertices;
 
    public:
     ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device);
 
     std::size_t numBones() const { return m_BoneToModel.length(); }
-    
+
    private:
     void onLoad() override;
     void loadSkeleton(const ModelSkeleton& skeleton);

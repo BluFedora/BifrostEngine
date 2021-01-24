@@ -66,20 +66,6 @@ typedef struct /*ALIGN_STRUCT(16)*/ Vec3f_t
 
 } /*ALIGN_STRUCT(16)*/ Vec3f;
 
-typedef struct Rectf_t
-{
-  float min[2];
-  float max[2];
-
-} Rectf;
-
-typedef struct Recti_t
-{
-  int min[2];
-  int max[2];
-
-} Recti;
-
 BF_MATH_API void  Vec3f_set(Vec3f* self, float x, float y, float z, float w);
 BF_MATH_API void  Vec3f_copy(Vec3f* self, const Vec3f* other);
 BF_MATH_API int   Vec3f_isEqual(const Vec3f* self, const Vec3f* other);
@@ -111,6 +97,41 @@ inline float bfV3f_len(Vec3f self)
 inline float bfV3f_dot(Vec3f lhs, Vec4f rhs)
 {
   return Vec3f_dot(&lhs, &rhs);
+}
+
+inline Vec3f bfV3f_mulS(Vec3f lhs, float scalar)
+{
+  Vec3f result = lhs;
+  Vec3f_mul(&result, scalar);
+  return result;
+}
+
+inline Vec3f bfV3f_add(Vec3f lhs, Vec3f rhs)
+{
+  Vec3f result = lhs;
+  Vec3f_add(&result, &rhs);
+  return result;
+}
+
+inline Vec3f bfV3f_addScaled(Vec3f lhs, Vec3f rhs, float scalar)
+{
+  Vec3f result = lhs;
+  Vec3f_addScaled(&result, &rhs, scalar);
+  return result;
+}
+
+inline Vec3f bfV3f_sub(Vec3f lhs, Vec3f rhs)
+{
+  Vec3f result = lhs;
+  Vec3f_sub(&result, &rhs);
+  return result;
+}
+
+inline Vec3f bfV3f_cross(Vec3f lhs, Vec3f rhs)
+{
+  Vec3f result;
+  Vec3f_cross(&lhs, &rhs, &result);
+  return result;
 }
 
 // V4

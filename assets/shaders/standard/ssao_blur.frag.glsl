@@ -23,7 +23,7 @@ layout(location = 0) out float o_FragColor0;
 
 void main()
 {
-  vec2  noise_texel_size = 1.0 / vec2(textureSize(u_SSAOTexture, 0));
+  vec2  noise_texel_size = 1.0 / vec2(/*textureSize(u_SSAOTexture, 0)*/ 1280.0, 720.0);
   float accumulation     = 0.0;
 
   for (int y = -k_HalfNoiseSize; y < k_HalfNoiseSize; ++y)

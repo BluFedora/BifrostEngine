@@ -463,6 +463,9 @@ namespace bf
     void bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info);
     void resize(bfGfxDeviceHandle device, int width, int height);
     void deinit(bfGfxDeviceHandle device);
+
+  private:
+    void createBuffers(bfGfxDeviceHandle device, int width, int height);
   };
 
   struct StdPairHash

@@ -7,6 +7,7 @@
 
 #include <list>
 
+#include "bf/asset_io/bf_model_loader.hpp"
 #include "bf/graphics/bifrost_component_renderer.hpp"
 
 namespace bf::editor
@@ -296,7 +297,7 @@ namespace bf::editor
   template<typename T>
   using StdList = std::list<T, StlAllocator<T>>;
 
-  using ClickResult = std::pair<const BVHNode*, bfRayCastResult>;
+  using ClickResult = std::pair<const BVHNode*, bfRaycastAABBResult>;
 
   void SceneView::onEvent(EditorOverlay& editor, Event& event)
   {
@@ -481,25 +482,25 @@ namespace bf::editor
 
       if (scene)
       {
+        auto&       io           = ImGui::GetIO();
+        const auto& window_mouse = io.MousePos;
+        Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+          ImGuiViewport* const main_vp = ImGui::GetMainViewport();
+
+          local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
+        }
+
+        local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
+
+        const bfRay3D ray = bfRay3D_make(
+         m_Camera->cpu_camera.position,
+         Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
+
         if (m_IsSceneViewHovered)
         {
-          auto&       io           = ImGui::GetIO();
-          const auto& window_mouse = io.MousePos;
-          Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
-
-          if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-          {
-            ImGuiViewport* const main_vp = ImGui::GetMainViewport();
-
-            local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
-          }
-
-          local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
-
-          bfRay3D ray = bfRay3D_make(
-           m_Camera->cpu_camera.position,
-           Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
-
           ClickResult highlighted_node = {nullptr, {}};
 
           scene->bvh().traverseConditionally([&ray, &highlighted_node](const BVHNode& node) {
@@ -520,6 +521,7 @@ namespace bf::editor
             return ray_cast_result.did_hit;
           });
 
+#if 0
           if (highlighted_node.first)
           {
             const BVHNode& node = *highlighted_node.first;
@@ -531,7 +533,159 @@ namespace bf::editor
              0.0f,
              true);
           }
+#endif
         }
+
+        //
+        // Mesh Bounds Test
+        //
+
+        auto& dbg_draw = engine.debugDraw();
+
+        if (editor.isKeyDown('P'))
+          scene->bvh().traverseConditionally([&ray, &dbg_draw](const BVHNode& node) {
+            Vec3f aabb_min;
+            Vec3f aabb_max;
+
+            memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
+            memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
+
+            const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
+
+            if (ray_cast_result.did_hit && bvh_node::isLeaf(node))
+            {
+              Entity*             entity   = (Entity*)node.user_data;
+              const MeshRenderer* renderer = entity->get<MeshRenderer>();
+
+              if (renderer && renderer->m_Model)
+              {
+                const auto& transform = &entity->transform();
+                auto&       model     = *renderer->m_Model;
+
+                bfRay3D local_ray = ray;
+                Mat4x4_multVec(&transform->inv_world_transform, &local_ray.origin, &local_ray.origin);
+                Mat4x4_multVec(&transform->inv_world_transform, &local_ray.direction, &local_ray.direction);
+
+                const auto num_indices = model.m_Triangles.size();
+
+                for (AssetIndexType face = 0u; face < num_indices; face += 3)
+                {
+                  auto v0 = model.m_Vertices[model.m_Triangles[face + 0u]].pos;
+                  auto v1 = model.m_Vertices[model.m_Triangles[face + 1u]].pos;
+                  auto v2 = model.m_Vertices[model.m_Triangles[face + 2u]].pos;
+
+                  const auto raycast = bfRay3D_intersectsTriangle(&local_ray, v2, v0, v1);
+
+                  if (raycast.did_hit)
+                  {
+                    Mat4x4_multVec(&transform->world_transform, &v0, &v0);
+                    Mat4x4_multVec(&transform->world_transform, &v1, &v1);
+                    Mat4x4_multVec(&transform->world_transform, &v2, &v2);
+
+                    dbg_draw.addLine(v0, v1, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
+                    dbg_draw.addLine(v1, v2, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
+                    dbg_draw.addLine(v2, v0, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
+                  }
+                }
+              }
+            }
+
+            return ray_cast_result.did_hit;
+          });
+
+        {
+          for (const SpriteRenderer& sprite : scene->components<SpriteRenderer>())
+          {
+            // Ray Picking Code
+
+            const auto&                transform               = sprite.owner().transform();
+            const Vector3f             center_position         = transform.world_position;
+            const Vector3f             forward                 = bfQuaternionf_forward(&transform.world_rotation);
+            const float                signed_dist_from_origin = bfPlane_dot(bfPlane_make(forward, 0.0f), center_position);
+            const bfRaycastPlaneResult sprite_ray_cast         = bfRay3D_intersectsPlane(&ray, bfPlane_make(forward, signed_dist_from_origin));
+
+            if (sprite_ray_cast.did_hit)
+            {
+              const Vector2f half_local_x_axis = Vector2f{sprite.m_Size.x, 0.0f} * 0.5f;
+              const Vector2f half_local_y_axis = Vector2f{0.0f, sprite.m_Size.y} * 0.5f;
+              const Vector3f hit_point         = Vector3f(ray.origin) + Vector3f(ray.direction) * sprite_ray_cast.time;
+              Vector3f       local_hit_point_v3;
+
+              Mat4x4_multVec(&transform.inv_world_transform, &hit_point, &local_hit_point_v3);
+
+              const Vector2f local_hit_point = {local_hit_point_v3.x, local_hit_point_v3.y};
+
+              if (math::isInbetween(0.0f, vec::inverseLerp(-half_local_x_axis, half_local_x_axis, local_hit_point), 1.0f) &&
+                  math::isInbetween(0.0f, vec::inverseLerp(-half_local_y_axis, half_local_y_axis, local_hit_point), 1.0f))
+              {
+                dbg_draw.addAABB(
+                 hit_point,
+                 Vector3f{0.1f, 0.1f, 0.1f},
+                 bfColor4u_fromUint32(BIFROST_COLOR_GOLD));
+              }
+            }
+
+            const float    half_thickness = 0.05f;
+            const Vector3f half_extents   = Vector3f{sprite.m_Size.x, sprite.m_Size.y, half_thickness, 0.0f} * 0.5f;
+
+            const AABB object_space_bounds = {-half_extents, half_extents};
+            const AABB world_space_bounds  = aabb::transform(object_space_bounds, transform.world_transform);
+
+            dbg_draw.addAABB(
+             world_space_bounds.center(),
+             world_space_bounds.dimensions(),
+             bfColor4u_fromUint32(BIFROST_COLOR_DEEPPINK));
+          }
+        }
+
+#if 0
+        for (const MeshRenderer& renderer : scene->components<MeshRenderer>())
+        {
+          if (renderer.m_Model)
+          {
+            auto&       model     = *renderer.m_Model;
+            const auto& transform = &renderer.owner().transform();
+            const auto  bounds    = aabb::transform(model.m_ObjectSpaceBounds, transform->world_transform);
+            const auto  size      = bounds.dimensions();
+
+            engine.debugDraw().addAABB(bounds.center(), size, bfColor4u_fromUint32(BIFROST_COLOR_INDIGO));
+
+            if (m_IsSceneViewHovered)
+            {
+              for (AssetIndexType face = 0u; face < model.m_Triangles.size(); face += 3)
+              {
+                auto v0 = model.m_Vertices[model.m_Triangles[face + 0u]].pos;
+                auto v1 = model.m_Vertices[model.m_Triangles[face + 1u]].pos;
+                auto v2 = model.m_Vertices[model.m_Triangles[face + 2u]].pos;
+
+                bfRay3D local_ray = ray;
+
+#if 1
+                Mat4x4_multVec(&transform->inv_world_transform, &local_ray.origin, &local_ray.origin);
+                Mat4x4_multVec(&transform->inv_world_transform, &local_ray.direction, &local_ray.direction);
+#else
+                Mat4x4_multVec(&transform->world_transform, &v0, &v0);
+                Mat4x4_multVec(&transform->world_transform, &v1, &v1);
+                Mat4x4_multVec(&transform->world_transform, &v2, &v2);
+#endif
+
+                const auto raycast = bfRay3D_intersectsTriangle(&local_ray, v2, v0, v1);
+
+                if (raycast.did_hit)
+                {
+                  Mat4x4_multVec(&transform->world_transform, &v0, &v0);
+                  Mat4x4_multVec(&transform->world_transform, &v1, &v1);
+                  Mat4x4_multVec(&transform->world_transform, &v2, &v2);
+
+                  dbg_draw.addLine(v0, v1, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
+                  dbg_draw.addLine(v1, v2, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
+                  dbg_draw.addLine(v2, v0, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
+                }
+              }
+            }
+          }
+        }
+#endif
 
         // Light Icon Rendering
 
@@ -562,9 +716,11 @@ namespace bf::editor
 
         for (const Light& light : lights)
         {
-          const auto& light_transform = light.owner().transform();
+          const auto&    light_transform = light.owner().transform();
+          const Vector3f pos_to_cam      = Vector3f(m_Camera->cpu_camera.position) - Vector3f(light_transform.world_position);
 
-          primitive_proto.origin = light_transform.world_position;
+          // Being right on top of the light is kinda jank so move it towards the cam a tad bit.
+          primitive_proto.origin = Vector3f(light_transform.world_position) + vec::normalized(pos_to_cam) * 0.2f;
 
           renderer.pushSprite(primitive_proto);
         }

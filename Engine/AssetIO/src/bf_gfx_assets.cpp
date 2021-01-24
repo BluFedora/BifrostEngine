@@ -24,7 +24,7 @@
 namespace bf
 {
   // TODO(SR): This is copied from "bifrost_standard_renderer.cpp"
-  static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
+  static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
 
   // TODO(SR): We dont want this.
   LinearAllocator& ENGINE_TEMP_MEM(Engine& engine);
@@ -135,7 +135,7 @@ namespace bf
     markIsLoaded();
   }
 
-  void Anim3DAsset::onUnload() { }
+  void Anim3DAsset::onUnload() {}
 
   ModelAsset::ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device) :
     m_GraphicsDevice{device},
@@ -146,7 +146,10 @@ namespace bf
     m_Nodes{memory},
     m_BoneToModel{memory},
     m_Materials{memory},
-    m_GlobalInvTransform{}
+    m_GlobalInvTransform{},
+    m_ObjectSpaceBounds{},
+    m_Triangles{memory},
+    m_Vertices{memory}
   {
   }
 
@@ -227,11 +230,11 @@ namespace bf
 
   void ModelAsset::onLoad()
   {
-    Engine&              engine        = assets().engine();
-    LinearAllocatorScope mem_scope0    = ENGINE_TEMP_MEM(engine);
-    const String&        full_path     = fullPath();
-    const StringRange    file_dir      = path::directory(full_path);
-    AssetModelLoadResult model_result  = loadModel(AssetModelLoadSettings(full_path, ENGINE_TEMP_MEM(engine)));
+    Engine&              engine       = assets().engine();
+    LinearAllocatorScope mem_scope0   = ENGINE_TEMP_MEM(engine);
+    const String&        full_path    = fullPath();
+    const StringRange    file_dir     = path::directory(full_path);
+    AssetModelLoadResult model_result = loadModel(AssetModelLoadSettings(full_path, ENGINE_TEMP_MEM(engine)));
 
     if (model_result)
     {
@@ -250,6 +253,8 @@ namespace bf
           tex_handle = getTextureAssetHandle(assets, abs_texture_path);
         }
       };
+
+      m_ObjectSpaceBounds = model_result.object_space_bounds;
 
       // Load Skeleton
       loadSkeleton(model_result.skeleton);
@@ -339,18 +344,22 @@ namespace bf
        model_result.mesh_list->begin(),
        model_result.mesh_list->end(),
        [this](const Mesh& mesh_proto) {
-         m_Meshes.push(
-          Mesh{mesh_proto.index_offset, mesh_proto.num_indices, mesh_proto.material_idx});
+         m_Meshes.push(Mesh{mesh_proto.index_offset, mesh_proto.num_indices, mesh_proto.material_idx});
        });
 
       /// Vertex / Index Buffer Marshalling
 
-      const uint32_t        num_vertices = uint32_t(model_result.vertices->length);
-      Array<StandardVertex> vertices{ENGINE_TEMP_MEM(engine)};
-      Array<VertexBoneData> bone_vertices{ENGINE_TEMP_MEM(engine)};
+      const uint32_t         num_vertices = uint32_t(model_result.vertices->length);
+      Array<StandardVertex>& vertices     = m_Vertices;
+      Array<VertexBoneData>  bone_vertices{ENGINE_TEMP_MEM(engine)};
+
+      m_Vertices.clear();
+      m_Triangles.clear();
 
       vertices.resize(num_vertices);
       bone_vertices.resize(num_vertices);
+      m_Triangles.resize(model_result.indices->length);
+      std::memcpy(m_Triangles.data(), model_result.indices->data, sizeof(AssetIndexType) * model_result.indices->length);
 
       std::transform(
        model_result.vertices->begin(),
@@ -362,12 +371,12 @@ namespace bf
          r.pos     = vertex.position;
          r.normal  = vertex.normal;
          r.tangent = vertex.tangent;
-         r.color   = bfColor4u_fromUint32(Vec3f_toColor(Vector3f{vertex.color.r, vertex.color.g, vertex.color.b, vertex.color.a}));
+         r.color   = bfColor4u_fromColor4f(vertex.color);
          r.uv      = vertex.uv;
 
          VertexBoneData& out_bone_data = *write_bone_data;
 
-         for (int i = 0; i < k_GfxMaxVertexBones; ++i)
+         for (int i = 0; i < int(k_GfxMaxVertexBones); ++i)
          {
            out_bone_data.bone_idx[i]     = vertex.bone_indices[i];
            out_bone_data.bone_weights[i] = vertex.bone_weights[i];
@@ -399,7 +408,7 @@ namespace bf
 
       ///////
 
-      buffer_params.allocation.size = sizeof(std::uint32_t) * model_result.indices->length;
+      buffer_params.allocation.size = sizeof(AssetIndexType) * model_result.indices->length;
       buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
       m_IndexBuffer = bfGfxDevice_newBuffer(m_GraphicsDevice, &buffer_params);

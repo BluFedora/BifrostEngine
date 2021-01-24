@@ -216,7 +216,7 @@ namespace bf
   template<typename T>
   class List : private NonCopyMoveable<List<T>>
   {
-   private:
+   public:
     struct Node;
 
    public:
@@ -303,7 +303,7 @@ namespace bf
       }
     };
 
-   private:
+   public:
     struct Node final
     {
       std::aligned_storage_t<sizeof(T), alignof(T)> data_storage;  //!< Must be the first member since this will be treated as a 'T'.

@@ -426,17 +426,17 @@
                         "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
                     },
                     "m_Model" : {
-                        "uuid" : "CAFB9535-AB61-4FB3-B2D6-A9CA86977E3E"
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
                     },
                     "__Active__" : true
                 }
             },
             "m_Transform" : {
                 "Position" : {
-                    "y" : 0.0349674,
+                    "y" : 0.2619,
                     "w" : 1,
-                    "x" : -3.16123,
-                    "z" : 1.93151
+                    "x" : -0.201313,
+                    "z" : 0.866461
                 },
                 "Origin" : {
                     "y" : 0,
@@ -1732,10 +1732,10 @@
                     },
                     "m_Transform" : {
                         "Position" : {
-                            "y" : 0.976933,
+                            "y" : 0.813418,
                             "w" : 1,
-                            "x" : 1.03014,
-                            "z" : 3.97289
+                            "x" : 0.863937,
+                            "z" : 6.06866
                         },
                         "Origin" : {
                             "y" : 0,
@@ -2412,6 +2412,864 @@
                     "w" : 1,
                     "x" : 0,
                     "z" : 0
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "A7A92400-F055-4409-B8B8-16669F1433D9",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "House",
+            "m_Components" : {
+                "SpriteRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "18616319-B148-41B1-A850-63B6F7938A2A"
+                    },
+                    "m_UVRect" : {
+                        "height" : 1,
+                        "y" : 0,
+                        "x" : 0,
+                        "width" : 1
+                    },
+                    "m_Color" : {
+                        "r" : 255,
+                        "g" : 255,
+                        "b" : 255,
+                        "a" : 255
+                    },
+                    "__Active__" : true,
+                    "m_Size" : {
+                        "y" : 1,
+                        "x" : 1
+                    },
+                    "m_Flags" : 0
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.608186,
+                    "w" : 1,
+                    "x" : -3.16526,
+                    "z" : 4.38065
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1.3,
+                    "w" : 0,
+                    "x" : 1.3,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.698833,
+                    "w" : 0.70036,
+                    "x" : -0.102671,
+                    "z" : 0.102896
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "A7A92400-F055-4409-B8B8-16669F1433D9",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "House",
+            "m_Components" : {
+                "SpriteRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "18616319-B148-41B1-A850-63B6F7938A2A"
+                    },
+                    "m_UVRect" : {
+                        "height" : 1,
+                        "y" : 0,
+                        "x" : 0,
+                        "width" : 1
+                    },
+                    "m_Color" : {
+                        "r" : 255,
+                        "g" : 255,
+                        "b" : 255,
+                        "a" : 255
+                    },
+                    "__Active__" : true,
+                    "m_Size" : {
+                        "y" : 1,
+                        "x" : 1
+                    },
+                    "m_Flags" : 0
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.608186,
+                    "w" : 1,
+                    "x" : -1.92432,
+                    "z" : 2.82421
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1.3,
+                    "w" : 0,
+                    "x" : 1.3,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.698833,
+                    "w" : 0.70036,
+                    "x" : -0.102671,
+                    "z" : 0.102896
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "A7A92400-F055-4409-B8B8-16669F1433D9",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "House",
+            "m_Components" : {
+                "SpriteRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "18616319-B148-41B1-A850-63B6F7938A2A"
+                    },
+                    "m_UVRect" : {
+                        "height" : 1,
+                        "y" : 0,
+                        "x" : 0,
+                        "width" : 1
+                    },
+                    "m_Color" : {
+                        "r" : 255,
+                        "g" : 255,
+                        "b" : 255,
+                        "a" : 255
+                    },
+                    "__Active__" : true,
+                    "m_Size" : {
+                        "y" : 1,
+                        "x" : 1
+                    },
+                    "m_Flags" : 0
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.608186,
+                    "w" : 1,
+                    "x" : -2.36979,
+                    "z" : 1.2756
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1.3,
+                    "w" : 0,
+                    "x" : 1.3,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.698833,
+                    "w" : 0.70036,
+                    "x" : -0.102671,
+                    "z" : 0.102896
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 0.601908,
+                    "z" : 0.866461
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : -0.201313,
+                    "z" : 2.0494
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 0.601908,
+                    "z" : 2.0494
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 1.34766,
+                    "z" : 2.0494
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 2.15088,
+                    "z" : 2.0494
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 1.34766,
+                    "z" : 0.477542
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 2.15088,
+                    "z" : 0.477542
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : -0.201313,
+                    "z" : 4.59446
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 0.601908,
+                    "z" : 3.41152
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : -0.201313,
+                    "z" : 3.41152
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 1.34766,
+                    "z" : 3.0226
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 1.34766,
+                    "z" : 4.59446
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 2.15088,
+                    "z" : 3.0226
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
+                }
+            },
+            "m_Flags" : 24,
+            "m_Behaviors" : [
+
+            ]
+        },
+        {
+            "m_UUID" : "593B5B32-F23C-45BA-BD71-5E9DF29A029A",
+            "m_Children" : [
+
+            ],
+            "m_Name" : "Player",
+            "m_Components" : {
+                "MeshRenderer" : {
+                    "m_Material" : {
+                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
+                    },
+                    "m_Model" : {
+                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
+                    },
+                    "__Active__" : true
+                }
+            },
+            "m_Transform" : {
+                "Position" : {
+                    "y" : 0.2619,
+                    "w" : 1,
+                    "x" : 2.15088,
+                    "z" : 4.59446
+                },
+                "Origin" : {
+                    "y" : 0,
+                    "w" : 1,
+                    "x" : 0,
+                    "z" : 0
+                },
+                "Scale" : {
+                    "y" : 1,
+                    "w" : 0,
+                    "x" : 1,
+                    "z" : 1
+                },
+                "Rotation" : {
+                    "y" : 0.00741799,
+                    "w" : 0.999956,
+                    "x" : -4.20806e-05,
+                    "z" : 0.00567253
                 }
             },
             "m_Flags" : 24,

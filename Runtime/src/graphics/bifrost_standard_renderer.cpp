@@ -252,17 +252,9 @@ namespace bf
 
   void CameraGPUData::init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height)
   {
-    const auto limits           = bfGfxDevice_limits(device);
-    const auto create_composite = bfTextureCreateParams_initColorAttachment(
-     initial_width,
-     initial_height,
-     BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT,  // TODO:BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
-     bfTrue,
-     bfFalse);
+    const auto limits = bfGfxDevice_limits(device);
 
-    geometry_buffer.init(device, initial_width, initial_height);
-    ssao_buffer.init(device, initial_width, initial_height);
-    composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
+    createBuffers(device, initial_width, initial_height);
     camera_uniform_buffer.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
     camera_screen_uniform_buffer.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, frame_info, limits.uniform_buffer_offset_alignment);
   }
@@ -270,7 +262,7 @@ namespace bf
   void CameraGPUData::updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient)
   {
     CameraUniformData* const buffer_data = camera_uniform_buffer.currentElement(frame_info);
-    
+
     buffer_data->u_CameraProjection        = camera.proj_cache;
     buffer_data->u_CameraInvViewProjection = camera.inv_view_proj_cache;
     buffer_data->u_CameraViewProjection    = camera.view_proj_cache;
@@ -336,17 +328,7 @@ namespace bf
     geometry_buffer.deinit(device);
     bfGfxDevice_release(device, composite_buffer);
 
-    geometry_buffer.init(device, width, height);
-    ssao_buffer.init(device, width, height);
-
-    const auto create_composite = bfTextureCreateParams_initColorAttachment(
-     width,
-     height,
-     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,  // BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT, BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
-     bfTrue,
-     bfFalse);
-
-    composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
+    createBuffers(device, width, height);
   }
 
   void CameraGPUData::deinit(bfGfxDeviceHandle device)
@@ -356,6 +338,21 @@ namespace bf
     ssao_buffer.deinit(device);
     geometry_buffer.deinit(device);
     bfGfxDevice_release(device, composite_buffer);
+  }
+
+  void CameraGPUData::createBuffers(bfGfxDeviceHandle device, int width, int height)
+  {
+    geometry_buffer.init(device, width, height);
+    ssao_buffer.init(device, width / 2, height / 2);
+
+    const auto create_composite = bfTextureCreateParams_initColorAttachment(
+     width,
+     height,
+     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,  // BF_IMAGE_FORMAT_R16G16B16A16_SFLOAT, BF_IMAGE_FORMAT_R8G8B8A8_UNORM BF_IMAGE_FORMAT_R32G32B32A32_SFLOAT
+     bfTrue,
+     bfFalse);
+
+    composite_buffer = gfx::createAttachment(device, create_composite, k_SamplerNearestRepeat);
   }
 
   StandardRenderer::StandardRenderer(IMemoryManager& memory) :
@@ -897,7 +894,7 @@ namespace bf
   bfDescriptorSetInfo StandardRenderer::makeMaterialInfo(const MaterialAsset& material)
   {
     const auto defaultTexture = [this](const ARC<TextureAsset>& handle) -> bfTextureHandle {
-      return handle ? handle->handle() : m_WhiteTexture;
+      return handle && handle->status() == AssetStatus::LOADED ? handle->handle() : m_WhiteTexture;
     };
 
     bfTextureHandle albedo            = defaultTexture(material.albedoTexture());
@@ -973,7 +970,7 @@ namespace bf
     // GBuffer
     beginGBufferPass(camera_gpu_data);
     view.opaque_render_queue.execute(m_MainCmdList, m_FrameInfo);
-    view.transparent_render_queue.execute(m_MainCmdList, m_FrameInfo); // TODO(SR): This is not correct
+    view.transparent_render_queue.execute(m_MainCmdList, m_FrameInfo);  // TODO(SR): This is not correct
     endPass();
 
     // SSAO

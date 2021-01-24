@@ -312,6 +312,16 @@ namespace bf
           const Vector3f half_x_axis = x_axis * 0.5f;
           const Vector3f half_y_axis = y_axis * 0.5f;
 
+          //
+          // Sprite Draw Order (CCW)
+          //
+          // v2---v3
+          // |  O  |
+          // v0---v1
+          //
+          // Index Buffer: { 0, 3, 2, 0, 1, 3 }
+          //
+
           // TODO(SR): This can probably be micro-optimized to do less redundant math ops.
           const Vector3f positions[] =
            {
@@ -355,11 +365,11 @@ namespace bf
           addVertex(positions[3], uvs[3]);
 
           indices[0] = index_vertex_offset + 0;
-          indices[1] = index_vertex_offset + 1;
+          indices[1] = index_vertex_offset + 3;
           indices[2] = index_vertex_offset + 2;
-          indices[3] = index_vertex_offset + 1;
-          indices[4] = index_vertex_offset + 3;
-          indices[5] = index_vertex_offset + 2;
+          indices[3] = index_vertex_offset + 0;
+          indices[4] = index_vertex_offset + 1;
+          indices[5] = index_vertex_offset + 3;
 
           last_batch->num_indices += k_NumIndicesPerSprite;
 #else
