@@ -34,6 +34,7 @@ namespace bf::editor
     void        onPostDrawGUI(EditorOverlay& editor) override;
     void        onEvent(EditorOverlay& editor, Event& event) override;
     void        onUpdate(EditorOverlay& editor, float dt) override;
+    void        onDraw(EditorOverlay& editor, Engine& engine, RenderView& camera, float alpha) override;
 
    private:
     bool isGizmoOver(const Selection& selection) const;

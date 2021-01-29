@@ -1070,7 +1070,7 @@ namespace
     VkPhysicalDeviceFeatures deviceFeatures;  // I should be checking if the features exist for the device in the first place.
     memset(&deviceFeatures, 0x0, sizeof(deviceFeatures));
     //deviceFeatures.samplerAnisotropy = VK_TRUE;
-    //deviceFeatures.fillModeNonSolid = VK_TRUE;
+    deviceFeatures.fillModeNonSolid = VK_TRUE;
 
     VkDeviceCreateInfo device_info;
     device_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

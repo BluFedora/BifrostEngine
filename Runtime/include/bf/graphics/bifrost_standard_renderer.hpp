@@ -500,6 +500,7 @@ namespace bf
     bfGfxCommandListHandle                   m_MainCmdList;
     bfTextureHandle                          m_MainSurface;
     bfShaderProgramHandle                    m_GBufferShader;
+    bfShaderProgramHandle                    m_GBufferSelectionShader;
     bfShaderProgramHandle                    m_GBufferSkinnedShader;
     bfShaderProgramHandle                    m_SSAOBufferShader;
     bfShaderProgramHandle                    m_SSAOBlurShader;

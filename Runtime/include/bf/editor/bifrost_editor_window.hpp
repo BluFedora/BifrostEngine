@@ -71,6 +71,7 @@ namespace bf::editor
     virtual EditorWindowID windowID() const = 0;
 
     virtual void onCreate(EditorOverlay& editor) {}
+    virtual void onDraw(EditorOverlay& editor, Engine& engine, RenderView& camera, float alpha) {}
     virtual void onDestroy(EditorOverlay& editor) {}
 
     virtual ~BaseEditorWindow() = default;

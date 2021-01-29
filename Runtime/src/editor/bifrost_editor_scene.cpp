@@ -15,9 +15,8 @@ extern bf::PainterFont* TEST_FONT;
 
 namespace bf::editor
 {
-  static AABB s_XXXSelectedAABB;
-
   static const float        k_SceneViewPadding = 1.0f;
+  static const float        k_LightIconSize    = 0.5f;
   static const float        k_InvalidMousePos  = -1.0f;
   const ImGuizmo::OPERATION gizmo_op           = ImGuizmo::TRANSLATE;
 
@@ -63,10 +62,8 @@ namespace bf::editor
 
   void SceneView::onDrawGUI(EditorOverlay& editor)
   {
-    static float Rounding = 5.0f;
-
-    auto& engine       = editor.engine();
-    auto& open_project = editor.currentlyOpenProject();
+    auto&       engine       = editor.engine();
+    const auto& open_project = editor.currentlyOpenProject();
 
     if (open_project)
     {
@@ -78,7 +75,7 @@ namespace bf::editor
       {
         if (ImGui::BeginMenu("Camera"))
         {
-          ImGui::DragFloat("Rounding", &Rounding, 1.0f, k_Epsilon, 100.0f);
+          // ImGui::DragFloat("Rounding", &Rounding, 1.0f, k_Epsilon, 100.0f);
 
           ImGui::DragFloat3("Ambient Color", &engine.renderer().AmbientColor.x);
 
@@ -195,101 +192,85 @@ namespace bf::editor
       editor.buttonAction({&editor}, "File.Open.Project", s_StrOpenProject);
     }
 
-    if (isFocused())
+    const auto& selection = editor.selection();
+
+    if (selection.hasType<Entity*>())
     {
-      auto&       dbg_rendrer = engine.debugDraw();
-      const auto& selection   = editor.selection();
+      auto& cam = m_Camera->cpu_camera;
 
-      if (selection.hasType<Entity*>())
+      ImGuizmo::SetDrawlist();
+
+      const bool was_using_gizmo = ImGuizmo::IsUsing();
+
+      Mat4x4 delta_mat;
+
+      Mat4x4 projection_ogl;
+      bfCamera_openGLProjection(&cam, &projection_ogl);
+
+      selection.forEachOfType<Entity*>([this, &delta_mat, &cam, &projection_ogl](Entity* entity) {
+        auto&  entity_transform = entity->transform();
+        Mat4x4 entity_mat       = entity_transform.world_transform;
+
+        ImGuizmo::Manipulate(cam.view_cache.data, projection_ogl.data, gizmo_op, ImGuizmo::WORLD, entity_mat.data, delta_mat.data, nullptr);
+      });
+
+      const bool is_using_gizmo = ImGuizmo::IsUsing();
+
+      if (was_using_gizmo != is_using_gizmo)
       {
-        ImGuizmo::SetDrawlist();
-
-        const bool was_using_gizmo = ImGuizmo::IsUsing();
-
-        Mat4x4 delta_mat;
-
-        selection.firstOfType<Entity*>([this, &delta_mat](Entity* entity) {
-          auto&  cam              = m_Camera->cpu_camera;
-          auto&  entity_transform = entity->transform();
-          Mat4x4 entity_mat       = entity_transform.world_transform;
-          Mat4x4 projection_ogl;
-
-          bfCamera_openGLProjection(&cam, &projection_ogl);
-
-          ImGuizmo::Manipulate(cam.view_cache.data, projection_ogl.data, gizmo_op, ImGuizmo::WORLD, entity_mat.data, delta_mat.data, nullptr);
-        });
-
-        const bool is_using_gizmo = ImGuizmo::IsUsing();
-
-        if (was_using_gizmo != is_using_gizmo)
+        if (is_using_gizmo)
         {
-          if (is_using_gizmo)
-          {
-            bfLogPrint("Started using the Gizmo");
-          }
-          else
-          {
-            bfLogPrint("Stopped using the Gizmo");
-          }
+          bfLogPrint("Started using the Gizmo");
+        }
+        else
+        {
+          bfLogPrint("Stopped using the Gizmo");
+        }
+      }
+
+      selection.forEachOfType<Entity*>([this, &delta_mat](Entity* entity) {
+        auto&  entity_transform = entity->transform();
+        Mat4x4 entity_mat       = entity_transform.world_transform;
+
+        Mat4x4_mult(&delta_mat, &entity_mat, &entity_mat);
+
+        auto* const transform_parent = entity_transform.parent;
+
+        if (transform_parent)
+        {
+          Mat4x4_mult(&transform_parent->inv_world_transform, &entity_mat, &entity_mat);
         }
 
-        selection.forEachOfType<Entity*>([this, &dbg_rendrer, &delta_mat](Entity* entity) {
-          auto&  entity_transform = entity->transform();
-          Mat4x4 entity_mat       = entity_transform.world_transform;
+        Vec3f translation;
+        Vec3f rotation;
+        Vec3f scale;
 
-          dbg_rendrer.addAABB(
-           entity_transform.world_position,
-           Vector3f{0.1f},
-           bfColor4u_fromUint32(BIFROST_COLOR_DEEPPINK),
-           0.0f,
-           true);
+        ImGuizmo::DecomposeMatrixToComponents(entity_mat.data, &translation.x, &rotation.x, &scale.x);
 
-          Mat4x4_mult(&delta_mat, &entity_mat, &entity_mat);
-
-          auto* const transform_parent = entity_transform.parent;
-
-          if (transform_parent)
+        switch (gizmo_op)
+        {
+          case ImGuizmo::TRANSLATE:
           {
-            Mat4x4 inv_parent_world = transform_parent->world_transform;
-
-            if (Mat4x4_inverse(&inv_parent_world, &inv_parent_world))
-            {
-              Mat4x4_mult(&inv_parent_world, &entity_mat, &entity_mat);
-            }
+            translation.w = 1.0f;
+            // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
+            entity_transform.local_position = translation;
+            break;
           }
+          case ImGuizmo::ROTATE:
+            // ReSharper disable once CppObjectMemberMightNotBeInitialized
+            entity_transform.local_rotation = bfQuaternionf_fromEulerDeg(-rotation.y, -rotation.z, rotation.x);
+            break;
+          case ImGuizmo::SCALE:
+            scale.w = 0.0f;
+            // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
+            entity_transform.local_scale = scale;
+            break;
+          case ImGuizmo::BOUNDS:
+            break;
+        }
 
-          Vec3f translation;
-          Vec3f rotation;
-          Vec3f scale;
-
-          ImGuizmo::DecomposeMatrixToComponents(entity_mat.data, &translation.x, &rotation.x, &scale.x);
-
-          switch (gizmo_op)
-          {
-            case ImGuizmo::TRANSLATE:
-            {
-              translation.w = 1.0f;
-              // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
-              entity_transform.local_position = translation;
-              break;
-            }
-            case ImGuizmo::ROTATE:
-              // ReSharper disable once CppObjectMemberMightNotBeInitialized
-              entity_transform.local_rotation = bfQuaternionf_fromEulerDeg(-rotation.y, -rotation.z, rotation.x);
-              break;
-            case ImGuizmo::SCALE:
-              scale.w = 0.0f;
-              // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
-              entity_transform.local_scale = scale;
-              break;
-            case ImGuizmo::BOUNDS:
-            default:
-              break;
-          }
-
-          bfTransform_flushChanges(&entity_transform);
-        });
-      }
+        bfTransform_flushChanges(&entity_transform);
+      });
     }
   }
 
@@ -302,7 +283,127 @@ namespace bf::editor
   template<typename T>
   using StdList = std::list<T, StlAllocator<T>>;
 
-  using ClickResult = std::pair<const BVHNode*, bfRaycastAABBResult>;
+  struct HitTestResult
+  {
+    bool  did_hit = false;
+    float t       = INFINITY;
+  };
+
+  using ClickResult = std::pair<const BVHNode*, HitTestResult>;
+
+  static HitTestResult hitTestModel(const bfRay3D& ray, const ModelAsset& model, const Mat4x4& inv_world_transform)
+  {
+    bfRay3D local_ray = ray;
+    Mat4x4_multVec(&inv_world_transform, &local_ray.origin, &local_ray.origin);
+    Mat4x4_multVec(&inv_world_transform, &local_ray.direction, &local_ray.direction);
+
+    HitTestResult result = {};
+
+    for (AssetIndexType face = 0u; face < model.m_Triangles.size(); face += 3)
+    {
+      const auto& v0      = model.m_Vertices[model.m_Triangles[face + 0u]].pos;
+      const auto& v1      = model.m_Vertices[model.m_Triangles[face + 1u]].pos;
+      const auto& v2      = model.m_Vertices[model.m_Triangles[face + 2u]].pos;
+      const auto  raycast = bfRay3D_intersectsTriangle(&local_ray, v0, v1, v2);
+
+      if (raycast.did_hit && (!result.did_hit || raycast.time < result.t))
+      {
+        result.did_hit = true;
+        result.t       = raycast.time;
+      }
+    }
+
+    return result;
+  }
+
+  static HitTestResult hitTestQuad(const bfRay3D& ray, const Vector3f center_position, const Vector3f normal, const Vector2f size, const Mat4x4& inv_world_transform)
+  {
+    const float                signed_dist_from_origin = bfPlane_dot(bfPlane_make(normal, 0.0f), center_position);
+    const bfRaycastPlaneResult sprite_ray_cast         = bfRay3D_intersectsPlane(&ray, bfPlane_make(normal, signed_dist_from_origin));
+    HitTestResult              result                  = {};
+
+    if (sprite_ray_cast.did_hit)
+    {
+      const Vector3f hit_point         = Vector3f(ray.origin) + Vector3f(ray.direction) * sprite_ray_cast.time;
+      const Vector2f half_local_x_axis = Vector2f{size.x, 0.0f} * 0.5f;
+      const Vector2f half_local_y_axis = Vector2f{0.0f, size.y} * 0.5f;
+      Vector3f       local_hit_point_v3;
+
+      Mat4x4_multVec(&inv_world_transform, &hit_point, &local_hit_point_v3);
+
+      const Vector2f local_hit_point = {local_hit_point_v3.x, local_hit_point_v3.y};
+
+      if (math::isInbetween(0.0f, vec::inverseLerp(-half_local_x_axis, half_local_x_axis, local_hit_point), 1.0f) &&
+          math::isInbetween(0.0f, vec::inverseLerp(-half_local_y_axis, half_local_y_axis, local_hit_point), 1.0f))
+      {
+        result.did_hit = true;
+        result.t       = sprite_ray_cast.time;
+      }
+    }
+
+    return result;
+  }
+
+  static HitTestResult hitTestSprite(const bfRay3D& ray, const SpriteRenderer& sprite, const bfTransform& transform)
+  {
+    return hitTestQuad(
+     ray,
+     transform.world_position,
+     bfQuaternionf_forward(&transform.world_rotation),
+     sprite.m_Size,
+     transform.inv_world_transform);
+  }
+
+  static HitTestResult hitTestEntity(const bfRay3D& ray, const Entity* entity, Vector3f pos_to_cam)
+  {
+    auto* const   mesh         = entity->get<MeshRenderer>();
+    auto* const   skinned_mesh = entity->get<SkinnedMeshRenderer>();
+    auto* const   sprite       = entity->get<SpriteRenderer>();
+    auto* const   light        = entity->get<Light>();
+    HitTestResult result       = {};
+
+    if (mesh && mesh->m_Model)
+    {
+      const HitTestResult mesh_hit = hitTestModel(ray, *mesh->m_Model, entity->transform().inv_world_transform);
+
+      if (mesh_hit.did_hit && mesh_hit.t < result.t)
+      {
+        result = mesh_hit;
+      }
+    }
+
+    if (skinned_mesh)
+    {
+      const HitTestResult skinned_mesh_hit = hitTestModel(ray, *skinned_mesh->m_Model, entity->transform().inv_world_transform);
+
+      if (skinned_mesh_hit.did_hit && skinned_mesh_hit.t < result.t)
+      {
+        result = skinned_mesh_hit;
+      }
+    }
+
+    if (sprite)
+    {
+      const HitTestResult sprite_mesh_hit = hitTestSprite(ray, *sprite, entity->transform());
+
+      if (sprite_mesh_hit.did_hit && sprite_mesh_hit.t < result.t)
+      {
+        result = sprite_mesh_hit;
+      }
+    }
+
+    if (light)
+    {
+      const HitTestResult light_mesh_hit = hitTestQuad(ray, entity->transform().world_position, pos_to_cam, Vector2f{k_LightIconSize}, entity->transform().inv_world_transform);
+
+      if (light_mesh_hit.did_hit && light_mesh_hit.t < result.t)
+      {
+        result = light_mesh_hit;
+      }
+    }
+
+    return result;
+  }
 
   void SceneView::onEvent(EditorOverlay& editor, Event& event)
   {
@@ -349,7 +450,7 @@ namespace bf::editor
 
                 StdList<ClickResult> clicked_nodes{engine.tempMemory()};
 
-                scene->bvh().traverseConditionally([&ray, &clicked_nodes](const BVHNode& node) -> bool {
+                scene->bvh().traverseConditionally([this, &ray, &clicked_nodes](const BVHNode& node) -> bool {
                   Vec3f aabb_min;
                   Vec3f aabb_max;
 
@@ -362,15 +463,18 @@ namespace bf::editor
                   {
                     const Entity* const entity = (Entity*)node.user_data;
 
-                    // The Entity must have a visual component
-                    if (entity->has<MeshRenderer>() || entity->has<SkinnedMeshRenderer>() || entity->has<SpriteRenderer>() || entity->has<Light>())
+                    if (ray_cast_result.did_hit && (ray_cast_result.min_time >= 0.0f || ray_cast_result.max_time >= 0.0f))
                     {
-                      if (ray_cast_result.did_hit && (ray_cast_result.min_time >= 0.0f || ray_cast_result.max_time >= 0.0f))
+                      const Vector3f pos_to_cam        = Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position);
+                      const auto     accurate_hit_test = hitTestEntity(ray, entity, pos_to_cam);
+
+                      if (accurate_hit_test.did_hit)
                       {
-                        clicked_nodes.emplace_back(&node, ray_cast_result);
-                        return false;
+                        clicked_nodes.emplace_back(&node, accurate_hit_test);
                       }
                     }
+
+                    return false;
                   }
 
                   return ray_cast_result.did_hit;
@@ -386,12 +490,10 @@ namespace bf::editor
                 if (!clicked_nodes.empty())
                 {
                   clicked_nodes.sort([](const ClickResult& a, const ClickResult& b) {
-                    return a.second.min_time < b.second.min_time;
+                    return a.second.t < b.second.t;
                   });
 
                   const ClickResult best_click = clicked_nodes.front();
-
-                  s_XXXSelectedAABB = best_click.first->bounds;
 
                   selection.toggle(static_cast<Entity*>(best_click.first->user_data));
                 }
@@ -482,194 +584,19 @@ namespace bf::editor
   {
     if (m_Camera)
     {
-      auto&      engine   = editor.engine();
-      auto&      dbg_draw = engine.debugDraw();
-      const auto scene    = engine.currentScene();
+      auto&      engine = editor.engine();
+      const auto scene  = engine.currentScene();
 
       if (scene)
       {
-        auto&       io           = ImGui::GetIO();
-        const auto& window_mouse = io.MousePos;
-        Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
-
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-          ImGuiViewport* const main_vp = ImGui::GetMainViewport();
-
-          local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
-        }
-
-        local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
-
-        const bfRay3D ray = bfRay3D_make(
-         m_Camera->cpu_camera.position,
-         Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
-
-        if (m_IsSceneViewHovered)
-        {
-          ClickResult highlighted_node = {nullptr, {}};
-
-          scene->bvh().traverseConditionally([&ray, &highlighted_node](const BVHNode& node) {
-            Vec3f aabb_min;
-            Vec3f aabb_max;
-
-            memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
-            memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
-
-            const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
-
-            if (ray_cast_result.did_hit && bvh_node::isLeaf(node) && ray_cast_result.min_time > 0.0f && (!highlighted_node.first || highlighted_node.second.min_time > ray_cast_result.min_time))
-            {
-              highlighted_node.first  = &node;
-              highlighted_node.second = ray_cast_result;
-            }
-
-            return ray_cast_result.did_hit;
-          });
-          /*
-          scene->bvh().traverseConditionally([&ray, &dbg_draw](const BVHNode& node) {
-            static bfColor4u k_DebugColors[] =
-             {
-              {255, 0, 0, 255},
-              {0, 255, 0, 255},
-              {0, 0, 255, 255},
-              {255, 0, 255, 255},
-              {255, 255, 0, 255},
-              {0, 255, 255, 255},
-              {255, 255, 255, 255},
-             };
-
-            const bfColor4u color = k_DebugColors[node.depth % std::size(k_DebugColors)];
-
-            
-            Vec3f aabb_min;
-            Vec3f aabb_max;
-
-            memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
-            memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
-
-            const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
-
-            if (ray_cast_result.did_hit)
-            {
-              dbg_draw.addAABB(
-               node.bounds.center(),
-               node.bounds.dimensions(),
-               color);  
-            }
-
-            return ray_cast_result.did_hit;
-          });
-          */
-#if 0
-          if (highlighted_node.first)
-          {
-            const BVHNode& node = *highlighted_node.first;
-
-            engine.debugDraw().addAABB(
-             (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
-             Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
-             bfColor4u_fromUint32(BIFROST_COLOR_FIREBRICK),
-             0.0f,
-             true);
-          }
-#endif
-        }
-
-        //
-        // Mesh Bounds Test
-        //
-
-        scene->bvh().traverseConditionally([&ray, &dbg_draw](const BVHNode& node) {
-          Vec3f aabb_min;
-          Vec3f aabb_max;
-
-          memcpy(&aabb_min, &node.bounds.min, sizeof(float) * 3);
-          memcpy(&aabb_max, &node.bounds.max, sizeof(float) * 3);
-
-          const auto ray_cast_result = bfRay3D_intersectsAABB(&ray, aabb_min, aabb_max);
-
-          if (ray_cast_result.did_hit && bvh_node::isLeaf(node))
-          {
-            Entity*             entity   = (Entity*)node.user_data;
-            const MeshRenderer* renderer = entity->get<MeshRenderer>();
-
-            if (renderer && renderer->m_Model)
-            {
-              const auto& transform = &entity->transform();
-              auto&       model     = *renderer->m_Model;
-
-              bfRay3D local_ray = ray;
-              Mat4x4_multVec(&transform->inv_world_transform, &local_ray.origin, &local_ray.origin);
-              Mat4x4_multVec(&transform->inv_world_transform, &local_ray.direction, &local_ray.direction);
-
-              const auto num_indices = model.m_Triangles.size();
-
-              for (AssetIndexType face = 0u; face < num_indices; face += 3)
-              {
-#if 0
-                auto v0 = model.m_Vertices[model.m_Triangles[face + 0u]].pos;
-                auto v1 = model.m_Vertices[model.m_Triangles[face + 1u]].pos;
-                auto v2 = model.m_Vertices[model.m_Triangles[face + 2u]].pos;
-                const auto raycast = bfRay3D_intersectsTriangle(&local_ray, v2, v0, v1);
-
-                if (raycast.did_hit)
-                {
-                  Mat4x4_multVec(&transform->world_transform, &v0, &v0);
-                  Mat4x4_multVec(&transform->world_transform, &v1, &v1);
-                  Mat4x4_multVec(&transform->world_transform, &v2, &v2);
-
-                  dbg_draw.addLine(v0, v1, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
-                  dbg_draw.addLine(v1, v2, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
-                  dbg_draw.addLine(v2, v0, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
-                }
-#endif
-              }
-            }
-          }
-
-          return ray_cast_result.did_hit;
-        });
-
         {
           for (const SpriteRenderer& sprite : scene->components<SpriteRenderer>())
           {
-            // Ray Picking Code
+            // Screen space pos testing.
 
-            const auto&                transform               = sprite.owner().transform();
-            const Vector3f             center_position         = transform.world_position;
-            const Vector3f             forward                 = bfQuaternionf_forward(&transform.world_rotation);
-            const float                signed_dist_from_origin = bfPlane_dot(bfPlane_make(forward, 0.0f), center_position);
-            const bfRaycastPlaneResult sprite_ray_cast         = bfRay3D_intersectsPlane(&ray, bfPlane_make(forward, signed_dist_from_origin));
-
-            if (sprite_ray_cast.did_hit)
-            {
-              const Vector2f half_local_x_axis = Vector2f{sprite.m_Size.x, 0.0f} * 0.5f;
-              const Vector2f half_local_y_axis = Vector2f{0.0f, sprite.m_Size.y} * 0.5f;
-              const Vector3f hit_point         = Vector3f(ray.origin) + Vector3f(ray.direction) * sprite_ray_cast.time;
-              Vector3f       local_hit_point_v3;
-
-              Mat4x4_multVec(&transform.inv_world_transform, &hit_point, &local_hit_point_v3);
-
-              const Vector2f local_hit_point = {local_hit_point_v3.x, local_hit_point_v3.y};
-
-              if (math::isInbetween(0.0f, vec::inverseLerp(-half_local_x_axis, half_local_x_axis, local_hit_point), 1.0f) &&
-                  math::isInbetween(0.0f, vec::inverseLerp(-half_local_y_axis, half_local_y_axis, local_hit_point), 1.0f))
-              {
-                dbg_draw.addAABB(hit_point, Vector3f{0.1f}, bfColor4u_fromUint32(BIFROST_COLOR_GOLD));
-              }
-            }
-
-            // Calculating the Bounds
-
-            //const float    half_thickness      = 0.05f;  // Needed since an aabb of zero volume is a bad idea.
-            //const Vector3f half_extents        = Vector3f{sprite.m_Size.x, sprite.m_Size.y, half_thickness, 0.0f} * 0.5f;
-            //const AABB     object_space_bounds = {-half_extents, half_extents};
-            //const AABB     world_space_bounds  = aabb::transform(object_space_bounds, transform.world_transform);
-            //
-            //dbg_draw.addAABB(world_space_bounds.center(), world_space_bounds.dimensions(), bfColor4u_fromUint32(BIFROST_COLOR_DEEPPINK));
-
-            Vector3f ss_pos = bfCamera_worldToScreenSpace(&m_Camera->cpu_camera, center_position);
+            const auto&    transform       = sprite.owner().transform();
+            const Vector3f center_position = transform.world_position;
+            Vector3f       ss_pos          = bfCamera_worldToScreenSpace(&m_Camera->cpu_camera, center_position);
 
             if (math::isInbetween(0.0f, ss_pos.z, 1.0f))
             {
@@ -693,55 +620,6 @@ namespace bf::editor
           }
         }
 
-#if 0
-        for (const MeshRenderer& renderer : scene->components<MeshRenderer>())
-        {
-          if (renderer.m_Model)
-          {
-            auto&       model     = *renderer.m_Model;
-            const auto& transform = &renderer.owner().transform();
-            const auto  bounds    = aabb::transform(model.m_ObjectSpaceBounds, transform->world_transform);
-            const auto  size      = bounds.dimensions();
-
-            engine.debugDraw().addAABB(bounds.center(), size, bfColor4u_fromUint32(BIFROST_COLOR_INDIGO));
-
-            if (m_IsSceneViewHovered)
-            {
-              for (AssetIndexType face = 0u; face < model.m_Triangles.size(); face += 3)
-              {
-                auto v0 = model.m_Vertices[model.m_Triangles[face + 0u]].pos;
-                auto v1 = model.m_Vertices[model.m_Triangles[face + 1u]].pos;
-                auto v2 = model.m_Vertices[model.m_Triangles[face + 2u]].pos;
-
-                bfRay3D local_ray = ray;
-
-#if 1
-                Mat4x4_multVec(&transform->inv_world_transform, &local_ray.origin, &local_ray.origin);
-                Mat4x4_multVec(&transform->inv_world_transform, &local_ray.direction, &local_ray.direction);
-#else
-                Mat4x4_multVec(&transform->world_transform, &v0, &v0);
-                Mat4x4_multVec(&transform->world_transform, &v1, &v1);
-                Mat4x4_multVec(&transform->world_transform, &v2, &v2);
-#endif
-
-                const auto raycast = bfRay3D_intersectsTriangle(&local_ray, v2, v0, v1);
-
-                if (raycast.did_hit)
-                {
-                  Mat4x4_multVec(&transform->world_transform, &v0, &v0);
-                  Mat4x4_multVec(&transform->world_transform, &v1, &v1);
-                  Mat4x4_multVec(&transform->world_transform, &v2, &v2);
-
-                  dbg_draw.addLine(v0, v1, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
-                  dbg_draw.addLine(v1, v2, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
-                  dbg_draw.addLine(v2, v0, bfColor4u_fromUint32(BIFROST_COLOR_SILVER));
-                }
-              }
-            }
-          }
-        }
-#endif
-
         // Light Icon Rendering
 
         /* const ??? */ auto& lights   = scene->components<Light>();
@@ -764,7 +642,7 @@ namespace bf::editor
         *Mat4x4_get(&transform, 1, 2) = camera_up.z;
 
         primitive_proto.material  = &editor.m_SceneLightMaterial;
-        primitive_proto.size      = {0.5f, 0.5f};
+        primitive_proto.size      = {k_LightIconSize, k_LightIconSize};
         primitive_proto.uv_rect   = {0.0f, 0.0f, 1.0f, 1.0};
         primitive_proto.color     = bfColor4u_fromUint32(0xFFFFFFFF);
         primitive_proto.transform = transform;
@@ -781,32 +659,41 @@ namespace bf::editor
         }
       }
 
-      // Highlight Selected Objects
-#if 0
-      const auto& selection = editor.selection();
-
-      selection.forEachOfType<Entity*>([this, &dbg_rendrer](Entity* entity) {
-        auto&       entity_transform = entity->transform();
-        const AABB& bounds           = entity_transform;
-
-        dbg_rendrer.addAABB(
-         entity_transform.world_position,
-         bounds.dimensions(),
-         bfColor4u_fromUint32(BIFROST_COLOR_LAVENDER),
-         0.0f,
-         true);
-      });
-#endif
-
-      dbg_draw.addAABB(
-       s_XXXSelectedAABB.center(),
-       s_XXXSelectedAABB.dimensions(),
-       bfColor4u_fromUint32(BIFROST_COLOR_LAVENDER),
-       0.0f,
-       true);
-
       updateCameraMovement(editor, dt);
     }
+  }
+
+  void SceneView::onDraw(EditorOverlay& editor, Engine& engine, RenderView& camera, float alpha)
+  {
+    // Highlight Selected Objects
+
+    const auto& selection       = editor.selection();
+    auto&       engine_renderer = engine.renderer();
+
+    bfDrawCallPipeline pipeline;
+    bfDrawCallPipeline_defaultOpaque(&pipeline);
+
+    pipeline.state.do_depth_test  = bfFalse;
+    pipeline.state.do_depth_write = bfFalse;
+    pipeline.program              = engine_renderer.m_GBufferSelectionShader;
+    pipeline.vertex_layout        = engine_renderer.m_StandardVertexLayout;
+    pipeline.state.fill_mode      = BF_POLYGON_MODE_LINE;
+
+    selection.forEachOfType<Entity*>([this, &camera, &pipeline, &engine_renderer](Entity* entity) {
+      MeshRenderer* const mesh_renderer = entity->get<MeshRenderer>();
+
+      if (mesh_renderer && mesh_renderer->material() && mesh_renderer->model())
+      {
+        ComponentRenderer::pushModel(
+         camera,
+         entity,
+         *mesh_renderer->model(),
+         pipeline,
+         engine_renderer,
+         camera.opaque_render_queue,
+         -1.0f);
+      }
+    });
   }
 
   bool SceneView::isGizmoOver(const Selection& selection) const

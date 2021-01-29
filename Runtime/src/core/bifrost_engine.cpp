@@ -5,6 +5,7 @@
 #include "bf/asset_io/bf_gfx_assets.hpp"               // ***Asset
 #include "bf/bf_ui.hpp"                                // UI::
 #include "bf/bf_version.h"                             // BF_VERSION_STR
+#include "bf/bifrost_imgui_glfw.hpp"
 #include "bf/debug/bifrost_dbg_logger.h"               // bfLog*
 #include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bf/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
@@ -435,7 +436,6 @@ namespace bf
     //   _next_ frame.
     m_DebugRenderer.update(delta_time);
 
-
     // Cleared at the beginning of update so any update function can submit draw commands.
     m_Gfx2D->clear();
 
@@ -513,16 +513,19 @@ namespace bf
           }
         }
 
+        for (auto& state : m_StateMachine)
+        {
+          state.onDraw(*this, *camera, render_alpha);
+        }
+
         m_Renderer.renderCameraTo(*camera);
       }
     });
 
     m_Renderer.beginScreenPass(cmd_list);
 
-    for (auto& state : m_StateMachine)
-    {
-      state.onDraw2D(*this);  // This is here because of my Dear ImGui implementation.
-    }
+    // TODO(SR): This should not be here but whatever.
+    imgui::endFrame();
 
     m_Renderer.endPass();
     m_Renderer.drawEnd();

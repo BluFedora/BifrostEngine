@@ -1035,18 +1035,20 @@ namespace bf
 
   void StandardRenderer::initShaders()
   {
-    const auto gbuffer_skinned_vert_module = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer_skinned.vert.glsl");
-    const auto gbuffer_vert_module         = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.vert.glsl");
-    const auto gbuffer_frag_module         = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.frag.glsl");
-    const auto fullscreen_vert_module      = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/fullscreen_quad.vert.glsl");
-    const auto ssao_frag_module            = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao.frag.glsl");
-    const auto ssao_blur_frag_module       = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao_blur.frag.glsl");
-    const auto ambient_light_frag_module   = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ambient_lighting.frag.glsl");
-    const auto dir_light_frag_module       = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/directional_lighting.frag.glsl");
-    const auto point_light_frag_module     = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/point_lighting.frag.glsl");
-    const auto spot_light_frag_module      = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/spot_lighting.frag.glsl");
+    const auto gbuffer_skinned_vert_module   = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer_skinned.vert.glsl");
+    const auto gbuffer_vert_module           = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.vert.glsl");
+    const auto gbuffer_frag_module           = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer.frag.glsl");
+    const auto gbuffer_selection_frag_module = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/gbuffer_selection.frag.glsl");
+    const auto fullscreen_vert_module        = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/fullscreen_quad.vert.glsl");
+    const auto ssao_frag_module              = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao.frag.glsl");
+    const auto ssao_blur_frag_module         = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ssao_blur.frag.glsl");
+    const auto ambient_light_frag_module     = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/ambient_lighting.frag.glsl");
+    const auto dir_light_frag_module         = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/directional_lighting.frag.glsl");
+    const auto point_light_frag_module       = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/point_lighting.frag.glsl");
+    const auto spot_light_frag_module        = m_GLSLCompiler.createModule(m_GfxDevice, "assets/shaders/standard/spot_lighting.frag.glsl");
 
     m_GBufferShader                     = gfx::createShaderProgram(m_GfxDevice, 4, gbuffer_vert_module, gbuffer_frag_module, "GBuffer Shader");
+    m_GBufferSelectionShader            = gfx::createShaderProgram(m_GfxDevice, 4, gbuffer_vert_module, gbuffer_selection_frag_module, "Selection GBuffer Shader");
     m_GBufferSkinnedShader              = gfx::createShaderProgram(m_GfxDevice, 4, gbuffer_skinned_vert_module, gbuffer_frag_module, "Skinned GBuffer");
     m_SSAOBufferShader                  = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, ssao_frag_module, "SSAO Buffer");
     m_SSAOBlurShader                    = gfx::createShaderProgram(m_GfxDevice, 3, fullscreen_vert_module, ssao_blur_frag_module, "SSAO Blur Buffer");
@@ -1058,6 +1060,10 @@ namespace bf
     bindings::addObject(m_GBufferShader, BF_SHADER_STAGE_VERTEX);
     bindings::addMaterial(m_GBufferShader, BF_SHADER_STAGE_FRAGMENT);
     bindings::addCamera(m_GBufferShader, BF_SHADER_STAGE_VERTEX);
+
+    bindings::addObject(m_GBufferSelectionShader, BF_SHADER_STAGE_VERTEX);
+    bindings::addMaterial(m_GBufferSelectionShader, BF_SHADER_STAGE_FRAGMENT);
+    bindings::addCamera(m_GBufferSelectionShader, BF_SHADER_STAGE_VERTEX | BF_SHADER_STAGE_FRAGMENT);
 
     bindings::addObject(m_GBufferSkinnedShader, BF_SHADER_STAGE_VERTEX);
     bindings::addMaterial(m_GBufferSkinnedShader, BF_SHADER_STAGE_FRAGMENT);
@@ -1081,6 +1087,7 @@ namespace bf
     }
 
     bfShaderProgram_compile(m_GBufferShader);
+    bfShaderProgram_compile(m_GBufferSelectionShader);
     bfShaderProgram_compile(m_GBufferSkinnedShader);
     bfShaderProgram_compile(m_SSAOBufferShader);
     bfShaderProgram_compile(m_SSAOBlurShader);
@@ -1092,6 +1099,7 @@ namespace bf
     m_AutoRelease.push(gbuffer_skinned_vert_module);
     m_AutoRelease.push(gbuffer_vert_module);
     m_AutoRelease.push(gbuffer_frag_module);
+    m_AutoRelease.push(gbuffer_selection_frag_module);
     m_AutoRelease.push(fullscreen_vert_module);
     m_AutoRelease.push(ssao_frag_module);
     m_AutoRelease.push(ssao_blur_frag_module);
@@ -1100,6 +1108,7 @@ namespace bf
     m_AutoRelease.push(point_light_frag_module);
     m_AutoRelease.push(spot_light_frag_module);
     m_AutoRelease.push(m_GBufferShader);
+    m_AutoRelease.push(m_GBufferSelectionShader);
     m_AutoRelease.push(m_GBufferSkinnedShader);
     m_AutoRelease.push(m_SSAOBufferShader);
     m_AutoRelease.push(m_SSAOBlurShader);

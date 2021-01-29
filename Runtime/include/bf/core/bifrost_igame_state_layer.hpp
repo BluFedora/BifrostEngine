@@ -4,7 +4,7 @@
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *   A single gamestate, used with the 'GameStateMachine' to
- *   handle stackable game states.
+ *   handle stack-able game states.
  *
  * @version 0.0.1
  * @date    2019-12-22
@@ -12,8 +12,8 @@
  * @copyright Copyright (c) 2019
  */
 /******************************************************************************/
-#ifndef BIFROST_IGAME_STATE_LAYER_HPP
-#define BIFROST_IGAME_STATE_LAYER_HPP
+#ifndef BF_IGAME_STATE_LAYER_HPP
+#define BF_IGAME_STATE_LAYER_HPP
 
 #include "bf/PlatformFwd.h"        /* bfEvent              */
 #include "bf/bf_non_copy_move.hpp" /* bfNonCopyMoveable<T> */
@@ -21,9 +21,10 @@
 namespace bf
 {
   class Engine;
-  using Event = ::bfEvent;
-
   class GameStateMachine;
+  struct RenderView;
+
+  using Event = ::bfEvent;
 
   class IGameStateLayer : private NonCopyMoveable<IGameStateLayer>
   {
@@ -43,8 +44,8 @@ namespace bf
     virtual void onLoad(Engine& engine);
     virtual void onEvent(Engine& engine, bfEvent& event);
     virtual void onFixedUpdate(Engine& engine, float delta_time);
-    virtual void onDraw2D(Engine& engine);
     virtual void onUpdate(Engine& engine, float delta_time);
+    virtual void onDraw(Engine& engine, RenderView& camera, float alpha);
     virtual void onUnload(Engine& engine);
     virtual void onDestroy(Engine& engine);
 
@@ -57,4 +58,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_IGAME_STATE_LAYER_HPP */
+#endif /* BF_IGAME_STATE_LAYER_HPP */

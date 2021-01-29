@@ -56,7 +56,7 @@ namespace bf::editor
 
       ImGui::SameLine();
 
-      imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH " Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
+      imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH "  Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
 
       if (!m_SearchQuery.isEmpty())
       {
@@ -119,7 +119,6 @@ namespace bf::editor
     }
 
     bool is_opened;
-
     {
       LinearAllocator&     tmp_alloc = editor.engine().tempMemory();
       LinearAllocatorScope scope     = tmp_alloc;
@@ -136,7 +135,7 @@ namespace bf::editor
     ImGuiDragDropFlags src_flags = 0;
     src_flags |= ImGuiDragDropFlags_SourceNoDisableHover;      // Keep the source displayed as hovered
     src_flags |= ImGuiDragDropFlags_SourceNoHoldToOpenOthers;  // Because our dragging is local, we disable the
-                                                               // feature of opening foreign treenodes/tabs while
+                                                               // feature of opening foreign tree nodes/tabs while
                                                                // dragging
                                                                // src_flags |= ImGuiDragDropFlags_SourceNoPreviewTooltip; // Hide
                                                                // the tooltip
@@ -145,10 +144,19 @@ namespace bf::editor
     {
       if (ImGui::Selectable("Toggle Active"))
       {
-        entity->setActiveSelf(!entity->isActiveSelf());
+        editor.history().performLambdaAction("Toggle Entity Active", [entity, original_state = entity->isActiveSelf()](UndoRedoEventType evt) {
+          if (evt == UndoRedoEventType::ON_REDO)
+          {
+            entity->setActiveSelf(!original_state);
+          }
+          else if (evt == UndoRedoEventType::ON_UNDO)
+          {
+            entity->setActiveSelf(original_state);
+          }
+        });
       }
 
-      if (ImGui::Selectable("Delete"))
+      // if (ImGui::Selectable("Delete"))
       {
         // editor.undoRedo().doCommand(cmd::deleteEntity(*entity));
       }
@@ -235,7 +243,5 @@ namespace bf::editor
     {
       parent_to.second->setParent(parent_to.first);
     }
-
-    // bfTransform_flushChanges(&entity->transform());
   }
 }  // namespace bf::editor

@@ -31,15 +31,17 @@ namespace bf
     (void)delta_time;
   }
 
-  void IGameStateLayer::onDraw2D(Engine& engine)
-  {
-    (void)engine;
-  }
-
   void IGameStateLayer::onUpdate(Engine& engine, float delta_time)
   {
     (void)engine;
     (void)delta_time;
+  }
+
+  void IGameStateLayer::onDraw(Engine& engine, RenderView& camera, float alpha)
+  {
+    (void)engine;
+    (void)camera;
+    (void)alpha;
   }
 
   void IGameStateLayer::onUnload(Engine& engine)

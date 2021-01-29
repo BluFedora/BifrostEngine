@@ -1212,9 +1212,12 @@ namespace bf::editor
     }
   }
 
-  void EditorOverlay::onDraw2D(Engine& engine)
+  void EditorOverlay::onDraw(Engine& engine, RenderView& camera, float alpha)
   {
-    imgui::endFrame();
+    for (BaseEditorWindowPtr& window : m_OpenWindows)
+    {
+      window->onDraw(*this, engine, camera, alpha);
+    }
   }
 
   void EditorOverlay::onUnload(Engine& engine)

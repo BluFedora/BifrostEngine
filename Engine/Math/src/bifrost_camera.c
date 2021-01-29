@@ -577,11 +577,11 @@ bfRaycastTriangleResult bfSegment3D_intersectsTriangle(Vec3f p, Vec3f q, Vec3f t
 {
   bfRaycastTriangleResult result;
 
-  const Vec3f q_to_p          = bfV3f_sub(q, p);
+  const Vec3f p_to_q          = bfV3f_sub(p, q);
   const Vec3f b_to_a          = bfV3f_sub(triangle_b, triangle_a);
   const Vec3f c_to_a          = bfV3f_sub(triangle_c, triangle_a);
   const Vec3f triangle_normal = bfV3f_cross(b_to_a, c_to_a);
-  const float d               = bfV3f_dot(q_to_p, triangle_normal);
+  const float d               = bfV3f_dot(p_to_q, triangle_normal);
 
   if (d <= 0.0f)  // Segment does not point toward the triangle (either away or parallel)
   {
@@ -607,7 +607,7 @@ bfRaycastTriangleResult bfSegment3D_intersectsTriangle(Vec3f p, Vec3f q, Vec3f t
     return result;
   }
 
-  const Vec3f e = bfV3f_cross(q_to_p, ap);
+  const Vec3f e = bfV3f_cross(p_to_q, ap);
   const float v = bfV3f_dot(c_to_a, e);
 
   if (v < 0.0f || v > d)

@@ -1,5 +1,5 @@
-#ifndef BIFROST_EDITOR_HIERARCHY_HPP
-#define BIFROST_EDITOR_HIERARCHY_HPP
+#ifndef BF_EDITOR_HIERARCHY_HPP
+#define BF_EDITOR_HIERARCHY_HPP
 
 #include "bf/data_structures/bifrost_string.hpp"  // String
 #include "bifrost_editor_window.hpp"              // EditorWindow
@@ -23,4 +23,4 @@ namespace bf::editor
   };
 }  // namespace bf::editor
 
-#endif /* BIFROST_EDITOR_HIERARCHY_HPP */
+#endif /* BF_EDITOR_HIERARCHY_HPP */

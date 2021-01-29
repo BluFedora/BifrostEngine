@@ -136,27 +136,13 @@ namespace bf
       {
         if (renderer.material() && renderer.model() && bvh.nodes[renderer.m_BHVNode].is_visible)
         {
-          ModelAsset& model = *renderer.model();
-
-          for (Mesh& mesh : model.m_Meshes)
-          {
-            RC_DrawIndexed* const render_command = opaque_render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
-            MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
-
-            render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
-            render_command->object_binding.set(engine_renderer.makeObjectTransformInfo(camera.cpu_camera.view_proj_cache, camera.gpu_camera, renderer.owner()));
-
-            render_command->vertex_buffers[0]         = model.m_VertexBuffer;
-            render_command->vertex_buffers[1]         = model.m_VertexBoneData;
-            render_command->vertex_binding_offsets[0] = 0u;
-            render_command->vertex_binding_offsets[1] = 0u;
-            render_command->index_offset              = mesh.index_offset;
-            render_command->num_indices               = mesh.num_indices;
-
-            opaque_render_queue.submit(render_command, 0.0f);
-
-            ++g_NumDrawnObjects;
-          }
+          ComponentRenderer::pushModel(
+           camera,
+           &renderer.owner(),
+           *renderer.model(),
+           pipeline,
+           engine_renderer,
+           opaque_render_queue);
         }
       }
 
@@ -449,5 +435,34 @@ namespace bf
   void ComponentRenderer::pushSprite(const Renderable2DPrimitive& sprite) const
   {
     m_PerFrameSprites->push(sprite);
+  }
+
+  void ComponentRenderer::pushModel(RenderView&               camera,
+                                    Entity*                   entity,
+                                    const ModelAsset&         model,
+                                    const bfDrawCallPipeline& pipeline,
+                                    StandardRenderer&         engine_renderer,
+                                    RenderQueue&              render_queue,
+                                    float                     distance_from_camera)
+  {
+    for (const Mesh& mesh : model.m_Meshes)
+    {
+      RC_DrawIndexed* const render_command = render_queue.drawIndexed(pipeline, 2, model.m_IndexBuffer);
+      MaterialAsset*        material       = model.m_Materials[mesh.material_idx];
+
+      render_command->material_binding.set(engine_renderer.makeMaterialInfo(*material));
+      render_command->object_binding.set(engine_renderer.makeObjectTransformInfo(camera.cpu_camera.view_proj_cache, camera.gpu_camera, *entity));
+
+      render_command->vertex_buffers[0]         = model.m_VertexBuffer;
+      render_command->vertex_buffers[1]         = model.m_VertexBoneData;
+      render_command->vertex_binding_offsets[0] = 0u;
+      render_command->vertex_binding_offsets[1] = 0u;
+      render_command->index_offset              = mesh.index_offset;
+      render_command->num_indices               = mesh.num_indices;
+
+      render_queue.submit(render_command, distance_from_camera);
+
+      ++g_NumDrawnObjects;
+    }
   }
 }  // namespace bf
