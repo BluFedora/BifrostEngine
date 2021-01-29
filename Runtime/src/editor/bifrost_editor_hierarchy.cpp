@@ -236,6 +236,6 @@ namespace bf::editor
       parent_to.second->setParent(parent_to.first);
     }
 
-    bfTransform_flushChanges(&entity->transform());
+    // bfTransform_flushChanges(&entity->transform());
   }
 }  // namespace bf::editor

@@ -63,7 +63,8 @@ namespace bf
     {
       for (int i = 0; i < 3; ++i)
       {
-        if (rhs.min[i] < min[i] || rhs.max[i] > max[i])
+        if (rhs.min[i] < min[i] && !math::isAlmostEqual(min[i], rhs.min[i]) ||
+            rhs.max[i] > max[i] && !math::isAlmostEqual(max[i], rhs.max[i]))
         {
           return false;
         }

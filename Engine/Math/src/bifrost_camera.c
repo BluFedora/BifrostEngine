@@ -257,7 +257,10 @@ void Camera_setFovY(BifrostCamera* cam, float value)
 
 void Camera_onResize(BifrostCamera* cam, uint width, uint height)
 {
+  cam->width                    = width;
+  cam->height                   = height;
   cam->camera_mode.aspect_ratio = (float)width / (float)height;
+
   Camera_setProjectionModified(cam);
 }
 
@@ -294,10 +297,18 @@ Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i screen_size)
   return ray_world;
 }
 
-void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos)
+void bfCamera_setPosition(bfCamera* cam, const Vec3f* pos)
 {
   cam->position = *pos;
   Camera_setViewModified(cam);
+}
+
+Vec3f bfCamera_worldToScreenSpace(const bfCamera* cam, Vec3f pos)
+{
+  Vec3f clip_space_pos;
+  Mat4x4_multVec(&cam->view_proj_cache, &pos, &clip_space_pos);
+
+  return bfV3f_mulS(clip_space_pos, 1.0f / clip_space_pos.w);
 }
 
 /* Frustum API */

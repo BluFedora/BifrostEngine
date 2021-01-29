@@ -212,7 +212,7 @@ namespace bf
   };
 
   //
-  // ***************************** Ascent (The hieght of the text above Baseline)
+  // ***************************** Ascent (The height of the text above Baseline)
   //   _____
   //  / ____|
   // | |  __  __ _
@@ -222,9 +222,18 @@ namespace bf
   // ***************************** Baseline
   //          __/ |
   //         |___/
-  // ***************************** Descent (Negative Number Ralative To Baseline)
+  // ***************************** Descent (Negative Number Relative To Baseline)
   //          ~Line Gap~
   // *****************************
+  //
+  // To calculate where the top of the text is:
+  //
+  // DrawText(x, y)
+  //
+  // Top of Text = y - (TextBounds.y + FontBaselineInfo.descent_px)
+  //                        OR
+  // Top of Text = y - FontBaselineInfo.ascent_px
+  //
   //
   struct FontBaselineInfo
   {

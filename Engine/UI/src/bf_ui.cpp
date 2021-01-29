@@ -131,16 +131,19 @@ namespace bf
 
 namespace bf::UI
 {
-  static constexpr float k_Inf = FLT_MAX;
-
   static UIContext g_UI = {};
+}
+
+bf::PainterFont* TEST_FONT = new bf::PainterFont(bf::UI::g_UI.widget_freelist, "assets/fonts/Montserrat/Montserrat-Medium.ttf", -20.0f);
+
+namespace bf::UI
+{
+  static constexpr float k_Inf = FLT_MAX;
 
   static IMemoryManager& CurrentAllocator()
   {
     return g_UI.widget_freelist;
   }
-
-  static PainterFont* const TEST_FONT = new PainterFont(CurrentAllocator(), "assets/fonts/Montserrat/Montserrat-Medium.ttf", -20.0f);
 
   static void BringToFront(Widget* widget)
   {

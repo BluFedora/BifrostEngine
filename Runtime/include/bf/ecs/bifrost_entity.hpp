@@ -76,6 +76,14 @@ namespace bf
     static constexpr std::uint8_t IS_SERIALIZABLE         = bfBit(4);  //!<
     static constexpr std::uint8_t IS_ADOPTS_PARENT_ACTIVE = bfBit(5);  //!<
 
+    //
+    // If you have a pointer to a transform that is on an entity you can turn that back into an Entity.
+    //
+    static Entity* fromTransform(bfTransform* transform)
+    {
+      return reinterpret_cast<Entity*>(reinterpret_cast<char*>(transform) - offsetof(Entity, m_Transform));
+    }
+
    private:
     Scene&                 m_OwningScene;            //!<
     String                 m_Name;                   //!<
@@ -87,7 +95,6 @@ namespace bf
     ComponentHandleStorage m_ComponentHandles;       //!<
     bfTransform            m_Transform;              //!<
     std::atomic_uint32_t   m_RefCount;               //!<
-    BVHNodeOffset          m_BHVNode;                //!<
     ComponentActiveStorage m_ComponentActiveStates;  //!<
     std::uint8_t           m_Flags;                  //!<
     bfUUIDNumber           m_UUID;                   //!< This uuid will remain unset until the first use through "Entity::uuid".
@@ -103,10 +110,8 @@ namespace bf
     void                              setName(StringRange value);
     [[nodiscard]] bfTransform&        transform() { return m_Transform; }
     [[nodiscard]] const bfTransform&  transform() const { return m_Transform; }
-    [[nodiscard]] BVHNode&            bvhNode() const;
     [[nodiscard]] Entity*             parent() const { return m_Parent; }
     [[nodiscard]] EntityList&         children() { return m_Children; }
-    [[nodiscard]] BVHNodeOffset       bvhID() const { return m_BHVNode; }
     [[nodiscard]] const BehaviorList& behaviors() const { return m_Behaviors; }
     [[nodiscard]] bool                hasUUID() const;
     [[nodiscard]] const bfUUIDNumber& uuid();

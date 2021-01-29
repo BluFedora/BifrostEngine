@@ -301,6 +301,7 @@ namespace bf
     ///    +-----x.basis-------+
     /// (0, 0)                (1, 0)
     /// </code>
+    ///
     BrushSampleResult sample(Vector2f uv, UIIndexType vertex_index) const;
 
     //
@@ -540,8 +541,7 @@ namespace bf
 
     // Returns you the screen bounds that the graphic drawn by
     // the command will take up.
-    // Some of the calculations may be expensive depending on the type
-    // of command.
+    // Some of the calculations may be expensive depending on the type of command.
     static Rect2f calcCommandBounds(const BaseRender2DCommand* command);
 
    private:

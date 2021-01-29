@@ -27,8 +27,15 @@ namespace bf
   class Entity;
   class bfPureInterface(IBehavior);
 
-  using Camera     = BifrostCamera;
-  using EntityList = ListView<Entity>;
+  using Camera = BifrostCamera;
+
+  // TODO(SR): Storage for enities should be grouped together since each of these parts has a max of 2^16 - 1 entities.
+  // EntityStorage:
+  //   IMemoryManger    (Pool)
+  //   ComponentStorage m_ActiveComponents
+  //   ComponentStorage m_InactiveComponents
+  //   BVH              m_BVHTree;
+  //
 
   /*!
    * @brief
@@ -41,20 +48,20 @@ namespace bf
     friend class Entity;
     BF_META_FRIEND;
 
-  public:
-    bool m_DoDebugDraw = true;
+   public:
+    bool m_DoDebugDraw = true;  // TODO(SR): Remove this.
 
    private:
-    Engine&              m_Engine; // TODO(SR): Remove this.
+    Engine&              m_Engine;  // TODO(SR): Remove this.
     IMemoryManager&      m_Memory;
     Array<Entity*>       m_RootEntities;
-    EntityList           m_Entities;
     ComponentStorage     m_ActiveComponents;
     ComponentStorage     m_InactiveComponents;
     Array<BaseBehavior*> m_ActiveBehaviors;
     BVH                  m_BVHTree;
     Camera               m_Camera;
     bfAnim2DScene*       m_AnimationScene;
+    bfTransform*         m_DirtyList;
 
    public:
     explicit Scene(Engine& engine);
@@ -69,18 +76,13 @@ namespace bf
     // Entity Management
 
     const Array<Entity*>& rootEntities() const { return m_RootEntities; }
-    const EntityList&     entities() const { return m_Entities; }
     EntityRef             addEntity(const StringRange& name = "Untitled");
     EntityRef             findEntity(const StringRange& name) const;
     void                  removeEntity(Entity* entity);
     void                  removeAllEntities();
+    BVH&                  bvh() { return m_BVHTree; }
 
-    BVH& bvh() { return m_BVHTree; }
-
-    // Temp Code Begin
     void update(LinearAllocator& temp, DebugRenderer& dbg_renderer);
-    void markEntityTransformDirty(Entity* entity);
-    // Temp Code End
 
     // Component
 
@@ -111,9 +113,11 @@ namespace bf
 
     ~Scene() override;
 
-  private:
+   private:
     void onLoad() override;
     void onUnload() override;
+
+    void updateDirtyListTransforms();
   };
 
   BIFROST_META_REGISTER(bf::Scene)

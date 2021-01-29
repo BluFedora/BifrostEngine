@@ -435,6 +435,10 @@ namespace bf
     //   _next_ frame.
     m_DebugRenderer.update(delta_time);
 
+
+    // Cleared at the beginning of update so any update function can submit draw commands.
+    m_Gfx2D->clear();
+
     UI::Update(delta_time);
 
     for (auto& system : m_Systems)
@@ -480,8 +484,6 @@ namespace bf
   {
     const bfGfxCommandListHandle cmd_list = m_Renderer.mainCommandList();
     auto                         scene    = currentScene();
-
-    m_Gfx2D->clear();
 
     if (scene)
     {

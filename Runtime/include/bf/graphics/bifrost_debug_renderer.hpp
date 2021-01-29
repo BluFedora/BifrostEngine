@@ -107,7 +107,7 @@ namespace bf
     void               clearLineBuffer(Array<BufferLink*>& buffer_link_list);
     void               addVertices(Array<BufferLink*>& buffer, const Vector3f& a, const Vector3f& b, const bfColor4u& color, const bfGfxFrameInfo& frame_info);
     void               addTriangle(Array<BufferLink*>& buffer, const VertexDebugLine& a, const VertexDebugLine& b, const VertexDebugLine& c, const bfGfxFrameInfo& frame_info);
-    IMemoryManager&    memory() const { return m_DepthDrawCommands.memory(); }
+    IMemoryManager&    memory() const { return m_LineBuffers[0].memory(); }
     static void        updateDrawCommands(List<DrawCommand>& list, float delta_time);
   };
 }  // namespace bf

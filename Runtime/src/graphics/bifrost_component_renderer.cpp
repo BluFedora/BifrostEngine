@@ -313,11 +313,12 @@ namespace bf
           const Vector3f half_y_axis = y_axis * 0.5f;
 
           //
-          // Sprite Draw Order (CCW)
+          // Sprite Drawing (CCW)
           //
-          // v2---v3
-          // |  O  |
-          // v0---v1
+          //   v2---v3
+          // y |  O  |
+          //   v0---v1
+          //      x
           //
           // Index Buffer: { 0, 3, 2, 0, 1, 3 }
           //
@@ -373,7 +374,7 @@ namespace bf
 
           last_batch->num_indices += k_NumIndicesPerSprite;
 #else
-          for (int index : {0, 1, 2, 1, 3, 2})
+          for (int index : {0, 3, 2, 0, 1, 3})
           {
             addVertex(positions[index], uvs[index]);
           }
@@ -406,7 +407,6 @@ namespace bf
             render_command->index_offset                = batches->index_offset;
             render_command->num_indices                 = batches->num_indices;
             render_command->index_type                  = k_SpriteIndexType;
-
 #else
             RC_DrawArrays* const render_command = render_queue.drawArrays(pipeline, 1);
 
@@ -415,7 +415,6 @@ namespace bf
             render_command->vertex_binding_offsets[0] = batches->vertex_buffer->gpu_buffer.offset(frame_info);
             render_command->first_vertex              = batches->vertex_offset;
             render_command->num_vertices              = batches->num_vertices;
-
 #endif
 
             transparent_render_queue.submit(render_command, 0.0f);

@@ -128,8 +128,6 @@ target_sources(
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}utility/bifrost_json.cpp"
    "${THIS_IS_A_HACK_THAT_NEEDS_TO_BE_FIXED}utility/bifrost_uuid.c"
 
-   
-
    # HAcky Hacks
 
    "${PROJECT_SOURCE_DIR}/../../Experiments/src/bifrost_json.c"

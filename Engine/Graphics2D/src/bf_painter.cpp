@@ -941,7 +941,7 @@ namespace bf
 
         const auto     baseline_info = fontBaselineInfo(typed_command->brush->font_data.font->font);
         const Vector2f min_bounds    = {typed_command->position.x, typed_command->position.y - typed_command->bounds_size.y};
-        const Vector2f max_bounds    = {typed_command->position.x + typed_command->bounds_size.x, typed_command->position.y - baseline_info.descent_px};
+        const Vector2f max_bounds    = {min_bounds.x + typed_command->bounds_size.x, typed_command->position.y - baseline_info.descent_px};
 
         return {min_bounds, max_bounds};
       }

@@ -27,13 +27,13 @@ namespace bf
     m_Engine{engine},
     m_Memory{m_Engine.mainMemory()},
     m_RootEntities{m_Memory},
-    m_Entities{&Entity::m_Hierarchy},
     m_ActiveComponents{m_Memory},
     m_InactiveComponents{m_Memory},
     m_ActiveBehaviors{m_Memory},
     m_BVHTree{m_Memory},
     m_Camera{},
-    m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())}
+    m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())},
+    m_DirtyList{nullptr}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
 
@@ -70,7 +70,6 @@ namespace bf
     while (!m_RootEntities.isEmpty())
     {
       m_RootEntities.back()->destroy();
-
       // Entity::destroy detaches from parent.
       // m_RootEntities.pop();
     }
@@ -78,16 +77,45 @@ namespace bf
 
   void Scene::update(LinearAllocator& temp, DebugRenderer& dbg_renderer)
   {
-    for (Entity* entity : m_RootEntities)
-    {
-      markEntityTransformDirty(entity);
-    }
-
-    m_BVHTree.endFrame(temp, true);
+    updateDirtyListTransforms();
+    
+    m_BVHTree.endFrame(temp, false);
 
     if (m_DoDebugDraw)
     {
-      m_BVHTree.traverse([&dbg_renderer](const BVHNode& node) {
+      m_BVHTree.traverse([this, &dbg_renderer](const BVHNode& node) {
+        if (!bvh_node::isLeaf(node))
+        {
+          const auto child_bounds = aabb::mergeBounds(m_BVHTree.nodeAt(node.children[0]).bounds,
+                                                      m_BVHTree.nodeAt(node.children[1]).bounds);
+
+          assert(m_BVHTree.nodeAt(node.children[0]).parent == m_BVHTree.nodeToIndex(node));
+          assert(m_BVHTree.nodeAt(node.children[1]).parent == m_BVHTree.nodeToIndex(node));
+
+          if (!node.bounds.canContain(child_bounds))
+          {
+            if (node.bounds == child_bounds)
+            {
+              __debugbreak();
+            }
+
+             __debugbreak();
+          }
+        }
+
+        static bfColor4u k_DebugColors[] =
+         {
+          {255, 0, 0, 255},
+          {0, 255, 0, 255},
+          {0, 0, 255, 255},
+          {255, 0, 255, 255},
+          {255, 255, 0, 255},
+          {0, 255, 255, 255},
+          {255, 255, 255, 255},
+         };
+
+        const bfColor4u color = k_DebugColors[node.depth % std::size(k_DebugColors)];
+
         if (bvh_node::isLeaf(node))
         {
           Entity* const entity = static_cast<Entity*>(node.user_data);
@@ -97,45 +125,19 @@ namespace bf
           {
             return;
           }
+
+          // color = bfColor4u_fromUint32(BIFROST_COLOR_DEEPPINK);
+        }
+        else
+        {
+          // color = bfColor4u_fromUint32(BIFROST_COLOR_CYAN);
         }
 
         dbg_renderer.addAABB(
          (Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) + Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2])) * 0.5f,
          Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
-         bfColor4u_fromUint32(BIFROST_COLOR_CYAN));
+         color);
       });
-    }
-  }
-
-  void Scene::markEntityTransformDirty(Entity* entity)
-  {
-    for (Entity& child : entity->children())
-    {
-      markEntityTransformDirty(&child);
-    }
-
-    const auto& transform = entity->transform();
-
-    // TEMP: NEEDED FOR LIGHTS
-    m_BVHTree.markLeafDirty(entity->bvhID(), transform);
-
-    auto* const mesh         = entity->get<MeshRenderer>();
-    auto* const skinned_mesh = entity->get<SkinnedMeshRenderer>();
-    auto* const sprite       = entity->get<SpriteRenderer>();
-
-    if (mesh)
-    {
-      m_BVHTree.markLeafDirty(mesh->m_BHVNode, transform);
-    }
-
-    if (skinned_mesh)
-    {
-      m_BVHTree.markLeafDirty(skinned_mesh->m_BHVNode, transform);
-    }
-
-    if (sprite)
-    {
-      m_BVHTree.markLeafDirty(sprite->m_BHVNode, transform);
     }
   }
 
@@ -224,25 +226,83 @@ namespace bf
           json_writer.endDocument();
 
           markIsLoaded();
-        }
-        else
-        {
-          markFailedToLoad();
+          return;
         }
       }
-      else
-      {
-        markFailedToLoad();
-      }
     }
-    else
-    {
-      markFailedToLoad();
-    }
+
+    markFailedToLoad();
   }
 
   void Scene::onUnload()
   {
+  }
+
+  static AABB calcBounds(const MeshRenderer& mesh_renderer, const bfTransform& transform)
+  {
+    if (mesh_renderer.m_Model)
+    {
+      return aabb::transform(mesh_renderer.m_Model->m_ObjectSpaceBounds, transform.world_transform);
+    }
+
+    return AABB(Vector3f{0.0f}, Vector3f{0.0f});
+  }
+
+  static AABB calcBounds(const SkinnedMeshRenderer& mesh_renderer, const bfTransform& transform)
+  {
+    if (mesh_renderer.m_Model)
+    {
+      return aabb::transform(mesh_renderer.m_Model->m_ObjectSpaceBounds, transform.world_transform);
+    }
+
+    return AABB(Vector3f{0.0f}, Vector3f{0.0f});
+  }
+
+  static AABB calcBounds(const SpriteRenderer& sprite, const bfTransform& transform)
+  {
+    const float    thickness           = 0.05f;  // Needed since an AABB of zero volume is a bad idea.
+    const Vector3f half_extents        = Vector3f{sprite.m_Size.x, sprite.m_Size.y, thickness, 0.0f} * 0.5f;
+    const AABB     object_space_bounds = {-half_extents, half_extents};
+    const AABB     world_space_bounds  = aabb::transform(object_space_bounds, transform.world_transform);
+
+    return world_space_bounds;
+  }
+
+  void Scene::updateDirtyListTransforms()
+  {
+    if (m_DirtyList)
+    {
+      bfTransform* transform = m_DirtyList;
+
+      while (transform)
+      {
+        bfTransform* const next_transform = std::exchange(transform->dirty_list_next, nullptr);
+        transform->flags &= ~BF_TRANSFORM_LOCAL_DIRTY;
+        Entity* const entity       = Entity::fromTransform(transform);
+        auto* const   mesh         = entity->get<MeshRenderer>();
+        auto* const   skinned_mesh = entity->get<SkinnedMeshRenderer>();
+        auto* const   sprite       = entity->get<SpriteRenderer>();
+
+        if (mesh)
+        {
+          m_BVHTree.markLeafDirty(mesh->m_BHVNode, calcBounds(*mesh, *transform));
+        }
+
+        if (skinned_mesh)
+        {
+          m_BVHTree.markLeafDirty(skinned_mesh->m_BHVNode, calcBounds(*skinned_mesh, *transform));
+        }
+
+        if (sprite)
+        {
+          m_BVHTree.markLeafDirty(sprite->m_BHVNode, calcBounds(*sprite, *transform));
+        }
+
+        transform = next_transform;
+      }
+
+      m_DirtyList = nullptr;
+    }
   }
 
   Scene::~Scene()

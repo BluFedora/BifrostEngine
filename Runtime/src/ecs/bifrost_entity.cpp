@@ -38,12 +38,11 @@ namespace bf
     m_ComponentHandles{},
     m_Transform{},
     m_RefCount{ATOMIC_VAR_INIT(0)},
-    m_BHVNode{scene.m_BVHTree.insert(this, transform())},
     m_ComponentActiveStates{},
     m_Flags{IS_ACTIVE | IS_SERIALIZABLE},
     m_UUID{bfUUID_makeEmpty().as_number}
   {
-    bfTransform_ctor(&m_Transform);
+    bfTransform_ctor(&m_Transform, &scene.m_DirtyList);
   }
 
   Engine& Entity::engine() const
@@ -54,11 +53,6 @@ namespace bf
   void Entity::setName(StringRange value)
   {
     m_Name = value;
-  }
-
-  BVHNode& Entity::bvhNode() const
-  {
-    return m_OwningScene.m_BVHTree.nodes[m_BHVNode];
   }
 
   bool Entity::hasUUID() const
@@ -261,6 +255,7 @@ namespace bf
   void Entity::reflect(ISerializer& serializer)
   {
     serializer.serializeT(this);
+    bfTransform_flushChanges(&m_Transform);
 
     if (serializer.mode() == SerializerMode::LOADING)
     {
@@ -463,7 +458,6 @@ namespace bf
 
     // Transform
     bfTransform_dtor(&m_Transform);
-    scene().m_BVHTree.remove(m_BHVNode);
   }
 
   void Entity::reevaluateActiveState(bool was_active, bool is_active)

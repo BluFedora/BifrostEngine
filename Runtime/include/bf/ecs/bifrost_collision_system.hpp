@@ -14,13 +14,12 @@
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#ifndef BIFROST_COLLISION_SYSTEM
-#define BIFROST_COLLISION_SYSTEM
+#ifndef BF_BVH_HPP
+#define BF_BVH_HPP
 
 #include "bf/LinearAllocator.hpp"                // LinearAllocator
 #include "bf/asset_io/bf_model_loader.hpp"       // AABB
 #include "bf/data_structures/bifrost_array.hpp"  // Array<T>
-#include "bifrost_iecs_system.hpp"               // IECSSystem
 
 #include <cfloat>   // FLT_MAX
 #include <cstdint>  // uint16_t
@@ -47,7 +46,7 @@ namespace bf
         BVHNodeOffset depth;        // For avl rotation balancing.
         bool          is_visible;   // TODO(SR): TEMP bool just for testing an idea.
       };
-      BVHNodeOffset next;  // Freelist, can be unioned with other data since if it is on the freelist then all node members are unused.
+      BVHNodeOffset next;  // Freelist, can be union-ed with other data since if it is on the freelist then all node members are unused.
     };
   };
 
@@ -74,14 +73,14 @@ namespace bf
     Array<BVHNodeOffset> nodes_to_optimize;
     BVHNodeOffset        root_idx;
     BVHNodeOffset        freelist;
-    std::uint16_t        max_depth;
+    std::uint16_t        max_depth_;
 
     explicit BVH(IMemoryManager& memory) :
       nodes{memory},
       nodes_to_optimize{memory},
       root_idx{k_BVHNodeInvalidOffset},
       freelist{k_BVHNodeInvalidOffset},
-      max_depth{0}
+      max_depth_{0}
     {
     }
 
@@ -153,7 +152,7 @@ namespace bf
         const BVHNodeOffset sibling    = nodeToIndex(*current_node);
         const BVHNodeOffset old_parent = current_node->parent;
         const BVHNodeOffset old_depth  = current_node->depth;
-        const BVHNodeOffset new_parent = createNode(nullptr, aabb::mergeBounds(object_bounds, current_node->bounds));
+        const BVHNodeOffset new_parent = createNode(nullptr, AABB(Vector3f{0.0f}, Vector3f{0.0f}));
         const BVHNodeOffset new_leaf   = createNode(user_data, object_bounds);
 
         nodes[new_parent].children[0] = sibling;
@@ -180,7 +179,7 @@ namespace bf
         }
 
         updateDepth(new_parent, old_depth);
-        refitChildren(root_idx, true);  // TODO: This is doing more work than need be.
+        refitChildren(new_parent, true);
 
         return new_leaf;
       }
@@ -192,18 +191,13 @@ namespace bf
     // Call when the object associated with this leaf has moved.
     void markLeafDirty(BVHNodeOffset leaf, const AABB& bounds)
     {
+      assert(bvh_node::isLeaf(nodes[leaf]) && "Only leaf nodes can be passed into this function.");
+
       if (!nodes[leaf].bounds.canContain(bounds))
       {
-        const AABB object_bounds = aabb::expandedBy(bounds, k_BVHBoundsSkin);
+        nodes[leaf].bounds = aabb::expandedBy(bounds, k_BVHBoundsSkin);
 
-        nodes[leaf].bounds = object_bounds;
-
-        if (leaf == root_idx)
-        {
-          return;
-        }
-
-        if (refitChildren(nodes[leaf].parent, true))
+        if (leaf != root_idx && refitChildren(nodes[leaf].parent, true))
         {
           addNodeToRefit(nodes[leaf].parent);
         }
@@ -240,12 +234,15 @@ namespace bf
       nodes[sibling].depth  = parent_depth;
       nodes[sibling].parent = grandparent;
 
-      refitChildren(has_grandparent ? grandparent : root_idx, true);
+      if (has_grandparent || !bvh_node::isLeaf(nodes[root_idx]))
+      {
+        refitChildren(has_grandparent ? grandparent : root_idx, true);
+      }
     }
 
     /*!
      * @brief
-     *   Optimizes the tree using some rotations to rebalance.
+     *   Optimizes the tree using some rotations to re-balance.
      *
      * @param temp_memory
      *   Pass in a nice and fast allocator for a temp stack.
@@ -255,8 +252,6 @@ namespace bf
     */
     void endFrame(LinearAllocator& temp_memory, bool refit_parents_with_no_rotation = true)
     {
-      // return;
-
       struct OffsetIndexPair final
       {
         BVHNodeOffset node;   // Index into BVH::nodes
@@ -301,15 +296,18 @@ namespace bf
           nodes_to_optimize[max_depth_nodes[i].index] = k_BVHNodeInvalidOffset;
         }
 
-        const auto split = std::partition(nodes_to_optimize.begin(), nodes_to_optimize.end(), [](const BVHNodeOffset element) -> bool {
-          return element < k_BVHNodeInvalidOffset;
-        });
+        auto* const split = std::partition(
+         nodes_to_optimize.begin(),
+         nodes_to_optimize.end(),
+         [](const BVHNodeOffset element) -> bool {
+           return element < k_BVHNodeInvalidOffset;
+         });
 
         const std::size_t new_size = split - nodes_to_optimize.begin();
 
         nodes_to_optimize.resize(new_size);
 
-        // Stage 3: Removed the visted nodes and Attempt to rebalance the tree.
+        // Stage 3: Removed the visited nodes and Attempt to re-balance the tree.
 
         for (int i = 0; i < num_max_depth_nodes; ++i)
         {
@@ -556,27 +554,24 @@ namespace bf
       nodes[child].parent         = self;
     }
 
-    bool refitChildren(BVHNodeOffset self, bool propogate)
+    bool refitChildren(BVHNodeOffset self, bool propagate)
     {
-      const BVHNode& node = nodeAt(self);
+      BVHNode& node = nodeAt(self);
 
-      if (bvh_node::isLeaf(node))
-      {
-        return false;
-      }
+      assert(!bvh_node::isLeaf(node) && "Only nodes with children can be passed to this function.");
 
       const AABB new_bounds = aabb::mergeBounds(nodes[node.children[0]].bounds, nodes[node.children[1]].bounds);
 
-      if (nodes[self].bounds != new_bounds)
+      if (node.bounds != new_bounds)
       {
-        nodes[self].bounds = new_bounds;
+        node.bounds = new_bounds;
 
-        if (propogate && !bvh_node::isNull(node.parent))
-        {
-          refitChildren(node.parent, propogate);
-        }
+         if (propagate && !bvh_node::isNull(node.parent))
+         {
+           refitChildren(node.parent, propagate);
+         }
 
-        return true;
+         return true;
       }
 
       return false;
@@ -586,9 +581,11 @@ namespace bf
     {
       BVHNode& node = nodeAt(self);
 
-      if (depth > max_depth)
+      node.depth = depth;
+
+      if (depth > max_depth_)
       {
-        max_depth = depth;
+        max_depth_ = depth;
       }
 
       if (!bvh_node::isLeaf(node))
@@ -637,4 +634,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_COLLISION_SYSTEM */
+#endif /* BF_BVH_HPP */

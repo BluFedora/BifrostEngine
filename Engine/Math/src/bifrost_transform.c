@@ -88,18 +88,20 @@ Quaternionf bfQuaternionf_fromMatrix(const Mat4x4* rot_mat)
   else if (m11 > m22)
   {
     const float s = 2.0f * sqrtf(1.0f + m11 - m00 - m22);
-    self.w        = (m02 - m20) / s;
-    self.x        = (m01 + m10) / s;
-    self.y        = 0.25f * s;
-    self.z        = (m12 + m21) / s;
+
+    self.w = (m02 - m20) / s;
+    self.x = (m01 + m10) / s;
+    self.y = 0.25f * s;
+    self.z = (m12 + m21) / s;
   }
   else
   {
     const float s = 2.0f * sqrtf(1.0f + m22 - m00 - m11);
-    self.w        = (m10 - m01) / s;
-    self.x        = (m02 + m20) / s;
-    self.y        = (m21 + m12) / s;
-    self.z        = 0.25f * s;
+
+    self.w = (m10 - m01) / s;
+    self.x = (m02 + m20) / s;
+    self.y = (m21 + m12) / s;
+    self.z = 0.25f * s;
   }
 
   bfQuaternionf_normalize(&self);
@@ -247,7 +249,7 @@ void bfQuaternionf_toMatrix(Quaternionf self, Mat4x4* out_rot_mat)
 void bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler)
 {
   const float sin_y_axis = 2.0f * (self->w * self->y - self->z * self->x);
-  const float y_sq      = self->y * self->y;
+  const float y_sq       = self->y * self->y;
 
   /* X-Axis (Pitch) */
   out_rot_euler->x = atan2f(2.0f * (self->x * self->w + self->y * self->z), 1.0f - 2.0f * (self->x * self->x + y_sq));
@@ -364,9 +366,52 @@ bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf*
    sclp * lhs->w + sclq * end.w);
 }
 
+/*
+quat RotateTowards(quat q1, quat q2, float maxAngle)
+{
+  if (maxAngle < 0.001f)
+  {
+    // No rotation allowed. Prevent dividing by 0 later.
+    return q1;
+  }
+
+  float cosTheta = dot(q1, q2);
+
+  // q1 and q2 are already equal.
+  // Force q2 just to be sure
+  if (cosTheta > 0.9999f)
+  {
+    return q2;
+  }
+
+  // Avoid taking the long path around the sphere
+  if (cosTheta < 0)
+  {
+    q1 = q1 * -1.0f;
+    cosTheta *= -1.0f;
+  }
+
+  float angle = acos(cosTheta);
+
+  // If there is only a 2&deg; difference, and we are allowed 5&deg;,
+  // then we arrived.
+  if (angle < maxAngle)
+  {
+    return q2;
+  }
+
+  float fT = maxAngle / angle;
+  angle    = maxAngle;
+
+  quat res = (sin((1.0f - fT) * angle) * q1 + sin(fT * angle) * q2) / sin(angle);
+  res      = normalize(res);
+  return res;
+}
+*/
+
 // Transform
 
-void bfTransform_ctor(bfTransform* self)
+void bfTransform_ctor(bfTransform* self, bfTransform** dirty_list)
 {
   Vec3f_set(&self->origin, 0.0f, 0.0f, 0.0f, 1.0f);
   Vec3f_set(&self->local_position, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -377,18 +422,21 @@ void bfTransform_ctor(bfTransform* self)
   Vec3f_set(&self->world_scale, 1.0f, 1.0f, 1.0f, 0.0f);
   Mat4x4_identity(&self->local_transform);
   Mat4x4_identity(&self->world_transform);
-  self->parent       = NULL;
-  self->first_child  = NULL;
-  self->next_sibling = NULL;
-  self->prev_sibling = NULL;
-  self->flags        = BF_TRANSFORM_DIRTY;
+  self->parent          = NULL;
+  self->first_child     = NULL;
+  self->next_sibling    = NULL;
+  self->prev_sibling    = NULL;
+  self->dirty_list      = dirty_list;
+  self->dirty_list_next = NULL;
+  bfTransform_flushChanges(self);
+  self->flags = BF_TRANSFORM_DIRTY;
 }
 
 void bfTransform_setOrigin(bfTransform* self, const Vec3f* value)
 {
   self->origin = *value;
-  self->flags |= BF_TRANSFORM_ORIGIN_DIRTY;
   bfTransform_flushChanges(self);
+  self->flags |= BF_TRANSFORM_ORIGIN_DIRTY;
 }
 
 /*
@@ -408,22 +456,22 @@ Vec3f bfTransform_localPosition(const bfTransform* self)
 void bfTransform_setPosition(bfTransform* self, const Vec3f* value)
 {
   self->local_position = *value;
-  self->flags |= BF_TRANSFORM_POSITION_DIRTY;
   bfTransform_flushChanges(self);
+  self->flags |= BF_TRANSFORM_POSITION_DIRTY;
 }
 
 void bfTransform_setRotation(bfTransform* self, const Quaternionf* value)
 {
   self->local_rotation = *value;
-  self->flags |= BF_TRANSFORM_ROTATION_DIRTY;
   bfTransform_flushChanges(self);
+  self->flags |= BF_TRANSFORM_ROTATION_DIRTY;
 }
 
 void bfTransform_setScale(bfTransform* self, const Vec3f* value)
 {
   self->local_scale = *value;
-  self->flags |= BF_TRANSFORM_SCALE_DIRTY;
   bfTransform_flushChanges(self);
+  self->flags |= BF_TRANSFORM_SCALE_DIRTY;
 }
 
 void bfTransform_setParent(bfTransform* self, bfTransform* value)
@@ -467,8 +515,8 @@ void bfTransform_setParent(bfTransform* self, bfTransform* value)
     }
 
     self->parent = value;
-    self->flags |= BF_TRANSFORM_PARENT_DIRTY;
     bfTransform_flushChanges(self);
+    self->flags |= BF_TRANSFORM_PARENT_DIRTY;
   }
 }
 
@@ -481,9 +529,8 @@ void bfTransform_copyFrom(bfTransform* self, const bfTransform* value)
     self->local_rotation = value->local_rotation;
     self->local_scale    = value->local_scale;
 
-    self->flags |= BF_TRANSFORM_LOCAL_DIRTY;
-
     bfTransform_flushChanges(self);
+    self->flags |= BF_TRANSFORM_LOCAL_DIRTY;
   }
 }
 
@@ -567,6 +614,13 @@ void bfTransform_flushChanges(bfTransform* self)
 
       work_stack[work_stack_top++] = child;
       child                        = child->next_sibling;
+    }
+
+    // This the node was not dirty before then prepend to the dirty list.
+    if ((node->flags & BF_TRANSFORM_LOCAL_DIRTY) == 0u)
+    {
+      node->dirty_list_next = *node->dirty_list;
+      *node->dirty_list     = node;
     }
 
     node->flags |= BF_TRANSFORM_NEEDS_GPU_UPLOAD;

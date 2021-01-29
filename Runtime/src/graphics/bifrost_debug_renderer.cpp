@@ -3,8 +3,6 @@
 #include "bf/core/bifrost_engine.hpp"
 #include "bf/graphics/bifrost_standard_renderer.hpp"
 
-#include <cassert>
-
 namespace bf
 {
   DebugRenderer::DebugRenderer(IMemoryManager& memory) :
@@ -22,8 +20,8 @@ namespace bf
 
   void DebugRenderer::init(StandardRenderer& renderer)
   {
-    const auto device          = renderer.device();
-    auto&      shader_compiler = renderer.glslCompiler();
+    const bfGfxDeviceHandle device          = renderer.device();
+    auto&                   shader_compiler = renderer.glslCompiler();
 
     m_Gfx              = &renderer;
     m_ShaderModules[0] = shader_compiler.createModule(device, "assets/shaders/debug/dbg_lines.vert.glsl");
@@ -249,7 +247,7 @@ namespace bf
 
   void DebugRenderer::addVertices(Array<BufferLink*>& buffer, const Vector3f& a, const Vector3f& b, const bfColor4u& color, const bfGfxFrameInfo& frame_info)
   {
-    static constexpr float k_Thickness = 0.03f; // ToDO(SR): This width should be customizable.
+    static constexpr float k_Thickness = 0.03f;  // ToDO(SR): This width should be customizable.
 
     const VertexDebugLine vertices[] =
      {

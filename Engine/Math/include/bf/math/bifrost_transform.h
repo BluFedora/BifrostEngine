@@ -7,8 +7,8 @@
  *
  * @copyright Copyright (c) 2019-2020
  */
-#ifndef BIFROST_TRANSFORM_H
-#define BIFROST_TRANSFORM_H
+#ifndef BF_TRANSFORM_H
+#define BF_TRANSFORM_H
 
 #include "bifrost_mat4x4.h"
 #include "bifrost_vec3.h"
@@ -62,12 +62,12 @@ BF_MATH_API void          bfQuaternionf_normalize(Quaternionf* self);
 BF_MATH_API void          bfQuaternionf_toMatrix(Quaternionf self, Mat4x4* out_rot_mat);
 BF_MATH_API void          bfQuaternionf_toEulerRad(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
 BF_MATH_API void          bfQuaternionf_toEulerDeg(const Quaternionf* self, Vec3f* out_rot_euler); /* x (pitch), y (yaw), z (roll) */
-BF_MATH_API Vec3f         bfQuaternionf_up(const Quaternionf* self);                            // positive y-axis
-BF_MATH_API Vec3f         bfQuaternionf_down(const Quaternionf* self);                          // negative y-axis
-BF_MATH_API Vec3f         bfQuaternionf_left(const Quaternionf* self);                          // negative x-axis
-BF_MATH_API Vec3f         bfQuaternionf_right(const Quaternionf* self);                         // positive x-xis
-BF_MATH_API Vec3f         bfQuaternionf_forward(const Quaternionf* self);                       // positive z-axis
-BF_MATH_API Vec3f         bfQuaternionf_backward(const Quaternionf* self);                      // negative z-axis
+BF_MATH_API Vec3f         bfQuaternionf_up(const Quaternionf* self);                               // positive y-axis
+BF_MATH_API Vec3f         bfQuaternionf_down(const Quaternionf* self);                             // negative y-axis
+BF_MATH_API Vec3f         bfQuaternionf_left(const Quaternionf* self);                             // negative x-axis
+BF_MATH_API Vec3f         bfQuaternionf_right(const Quaternionf* self);                            // positive x-xis
+BF_MATH_API Vec3f         bfQuaternionf_forward(const Quaternionf* self);                          // positive z-axis
+BF_MATH_API Vec3f         bfQuaternionf_backward(const Quaternionf* self);                         // negative z-axis
 BF_MATH_API bfQuaternionf bfQuaternionf_slerp(const bfQuaternionf* lhs, const bfQuaternionf* rhs, float factor);
 
 enum
@@ -135,10 +135,12 @@ struct bfTransform
   bfTransform* prev_sibling; /*!< The previous sibling of this transform.                             */
 
   /* Misc */
-  uint32_t flags; /*!< bfTransformFlags, flags for various feature and dirty states. */
+  bfTransform** dirty_list;      /*!< Head of the dirty list.                                          */
+  bfTransform*  dirty_list_next; /*!< Next item in the embedded dirty linked list.                     */
+  uint32_t      flags;           /*!< bfTransformFlags, flags for various feature and dirty states.    */
 };
 
-BF_MATH_API void bfTransform_ctor(bfTransform* self);
+BF_MATH_API void bfTransform_ctor(bfTransform* self, bfTransform** dirty_list);
 BF_MATH_API void bfTransform_setOrigin(bfTransform* self, const Vec3f* value);
 BF_MATH_API void bfTransform_setPosition(bfTransform* self, const Vec3f* value);
 BF_MATH_API void bfTransform_setRotation(bfTransform* self, const Quaternionf* value);
@@ -152,4 +154,4 @@ BF_MATH_API void bfTransform_dtor(bfTransform* self);
 }
 #endif
 
-#endif /* BIFROST_TRANSFORM_H */
+#endif /* BF_TRANSFORM_H */

@@ -158,6 +158,8 @@ typedef struct
 typedef struct BifrostCamera_t
 {
   bfFrustum        frustum;
+  unsigned int     width;   // In pixels
+  unsigned int     height;  // In pixels
   Vec3f            position;
   Vec3f            forward;   // This is normalized.
   Vec3f            up;        // This is normalized.
@@ -198,7 +200,14 @@ BF_MATH_API Vec3f Camera_castRay(BifrostCamera* cam, Vec2i screen_space, Vec2i s
 
 // 'New' Camera API
 
-BF_MATH_API void bfCamera_setPosition(BifrostCamera* cam, const Vec3f* pos);
+typedef BifrostCamera bfCamera;
+
+BF_MATH_API void bfCamera_setPosition(bfCamera* cam, const Vec3f* pos);
+
+//
+// If the result.z is not in the range of [0.0f, 1.0f] then it should be clipped.
+//
+BF_MATH_API Vec3f bfCamera_worldToScreenSpace(const bfCamera* cam, Vec3f pos);
 
 /* Ray API */
 

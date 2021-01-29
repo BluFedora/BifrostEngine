@@ -20,7 +20,7 @@ namespace bf::editor
 
    public:
     explicit SceneView();
-    ~SceneView();
+    ~SceneView() override;
 
     bool isPointOverSceneView(const Vector2i& point) const
     {
