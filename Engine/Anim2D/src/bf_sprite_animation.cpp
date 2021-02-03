@@ -100,7 +100,6 @@ struct NetworkingData final
     current_packet_header{0u, 0u},
     read_buffer{}
   {
-    bfNet::Startup();
   }
 
   void establishConnection()
@@ -115,7 +114,9 @@ struct NetworkingData final
     {
       if (!is_connected)
       {
-        is_connected = socket.connectTo(address).isSuccess();
+        const auto err = socket.connectTo(address);
+        
+        is_connected = err.isSuccess() || bfNet::isErrorAlreadyConnected(err.code);
       }
     }
   }
@@ -183,6 +184,7 @@ bfAnimation2DCtx* bfAnimation2D_new(const bfAnim2DCreateParams* params)
   {
     if (safe_params.on_spritesheet_changed)
     {
+      bfNet::Startup();
       self->network_module = new (bfAllocate(self, sizeof(*self->network_module))) NetworkingData(self->allocator);
     }
   }
@@ -335,6 +337,7 @@ void bfAnimation2D_delete(bfAnimation2DCtx* self)
   {
     self->network_module->~NetworkingData();
     bfFree(self, self->network_module, sizeof(*self->network_module));
+    bfNet::Shutdown();
   }
 
   bfFree(self, self, sizeof(*self));
