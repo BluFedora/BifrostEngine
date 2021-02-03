@@ -5,7 +5,7 @@
 #include <bf/DenseMap.hpp>        // DenseMap
 #include <bf/IMemoryManager.hpp>  // IMemoryManager
 #include <bf/MemoryUtils.h>       // bfBytesReadUint*
-#include <bf/Network.hpp>         // Networking API
+#include <bf/bf_net.hpp>          // Networking API
 
 #include <assert.h> /* assert              */
 #include <stdlib.h> /* realloc, free, NULL */
@@ -24,8 +24,8 @@
 
 // Helper Struct Definitions
 
-// NOTE(SR): 
-//   The two levels of indirection here is kinda gross 
+// NOTE(SR):
+//   The two levels of indirection here is kinda gross
 //   but is needed for code reuse, maybe that is a bad goal / reason ...
 struct CallbackAllocator final : public bf::IMemoryManager
 {
@@ -83,40 +83,39 @@ struct NetworkingData final
 {
   static constexpr int k_PacketReadSize = 8192 * 4;
 
-  NetworkContextHandle network;
-  RequestURL           url;
-  SocketHandle         socket;
-  Address              address;
+  bfNet::RequestURL    url;
+  bfNet::Socket        socket;
+  bfNet::Address       address;
   bool                 is_connected;
   bf::Array<char>      current_packet;
   bfAnim2DPacketHeader current_packet_header;
   char                 read_buffer[k_PacketReadSize];
 
   NetworkingData(CallbackAllocator& allocator) :
-    network{NetworkContext::create()},
-    url{RequestURL::create("localhost", k_bfSRSMServerPort)},
-    socket{nullptr},
-    address{network->makeAddress(NetworkFamily::IPv4, url.ip_address, k_bfSRSMServerPort)},
+    url{bfNet::RequestURL::create("localhost", k_bfSRSMServerPort)},
+    socket{},
+    address{bfNet::makeAddress(bfNet::NetworkFamily::IPv4, url.ip_address, k_bfSRSMServerPort)},
     is_connected{false},
     current_packet{allocator},
     current_packet_header{0u, 0u},
     read_buffer{}
   {
+    bfNet::Startup();
   }
 
   void establishConnection()
   {
     if (!socket)
     {
-      socket = network->createSocket(NetworkFamily::IPv4, SocketType::TCP);
-      socket->makeNonBlocking();
+      socket = bfNet::createSocket(bfNet::NetworkFamily::IPv4, bfNet::SocketType::TCP);
+      (void)socket.makeNonBlocking();
     }
 
     if (socket)
     {
       if (!is_connected)
       {
-        is_connected = socket->connectTo(address);
+        is_connected = socket.connectTo(address).isSuccess();
       }
     }
   }
@@ -708,7 +707,7 @@ bool bfLoadUpSpritesheetFromData(bfAnimation2DCtx* self, bfSpritesheetPrivate* s
   }
 
   // TODO(SR):
-  //   I can probably do a smarter allocation scheme, 
+  //   I can probably do a smarter allocation scheme,
   //   like not freeing if there are minimal changes but this is simpler.
 
   // sheet->name           = bfStringClone(self, name);
@@ -868,14 +867,14 @@ void NetworkingData::readPackets(bfAnimation2DCtx* self)
 
   const auto old_current_packet_size = current_packet.size();
   const bool is_beginning_of_packet  = old_current_packet_size < k_bfAnim2DTotalHeaderSize;
-  const auto received_data           = socket->receiveDataFrom(read_buffer, sizeof(read_buffer));
+  const auto received_data           = socket.receiveDataFrom(read_buffer, sizeof(read_buffer));
 
   // Connection Ended
   if (received_data.received_bytes_size == 0 || received_data.received_bytes_size == -2)
   {
     current_packet.clear();
     is_connected = false;
-    socket       = nullptr;
+    socket       = {};
     return;
   }
 

@@ -1,23 +1,17 @@
 /******************************************************************************/
 /*!
-  @file   NetworkPlatform.hpp
-  @author Shareef Abdoul-Raheem
-  @par    email: shareef.a\@digipen.edu
-  @par    DigiPen login: shareef.a
-  @par    Course: CS260
-  @par    Assignment #2
-  @date   11/04/2019
-  @brief 
-    This is where the cross-platform magic happens.
-    All methods defined here work in a cross-platform mannor while providing
-    a consistent API.
-*/
+ * @file   bf_net.cpp
+ * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @brief
+ *   Cross platform over the berkeley api on Win32 and Posix.
+ *
+ * @version 1.0.0
+ * @date    2021-02-02
+ *
+ * @copyright Copyright (c) 2020-2021
+ */
 /******************************************************************************/
-
-#include "NetworkPlatform.hpp"
-
-#include "NetworkError.hpp" /* NetworkError                        */
-#include "Socket.hpp"       /* NetworkFamily, SocketShutdownAction */
+#include "bf_net.hpp"
 
 #if defined(_WIN32)
 
@@ -34,91 +28,211 @@
 #include <sys/ioctl.h>  // ioctl, FIONBIO
 #include <unistd.h>     // close
 
-#define MAGIC_VALID_CONTEXT 1
-
 #endif
 
-namespace detail
+#include <cassert>  // assert
+
+namespace bfNet
 {
-  bool createContext(NetworkContextImpl& out, unsigned char version_major, unsigned char version_minor)
-  {
-#if defined(_WIN32)
-    const int wsa_startup_error = WSAStartup(MAKEWORD(version_major, version_minor), &out);
-
-    if (wsa_startup_error != 0) { throw NetworkError(NetworkErrorCode::FAILED_TO_CREATE_CONTEXT); }
-
-    if (LOBYTE(out.wVersion) != version_major || HIBYTE(out.wVersion) != version_minor)
-    {
-      const int wsa_cleanup_error = WSACleanup();
-
-      if (wsa_cleanup_error == SOCKET_ERROR) { throw NetworkError(NetworkErrorCode::FAILED_TO_DESTROY_CONTEXT); }
-
-      throw NetworkError(NetworkErrorCode::FAILED_TO_FIND_CORRECT_WSA_VERSION);
-    }
-#else
-    out = MAGIC_VALID_CONTEXT;
-    (void)version_major;
-    (void)version_minor;
-#endif
-
-    return true;
-  }
-
-  void destroyContext(const NetworkContextImpl& ctx)
-  {
-#if defined(_WIN32)
-    const int wsa_cleanup_error = WSACleanup();
-
-    if (wsa_cleanup_error == SOCKET_ERROR)
-    {
-      throw NetworkError(NetworkErrorCode::FAILED_TO_DESTROY_CONTEXT);
-    }
-#else
-    // A magic number set in 'createContext' just so that were a semi sure it was called.
-    if (ctx != MAGIC_VALID_CONTEXT)
-    {
-      throw NetworkError(NetworkErrorCode::FAILED_TO_DESTROY_CONTEXT);
-    }
-#endif
-  }
-
-  void makeNonBlocking(SocketImpl socket)
+  Error Socket::makeNonBlocking() const
   {
 #if defined(_WIN32)
     u_long mode = 1;
 
-    const int err = ioctlsocket(socket, FIONBIO, &mode);
+    const int err = ioctlsocket(handle, FIONBIO, &mode);
 
-    if (err != NO_ERROR)
-    {
-      throw NetworkError(APIFunction::FN_IO_CTL_SOCKET);
-    }
+    return Error{err, APIFunction::FN_IO_CTL_SOCKET};
 #else
-    char mode = 1;
+    char      mode = 1;
+    const int err  = ioctl(handle, FIONBIO, &mode);
 
-    const int err = ioctl(socket, FIONBIO, &mode);
-
-    if (err < 0)
-    {
-      throw NetworkError(APIFunction::FN_IO_CTL);
-    }
+    return Error{err, APIFunction::FN_IO_CTL_SOCKET};
 #endif
   }
 
-  void closeSocket(SocketImpl socket)
+  Error Socket::bindTo(const Address& address) const
+  {
+    const int err = bind(handle, &address.handle, static_cast<SocketLengthImpl>(sizeof(sockaddr)));
+
+    return Error{err, APIFunction::FN_BIND};
+  }
+
+  Error Socket::connectTo(const Address& address) const
+  {
+    const int err = connect(handle, &address.handle, static_cast<SocketLengthImpl>(sizeof(sockaddr)));
+
+    if (err == SOCKET_ERROR)
+    {
+      return Error{getLastErrorCode(), APIFunction::FN_CONNECT};
+    }
+
+    return Error{err, APIFunction::FN_CONNECT};
+  }
+
+  BytesCountType Socket::sendDataTo(const Address& address, const char* data, int data_size, SendToFlags::type flags) const
+  {
+    const BytesCountType num_bytes_sent = sendto(
+     handle,
+     data,
+     data_size,
+     flags,
+     &address.handle,
+     static_cast<SocketLengthImpl>(sizeof(sockaddr)));
+
+    return num_bytes_sent;
+  }
+
+  ReceiveResult Socket::receiveDataFrom(char* data, int data_size, ReceiveFromFlags::type flags) const
+  {
+    ReceiveResult result = {};
+
+    result.received_bytes = data;
+
+    if (type == SocketType::UDP)
+    {
+      result.received_bytes_size = recvfrom(
+       handle,
+       result.received_bytes,
+       data_size,
+       flags,
+       &result.source_address.handle,
+       &result.source_address_size);
+    }
+    else
+    {
+      result.received_bytes_size = recv(handle, data, data_size, 0);
+    }
+
+    if (result.received_bytes_size < 0)
+    {
+      const int error_code = getLastErrorCode();
+
+      result.error_code = error_code;
+
+      if (isErrorWaiting(error_code))
+      {
+        result.status = ReceiveResultStatus::WAITING_ON_MESSAGE;
+      }
+      else
+      {
+        if (isErrorConnectionClosed(error_code))
+        {
+          result.status = ReceiveResultStatus::CONNECTION_CLOSED;
+        }
+        else
+        {
+          result.status = ReceiveResultStatus::CONTAINS_ERROR;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  Error Socket::shutdown(SocketShutdownAction action) const
+  {
+    const int err = ::shutdown(handle, toNative(action));
+
+    return Error{err, APIFunction::FN_SHUTDOWN};
+  }
+
+  void Socket::close()
   {
 #if defined(_WIN32)
-    closesocket(socket);
+    closesocket(handle);
 #else
-    close(socket);
+    close(handle);
 #endif
+
+    handle = k_InvalidSocketHandle;
+  }
+
+  bool Startup(NetworkContext* optional_output_ctx)
+  {
+    NetworkContext context;
+
+#if defined(_WIN32)
+    static constexpr unsigned char k_MajorVersion = 2;
+    static constexpr unsigned char k_MinorVersion = 2;
+
+    const int wsa_startup_error = WSAStartup(MAKEWORD(k_MajorVersion, k_MinorVersion), &context);
+
+    if (wsa_startup_error != 0)
+    {
+      return false;
+    }
+
+    if (LOBYTE(context.wVersion) != k_MajorVersion || HIBYTE(context.wVersion) != k_MinorVersion)
+    {
+      const int wsa_cleanup_error = WSACleanup();
+
+      if (wsa_cleanup_error == SOCKET_ERROR)
+      {
+        return false;
+      }
+
+      return false;
+    }
+#else
+    context = 1;
+#endif
+
+    if (optional_output_ctx)
+    {
+      *optional_output_ctx = context;
+    }
+
+    return true;
+  }
+
+  Socket createSocket(NetworkFamily family, SocketType type, int protocol)
+  {
+    Socket result;
+
+    result.type   = type;
+    result.handle = socket(toNative(family), toNative(type), protocol);
+
+    return result;
+  }
+
+  Address makeAddress(NetworkFamily family, const char* address, unsigned short port, int* error_code)
+  {
+    const NetworkFamilyImpl native_family = toNative(family);
+    Address                 address_obj   = {};
+
+    std::memset(&address_obj.handle, 0x0, sizeof(sockaddr_in));
+
+    auto& addr_in = address_obj.handleIn();
+
+    address_obj.handle.sa_family = native_family;
+    addr_in.sin_port             = htons(port);
+
+    if (address == nullptr)
+    {
+#if defined(_WIN32)
+      addr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+#else
+      addr_in.sin_addr.s_addr = INADDR_ANY;
+#endif
+    }
+    else
+    {
+      const int error = inet_pton(native_family, address, &addr_in.sin_addr);
+
+      if (error_code)
+      {
+        *error_code = error;
+      }
+    }
+
+    return address_obj;
   }
 
   NetworkFamilyImpl toNative(NetworkFamily family)
   {
     switch (family)
     {
-      case NetworkFamily::LOCAL: return AF_UNIX; // NOT ACTUALLY SUPPORTED BY WINDOWS.
+      case NetworkFamily::LOCAL: return AF_UNIX;  // NOTE(SR): NOT ACTUALLY SUPPORTED BY WINDOWS.
       case NetworkFamily::IPv4: return AF_INET;
       case NetworkFamily::IPv6: return AF_INET6;
 
@@ -127,8 +241,10 @@ namespace detail
 #else
       case NetworkFamily::BLUETOOTH: return AF_BLUETOOTH;
 #endif
-      default: return -1;
     }
+
+    assert(!"Invalid NetworkFamily");
+    return -1;
   }
 
   int toNative(SocketType socket_type)
@@ -137,8 +253,10 @@ namespace detail
     {
       case SocketType::UDP: return SOCK_DGRAM;
       case SocketType::TCP: return SOCK_STREAM;
-      default: return -1;
     }
+
+    assert(!"Invalid SocketType");
+    return -1;
   }
 
   int toNative(SocketShutdownAction socket_shutdown_action)
@@ -154,38 +272,12 @@ namespace detail
       case SocketShutdownAction::SEND: return SHUT_WR;
       case SocketShutdownAction::RECEIVE_SEND: return SHUT_RDWR;
 #endif
-      default: return -1;
     }
+
+    return -1;
   }
 
-  bool isWaiting(int error_code)
-  {
-#if defined(_WIN32)
-    return error_code == WSAEWOULDBLOCK;
-#else
-    return (error_code == EAGAIN) || (error_code == EWOULDBLOCK);
-#endif
-  }
-
-  bool isConnectionClosed(int error_code)
-  {
-#if defined(_WIN32)
-    return error_code == WSAECONNRESET;
-#else
-    return error_code == ECONNREFUSED);
-#endif
-  }
-
-  bool isAlreadyConnected(int error_code)
-  {
-#if defined(_WIN32)
-    return error_code == WSAEISCONN;
-#else
-    return error_code == EISCONN;
-#endif
-  }
-
-  int getLastError()
+  int getLastErrorCode()
   {
 #if defined(_WIN32)
     return WSAGetLastError();
@@ -194,10 +286,37 @@ namespace detail
 #endif
   }
 
-  const char* errorToString(int error_code, APIFunction function)
+  bool isErrorWaiting(int error_code)
   {
 #if defined(_WIN32)
-    switch (error_code)
+    return error_code == WSAEWOULDBLOCK;
+#else
+    return (error_code == EAGAIN) || (error_code == EWOULDBLOCK);
+#endif
+  }
+
+  bool isErrorConnectionClosed(int error_code)
+  {
+#if defined(_WIN32)
+    return error_code == WSAECONNRESET;
+#else
+    return error_code == ECONNREFUSED);
+#endif
+  }
+
+  bool isErrorAlreadyConnected(int error_code)
+  {
+#if defined(_WIN32)
+    return error_code == WSAEISCONN;
+#else
+    return error_code == EISCONN;
+#endif
+  }
+
+  const char* errorToString(Error err)
+  {
+#if defined(_WIN32)
+    switch (err.code)
     {
       case WSASYSNOTREADY:  // WSAStartup
         return "The underlying network subsystem is not ready for network communication.";
@@ -208,7 +327,7 @@ namespace detail
       case WSAEPROCLIM:  // WSACleanup, recvfrom
         return "A limit on the number of tasks supported by the Windows Sockets implementation has been reached.";
       case WSAEFAULT:
-        switch (function)
+        switch (err.api)
         {
           case APIFunction::FN_WSA_STARTUP: return "The lpWSAData parameter is not a valid pointer.";
           case APIFunction::FN_RECVFROM: return "The buffer pointed to by the buf or from parameters are not in the user address space, or the fromlen parameter is too small to accommodate the source address of the peer address.";
@@ -218,7 +337,7 @@ namespace detail
       case WSAEINTR:  // recvfrom, closesocket
         return "The (blocking) call was canceled through WSACancelBlockingCall.";
       case WSAEINVAL:
-        switch (function)
+        switch (err.api)
         {
           case APIFunction::FN_RECVFROM: return "The socket has not been bound with bind, or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled, or (for byte stream-style sockets only) len was zero or negative.";
           case APIFunction::FN_SOCKET: return "An invalid argument was supplied. This error is returned if the af parameter is set to AF_UNSPEC and the type and protocol parameter are unspecified.";
@@ -292,7 +411,7 @@ namespace detail
 #else
     // EWOULDBLOCK is the same as EAGAIN so use both at the same time.
 
-    switch (error_code)
+    switch (err.code)
     {
       case ENOTCONN:
       {
@@ -301,7 +420,7 @@ namespace detail
       }
     }
 
-    switch (function)
+    switch (err.api)
     {
       case APIFunction::FN_WSA_STARTUP: return "Error from startup";
       case APIFunction::FN_CLOSE_SOCKET: return "Error from closesocket";
@@ -317,4 +436,13 @@ namespace detail
     return "Use Windows for a more descriptive error message";
 #endif
   }
-}  // namespace detail
+
+  bool Shutdown()
+  {
+#if defined(_WIN32)
+    const int wsa_cleanup_error = WSACleanup();
+
+    return wsa_cleanup_error != SOCKET_ERROR;
+#endif
+  }
+}  // namespace bfNet
