@@ -200,8 +200,10 @@ namespace bf
 
   enum class RenderCommandType
   {
+    Group,
     DrawIndexed,
     DrawArrays,
+    SetScissorRect,
   };
 
   struct BaseRenderCommand
@@ -226,6 +228,26 @@ namespace bf
   };
 
 #define DECLARE_RENDER_CMD(name) struct RC_##name : public RenderCommandT<RenderCommandType::name>
+
+  // This is just a command type for storing other commands.
+  DECLARE_RENDER_CMD(Group)
+  {
+    BaseRenderCommand* tail = nullptr;
+
+    void push(BaseRenderCommand * cmd)
+    {
+      if (!next)
+      {
+        next = cmd;
+        tail = cmd;
+      }
+      else
+      {
+        tail->next = cmd;
+        tail       = cmd;
+      }
+    }
+  };
 
   DECLARE_RENDER_CMD(DrawArrays)
   {
@@ -255,6 +277,11 @@ namespace bf
     bfGfxIndexType     index_type                  = BF_INDEX_TYPE_UINT32;
   };
 
+  DECLARE_RENDER_CMD(SetScissorRect)
+  {
+    bfScissorRect rect;
+  };
+
 #undef DECLARE_RENDER_CMD
 
   //
@@ -282,32 +309,37 @@ namespace bf
     static constexpr std::size_t k_CommandBufferSize = bfMegabytes(2);
 
     RenderQueueType                           type;
-    RenderView&                               render_view;
     FixedLinearAllocator<k_KeyBufferSize>     key_stream_memory;
     FixedLinearAllocator<k_CommandBufferSize> command_stream_memory;
     std::size_t                               num_keys;
 
-    RenderQueue(RenderQueueType type, RenderView& view);
+    RenderQueue(RenderQueueType type);
 
-    void            clear();
-    void            execute(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info);
-    RC_DrawArrays*  drawArrays(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers);
-    RC_DrawIndexed* drawIndexed(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers, bfBufferHandle index_buffer);
-    void            submit(RC_DrawIndexed* command, float distance_to_camera);
-    void            submit(RC_DrawArrays* command, float distance_to_camera);
+    // Render Queue Owner API //
+
+    void clear();
+    void execute(bfGfxCommandListHandle command_list, const bfDescriptorSetInfo& camera_desc_set);
+
+    // Making Commands //
+
+    RC_Group*          group();
+    RC_SetScissorRect* setScissorRect(bfScissorRect rect);
+    RC_DrawArrays*     drawArrays(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers);
+    RC_DrawIndexed*    drawIndexed(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers, bfBufferHandle index_buffer);
+
+    // Making Keys //
+
+    std::uint64_t makeKeyFor(RC_DrawIndexed* command, float distance_to_camera) const;
+    std::uint64_t makeKeyFor(RC_DrawArrays* command, float distance_to_camera) const;
+
+    // Submission of Commands //
+
+    void submit(RC_DrawIndexed* command, float distance_to_camera);
+    void submit(RC_DrawArrays* command, float distance_to_camera);
+    void submit(std::uint64_t key, BaseRenderCommand* command);
 
    private:
     RenderSortKey* firstKey() const { return reinterpret_cast<RenderSortKey*>(key_stream_memory.begin()); }
-
-    void pushKey(std::uint64_t key, BaseRenderCommand* command)
-    {
-      RenderSortKey* const sort_key = key_stream_memory.allocateT<RenderSortKey>();
-
-      sort_key->key     = key;
-      sort_key->command = command;
-
-      ++num_keys;
-    }
 
     template<typename T, typename... Args>
     T* pushAlloc(Args&&... args)

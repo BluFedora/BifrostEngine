@@ -347,6 +347,7 @@ namespace bf::editor
     void onEvent(Engine& engine, bfEvent& event) override;
     void onUpdate(Engine& engine, float delta_time) override;
     void onDraw(Engine& engine, RenderView& camera, float alpha) override;
+    void onRenderBackbuffer(Engine& engine, float alpha) override;
     void onUnload(Engine& engine) override;
     void onDestroy(Engine& engine) override;
 
@@ -421,6 +422,7 @@ namespace bf::editor
     void selectableAction(const ActionContext& ctx, const char* action_name) const;
     void selectableAction(const ActionContext& ctx, const char* action_name, const char* custom_label) const;
     void addMenuItem(const StringRange& menu_path, const char* action_name);
+    
   };
 }  // namespace bf::editor
 

@@ -116,9 +116,9 @@ namespace bf
   // Standard GBuffer Layout:                                 //
   //   This Engine Uses View Space Lighting Calculations      //
   //                                                          //
-  // GBuffer0 [normal.x, normal.y, roughness, metallic      ] // (BIFROST_IMAGE_FORMAT_R16G16B16A16_UNORM)
-  // GBuffer2 [albedo.r, albedo.g, albedo.b,  ao            ] // (BIFROST_IMAGE_FORMAT_R8G8B8A8_UNORM)
-  // DS       [depth 24, stencil 8                          ] // (BIFROST_IMAGE_FORMAT_D24_UNORM_S8_UINT)
+  // GBuffer0 [normal.x, normal.y, roughness, metallic      ] // (BF_IMAGE_FORMAT_R16G16B16A16_UNORM)
+  // GBuffer2 [albedo.r, albedo.g, albedo.b,  ao            ] // (BF_IMAGE_FORMAT_R8G8B8A8_UNORM)
+  // DS       [depth 24, stencil 8                          ] // (BF_IMAGE_FORMAT_D24_UNORM_S8_UINT)
   //                                                          //
   // -------------------------------------------------------- //
   //
@@ -458,13 +458,14 @@ namespace bf
     SceneUBO        camera_uniform_buffer;
     OverlayUBO      camera_screen_uniform_buffer;
 
-    void init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height);
-    void updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient);
-    void bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info);
-    void resize(bfGfxDeviceHandle device, int width, int height);
-    void deinit(bfGfxDeviceHandle device);
+    void                init(bfGfxDeviceHandle device, bfGfxFrameInfo frame_info, int initial_width, int initial_height);
+    void                updateBuffers(BifrostCamera& camera, const bfGfxFrameInfo& frame_info, float global_time, const Vector3f& ambient);
+    bfDescriptorSetInfo getDescriptorSet(bool is_overlay, const bfGfxFrameInfo& frame_info);
+    void                bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info);
+    void                resize(bfGfxDeviceHandle device, int width, int height);
+    void                deinit(bfGfxDeviceHandle device);
 
-  private:
+   private:
     void createBuffers(bfGfxDeviceHandle device, int width, int height);
   };
 

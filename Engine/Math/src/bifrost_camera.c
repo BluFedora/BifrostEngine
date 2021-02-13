@@ -330,16 +330,16 @@ static bfPlane bfV4_toPlane(Vec4f value)
 //   [http://www.codersnotes.com/notes/maths-lib-2016/]
 //   [http://www.reedbeta.com/blog/on-vector-math-libraries/]
 
-void bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* matrix)
+void bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* view_projection)
 {
   // Method from "Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix"
   //  [https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf]
   //  [https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/]
 
-  const Vec4f row0 = bfMat4x4_row(matrix, 0);
-  const Vec4f row1 = bfMat4x4_row(matrix, 1);
-  const Vec4f row2 = bfMat4x4_row(matrix, 2);
-  const Vec4f row3 = bfMat4x4_row(matrix, 3);
+  const Vec4f row0 = bfMat4x4_row(view_projection, 0);
+  const Vec4f row1 = bfMat4x4_row(view_projection, 1);
+  const Vec4f row2 = bfMat4x4_row(view_projection, 2);
+  const Vec4f row3 = bfMat4x4_row(view_projection, 3);
 
   const Vec4f planes[k_bfPlaneIdx_Max] =
    {
@@ -354,7 +354,8 @@ void bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* matrix)
   // Normalize the planes.
   for (int i = 0; i < k_bfPlaneIdx_Max; ++i)
   {
-    Vec4f plane = bfV4f_div(planes[i], bfV3f_len(bfV4f_toV3f(planes[i])));
+    //Vec4f plane = bfV4f_div(planes[i], bfV3f_len(bfV4f_toV3f(planes[i])));
+    Vec4f plane = planes[i];
 
     plane.w *= -1.0f;
 

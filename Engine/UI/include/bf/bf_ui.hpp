@@ -9,11 +9,13 @@
 #ifndef BF_UI_HPP
 #define BF_UI_HPP
 
-#include "bf/Gfx2DPainter.hpp"
+#include "bf/gfx/bf_draw_2d.hpp"
 #include "bf/LinearAllocator.hpp"
 #include "bf/Math.hpp"
 #include "bf/MemoryUtils.h"
 #include "bf/PlatformFwd.h"
+
+#include "sr_meta_interface.hpp"
 
 namespace bf
 {
@@ -94,25 +96,39 @@ namespace bf
 
   struct SizeUnit
   {
-    SizeUnitType type  = SizeUnitType::Absolute;
-    float        value = 0.0f;
+    sr_meta() SizeUnitType type = SizeUnitType::Absolute;
+    sr_meta() float value       = 0.0f;
   };
 
   struct Size
   {
-    SizeUnit width  = {};
-    SizeUnit height = {};
+    sr_meta() SizeUnit width  = {};
+    sr_meta() SizeUnit height = {};
+
+    Size() = default;
+
+    Size(SizeUnit width, SizeUnit height) :
+      width{width},
+      height{height}
+    {
+    }
+
+    Size(float width, float height) :
+      width{SizeUnitType::Absolute, width},
+      height{SizeUnitType::Absolute, height}
+    {
+    }
   };
 
   struct LayoutConstraints
   {
-    Vector2f min_size = {0.0f, 0.0f};
-    Vector2f max_size = {0.0f, 0.0f};
+    sr_meta() Vector2f min_size = {0.0f, 0.0f};
+    sr_meta() Vector2f max_size = {0.0f, 0.0f};
   };
 
   struct LayoutOutput
   {
-    Vector2f desired_size = {0.0f, 0.0f};
+    sr_meta() Vector2f desired_size = {0.0f, 0.0f};
   };
 
   using WidgetLayoutFn      = LayoutOutput (*)(Widget* self, const LayoutConstraints& constraints);
@@ -121,25 +137,32 @@ namespace bf
 
   // [https://flutter.dev/docs/development/ui/widgets/layout]
 
-  enum class LayoutType
+  enum class sr_meta() LayoutType
   {
     // Single Child Layouts
-    Default,
-    Padding,
+    Stack,
+    Padding,  // TODO(SR): Remove me and just give all widgets padding.
     Fixed,
 
     // Multi-Child Layouts
     Row,
     Column,
     Grid,
-    Stack,
 
     Custom,
   };
 
+  struct WidgetPadding
+  {
+    SizeUnit top    = {};
+    SizeUnit bottom = {};
+    SizeUnit left   = {};
+    SizeUnit right  = {};
+  };
+
   struct WidgetLayout
   {
-    LayoutType type = LayoutType::Default;
+    LayoutType type = LayoutType::Stack;
 
     union
     {
@@ -166,6 +189,8 @@ namespace bf
     HoverTime,
     ActiveTime,
     Padding,
+    ScrollX,
+    ScrollY,
 
     WidgetParams_Max,
   };
@@ -185,13 +210,17 @@ namespace bf
       BlocksInput    = (1 << 4),
       DrawBackground = (1 << 5),
       IsWindow       = (1 << 6),
+      ClipChildren   = (1 << 7),
+      ScrollChildren = (1 << 8),
+      NeedsScrollX   = (1 << 9),
+      NeedsScrollY   = (1 << 10),
     };
 
-    WidgetLayout   layout   = {};
-    char*          name     = nullptr;
-    std::size_t    name_len = 0u;
-    BufferLen      name_;
-    ParamList      params               = {0.0f};
+    WidgetLayout   layout               = {};
+    char*          name                 = nullptr;
+    std::size_t    name_len             = 0u;
+    BufferLen      name_                = {};
+    ParamList      params               = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     Size           desired_size         = {};
     Vector2f       position_from_parent = {5.0f, 5.0f};
     Vector2f       realized_size        = {0.0f, 0.0f};
@@ -200,12 +229,20 @@ namespace bf
     UIElementID    hash                 = 0x0;
     std::uint32_t  zindex               = 0;
     Widget*        hit_test_list        = nullptr;
+    Vector2f       children_size        = {0.0f, 0.0f};
 
     // TODO(SR): WidgetNavigationFn do_nav;
   };
 
   constexpr int k_WidgetSize = sizeof(Widget);
-  static_assert(k_WidgetSize <= 200, "This is just for keeping track of the size TODO(SR): Delete me!");
+  static_assert(k_WidgetSize <= 216, "This is just for keeping track of the size TODO(SR): Delete me!");
+
+  struct WindowState
+  {
+    bool     can_be_dragged = true;
+    Vector2i position       = {5, 5};
+    Size     size           = {{SizeUnitType::Absolute, 350.0f}, {SizeUnitType::Absolute, 500.0f}};
+  };
 
   namespace UI
   {
@@ -217,7 +254,7 @@ namespace bf
 
     // Interact-able Widgets
 
-    bool BeginWindow(const char* title);
+    bool BeginWindow(const char* title, WindowState& state);
     void EndWindow();
     bool Button(const char* name);
 
@@ -235,7 +272,7 @@ namespace bf
     void PumpEvents(bfEvent* event);
     void BeginFrame();
     void Update(float delta_time);
-    void Render(CommandBuffer2D& gfx2D);
+    void Render(CommandBuffer2D& gfx2D, float screen_width, float screen_height);
     void ShutDown();
   }  // namespace UI
 }  // namespace bf

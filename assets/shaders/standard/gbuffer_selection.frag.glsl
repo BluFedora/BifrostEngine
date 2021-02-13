@@ -27,7 +27,7 @@ void main()
   float roughness         = texture(u_RoughnessTexture, frag_UV).r;
   float ambient_occlusion = texture(u_AmbientOcclusionTexture, frag_UV).r;
   vec2  normal            = encodeNormal(normalize(frag_WorldNormal));  // TODO: Normal mapping
-  vec3  albedo            = vec3(1.0, 0.0, (sin(u_Time * 10.0f) + 1.0f) * 0.5f) * frag_Color;
+  vec3  albedo            = vec3(0.7, 0.3, (sin(u_Time * 5.0f) + 1.0f) * 0.5f) * frag_Color;
 
   o_FragColor0 = vec4(normal, roughness, metallic);
   o_FragColor1 = vec4(albedo.xyz, ambient_occlusion);

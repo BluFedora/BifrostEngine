@@ -46,6 +46,7 @@ namespace bf
     virtual void onFixedUpdate(Engine& engine, float delta_time);
     virtual void onUpdate(Engine& engine, float delta_time);
     virtual void onDraw(Engine& engine, RenderView& camera, float alpha);
+    virtual void onRenderBackbuffer(Engine& engine, float alpha);
     virtual void onUnload(Engine& engine);
     virtual void onDestroy(Engine& engine);
 

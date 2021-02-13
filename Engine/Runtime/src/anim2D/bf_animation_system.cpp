@@ -138,23 +138,17 @@ namespace bf
   {
     Matrix4x4f node_transform = node->transform;
 
-    // const size_t node_index = node - root_node;
-    // assert(node->bone_idx == k_InvalidBoneID || node->bone_idx == root_node[input_transform[node->bone_idx].node_idx].bone_idx && node_index == input_transform[node->bone_idx].node_idx);
-
     if (node->bone_idx != k_InvalidBoneID)
     {
       const auto it = bone_to_channel.find(node->bone_idx);
 
       if (it != bone_to_channel.end())
       {
-        const std::uint8_t channel_index0 = *animation.m_NameToChannel.at(node->name);
-        const std::uint8_t channel_index  = it->value();
-
-        assert(channel_index0 == channel_index);
+        const std::uint8_t channel_index = it->value();
 
         Anim3DAsset::Channel& channel     = animation.m_Channels[channel_index];
         const Vector3f        scale       = vec3ValueAtTime(animation, channel.scale, animation_time, 1.0f);
-        bfQuaternionf         rotation    = quatValueAtTime(animation, channel.rotation, animation_time);
+        const bfQuaternionf   rotation    = quatValueAtTime(animation, channel.rotation, animation_time);
         const Vector3f        translation = vec3ValueAtTime(animation, channel.translation, animation_time, 0.0f);
 
         Matrix4x4f scale_mat;
@@ -185,15 +179,8 @@ namespace bf
 
       Matrix4x4f* const out = output_transform + node->bone_idx;
 
-      Mat4x4_mult(
-       &global_transform,
-       &input_transform[node->bone_idx].transform,
-       out);
-
-      Mat4x4_mult(
-       &global_inv_transform,
-       out,
-       out);
+      Mat4x4_mult(&global_transform, &input_transform[node->bone_idx].transform, out);
+      Mat4x4_mult(&global_inv_transform, out, out);
     }
 
     std::for_each_n(

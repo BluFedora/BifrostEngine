@@ -4,12 +4,11 @@
 #include "bf/asset_io/bf_model_loader.hpp"
 #include "bf/bf_ui.hpp"
 #include "bf/graphics/bifrost_component_renderer.hpp"
+#include "bf/text/bf_text.hpp"
 
 #include <ImGuizmo/ImGuizmo.h>
 
 #include <list>
-
-#include "bf/text/bf_text.hpp"
 
 extern bf::PainterFont* TEST_FONT;
 
@@ -241,9 +240,9 @@ namespace bf::editor
           Mat4x4_mult(&transform_parent->inv_world_transform, &entity_mat, &entity_mat);
         }
 
-        Vec3f translation;
-        Vec3f rotation;
-        Vec3f scale;
+        Vec3f translation = {};
+        Vec3f rotation    = {};
+        Vec3f scale       = {};
 
         ImGuizmo::DecomposeMatrixToComponents(entity_mat.data, &translation.x, &rotation.x, &scale.x);
 
@@ -251,18 +250,15 @@ namespace bf::editor
         {
           case ImGuizmo::TRANSLATE:
           {
-            translation.w = 1.0f;
-            // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
+            translation.w                   = 1.0f;
             entity_transform.local_position = translation;
             break;
           }
           case ImGuizmo::ROTATE:
-            // ReSharper disable once CppObjectMemberMightNotBeInitialized
             entity_transform.local_rotation = bfQuaternionf_fromEulerDeg(-rotation.y, -rotation.z, rotation.x);
             break;
           case ImGuizmo::SCALE:
-            scale.w = 0.0f;
-            // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
+            scale.w                      = 0.0f;
             entity_transform.local_scale = scale;
             break;
           case ImGuizmo::BOUNDS:
@@ -285,11 +281,10 @@ namespace bf::editor
 
   struct HitTestResult
   {
-    bool  did_hit = false;
-    float t       = INFINITY;
+    bool    did_hit = false;
+    float   t       = INFINITY;
+    Entity* entity;
   };
-
-  using ClickResult = std::pair<const BVHNode*, HitTestResult>;
 
   static HitTestResult hitTestModel(const bfRay3D& ray, const ModelAsset& model, const Mat4x4& inv_world_transform)
   {
@@ -316,6 +311,9 @@ namespace bf::editor
     return result;
   }
 
+  //
+  // normal must be normalized.
+  //
   static HitTestResult hitTestQuad(const bfRay3D& ray, const Vector3f center_position, const Vector3f normal, const Vector2f size, const Mat4x4& inv_world_transform)
   {
     const float                signed_dist_from_origin = bfPlane_dot(bfPlane_make(normal, 0.0f), center_position);
@@ -332,9 +330,10 @@ namespace bf::editor
       Mat4x4_multVec(&inv_world_transform, &hit_point, &local_hit_point_v3);
 
       const Vector2f local_hit_point = {local_hit_point_v3.x, local_hit_point_v3.y};
+      const float    inv_lerp_x      = vec::inverseLerp(-half_local_x_axis, half_local_x_axis, local_hit_point);
+      const float    inv_lerp_y      = vec::inverseLerp(-half_local_y_axis, half_local_y_axis, local_hit_point);
 
-      if (math::isInbetween(0.0f, vec::inverseLerp(-half_local_x_axis, half_local_x_axis, local_hit_point), 1.0f) &&
-          math::isInbetween(0.0f, vec::inverseLerp(-half_local_y_axis, half_local_y_axis, local_hit_point), 1.0f))
+      if (math::isInbetween(0.0f, inv_lerp_x, 1.0f) && math::isInbetween(0.0f, inv_lerp_y, 1.0f))
       {
         result.did_hit = true;
         result.t       = sprite_ray_cast.time;
@@ -354,12 +353,11 @@ namespace bf::editor
      transform.inv_world_transform);
   }
 
-  static HitTestResult hitTestEntity(const bfRay3D& ray, const Entity* entity, Vector3f pos_to_cam)
+  static HitTestResult hitTestEntity(const bfRay3D& ray, Entity* entity, Vector3f pos_to_cam)
   {
     auto* const   mesh         = entity->get<MeshRenderer>();
     auto* const   skinned_mesh = entity->get<SkinnedMeshRenderer>();
     auto* const   sprite       = entity->get<SpriteRenderer>();
-    auto* const   light        = entity->get<Light>();
     HitTestResult result       = {};
 
     if (mesh && mesh->m_Model)
@@ -392,15 +390,7 @@ namespace bf::editor
       }
     }
 
-    if (light)
-    {
-      const HitTestResult light_mesh_hit = hitTestQuad(ray, entity->transform().world_position, pos_to_cam, Vector2f{k_LightIconSize}, entity->transform().inv_world_transform);
-
-      if (light_mesh_hit.did_hit && light_mesh_hit.t < result.t)
-      {
-        result = light_mesh_hit;
-      }
-    }
+    result.entity = entity;
 
     return result;
   }
@@ -448,7 +438,7 @@ namespace bf::editor
                  m_Camera->cpu_camera.position,
                  Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
 
-                StdList<ClickResult> clicked_nodes{engine.tempMemory()};
+                StdList<HitTestResult> clicked_nodes{engine.tempMemory()};
 
                 scene->bvh().traverseConditionally([this, &ray, &clicked_nodes](const BVHNode& node) -> bool {
                   Vec3f aabb_min;
@@ -461,7 +451,7 @@ namespace bf::editor
 
                   if (bvh_node::isLeaf(node))
                   {
-                    const Entity* const entity = (Entity*)node.user_data;
+                    Entity* const entity = static_cast<Entity*>(node.user_data);
 
                     if (ray_cast_result.did_hit && (ray_cast_result.min_time >= 0.0f || ray_cast_result.max_time >= 0.0f))
                     {
@@ -470,7 +460,7 @@ namespace bf::editor
 
                       if (accurate_hit_test.did_hit)
                       {
-                        clicked_nodes.emplace_back(&node, accurate_hit_test);
+                        clicked_nodes.emplace_back(accurate_hit_test);
                       }
                     }
 
@@ -479,6 +469,20 @@ namespace bf::editor
 
                   return ray_cast_result.did_hit;
                 });
+
+                for (const Light& light : scene->components<Light>())
+                {
+                  Entity* const  entity            = &light.owner();
+                  const Vector3f pos_to_cam        = vec::normalized(Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position));
+                  const auto     center_pos        = Vector3f(entity->transform().world_position) + pos_to_cam * 0.2f;
+                  auto           accurate_hit_test = hitTestQuad(ray, center_pos, pos_to_cam, Vector2f{k_LightIconSize}, entity->transform().inv_world_transform);
+
+                  if (accurate_hit_test.did_hit)
+                  {
+                    accurate_hit_test.entity = entity;
+                    clicked_nodes.emplace_back(accurate_hit_test);
+                  }
+                }
 
                 auto& selection = editor.selection();
 
@@ -489,13 +493,13 @@ namespace bf::editor
 
                 if (!clicked_nodes.empty())
                 {
-                  clicked_nodes.sort([](const ClickResult& a, const ClickResult& b) {
-                    return a.second.t < b.second.t;
+                  clicked_nodes.sort([](const HitTestResult& a, const HitTestResult& b) {
+                    return a.t < b.t;
                   });
 
-                  const ClickResult best_click = clicked_nodes.front();
+                  const HitTestResult best_click = clicked_nodes.front();
 
-                  selection.toggle(static_cast<Entity*>(best_click.first->user_data));
+                  selection.toggle(static_cast<Entity*>(best_click.entity));
                 }
               }
             }
@@ -657,6 +661,50 @@ namespace bf::editor
 
           renderer.pushSprite(primitive_proto);
         }
+
+        {
+          auto&       io           = ImGui::GetIO();
+          const auto& window_mouse = io.MousePos;
+          Vector2i    local_mouse  = Vector2i(int(window_mouse.x), int(window_mouse.y)) - m_SceneViewViewport.topLeft();
+
+          if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+          {
+            ImGuiViewport* const main_vp = ImGui::GetMainViewport();
+
+            local_mouse -= Vector2i(int(main_vp->Pos.x), int(main_vp->Pos.y));
+          }
+
+          local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
+
+          const bfRay3D ray = bfRay3D_make(
+           m_Camera->cpu_camera.position,
+           Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
+
+          for (const Light& light : scene->components<Light>())
+          {
+            Entity* const  entity     = &light.owner();
+            const Vector3f pos_to_cam = vec::normalized(Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position));
+            const auto     center_pos = Vector3f(entity->transform().world_position) + pos_to_cam * 0.2f;
+
+            Mat4x4 inv_world_mat = transform;
+
+            *Mat4x4_get(&inv_world_mat, 3, 0) = center_pos.x;
+            *Mat4x4_get(&inv_world_mat, 3, 1) = center_pos.y;
+            *Mat4x4_get(&inv_world_mat, 3, 2) = center_pos.z;
+
+            Mat4x4_inverse(&inv_world_mat, &inv_world_mat);
+
+            auto accurate_hit_test = hitTestQuad(ray, center_pos, pos_to_cam, Vector2f{k_LightIconSize}, inv_world_mat);
+
+            if (accurate_hit_test.did_hit)
+            {
+              engine.debugDraw().addAABB(
+               Vector3f(m_Camera->cpu_camera.position) + accurate_hit_test.t * Vector3f(ray.direction),
+               Vector3f{0.2f},
+               bfColor4u_fromUint32(0xFFFFFFFF));
+            }
+          }
+        }
       }
 
       updateCameraMovement(editor, dt);
@@ -673,11 +721,9 @@ namespace bf::editor
     bfDrawCallPipeline pipeline;
     bfDrawCallPipeline_defaultOpaque(&pipeline);
 
-    pipeline.state.do_depth_test  = bfFalse;
-    pipeline.state.do_depth_write = bfFalse;
-    pipeline.program              = engine_renderer.m_GBufferSelectionShader;
-    pipeline.vertex_layout        = engine_renderer.m_StandardVertexLayout;
-    pipeline.state.fill_mode      = BF_POLYGON_MODE_LINE;
+    pipeline.program         = engine_renderer.m_GBufferSelectionShader;
+    pipeline.vertex_layout   = engine_renderer.m_StandardVertexLayout;
+    pipeline.state.fill_mode = BF_POLYGON_MODE_LINE;
 
     selection.forEachOfType<Entity*>([this, &camera, &pipeline, &engine_renderer](Entity* entity) {
       MeshRenderer* const mesh_renderer = entity->get<MeshRenderer>();
@@ -690,8 +736,8 @@ namespace bf::editor
          *mesh_renderer->model(),
          pipeline,
          engine_renderer,
-         camera.opaque_render_queue,
-         -1.0f);
+         camera.transparent_render_queue,
+         0.0f);
       }
     });
   }

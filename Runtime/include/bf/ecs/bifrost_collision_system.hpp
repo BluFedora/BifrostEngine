@@ -220,9 +220,13 @@ namespace bf
       const bool          has_grandparent = !bvh_node::isNull(grandparent);
       const BVHNodeOffset sibling         = nodes[parent].children[(leaf == nodes[parent].children[0] ? 1 : 0)];
 
+      assert(nodes[parent].children[0] == leaf || nodes[parent].children[1] == leaf);
+
       if (has_grandparent)
       {
         const int child_idx = nodes[grandparent].children[0] == parent ? 0 : 1;
+
+        assert(nodes[grandparent].children[0] == parent || nodes[grandparent].children[1] == parent);
 
         nodes[grandparent].children[child_idx] = sibling;
       }
@@ -233,6 +237,11 @@ namespace bf
 
       nodes[sibling].depth  = parent_depth;
       nodes[sibling].parent = grandparent;
+
+      if (has_grandparent)
+      {
+        assert(nodes[grandparent].children[0] == sibling || nodes[grandparent].children[1] == sibling);
+      }
 
       if (has_grandparent || !bvh_node::isLeaf(nodes[root_idx]))
       {
@@ -467,8 +476,8 @@ namespace bf
               }
               case RotationOp::L_RR:
               {
-                BVHNode&            right_right = nodeAt(child_r.children[1]);
                 const BVHNodeOffset swap        = nodeToIndex(child_l);
+                BVHNode&            right_right = nodeAt(child_r.children[1]);
 
                 adoptNode(self_idx, nodeToIndex(right_right), 0);
                 adoptNode(nodeToIndex(child_r), swap, 1);
@@ -489,10 +498,10 @@ namespace bf
               }
               case RotationOp::R_LR:
               {
-                const BVHNodeOffset swap      = nodeToIndex(child_r);
-                BVHNode&            left_left = nodeAt(child_l.children[0]);
+                const BVHNodeOffset swap       = nodeToIndex(child_r);
+                BVHNode&            left_right = nodeAt(child_l.children[1]);
 
-                adoptNode(self_idx, nodeToIndex(left_left), 1);
+                adoptNode(self_idx, nodeToIndex(left_right), 1);
                 adoptNode(nodeToIndex(child_l), swap, 1);
                 refitChildren(nodeToIndex(child_l), false);
                 updateDepth(self_idx, node.depth);
@@ -524,6 +533,7 @@ namespace bf
                 break;
               }
               case RotationOp::NONE:
+                break;
               case RotationOp::MAX:
                 bfInvalidDefaultCase();
             }
@@ -566,12 +576,12 @@ namespace bf
       {
         node.bounds = new_bounds;
 
-         if (propagate && !bvh_node::isNull(node.parent))
-         {
-           refitChildren(node.parent, propagate);
-         }
+        if (propagate && !bvh_node::isNull(node.parent))
+        {
+          refitChildren(node.parent, propagate);
+        }
 
-         return true;
+        return true;
       }
 
       return false;

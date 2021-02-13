@@ -1,11 +1,11 @@
 #include "bf/core/bifrost_engine.hpp"
 
+#include "bf/JobSystem.hpp"                            // Job System
 #include "bf/Platform.h"                               // BifrostWindow
 #include "bf/anim2D/bf_animation_system.hpp"           // AnimationSystem
 #include "bf/asset_io/bf_gfx_assets.hpp"               // ***Asset
 #include "bf/bf_ui.hpp"                                // UI::
 #include "bf/bf_version.h"                             // BF_VERSION_STR
-#include "bf/bifrost_imgui_glfw.hpp"
 #include "bf/debug/bifrost_dbg_logger.h"               // bfLog*
 #include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bf/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
@@ -52,6 +52,12 @@ namespace bf
 
         break;
       }
+      case BIFROST_EVT_ON_KEY_DOWN:
+      case BIFROST_EVT_ON_KEY_UP:
+      {
+        KEY_STATE[evt.keyboard.key] = evt.type == BIFROST_EVT_ON_KEY_DOWN;
+        break;
+      }
       default:
         break;
     }
@@ -79,6 +85,9 @@ namespace bf
     m_Renderer{m_MainMemory},
     m_DebugRenderer{m_MainMemory},
     m_Gfx2D{nullptr},
+    m_2DScreenCommands{nullptr},
+    m_2DScreenRenderQueue{RenderQueueType::SCREEN_OVERLAY},
+    m_2DScreenUBO{},
     m_CameraMemory{},
     m_CameraList{nullptr},
     m_CameraResizeList{nullptr},
@@ -110,14 +119,17 @@ namespace bf
 
   void Engine::resizeCamera(RenderView* camera, int width, int height)
   {
-    camera->new_width  = width;
-    camera->new_height = height;
-
-    // If not already on the resize list.
-    if (!camera->resize_list_next)
+    if (camera->old_width != width || camera->old_height != height)
     {
-      camera->resize_list_next = m_CameraResizeList;
-      m_CameraResizeList       = camera;
+      camera->new_width  = width;
+      camera->new_height = height;
+
+      // If not already on the resize list.
+      if (!camera->resize_list_next)
+      {
+        camera->resize_list_next = m_CameraResizeList;
+        m_CameraResizeList       = camera;
+      }
     }
   }
 
@@ -230,6 +242,7 @@ namespace bf
      }};
 
     bfLogger_init(&logger_config);
+    bfJob::initialize();
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 
@@ -312,6 +325,14 @@ namespace bf
 
     m_TimeStep    = std::chrono::milliseconds(int((1.0f / float(params.fixed_frame_rate)) * k_SecToMs));
     m_CurrentTime = UpdateLoopClock::now();
+
+    /////
+
+    const auto limits  = bfGfxDevice_limits(m_Renderer.device());
+    m_2DScreenCommands = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler(), m_Renderer.context());
+    m_2DScreenUBO.create(m_Renderer.device(), BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, m_Renderer.frameInfo(), limits.uniform_buffer_offset_alignment);
+
+    ///////
   }
 
   void Engine::onEvent(bfWindow* window, Event& evt)
@@ -344,16 +365,17 @@ namespace bf
       m_IsInMiddleOfFrame = true;
       if (beginFrame())
       {
+        const float dt_seconds   = float(std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time).count()) * k_NanoSecToSec;
+        const float render_alpha = float(m_TimeStepLag.count()) / float(m_TimeStep.count());
+
+        update(dt_seconds);
+
         while (m_TimeStepLag >= m_TimeStep)
         {
           fixedUpdate(float(m_TimeStep.count()) * k_NanoSecToSec);
           m_TimeStepLag -= m_TimeStep;
         }
 
-        const float dt_seconds   = float(std::chrono::duration_cast<std::chrono::nanoseconds>(delta_time).count()) * k_NanoSecToSec;
-        const float render_alpha = float(m_TimeStepLag.count()) / float(m_TimeStep.count());
-
-        update(dt_seconds);
         draw(render_alpha);
         endFrame();
       }
@@ -396,6 +418,8 @@ namespace bf
     }
     m_Systems.clear();
 
+    m_2DScreenUBO.destroy(m_Renderer.device());
+    m_MainMemory.deallocateT(m_2DScreenCommands);
     m_MainMemory.deallocateT(m_Gfx2D);
     m_DebugRenderer.deinit();
     m_Renderer.deinit();
@@ -404,6 +428,8 @@ namespace bf
 
     // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
     m_Scripting.destroy();
+
+    bfJob::shutdown();
 
     // Shutdown last since there could be errors logged on shutdown if any failures happen.
     bfLogger_deinit();
@@ -430,14 +456,19 @@ namespace bf
 
   void Engine::update(float delta_time)
   {
+    bfJob::tick();
+
     // NOTE(SR):
     //   The Debug Renderer must update before submission of debug draw commands
     //   to allow a duration of 0.0f seconds for debug primitives that we will remove
     //   _next_ frame.
     m_DebugRenderer.update(delta_time);
 
+    const int framebuffer_width  = int(bfTexture_width(m_Renderer.m_MainSurface));
+    const int framebuffer_height = int(bfTexture_height(m_Renderer.m_MainSurface));
+
     // Cleared at the beginning of update so any update function can submit draw commands.
-    m_Gfx2D->clear();
+    m_Gfx2D->clear(Rect2i{0, 0, framebuffer_width, framebuffer_height});
 
     UI::Update(delta_time);
 
@@ -493,7 +524,10 @@ namespace bf
       }
     }
 
-    UI::Render(*m_Gfx2D);
+    const float framebuffer_width  = float(bfTexture_width(m_Renderer.m_MainSurface));
+    const float framebuffer_height = float(bfTexture_height(m_Renderer.m_MainSurface));
+
+    UI::Render(*m_Gfx2D, framebuffer_width, framebuffer_height);
 
     forEachCamera([this, render_alpha](RenderView* camera) {
       Camera_update(&camera->cpu_camera);
@@ -523,9 +557,45 @@ namespace bf
     });
 
     m_Renderer.beginScreenPass(cmd_list);
+    m_2DScreenCommands->clear(Rect2i{0, 0, (int)framebuffer_width, (int)framebuffer_height});
+    m_2DScreenRenderQueue.clear();
 
-    // TODO(SR): This should not be here but whatever.
-    imgui::endFrame();
+    for (auto& state : m_StateMachine)
+    {
+      state.onRenderBackbuffer(*this, render_alpha);
+    }
+
+    m_2DScreenCommands->renderToQueue(m_2DScreenRenderQueue);
+
+    {
+      const auto frame_info = m_Renderer.frameInfo();
+
+      const float k_ScaleFactorDPI = 1.0f;  // TODO(SR): Need to grab this value based on what window is being drawn onto.
+
+      CameraOverlayUniformData* const cam_screen_data = m_2DScreenUBO.currentElement(frame_info);
+
+      static constexpr decltype(&Mat4x4_orthoVk) orthos_fns[] = {&Mat4x4_orthoVk, &Mat4x4_ortho};
+
+      orthos_fns[bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL](
+       &cam_screen_data->u_CameraProjection,
+       0.0f,
+       framebuffer_width / k_ScaleFactorDPI,
+       framebuffer_height / k_ScaleFactorDPI,
+       0.0f,
+       0.0f,
+       1.0f);
+
+      m_2DScreenUBO.flushCurrent(frame_info);
+
+      bfDescriptorSetInfo desc_set_camera = bfDescriptorSetInfo_make();
+
+      const bfBufferSize offset = m_2DScreenUBO.offset(frame_info);
+      const bfBufferSize size   = MultiBuffer<CameraOverlayUniformData>::elementSize();
+
+      bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &m_2DScreenUBO.handle(), 1);
+
+      m_2DScreenRenderQueue.execute(m_Renderer.m_MainCmdList, desc_set_camera);
+    }
 
     m_Renderer.endPass();
     m_Renderer.drawEnd();

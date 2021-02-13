@@ -469,7 +469,7 @@ namespace sr
 
 #define SR_DEFINE_PRIMITIVE_GEN_VAL(T, member)  \
   template<>                                    \
-  GenericValue makeGenericValue<T>(T && object) \
+  inline GenericValue makeGenericValue<T>(T && object) \
   {                                             \
     GenericValue result;                        \
     result.member = object;                     \
@@ -477,7 +477,7 @@ namespace sr
   }                                             \
                                                 \
   template<>                                    \
-  T castGenericValue<T>(GenericValue value)     \
+  inline T castGenericValue<T>(GenericValue value)     \
   {                                             \
     T result = value.member;                    \
     return result;                              \
@@ -515,6 +515,14 @@ namespace sr
     }
   }  // namespace Meta
 }  // namespace sr
+
+#ifndef sr_meta
+#if defined(SR_META_COMPILER)
+#define sr_meta(...) __attribute__((annotate("sr-meta"))) // __attribute__((annotate(#__VA_ARGS__)))
+#else
+#define sr_meta(...)
+#endif
+#endif /* sr_meta */
 
 #endif /* SR_META_INTERFACE_HPP */
 

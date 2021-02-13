@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+// [http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/]
+// [https://keithmaggio.wordpress.com/2011/02/15/math-magician-lerp-slerp-and-nlerp/]
 typedef struct Quaternionf_t
 {
   union

@@ -1,5 +1,5 @@
 //
-// Author:       Shareef Abdoul-Raheem
+// Author: Shareef Abdoul-Raheem
 // Sprite Fragment Shader
 //
 #version 450

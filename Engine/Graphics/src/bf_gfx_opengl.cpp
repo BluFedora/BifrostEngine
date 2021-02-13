@@ -2166,7 +2166,7 @@ void bfGfxCmdList_bindDrawCallPipeline(bfGfxCommandListHandle self, const bfDraw
   std::memcpy(self->pipeline_state.blend_constants, pipeline_state->blend_constants, sizeof(pipeline_state->blend_constants));
   std::memcpy(self->pipeline_state.blending, pipeline_state->blending, sizeof(pipeline_state->blending));  // TODO(SR): This can be optimized to copy less.
 
-  self->dynamic_state_dirty = BF_PIPELINE_DYNAMIC_LINE_WIDTH |
+  self->dynamic_state_dirty |= BF_PIPELINE_DYNAMIC_LINE_WIDTH |
                               BF_PIPELINE_DYNAMIC_BLEND_CONSTANTS |
                               BF_PIPELINE_DYNAMIC_STENCIL_COMPARE_MASK |
                               BF_PIPELINE_DYNAMIC_STENCIL_WRITE_MASK |

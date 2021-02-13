@@ -74,9 +74,8 @@ namespace bf
     }
   }
 
-  RenderQueue::RenderQueue(RenderQueueType type, RenderView& view) :
+  RenderQueue::RenderQueue(RenderQueueType type) :
     type{type},
-    render_view{view},
     key_stream_memory{},
     command_stream_memory{},
     num_keys{0}
@@ -169,7 +168,7 @@ namespace bf
     }
   }
 
-  void RenderQueue::execute(bfGfxCommandListHandle command_list, const bfGfxFrameInfo& frame_info)
+  void RenderQueue::execute(bfGfxCommandListHandle command_list, const bfDescriptorSetInfo& camera_desc_set)
   {
     if (!num_keys)
     {
@@ -209,7 +208,7 @@ namespace bf
 
             if (last_program != draw_arrays->pipeline.program)
             {
-              render_view.gpu_camera.bindDescriptorSet(command_list, is_overlay, frame_info);
+              bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &camera_desc_set);
               last_program = draw_arrays->pipeline.program;
             }
 
@@ -233,7 +232,7 @@ namespace bf
 
             if (last_program != draw_elements->pipeline.program)
             {
-              render_view.gpu_camera.bindDescriptorSet(command_list, is_overlay, frame_info);
+              bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &camera_desc_set);
               last_program = draw_elements->pipeline.program;
             }
 
@@ -248,6 +247,20 @@ namespace bf
              draw_elements->vertex_binding_offsets);
             bfGfxCmdList_bindIndexBuffer(command_list, draw_elements->index_buffer, draw_elements->index_buffer_binding_offset, draw_elements->index_type);
             bfGfxCmdList_drawIndexed(command_list, draw_elements->num_indices, draw_elements->index_offset, draw_elements->vertex_offset);
+            break;
+          }
+          case RenderCommandType::Group:
+          {
+            const RC_Group* volatile const group_cmd = static_cast<RC_Group*>(current_cmd);
+            (void)group_cmd; /* Pass Through */
+            break;
+          }
+          case RenderCommandType::SetScissorRect:
+          {
+            const RC_SetScissorRect* const set_scissor_rect = static_cast<RC_SetScissorRect*>(current_cmd);
+            const bfScissorRect            rect             = set_scissor_rect->rect;
+
+            bfGfxCmdList_setScissorRect(command_list, rect.x, rect.y, rect.width, rect.height);
             break;
           }
         }
@@ -268,7 +281,7 @@ namespace bf
         const std::uint64_t material_bits   = material_to_bits(material_state);
         const std::uint64_t vertex_fmt_bits = hash::reducePointer<std::uint16_t>(pipeline.vertex_layout);
         const std::uint64_t shader_bits     = hash::reducePointer<std::uint16_t>(pipeline.program);
-        const std::uint64_t depth_bits      = depth_to_bits(depth, OpaqueDepthBits::k_NumBits);
+        const std::uint64_t depth_bits      = depth_to_bits(-depth, OpaqueDepthBits::k_NumBits);
 
         return set(
          set(
@@ -310,6 +323,22 @@ namespace bf
     }
   }
 
+  RC_Group* RenderQueue::group()
+  {
+    RC_Group* const cmd = pushAlloc<RC_Group>();
+
+    return cmd;
+  }
+
+  RC_SetScissorRect* RenderQueue::setScissorRect(bfScissorRect rect)
+  {
+    RC_SetScissorRect* const cmd = pushAlloc<RC_SetScissorRect>();
+
+    cmd->rect = rect;
+
+    return cmd;
+  }
+
   RC_DrawArrays* RenderQueue::drawArrays(const bfDrawCallPipeline& pipeline, std::uint32_t num_vertex_buffers)
   {
     RC_DrawArrays* const cmd = pushAlloc<RC_DrawArrays>();
@@ -347,13 +376,33 @@ namespace bf
     return cmd;
   }
 
+  std::uint64_t RenderQueue::makeKeyFor(RC_DrawIndexed* command, float distance_to_camera) const
+  {
+    return makeKey(type, command->material_binding, command->pipeline, distance_to_camera);
+  }
+
+  std::uint64_t RenderQueue::makeKeyFor(RC_DrawArrays* command, float distance_to_camera) const
+  {
+    return makeKey(type, command->material_binding, command->pipeline, distance_to_camera);
+  }
+
   void RenderQueue::submit(RC_DrawArrays* command, float distance_to_camera)
   {
-    pushKey(makeKey(type, command->material_binding, command->pipeline, distance_to_camera), command);
+    submit(makeKeyFor(command, distance_to_camera), command);
   }
 
   void RenderQueue::submit(RC_DrawIndexed* command, float distance_to_camera)
   {
-    pushKey(makeKey(type, command->material_binding, command->pipeline, distance_to_camera), command);
+    submit(makeKeyFor(command, distance_to_camera), command);
+  }
+
+  void RenderQueue::submit(std::uint64_t key, BaseRenderCommand* command)
+  {
+    RenderSortKey* const sort_key = key_stream_memory.allocateT<RenderSortKey>();
+
+    sort_key->key     = key;
+    sort_key->command = command;
+
+    ++num_keys;
   }
 }  // namespace bf

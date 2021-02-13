@@ -80,10 +80,10 @@ namespace bf
       old_height{params.height},
       new_width{params.width},
       new_height{params.height},
-      opaque_render_queue{RenderQueueType::NO_BLENDING, *this},
-      transparent_render_queue{RenderQueueType::ALPHA_BLENDING, *this},
-      overlay_scene_render_queue{RenderQueueType::NO_BLENDING, *this},
-      screen_overlay_render_queue{RenderQueueType::SCREEN_OVERLAY, *this},
+      opaque_render_queue{RenderQueueType::NO_BLENDING},
+      transparent_render_queue{RenderQueueType::ALPHA_BLENDING},
+      overlay_scene_render_queue{RenderQueueType::NO_BLENDING},
+      screen_overlay_render_queue{RenderQueueType::SCREEN_OVERLAY},
       prev{nullptr},
       next{head},
       resize_list_next{nullptr},
@@ -151,6 +151,8 @@ namespace bf
     void frameEnd();
 
    public:
+    char KEY_STATE[1024] = {0};
+
     const MouseInputState& mouseState() const { return m_MouseState; }
     Vector2i               mousePos() const { return mouseState().current_pos; }
     Vector2i               mousePosDelta() const { return mouseState().delta_pos; }
@@ -191,13 +193,16 @@ namespace bf
 
     // Rendering
 
-    StandardRenderer   m_Renderer;
-    DebugRenderer      m_DebugRenderer;
-    CommandBuffer2D*   m_Gfx2D;
-    CameraRenderMemory m_CameraMemory;
-    RenderView*        m_CameraList;
-    RenderView*        m_CameraResizeList;
-    RenderView*        m_CameraDeleteList;
+    StandardRenderer                      m_Renderer;
+    DebugRenderer                         m_DebugRenderer;
+    CommandBuffer2D*                      m_Gfx2D;
+    CommandBuffer2D*                      m_2DScreenCommands;
+    RenderQueue                           m_2DScreenRenderQueue;
+    MultiBuffer<CameraOverlayUniformData> m_2DScreenUBO;
+    CameraRenderMemory                    m_CameraMemory;
+    RenderView*                           m_CameraList;
+    RenderView*                           m_CameraResizeList;
+    RenderView*                           m_CameraDeleteList;
 
     // IECSSystem (High Level Systems)
 
@@ -229,6 +234,7 @@ namespace bf
     StandardRenderer&  renderer() { return m_Renderer; }
     DebugRenderer&     debugDraw() { return m_DebugRenderer; }
     CommandBuffer2D&   gfx2D() const { return *m_Gfx2D; }
+    CommandBuffer2D&   gfx2DScreen() const { return *m_2DScreenCommands; }
     Assets&            assets() { return m_Assets; }
     Input&             input() { return m_Input; }
     AnimationSystem&   animationSys() const { return *m_AnimationSystem; }

@@ -6,8 +6,6 @@
 
 #include <cassert>  // assert
 
-#define DEBUG_PRINTOUT 0
-
 namespace bf
 {
   static char* stringRangeToString(IMemoryManager& memory, bfStringRange str) noexcept
@@ -26,6 +24,7 @@ namespace bf
     to.x = from->x;
     to.y = from->y;
     to.z = from->z;
+    to.w = 1.0f;
   }
 
   static void aiColor4DToArray(const aiColor4D* from, bfColor4f& to)
@@ -126,9 +125,9 @@ namespace bf
   template<typename F>
   static void recurseNodes(aiNode* node, F&& callback)
   {
-#if 0 /* Depth */
+#if 0 /* Depth Order */
     recurseNodes(nullptr, node, std::forward<F>(callback), 0);
-#else /* Level */
+#else /* Level Order */
 
     int num_nodes = 0;
 
@@ -138,51 +137,6 @@ namespace bf
     recurseNodes(nullptr, node, callback, 1, 0, num_nodes);
 #endif
   }
-
-#if DEBUG_PRINTOUT
-  static void PrintAssetNode(AssetNode* base_array, AssetNode& node, int depth, int& count)
-  {
-    for (unsigned int i = 0; i < node.num_children; ++i)
-    {
-      auto& child = base_array[i + node.first_child];
-
-      for (int j = 0; j < depth * 2; ++j)
-      {
-        std::printf(" ");
-      }
-
-      std::printf("(%i depth: %i, fc: %i, numc: %i) '%s'\n",
-                  count,
-                  depth,
-                  child.first_child,
-                  child.num_children,
-                  child.name.data);
-
-      ++count;
-    }
-
-    for (unsigned int i = 0; i < node.num_children; ++i)
-    {
-      PrintAssetNode(base_array, base_array[node.first_child + i], depth + 1, count);
-    }
-  }
-
-  static void PrintAssetNode(AssetNode* base_array, AssetNode& node)
-  {
-    int depth = 0;
-    int count = 0;
-
-    std::printf("(%i depth: %i, fc: %i, numc: %i) '%s'\n",
-                count,
-                depth,
-                node.first_child,
-                node.num_children,
-                node.name.data);
-    ++count;
-
-    PrintAssetNode(base_array, node, depth + 1, count);
-  }
-#endif
 
   AABB::AABB(const bfTransform& transform)
   {
@@ -244,6 +198,10 @@ namespace bf
 
   AssetModelLoadResult loadModel(const AssetModelLoadSettings& load_settings) noexcept
   {
+#if _DEBUG
+    static constexpr std::uint32_t k_MaxUint32 = std::numeric_limits<std::uint32_t>::max();
+#endif
+
     AssetModelLoadResult result              = {};
     IMemoryManager&      memory              = *load_settings.memory;
     const bfStringRange  file_path           = load_settings.file_path;
@@ -266,11 +224,6 @@ namespace bf
 
     assert(importer.ValidateFlags(import_flags));
 
-    if (!importer.ValidateFlags(import_flags))
-    {
-      *(volatile int*)nullptr = 0;
-    }
-
     const aiScene* const scene = importer.ReadFile(nul_terminated_path, import_flags);
 
     // Error Checking
@@ -283,7 +236,6 @@ namespace bf
 
     // Main Loading Routine
     {
-      static constexpr AssetIndexType k_MaxUint32         = std::numeric_limits<AssetIndexType>::max();
       static constexpr AssetIndexType k_NumIndicesPerFace = 3;
 
       result.memory = &memory;
@@ -296,36 +248,10 @@ namespace bf
 
         recurseNodes(
          scene->mRootNode,
-         [&num_nodes](const aiNode* parent_node, const aiNode* node, int depth, int parent_index) {
-
-#if DEBUG_PRINTOUT
-           for (int i = 0; i < depth * 2; ++i)
-           {
-             std::printf(" ");
-           }
-
-           std::printf("(depth:%i, #%i, mesh0: %i, %i) '%s'\n",
-                       depth,
-                       num_nodes,
-                       node->mNumMeshes ? node->mMeshes[0] : -1,
-                       node->mNumChildren,
-                       node->mName.data);
-
-#endif
-
+         [&num_nodes](const aiNode*, const aiNode*, int, int) {
            ++num_nodes;
          });
 
-#if DEBUG_PRINTOUT
-        for (int i = 0; i < 80; ++i)
-          std::printf("-");
-        std::printf("\n");
-#endif
-
-        auto global_inv = scene->mRootNode->mTransformation;
-        global_inv.Inverse();
-
-        aiMat4x4ToMatrix4x4(&global_inv, result.skeleton.global_inv_transform, load_settings.row_major);
         result.skeleton.num_nodes = num_nodes;
         result.skeleton.nodes     = memory.allocateArray<AssetNode>(num_nodes);
 
@@ -347,10 +273,6 @@ namespace bf
 
            ++node_idx;
          });
-
-#if DEBUG_PRINTOUT
-        PrintAssetNode(result.skeleton.nodes, result.skeleton.nodes[0]);
-#endif
       }
 
       const unsigned int num_meshes = scene->mNumMeshes;
@@ -391,9 +313,9 @@ namespace bf
 
       // Merging All Vertices Into One Buffer
 
+      Vector3f bounds_min = {std::numeric_limits<float>::infinity()};
+      Vector3f bounds_max = {-std::numeric_limits<float>::infinity()};
       {
-        Vector3f        bounds_min    = {std::numeric_limits<float>::infinity()};
-        Vector3f        bounds_max    = {-std::numeric_limits<float>::infinity()};
         AssetIndexType  index_offset  = 0;
         AssetIndexType  vertex_offset = 0;
         AssetIndexType* output_index  = result.indices->data;
@@ -488,36 +410,16 @@ namespace bf
           vertex_offset += num_mesh_vertices;
           index_offset += num_mesh_indices;
         }
-
-        // Scale the model to fit in Unit Cube.
-
-        const AABB              bounds        = {bounds_min, bounds_max};
-        const Vector3f          bounds_center = bounds.center();
-        const Vector3f          bounds_dim    = bounds.dimensions();
-        const std::size_t       num_verts     = result.vertices->length;
-        AssetModelVertex* const vertex_start  = result.vertices->data;
-        const float             scale         = (1.0f / std::max({bounds_dim.x, bounds_dim.y, bounds_dim.z})) * load_settings.scale_factor;
-
-        for (std::size_t v = 0; v < num_verts; ++v)
-        {
-          AssetModelVertex* const vertex = vertex_start + v;
-
-          vertex->position   = (vertex->position - bounds_center) * scale;
-          vertex->position.w = 1.0f;
-        }
-
-        result.object_space_bounds = bounds;
-
-        for (int i = 0; i < 3; ++i)
-        {
-          const float offset = (&bounds_center.x)[i];
-
-          result.object_space_bounds.min[i] -= offset;
-          result.object_space_bounds.max[i] -= offset;
-          result.object_space_bounds.min[i] *= scale;
-          result.object_space_bounds.max[i] *= scale;
-        }
       }
+
+      // Scale the model to fit in Unit Cube.
+
+      const AABB bounds          = {bounds_min, bounds_max};
+      const auto global_inv      = scene->mRootNode->mTransformation;
+      result.object_space_bounds = bounds;
+
+      aiMat4x4ToMatrix4x4(&global_inv, result.skeleton.global_inv_transform, load_settings.row_major);
+      Mat4x4_inverse(&result.skeleton.global_inv_transform, &result.skeleton.global_inv_transform);
 
       // Process Materials
       {

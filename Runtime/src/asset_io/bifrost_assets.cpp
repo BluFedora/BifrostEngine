@@ -213,7 +213,8 @@ namespace bf
     m_RootPath{nullptr},
     m_AssetSet{memory},
     m_FileExtReg{},
-    m_DirtyAssets{&IBaseAsset::m_DirtyListNode}
+    m_DirtyAssets{&IBaseAsset::m_DirtyListNode},
+    m_DirtyAssetsMutex{}
   {
   }
 
@@ -259,16 +260,17 @@ namespace bf
 
   void Assets::markDirty(IBaseAsset* asset)
   {
-    // TODO(SR): This is not thread safe, a CAS would be needed.
-    //   THis is because multiple threads can pass the check at the same time
-    //   before the first thread is able to set the flag to true.
+    std::uint16_t flags = asset->m_Flags;
 
-    if (!(asset->m_Flags & AssetFlags::IS_DIRTY))
+    if (!(flags & AssetFlags::IS_DIRTY))
     {
-      asset->m_Flags |= AssetFlags::IS_DIRTY;
-      asset->acquire();
+      if (std::atomic_compare_exchange_strong(&asset->m_Flags, &flags, flags | AssetFlags::IS_DIRTY))
+      {
+        std::lock_guard<std::mutex> lock{m_DirtyAssetsMutex};
 
-      m_DirtyAssets.pushBack(*asset);
+        asset->acquire();
+        m_DirtyAssets.pushBack(*asset);
+      }
     }
   }
 
@@ -432,12 +434,16 @@ namespace bf
   {
     LinearAllocator& temp_alloc = m_Engine.tempMemory();
 
-    for (auto& asset : m_DirtyAssets)
     {
-      saveAssetInfo(temp_alloc, &asset);
-    }
+      std::lock_guard<std::mutex> lock{m_DirtyAssetsMutex};
 
-    clearDirtyList();
+      for (auto& asset : m_DirtyAssets)
+      {
+        saveAssetInfo(temp_alloc, &asset);
+      }
+
+      clearDirtyList();
+    }
   }
 
   void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const

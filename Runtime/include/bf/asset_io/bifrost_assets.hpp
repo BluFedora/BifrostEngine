@@ -22,6 +22,8 @@
 #include "bf/bf_non_copy_move.hpp"               /* NonCopyMoveable<T>          */
 #include "bf/meta/bifrost_meta_runtime_impl.hpp" /* BaseClassMetaInfo, TypeInfo */
 
+#include <mutex> /* mutex */
+
 namespace bf
 {
   namespace json
@@ -119,12 +121,13 @@ namespace bf
     inline static const StringRange k_MetaFileExtension = ".meta";
 
    private:
-    Engine&                m_Engine;       //!< The engine this asset system is attached to.
-    IMemoryManager&        m_Memory;       //!< Where to grab memory for the asset info.
-    BifrostString          m_RootPath;     //!< Base Path that all assets are relative to.
-    AssetMap               m_AssetSet;     //!< Owns the memory for the associated 'IBaseAsset*'.
-    FileExtenstionRegistry m_FileExtReg;   //!< Allows installing of handlers for certain file extensions.
-    ListView<IBaseAsset>   m_DirtyAssets;  //!< Assets that have unsaved modifications.
+    Engine&                m_Engine;            //!< The engine this asset system is attached to.
+    IMemoryManager&        m_Memory;            //!< Where to grab memory for the asset info.
+    BifrostString          m_RootPath;          //!< Base Path that all assets are relative to.
+    AssetMap               m_AssetSet;          //!< Owns the memory for the associated 'IBaseAsset*'.
+    FileExtenstionRegistry m_FileExtReg;        //!< Allows installing of handlers for certain file extensions.
+    ListView<IBaseAsset>   m_DirtyAssets;       //!< Assets that have unsaved modifications.
+    std::mutex             m_DirtyAssetsMutex;  //!< Protects concurrent access to `m_DirtyAssets`.
 
    public:
     explicit Assets(Engine& engine, IMemoryManager& memory);

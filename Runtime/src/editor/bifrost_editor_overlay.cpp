@@ -2,7 +2,7 @@
 
 #include "bf/CRTAllocator.hpp"
 #include "bf/FreeListAllocator.hpp"
-#include "bf/Gfx2DPainter.hpp"
+#include "bf/gfx/bf_draw_2d.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
@@ -1218,6 +1218,11 @@ namespace bf::editor
     {
       window->onDraw(*this, engine, camera, alpha);
     }
+  }
+
+  void EditorOverlay::onRenderBackbuffer(Engine& engine, float alpha)
+  {
+    imgui::endFrame();
   }
 
   void EditorOverlay::onUnload(Engine& engine)

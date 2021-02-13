@@ -298,7 +298,7 @@ namespace bf
     }
   }
 
-  void CameraGPUData::bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info)
+  bfDescriptorSetInfo CameraGPUData::getDescriptorSet(bool is_overlay, const bfGfxFrameInfo& frame_info)
   {
     bfDescriptorSetInfo desc_set_camera = bfDescriptorSetInfo_make();
 
@@ -316,6 +316,13 @@ namespace bf
 
       bfDescriptorSetInfo_addUniform(&desc_set_camera, 0, 0, &offset, &size, &camera_uniform_buffer.handle(), 1);
     }
+
+    return desc_set_camera;
+  }
+
+  void CameraGPUData::bindDescriptorSet(bfGfxCommandListHandle command_list, bool is_overlay, const bfGfxFrameInfo& frame_info)
+  {
+    const bfDescriptorSetInfo desc_set_camera = getDescriptorSet(is_overlay, frame_info);
 
     bfGfxCmdList_bindDescriptorSet(command_list, k_GfxCameraSetIndex, &desc_set_camera);
   }
@@ -366,6 +373,7 @@ namespace bf
     m_MainCmdList{nullptr},
     m_MainSurface{nullptr},
     m_GBufferShader{nullptr},
+    m_GBufferSelectionShader{nullptr},
     m_GBufferSkinnedShader{nullptr},
     m_SSAOBufferShader{nullptr},
     m_SSAOBlurShader{nullptr},
@@ -581,9 +589,14 @@ namespace bf
     static constexpr std::uint16_t k_StencilClearFlags = 0x0;
     static constexpr std::uint16_t k_StencilStoreFlags = 0x0;
 
+    bfDrawCallPipeline pipeline;
+    bfDrawCallPipeline_defaultOpaque(&pipeline);
+
+    bfGfxCmdList_bindDrawCallPipeline(m_MainCmdList, &pipeline);
+
     bfGfxCmdList_setCullFace(m_MainCmdList, BF_CULL_FACE_FRONT);
 
-#if 0
+#if 1
     {
       const bfPipelineBarrier barriers[] =
        {
@@ -813,7 +826,7 @@ namespace bf
     auto renderpass_info = bfRenderpassInfo_init(1);
     bfRenderpassInfo_setLoadOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStencilLoadOps(&renderpass_info, 0x0);
-    bfRenderpassInfo_setClearOps(&renderpass_info, 0 * bfBit(0));
+    bfRenderpassInfo_setClearOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilClearOps(&renderpass_info, 0x0);
     bfRenderpassInfo_setStoreOps(&renderpass_info, bfBit(0));
     bfRenderpassInfo_setStencilStoreOps(&renderpass_info, 0x0);
@@ -821,7 +834,7 @@ namespace bf
     bfRenderpassInfo_addColorOut(&renderpass_info, 0, 0, BF_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     bfClearValue clear_colors[1];
-    clear_colors[0].color = gfx::makeClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    clear_colors[0].color = gfx::makeClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     bfTextureHandle attachments[] = {surface_tex};
 
@@ -962,15 +975,17 @@ namespace bf
 
   void StandardRenderer::renderCameraTo(RenderView& view)
   {
-    BifrostCamera& camera          = view.cpu_camera;
-    CameraGPUData& camera_gpu_data = view.gpu_camera;
+    BifrostCamera&             camera           = view.cpu_camera;
+    CameraGPUData&             camera_gpu_data  = view.gpu_camera;
+    const bfDescriptorSetInfo& desc_set_normal  = camera_gpu_data.getDescriptorSet(false, m_FrameInfo);
+    const bfDescriptorSetInfo& desc_set_overlay = camera_gpu_data.getDescriptorSet(true, m_FrameInfo);
 
     camera_gpu_data.updateBuffers(camera, m_FrameInfo, m_GlobalTime, AmbientColor);
 
     // GBuffer
     beginGBufferPass(camera_gpu_data);
-    view.opaque_render_queue.execute(m_MainCmdList, m_FrameInfo);
-    view.transparent_render_queue.execute(m_MainCmdList, m_FrameInfo);  // TODO(SR): This is not correct
+    view.opaque_render_queue.execute(m_MainCmdList, desc_set_normal);
+    view.transparent_render_queue.execute(m_MainCmdList, desc_set_normal);  // TODO(SR): This is not correct
     endPass();
 
     // SSAO
@@ -979,8 +994,8 @@ namespace bf
 
     // Lighting
     beginLightingPass(camera_gpu_data);
-    view.overlay_scene_render_queue.execute(m_MainCmdList, m_FrameInfo);
-    view.screen_overlay_render_queue.execute(m_MainCmdList, m_FrameInfo);
+    view.overlay_scene_render_queue.execute(m_MainCmdList, desc_set_normal);
+    view.screen_overlay_render_queue.execute(m_MainCmdList, desc_set_overlay);
     endPass();
   }
 

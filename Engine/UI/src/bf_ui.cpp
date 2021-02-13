@@ -138,7 +138,7 @@ bf::PainterFont* TEST_FONT = new bf::PainterFont(bf::UI::g_UI.widget_freelist, "
 
 namespace bf::UI
 {
-  static constexpr float k_Inf = FLT_MAX;
+  static constexpr float k_Float32Max = FLT_MAX;
 
   static IMemoryManager& CurrentAllocator()
   {
@@ -176,9 +176,14 @@ namespace bf::UI
     return widget->params[int(param)];
   }
 
+  static float WidgetParam(const Widget* widget, WidgetParams param)
+  {
+    return widget->params[int(param)];
+  }
+
   static float MutateFloat(float value, float delta)
   {
-    if (value != k_Inf)
+    if (value != k_Float32Max)
     {
       value += delta;
     }
@@ -221,19 +226,84 @@ namespace bf::UI
     };
   }
 
+  static constexpr float k_ScrollbarWidth = 20.0f;
+  static constexpr float k_ScrollbarPad   = 4.0f;
+
+  static Rect2f WidgetScrollYBounds(const Widget* widget)
+  {
+    return {widget->position_from_parent.x + widget->realized_size.x - k_ScrollbarWidth, widget->position_from_parent.y, k_ScrollbarWidth, widget->realized_size.y};
+  }
+
+  static Rect2f WidgetScrollYDragger(const Widget* widget, const Rect2f& bounds)
+  {
+    const float scroll_percent   = WidgetParam(widget, WidgetParams::ScrollY);
+    const float widget_height    = widget->realized_size.y;
+    const float children_height  = widget->children_size.y;
+    const float scrollbar_height = bounds.height();
+    const float dragger_height   = (widget_height / children_height) * scrollbar_height;
+    const float available_area   = scrollbar_height - dragger_height;
+    const float dragger_y        = scroll_percent * available_area;
+
+    return {bounds.left() + k_ScrollbarPad, widget->position_from_parent.y + dragger_y, k_ScrollbarWidth - k_ScrollbarPad * 2.0f, dragger_height};
+  }
+
+  static float WidgetScrollYOffset(const Widget* widget)
+  {
+    const float scroll_percent  = WidgetParam(widget, WidgetParams::ScrollY);
+    const float widget_height   = widget->realized_size.y;
+    const float children_height = widget->children_size.y;
+
+    return (children_height - widget_height) * scroll_percent;
+  }
+
+  static void AugmentChildConstraintsForScrollbar(Widget* widget, LayoutConstraints& constraints)
+  {
+    if (widget->children_size.x > widget->realized_size.x)
+    {
+      constraints.max_size.y = MutateFloat(constraints.max_size.y, -k_ScrollbarWidth);
+      widget->flags |= Widget::NeedsScrollX;
+    }
+    else
+    {
+      widget->flags &= ~Widget::NeedsScrollX;
+      WidgetParam(widget, WidgetParams::ScrollX) = 0.0f;
+    }
+
+    if (widget->children_size.y > widget->realized_size.y)
+    {
+      constraints.max_size.x = MutateFloat(constraints.max_size.x, -k_ScrollbarWidth);
+      widget->flags |= Widget::NeedsScrollY;
+    }
+    else
+    {
+      widget->flags &= ~Widget::NeedsScrollY;
+      WidgetParam(widget, WidgetParams::ScrollY) = 0.0f;
+    }
+  }
+
   static LayoutOutput WidgetDoLayout(Widget* widget, const LayoutConstraints& constraints)
   {
     const auto&  layout = widget->layout;
     LayoutOutput layout_result;
+    Vector2f     children_size = {0.0f, 0.0f};
 
     switch (layout.type)
     {
         // Single Child Layouts
 
-      case LayoutType::Default:
+      case LayoutType::Stack:
       {
-        widget->ForEachChild([&constraints](Widget* child) {
-          WidgetDoLayout(child, constraints);
+        LayoutConstraints child_constraints = constraints;
+
+        // child_constraints.min_size = child_constraints.max_size = layout_result.desired_size;
+
+        AugmentChildConstraintsForScrollbar(widget, child_constraints);
+
+        widget->ForEachChild([&child_constraints, &children_size](Widget* child) {
+          const LayoutOutput child_layout = WidgetDoLayout(child, child_constraints);
+
+          children_size.x = std::max(children_size.x, child_layout.desired_size.x);
+          children_size.y = std::max(children_size.y, child_layout.desired_size.y);
         });
 
         layout_result.desired_size = RealizeSize(widget, constraints);
@@ -244,6 +314,8 @@ namespace bf::UI
         const float padding = WidgetParam(widget, WidgetParams::Padding);
 
         LayoutConstraints child_constraints;
+
+        AugmentChildConstraintsForScrollbar(widget, child_constraints);
 
         child_constraints.max_size.x = MutateFloat(constraints.max_size.x, -padding * 2.0f);
         child_constraints.max_size.y = MutateFloat(constraints.max_size.y, -padding * 2.0f);
@@ -257,24 +329,26 @@ namespace bf::UI
           max_child_size = vec::max(max_child_size, child_layout.desired_size);
         });
 
+        children_size = max_child_size;
+
         layout_result.desired_size = max_child_size + Vector2f{padding * 2.0f};
         break;
       }
       case LayoutType::Fixed:
       {
-        const float padding = 0.0f;
+        layout_result.desired_size = RealizeSize(widget, constraints);
 
-        LayoutConstraints child_constraints = constraints;
+        LayoutConstraints child_constraints;
 
-        child_constraints.min_size   = child_constraints.min_size;
-        child_constraints.max_size.x = MutateFloat(constraints.max_size.x, -padding * 2.0f);
-        child_constraints.max_size.y = MutateFloat(constraints.max_size.y, -padding * 2.0f);
+        child_constraints.min_size = child_constraints.max_size = layout_result.desired_size;
 
-        widget->ForEachChild([&child_constraints](Widget* child) {
-          WidgetDoLayout(child, child_constraints);
+        AugmentChildConstraintsForScrollbar(widget, child_constraints);
+
+        widget->ForEachChild([&child_constraints, &children_size](Widget* child) {
+          const LayoutOutput child_layout = WidgetDoLayout(child, child_constraints);
+
+          children_size = vec::max(children_size, child_layout.desired_size);
         });
-
-        layout_result.desired_size = constraints.max_size;
         break;
       }
 
@@ -291,6 +365,8 @@ namespace bf::UI
         child_constraints.max_size   = constraints.max_size;
         child_constraints.min_size.x = 0.0f;
         child_constraints.max_size.x = constraints.max_size.x;
+
+        AugmentChildConstraintsForScrollbar(widget, child_constraints);
 
         float total_flex_factor = 0.0f;
 
@@ -312,7 +388,7 @@ namespace bf::UI
         {
           float flex_space_unit = std::max(constraints.max_size.x - layout_result.desired_size.x, 0.0f) / total_flex_factor;
 
-          widget->ForEachChild([flex_space_unit, &constraints, &layout_result](Widget* child) {
+          widget->ForEachChild([widget, flex_space_unit, &constraints, &layout_result](Widget* child) {
             if (child->desired_size.width.type == SizeUnitType::Flex)
             {
               float             child_width      = flex_space_unit * child->desired_size.width.value;
@@ -320,12 +396,15 @@ namespace bf::UI
                {child_width, 0.0f},
                {child_width, constraints.max_size.y},
               };
+
+              AugmentChildConstraintsForScrollbar(widget, flex_constraints);
+
               LayoutOutput child_size = WidgetDoLayout(child, flex_constraints);
 
               layout_result.desired_size.x += child_size.desired_size.x;
               layout_result.desired_size.y = std::max(layout_result.desired_size.y, child_size.desired_size.y);
 
-              if (child_size.desired_size.y == k_Inf)
+              if (child_size.desired_size.y == k_Float32Max)
               {
                 child_size.desired_size.y = layout_result.desired_size.y;
               }
@@ -337,6 +416,8 @@ namespace bf::UI
               child->realized_size = child_size.desired_size;
             }
           });
+
+          children_size = layout_result.desired_size;
         }
         break;
       }
@@ -352,12 +433,14 @@ namespace bf::UI
         my_constraints.min_size.y = 0.0f;
         my_constraints.max_size.y = constraints.max_size.y;
 
+        AugmentChildConstraintsForScrollbar(widget, my_constraints);
+
         float total_flex_factor = 0.0f;
 
         widget->ForEachChild([&layout_result, &total_flex_factor, &my_constraints](Widget* child) {
           if (child->desired_size.height.type != SizeUnitType::Flex)
           {
-            LayoutOutput child_size = WidgetDoLayout(child, my_constraints);
+            const LayoutOutput child_size = WidgetDoLayout(child, my_constraints);
 
             layout_result.desired_size.x = std::max(layout_result.desired_size.x, child_size.desired_size.x);
             layout_result.desired_size.y += child_size.desired_size.y;
@@ -372,20 +455,23 @@ namespace bf::UI
         {
           float flex_space_unit = std::max(constraints.max_size.y - layout_result.desired_size.y, 0.0f) / total_flex_factor;
 
-          widget->ForEachChild([flex_space_unit, &constraints, &layout_result](Widget* child) {
+          widget->ForEachChild([widget, flex_space_unit, &constraints, &layout_result](Widget* child) {
             if (child->desired_size.height.type == SizeUnitType::Flex)
             {
-              const float             child_height     = flex_space_unit * child->desired_size.height.value;
-              const LayoutConstraints flex_constraints = {
+              const float       child_height     = flex_space_unit * child->desired_size.height.value;
+              LayoutConstraints flex_constraints = {
                {0.0f, child_height},
                {constraints.max_size.x, child_height},
               };
+
+              AugmentChildConstraintsForScrollbar(widget, flex_constraints);
+
               LayoutOutput child_size = WidgetDoLayout(child, flex_constraints);
 
               layout_result.desired_size.x = std::max(layout_result.desired_size.x, child_size.desired_size.x);
               layout_result.desired_size.y += child_size.desired_size.y;
 
-              if (child_size.desired_size.x == k_Inf)
+              if (child_size.desired_size.x == k_Float32Max)
               {
                 child_size.desired_size.x = layout_result.desired_size.x;
               }
@@ -397,16 +483,12 @@ namespace bf::UI
               child->realized_size = child_size.desired_size;
             }
           });
+
+          children_size = layout_result.desired_size;
         }
         break;
       }
       case LayoutType::Grid:
-      {
-        assert(false);
-
-        break;
-      }
-      case LayoutType::Stack:
       {
         assert(false);
         break;
@@ -420,40 +502,46 @@ namespace bf::UI
         bfInvalidDefaultCase();
     }
 
-    // widget->realized_size = vec::min(vec::max(constraints.min_size, layout_result.desired_size), constraints.max_size);
+    widget->children_size = children_size;
     widget->realized_size = layout_result.desired_size;
 
     return layout_result;
   }
 
   //
-  // Widget Positioning is Separate From the Layout
-  // Since Positioning requires knowledge of one own
-  // `Widget::position_from_parent` to be relative to.
+  // Final widget positioning is separate from the layout
+  // Since Positioning requires knowledge of the parent
+  // widget's `Widget::position_from_parent` to be relative to.
   //
   // When you do it within the `WidgetDoLayout` function
   // there is a noticeable frame delay of the children not
   // keeping up with parents when quick motion happens.
   //
-
   static void WidgetDoLayoutPositioning(Widget* widget)
   {
-    const auto& layout = widget->layout;
+    const auto& layout   = widget->layout;
+    const float offset_y = WidgetScrollYOffset(widget);
 
     switch (layout.type)
     {
         // Single Child Layouts
 
-      case LayoutType::Default:
+      case LayoutType::Stack:
       {
+        widget->ForEachChild([pos = widget->position_from_parent, offset_y](Widget* child) {
+          child->position_from_parent = pos;
+          child->position_from_parent.y -= offset_y;
+          WidgetDoLayoutPositioning(child);
+        });
         break;
       }
       case LayoutType::Padding:
       {
         const float padding = WidgetParam(widget, WidgetParams::Padding);
 
-        widget->ForEachChild([widget, position_offset = Vector2f{padding}](Widget* child) {
+        widget->ForEachChild([widget, position_offset = Vector2f{padding}, offset_y](Widget* child) {
           child->position_from_parent = widget->position_from_parent + position_offset;
+          child->position_from_parent.y -= offset_y;
           WidgetDoLayoutPositioning(child);
         });
         break;
@@ -462,8 +550,9 @@ namespace bf::UI
       {
         const float padding = 0.0f;
 
-        widget->ForEachChild([widget, position_offset = Vector2f{padding}](Widget* child) {
+        widget->ForEachChild([widget, position_offset = Vector2f{padding}, offset_y](Widget* child) {
           child->position_from_parent = widget->position_from_parent + position_offset;
+          child->position_from_parent.y -= offset_y;
           WidgetDoLayoutPositioning(child);
         });
         break;
@@ -475,9 +564,10 @@ namespace bf::UI
       {
         float current_x = widget->position_from_parent.x;
 
-        widget->ForEachChild([&current_x, widget](Widget* child) {
+        widget->ForEachChild([&current_x, widget, offset_y](Widget* child) {
           child->position_from_parent.x = current_x;
           child->position_from_parent.y = widget->position_from_parent.y;
+          child->position_from_parent.y -= offset_y;
           WidgetDoLayoutPositioning(child);
 
           current_x += child->realized_size.x;
@@ -486,7 +576,7 @@ namespace bf::UI
       }
       case LayoutType::Column:
       {
-        float current_y = widget->position_from_parent.y;
+        float current_y = widget->position_from_parent.y - offset_y;
 
         widget->ForEachChild([&current_y, widget](Widget* child) {
           child->position_from_parent.x = widget->position_from_parent.x;
@@ -498,12 +588,6 @@ namespace bf::UI
         break;
       }
       case LayoutType::Grid:
-      {
-        assert(false);
-
-        break;
-      }
-      case LayoutType::Stack:
       {
         assert(false);
         break;
@@ -521,80 +605,6 @@ namespace bf::UI
   static void WidgetDoRender(Widget* self, CommandBuffer2D& gfx2D)
   {
     self->render(self, gfx2D);
-  }
-
-  static void DefaultRender(Widget* self, CommandBuffer2D& gfx2D)
-  {
-    Brush* font_brush = gfx2D.makeBrush(TEST_FONT);
-
-    Brush* beige_brush = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
-    Rect2f main_rect   = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
-
-    if (self->flags & Widget::IsWindow)
-    {
-      Brush* burlywood_brush = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
-      Brush* brown_brush     = gfx2D.makeBrush(bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BURLYWOOD)),
-                                           bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BROWN)));
-
-      bfQuaternionf gradient_rot = bfQuaternionf_fromEulerDeg(0.0f, 0.0f, 45.0f);
-      Vec3f         rot_right    = bfQuaternionf_right(&gradient_rot);
-      Vec3f         rot_up       = bfQuaternionf_up(&gradient_rot);
-
-      brown_brush->linear_gradient_data.uv_remap.position = {0.0f, 1.0f};
-      brown_brush->linear_gradient_data.uv_remap.x_axis   = {rot_right.x, rot_right.y};
-      brown_brush->linear_gradient_data.uv_remap.y_axis   = {rot_up.x, rot_up.y};
-
-      if (IsFocusedWindow(self))
-      {
-        gfx2D.blurredRect(
-         beige_brush,
-         main_rect,
-         4.0f,
-         4.0f);
-      }
-
-      if (self->flags & Widget::DrawBackground)
-      {
-#if 0
-        gfx2D.fillRoundedRect(
-         burlywood_brush,
-         AxisQuad::make(main_rect),
-         5.0f);
-
-        gfx2D.fillRoundedRect(
-         brown_brush,
-         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)),
-         5.0f);
-#else
-        gfx2D.fillRect(
-         burlywood_brush,
-         AxisQuad::make(main_rect));
-
-        gfx2D.fillRect(
-         brown_brush,
-         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
-#endif
-      }
-    }
-    else if (self->flags & Widget::DrawBackground)
-    {
-      Brush* peach_brush = gfx2D.makeBrush(BIFROST_COLOR_PEACHPUFF);
-
-      gfx2D.fillRect(beige_brush, AxisQuad::make(main_rect));
-      gfx2D.fillRect(peach_brush, AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
-    }
-
-    if (self->flags & Widget::DrawName)
-    {
-      auto text_cmd = gfx2D.text(font_brush, self->position_from_parent + Vector2f{1.0f, 16.0f}, {self->name, self->name_len});
-
-      text_cmd->position.x = self->position_from_parent.x + (main_rect.width() - text_cmd->bounds_size.x) * 0.5f;
-      text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y;
-    }
-
-    self->ForEachChild([&gfx2D](Widget* const child) {
-      WidgetDoRender(child, gfx2D);
-    });
   }
 
   static UIElementID CalcID(StringRange name)
@@ -631,7 +641,99 @@ namespace bf::UI
     PopWidget();
   }
 
-  static Widget* CreateWidget(StringRange name, LayoutType layout_type = LayoutType::Default)
+  static void DefaultRender(Widget* self, CommandBuffer2D& gfx2D)
+  {
+    Brush*             font_brush      = gfx2D.makeBrush(TEST_FONT);
+    const Brush* const window_bg_brush = gfx2D.makeBrush(0xFFE6E6E6);
+    const Rect2f       window_bg_rect  = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+
+    Brush* beige_brush = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
+    Rect2f main_rect   = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+
+    if (self->flags & Widget::IsWindow)
+    {
+      Brush* burlywood_brush = gfx2D.makeBrush(BIFROST_COLOR_BURLYWOOD);
+      Brush* brown_brush     = gfx2D.makeBrush(bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BURLYWOOD)),
+                                           bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BROWN)));
+
+      bfQuaternionf gradient_rot = bfQuaternionf_fromEulerDeg(0.0f, 0.0f, 20.0f);
+      Vec3f         rot_right    = bfQuaternionf_right(&gradient_rot);
+      Vec3f         rot_up       = bfQuaternionf_up(&gradient_rot);
+
+      brown_brush->linear_gradient_data.uv_remap.position = {0.0f, 1.0f};
+      brown_brush->linear_gradient_data.uv_remap.x_axis   = {rot_right.x, rot_right.y};
+      brown_brush->linear_gradient_data.uv_remap.y_axis   = {rot_up.x, rot_up.y};
+
+      if (IsFocusedWindow(self))
+      {
+        gfx2D.blurredRect(
+         beige_brush,
+         main_rect,
+         4.0f,
+         4.0f);
+      }
+
+      if (self->flags & Widget::DrawBackground)
+      {
+#if 0
+        gfx2D.fillRoundedRect(
+         burlywood_brush,
+         AxisQuad::make(main_rect),
+         5.0f);
+
+        gfx2D.fillRoundedRect(
+         brown_brush,
+         AxisQuad::make(main_rect.expandedFromCenter(-1.0f)),
+         5.0f);
+#else
+        gfx2D.fillRoundedRect(window_bg_brush, AxisQuad::make(main_rect), 3.0f);
+
+        // gfx2D.fillRect(
+        //  brown_brush,
+        //  AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
+#endif
+      }
+    }
+
+    if (self->flags & Widget::DrawName)
+    {
+      auto text_cmd = gfx2D.text(font_brush, self->position_from_parent + Vector2f{1.0f, 16.0f}, {self->name, self->name_len});
+
+      text_cmd->position.x = self->position_from_parent.x + (main_rect.width() - text_cmd->bounds_size.x) * 0.5f;
+      text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y;
+    }
+
+    if (self->flags & Widget::NeedsScrollY)
+    {
+      const auto scrollbar_bg_rect  = WidgetScrollYBounds(self);
+      const auto scrollbar_dragger  = WidgetScrollYDragger(self, scrollbar_bg_rect);
+      const auto scrollbar_bg_brush = gfx2D.makeBrush(0xFF4C4654);
+      const auto scrollbar_fg_brush = gfx2D.makeBrush(0xFF707070);
+
+      gfx2D.fillRect(scrollbar_bg_brush, AxisQuad::make(scrollbar_bg_rect));
+      gfx2D.fillRect(scrollbar_fg_brush, AxisQuad::make(scrollbar_dragger));
+    }
+
+    if (self->flags & Widget::IsWindow)
+    {
+      gfx2D.pushClipRect({vec::convert<int>(main_rect.min()), vec::convert<int>(main_rect.max())});
+    }
+
+    //    Brush* red_brush = gfx2D.makeBrush(0xAA0000FF);
+
+    //gfx2D.fillRect(red_brush, AxisQuad::make({self->position_from_parent.x, self->position_from_parent.y, self->children_size.x, self->children_size.y}));
+
+    self->ForEachChild([&gfx2D](Widget* const child) {
+      WidgetDoRender(child, gfx2D);
+    });
+
+    if (self->flags & Widget::IsWindow)
+    {
+      gfx2D.popClipRect();
+    }
+  }
+
+  static Widget* CreateWidget(StringRange name, LayoutType layout_type = LayoutType::Stack)
   {
     const auto id     = CalcID(name);
     Widget*    widget = g_UI.widgets.find(id);
@@ -666,10 +768,12 @@ namespace bf::UI
   {
     enum
     {
-      IsClicked = (1 << 0),
-      IsHovered = (1 << 1),
-      IsActive  = (1 << 2),
-      IsPressed = (1 << 3),
+      IsClicked            = (1 << 0),
+      IsHovered            = (1 << 1),
+      IsActive             = (1 << 2),
+      IsPressed            = (1 << 3),
+      IsInScrollbarBg      = (1 << 4),
+      IsInScrollbarDragger = (1 << 5),
     };
 
     std::uint8_t flags = 0x0;
@@ -755,15 +859,37 @@ namespace bf::UI
         }
       }
 
+      if (widget->flags & Widget::NeedsScrollY)
+      {
+        const auto scrollbar_bg_rect = WidgetScrollYBounds(widget);
+        const auto scrollbar_dragger = WidgetScrollYDragger(widget, scrollbar_bg_rect);
+
+        if (scrollbar_bg_rect.intersects(g_UI.mouse_pos))
+        {
+          result.flags |= WidgetBehaviorResult::IsInScrollbarBg;
+          // g_UI.drag_offset = g_UI.mouse_pos - scrollbar_bg_rect.topLeft();
+        }
+
+        if (IsActiveWidget(widget) || scrollbar_dragger.intersects(g_UI.mouse_pos))
+        {
+          result.flags |= WidgetBehaviorResult::IsInScrollbarDragger;
+
+          if (ClickedDownThisFrame(BIFROST_BUTTON_LEFT))
+          {
+            g_UI.drag_offset = g_UI.mouse_pos - scrollbar_dragger.topLeft();
+          }
+        }
+      }
+
       if (g_UI.active_widget == widget && button_released)
       {
         g_UI.active_widget = nullptr;
       }
-    }
 
-    if (IsActiveWidget(widget))
-    {
-      result.flags |= WidgetBehaviorResult::IsActive;
+      if (IsActiveWidget(widget))
+      {
+        result.flags |= WidgetBehaviorResult::IsActive;
+      }
     }
 
     return result;
@@ -802,11 +928,13 @@ namespace bf::UI
     return button;
   }
 
-  bool BeginWindow(const char* title)
+  bool BeginWindow(const char* title, WindowState& state)
   {
-    Widget* const window = CreateWidget(title, LayoutType::Column);
+    Widget* const window = CreateWidget(title, LayoutType::Fixed);
 
-    window->flags |= Widget::BlocksInput | Widget::IsWindow | Widget::DrawBackground;
+    window->flags |= Widget::BlocksInput | Widget::IsWindow | Widget::DrawBackground | Widget::Clickable | Widget::IsExpanded;
+
+    window->desired_size = state.size;
 
     g_UI.root_widgets.push(window);
 
@@ -815,9 +943,30 @@ namespace bf::UI
     PushID(window->hash);
 
     PushWidget(window);
-
-    PushPadding(5.0f);
     PushColumn();
+
+    if (window->flags & Widget::NeedsScrollY)
+    {
+      const auto window_behavior   = WidgetBehavior(window);
+      const auto scrollbar_bg_rect = WidgetScrollYBounds(window);
+      const auto scrollbar_dragger = WidgetScrollYDragger(window, scrollbar_bg_rect);
+
+      if (window_behavior.Is(WidgetBehaviorResult::IsInScrollbarBg) && window_behavior.Is(WidgetBehaviorResult::IsClicked))
+      {
+        //const float current_y = g_UI.mouse_pos.y;
+
+        //WidgetParam(window, WidgetParams::ScrollY) = bfMathRemapf(scrollbar_bg_rect.top(), scrollbar_bg_rect.bottom(), 0.0f, 1.0f, current_y);
+      }
+
+      if (window_behavior.Is(WidgetBehaviorResult::IsInScrollbarDragger) && window_behavior.Is(WidgetBehaviorResult::IsActive))
+      {
+        const float current_y = g_UI.mouse_pos.y;
+        const float offset_y  = g_UI.drag_offset.y;
+        const float desired_y = current_y - offset_y;
+
+        WidgetParam(window, WidgetParams::ScrollY) = math::clamp(0.0f, bfMathRemapf(scrollbar_bg_rect.top(), scrollbar_bg_rect.bottom() - scrollbar_dragger.height(), 0.0f, 1.0f, desired_y), 1.0f);
+      }
+    }
 
     Widget* const titlebar = CreateWidget("__WindowTitlebar__", LayoutType::Row);
 
@@ -825,14 +974,20 @@ namespace bf::UI
     titlebar->desired_size.height = {SizeUnitType::Absolute, 25.0f};
     titlebar->flags |= Widget::Clickable | Widget::DrawBackground;
 
-    const auto titlebar_behavior = WidgetBehavior(titlebar);
-
-    if (titlebar_behavior.Is(WidgetBehaviorResult::IsActive))
+    if (state.can_be_dragged)
     {
-      const Vector2f titlebar_offset_from_window = titlebar->position_from_parent - window->position_from_parent;
+      const auto titlebar_behavior = WidgetBehavior(titlebar);
 
-      window->position_from_parent = g_UI.mouse_pos - g_UI.drag_offset - titlebar_offset_from_window;
+      if (titlebar_behavior.Is(WidgetBehaviorResult::IsActive))
+      {
+        const Vector2f titlebar_offset_from_window = titlebar->position_from_parent - vec::convert<float>(state.position);
+        const Vector2f new_window_pos              = g_UI.mouse_pos - g_UI.drag_offset - titlebar_offset_from_window;
+
+        state.position = vec::convert<int>(new_window_pos);
+      }
     }
+
+    window->position_from_parent = vec::convert<float>(state.position);
 
     PushWidget(titlebar);
     {
@@ -857,14 +1012,12 @@ namespace bf::UI
       if (x_button_behavior.flags & WidgetBehaviorResult::IsClicked)
       {
         window->flags ^= Widget::IsExpanded;
-        window->realized_size.y = 0.0f;  // TODO(SR): This is a hack for a more pressing issue of window expanding to biggest size.
       }
     }
     PopWidget();
 
     const bool is_expanded = window->flags & Widget::IsExpanded;
 
-    PushPadding(is_expanded ? 2.0f : 0.0f);
     PushColumn();
 
     if (!is_expanded)
@@ -878,9 +1031,7 @@ namespace bf::UI
   void EndWindow()
   {
     PopWidget();  // Column
-    PopWidget();  // Padding
     PopWidget();  // Column
-    PopWidget();  // Padding
     PopWidget();
     PopID();
   }
@@ -1022,11 +1173,19 @@ namespace bf::UI
     g_UI.delta_time = delta_time;
   }
 
-  void Render(CommandBuffer2D& gfx2D)
+  void Render(CommandBuffer2D& gfx2D, float screen_width, float screen_height)
   {
+#if 0
     // Test Code
 
-    if (BeginWindow("Buttons Galore"))
+    static WindowState s_WinStates[2] = {};
+
+    s_WinStates[0].can_be_dragged = true;
+    //s_WinStates[0].position.x     = 5;
+    //s_WinStates[0].position.y     = 5;
+    s_WinStates[0].size.height    = {SizeUnitType::Absolute, screen_height - 100.0f};
+
+    if (BeginWindow("Buttons Galore", s_WinStates[0]))
     {
       char button_label_buffer[128];
 
@@ -1044,7 +1203,7 @@ namespace bf::UI
     }
 
     //*
-    if (BeginWindow("Test Window"))
+    if (BeginWindow("Test Window", s_WinStates[1]))
     {
       g_UI.current_widget->flags |= Widget::DrawBackground;
 
@@ -1077,43 +1236,11 @@ namespace bf::UI
 
       EndWindow();
     }
-
-    if (BeginWindow("Test Window2"))
-    {
-      PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
-      PushPadding(20.0f);
-      if (Button(u8"Hello22222222 \u0210"))
-      {
-        std::printf("\nHelloffffffff was pressed.\n");
-      }
-      PopWidget();
-      PopWidget();
-
-      PushColumn();
-      if (Button("Button 2222222222"))
-      {
-        std::printf("\nButton2ffffffff was pressed.\n");
-      }
-
-      PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
-      PopWidget();
-
-      PushPadding(5.0f);
-      if (Button("Button 32222222"))
-      {
-        std::printf("\nButton3fffffffff was pressed.\n");
-      }
-      PopWidget();
-
-      PopWidget();
-
-      EndWindow();
-    }
     //*/
     assert(g_UI.current_widget == nullptr && "Missing a PopWidget to a corresponding PushWidget.");
 
     // Test End
-
+#endif
     std::stable_sort(
      g_UI.root_widgets.begin(),
      g_UI.root_widgets.end(),
@@ -1126,8 +1253,8 @@ namespace bf::UI
     for (Widget* const window : g_UI.root_widgets)
     {
       LayoutConstraints main_constraints = {
-       {320.0f, 0.0f},
-       window->realized_size,
+       {0.0f, 0.0f},
+       {screen_width, 1000.0f},
       };
 
       WidgetDoLayout(window, main_constraints);

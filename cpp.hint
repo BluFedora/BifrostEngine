@@ -4,3 +4,4 @@
 #define BF_ANIM2D_API 
 #define bfPureInterface(T) __declspec(novtable) T
 #define bfPureInterface(T)
+#define sr_meta

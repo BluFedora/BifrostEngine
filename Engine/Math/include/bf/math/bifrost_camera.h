@@ -90,7 +90,7 @@ typedef struct
 
 } bfFrustum;
 
-BF_MATH_API void                bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* matrix);
+BF_MATH_API void                bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* view_projection);
 BF_MATH_API bfFrustumTestResult bfFrustum_isPointInside(const bfFrustum* self, Vec3f point);
 BF_MATH_API bfFrustumTestResult bfFrustum_isSphereInside(const bfFrustum* self, Vec3f center, float radius);
 BF_MATH_API bfFrustumTestResult bfFrustum_isAABBInside(const bfFrustum* self, Vec3f aabb_min, Vec3f aabb_max);

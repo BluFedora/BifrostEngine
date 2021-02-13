@@ -125,6 +125,7 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Bifrost Graphics Module
   "Runtime/src/graphics/bifrost_standard_renderer.cpp"
   "Runtime/src/graphics/bifrost_glsl_compiler.cpp"
+  "${PROJECT_SOURCE_DIR}/Engine/Runtime/gfx/src/bf_draw_2d.cpp"
 
   # Bifrost Math Module
   "Engine/Math/src/bifrost_rect2.cpp"
@@ -142,7 +143,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Physics
   "Runtime/src/bifrost/physics/bifrost_particle.cpp"
 
-  "main.cpp"
  )
 
 if (WIN32)
@@ -159,6 +159,7 @@ add_executable(
   BifrostEngineOLD
   ${BIFROST_ENGINE_SOURCE_FILES}
   
+  "main.cpp"
   "Runtime/src/graphics/bifrost_debug_renderer.cpp"
   "Runtime/src/core/bifrost_engine.cpp"
   "DemoApp/src/main_demo.cpp"
@@ -175,13 +176,42 @@ add_executable(
 
  "Runtime/src/graphics/bifrost_component_renderer.cpp"
 
- "${PROJECT_SOURCE_DIR}/Engine/Graphics2D/src/bf_painter.cpp" 
+ 
  "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
  "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
   "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp")
+
+add_executable(
+  StandaloneRuntime
+  "Engine/Runtime/src/bf_runtime_driver.cpp"
+
+  ${BIFROST_ENGINE_SOURCE_FILES}
+  
+  "Runtime/src/graphics/bifrost_debug_renderer.cpp"
+  "Runtime/src/core/bifrost_engine.cpp"
+  "Runtime/src/ecs/bifrost_behavior.cpp"
+  "Runtime/src/ecs/bifrost_behavior_system.cpp"
+  "Runtime/src/ecs/bifrost_entity_ref.cpp"
+
+  # Runtime
+
+  "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
+
+  # 'Game' Code
+ "DemoApp/src/camera_controller.cpp"
+
+ "Runtime/src/graphics/bifrost_component_renderer.cpp"
+
+ "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
+ "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
+  
+ "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
+ "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp")
+
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")
@@ -228,18 +258,91 @@ target_link_libraries(
     bfAnimation2D_shared
     BifrostScript_shared
     BF_UI_shared
+    BF_RuntimeGraphics
+
+    BF_Job_static
+)
+
+set_target_properties(
+  StandaloneRuntime
+
+  PROPERTIES
+    LINK_FLAGS "/ignore:4099"
+)
+
+target_include_directories(
+  StandaloneRuntime
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}/lib/include
+    ${PROJECT_SOURCE_DIR}/Runtime/include
+    ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/Experiments/include
+    ${PROJECT_SOURCE_DIR}/DemoApp/include
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
+    ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
+    ${PROJECT_BINARY_DIR} # For the cmake version file
+    ${PROJECT_SOURCE_DIR}/Engine/Graphics2D/include 
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
+
+    "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/include"
+)
+
+target_link_libraries(
+  StandaloneRuntime
+  PRIVATE
+    BF_AssetIO_static
+    BF_Core_static
+    BF_Platform_shared
+    BF_Memory_interface
+    BF_Text_static
+    BF_TMPUtils
+    BF_DataStructuresCxx
+    BF_Math_shared
+    BF_Graphics_shared
+    bfAnimation2D_shared
+    BifrostScript_shared
+    BF_UI_shared
+    BF_RuntimeGraphics
+
+    BF_Job_static
+
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/LowLevel_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/LowLevelAABB_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/LowLevelDynamics_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysX_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXCharacterKinematic_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXCommon_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXCooking_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXExtensions_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXFoundation_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXPvdSDK_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXTask_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/PhysXVehicle_static_64.lib"
+   # "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/SampleBase_static_64.lib"
+   # "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/SampleFramework_static_64.lib"
+   "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/SceneQuery_static_64.lib"
+   # "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/SimulationController_static_64.lib"
+   # "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/SnippetRender_static_64.lib"
+   # "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/SnippetUtils_static_64.lib"
 )
 
 set_target_properties(BifrostEngineOLD PROPERTIES CXX_STANDARD 17)
+set_target_properties(StandaloneRuntime PROPERTIES CXX_STANDARD 17)
 
   # NOTE(Shareef): Sets the working directory of the exe to be at the exe
   #   allowing us to load stuff from the assets folder.
 set_target_properties(BifrostEngineOLD PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_target_properties(StandaloneRuntime PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
   # NOTE(Shareef): Make the console not pop up.
 # set_target_properties(BifrostEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup /SUBSYSTEM:WINDOWS")
 
 # Copy over the assets folder. TODO: Instead of a copy make a symlink?
 add_custom_command(TARGET BifrostEngineOLD PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngineOLD>/assets)
+
+add_custom_command(TARGET StandaloneRuntime PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngineOLD>/assets)
 
@@ -262,11 +365,13 @@ elseif (APPLE)
   set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
 endif()
 
+add_library(BF_RuntimeGraphics INTERFACE)
+
 if (WIN32)
   if(CMAKE_BUILD_TYPE MATCHES "Debug")
     target_link_libraries(
-      BifrostEngineOLD
-      PRIVATE 
+      BF_RuntimeGraphics
+      INTERFACE 
         "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib"
         "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib"
         "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib"
@@ -278,8 +383,8 @@ if (WIN32)
     )
   else()
     target_link_libraries(
-        BifrostEngineOLD
-        PRIVATE 
+        BF_RuntimeGraphics
+        INTERFACE 
           "${BIFROST_ENGINE_LIB_DIR}/glslang.lib"
           "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib"
           "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib"
@@ -293,22 +398,22 @@ if (WIN32)
   # target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
 elseif (APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
-  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libglslang.a")
-  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libHLSL.a")
-  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOGLCompiler.a")
-  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libSPIRV.a")
-  target_link_libraries(BifrostEngineOLD PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
+  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libglslang.a")
+  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libHLSL.a")
+  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOGLCompiler.a")
+  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libSPIRV.a")
+  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
 endif()
 
 
-if(OpenCL_FOUND)
-  include_directories(${OPENCL_INCLUDE_DIR})
-  target_link_libraries(BifrostEngineOLD PRIVATE OpenCL::OpenCL)
-  #target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
-  add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
-else()
-  add_compile_definitions(BIFROST_COMPUTE_OPENCL=0)
-endif()
+# if(OpenCL_FOUND)
+#   include_directories(${OPENCL_INCLUDE_DIR})
+#   target_link_libraries(BifrostEngineOLD PRIVATE OpenCL::OpenCL)
+#   #target_compile_definitions(my_target PRIVATE FOO=1 BAR=1)
+#   add_compile_definitions(BIFROST_COMPUTE_OPENCL=1)
+# else()
+#   add_compile_definitions(BIFROST_COMPUTE_OPENCL=0)
+# endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
@@ -362,7 +467,6 @@ endif()
 add_subdirectory(Engine)
 add_subdirectory(Experiments)
 add_subdirectory(BifrostScript)
-add_subdirectory(Games/DungeonSwiper)
 
 add_subdirectory(BuildTimeAnalyzerGUI)
 

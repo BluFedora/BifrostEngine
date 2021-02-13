@@ -44,6 +44,10 @@ namespace bf
     (void)alpha;
   }
 
+  void IGameStateLayer::onRenderBackbuffer(Engine& engine, float alpha)
+  {
+  }
+
   void IGameStateLayer::onUnload(Engine& engine)
   {
     (void)engine;

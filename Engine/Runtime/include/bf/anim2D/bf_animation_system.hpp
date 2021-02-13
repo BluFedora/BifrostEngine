@@ -28,13 +28,12 @@ namespace bf
     {
     }
 
-    bfAnimation2DCtx* anim2DCtx() const { return m_Anim2DCtx; }
+    bfAnimation2DCtx*           anim2DCtx() const { return m_Anim2DCtx; }
+    Renderable<ObjectBoneData>& getRenderable(StandardRenderer& renderer, Entity& entity);
 
     void onInit(Engine& engine) override;
     void onFrameUpdate(Engine& engine, float dt) override;
     void onDeinit(Engine& engine) override;
-
-    Renderable<ObjectBoneData>& getRenderable(StandardRenderer& renderer, Entity& entity);
   };
 }  // namespace bf
 

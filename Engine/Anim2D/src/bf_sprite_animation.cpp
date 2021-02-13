@@ -115,7 +115,7 @@ struct NetworkingData final
       if (!is_connected)
       {
         const auto err = socket.connectTo(address);
-        
+
         is_connected = err.isSuccess() || bfNet::isErrorAlreadyConnected(err.code);
       }
     }
@@ -127,8 +127,8 @@ struct NetworkingData final
 struct bfAnim2DScene_t
 {
   bf::DenseMap<bfAnim2DSprite> active_sprites;
-  struct bfAnim2DScene_t*      prev; /*!< The previous scene in the bfAnimation2DCtx::scene_list linked list         */
-  struct bfAnim2DScene_t*      next; /*!< The next scene in the bfAnimation2DCtx::scene_list linked list             */
+  struct bfAnim2DScene_t*      prev; /*!< The previous scene in the bfAnimation2DCtx::scene_list linked list */
+  struct bfAnim2DScene_t*      next; /*!< The next scene in the bfAnimation2DCtx::scene_list linked list     */
 
   bfAnim2DScene_t(CallbackAllocator& allocator) :
     active_sprites{allocator},
@@ -215,7 +215,7 @@ bfSpritesheet* bfAnimation2D_createSpritesheet(bfAnimation2DCtx* self, const bfS
 
   if (sheet)
   {
-    // TODO(SR): All allocations can probably be merged into one since a 'bfSpritesheet' is pretty immutable.
+    // TODO(SR): All allocations can probably be merged into one since a 'bfSpritesheet' is immutable.
 
     sheet->name           = bfStringClone(self, params->name);
     sheet->animations     = (bfAnimation*)bfAllocate(self, sizeof(bfAnimation) * params->num_animations);
@@ -727,17 +727,15 @@ bool bfLoadUpSpritesheetFromData(bfAnimation2DCtx* self, bfSpritesheetPrivate* s
 
   for (uint8_t i = 0; i < header_num_chunks; ++i)
   {
-    uint8_t       chunk_type[4];
-    uint32_t      chunk_data_length;
-    const bfByte* chuck_data;
+    uint8_t chunk_type[4];
 
     memcpy(chunk_type, chucks, sizeof(chunk_type));
     chucks += sizeof(chunk_type);
 
-    chunk_data_length = bfBytesReadUint32LE(chucks);
+    uint32_t chunk_data_length = bfBytesReadUint32LE(chucks);
     chucks += sizeof(chunk_data_length);
 
-    chuck_data = chucks;
+    const bfByte* chuck_data = chucks;
 
     if (memcmp(chunk_type, "FRME", 4) == 0)
     {
@@ -869,7 +867,7 @@ void NetworkingData::readPackets(bfAnimation2DCtx* self)
   }
 
   const auto old_current_packet_size = current_packet.size();
-  const bool is_beginning_of_packet  = old_current_packet_size < k_bfAnim2DTotalHeaderSize;
+  // const bool is_beginning_of_packet  = old_current_packet_size < k_bfAnim2DTotalHeaderSize;
   const auto received_data           = socket.receiveDataFrom(read_buffer, sizeof(read_buffer));
 
   // Connection Ended

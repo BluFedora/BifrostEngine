@@ -84,7 +84,7 @@ namespace bf
      const bfDrawCallPipeline& pipeline,
      StandardRenderer&         engine_renderer,
      RenderQueue&              render_queue,
-     float                     distance_from_camera = 0.0f);
+     float                     distance_from_camera = 1.0f);
   };
 }  // namespace bf
 

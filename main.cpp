@@ -12,7 +12,7 @@
 
 using namespace bf;
 
-struct TestClass final
+struct TestClass
 {
   int         x;
   std::string y;
