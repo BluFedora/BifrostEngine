@@ -350,7 +350,7 @@ namespace bf
   void CameraGPUData::createBuffers(bfGfxDeviceHandle device, int width, int height)
   {
     geometry_buffer.init(device, width, height);
-    ssao_buffer.init(device, width / 2, height / 2);
+    ssao_buffer.init(device, width, height);
 
     const auto create_composite = bfTextureCreateParams_initColorAttachment(
      width,
