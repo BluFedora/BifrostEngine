@@ -353,7 +353,7 @@ namespace bf::editor
      transform.inv_world_transform);
   }
 
-  static HitTestResult hitTestEntity(const bfRay3D& ray, Entity* entity, Vector3f pos_to_cam)
+  static HitTestResult hitTestEntity(const bfRay3D& ray, Entity* entity)
   {
     auto* const   mesh         = entity->get<MeshRenderer>();
     auto* const   skinned_mesh = entity->get<SkinnedMeshRenderer>();
@@ -370,7 +370,7 @@ namespace bf::editor
       }
     }
 
-    if (skinned_mesh)
+    if (skinned_mesh && skinned_mesh->m_Model)
     {
       const HitTestResult skinned_mesh_hit = hitTestModel(ray, *skinned_mesh->m_Model, entity->transform().inv_world_transform);
 
@@ -455,8 +455,7 @@ namespace bf::editor
 
                     if (ray_cast_result.did_hit && (ray_cast_result.min_time >= 0.0f || ray_cast_result.max_time >= 0.0f))
                     {
-                      const Vector3f pos_to_cam        = Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position);
-                      const auto     accurate_hit_test = hitTestEntity(ray, entity, pos_to_cam);
+                      const auto accurate_hit_test = hitTestEntity(ray, entity);
 
                       if (accurate_hit_test.did_hit)
                       {

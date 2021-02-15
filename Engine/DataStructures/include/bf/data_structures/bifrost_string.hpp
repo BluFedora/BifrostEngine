@@ -67,11 +67,16 @@ namespace bf
       return bfStringRange::end - bgn;
     }
 
+    [[nodiscard]] char operator[](std::size_t i) const
+    {
+      return begin()[i];
+    }
+
     [[nodiscard]] bool operator==(const StringRange& rhs) const noexcept
     {
       const std::size_t lhs_length = length();
       const std::size_t rhs_length = rhs.length();
-      // TODO(Shareef): Can this be optimized by not using 'strncmp' since 'strncmp' checks for 'NUL' aswell?
+
       return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
     }
 
@@ -106,6 +111,19 @@ namespace bf
     auto rend() const noexcept
     {
       return std::make_reverse_iterator(begin());
+    }
+
+    StringRange slice(std::size_t begin_idx, std::size_t end_idx) const
+    {
+      // TODO(SR): Replace this with an assert.
+      if (end_idx < begin_idx)
+      {
+        throw std::runtime_error("Invalid range");
+      }
+
+      const std::size_t len = length();
+      
+      return {bgn + std::min(begin_idx, len), bgn + std::min(end_idx, len)};
     }
 
     std::size_t find(char character, std::size_t pos = 0) const noexcept
@@ -571,6 +589,52 @@ namespace bf::string_utils
   }
 
   // Misc //
+
+  // Algorithm based on the one described in "Game Programming Gems 6"
+  //
+  // capital_letter_mismatch_cost: The penalty should not be super high for capitalization mismatch.
+  //                               1.0f = no penalty, 0.0f means it does not match at all.
+  //
+  // Returns: A float from [0.0, 1.0], with 0.0 being no match while 1.0 is 100% match.
+  //
+  float stringMatchPercent(const char* str1, std::size_t str1_len, const char* str2, std::size_t str2_len, float capital_letter_mismatch_cost = 0.93f);
+  float stringMatchPercent(StringRange str1, StringRange str2, float capital_letter_mismatch_cost = 0.93f);
+
+  //
+  // Returns a null StringRange if not found.
+  //
+  template<typename F = std::equal_to<void>>
+  StringRange findSubstring(StringRange haystack, StringRange needle, F&& cmp = F{})
+  {
+    const std::size_t haystack_len = haystack.length();
+    const std::size_t needle_len   = needle.length();
+
+    if (haystack_len >= needle_len)
+    {
+      std::size_t needle_idx = 0u;
+
+      for (std::size_t i = 0; i < haystack_len; ++i)
+      {
+        if (needle_idx == needle_len)
+        {
+          return haystack.slice(i - needle_idx, i);
+        }
+
+        if (cmp(haystack[i], needle[needle_idx]))
+        {
+          ++needle_idx;
+        }
+        else
+        {
+          needle_idx = 0u;
+        }
+      }
+    }
+
+    return {};
+  }
+
+  StringRange findSubstringI(StringRange haystack, StringRange needle);
 
   // Caller is responsible for freeing memory.
   // The returned length is one less than the actual buffer size.

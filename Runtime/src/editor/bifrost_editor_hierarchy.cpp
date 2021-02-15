@@ -7,7 +7,10 @@
 namespace bf::editor
 {
   HierarchyView::HierarchyView() :
-    m_SearchQuery{""}  // Filled with initial data for ImGui since ImGui functions do not accept nullptr as an input string.
+    m_SearchQuery{""},  // Filled with initial data for ImGui since ImGui functions do not accept nullptr as an input string.
+    m_ExpandedState{allocator()},
+    m_FilteredIn{allocator()},
+    m_FilteredInBecauseOfChild{allocator()}
   {
   }
 
@@ -38,27 +41,26 @@ namespace bf::editor
         ImGui::EndMenuBar();
       }
 
+      /*
       if (ImGui::Button(" " ICON_FA_ARROWS_ALT " "))
       {
       }
-
       ImGui::SameLine();
-
       if (ImGui::Button(" " ICON_FA_UNDO " "))
       {
       }
-
       ImGui::SameLine();
-
       if (ImGui::Button(" " ICON_FA_EXPAND_ALT " "))
       {
       }
-
       ImGui::SameLine();
+      */
 
       imgui_ext::inspect("###SearchBar", ICON_FA_SEARCH "  Search...", m_SearchQuery, ImGuiInputTextFlags_CharsUppercase);
 
-      if (!m_SearchQuery.isEmpty())
+      const bool do_filter_entities = !m_SearchQuery.isEmpty();
+
+      if (do_filter_entities)
       {
         ImGui::SameLine();
 
@@ -74,9 +76,68 @@ namespace bf::editor
 
       ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{old_item_spacing.x, 0.0f});
 
-      for (Entity* const root_entity : current_scene->rootEntities())
+      auto&                temp_mem = engine.tempMemory();
+      LinearAllocatorScope mem_scope{temp_mem};
+      Array<Entity*>       top_level_entities{temp_mem};
+
+      if (do_filter_entities)
       {
-        guiEntityList(editor, root_entity);
+        Array<Entity*>        entities_to_process{temp_mem, current_scene->rootEntities()};
+        UnorderedSet<Entity*> processed_entities{temp_mem};
+
+        m_FilteredIn.clear();
+        m_FilteredInBecauseOfChild.clear();
+
+        while (!entities_to_process.isEmpty())
+        {
+          Entity* entity = entities_to_process.back();
+          entities_to_process.pop();
+
+          for (Entity& child : entity->children())
+          {
+            entities_to_process.push(&child);
+          }
+
+          if (isEntityFilteredIn(entity))
+          {
+            m_FilteredIn.insert(entity);
+
+            while (entity && processed_entities.find(entity) == processed_entities.end())
+            {
+              processed_entities.insert(entity);
+
+              Entity* const parent = entity->parent();
+
+              if (!parent)
+              {
+                top_level_entities.push(entity);
+              }
+
+              entity = parent;
+
+              if (entity && !isEntityFilteredIn(entity))
+              {
+                m_FilteredInBecauseOfChild.insert(entity);
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        top_level_entities.copyFrom(current_scene->rootEntities());
+      }
+
+      std::pair<Entity*, Entity*> parent_to = {nullptr, nullptr};  // {parent, child}
+
+      for (Entity* const root_entity : top_level_entities)
+      {
+        guiEntityList(parent_to, editor, root_entity);
+      }
+
+      if (parent_to.first != nullptr && parent_to.second != nullptr)
+      {
+        parent_to.second->setParent(parent_to.first);
       }
 
       ImGui::PopStyleVar();
@@ -92,30 +153,37 @@ namespace bf::editor
     }
   }
 
-  void HierarchyView::guiEntityList(EditorOverlay& editor, Entity* entity) const
+  void HierarchyView::guiEntityList(std::pair<Entity*, Entity*>& parent_to, EditorOverlay& editor, Entity* entity)
   {
-    Selection&                  selection       = editor.selection();
-    const bool                  has_children    = !entity->children().isEmpty();
-    const bool                  is_selected     = editor.selection().contains(entity);
-    std::pair<Entity*, Entity*> parent_to       = {nullptr, nullptr}; /* {parent, child} */
-    const bool                  is_active       = entity->isActive();
-    ImGuiTreeNodeFlags          tree_node_flags = ImGuiTreeNodeFlags_OpenOnArrow;
+    const bool         has_children              = !entity->children().isEmpty();
+    Selection&         selection                 = editor.selection();
+    const bool         is_selected               = selection.contains(entity);
+    const bool         is_active                 = entity->isActive();
+    ImGuiTreeNodeFlags tree_node_flags           = ImGuiTreeNodeFlags_OpenOnArrow;
+    const auto         expanded_state_it         = m_ExpandedState.find(entity);  // Stored for faster 'm_ExpandedState.erase'.
+    const bool         expanded_state            = expanded_state_it != m_ExpandedState.end();
+    const bool         do_filter_entities        = !m_SearchQuery.isEmpty();
+    const bool         is_filtered_in            = !do_filter_entities || m_FilteredIn.find(entity) != m_FilteredIn.end();
+    const bool         is_filtered_in_bcuz_child = !do_filter_entities || m_FilteredInBecauseOfChild.find(entity) != m_FilteredInBecauseOfChild.end();
+
+    if (!is_filtered_in_bcuz_child && !is_filtered_in)
+    {
+      return;
+    }
 
     ImGui::PushID(entity);
 
-    if (!has_children)
-    {
-      tree_node_flags |= ImGuiTreeNodeFlags_Bullet;
-    }
-
-    if (is_selected)
-    {
-      tree_node_flags |= ImGuiTreeNodeFlags_Selected;
-    }
+    if (!has_children) tree_node_flags |= ImGuiTreeNodeFlags_Bullet;
+    if (is_selected) tree_node_flags |= ImGuiTreeNodeFlags_Selected;
 
     if (!is_active)
     {
       ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
+    }
+
+    if (do_filter_entities && is_filtered_in)
+    {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
     }
 
     bool is_opened;
@@ -123,8 +191,30 @@ namespace bf::editor
       LinearAllocator&     tmp_alloc = editor.engine().tempMemory();
       LinearAllocatorScope scope     = tmp_alloc;
 
+      ImGui::SetNextItemOpen(expanded_state || do_filter_entities, ImGuiCond_Always);
+
       char* tree_node_name = string_utils::fmtAlloc(tmp_alloc, nullptr, "%s %s", ICON_FA_DICE_D6, entity->name().c_str());
       is_opened            = ImGui::TreeNodeEx(tree_node_name, tree_node_flags);
+    }
+
+    if (!do_filter_entities)
+    {
+      if (is_opened != expanded_state)
+      {
+        if (is_opened)
+        {
+          m_ExpandedState.insert(entity);
+        }
+        else
+        {
+          m_ExpandedState.erase(expanded_state_it);
+        }
+      }
+    }
+
+    if (do_filter_entities && is_filtered_in)
+    {
+      ImGui::PopStyleColor();
     }
 
     if (!is_active)
@@ -144,16 +234,18 @@ namespace bf::editor
     {
       if (ImGui::Selectable("Toggle Active"))
       {
-        editor.history().performLambdaAction("Toggle Entity Active", [entity, original_state = entity->isActiveSelf()](UndoRedoEventType evt) {
-          if (evt == UndoRedoEventType::ON_REDO)
-          {
-            entity->setActiveSelf(!original_state);
-          }
-          else if (evt == UndoRedoEventType::ON_UNDO)
-          {
-            entity->setActiveSelf(original_state);
-          }
-        });
+        editor.history().performLambdaAction(
+         "Toggle Entity Active",
+         [entity, original_state = entity->isActiveSelf()](UndoRedoEventType evt) {
+           if (evt == UndoRedoEventType::ON_REDO)
+           {
+             entity->setActiveSelf(!original_state);
+           }
+           else if (evt == UndoRedoEventType::ON_UNDO)
+           {
+             entity->setActiveSelf(original_state);
+           }
+         });
       }
 
       // if (ImGui::Selectable("Delete"))
@@ -210,7 +302,7 @@ namespace bf::editor
     {
       for (Entity& child : entity->children())
       {
-        guiEntityList(editor, &child);
+        guiEntityList(parent_to, editor, &child);
       }
 
       ImGui::TreePop();
@@ -238,10 +330,22 @@ namespace bf::editor
     }
 
     ImGui::PopID();
+  }
 
-    if (parent_to.first != nullptr && parent_to.second != nullptr)
+  bool HierarchyView::isEntityFilteredIn(const Entity* entity) const
+  {
+    using namespace string_utils;
+
+    const String& name     = entity->name();
+    bool          is_found = stringMatchPercent(name, m_SearchQuery) >= 0.65f;
+
+    if (!is_found)
     {
-      parent_to.second->setParent(parent_to.first);
+      tokenize(name, ' ', [this, &is_found](StringRange element) {
+        is_found = is_found || stringMatchPercent(element, m_SearchQuery) >= 0.65f;
+      });
     }
+
+    return is_found || findSubstringI(name, m_SearchQuery) != nullptr;
   }
 }  // namespace bf::editor

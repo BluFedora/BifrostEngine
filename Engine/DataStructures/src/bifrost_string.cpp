@@ -3,6 +3,7 @@
 #include "bf/IMemoryManager.hpp"  // IMemoryManager
 
 #include <cassert>  // assert
+#include <cctype>   // tolower
 #include <cstdio>   // vsnprintf
 
 namespace bf
@@ -130,6 +131,82 @@ namespace bf::string_utils
       allocator.deallocateT(link_head);
       link_head = next;
     }
+  }
+
+  float stringMatchPercent(const char* str1, std::size_t str1_len, const char* str2, std::size_t str2_len, float capital_letter_mismatch_cost)
+  {
+    const float       max_size     = float(std::max(str1_len, str2_len));
+    const char* const str1_end     = str1 + str1_len;
+    const char* const str2_end     = str2 + str2_len;
+    const float       cost_match   = 1.0f / max_size;
+    const float       cost_capital = capital_letter_mismatch_cost / max_size;
+    float             match_value  = 0.0f;
+
+    while (str1 != str1_end && str2 != str2_end)
+    {
+      if (*str1 == *str2)
+      {
+        match_value += cost_match;
+      }
+      else if (std::tolower(*str1) == std::tolower(*str2))
+      {
+        match_value += cost_capital;
+      }
+      else
+      {
+        const char* left_best   = str1_end;
+        const char* right_best  = str2_end;
+        int         best_count  = std::numeric_limits<decltype(best_count)>::max();
+        int         left_count  = 0;
+        int         right_count = 0;
+
+        for (const char* l = str1; (l != str1_end) && (left_count + right_count < best_count); ++l)
+        {
+          for (const char* r = str2; (r != str2_end) && (left_count + right_count < best_count); ++r)
+          {
+            if (std::tolower(*l) == std::tolower(*r))
+            {
+              const auto total_count = left_count + right_count;
+
+              if (total_count < best_count)
+              {
+                best_count = total_count;
+                left_best  = l;
+                right_best = r;
+              }
+            }
+
+            ++right_count;
+          }
+
+          ++left_count;
+          right_count = 0;
+        }
+
+        str1 = left_best;
+        str2 = right_best;
+        continue;
+      }
+
+      // TODO(Shareef): Test to see if the if statement is really needed.
+      if (str1 != str1_end) ++str1;
+      if (str2 != str2_end) ++str2;
+    }
+
+    // NOTE(Shareef): Some floating point error adjustment.
+    return match_value < 0.01f ? 0.0f : match_value > 0.99f ? 1.0f : match_value;
+  }
+
+  float stringMatchPercent(StringRange str1, StringRange str2, float capital_letter_mismatch_cost)
+  {
+    return stringMatchPercent(str1.begin(), str1.length(), str2.begin(), str2.length(), capital_letter_mismatch_cost);
+  }
+
+  StringRange findSubstringI(StringRange haystack, StringRange needle)
+  {
+    return findSubstring(haystack, needle, [](char hay_char, char needle_char) {
+      return std::tolower(hay_char) == std::tolower(needle_char);
+    });
   }
 
   BufferLen clone(IMemoryManager& allocator, StringRange str)

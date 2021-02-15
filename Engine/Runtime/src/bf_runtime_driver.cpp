@@ -459,9 +459,9 @@ if (!mCooking)
 
               for (int y = 0; y <= num_grid_segments; ++y)
               {
-                const physx::PxVec3 grid_y = center +  y_axis * float(y * grid_square_size) - half_y_extents;
+                const physx::PxVec3 grid_y = center + y_axis * float(y * grid_square_size) - half_y_extents;
                 const physx::PxVec3 p0     = grid_y - half_z_extents;
-                const physx::PxVec3 p1     =grid_y + half_z_extents;
+                const physx::PxVec3 p1     = grid_y + half_z_extents;
 
                 dbg_draw.addLine({p0.x, p0.y, p0.z}, {p1.x, p1.y, p1.z}, line_clr);
               }

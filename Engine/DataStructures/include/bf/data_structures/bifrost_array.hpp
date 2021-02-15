@@ -75,6 +75,12 @@ namespace bf
       copyFrom(rhs);
     }
 
+    Array(IMemoryManager& memory, const Array& rhs) noexcept :
+      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignof(T), &memory))}
+    {
+      copyFrom(rhs);
+    }
+
     Array(Array&& rhs) noexcept :
       m_Data{rhs.m_Data}
     {
@@ -319,6 +325,16 @@ namespace bf
       return element - begin();
     }
 
+    void copyFrom(const Array& rhs)
+    {
+      reserve(rhs.size());
+
+      for (const T& value : rhs)
+      {
+        push(value);
+      }
+    }
+
     ~Array()
     {
       if (m_Data)
@@ -334,16 +350,6 @@ namespace bf
       assert(begin() <= element && element <= end() && "'element' must be within this Array");
 
       return element - begin();
-    }
-
-    void copyFrom(const Array& rhs)
-    {
-      reserve(rhs.size());
-
-      for (const T& value : rhs)
-      {
-        push(value);
-      }
     }
 
     void** rawData()
