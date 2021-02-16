@@ -644,7 +644,7 @@ namespace bf::editor
         *Mat4x4_get(&transform, 1, 1) = camera_up.y;
         *Mat4x4_get(&transform, 1, 2) = camera_up.z;
 
-        primitive_proto.material  = &editor.m_SceneLightMaterial;
+        primitive_proto.material  = editor.m_SceneLightMaterial.typedHandle();
         primitive_proto.size      = {k_LightIconSize, k_LightIconSize};
         primitive_proto.uv_rect   = {0.0f, 0.0f, 1.0f, 1.0};
         primitive_proto.color     = bfColor4u_fromUint32(0xFFFFFFFF);

@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2020-12-19
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_GFX_ASSETS_HPP
@@ -30,7 +30,7 @@ namespace bf
     bfTextureHandle   m_TextureHandle;
 
    public:
-    explicit TextureAsset(bfGfxDeviceHandle gfx_device = nullptr);
+    explicit TextureAsset();
 
     bfGfxDeviceHandle gfxDevice() const { return m_ParentDevice; }
     bfTextureHandle   handle() const { return m_TextureHandle; }
@@ -80,7 +80,7 @@ namespace bf
     BIFROST_META_BEGIN()
       BIFROST_META_MEMBERS(
        class_info<TextureAsset>("Texture"),       //
-       ctor<bfGfxDeviceHandle>(),                 //
+       ctor<>(),                                  //
        property("width", &TextureAsset::width),   //
        property("height", &TextureAsset::height)  //
       )
@@ -323,7 +323,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

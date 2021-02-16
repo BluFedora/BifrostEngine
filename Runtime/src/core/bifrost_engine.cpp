@@ -248,8 +248,8 @@ namespace bf
 
     m_Assets.registerFileExtensions(
      {".png", ".jpg", ".jpeg", ".ppm", ".pgm", ".bmp", ".tga", ".psd"},
-     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
-       return asset_memory.allocateT<TextureAsset>(engine.renderer().device());
+     [](IMemoryManager& asset_memory, Engine& /* engine */) -> IBaseAsset* {
+       return asset_memory.allocateT<TextureAsset>();
      });
 
     m_Assets.registerFileExtensions(

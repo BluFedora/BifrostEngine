@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2020-12-19
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #include "bf/asset_io/bf_gfx_assets.hpp"
@@ -27,11 +27,12 @@ namespace bf
   static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
 
   // TODO(SR): We dont want this.
-  LinearAllocator& ENGINE_TEMP_MEM(Engine& engine);
+  LinearAllocator&  ENGINE_TEMP_MEM(Engine& engine);
+  bfGfxDeviceHandle ENGINE_GFX_DEVICE(Engine& engine);
 
-  TextureAsset::TextureAsset(bfGfxDeviceHandle gfx_device) :
+  TextureAsset::TextureAsset() :
     Base(),
-    m_ParentDevice{gfx_device},
+    m_ParentDevice{nullptr},
     m_TextureHandle{nullptr}
   {
   }
@@ -61,6 +62,9 @@ namespace bf
 
   bool TextureAsset::loadImpl()
   {
+    // TODO(SR): This is bad.
+    m_ParentDevice = ENGINE_GFX_DEVICE(assets().engine());
+
     const String&               full_path         = fullPath();
     const bfTextureCreateParams tex_create_params = bfTextureCreateParams_init2D(
      BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
@@ -459,7 +463,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

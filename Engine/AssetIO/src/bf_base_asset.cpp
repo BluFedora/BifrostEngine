@@ -198,6 +198,10 @@ namespace bf
           m_ParentAsset->acquire();
           m_Flags |= AssetFlags::IS_LOADED;
         }
+        else if (m_Flags & AssetFlags::IS_IN_MEMORY)
+        {
+          markIsLoaded();
+        }
         else
         {
           onLoad();
@@ -230,7 +234,7 @@ namespace bf
       {
         m_ParentAsset->release();
       }
-      else
+      else if (!(m_Flags & AssetFlags::IS_IN_MEMORY))
       {
         onUnload();
 
@@ -243,6 +247,13 @@ namespace bf
       }
 
       m_Flags &= ~(AssetFlags::IS_LOADED | AssetFlags::FAILED_TO_LOAD);
+
+      if (m_Flags & AssetFlags::IS_FREE_ON_RELEASE)
+      {
+        IMemoryManager& asset_memory = assets().memory();
+
+        asset_memory.deallocateT(this);
+      }
     }
   }
 

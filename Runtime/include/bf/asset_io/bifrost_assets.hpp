@@ -113,6 +113,12 @@ namespace bf
     DONT_LOAD_ASSET,
   };
 
+  enum class AssetLoadMode
+  {
+    FROM_FILE,
+    IN_MEMORY,
+  };
+
   class Assets final : public NonCopyMoveable<Assets>
   {
     friend class IBaseAsset;
@@ -131,6 +137,35 @@ namespace bf
 
    public:
     explicit Assets(Engine& engine, IMemoryManager& memory);
+
+    //
+    // The asset will automatically be freed when the last reference
+    // to this asset is gone.
+    //
+    // Normal assets are stored within this class and are deleted when
+    // a new project is opened, but these type of assets do not do this behavior.
+    //
+    template<typename T>
+    ARC<T> loadUnmanagedAsset(StringRange abs_path, AssetLoadMode load_mode = AssetLoadMode::FROM_FILE)
+    {
+      static_assert(std::is_base_of_v<IBaseAsset, T>, "The T must be an asset type.");
+
+      IBaseAsset* const base_asset = m_Memory.allocateT<T>();
+
+      if (base_asset)
+      {
+        base_asset->m_Flags |= AssetFlags::IS_FREE_ON_RELEASE;
+
+        if (load_mode == AssetLoadMode::IN_MEMORY)
+        {
+          base_asset->m_Flags |= AssetFlags::IS_IN_MEMORY;
+        }
+
+        base_asset->setup(abs_path, *this);
+      }
+
+      return ARC<T>{static_cast<T*>(base_asset)};
+    }
 
     void        registerFileExtensions(std::initializer_list<StringRange> exts, AssetCreationFn create_fn);
     IBaseAsset* findAsset(const bfUUIDNumber& uuid) const;

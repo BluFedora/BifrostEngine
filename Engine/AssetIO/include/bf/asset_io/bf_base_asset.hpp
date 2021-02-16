@@ -39,12 +39,14 @@ namespace bf
   {
     enum
     {
-      DEFAULT         = 0x0,       //!< No flags are set by default.
-      IS_LOADED       = bfBit(0),  //!< Marks that the asset has been successfully loaded.
-      IS_SUBASSET     = bfBit(1),  //!< This asset only lives in memory.
-      FAILED_TO_LOAD  = bfBit(2),  //!< Failed to load asset, this flag is set do that we do not continuously try to load it.
-      IS_DIRTY        = bfBit(3),  //!< This asset wants to be saved.
-      IS_ENGINE_ASSET = bfBit(4),  //!< If the content saving routines should be called.
+      DEFAULT            = 0x0,       //!< No flags are set by default.
+      IS_LOADED          = bfBit(0),  //!< Marks that the asset has been successfully loaded.
+      IS_SUBASSET        = bfBit(1),  //!< This asset only lives in memory.
+      FAILED_TO_LOAD     = bfBit(2),  //!< Failed to load asset, this flag is set do that we do not continuously try to load it.
+      IS_DIRTY           = bfBit(3),  //!< This asset wants to be saved.
+      IS_ENGINE_ASSET    = bfBit(4),  //!< If the content saving routines should be called.
+      IS_FREE_ON_RELEASE = bfBit(5),  //!< Asset's memory will not be managed by `Assets` class, so will be freed on release.
+      IS_IN_MEMORY       = bfBit(6),  //!< If the asset should not attempt to load from a file.
     };
   }
 
@@ -286,6 +288,11 @@ namespace bf
     bool operator==(const ARC& rhs) const noexcept { return m_Handle == rhs.m_Handle; }
     bool operator!=(const ARC& rhs) const noexcept { return m_Handle != rhs.m_Handle; }
 
+    T* typedHandle() const noexcept
+    {
+      return m_Handle;
+    }
+
     ~ARC()
     {
       release();
@@ -295,16 +302,8 @@ namespace bf
 
     bool                     isValid() const noexcept override { return m_Handle != nullptr; }
     meta::BaseClassMetaInfo* typeInfo() const noexcept override { return meta::typeInfoGet<T>(); }
-
-    void assign(IBaseAsset* asset) override
-    {
-      reassign(asset);
-    }
-
-    IBaseAsset* handle() const noexcept override
-    {
-      return m_Handle;
-    }
+    void                     assign(IBaseAsset* asset) override { reassign(asset); }
+    IBaseAsset*              handle() const noexcept override { return m_Handle; }
 
    private:
     void reassign(IBaseAsset* asset)

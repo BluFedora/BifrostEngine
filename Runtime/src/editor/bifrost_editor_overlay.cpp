@@ -2,7 +2,6 @@
 
 #include "bf/CRTAllocator.hpp"
 #include "bf/FreeListAllocator.hpp"
-#include "bf/gfx/bf_draw_2d.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
@@ -12,6 +11,7 @@
 #include "bf/data_structures/bifrost_intrusive_list.hpp"
 #include "bf/editor/bifrost_editor_inspector.hpp"
 #include "bf/editor/bifrost_editor_scene.hpp"
+#include "bf/gfx/bf_draw_2d.hpp"
 #include "bf/utility/bifrost_json.hpp"
 
 #include <imgui/imgui.h>           /* ImGUI::* */
@@ -829,15 +829,12 @@ namespace bf::editor
       }
     });
 
-    // TODO(SR): API for making on Assets owned assets sucks.
-    {
-      auto& assets                       = engine.assets();
-      m_SceneLightTexture.m_ParentDevice = engine.renderer().device();
-      m_SceneLightTexture.setup("editor/images/Scene_Light.png", assets);
-      m_SceneLightMaterial.setup("__InMemory__", assets);
-      m_SceneLightMaterial.acquire();
-      m_SceneLightMaterial.m_AlbedoTexture = &m_SceneLightTexture;
-    }
+    auto& assets = engine.assets();
+
+    m_SceneLightTexture  = assets.loadUnmanagedAsset<TextureAsset>("editor/images/Scene_Light.png");
+    m_SceneLightMaterial = assets.loadUnmanagedAsset<MaterialAsset>("Scene Light Mat", AssetLoadMode::IN_MEMORY);
+
+    m_SceneLightMaterial->m_AlbedoTexture = m_SceneLightTexture;
   }
 
   void EditorOverlay::onLoad(Engine& engine)
@@ -1090,7 +1087,7 @@ namespace bf::editor
 
       if (ImGui::Begin("History View"))
       {
-        const auto& cmds = m_History.stack().commands();
+        const auto& cmds      = m_History.stack().commands();
         const auto  stack_top = m_History.stack().stackTop();
 
         ImGui::Selectable("Clean State", 0 == stack_top);
@@ -1237,7 +1234,8 @@ namespace bf::editor
 
   void EditorOverlay::onDestroy(Engine& engine)
   {
-    m_SceneLightMaterial.release();
+    m_SceneLightTexture  = nullptr;
+    m_SceneLightMaterial = nullptr;
 
     imgui::shutdown();
     enqueueDialog(nullptr);

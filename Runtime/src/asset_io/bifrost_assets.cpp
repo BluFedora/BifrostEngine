@@ -44,6 +44,11 @@ namespace bf
     return engine.tempMemory();
   }
 
+  bfGfxDeviceHandle ENGINE_GFX_DEVICE(Engine& engine)
+  {
+    return engine.renderer().device();
+  }
+
   namespace files = std::filesystem;
 
   namespace path
