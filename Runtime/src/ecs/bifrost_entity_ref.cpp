@@ -161,9 +161,9 @@ namespace bf
         }
       };
 
-      IMemoryManager*             memory;
-      UUIDToObject                id_to_object;
-      intrusive::ListView<Entity> gc_list;
+      IMemoryManager*  memory;
+      UUIDToObject     id_to_object;
+      ListView<Entity> gc_list;
 
       explicit GCContext(IMemoryManager* mem) :
         memory{mem},
@@ -261,4 +261,4 @@ namespace bf
       g_GCCtx.reset();
     }
   }  // namespace gc
-}  // namespace bifrost
+}  // namespace bf

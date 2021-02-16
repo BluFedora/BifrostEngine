@@ -14,7 +14,7 @@
 #ifndef BIFROST_EDITOR_FILESYSTEM_HPP
 #define BIFROST_EDITOR_FILESYSTEM_HPP
 
-#include "bf/ListView.hpp"                        // ListView<T>, Node<T>
+#include "bf/ListView.hpp"                        // ListView<T>, ListNode<T>
 #include "bf/data_structures/bifrost_string.hpp"  // String
 
 namespace bf::editor
@@ -27,7 +27,7 @@ namespace bf::editor
     String              full_path;
     StringRange         file_extension;  //!< Backed by FileEntry::full_path.
     ListView<FileEntry> children;
-    Node<FileEntry>     next;
+    ListNode<FileEntry>     next;
     IBaseAsset*         asset_info;
     bool                is_file;
 

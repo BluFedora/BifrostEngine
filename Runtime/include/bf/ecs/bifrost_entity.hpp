@@ -89,8 +89,8 @@ namespace bf
     String                 m_Name;                   //!<
     Entity*                m_Parent;                 //!<
     EntityList             m_Children;               //!<
-    Node<Entity>           m_Hierarchy;              //!<
-    Node<Entity>           m_GCList;                 //!<
+    ListNode<Entity>       m_Hierarchy;              //!<
+    ListNode<Entity>       m_GCList;                 //!<
     BehaviorList           m_Behaviors;              //!<
     ComponentHandleStorage m_ComponentHandles;       //!<
     bfTransform            m_Transform;              //!<

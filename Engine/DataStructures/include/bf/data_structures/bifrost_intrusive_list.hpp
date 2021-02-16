@@ -1,22 +1,22 @@
 // Inspired By [https://stackoverflow.com/questions/34134886/how-to-implement-an-intrusive-linked-list-that-avoids-undefined-behavior]
 
-#ifndef BIFROST_INTRUSIVE_LIST_HPP
-#define BIFROST_INTRUSIVE_LIST_HPP
+#ifndef BF_INTRUSIVE_LIST_HPP
+#define BF_INTRUSIVE_LIST_HPP
 
 #include "bf/bf_non_copy_move.hpp" /* bfNonCopyable<T>, bfNonCopyMoveable<t> */
 
-namespace bf::intrusive
+namespace bf
 {
   template<typename T>
   class ListView;
 
   template<typename T>
-  struct Node // : private NonCopyable<Node<T>>
+  struct ListNode  // : private NonCopyable<ListNode<T>>
   {
-    Node<T>* prev;
-    T*       next;
+    ListNode<T>* prev;
+    T*           next;
 
-    explicit Node(Node<T>* p = nullptr, T* n = nullptr) :
+    explicit ListNode(ListNode<T>* p = nullptr, T* n = nullptr) :
       prev{p},
       next{n}
     {
@@ -24,26 +24,23 @@ namespace bf::intrusive
   };
 
   template<typename T>
-  using ListNode = Node<T>;
-
-  template<typename T>
   class ListIterator final
   {
     friend class ListView<T>;
 
    public:
-    typedef ListIterator<T>        self_type;
-    typedef T                      value_type;
-    typedef value_type&            reference;
-    typedef value_type*            pointer;
-    using MemberAccessor = Node<T> T::*;
+    typedef ListIterator<T>            self_type;
+    typedef T                          value_type;
+    typedef value_type&                reference;
+    typedef value_type*                pointer;
+    using MemberAccessor = ListNode<T> T::*;
 
    private:
-    Node<T>*       m_Current;
+    ListNode<T>*   m_Current;
     MemberAccessor m_Link;
 
    public:
-    explicit ListIterator(Node<T>* node, Node<T> T::*link) :
+    explicit ListIterator(ListNode<T>* node, ListNode<T> T::*link) :
       m_Current{node},
       m_Link{link}
     {
@@ -123,11 +120,11 @@ namespace bf::intrusive
   template<typename T>
   class ListView final
   {
-    using MemberAccessor = Node<T> T::*;
+    using MemberAccessor = ListNode<T> T::*;
 
    private:
-    mutable Node<T> m_Head; // TODO(SR): This is for the const versions begin and end, but maybe they should be actually const??
-    MemberAccessor  m_Link;
+    mutable ListNode<T> m_Head;  // TODO(SR): This is for the const versions begin and end, but maybe they should be actually const??
+    MemberAccessor      m_Link;
 
    public:
     explicit ListView(MemberAccessor link) :
@@ -204,7 +201,7 @@ namespace bf::intrusive
       clear();
     }
   };
-}  // namespace bf::intrusive
+}  // namespace bf
 
 // TODO: Make a new file for this
 
@@ -231,10 +228,10 @@ namespace bf
       typedef value_type* pointer;
 
      private:
-      intrusive::ListIterator<Node> m_Current;
+      ListIterator<Node> m_Current;
 
      public:
-      explicit iterator(intrusive::ListIterator<Node> current) :
+      explicit iterator(ListIterator<Node> current) :
         m_Current{current}
       {
       }
@@ -307,7 +304,7 @@ namespace bf
     struct Node final
     {
       std::aligned_storage_t<sizeof(T), alignof(T)> data_storage;  //!< Must be the first member since this will be treated as a 'T'.
-      intrusive::Node<Node>                         list;          //!< The set of pointers for the ListView.
+      bf::ListNode<Node>                            list;          //!< The set of pointers for the ListView.
 
       Node() :
         data_storage{},
@@ -327,8 +324,8 @@ namespace bf
     };
 
    private:
-    IMemoryManager&           m_Memory;
-    intrusive::ListView<Node> m_InternalList;
+    IMemoryManager& m_Memory;
+    ListView<Node>  m_InternalList;
 
    public:
     explicit List(IMemoryManager& memory) :
@@ -417,4 +414,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_INTRUSIVE_LIST_HPP */
+#endif /* BF_INTRUSIVE_LIST_HPP */
