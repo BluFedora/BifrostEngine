@@ -298,16 +298,6 @@ namespace bf::editor
       ImGui::EndDragDropTarget();
     }
 
-    if (is_opened)
-    {
-      for (Entity& child : entity->children())
-      {
-        guiEntityList(parent_to, editor, &child);
-      }
-
-      ImGui::TreePop();
-    }
-
     ImGui::InvisibleButton("Reorder", ImVec2{ImGui::GetWindowContentRegionWidth(), 2.0f});
 
     if (ImGui::BeginDragDropTarget())
@@ -327,6 +317,16 @@ namespace bf::editor
       }
 
       ImGui::EndDragDropTarget();
+    }
+
+    if (is_opened)
+    {
+      for (Entity& child : entity->children())
+      {
+        guiEntityList(parent_to, editor, &child);
+      }
+
+      ImGui::TreePop();
     }
 
     ImGui::PopID();
