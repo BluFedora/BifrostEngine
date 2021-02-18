@@ -10,8 +10,8 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_JSON_SERIALIZER_HPP
-#define BIFROST_JSON_SERIALIZER_HPP
+#ifndef BF_JSON_SERIALIZER_HPP
+#define BF_JSON_SERIALIZER_HPP
 
 #include "bf/asset_io/bf_iserializer.hpp"                 // ISerializer
 #include "bf/data_structures/bifrost_intrusive_list.hpp"  // List<T>
@@ -79,7 +79,7 @@ namespace bf
 
    private:
     Assets&               m_Assets;
-    json::Value&          m_Document;  //!< Non cost by design, maybe I should make it const?
+    json::Value&          m_Document;  //!< Non const by design, maybe I should make it const?
     List<ObjectStackNode> m_ObjectStack;
 
    public:
@@ -115,4 +115,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_JSON_SERIALIZER_HPP */
+#endif /* BF_JSON_SERIALIZER_HPP */

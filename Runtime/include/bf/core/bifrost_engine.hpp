@@ -1,7 +1,6 @@
 #ifndef BF_ENGINE_HPP
 #define BF_ENGINE_HPP
 
-#include "bf/PoolAllocator.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/ecs/bifrost_iecs_system.hpp"

@@ -1,6 +1,7 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_scene.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   This is where Entities live in the engine.
  *   Also contains the storage for the components.
@@ -8,16 +9,17 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
+/******************************************************************************/
 #ifndef BIFROST_SCENE_HPP
 #define BIFROST_SCENE_HPP
 
-#include "bf/bifrost_math.h"                              /* Vec3f, Mat4x4     */
-#include "bf/core/bifrost_base_object.hpp"                /* BaseObject<T>     */
-#include "bf/data_structures/bifrost_intrusive_list.hpp"  //
-#include "bf/ecs/bifrost_collision_system.hpp"            /* BVH               */
-#include "bf/ecs/bifrost_component_storage.hpp"           /* ComponentStorage  */
+#include "bf/bifrost_math.h"                             /* Vec3f, Mat4x4     */
+#include "bf/core/bifrost_base_object.hpp"               /* BaseObject<T>     */
+#include "bf/data_structures/bifrost_intrusive_list.hpp" /* ListView<T>       */
+#include "bf/ecs/bifrost_collision_system.hpp"           /* BVH               */
+#include "bf/ecs/bifrost_component_storage.hpp"          /* ComponentStorage  */
 
 namespace bf
 {
@@ -29,12 +31,13 @@ namespace bf
 
   using Camera = BifrostCamera;
 
-  // TODO(SR): Storage for enities should be grouped together since each of these parts has a max of 2^16 - 1 entities.
+  // TODO(SR): Storage for entities should be grouped together since each of these parts has a max of 2^16 - 1 entities.
   // EntityStorage:
-  //   IMemoryManger    (Pool)
-  //   ComponentStorage m_ActiveComponents
-  //   ComponentStorage m_InactiveComponents
-  //   BVH              m_BVHTree;
+  //   IMemoryManger          (Pool)
+  //   ComponentStorage       m_ActiveComponents
+  //   ComponentStorage       m_InactiveComponents
+  //   BVH                    m_BVHTree;
+  //   HashTable<id, Entity*> m_IDToEntity;
   //
 
   /*!

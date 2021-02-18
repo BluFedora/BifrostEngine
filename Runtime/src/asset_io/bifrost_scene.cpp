@@ -1,15 +1,17 @@
+/******************************************************************************/
 /*!
-* @file   bifrost_scene.cpp
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
-* @brief
-*   This is where Entities live in the engine.
-*   Also contains the storage for the components.
-*
-* @version 0.0.1
-* @date    2019-12-22
-*
-* @copyright Copyright (c) 2019
-*/
+ * @file   bifrost_scene.cpp
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
+ * @brief
+ *   This is where Entities live in the engine.
+ *   Also contains the storage for the components.
+ *
+ * @version 0.0.1
+ * @date    2019-12-22
+ *
+ * @copyright Copyright (c) 2019-2021
+ */
+/******************************************************************************/
 #include "bf/asset_io/bifrost_scene.hpp"
 
 #include "bf/asset_io/bifrost_file.hpp"            /* File                 */
@@ -82,26 +84,7 @@ namespace bf
     if (m_DoDebugDraw)
     {
       m_BVHTree.traverse([this, &dbg_renderer](const BVHNode& node) {
-        if (!bvh_node::isLeaf(node))
-        {
-          const auto child_bounds = aabb::mergeBounds(m_BVHTree.nodeAt(node.children[0]).bounds,
-                                                      m_BVHTree.nodeAt(node.children[1]).bounds);
-
-          assert(m_BVHTree.nodeAt(node.children[0]).parent == m_BVHTree.nodeToIndex(node));
-          assert(m_BVHTree.nodeAt(node.children[1]).parent == m_BVHTree.nodeToIndex(node));
-
-          if (!node.bounds.canContain(child_bounds))
-          {
-            if (node.bounds == child_bounds)
-            {
-              __debugbreak();
-            }
-
-            __debugbreak();
-          }
-        }
-
-        static bfColor4u k_DebugColors[] =
+        static constexpr bfColor4u k_DebugColors[] =
          {
           {255, 0, 0, 255},
           {0, 255, 0, 255},
@@ -275,6 +258,7 @@ namespace bf
       {
         bfTransform* const next_transform = std::exchange(transform->dirty_list_next, nullptr);
         transform->flags &= ~BF_TRANSFORM_LOCAL_DIRTY;
+
         Entity* const entity       = Entity::fromTransform(transform);
         auto* const   mesh         = entity->get<MeshRenderer>();
         auto* const   skinned_mesh = entity->get<SkinnedMeshRenderer>();

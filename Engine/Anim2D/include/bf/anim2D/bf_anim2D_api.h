@@ -1,7 +1,7 @@
 #ifndef BF_ANIM2D_H
 #define BF_ANIM2D_H
 
-#include "bf_animation2D_export.h" /* BF_ANIM2D_API, BF_CDECL */
+#include "bf_anim2D_export.h" /* BF_ANIM2D_API, BF_CDECL */
 
 #include <stddef.h> /* size_t            */
 #include <stdint.h> /* uint32_t, uint8_t */

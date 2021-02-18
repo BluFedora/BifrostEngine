@@ -1,6 +1,6 @@
 
-#ifndef BIFROST_SPRITE_ANIM_API_H
-#define BIFROST_SPRITE_ANIM_API_H
+#ifndef BF_SPRITE_ANIM_API_H
+#define BF_SPRITE_ANIM_API_H
 
 #if defined _WIN32 || defined __CYGWIN__
 #ifdef BF_ANIM2D_EXPORT
@@ -11,7 +11,7 @@
 #define BF_ANIM2D_API __declspec(dllexport)
 #endif
 
-#elif defined(BIFROST_ANIM2D_EXPORT_STATIC)
+#elif defined(BF_ANIM2D_EXPORT_STATIC)
 
 #define BF_ANIM2D_API
 
@@ -37,10 +37,10 @@
 #endif
 #endif
 
-#  ifdef __GNUC__
-#    define BF_CDECL __attribute__ ((__cdecl__))
-#  else
-#    define BF_CDECL __cdecl
-#  endif
+#ifdef __GNUC__
+#define BF_CDECL __attribute__((__cdecl__))
+#else
+#define BF_CDECL __cdecl
+#endif
 
-#endif /* BIFROST_SPRITE_ANIM_API_H */
+#endif /* BF_SPRITE_ANIM_API_H */

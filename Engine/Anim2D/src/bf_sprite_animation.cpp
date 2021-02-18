@@ -1,4 +1,4 @@
-#include "bf/anim2D/bf_sprite_animation_api.h"
+#include "bf/anim2D/bf_anim2D_api.h"
 
 #include "bf/anim2D/bf_anim2D_network.h"  // bfAnim2DPacketHeader
 

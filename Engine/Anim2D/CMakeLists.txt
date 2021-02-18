@@ -1,9 +1,9 @@
 ﻿################################################################################
 #                                                                              #
-#                     SPRITE-ANIM RUNTIME PROJECT                              #
+#                           ANIM2D RUNTIME PROJECT                             #
 #                                                                              #
 ################################################################################
-###  CMakeList.txt :                                                         ###
+###  CMakeList.txt : Animation runtime for the SRSA tool.                    ###
 ################################################################################
 
 cmake_minimum_required(VERSION 3.8)
@@ -15,8 +15,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(
   bfAnimation2D_shared SHARED
+  "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_anim2D_api.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_anim2D_export.h"
+  "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_anim2D_network.h"
+
   "${PROJECT_SOURCE_DIR}/src/bf_sprite_animation.cpp"
-  "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_animation2D_export.h"
 )
 
 target_include_directories(
@@ -48,9 +51,6 @@ target_compile_definitions(
 
 set_target_properties(bfAnimation2D_shared PROPERTIES OUTPUT_NAME bf.Animation2DDLL)
 set_target_properties(bfAnimation2D_shared PROPERTIES VERSION ${PROJECT_VERSION})
-# set_target_properties(BifrostAnimation2D_static PROPERTIES PUBLIC_HEADER include/bifrost/script/bifrost_vm.h)
-set_target_properties(bfAnimation2D_shared PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-
 
 # include(GenerateExportHeader)
 
