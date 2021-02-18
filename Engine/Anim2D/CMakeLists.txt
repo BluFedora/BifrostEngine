@@ -15,11 +15,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(
   bfAnimation2D_shared SHARED
+
   "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_anim2D_api.h"
   "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_anim2D_export.h"
   "${PROJECT_SOURCE_DIR}/include/bf/anim2D/bf_anim2D_network.h"
 
-  "${PROJECT_SOURCE_DIR}/src/bf_sprite_animation.cpp"
+  "${PROJECT_SOURCE_DIR}/src/bf_anim2D.cpp"
 )
 
 target_include_directories(
