@@ -32,7 +32,6 @@ namespace bf
     m_ActiveBehaviors{m_Memory},
     m_BVHTree{m_Memory},
     m_Camera{},
-    m_AnimationScene{bfAnimation2D_createScene(engine.animationSys().anim2DCtx())},
     m_DirtyList{nullptr}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
@@ -307,7 +306,6 @@ namespace bf
 
   Scene::~Scene()
   {
-    bfAnimation2D_destroyScene(m_Engine.animationSys().anim2DCtx(), m_AnimationScene);
     removeAllEntities();
   }
 }  // namespace bf

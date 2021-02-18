@@ -16,7 +16,7 @@ namespace bf
   class AnimationSystem final : public IECSSystem
   {
    private:
-    bfAnimation2DCtx*                               m_Anim2DCtx;
+    bfAnim2DCtx*                                    m_Anim2DCtx;
     List<Renderable<ObjectBoneData>>                m_RenderablePool;  // TODO(SR): Per make this Scene.
     HashTable<Entity*, Renderable<ObjectBoneData>*> m_Renderables;     // TODO(SR): Per make this Scene.
 
@@ -28,7 +28,7 @@ namespace bf
     {
     }
 
-    bfAnimation2DCtx*           anim2DCtx() const { return m_Anim2DCtx; }
+    bfAnim2DCtx*                anim2DCtx() const { return m_Anim2DCtx; }
     Renderable<ObjectBoneData>& getRenderable(StandardRenderer& renderer, Entity& entity);
 
     void onInit(Engine& engine) override;

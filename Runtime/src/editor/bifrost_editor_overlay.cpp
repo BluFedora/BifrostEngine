@@ -782,49 +782,33 @@ namespace bf::editor
 
       serializer.serializeT(sprite_animator);
 
-      ARC<SpritesheetAsset> sheet = sprite_animator->spritesheet();
+      const ARC<SpritesheetAsset>& sheet = sprite_animator->spritesheet();
 
       if (sheet)
       {
-        bfSpritesheet* const ss            = sheet->spritesheet();
-        const auto           sprite_handle = sprite_animator->animatedSprite();
+        bfSpritesheet* const ss = sheet->spritesheet();
 
-        if (!bfAnim2DSprite_isInvalidHandle(sprite_handle))
+        const char* preview_str = "No Animation Selected";
+
+        if (sprite_animator->m_Anim2DUpdateInfo.animation < ss->num_animations)
         {
-          const char* preview_str = "No Animation Selected";
+          preview_str = ss->animations[sprite_animator->m_Anim2DUpdateInfo.animation].name.str;
+        }
 
-          bfAnim2DSpriteState sprite_state;
-
-          if (bfAnim2DSprite_grabState(sprite_handle, &sprite_state))
+        if (ImGui::BeginCombo("Animations", preview_str, ImGuiComboFlags_None))
+        {
+          for (uint32_t i = 0; i < ss->num_animations; ++i)
           {
-            preview_str = sprite_state.animation->name.str;
-          }
+            const bfAnimation* const anim = ss->animations + i;
 
-          if (ImGui::BeginCombo("Animations", preview_str, ImGuiComboFlags_None))
-          {
-            for (uint32_t i = 0; i < ss->num_animations; ++i)
+            if (ImGui::Selectable(anim->name.str))
             {
-              const bfAnimation* const anim = ss->animations + i;
-
-              if (ImGui::Selectable(anim->name.str))
-              {
-                bfAnim2DSprite_setSpritesheet(sprite_handle, ss);
-
-                bfAnim2DPlayExOptions play_options;
-
-                play_options.animation         = anim;
-                play_options.playback_speed    = 1.0f;
-                play_options.start_frame       = 0;
-                play_options.is_looping        = true;
-                play_options.does_ping_ponging = false;
-                play_options.force_restart     = false;
-
-                bfAnim2DSprite_playAnimationEx(sprite_handle, &play_options);
-              }
+              sprite_animator->m_Anim2DUpdateInfo.current_frame = 0u;
+              sprite_animator->m_Anim2DUpdateInfo.animation     = bfAnim2DAnimationID(i);
             }
-
-            ImGui::EndCombo();
           }
+
+          ImGui::EndCombo();
         }
       }
     });

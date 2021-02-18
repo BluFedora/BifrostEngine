@@ -10,11 +10,11 @@ namespace bf
 {
   static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
 
-  static void onSSChange(bfAnimation2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event)
+  static void onSSChange(bfAnim2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event)
   {
     if (change_event.type == bfAnim2DChange_Texture)
     {
-      Engine* const           engine      = static_cast<Engine*>(bfAnimation2D_userData(ctx));
+      Engine* const           engine      = static_cast<Engine*>(bfAnim2D_userData(ctx));
       SpritesheetAsset* const ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
       const StringRange       ss_dir      = path::directory(ss_info->fullPath());
       const String            texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
@@ -49,7 +49,7 @@ namespace bf
   {
     const bfAnim2DCreateParams create_anim_ctx = {nullptr, &engine, &onSSChange};
 
-    m_Anim2DCtx = bfAnimation2D_new(&create_anim_ctx);
+    m_Anim2DCtx = bfAnim2D_new(&create_anim_ctx);
   }
 
   template<typename T, typename F>
@@ -202,34 +202,57 @@ namespace bf
 
   void AnimationSystem::onFrameUpdate(Engine& engine, float dt)
   {
-    const auto scene = engine.currentScene();
+    bfAnim2D_networkUpdate(m_Anim2DCtx);
 
-    bfAnimation2D_beginFrame(m_Anim2DCtx);
-    bfAnimation2D_stepFrame(m_Anim2DCtx, dt);
+    const auto scene = engine.currentScene();
 
     if (scene)
     {
       auto& engine_renderer = engine.renderer();
       auto& anim_sprites    = scene->components<SpriteAnimator>();
 
+      struct BackPtrs
+      {
+        SpriteAnimator* animator;
+        SpriteRenderer* renderer;
+      };
+
+      bfAnim2DUpdateInput*  input       = engine.tempMemory().allocateArrayTrivial<bfAnim2DUpdateInput>(anim_sprites.size());
+      BackPtrs*             back_ptrs   = engine.tempMemory().allocateArrayTrivial<BackPtrs>(anim_sprites.size());
+      const bfSpritesheet** sheets      = engine.tempMemory().allocateArrayTrivial<const bfSpritesheet*>(anim_sprites.size());
+      std::uint16_t         num_sprites = 0u;
+
       for (auto& anim_sprite : anim_sprites)
       {
         SpriteRenderer* const sprite = anim_sprite.owner().get<SpriteRenderer>();
 
-        if (anim_sprite.m_Spritesheet && sprite)
+        if (sprite && anim_sprite.m_Spritesheet && anim_sprite.m_Anim2DUpdateInfo.animation < anim_sprite.m_Spritesheet->spritesheet()->num_animations)
         {
-          bfAnim2DSpriteState state;
+          const auto current_idx = num_sprites++;
 
-          if (bfAnim2DSprite_grabState(anim_sprite.m_SpriteHandle, &state))
-          {
-            sprite->uvRect() = {
-             state.uv_rect.x,
-             state.uv_rect.y,
-             state.uv_rect.width,
-             state.uv_rect.height,
-            };
-          }
+          back_ptrs[current_idx].animator    = &anim_sprite;
+          back_ptrs[current_idx].renderer    = sprite;
+          input[current_idx]                 = anim_sprite.m_Anim2DUpdateInfo;
+          input[current_idx].spritesheet_idx = current_idx;
+          sheets[current_idx]                = anim_sprite.m_Spritesheet->spritesheet();
         }
+      }
+
+      bfAnim2DUpdateOutput* results = engine.tempMemory().allocateArrayTrivial<bfAnim2DUpdateOutput>(num_sprites);
+
+      bfAnim2D_stepFrame(input, sheets, num_sprites, dt, results);
+
+      for (std::uint16_t i = 0u; i < num_sprites; ++i)
+      {
+        SpriteRenderer* const       sprite = back_ptrs[i].renderer;
+        const bfAnim2DUpdateOutput& result = results[i];
+        const bfSpritesheet*        sheet  = sheets[input[i].spritesheet_idx];
+        const bfUVRect              rect   = sheet->uvs[sheet->animations->frames[result.current_frame].frame_index];
+
+        sprite->uvRect() = {rect.x, rect.y, rect.width, rect.height};
+
+        back_ptrs[i].animator->m_Anim2DUpdateInfo.time_left_for_frame = result.time_left_for_frame;
+        back_ptrs[i].animator->m_Anim2DUpdateInfo.current_frame       = result.current_frame;
       }
 
       Matrix4x4f identity;
@@ -315,7 +338,7 @@ namespace bf
 
   void AnimationSystem::onDeinit(Engine& engine)
   {
-    bfAnimation2D_delete(m_Anim2DCtx);
+    bfAnim2D_delete(m_Anim2DCtx);
 
     for (auto& r : m_RenderablePool)
     {

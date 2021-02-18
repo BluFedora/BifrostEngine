@@ -28,7 +28,7 @@ namespace bf
       const TempBuffer     json_buffer = file_in.readAll(ENGINE_TEMP_MEM(engine));
       const auto           file_name   = nameWithExt();
 
-      m_Anim2DSpritesheet = bfAnimation2D_loadSpritesheet(
+      m_Anim2DSpritesheet = bfAnim2D_loadSpritesheet(
        engine.animationSys().anim2DCtx(),
        bfStringSpan{file_name.begin(), file_name.length()},
        reinterpret_cast<const uint8_t*>(json_buffer.buffer()),
@@ -48,7 +48,7 @@ namespace bf
   {
     Engine& engine = assets().engine();
 
-    bfAnimation2D_destroySpritesheet(
+    bfAnim2D_destroySpritesheet(
      engine.animationSys().anim2DCtx(),
      m_Anim2DSpritesheet);
   }

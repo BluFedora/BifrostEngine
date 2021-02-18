@@ -60,7 +60,6 @@ namespace bf
     Array<BaseBehavior*> m_ActiveBehaviors;
     BVH                  m_BVHTree;
     Camera               m_Camera;
-    bfAnim2DScene*       m_AnimationScene;
     bfTransform*         m_DirtyList;
 
    public:
@@ -68,10 +67,9 @@ namespace bf
 
     // Accessors
 
-    Engine&        engine() const { return m_Engine; }
-    const Camera&  camera() const { return m_Camera; }
-    Camera&        camera() { return m_Camera; }
-    bfAnim2DScene* anim2DScene() const { return m_AnimationScene; }
+    Engine&       engine() const { return m_Engine; }
+    const Camera& camera() const { return m_Camera; }
+    Camera&       camera() { return m_Camera; }
 
     // Entity Management
 

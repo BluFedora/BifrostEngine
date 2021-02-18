@@ -72,22 +72,13 @@ namespace bf
   SpriteAnimator::SpriteAnimator(Entity& owner) :
     Base(owner),
     m_Spritesheet{nullptr},
-    m_SpriteHandle{bfAnim2DSprite_invalidHandle()}
+    m_Anim2DUpdateInfo{}
   {
-  }
-
-  template<>
-  void ComponentTraits::onCreate<SpriteAnimator>(SpriteAnimator& comp, Engine& engine)
-  {
-    comp.m_SpriteHandle = bfAnim2DScene_addSprite(comp.scene().anim2DScene());
-  }
-
-  template<>
-  void ComponentTraits::onDestroy<SpriteAnimator>(SpriteAnimator& comp, Engine& engine)
-  {
-    if (!bfAnim2DSprite_isInvalidHandle(comp.m_SpriteHandle))
-    {
-      bfAnim2DScene_destroySprite(comp.scene().anim2DScene(), &comp.m_SpriteHandle);
-    }
+    m_Anim2DUpdateInfo.playback_speed      = 1.0f;
+    m_Anim2DUpdateInfo.time_left_for_frame = 0.0f;
+    m_Anim2DUpdateInfo.animation           = k_bfAnim2DInvalidID;
+    m_Anim2DUpdateInfo.spritesheet_idx     = k_bfAnim2DInvalidID;
+    m_Anim2DUpdateInfo.current_frame       = 0;
+    m_Anim2DUpdateInfo.is_looping          = true;
   }
 }  // namespace bf

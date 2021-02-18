@@ -174,21 +174,20 @@ namespace bf
 
    public:
     ARC<SpritesheetAsset> m_Spritesheet;
-    bfAnim2DSpriteHandle  m_SpriteHandle;
+    bfAnim2DUpdateInput   m_Anim2DUpdateInfo;
 
    public:
     explicit SpriteAnimator(Entity& owner);
 
-    ARC<SpritesheetAsset> spritesheet() const { return m_Spritesheet; }
-    bfAnim2DSpriteHandle  animatedSprite() const { return m_SpriteHandle; }
+    const ARC<SpritesheetAsset>& spritesheet() const { return m_Spritesheet; }
   };
 
   namespace ComponentTraits
   {
-    template<>
-    void onCreate<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
-    template<>
-    void onDestroy<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
+    // template<>
+    // void onCreate<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
+    // template<>
+    // void onDestroy<SpriteAnimator>(SpriteAnimator& comp, Engine& engine);
   }  // namespace ComponentTraits
 
   BIFROST_META_REGISTER(bf::SpriteAnimator)
@@ -200,7 +199,7 @@ namespace bf
       )
     BIFROST_META_END()
   }
-  
+
   using ParticleEmitterFlags = std::uint8_t;
 
   class ParticleEmitter : public Component<ParticleEmitter>
@@ -231,7 +230,7 @@ namespace bf
     {
     }
   };
-  
+
 }  // namespace bf
 
 #endif /* BF_RENDERER_COMPONENT_HPP */
