@@ -17,9 +17,9 @@ extern "C" {
 
 /* clang-format on */
 
-typedef struct bfAnimation   bfAnimation;   /*!< */
-typedef struct bfSpritesheet bfSpritesheet; /*!< */
 typedef struct bfAnim2DCtx   bfAnim2DCtx;   /*!< Only one of these should need to be created per application, but having more than one is allowed. */
+typedef struct bfSpritesheet bfSpritesheet; /*!< */
+typedef struct bfAnimation   bfAnimation;   /*!< */
 
 typedef uint8_t  bfBool8;
 typedef uint16_t bfAnim2DAnimationID;                       /*!< Indexes into `bfSpritesheet::animations`. */
@@ -28,7 +28,7 @@ typedef uint16_t bfAnim2DAnimationID;                       /*!< Indexes into `b
 typedef enum
 {
   bfAnim2DChange_Texture,
-  bfAnim2DChange_Animation,
+  bfAnim2DChange_Animation,  //!< An animation may have been, added, edited, removed or renamed.
 
 } bfAnim2DChangeEventType;
 
@@ -45,12 +45,6 @@ typedef struct
       uint32_t    texture_bytes_png_size;
 
     } texture;
-
-    struct
-    {
-      char padd[sizeof(const char*) * 2];
-
-    } animation;
   };
 
 } bfAnim2DChangeEvent;
