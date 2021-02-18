@@ -9,11 +9,11 @@
 #ifndef BF_UI_HPP
 #define BF_UI_HPP
 
-#include "bf/gfx/bf_draw_2d.hpp"
 #include "bf/LinearAllocator.hpp"
 #include "bf/Math.hpp"
 #include "bf/MemoryUtils.h"
 #include "bf/PlatformFwd.h"
+#include "bf/gfx/bf_draw_2d.hpp"
 
 #include "sr_meta_interface.hpp"
 
@@ -214,6 +214,8 @@ namespace bf
       ScrollChildren = (1 << 8),
       NeedsScrollX   = (1 << 9),
       NeedsScrollY   = (1 << 10),
+
+      IsInteractingWithScrollbar = (1 << 11),
     };
 
     WidgetLayout   layout               = {};
@@ -230,6 +232,10 @@ namespace bf
     std::uint32_t  zindex               = 0;
     Widget*        hit_test_list        = nullptr;
     Vector2f       children_size        = {0.0f, 0.0f};
+
+    bool IsFlagSet(std::uint64_t f) const { return (flags & f) != 0u; }
+    void SetFlags(std::uint64_t f) { flags |= f; }
+    void UnsetFlags(std::uint64_t f) { flags &= ~f; }
 
     // TODO(SR): WidgetNavigationFn do_nav;
   };

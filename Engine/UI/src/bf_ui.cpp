@@ -391,7 +391,7 @@ namespace bf::UI
           widget->ForEachChild([widget, flex_space_unit, &constraints, &layout_result](Widget* child) {
             if (child->desired_size.width.type == SizeUnitType::Flex)
             {
-              float             child_width      = flex_space_unit * child->desired_size.width.value;
+              const float       child_width      = flex_space_unit * child->desired_size.width.value;
               LayoutConstraints flex_constraints = {
                {child_width, 0.0f},
                {child_width, constraints.max_size.y},
@@ -870,7 +870,7 @@ namespace bf::UI
           // g_UI.drag_offset = g_UI.mouse_pos - scrollbar_bg_rect.topLeft();
         }
 
-        if (IsActiveWidget(widget) || scrollbar_dragger.intersects(g_UI.mouse_pos))
+        if (scrollbar_dragger.intersects(g_UI.mouse_pos))
         {
           result.flags |= WidgetBehaviorResult::IsInScrollbarDragger;
 
@@ -932,7 +932,7 @@ namespace bf::UI
   {
     Widget* const window = CreateWidget(title, LayoutType::Fixed);
 
-    window->flags |= Widget::BlocksInput | Widget::IsWindow | Widget::DrawBackground | Widget::Clickable | Widget::IsExpanded;
+    window->flags |= Widget::BlocksInput | Widget::IsWindow | Widget::DrawBackground | Widget::Clickable;
 
     window->desired_size = state.size;
 
@@ -958,13 +958,25 @@ namespace bf::UI
         //WidgetParam(window, WidgetParams::ScrollY) = bfMathRemapf(scrollbar_bg_rect.top(), scrollbar_bg_rect.bottom(), 0.0f, 1.0f, current_y);
       }
 
-      if (window_behavior.Is(WidgetBehaviorResult::IsInScrollbarDragger) && window_behavior.Is(WidgetBehaviorResult::IsActive))
+      if (window_behavior.Is(WidgetBehaviorResult::IsActive))
       {
-        const float current_y = g_UI.mouse_pos.y;
-        const float offset_y  = g_UI.drag_offset.y;
-        const float desired_y = current_y - offset_y;
+        if (window_behavior.Is(WidgetBehaviorResult::IsInScrollbarDragger))
+        {
+          window->SetFlags(Widget::IsInteractingWithScrollbar);
+        }
 
-        WidgetParam(window, WidgetParams::ScrollY) = math::clamp(0.0f, bfMathRemapf(scrollbar_bg_rect.top(), scrollbar_bg_rect.bottom() - scrollbar_dragger.height(), 0.0f, 1.0f, desired_y), 1.0f);
+        if (window->IsFlagSet(Widget::IsInteractingWithScrollbar))
+        {
+          const float current_y = g_UI.mouse_pos.y;
+          const float offset_y  = g_UI.drag_offset.y;
+          const float desired_y = current_y - offset_y;
+
+          WidgetParam(window, WidgetParams::ScrollY) = math::clamp(0.0f, bfMathRemapf(scrollbar_bg_rect.top(), scrollbar_bg_rect.bottom() - scrollbar_dragger.height(), 0.0f, 1.0f, desired_y), 1.0f);
+        }
+      }
+      else
+      {
+        window->UnsetFlags(Widget::IsInteractingWithScrollbar);
       }
     }
 
@@ -1175,7 +1187,7 @@ namespace bf::UI
 
   void Render(CommandBuffer2D& gfx2D, float screen_width, float screen_height)
   {
-#if 0
+#if 1
     // Test Code
 
     static WindowState s_WinStates[2] = {};
@@ -1183,7 +1195,7 @@ namespace bf::UI
     s_WinStates[0].can_be_dragged = true;
     //s_WinStates[0].position.x     = 5;
     //s_WinStates[0].position.y     = 5;
-    s_WinStates[0].size.height    = {SizeUnitType::Absolute, screen_height - 100.0f};
+    s_WinStates[0].size.height = {SizeUnitType::Absolute, screen_height - 100.0f};
 
     if (BeginWindow("Buttons Galore", s_WinStates[0]))
     {
@@ -1250,14 +1262,14 @@ namespace bf::UI
 
     // Layout, Position and Render Top Level Widgets
 
+    const LayoutConstraints screen_constraints = {
+     {0.0f, 0.0f},
+     {screen_width, screen_height},
+    };
+
     for (Widget* const window : g_UI.root_widgets)
     {
-      LayoutConstraints main_constraints = {
-       {0.0f, 0.0f},
-       {screen_width, 1000.0f},
-      };
-
-      WidgetDoLayout(window, main_constraints);
+      WidgetDoLayout(window, screen_constraints);
       WidgetDoLayoutPositioning(window);
       WidgetDoRender(window, gfx2D);
     }
