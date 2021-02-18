@@ -498,9 +498,7 @@ namespace bf
     }
     else
     {
-      auto& root_entities = m_OwningScene.m_RootEntities;
-
-      root_entities.removeAt(root_entities.find(this));
+      m_OwningScene.m_RootEntities.erase(*this);
     }
   }
 
@@ -518,7 +516,7 @@ namespace bf
     else
     {
       bfTransform_setParent(&transform(), nullptr);
-      scene().m_RootEntities.push(this);
+      scene().m_RootEntities.pushBack(*this);
     }
 
     reevaluateActiveState(was_active, is_active);

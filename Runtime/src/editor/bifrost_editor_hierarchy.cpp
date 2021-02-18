@@ -6,6 +6,18 @@
 
 namespace bf::editor
 {
+  static Array<Entity*> listViewToArray(IMemoryManager& memory, const ListView<Entity>& list)
+  {
+    Array<Entity*> result{memory};
+
+    for (Entity& entity : list)
+    {
+      result.push(&entity);
+    }
+
+    return result;
+  }
+
   HierarchyView::HierarchyView() :
     m_SearchQuery{""},  // Filled with initial data for ImGui since ImGui functions do not accept nullptr as an input string.
     m_ExpandedState{allocator()},
@@ -79,10 +91,11 @@ namespace bf::editor
       auto&                temp_mem = engine.tempMemory();
       LinearAllocatorScope mem_scope{temp_mem};
       Array<Entity*>       top_level_entities{temp_mem};
+      Array<Entity*>       root_entities_as_array = listViewToArray(temp_mem, current_scene->rootEntities());
 
       if (do_filter_entities)
       {
-        Array<Entity*>        entities_to_process{temp_mem, current_scene->rootEntities()};
+        Array<Entity*>        entities_to_process{temp_mem, root_entities_as_array};
         UnorderedSet<Entity*> processed_entities{temp_mem};
 
         m_FilteredIn.clear();
@@ -125,7 +138,7 @@ namespace bf::editor
       }
       else
       {
-        top_level_entities.copyFrom(current_scene->rootEntities());
+        top_level_entities.copyFrom(root_entities_as_array);
       }
 
       std::pair<Entity*, Entity*> parent_to = {nullptr, nullptr};  // {parent, child}

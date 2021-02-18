@@ -435,17 +435,17 @@ namespace bf::editor
 
       if (scene)
       {
-        for (Entity* const scene_entity : scene->rootEntities())
+        for (Entity& scene_entity : scene->rootEntities())
         {
-          const bool is_selected = scene_entity == entity;
+          const bool is_selected = &scene_entity == entity;
 
-          ImGui::PushID(scene_entity);
+          ImGui::PushID(&scene_entity);
 
-          if (ImGui::Selectable(scene_entity->name().c_str(), is_selected, ImGuiSelectableFlags_None))
+          if (ImGui::Selectable(scene_entity.name().c_str(), is_selected, ImGuiSelectableFlags_None))
           {
             if (!is_selected)
             {
-              assigned_entity = scene_entity;
+              assigned_entity = &scene_entity;
             }
           }
 

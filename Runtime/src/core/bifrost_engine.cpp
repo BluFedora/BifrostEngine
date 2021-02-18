@@ -198,7 +198,7 @@ namespace bf
 
     if (entity)
     {
-      scene.m_RootEntities.push(entity);
+      scene.m_RootEntities.pushBack(*entity);
     }
 
     return EntityRef{entity};

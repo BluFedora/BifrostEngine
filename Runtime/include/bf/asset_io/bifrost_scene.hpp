@@ -54,7 +54,7 @@ namespace bf
    private:
     Engine&              m_Engine;  // TODO(SR): Remove this.
     IMemoryManager&      m_Memory;
-    Array<Entity*>       m_RootEntities;
+    ListView<Entity>     m_RootEntities;
     ComponentStorage     m_ActiveComponents;
     ComponentStorage     m_InactiveComponents;
     Array<BaseBehavior*> m_ActiveBehaviors;
@@ -73,12 +73,12 @@ namespace bf
 
     // Entity Management
 
-    const Array<Entity*>& rootEntities() const { return m_RootEntities; }
-    EntityRef             addEntity(const StringRange& name = "Untitled");
-    EntityRef             findEntity(const StringRange& name) const;
-    void                  removeEntity(Entity* entity);
-    void                  removeAllEntities();
-    BVH&                  bvh() { return m_BVHTree; }
+    const ListView<Entity>& rootEntities() const { return m_RootEntities; }
+    EntityRef               addEntity(const StringRange& name = "Untitled");
+    EntityRef               findEntity(const StringRange& name) const;
+    void                    removeEntity(Entity* entity);
+    void                    removeAllEntities();
+    BVH&                    bvh() { return m_BVHTree; }
 
     void update(LinearAllocator& temp, DebugRenderer& dbg_renderer);
 

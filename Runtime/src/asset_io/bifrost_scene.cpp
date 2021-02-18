@@ -12,7 +12,6 @@
 */
 #include "bf/asset_io/bifrost_scene.hpp"
 
-#include "bf/anim2D/bf_animation_system.hpp"
 #include "bf/asset_io/bifrost_file.hpp"            /* File                 */
 #include "bf/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
 #include "bf/core/bifrost_engine.hpp"              /* Engine               */
@@ -26,7 +25,7 @@ namespace bf
     Base(),
     m_Engine{engine},
     m_Memory{m_Engine.mainMemory()},
-    m_RootEntities{m_Memory},
+    m_RootEntities{&Entity::m_Hierarchy},
     m_ActiveComponents{m_Memory},
     m_InactiveComponents{m_Memory},
     m_ActiveBehaviors{m_Memory},
@@ -48,9 +47,9 @@ namespace bf
 
   EntityRef Scene::findEntity(const StringRange& name) const
   {
-    for (Entity* const root_entity : m_RootEntities)
+    for (Entity& root_entity : m_RootEntities)
     {
-      if (root_entity->name() == name)
+      if (root_entity.name() == name)
       {
         return EntityRef{root_entity};
       }
@@ -61,14 +60,14 @@ namespace bf
 
   void Scene::removeEntity(Entity* entity)
   {
-    m_RootEntities.removeAt(m_RootEntities.find(entity));
+    m_RootEntities.erase(*entity);
   }
 
   void Scene::removeAllEntities()
   {
     while (!m_RootEntities.isEmpty())
     {
-      m_RootEntities.back()->destroy();
+      m_RootEntities.back().destroy();
       // Entity::destroy detaches from parent.
       // m_RootEntities.pop();
     }
@@ -77,7 +76,7 @@ namespace bf
   void Scene::update(LinearAllocator& temp, DebugRenderer& dbg_renderer)
   {
     updateDirtyListTransforms();
-    
+
     m_BVHTree.endFrame(temp, false);
 
     if (m_DoDebugDraw)
@@ -98,7 +97,7 @@ namespace bf
               __debugbreak();
             }
 
-             __debugbreak();
+            __debugbreak();
           }
         }
 
@@ -158,11 +157,10 @@ namespace bf
       {
         while (!m_RootEntities.isEmpty())
         {
-          m_RootEntities.back()->destroy();
+          m_RootEntities.back().destroy();
         }
 
         m_RootEntities.clear();
-        m_RootEntities.reserve(num_entities);
 
         for (std::size_t i = 0; i < num_entities; ++i)
         {
@@ -174,11 +172,11 @@ namespace bf
       //   num_entities = m_RootEntities.size();
       // }
 
-      for (Entity* const entity : m_RootEntities)
+      for (Entity& entity : m_RootEntities)
       {
-        if (serializer.pushObject(entity->name()))
+        if (serializer.pushObject(entity.name()))
         {
-          entity->reflect(serializer);
+          entity.reflect(serializer);
           serializer.popObject();
         }
       }
@@ -189,17 +187,17 @@ namespace bf
 
   void Scene::startup()
   {
-    for (Entity* entity : m_RootEntities)
+    for (Entity& entity : m_RootEntities)
     {
-      entity->startup();
+      entity.startup();
     }
   }
 
   void Scene::shutdown()
   {
-    for (Entity* entity : m_RootEntities)
+    for (Entity& entity : m_RootEntities)
     {
-      entity->startup();
+      entity.startup();
     }
   }
 
