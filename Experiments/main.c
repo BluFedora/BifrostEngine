@@ -5,7 +5,7 @@
 
 // Test Json
 
-#include "bifrost/utility/bifrost_json.h"
+#include "bf/utility/bifrost_json.h"
 
 static void test_JsonParser(void);
 

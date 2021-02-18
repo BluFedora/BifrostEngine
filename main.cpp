@@ -1,10 +1,7 @@
 ﻿#define NOMINMAX
 
-#include "main_demo.hpp"
 #include <bf/bifrost.hpp>
 #include <bf/editor/bifrost_editor_overlay.hpp>
-
-#include <glfw/glfw3.h>  // TODO(SR): Remove but Needed for Global Window and glfwSetWindowSizeLimits
 
 #include <functional>
 #include <iostream>
@@ -414,8 +411,6 @@ enum class ReturnCode
   FAILED_TO_ALLOCATE_ENGINE_MEMORY,
 };
 
-GLFWwindow* g_Window;  // TODO(SR): NEEDED BY MainDemoLayer for fullscreening code.
-
 #define MainQuit(code, label) \
   err_code = (code);          \
   goto label
@@ -437,8 +432,6 @@ int main(int argc, char* argv[])
 
     if (main_window)
     {
-      g_Window = (GLFWwindow*)main_window->handle;
-
       try
       {
         const std::size_t             engine_memory_size = bfMegabytes(300);
@@ -451,7 +444,7 @@ int main(int argc, char* argv[])
         main_window->frame_fn  = [](bfWindow* window) { static_cast<Engine*>(window->user_data)->tick(); };
 
         engine->init(params, main_window);
-        engine->stateMachine().push<MainDemoLayer>();
+        // engine->stateMachine().push<MainDemoLayer>();
         engine->stateMachine().addOverlay<editor::EditorOverlay>(main_window);
         bfPlatformDoMainLoop(main_window);
         engine->deinit();

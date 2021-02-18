@@ -162,7 +162,7 @@ add_executable(
   "main.cpp"
   "Runtime/src/graphics/bifrost_debug_renderer.cpp"
   "Runtime/src/core/bifrost_engine.cpp"
-  "DemoApp/src/main_demo.cpp"
+  
   "Runtime/src/ecs/bifrost_behavior.cpp"
   "Runtime/src/ecs/bifrost_behavior_system.cpp"
   "Runtime/src/ecs/bifrost_entity_ref.cpp"
@@ -235,7 +235,6 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/Experiments/include
-    ${PROJECT_SOURCE_DIR}/DemoApp/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
     ${PROJECT_BINARY_DIR} # For the cmake version file
@@ -278,7 +277,6 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/Experiments/include
-    ${PROJECT_SOURCE_DIR}/DemoApp/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
     ${PROJECT_BINARY_DIR} # For the cmake version file

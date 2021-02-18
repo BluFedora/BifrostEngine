@@ -41,7 +41,7 @@ typedef struct
 
 } bfJsonString;
 
-static inline bfJsonString bfJsonString_make(const char* null_terminated_string)
+inline bfJsonString bfJsonString_make(const char* null_terminated_string)
 {
   bfJsonString result;
 

@@ -8,11 +8,11 @@
  * @version 0.0.1
  * @date    2020-02-17
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 
-#include <bifrost/bifrost_vm.hpp> /* VM C++ API */
+#include "bifrost/bifrost_vm.hpp"  // VM C++ API
 
 #include <cassert>   // assert
 #include <cstdio>    // printf, fopen, flocse, ftell, fseek, fread, malloc

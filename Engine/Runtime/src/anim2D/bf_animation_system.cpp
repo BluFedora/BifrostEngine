@@ -217,6 +217,8 @@ namespace bf
         SpriteRenderer* renderer;
       };
 
+      // TODO(SR): This should use a linear allocator memory scope.
+
       bfAnim2DUpdateInput*  input       = engine.tempMemory().allocateArrayTrivial<bfAnim2DUpdateInput>(anim_sprites.size());
       BackPtrs*             back_ptrs   = engine.tempMemory().allocateArrayTrivial<BackPtrs>(anim_sprites.size());
       const bfSpritesheet** sheets      = engine.tempMemory().allocateArrayTrivial<const bfSpritesheet*>(anim_sprites.size());
