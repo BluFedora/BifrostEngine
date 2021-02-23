@@ -13,17 +13,46 @@ EDITOR OPERATIONS
 - Change Entity Parent
 
 
+Engine Performance Goals
+
+- 6000 Dynamic Physics Objects.
+  - There is currently a limit of 65535 such interaction objects for each actor. If more than 65535 interactions involve the same actor, then the SDK outputs an error message and the extra interactions are ignored.
+
+- UE4 has a max of '2,162,688' Entities.
+  - "This limit is imposed from Unreal Engine's memory management implementation and refers to data objects, not in-game objects."
+  - [https://satisfactory.gamepedia.com/Unreal_Engine_Entity_Limit#:~:text=This%20limit%20is%20imposed%20from,Unreal%20Engine%20is%202%2C162%2C688%20UObjects.]
+
+[https://developer.oculus.com/documentation/unity/unity-perf/]
+
+[https://www.cgtrader.com/forum/general-discussions/recommended-poly-count-for-game-models]
+"
+hi there,
+As with everything in 3d, it depends of the platform where the game is going to be played. (mobile, console, PC)
+
+Talking from experience in contemporary PC games, the polycount can be quite generous,
+A human character can be around 15.000 and 25.000 triangles, only the body, naked.
+And it can go as high as 50.000-60.000 triangles if you include the character's clothing, props, weapons, etc.
+Probably some characters in really high-end AAA games can be much more, but my guess is that they use a lot of programming magic to make it work.
+But, as always the basic idea is just to use as few as posible. In general terms, if you are not really sure, anything between 10.000 and 30.000 triangles should be safe, for PC.
+For mobile, logically it should be much less, but I wouldn't dare to give you numbers.
+
+As for the other question, you can mix quad polygons and triangles, there is no problem with that and every game model has a mix of those. The only important thing is that the topology is good for animation.
+"
+
+"
+as others have said it depends on your target. But 92K for a single model is too much if that model is for a human model. IIRC, overwatch ingame characters has 60K tris, Ellie from Last of us has 15K tris. Some Uncharted models are around 22-25K tris.
+"
 
 
 
 
 
 
+[https://bitbashing.io/comparing-floats.html]
 
-
-
-
-
+Vector Reflection
+Making A Frustum Matrix
+Camera View Look At
 
 
 
@@ -427,38 +456,6 @@ Apple platforms have Grand Central Dispatch, which works similarly but has a far
 
 
 
-DLLs
-
-dlls are reference counted.
-
-`cl /c MySource.cpp`  Generates Obj File (MySource.obj)
-`link MySource.obj /DLL /NOENTRY /EXPORT:FunctionName /EXPORT:RenamedFunctionName=FancyFunctionName /EXPORT:OnlyUseWithGetProcAddress,PRIVATE` (Generates The Library (MySource.dll And MySource.lib) file with the specified exported symbol)
-
-Whatever.def (use with `/DEF:Whatever.def`)
-```  
-LIBRARY liName
-EXPORTS
-  FunctionName
-  RenamedFunctionName=FancyFunctionName
-  OnlyUseWithGetProcAddress PRIVATE
-```
-
-```
-__declspec(dllexport)
-__declspec(dllimport)
-
-or
-
-#pragma comment(linker, "/export:FunctionName")
-```
-
-Runtime (These are defined in KERNEL32.dll):
-  LoadLibraryEx
-  GetProcAddress
-  FreeLibrary
-
-References:
-  (Everything You Ever Wanted to Know about DLLs)[https://www.youtube.com/watch?v=JPQWQfDhICA&ab_channel=CppCon]
 
 
 Optimizing:

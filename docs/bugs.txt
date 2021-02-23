@@ -1,5 +1,0 @@
-- Game View should not have debug lines being drawn.
-
-More Misc Cuz Im Disorganized.
-
-you can skip transpose/inverse part of your model matrix does not do non-uniform scaling

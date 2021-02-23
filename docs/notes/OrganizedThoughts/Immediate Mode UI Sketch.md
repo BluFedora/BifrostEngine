@@ -227,3 +227,8 @@ Basics:
 
 Extra Fun:
 - Gradients
+
+References:
+
+[Flutter Gallery](https://gallery.flutter.dev/#/)
+[Drawing Dynamic Visualizations](https://vimeo.com/66085662)
