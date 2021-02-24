@@ -8,46 +8,48 @@
         "type": "split",
         "children": [
           {
-            "id": "91fa5cd5293217c6",
-            "type": "leaf",
-            "dimension": 60.92375366568915,
-            "active": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "OrganizedThoughts/Mathematics.md",
-                "mode": "source"
-              }
-            }
-          },
-          {
-            "id": "9d2b92e9b569e152",
+            "id": "d7e0c301b009aef2",
             "type": "split",
-            "dimension": 39.07624633431085,
+            "dimension": 80.71847507331378,
             "children": [
               {
-                "id": "81f2acfc1b605f7f",
+                "id": "851f7988cffd470a",
                 "type": "leaf",
                 "state": {
                   "type": "markdown",
                   "state": {
-                    "file": "API_Design_Musings.md",
+                    "file": "OrganizedThoughts/AnimationRuntime.md",
                     "mode": "source"
                   }
-                }
+                },
+                "group": "09bf35f1cb7936de"
               },
               {
-                "id": "a1866b7e605a8e40",
+                "id": "81f2acfc1b605f7f",
                 "type": "leaf",
-                "pinned": true,
+                "active": true,
                 "state": {
-                  "type": "graph",
-                  "state": {},
-                  "pinned": true
-                }
+                  "type": "markdown",
+                  "state": {
+                    "file": "OrganizedThoughts/AnimationRuntime.md",
+                    "mode": "preview"
+                  }
+                },
+                "group": "09bf35f1cb7936de"
               }
             ],
             "direction": "vertical"
+          },
+          {
+            "id": "91fa5cd5293217c6",
+            "type": "leaf",
+            "dimension": 19.281524926686217,
+            "pinned": true,
+            "state": {
+              "type": "graph",
+              "state": {},
+              "pinned": true
+            }
           }
         ],
         "direction": "horizontal"
@@ -90,7 +92,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 399.5,
+    "collapsed": true
   },
   "right": {
     "id": "cdebc9e85d393563",
@@ -106,11 +109,11 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/Mathematics.md",
+                "file": "OrganizedThoughts/AnimationRuntime.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
-                "backlinkCollapsed": false,
+                "backlinkCollapsed": true,
                 "unlinkedCollapsed": true
               }
             }
@@ -123,15 +126,15 @@
     "collapsed": true
   },
   "lastOpenFiles": [
-    "OrganizedThoughts/Mathematics.md",
-    "API_Design_Musings.md",
     "OrganizedThoughts/AnimationRuntime.md",
-    "MiscNotes.md",
-    "Random Links.md",
-    "OrganizedThoughts/Cover.md",
-    "OrganizedThoughts/Untitled.md",
+    "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
+    "RenderGraph.md",
     "cover_image.png.md",
-    "Animation_Pipeline.png.md"
+    "OrganizedThoughts/IPC.md",
+    "vulkan_sync.md",
+    "Random Links.md",
+    "MiscNotes.md",
+    "API_Design_Musings.md"
   ]
 }

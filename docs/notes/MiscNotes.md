@@ -229,7 +229,7 @@ a >  b : b < a
 ```
 
 Windows Has a Default THread Pool.
-
+```cpp
 --- C++ Scripting
 
 class Script
@@ -245,7 +245,7 @@ class Script
   #include "Script.h"
 #include 
 
-class TestScriptClass : public DI::Script
+class TestScriptClass : public Script
 {
 	public:
 		TestScriptClass(){};
@@ -261,9 +261,9 @@ class TestScriptClass : public DI::Script
 };
 
 
-	extern "C"
+extern "C"
 {
-	__declspec(dllexport) DI::Script *CreateScript()
+	__declspec(dllexport) Script *CreateScript()
 	{
 		return new TestScriptClass();
 	}
@@ -286,7 +286,7 @@ if (hGetProcIDDLL) {
 } else {
   // Error Could not load scrpt dll.
 }
-
+```
 /*
 search for "serialization"
 same thing

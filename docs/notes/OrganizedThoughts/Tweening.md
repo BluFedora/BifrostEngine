@@ -16,4 +16,5 @@ changing the target state. You will need to take into account timing.
 
 ## References
 
-(Elias Daler)[https://eliasdaler.github.io/how-to-implement-action-sequences-and-cutscenes/]
+[[Interpolation]]
+[Elias Daler](https://eliasdaler.github.io/how-to-implement-action-sequences-and-cutscenes/)

@@ -1,5 +1,7 @@
 # Mathematics
 
+#math
+
 you can skip transpose/inverse part of your model matrix does not do non-uniform scaling
 
 ## Lerp / Smoothing
@@ -10,7 +12,7 @@ you can skip transpose/inverse part of your model matrix does not do non-uniform
 
 A moving lerp can be used to smoothly get to a target value using `value = lerp(value, target_value, /* coefficient: usually a low number like 0.05 - 0.2 */)`.
 
-*This is NOT framerate independent unless you use a fixed time step which isn't always desireable.*
+*This is NOT framerate independent unless you use a fixed time step which isn't always desirable.*
 
 To fix this an exponential function involving time can be used instead:
 `value = lerp(target_value, value, exp[base](-rate * delta_time))`
@@ -38,7 +40,7 @@ zoom = exp[base](lerp(log(zoom), log[base](target_zoom), delta_time / duration);
 
 ### Vector
 
-![[Pasted image 20210222204453.png]]
+![[CrossProductDerivation.png]]
 
 ```glsl
 // Dot Product
@@ -86,7 +88,7 @@ Angle = 2.0 * acos(q.w)
 
 ```glsl
 R = A^T
-=> transpose(inverse(R)) =inverse(A) = transpose(inverse(transpose(A)))
+=> transpose(inverse(R)) = inverse(A) = transpose(inverse(transpose(A)))
 ```
 
 #### Normal Mapping
