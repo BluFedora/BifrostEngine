@@ -29,6 +29,7 @@ void main()
   vec3  ambient     = ambientLighting(albedo, ao);
 
   o_FragColor0 = vec4(ambient, 1.0f);
+  // o_FragColor0 = vec4(vec3(0.0f), 1.0f);
 
   // Debug Outputs
   /*

@@ -26,6 +26,7 @@ namespace bf
   static const bfTextureSamplerProperties k_SamplerNearestClampToEdge = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
   static const bfTextureSamplerProperties k_SamplerLinearClampToEdge  = bfTextureSamplerProperties_init(BF_SFM_LINEAR, BF_SAM_CLAMP_TO_EDGE);
   static constexpr bfColor4u              k_ColorWhite4u              = {0xFF, 0xFF, 0xFF, 0xFF};
+  static constexpr bfColor4u              k_ColorHalfWhite4u          = {0xB1, 0xB1, 0xB1, 0xB1};
 
   void GBuffer::init(bfGfxDeviceHandle device, int width, int height)
   {
@@ -383,6 +384,7 @@ namespace bf
     m_RenderableMapping{},
     m_AutoRelease{memory},
     m_WhiteTexture{nullptr},
+    m_DefaultMaterialTexture{nullptr},
     m_DirectionalLightBuffer{},
     m_PunctualLightBuffers{},
     m_GlobalTime{0.0f},
@@ -432,8 +434,10 @@ namespace bf
     }
 
     m_WhiteTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
+    m_DefaultMaterialTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorHalfWhite4u, sizeof(k_ColorHalfWhite4u)); 
 
     m_AutoRelease.push(m_WhiteTexture);
+    m_AutoRelease.push(m_DefaultMaterialTexture);
   }
 
   bool StandardRenderer::frameBegin()
@@ -906,15 +910,15 @@ namespace bf
 
   bfDescriptorSetInfo StandardRenderer::makeMaterialInfo(const MaterialAsset& material)
   {
-    const auto defaultTexture = [this](const ARC<TextureAsset>& handle) -> bfTextureHandle {
-      return handle && handle->status() == AssetStatus::LOADED ? handle->handle() : m_WhiteTexture;
+    const auto defaultTexture = [this](const ARC<TextureAsset>& handle, bfTextureHandle default_tex) -> bfTextureHandle {
+      return handle && handle->status() == AssetStatus::LOADED ? handle->handle() : default_tex;
     };
 
-    bfTextureHandle albedo            = defaultTexture(material.albedoTexture());
-    bfTextureHandle normal            = defaultTexture(material.normalTexture());
-    bfTextureHandle metallic          = defaultTexture(material.metallicTexture());
-    bfTextureHandle roughness         = defaultTexture(material.roughnessTexture());
-    bfTextureHandle ambient_occlusion = defaultTexture(material.ambientOcclusionTexture());
+    bfTextureHandle albedo            = defaultTexture(material.albedoTexture(), m_WhiteTexture);
+    bfTextureHandle normal            = defaultTexture(material.normalTexture(), m_WhiteTexture);
+    bfTextureHandle metallic          = defaultTexture(material.metallicTexture(), m_DefaultMaterialTexture);
+    bfTextureHandle roughness         = defaultTexture(material.roughnessTexture(), m_DefaultMaterialTexture);
+    bfTextureHandle ambient_occlusion = defaultTexture(material.ambientOcclusionTexture(), m_WhiteTexture);
 
     bfDescriptorSetInfo desc_set_material = bfDescriptorSetInfo_make();
 

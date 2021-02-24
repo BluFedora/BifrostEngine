@@ -111,7 +111,8 @@ float geometrySmith(float n_dot_l, float n_dot_v, float roughnesss)
   float k           = pow2(roughnesss + 1.0) / 8.0;
   float one_minux_k = 1.0 - k;
 
-  return geometrySchlickGGX(n_dot_v, k, one_minux_k) * geometrySchlickGGX(n_dot_l, k, one_minux_k);
+  return  geometrySchlickGGX(n_dot_l, k, one_minux_k) *
+          geometrySchlickGGX(n_dot_v, k, one_minux_k);
 }
 
 /*
@@ -205,7 +206,7 @@ vec3 mainLighting(vec3 radiance, vec3 surface_normal, vec3 albedo, float roughne
   vec3  half_vector = normalize(pixel_to_cam + light_dir);
   float n_dot_h     = clamp(dot(surface_normal, half_vector), 0.0, 1.0);
   float n_dot_l     = max(dot(surface_normal, light_dir), 0.0);
-  float h_dot_v     = clamp(dot(half_vector, pixel_to_cam), 0.0, 1.0);
+  float h_dot_v     = max(dot(half_vector, pixel_to_cam), 0.0);
 
   // Cook-Torrance BRDF
   float ndf     = distributionGGX(n_dot_h, roughness);
@@ -220,7 +221,7 @@ vec3 mainLighting(vec3 radiance, vec3 surface_normal, vec3 albedo, float roughne
   // Diffuse BRDF + Energy conservation
   vec3 kDiffuse = vec3(1.0) - fresnel;
 
-  // Apply Smoothness
+  // Apply Smoothness (only Non-Metals have diffuse component)
   kDiffuse *= one_minus_metallic;
 
   return (kDiffuse * albedo / k_PI + specular) * radiance * n_dot_l;

@@ -511,6 +511,7 @@ namespace bf
     RenderableMapping                        m_RenderableMapping;  // TODO: Make this per Scene.
     Array<bfGfxBaseHandle>                   m_AutoRelease;
     bfTextureHandle                          m_WhiteTexture;
+    bfTextureHandle                          m_DefaultMaterialTexture;
     MultiBuffer<DirectionalLightUniformData> m_DirectionalLightBuffer;
     MultiBuffer<PunctualLightUniformData>    m_PunctualLightBuffers[2];  // [Point, Spot]
     float                                    m_GlobalTime;

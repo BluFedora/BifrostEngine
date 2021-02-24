@@ -64,9 +64,11 @@ void main()
 
   o_FragColor0 = vec4(light_out, 1.0f);
 
+  // o_FragColor0 = vec4(vec3(n_dot_v), 1.0f);
+  // o_FragColor0 = vec4(vec3(dot(world_normal, v)) * 0.3f, 1.0f);
   // o_FragColor0 = vec4(gammaCorrection(tonemapping(lit_color)), 1.0f);
   // o_FragColor0 = vec4(tonemapping(lit_color), 1.0f);
-  // o_FragColor0 = vec4(world_normal * 0.5 + 0.5, 1.0f);
+  // o_FragColor0 = vec4((world_normal * 0.5 + 0.5) * .2, 1.0f);
   // o_FragColor0 = vec4((Camera_getViewMatrix() * vec4(world_normal, 0.0)).xyz * 0.5 + 0.5, 1.0f);
   // o_FragColor0 = vec4((Camera_getViewMatrix() * vec4(world_position, 1.0)).xyz, 1.0f);
   // o_FragColor0 = vec4(world_position, 1.0f);

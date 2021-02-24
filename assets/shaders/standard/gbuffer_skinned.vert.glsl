@@ -36,7 +36,7 @@ void main()
   vec4 object_position = final_bone_transform * vec4(in_Position.xyz, 1.0);
   vec4 clip_position   = u_ModelViewProjection * object_position;
 
-  frag_WorldNormal = mat3(u_NormalModel) * in_Normal.xyz;
+  frag_WorldNormal = mat3(u_NormalModel) * mat3(final_bone_transform) * in_Normal.xyz;
   frag_Color       = in_Color.rgb;
   frag_UV          = in_UV;
 
