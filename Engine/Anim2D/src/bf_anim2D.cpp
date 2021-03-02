@@ -100,7 +100,7 @@ struct NetworkingData final
     }
   }
 
-  void readPackets(bfAnim2DCtx* self);
+  void readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback);
 };
 
 // Helpers Fwd Declarations
@@ -129,12 +129,6 @@ bfAnim2DCtx* bfAnim2D_new(const bfAnim2DCreateParams* params)
   }
 
   bfAnim2DCtx* self = new (safe_params.allocator(nullptr, 0u, sizeof(*self), safe_params.user_data)) bfAnim2DCtx(safe_params);
-
-  if (self && safe_params.on_spritesheet_changed)
-  {
-    bfNet::Startup();
-    self->network_module = new (bfAllocate(self, sizeof(*self->network_module))) NetworkingData(self->allocator);
-  }
 
   return self;
 }
@@ -167,48 +161,57 @@ bfSpritesheet* bfAnim2D_loadSpritesheet(bfAnim2DCtx* self, bfStringSpan name, co
   return sheet;
 }
 
-void bfAnim2D_networkUpdate(bfAnim2DCtx* self)
+void bfAnim2D_networkUpdate(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback)
 {
-  if (self->network_module)
+  if (callback)
   {
-    self->network_module->establishConnection();
-    self->network_module->readPackets(self);
+    if (!self->network_module)
+    {
+      bfNet::Startup();
+      self->network_module = new (bfAllocate(self, sizeof(*self->network_module))) NetworkingData(self->allocator);
+    }
+
+    if (self->network_module)
+    {
+      self->network_module->establishConnection();
+      self->network_module->readPackets(self, callback);
+    }
   }
 }
 
 void bfAnim2D_stepFrame(
- const bfAnim2DUpdateInput* input,
- const bfSpritesheet**      input_spritesheets,
- uint16_t                   num_input,
- float                      delta_time,
- bfAnim2DUpdateOutput*      output)
+ bfAnim2DUpdateInfo*   sprites,
+ const bfSpritesheet** spritesheets,
+ uint16_t              num_sprites,
+ float                 delta_time)
 {
-  for (uint16_t i = 0; i < num_input; ++i)
+  for (uint16_t i = 0; i < num_sprites; ++i)
   {
-    const bfAnim2DUpdateInput& sprite               = input[i];
-    const float                playback_speed       = sprite.playback_speed;
-    const bool                 playback_is_positive = playback_speed >= 0.0f;
-    const float                abs_playback_speed   = playback_is_positive ? playback_speed : -playback_speed;
-    const float                playback_delta       = abs_playback_speed * delta_time;
-    float                      time_left_for_frame  = sprite.time_left_for_frame - playback_delta;
-    uint32_t                   current_frame        = sprite.current_frame;
-    bool                       has_finished_playing = false;
+    bfAnim2DUpdateInfo& sprite               = sprites[i];
+    const float         playback_speed       = sprite.playback_speed;
+    const bool          playback_is_positive = playback_speed >= 0.0f;
+    const float         abs_playback_speed   = playback_is_positive ? +playback_speed : -playback_speed;
+    const float         playback_delta       = abs_playback_speed * delta_time;
+    float               time_left_for_frame  = sprite.time_left_for_frame - playback_delta;
+    uint32_t            current_frame        = sprite.current_frame;
+    bool                has_finished_playing = false;
 
     if (time_left_for_frame <= 0.0f)
     {
-      const bfAnimation& animation            = input_spritesheets[sprite.spritesheet_idx]->animations[sprite.animation];
+      const bfAnimation& animation            = spritesheets[sprite.spritesheet_idx]->animations[sprite.animation];
       const uint32_t     num_frames_minus_one = animation.num_frames - 1;
-      const uint32_t     last_frame           = playback_is_positive ? num_frames_minus_one : 0;
+      const uint32_t     last_frame_in_anim   = playback_is_positive ? num_frames_minus_one : 0;
 
-      if (current_frame != last_frame)
+      if (current_frame != last_frame_in_anim)
       {
-        current_frame += playback_is_positive ? 1 : -1;
+        current_frame += playback_is_positive ? +1 : -1;
       }
       else
       {
         if (sprite.is_looping)
         {
           current_frame = playback_is_positive ? 0 : num_frames_minus_one;  // Reset to first frame
+          // current_frame = num_frames_minus_one - last_frame_in_anim;  // Alternative way to calculate the same thing
         }
 
         has_finished_playing = true;
@@ -220,11 +223,10 @@ void bfAnim2D_stepFrame(
       }
     }
 
-    bfAnim2DUpdateOutput& result = output[i];
-
-    result.time_left_for_frame  = time_left_for_frame;
-    result.current_frame        = current_frame;
-    result.has_finished_playing = has_finished_playing;
+    // Write results from calculations back to the sprite.
+    sprite.time_left_for_frame  = time_left_for_frame;
+    sprite.current_frame        = current_frame;
+    sprite.has_finished_playing = has_finished_playing;
   }
 }
 
@@ -253,16 +255,16 @@ void bfAnim2D_destroySpritesheet(bfAnim2DCtx* self, bfSpritesheet* spritesheet)
 
 void bfAnim2D_delete(bfAnim2DCtx* self)
 {
-  while (self->spritesheet_list)
-  {
-    bfAnim2D_destroySpritesheet(self, self->spritesheet_list);
-  }
-
   if (self->network_module)
   {
     self->network_module->~NetworkingData();
     bfFree(self, self->network_module, sizeof(*self->network_module));
     bfNet::Shutdown();
+  }
+
+  while (self->spritesheet_list)
+  {
+    bfAnim2D_destroySpritesheet(self, self->spritesheet_list);
   }
 
   bfFree(self, self, sizeof(*self));
@@ -569,7 +571,7 @@ bfAnim2DPacketTextureChanged bfAnim2DPacketTextureChanged_read(const char* bytes
   return self;
 }
 
-void NetworkingData::readPackets(bfAnim2DCtx* self)
+void NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback)
 {
   if (!is_connected)
   {
@@ -584,11 +586,11 @@ void NetworkingData::readPackets(bfAnim2DCtx* self)
   {
     current_packet.clear();
     is_connected = false;
-    socket       = {};
+    socket.close();
     return;
   }
 
-  // received_data.received_bytes_size == -1 when Waiting On a Message
+  // received_data.received_bytes_size == -1 when waiting on a message
   for (int i = 0; i < received_data.received_bytes_size; ++i)
   {
     current_packet.push(read_buffer[i]);
@@ -638,7 +640,7 @@ void NetworkingData::readPackets(bfAnim2DCtx* self)
             change_event.type        = bfAnim2DChange_Animation;
             change_event.spritesheet = sheet;
 
-            self->params.on_spritesheet_changed(self, sheet, change_event);
+            callback(self, sheet, change_event);
           }
 
           break;
@@ -656,7 +658,7 @@ void NetworkingData::readPackets(bfAnim2DCtx* self)
             change_event.texture.texture_bytes_png      = packet.texture_data;
             change_event.texture.texture_bytes_png_size = packet.texture_data_size;
 
-            self->params.on_spritesheet_changed(self, sheet, change_event);
+            callback(self, sheet, change_event);
           }
 
           break;
@@ -672,6 +674,7 @@ void NetworkingData::readPackets(bfAnim2DCtx* self)
 
       if (num_bytes_left != 0)
       {
+        // Put leftover bytes in the beginning of the array.
         std::rotate(
          current_packet.rbegin(),
          current_packet.rbegin() + num_bytes_left,

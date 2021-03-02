@@ -1,12 +1,12 @@
 /******************************************************************************/
 /*!
  * @file   bf_hash.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Some hashing utilities for various data types.
  *
  * @version 0.0.1
- * @date 2019-12-28
+ * @date    2019-12-28
  *
  * @copyright Copyright (c) 2019
  */

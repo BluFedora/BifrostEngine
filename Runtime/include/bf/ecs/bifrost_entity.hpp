@@ -100,7 +100,7 @@ namespace bf
     bfUUIDNumber           m_UUID;                   //!< This uuid will remain unset until the first use through "Entity::uuid".
 
    public:
-    Entity(Scene& scene, StringRange name);
+    Entity(Scene& scene, StringRange name = "Unnamed");
 
     // Accessors
 

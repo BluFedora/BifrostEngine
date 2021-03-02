@@ -21,23 +21,18 @@ namespace bf
       Assets&                 assets      = engine->assets();
       TextureAsset* const     texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
 
-      // This only needs a texture if it is currently being used.
-      if (texture && texture->refCount())
+      // This only needs a to update the texture if it is currently being used.
+      if (texture && texture->refCount() > 0)
       {
         ARC<TextureAsset> keep_texture_alive = texture;
-
-        const bfTextureCreateParams create_params = bfTextureCreateParams_init2D(
-         BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
-         k_bfTextureUnknownSize,
-         k_bfTextureUnknownSize);
-
-        // Cannot use reload because we are loading the texture from memory.
-        // texture_info->reload();
 
         texture->assignNewHandle(
          gfx::createTexturePNG(
           texture->gfxDevice(),
-          create_params,
+          bfTextureCreateParams_init2D(
+           BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
+           k_bfTextureUnknownSize,
+           k_bfTextureUnknownSize),
           k_SamplerNearestRepeat,
           change_event.texture.texture_bytes_png,
           change_event.texture.texture_bytes_png_size));
@@ -47,7 +42,7 @@ namespace bf
 
   void AnimationSystem::onInit(Engine& engine)
   {
-    const bfAnim2DCreateParams create_anim_ctx = {nullptr, &engine, &onSSChange};
+    const bfAnim2DCreateParams create_anim_ctx = {nullptr, &engine};
 
     m_Anim2DCtx = bfAnim2D_new(&create_anim_ctx);
   }
@@ -136,7 +131,7 @@ namespace bf
    Matrix4x4f*                                  output_transform,
    const Matrix4x4f&                            parent_transform)
   {
-    Matrix4x4f node_transform = node->transform;
+    Matrix4x4f node_transform;  //  = node->transform;
 
     if (node->bone_idx != k_InvalidBoneID)
     {
@@ -144,12 +139,11 @@ namespace bf
 
       if (it != bone_to_channel.end())
       {
-        const std::uint8_t channel_index = it->value();
-
-        Anim3DAsset::Channel& channel     = animation.m_Channels[channel_index];
-        const Vector3f        scale       = vec3ValueAtTime(animation, channel.scale, animation_time, 1.0f);
-        const bfQuaternionf   rotation    = quatValueAtTime(animation, channel.rotation, animation_time);
-        const Vector3f        translation = vec3ValueAtTime(animation, channel.translation, animation_time, 0.0f);
+        const std::uint8_t    channel_index = it->value();
+        Anim3DAsset::Channel& channel       = animation.m_Channels[channel_index];
+        const Vector3f        scale         = vec3ValueAtTime(animation, channel.scale, animation_time, 1.0f);
+        const bfQuaternionf   rotation      = quatValueAtTime(animation, channel.rotation, animation_time);
+        const Vector3f        translation   = vec3ValueAtTime(animation, channel.translation, animation_time, 0.0f);
 
         Matrix4x4f scale_mat;
         Matrix4x4f rotation_mat;
@@ -162,10 +156,14 @@ namespace bf
         Mat4x4_mult(&rotation_mat, &scale_mat, &node_transform);
         Mat4x4_mult(&translation_mat, &node_transform, &node_transform);
       }
-      else
+      else  // Bone was not part of the animation
       {
-        // Bone was not part of the animation
+        node_transform = node->transform;
       }
+    }
+    else
+    {
+      node_transform = node->transform;
     }
 
     Matrix4x4f global_transform;
@@ -173,10 +171,7 @@ namespace bf
 
     if (node->bone_idx != k_InvalidBoneID)
     {
-      assert(node->bone_idx < k_InvalidBoneID);
-
       // out = global_inv_transform * global_transform * inv_bone
-
       Matrix4x4f* const out = output_transform + node->bone_idx;
 
       Mat4x4_mult(&global_transform, &input_transform[node->bone_idx].transform, out);
@@ -202,7 +197,7 @@ namespace bf
 
   void AnimationSystem::onFrameUpdate(Engine& engine, float dt)
   {
-    bfAnim2D_networkUpdate(m_Anim2DCtx);
+    bfAnim2D_networkUpdate(m_Anim2DCtx, &onSSChange);
 
     const auto scene = engine.currentScene();
 
@@ -219,7 +214,7 @@ namespace bf
 
       // TODO(SR): This should use a linear allocator memory scope.
 
-      bfAnim2DUpdateInput*  input       = engine.tempMemory().allocateArrayTrivial<bfAnim2DUpdateInput>(anim_sprites.size());
+      bfAnim2DUpdateInfo*   update_info = engine.tempMemory().allocateArrayTrivial<bfAnim2DUpdateInfo>(anim_sprites.size());
       BackPtrs*             back_ptrs   = engine.tempMemory().allocateArrayTrivial<BackPtrs>(anim_sprites.size());
       const bfSpritesheet** sheets      = engine.tempMemory().allocateArrayTrivial<const bfSpritesheet*>(anim_sprites.size());
       std::uint16_t         num_sprites = 0u;
@@ -232,24 +227,22 @@ namespace bf
         {
           const auto current_idx = num_sprites++;
 
-          back_ptrs[current_idx].animator    = &anim_sprite;
-          back_ptrs[current_idx].renderer    = sprite;
-          input[current_idx]                 = anim_sprite.m_Anim2DUpdateInfo;
-          input[current_idx].spritesheet_idx = current_idx;
-          sheets[current_idx]                = anim_sprite.m_Spritesheet->spritesheet();
+          back_ptrs[current_idx].animator          = &anim_sprite;
+          back_ptrs[current_idx].renderer          = sprite;
+          update_info[current_idx]                 = anim_sprite.m_Anim2DUpdateInfo;
+          update_info[current_idx].spritesheet_idx = current_idx;
+          sheets[current_idx]                      = anim_sprite.m_Spritesheet->spritesheet();
         }
       }
 
-      bfAnim2DUpdateOutput* results = engine.tempMemory().allocateArrayTrivial<bfAnim2DUpdateOutput>(num_sprites);
-
-      bfAnim2D_stepFrame(input, sheets, num_sprites, dt, results);
+      bfAnim2D_stepFrame(update_info, sheets, num_sprites, dt);
 
       for (std::uint16_t i = 0u; i < num_sprites; ++i)
       {
-        SpriteRenderer* const       sprite = back_ptrs[i].renderer;
-        const bfAnim2DUpdateOutput& result = results[i];
-        const bfSpritesheet*        sheet  = sheets[input[i].spritesheet_idx];
-        const bfUVRect              rect   = sheet->uvs[sheet->animations->frames[result.current_frame].frame_index];
+        SpriteRenderer* const     sprite = back_ptrs[i].renderer;
+        const bfAnim2DUpdateInfo& result = update_info[i];
+        const bfSpritesheet*      sheet  = sheets[result.spritesheet_idx];
+        const bfUVRect            rect   = sheet->uvs[sheet->animations->frames[result.current_frame].frame_index];
 
         sprite->uvRect() = {rect.x, rect.y, rect.width, rect.height};
 
@@ -280,7 +273,11 @@ namespace bf
           //
 
           //
-          // If this was backed one then in the main loop no string lookups are needed.
+          // NOTE(SR): This data must be backed per {ModelAsset, Anim3DAsset} pair.
+          //
+
+          //
+          // If this was backed once then in the main loop no string lookups are needed.
           //
 
           // TODO(SR): Maybe this can be an array rather than a map.
@@ -292,12 +289,12 @@ namespace bf
             const ModelAsset::Node& node = model->m_Nodes[bones.node_idx];
             const auto              it   = animation->m_NameToChannel.find(node.name);
 
+            assert(node.bone_idx == bone_index);
+
             if (it != animation->m_NameToChannel.end())
             {
               bone_to_channel.insert(bone_index, it->value());
             }
-
-            assert(node.bone_idx == bone_index);
 
             ++bone_index;
           }
@@ -311,7 +308,7 @@ namespace bf
           const bfBufferSize          offset            = uniform_bone_data.transform_uniform.offset(engine_renderer.frameInfo());
           const bfBufferSize          size              = sizeof(ObjectBoneData);
           ObjectBoneData* const       obj_data          = static_cast<ObjectBoneData*>(bfBuffer_map(uniform_bone_data.transform_uniform.handle(), offset, size));
-          Matrix4x4f*                 output_bones      = obj_data->bones;
+          Matrix4x4f*                 output_bones      = obj_data->u_Bones;
 
           std::for_each_n(
            output_bones,

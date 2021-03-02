@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2020-06-24
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #ifndef BIFROST_UUID_HPP
@@ -28,11 +28,11 @@ namespace bf
     {
       if constexpr (sizeof(std::size_t) == 4)
       {
-        return bfString_hashN(uuid.as_number.data, sizeof(uuid.as_number));
+        return bfString_hashN(uuid.as_number.bytes, sizeof(uuid.as_number));
       }
       else
       {
-        return bfString_hashN64(uuid.as_number.data, sizeof(uuid.as_number));
+        return bfString_hashN64(uuid.as_number.bytes, sizeof(uuid.as_number));
       }
     }
 
@@ -40,15 +40,15 @@ namespace bf
     {
       if constexpr (sizeof(std::size_t) == 4)
       {
-        return bfString_hashN(as_number.data, sizeof(as_number));
+        return bfString_hashN(as_number.bytes, sizeof(as_number));
       }
       else
       {
-        return bfString_hashN64(as_number.data, sizeof(as_number));
+        return bfString_hashN64(as_number.bytes, sizeof(as_number));
       }
     }
 
-    std::size_t operator()(const BifrostUUIDString& as_string) const
+    std::size_t operator()(const bfUUIDString& as_string) const
     {
       if constexpr (sizeof(std::size_t) == 4)
       {
@@ -74,7 +74,7 @@ namespace bf
       return bfUUID_numberCmp(&lhs, &rhs) != 0;
     }
 
-    bool operator()(const BifrostUUIDString& lhs, const BifrostUUIDString& rhs) const
+    bool operator()(const bfUUIDString& lhs, const bfUUIDString& rhs) const
     {
       return bfUUID_stringCmp(&lhs, &rhs) != 0;
     }

@@ -1187,7 +1187,7 @@ namespace bf::UI
 
   void Render(CommandBuffer2D& gfx2D, float screen_width, float screen_height)
   {
-#if 1
+#if 0
     // Test Code
 
     static WindowState s_WinStates[2] = {};

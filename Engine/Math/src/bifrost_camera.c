@@ -357,7 +357,7 @@ void bfFrustum_fromMatrix(bfFrustum* self, const Mat4x4* view_projection)
     //Vec4f plane = bfV4f_div(planes[i], bfV3f_len(bfV4f_toV3f(planes[i])));
     Vec4f plane = planes[i];
 
-    plane.w *= -1.0f;
+    plane.w = -plane.w;
 
     self->planes[i] = bfV4_toPlane(plane);
   }
@@ -640,6 +640,8 @@ bfRaycastTriangleResult bfSegment3D_intersectsTriangle(Vec3f p, Vec3f q, Vec3f t
 
 bfRaycastPlaneResult bfRay3D_intersectsPlane(const bfRay3D* ray, bfPlane plane)
 {
+  // [https://www.cs.princeton.edu/courses/archive/fall00/cs426/lectures/raycast/sld017.htm]
+
   bfRaycastPlaneResult result;
 
   const Vec3f plane_normal = bfPlane_normal(plane);

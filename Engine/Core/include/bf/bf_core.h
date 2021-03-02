@@ -23,7 +23,7 @@
  *  NOTE(Shareef):
  *    This is a compiler intrinsic that tells the compiler that
  *    the this class will never be instantiated directly and thus vtable
- *    initialization does not need to happen in this ctor.
+ *    initialization does not need to happen in the base class's ctor.
  */
 #define bfPureInterface(T) __declspec(novtable) T
 

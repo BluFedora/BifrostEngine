@@ -4,55 +4,38 @@
     "type": "split",
     "children": [
       {
-        "id": "82d4d50d2afd7ef6",
+        "id": "d7e0c301b009aef2",
         "type": "split",
         "children": [
           {
-            "id": "d7e0c301b009aef2",
-            "type": "split",
-            "dimension": 80.71847507331378,
-            "children": [
-              {
-                "id": "851f7988cffd470a",
-                "type": "leaf",
-                "state": {
-                  "type": "markdown",
-                  "state": {
-                    "file": "OrganizedThoughts/AnimationRuntime.md",
-                    "mode": "source"
-                  }
-                },
-                "group": "09bf35f1cb7936de"
-              },
-              {
-                "id": "81f2acfc1b605f7f",
-                "type": "leaf",
-                "active": true,
-                "state": {
-                  "type": "markdown",
-                  "state": {
-                    "file": "OrganizedThoughts/AnimationRuntime.md",
-                    "mode": "preview"
-                  }
-                },
-                "group": "09bf35f1cb7936de"
+            "id": "851f7988cffd470a",
+            "type": "leaf",
+            "dimension": 53.00487276664862,
+            "active": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "OrganizedThoughts/ByteWriterAPISketch.md",
+                "mode": "source"
               }
-            ],
-            "direction": "vertical"
+            },
+            "group": "09bf35f1cb7936de"
           },
           {
-            "id": "91fa5cd5293217c6",
+            "id": "81f2acfc1b605f7f",
             "type": "leaf",
-            "dimension": 19.281524926686217,
-            "pinned": true,
+            "dimension": 46.99512723335138,
             "state": {
-              "type": "graph",
-              "state": {},
-              "pinned": true
-            }
+              "type": "markdown",
+              "state": {
+                "file": "OrganizedThoughts/ByteWriterAPISketch.md",
+                "mode": "preview"
+              }
+            },
+            "group": "09bf35f1cb7936de"
           }
         ],
-        "direction": "horizontal"
+        "direction": "vertical"
       }
     ],
     "direction": "vertical"
@@ -92,8 +75,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 399.5,
-    "collapsed": true
+    "width": 356.5
   },
   "right": {
     "id": "cdebc9e85d393563",
@@ -109,7 +91,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/AnimationRuntime.md",
+                "file": "OrganizedThoughts/ByteWriterAPISketch.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -126,6 +108,8 @@
     "collapsed": true
   },
   "lastOpenFiles": [
+    "OrganizedThoughts/ByteWriterAPISketch.md",
+    "OrganizedThoughts/Interpolation.md",
     "OrganizedThoughts/AnimationRuntime.md",
     "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
@@ -133,8 +117,6 @@
     "cover_image.png.md",
     "OrganizedThoughts/IPC.md",
     "vulkan_sync.md",
-    "Random Links.md",
-    "MiscNotes.md",
-    "API_Design_Musings.md"
+    "Random Links.md"
   ]
 }

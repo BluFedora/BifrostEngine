@@ -10,7 +10,7 @@ namespace bf
 {
   struct ObjectBoneData
   {
-    Mat4x4 bones[k_GfxMaxTotalBones];
+    Mat4x4 u_Bones[k_GfxMaxTotalBones];
   };
 
   class AnimationSystem final : public IECSSystem

@@ -325,7 +325,7 @@ namespace bf::editor
     setNameBuffer(key);
 
     char as_string[37];
-    bfUUID_numberToString(value.data, as_string);
+    bfUUID_numberToString(value.bytes, as_string);
 
     ImGui::Text("UUID <%s>", as_string);
   }

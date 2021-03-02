@@ -182,7 +182,7 @@ add_executable(
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
-  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp")
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp")
 
 add_executable(
   StandaloneRuntime
@@ -210,7 +210,7 @@ add_executable(
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
-  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp")
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp")
 
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
@@ -343,6 +343,14 @@ add_custom_command(TARGET BifrostEngineOLD PRE_BUILD
 add_custom_command(TARGET StandaloneRuntime PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:BifrostEngineOLD>/assets)
+
+add_custom_target(
+    CopyAssets
+    COMMAND 
+      ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/assets"
+)
+
+add_dependencies(BifrostEngineOLD CopyAssets)
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")

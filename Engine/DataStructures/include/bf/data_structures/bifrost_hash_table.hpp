@@ -8,7 +8,7 @@
       so DO NOT store references long after you are given them.
 
       TODO: A good optimization would be for all functions taking in a key to
-            take in a templated key as to not for a constructionof a TKey specifically.
+            take in a templated key as to not force a constructionof a TKey specifically.
             Ex: A String vs StringRange shoudl be allowed tp be compared as is.
 */
 /******************************************************************************/

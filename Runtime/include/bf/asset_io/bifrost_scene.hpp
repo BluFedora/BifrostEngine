@@ -12,8 +12,8 @@
  * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
-#ifndef BIFROST_SCENE_HPP
-#define BIFROST_SCENE_HPP
+#ifndef BF_SCENE_HPP
+#define BF_SCENE_HPP
 
 #include "bf/bifrost_math.h"                             /* Vec3f, Mat4x4     */
 #include "bf/core/bifrost_base_object.hpp"               /* BaseObject<T>     */
@@ -30,15 +30,6 @@ namespace bf
   class bfPureInterface(IBehavior);
 
   using Camera = BifrostCamera;
-
-  // TODO(SR): Storage for entities should be grouped together since each of these parts has a max of 2^16 - 1 entities.
-  // EntityStorage:
-  //   IMemoryManger          (Pool)
-  //   ComponentStorage       m_ActiveComponents
-  //   ComponentStorage       m_InactiveComponents
-  //   BVH                    m_BVHTree;
-  //   HashTable<id, Entity*> m_IDToEntity;
-  //
 
   /*!
    * @brief
@@ -131,7 +122,6 @@ namespace bf
   }
 
   using SceneAsset = Scene;
-
 }  // namespace bf
 
 BIFROST_META_REGISTER(Quaternionf){
@@ -160,4 +150,4 @@ BIFROST_META_REGISTER(Vec3f)
   BIFROST_META_END()
 }
 
-#endif /* BIFROST_SCENE_HPP */
+#endif /* BF_SCENE_HPP */

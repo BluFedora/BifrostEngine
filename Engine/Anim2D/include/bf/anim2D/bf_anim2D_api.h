@@ -11,9 +11,9 @@ extern "C" {
 #endif
 /* clang-format off */
 
-#define k_bfAnim2DVersion               0                     /*!< */
-#define k_bfSRSMServerPort              ((int16_t)4512)       /*!< */
-#define k_bfAnimSpriteLastFrame         ((int32_t)0x7FFFFFFF) /*! Max signed int                           */
+#define k_bfAnim2DVersion   0                               /*!< Current version of the binary format this version of the code expects. */
+#define k_bfSRSMServerPort  ((int16_t)4512)                 /*!< Port used on localhost to connect to the animator tool's server.       */
+#define k_bfAnim2DInvalidID ((bfAnim2DAnimationID)(0xFFFF)) /*!< */
 
 /* clang-format on */
 
@@ -22,10 +22,10 @@ typedef struct bfSpritesheet bfSpritesheet; /*!< */
 typedef struct bfAnimation   bfAnimation;   /*!< */
 
 typedef uint8_t  bfBool8;
-typedef uint16_t bfAnim2DAnimationID;                       /*!< Indexes into `bfSpritesheet::animations`. */
-#define k_bfAnim2DInvalidID ((bfAnim2DAnimationID)(0xFFFF)) /*!< */
+typedef uint32_t bfBool32;
+typedef uint16_t bfAnim2DAnimationID; /*!< Indexes into `bfSpritesheet::animations`. */
 
-typedef enum
+typedef enum bfAnim2DChangeEventType
 {
   bfAnim2DChange_Texture,
   bfAnim2DChange_Animation,  //!< An animation may have been, added, edited, removed or renamed.
@@ -34,8 +34,8 @@ typedef enum
 
 typedef struct
 {
-  bfAnim2DChangeEventType type;        /*!< bfAnim2DChange_Texture or bfAnim2DChange_Animation */
-  bfSpritesheet*          spritesheet; /*!< The changed spritesheet. */
+  bfAnim2DChangeEventType type;        /*!< The type of change event. */
+  bfSpritesheet*          spritesheet; /*!< The changed spritesheet.  */
 
   union
   {
@@ -50,7 +50,7 @@ typedef struct
 } bfAnim2DChangeEvent;
 
 typedef void*(BF_CDECL* bfAnim2DAllocator)(void* ptr, size_t old_size, size_t new_size, void* user_data);
-typedef void(BF_CDECL* bfAnim2DSpritesheetChangedFn)(bfAnim2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event);
+typedef void(BF_CDECL* bfAnim2DSpritesheetChangedFn)(bfAnim2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event); /*!< Called whenever a spritesheet has changed from SRSM.     */
 
 typedef struct
 {
@@ -63,30 +63,29 @@ typedef struct
 
 typedef struct
 {
-  uint32_t frame_index; /*!< */
-  float    frame_time;  /*!< */
+  uint32_t frame_index; /*!< The index into the list of UVs that this frame corresponds to. */
+  float    frame_time;  /*!< How long the frame will be on screen in seconds.               */
 
 } bfAnimationFrame; /*!< */
 
 typedef struct
 {
-  char*  str;     /*!< Nul terminated string pointer.*/
-  size_t str_len; /*!< The cached length of the str.  */
+  char*    str;     /*!< Nul terminated string pointer.*/
+  uint64_t str_len; /*!< The cached length of the str.  */
 
-} bfOwnedString; /*!< */
+} bfOwnedString; /*!< Used to indicated the string is owned by the struct that contains a member of this type. */
 
 typedef struct
 {
   const char* str;     /*!< Start of the span (may not be NUL terminated). */
-  size_t      str_len; /*!< The cached length of the str.                  */
+  uint64_t    str_len; /*!< The cached length of the str.                  */
 
-} bfStringSpan; /*!< */
+} bfStringSpan; /*!< A view into a constant string. */
 
 typedef struct
 {
-  bfAnim2DAllocator            allocator;              /*!< NULL is valid, will just use the CRT's realloc and free. */
-  void*                        user_data;              /*!< This userdata will be passed into the allocator.         */
-  bfAnim2DSpritesheetChangedFn on_spritesheet_changed; /*!< Called whenever a spritesheet has changed from SRSM.     */
+  bfAnim2DAllocator allocator; /*!< NULL is valid, will just use the CRT's realloc and free. */
+  void*             user_data; /*!< This userdata will be passed into the allocator.         */
 
 } bfAnim2DCreateParams;
 
@@ -110,34 +109,29 @@ struct bfSpritesheet /*!< */
   bfSpritesheet* next;           /*!< */
 };
 
-typedef struct bfAnim2DUpdateInput
+// Input          - read but untouched by `bfAnim2D_stepFrame`.
+// Output         - are written to and can be left uninitialized.
+// Input / Output - read then written to.
+typedef struct bfAnim2DUpdateInfo
 {
-  float               playback_speed;
-  float               time_left_for_frame;
-  bfAnim2DAnimationID animation;
-  uint16_t            spritesheet_idx;
-  uint32_t            current_frame : 31;
-  uint32_t            is_looping : 1;
+  float               playback_speed;            //!< Input: 1.0 is normal speed and negative numbers means the animation will play backwards.
+  float               time_left_for_frame;       //!< Input / Output: Time left for the current animation.
+  uint16_t            spritesheet_idx;           //!< Input: The spritesheet this sprite is associated with in the 'spritesheets' array.
+  bfAnim2DAnimationID animation;                 //!< Input: The animation to be used.
+  uint16_t            current_frame : 14;        //!< Input / Output: The current frame of the animation.
+  uint16_t            is_looping : 1;            //!< Input: Whether or not the sprite's current frame wraps around.
+  uint16_t            has_finished_playing : 1;  //!< Output: True if the sprite reached the last frame of the animation this frame.
 
-} bfAnim2DUpdateInput;
-
-typedef struct bfAnim2DUpdateOutput
-{
-  float    time_left_for_frame;
-  uint32_t current_frame : 31;
-  uint32_t has_finished_playing : 1;
-
-} bfAnim2DUpdateOutput;
+} bfAnim2DUpdateInfo;
 
 BF_ANIM2D_API bfAnim2DCtx* bfAnim2D_new(const bfAnim2DCreateParams* params);
 BF_ANIM2D_API void*        bfAnim2D_userData(const bfAnim2DCtx* self);
-BF_ANIM2D_API void         bfAnim2D_networkUpdate(bfAnim2DCtx* self);
+BF_ANIM2D_API void         bfAnim2D_networkUpdate(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback);
 BF_ANIM2D_API void         bfAnim2D_stepFrame(
-         const bfAnim2DUpdateInput* input,
-         const bfSpritesheet**      input_spritesheets,
-         uint16_t                   num_input,
-         float                      delta_time,
-         bfAnim2DUpdateOutput*      output);
+         bfAnim2DUpdateInfo*   sprites,
+         const bfSpritesheet** spritesheets,
+         uint16_t              num_sprites,
+         float                 delta_time);
 BF_ANIM2D_API bfSpritesheet* bfAnim2D_loadSpritesheet(bfAnim2DCtx* self, bfStringSpan name, const uint8_t* srsm_bytes, size_t num_srsm_bytes);
 BF_ANIM2D_API void           bfAnim2D_destroySpritesheet(bfAnim2DCtx* self, bfSpritesheet* spritesheet);
 BF_ANIM2D_API void           bfAnim2D_delete(bfAnim2DCtx* self);

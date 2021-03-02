@@ -174,7 +174,7 @@ namespace bf
 
    public:
     ARC<SpritesheetAsset> m_Spritesheet;
-    bfAnim2DUpdateInput   m_Anim2DUpdateInfo;
+    bfAnim2DUpdateInfo    m_Anim2DUpdateInfo;
 
    public:
     explicit SpriteAnimator(Entity& owner);

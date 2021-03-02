@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_iserializer.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Generic interface for serializing and reflecting over various data types.
  *
  * @version 0.0.1
  * @date    2020-12-20
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_ISERIALIZER_HPP
@@ -33,6 +33,8 @@ namespace bf
   class IBaseObject;
   class EntityRef;
   class IARCHandle;
+
+  // Main Serializer API
 
   enum class SerializerMode
   {
@@ -181,9 +183,7 @@ namespace bf
     template<typename VariantT, typename T>
     static void deserializeVariantHelper(ISerializer& self, VariantT& value)
     {
-      T& typed_value = value.template set<T>();
-
-      self.serialize("__Value__", typed_value);
+      self.serialize("__Value__", value.template set<T>());
     }
 
     template<typename VariantT>
@@ -199,7 +199,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

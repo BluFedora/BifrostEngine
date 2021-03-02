@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_base_asset.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Interface for creating asset type the engine can use.
+ *   Interface for creating asset types the engine can use.
  *
  * @version 0.0.1
  * @date    2020-12-19
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #include "bf/asset_io/bf_base_asset.hpp"
@@ -327,7 +327,7 @@ namespace bf
   String IBaseAsset::createSubAssetPath(StringRange name_with_ext) const
   {
     char uuid_as_str[k_bfUUIDStringCapacity];
-    bfUUID_numberToString(m_UUID.data, uuid_as_str);
+    bfUUID_numberToString(m_UUID.bytes, uuid_as_str);
 
     String result = path::k_SubAssetsRoot;
     result.append(StringRange{uuid_as_str, k_bfUUIDStringLength});

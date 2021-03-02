@@ -10,7 +10,6 @@ cmake_minimum_required(VERSION 3.8)
 
 project(BF_Animation2D VERSION 0.0.1 DESCRIPTION "" LANGUAGES C)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # set(CMAKE_DEBUG_POSTFIX d)
 
 add_library(

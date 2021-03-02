@@ -1686,11 +1686,11 @@ namespace bf::editor
 
       if (ImGui::IsItemHovered())
       {
-        BifrostUUIDString uuid_str;
+        bfUUIDString uuid_str;
 
         if (entry.asset_info)
         {
-          bfUUID_numberToString(entry.asset_info->uuid().data, uuid_str.data);
+          bfUUID_numberToString(entry.asset_info->uuid().bytes, uuid_str.data);
         }
 
         ImGui::SetTooltip("Asset(%s)", entry.asset_info ? uuid_str.data : "<null>");
@@ -1702,7 +1702,33 @@ namespace bf::editor
         {
           if (entry.file_extension == ".scene")
           {
-            editor.engine().openScene(static_cast<SceneAsset*>(entry.asset_info));
+            ARC<SceneAsset> opened_scene = static_cast<SceneAsset*>(entry.asset_info);
+
+            editor.engine().openScene(opened_scene);
+#if 0
+            auto& assets = editor.engine().assets();
+            const auto  material   = assets.loadUnmanagedAsset<MaterialAsset>("Tile Material", AssetLoadMode::IN_MEMORY);
+            auto* const cube_model = assets.findAssetOfType<ModelAsset>(RelPath("Models/cube.obj"));
+
+            for (int y = 0; y < 64; ++y)
+            {
+              for (int x = 0; x < 32; ++x)
+              {
+                Entity* tile = opened_scene->addEntity("Tile");
+
+                auto& mesh      = tile->add<MeshRenderer>();
+                mesh.m_Material = material;
+                mesh.m_Model    = cube_model;
+
+                auto& tile_transform = tile->transform();
+
+                tile_transform.local_position = {float(x), 0.0f, float(y)};
+                tile_transform.local_scale    = Vector3f(0.5f);
+
+                bfTransform_flushChanges(&tile->transform());
+              }
+            }
+#endif
           }
         }
 
@@ -1720,9 +1746,9 @@ namespace bf::editor
         {
           if constexpr (!(flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
           {
-            BifrostUUIDString uuid_str;
+            bfUUIDString uuid_str;
 
-            bfUUID_numberToString(entry.asset_info->uuid().data, uuid_str.data);
+            bfUUID_numberToString(entry.asset_info->uuid().bytes, uuid_str.data);
 
             ImGui::Text("UUID %s", uuid_str.data);
           }

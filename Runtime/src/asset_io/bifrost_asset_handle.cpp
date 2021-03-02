@@ -104,7 +104,7 @@ namespace bf
   void ISerializer::serialize(StringRange key, bfUUIDNumber& value)
   {
     char as_string_chars[k_bfUUIDStringCapacity];
-    bfUUID_numberToString(value.data, as_string_chars);
+    bfUUID_numberToString(value.bytes, as_string_chars);
 
     String as_string = {as_string_chars, k_bfUUIDStringLength};
 
@@ -131,7 +131,7 @@ namespace bf
 
     if (mode() == SerializerMode::LOADING)
     {
-      bfUUID_numberToString(value.as_number.data, value.as_string.data);
+      bfUUID_numberToString(value.as_number.bytes, value.as_string.data);
     }
   }
 

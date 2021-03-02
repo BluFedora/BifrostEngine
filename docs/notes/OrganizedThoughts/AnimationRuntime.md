@@ -64,6 +64,12 @@ struct AnimationStateNode:
 struct AnimationStateTransition:
 ```
 
+```c
+
+struct PerAniamtorControllerInstance
+
+```
+
 ### Parameter Buffers
 
 This manages passing dynamically changing data into the animator controller at runtime.
@@ -140,16 +146,16 @@ enum InterpolationType:
   STEP
   CUBICSPLINE
 
-// This should be the result of the main animation routines.
-struct STRTransform:
+struct SRTTransform:
   scale:    Vector3;
   rotation: Quaternion;
   position: Vector3;
   
+// This should be the result of the main animation routines.
 struct Pose
   modified_bones: u64[2]; // Bitfield with which bones were modified.
   num_bones:      u8;
-  bones_poses:    STRTransform[num_bones];
+  bones_poses:    SRTTransform[num_bones];
 ```
 More info on: [[Interpolation]]
 

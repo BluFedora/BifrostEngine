@@ -63,7 +63,7 @@ inline float bfPlane_dot(bfPlane plane, Vec3f point)
   return bfV3f_dot(bfPlane_normal(plane), point) - plane.d;
 }
 
-/* Plane API */
+/* Frustum API */
 
 enum
 {
@@ -78,7 +78,7 @@ enum
 
 typedef enum
 {
-  BF_FRUSTUM_TEST_OUTSIDE      = 0,  //!< This is a falsy value to allow for this to be treated as a boolean.
+  BF_FRUSTUM_TEST_OUTSIDE      = 0,  //!< This is a false-y value to allow for this to be treated as a boolean.
   BF_FRUSTUM_TEST_INTERSECTING = 1,  //!< Partially inside of one of the planes
   BF_FRUSTUM_TEST_INSIDE       = 2,  //!< Completely inside all of the planes.
 

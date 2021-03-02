@@ -200,16 +200,13 @@ namespace bf
      });
   }
 
-  // TOOD(SR): Make this function also return the length so that the call to 'getTextureAssetHandle' doesnt have to recalc length.
   static bool makeTexturePath(char (&abs_texture_path)[path::k_MaxLength], StringRange root_dir, const AssetPBRMaterial& src_mat, int type)
   {
     const auto& texture = src_mat.textures[type];
 
     if (texture)
     {
-      const auto [path_length, is_truncated] = path::append(abs_texture_path, bfCArraySize(abs_texture_path), root_dir, StringRange(texture));
-
-      return !is_truncated;
+      return !path::append(abs_texture_path, bfCArraySize(abs_texture_path), root_dir, StringRange(texture)).is_truncated;
     }
 
     return false;
@@ -223,13 +220,10 @@ namespace bf
   template<typename T, typename F>
   static void forEachWithIndex(const AssetTempArray<T>& array, F&& callback)
   {
-    std::for_each_n(
-     array.data,
-     array.length,
-     [index = std::size_t(0u), &callback](const T& element) mutable {
-       callback(element, index);
-       ++index;
-     });
+    std::for_each_n(array.data, array.length, [index = std::size_t(0u), &callback](const T& element) mutable {
+      callback(element, index);
+      ++index;
+    });
   }
 
   void ModelAsset::onLoad()
@@ -314,7 +308,6 @@ namespace bf
               dst_channel.translation.x.keys[i] = {key.time, key.data[0]};
               dst_channel.translation.y.keys[i] = {key.time, key.data[1]};
               dst_channel.translation.z.keys[i] = {key.time, key.data[2]};
-
               ++i;
             });
 
@@ -323,7 +316,6 @@ namespace bf
             channel.num_rotation_keys,
             [&dst_channel, i = 0](const AnimationKey& key) mutable {
               dst_channel.rotation.keys[i] = {key.time, {key.data[0], key.data[1], key.data[2], key.data[3]}};
-
               ++i;
             });
 
@@ -334,7 +326,6 @@ namespace bf
               dst_channel.scale.x.keys[i] = {key.time, key.data[0]};
               dst_channel.scale.y.keys[i] = {key.time, key.data[1]};
               dst_channel.scale.z.keys[i] = {key.time, key.data[2]};
-
               ++i;
             });
 

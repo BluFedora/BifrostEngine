@@ -305,8 +305,8 @@ namespace bf
 
   struct RenderQueue
   {
-    static constexpr std::size_t k_KeyBufferSize     = bfMegabytes(1);
-    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(2);
+    static constexpr std::size_t k_KeyBufferSize     = bfMegabytes(5);
+    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(5); // TODO(SR): cant set this to 50???
 
     RenderQueueType                           type;
     FixedLinearAllocator<k_KeyBufferSize>     key_stream_memory;

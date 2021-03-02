@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_base_component.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   The base class for all core engine components.
  *   Look into "bf_component_list.hpp" for registering components.
@@ -9,7 +9,7 @@
  * @version 0.0.1
  * @date    2020-03-21
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_BASE_COMPONENT_HPP
@@ -136,9 +136,8 @@ namespace bf
   };
 
   //
-  // Allows for customizing the behavior of a component
-  // on certain events without introducing significant runtime
-  // overhead.
+  // Allows for customizing the behavior of a component on certain
+  // events without introducing significant runtime overhead.
   //
   namespace ComponentTraits
   {
@@ -154,3 +153,29 @@ namespace bf
 }  // namespace bf
 
 #endif /* BF_BASE_COMPONENT_HPP */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

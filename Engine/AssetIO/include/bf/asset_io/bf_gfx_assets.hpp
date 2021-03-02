@@ -248,8 +248,6 @@ namespace bf
   // TODO(SR): This should be declared in a better place.
   using Matrix4x4f = ::Mat4x4;
 
-  struct ModelSkeleton;
-
   class ModelAsset : public BaseAsset<ModelAsset>
   {
    public:

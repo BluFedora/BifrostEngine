@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_base_asset.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Interface for creating asset types the engine can use.
  *
  * @version 0.0.1
  * @date    2020-12-19
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_BASE_ASSET_HPP
@@ -50,14 +50,29 @@ namespace bf
     };
   }
 
+  enum class AssetMetaReferenceType
+  {
+    INTERNAL_REF,
+    EXTERNAL_REF,
+  };
+
+  struct AssetMetaReference
+  {
+    AssetMetaReferenceType type   = AssetMetaReferenceType::EXTERNAL_REF;
+    bfUUIDNumber           ref_id = {};
+    AssetMetaReference*    next   = nullptr;
+  };
+
   struct AssetMetaInfo
   {
-    std::int32_t   version      = 1;
-    BufferLen      name         = {nullptr, 0};
-    bfUUIDNumber   uuid         = {};
-    AssetMetaInfo* first_child  = nullptr;
-    AssetMetaInfo* last_child   = nullptr;  // Last child is stored to make appending fast. (We want to append since serialization is an array, we do not want the data reversing on every save).
-    AssetMetaInfo* next_sibling = nullptr;
+    std::int32_t        version       = 1;
+    BufferLen           name          = {nullptr, 0};
+    bfUUIDNumber        uuid          = {};
+    AssetMetaReference* internal_refs = nullptr;
+    AssetMetaReference* external_refs = nullptr;
+    AssetMetaInfo*      first_child   = nullptr;
+    AssetMetaInfo*      last_child    = nullptr;  // Last child is stored to make appending fast. (We want to append since serialization is an array, we do not want the data reversing on every save).
+    AssetMetaInfo*      next_sibling  = nullptr;
 
     // Before calling this function it is expected that no resources are currently being owned.
     // (Eg: Either default constructed or after a call to `freeResources` is fine)
@@ -115,9 +130,9 @@ namespace bf
 
     AssetMetaInfo* generateMetaInfo(IMemoryManager & allocator) const;
 
-    void setup(const String& full_path, Assets& assets);
-
    private:
+    // This overload is for `Unmanaged` assets.
+    void setup(const String& full_path, Assets& assets);
     void setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid, Assets& assets);
 
     // Interface That Must Be Implemented By Subclasses. //
@@ -141,20 +156,9 @@ namespace bf
     IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext);
     IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext, bfUUIDNumber uuid);
 
-    void markFailedToLoad()
-    {
-      m_Flags |= AssetFlags::FAILED_TO_LOAD;
-    }
-
-    void markIsLoaded()
-    {
-      m_Flags |= AssetFlags::IS_LOADED;
-    }
-
-    void markAsEngineAsset()
-    {
-      m_Flags |= AssetFlags::IS_ENGINE_ASSET;
-    }
+    void markFailedToLoad() { m_Flags |= AssetFlags::FAILED_TO_LOAD; }
+    void markIsLoaded() { m_Flags |= AssetFlags::IS_LOADED; }
+    void markAsEngineAsset() { m_Flags |= AssetFlags::IS_ENGINE_ASSET; }
   };
 
   namespace detail
@@ -345,7 +349,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

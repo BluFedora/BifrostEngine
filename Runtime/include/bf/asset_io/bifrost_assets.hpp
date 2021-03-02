@@ -185,17 +185,15 @@ namespace bf
     }
 
     template<typename T>
-    T* findAssetOfType(AbsPath abs_path)
+    T* findAssetOfType(AbsPath abs_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET)
     {
-      IBaseAsset* base_asset = findAsset(abs_path);
+      return findAssetOfTypeImpl<T, AbsPath>(abs_path, load_option);
+    }
 
-      // If the found asset does not match the correct type then return nullptr.
-      if (base_asset && base_asset->type() != meta::typeInfoGet<T>())
-      {
-        base_asset = nullptr;
-      }
-
-      return static_cast<T*>(base_asset);
+    template<typename T>
+    T* findAssetOfType(RelPath rel_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET)
+    {
+      return findAssetOfTypeImpl<T, RelPath>(rel_path, load_option);
     }
 
     AssetMetaInfo* loadMetaInfo(LinearAllocator& temp_allocator, StringRange abs_path_to_meta_file);
@@ -224,6 +222,20 @@ namespace bf
     IBaseAsset* loadAsset(const StringRange& abs_path);
 
    private:
+    template<typename T, typename PathType>
+    T* findAssetOfTypeImpl(PathType path, AssetFindOption load_option)
+    {
+      IBaseAsset* base_asset = findAsset(path, load_option);
+
+      // If the found asset does not match the correct type then return nullptr.
+      if (base_asset && base_asset->type() != meta::typeInfoGet<T>())
+      {
+        base_asset = nullptr;
+      }
+
+      return static_cast<T*>(base_asset);
+    }
+
     IBaseAsset* createAssetFromPath(StringRange path, const bfUUIDNumber& uuid);
     IBaseAsset* createAssetFromPath(StringRange path);  // Creates UUID for you.
     void        saveMetaInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const;
