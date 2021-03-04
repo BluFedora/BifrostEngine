@@ -8,8 +8,14 @@
             "m_Name" : "Rhino",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : null,
-                    "m_Model" : null,
+                    "m_Material" : {
+                        "docID" : "E4E997FB-9CF4-48D0-AE98-AD31C239345C",
+                        "fileID" : 1
+                    },
+                    "m_Model" : {
+                        "docID" : "DD66ECA0-0C25-45C6-8378-D3A1E9D547E8",
+                        "fileID" : 1
+                    },
                     "__Active__" : true
                 }
             },
@@ -422,12 +428,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -473,12 +475,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -521,12 +519,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -569,12 +563,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -617,12 +607,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -665,12 +651,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -713,12 +695,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -761,12 +739,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -809,12 +783,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -857,12 +827,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -905,12 +871,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -953,12 +915,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1001,12 +959,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1049,12 +1003,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1097,12 +1047,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1145,12 +1091,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1193,12 +1135,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1241,12 +1179,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1289,12 +1223,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1337,12 +1267,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1385,12 +1311,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1433,12 +1355,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1481,12 +1399,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1529,12 +1443,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1577,12 +1487,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1625,12 +1531,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1673,12 +1575,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1721,12 +1619,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1769,12 +1663,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1817,12 +1707,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1865,12 +1751,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1913,12 +1795,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -1961,12 +1839,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2009,12 +1883,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2057,12 +1927,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2105,12 +1971,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2153,12 +2015,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2201,12 +2059,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2249,12 +2103,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2343,12 +2193,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2391,12 +2237,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2439,12 +2281,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2487,12 +2325,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2535,12 +2369,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2583,12 +2413,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2631,12 +2457,8 @@
                     "m_Name" : "Untitled",
                     "m_Components" : {
                         "MeshRenderer" : {
-                            "m_Material" : {
-                                "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                            },
-                            "m_Model" : {
-                                "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32"
-                            },
+                            "m_Material" : null,
+                            "m_Model" : null,
                             "__Active__" : true
                         }
                     },
@@ -2715,9 +2537,7 @@
             "m_Name" : "House",
             "m_Components" : {
                 "SpriteRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "18616319-B148-41B1-A850-63B6F7938A2A"
-                    },
+                    "m_Material" : null,
                     "m_UVRect" : {
                         "height" : 1,
                         "y" : 0,
@@ -2777,9 +2597,7 @@
             "m_Name" : "House",
             "m_Components" : {
                 "SpriteRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "18616319-B148-41B1-A850-63B6F7938A2A"
-                    },
+                    "m_Material" : null,
                     "m_UVRect" : {
                         "height" : 1,
                         "y" : 0,
@@ -2839,9 +2657,7 @@
             "m_Name" : "House",
             "m_Components" : {
                 "SpriteRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "18616319-B148-41B1-A850-63B6F7938A2A"
-                    },
+                    "m_Material" : null,
                     "m_UVRect" : {
                         "height" : 1,
                         "y" : 0,
@@ -2901,12 +2717,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -2949,12 +2761,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -2997,12 +2805,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3045,12 +2849,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3093,12 +2893,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3141,12 +2937,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3189,12 +2981,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3237,12 +3025,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3285,12 +3069,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3333,12 +3113,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3381,12 +3157,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3429,12 +3201,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3477,12 +3245,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3525,12 +3289,8 @@
             "m_Name" : "Player",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "2AE9B419-297D-41E4-91C4-301D0E6368A6"
-                    },
-                    "m_Model" : {
-                        "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3573,12 +3333,8 @@
             "m_Name" : "BackPack",
             "m_Components" : {
                 "MeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                    },
-                    "m_Model" : {
-                        "uuid" : "B3D82F39-2CDF-49A0-9973-4894E54F1732"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true
                 }
             },
@@ -3621,16 +3377,10 @@
             "m_Name" : "Animated Guy",
             "m_Components" : {
                 "SkinnedMeshRenderer" : {
-                    "m_Material" : {
-                        "uuid" : "961D0D4D-87BC-4503-8998-15B8C5B5CF77"
-                    },
-                    "m_Model" : {
-                        "uuid" : "EBD7CFBB-3A83-410B-8AAA-82C8A1BDE883"
-                    },
+                    "m_Material" : null,
+                    "m_Model" : null,
                     "__Active__" : true,
-                    "m_Animation" : {
-                        "uuid" : "EFADAD68-12DE-42F6-8936-DC2FF64E0E22"
-                    }
+                    "m_Animation" : null
                 }
             },
             "m_Transform" : {

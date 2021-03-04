@@ -228,14 +228,14 @@ namespace bf
 
     JsonSerializerWriter serializer{temp_mem};
 
-    if (serializer.beginDocument(false))
+    if (serializer.beginDocument())
     {
       reflect(serializer);
       serializer.endDocument();
 
       JsonSerializerReader deserializer{assets, temp_mem, serializer.document()};
 
-      if (deserializer.beginDocument(false))
+      if (deserializer.beginDocument())
       {
         Entity* const clone = parent() ? parent()->addChild(name()) : scene().addEntity(name());
 

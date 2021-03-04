@@ -13,6 +13,7 @@
 #include "bf/asset_io/bifrost_json_serializer.hpp"
 
 #include "bf/asset_io/bf_base_asset.hpp"
+#include "bf/asset_io/bf_document.hpp"     // BaseDocument
 #include "bf/asset_io/bifrost_assets.hpp"  // Assets
 #include "bf/ecs/bifrost_entity.hpp"       // Entity
 
@@ -25,17 +26,9 @@ namespace bf
   {
   }
 
-  bool JsonSerializerWriter::beginDocument(bool is_array)
+  bool JsonSerializerWriter::beginDocument()
   {
-    if (is_array)
-    {
-      m_Document = json::detail::ArrayInitializer{};
-    }
-    else
-    {
-      m_Document = json::detail::ObjectInitializer{};
-    }
-
+    m_Document = json::detail::ObjectInitializer{};
     m_ObjectStack.emplaceBack(&m_Document);
 
     return true;
@@ -127,9 +120,11 @@ namespace bf
     if (value.isValid())
     {
       IBaseAsset* const asset_handle = value.handle();
+      ResourceReference resource_ref = asset_handle->toRef();
 
       pushObject(key);
-      serialize("uuid", const_cast<bfUUIDNumber&>(asset_handle->uuid()));
+      serialize("docID", resource_ref.doc_id);
+      serialize("fileID", resource_ref.file_id.id);
       popObject();
     }
     else
@@ -180,16 +175,10 @@ namespace bf
   {
   }
 
-  bool JsonSerializerReader::beginDocument(bool is_array)
+  bool JsonSerializerReader::beginDocument()
   {
-    const bool is_valid = m_Document.isArray() == is_array;
-
-    if (is_valid)
-    {
-      m_ObjectStack.emplaceBack(&m_Document, is_array ? 0 : -1);
-    }
-
-    return is_valid;
+    m_ObjectStack.emplaceBack(&m_Document, -1);
+    return true;
   }
 
   bool JsonSerializerReader::hasKey(StringRange key)
@@ -393,10 +382,13 @@ namespace bf
   {
     if (pushObject(key))
     {
-      bfUUIDNumber uuid;
-      serialize("uuid", uuid);
+      bfUUIDNumber doc_id;
+      ResourceID   file_id;
 
-      IBaseAsset* found_asset = m_Assets.findAsset(uuid);
+      serialize("docID", doc_id);
+      serialize("fileID", file_id.id);
+
+      IBaseAsset* found_asset = m_Assets.findAsset(ResourceReference{doc_id, file_id});
 
       // If the type info of the found asset is not compatible with the ARC handle then just assign nullptr.
       if (found_asset && value.typeInfo() != found_asset->type())

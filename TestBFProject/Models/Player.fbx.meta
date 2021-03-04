@@ -1,15 +1,21 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "0200B369-B4EC-4146-918C-3D1A2035AB99",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "93AA9A32-FCA2-4643-B130-1CDD55B6323E",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/Player.fbx",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
+        },
+        {
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "CAFB9535-AB61-4FB3-B2D6-A9CA86977E3E",
-    "name" : "Player.fbx",
-    "version" : 1
+    "Document" : {
+
+    }
 }

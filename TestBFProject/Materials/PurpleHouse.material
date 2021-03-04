@@ -1,7 +1,5 @@
 {
-    "m_AlbedoTexture" : {
-        "uuid" : "72743B68-771F-40DF-96C8-1D11707B92B9"
-    },
+    "m_AlbedoTexture" : null,
     "m_MetallicTexture" : null,
     "m_NormalTexture" : null,
     "m_RoughnessTexture" : null,

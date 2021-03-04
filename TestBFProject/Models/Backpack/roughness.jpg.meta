@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "91EE0D2D-97B7-4725-9A90-B9796EB578B1",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Models/Backpack/roughness.jpg",
+            "m_FileID" : 1,
+            "m_TypeName" : "Texture"
+        }
     ],
-    "uuid" : "AA013EA4-21A0-4574-91A4-8E12D3D4A83C",
-    "name" : "roughness.jpg",
-    "version" : 1
+    "Document" : {
+
+    }
 }

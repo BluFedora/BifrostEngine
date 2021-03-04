@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "AAB32668-6E77-46A9-965C-232CDD1BAF7D",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Models/Backpack/diffuse.jpg",
+            "m_FileID" : 1,
+            "m_TypeName" : "Texture"
+        }
     ],
-    "uuid" : "DE063AED-1E40-4459-86F4-86007BD46890",
-    "name" : "diffuse.jpg",
-    "version" : 1
+    "Document" : {
+
+    }
 }

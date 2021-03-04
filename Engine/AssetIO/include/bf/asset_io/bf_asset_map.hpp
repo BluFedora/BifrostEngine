@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_asset_map.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Maps a path and UUID to IBaseAsset pointers.
+ *   Provides a mapping of UUID and Paths to Documents for fast / easy lookup.
  *
  * @version 0.0.1
  * @date    2020-12-20
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_ASSET_MAP_HPP
@@ -23,16 +23,17 @@ namespace bf
 {
   // Forward Declarations
 
-  class IBaseAsset;
+  class IDocument;
 
   //
   // Although this is named `AssetMap` it is really a 'AssetSet'.
   // This class assumes you do not insert a repeated asset.
+  // Also this class does not assume memory ownership over the `IBaseAsset` pointers.
   //
   class AssetMap final : private NonCopyMoveable<AssetMap>
   {
    public:
-    static char s_TombstoneSentinel;  //!< Used to get a unique `IBaseAsset` pointer value so that Node does not need an extra member like a bool.
+    static char s_TombstoneSentinel;  //!< Used to get a unique `IBaseAsset` pointer value so that Node does not need an extra member for marking as a tombstone.
 
    private:
     static constexpr std::size_t k_InitialCapacity = 128;
@@ -45,17 +46,17 @@ namespace bf
 
     struct Node
     {
-      IBaseAsset* value = nullptr;
+      IDocument* value = nullptr;
 
       bool is_active() const { return !is_inactive() && !is_tombstone(); }
-      bool is_tombstone() const { return value == reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel); }
+      bool is_tombstone() const { return value == reinterpret_cast<IDocument*>(&s_TombstoneSentinel); }
       bool is_inactive() const { return value == nullptr; }
     };
 
     struct FindResult
     {
-      IBaseAsset* item;
-      HashIndex   bucket_slot;
+      IDocument* item;
+      HashIndex  bucket_slot;
     };
 
    private:
@@ -72,11 +73,11 @@ namespace bf
 
     ~AssetMap();
 
-    bool        isEmpty() const;
-    void        clear();
-    void        insert(IBaseAsset* key);
-    IBaseAsset* find(StringRange path) const;
-    IBaseAsset* find(const bfUUIDNumber& uuid) const;
+    bool       isEmpty() const;
+    void       clear();
+    void       insert(IDocument* key);
+    IDocument* find(StringRange path) const;
+    IDocument* find(const bfUUIDNumber& uuid) const;
 
     template<typename F>
     void forEach(F&& callback) const
@@ -110,7 +111,7 @@ namespace bf
         {
           if (m_Assets[i].is_active())
           {
-            IBaseAsset* const asset = m_Assets[i].value;
+            IDocument* const asset = m_Assets[i].value;
 
             if (predicate(asset))
             {
@@ -133,7 +134,7 @@ namespace bf
 
     bool remove(StringRange path);
     bool remove(const bfUUIDNumber& uuid);
-    bool remove(const IBaseAsset* key);
+    bool remove(const IDocument* key);
 
    private:
     template<typename TKey, typename FCmp>
@@ -196,7 +197,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -1,19 +1,19 @@
 /******************************************************************************/
 /*!
  * @file   bf_asset_map.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Maps a path and UUID to IBaseAsset pointers.
+ *   Provides a mapping of UUID and Paths to Documents for fast / easy lookup.
  *
  * @version 0.0.1
  * @date    2020-12-20
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #include "bf/asset_io/bf_asset_map.hpp"
 
-#include "bf/asset_io/bf_base_asset.hpp"  // IMemoryManager, IBaseAsset
+#include "bf/asset_io/bf_document.hpp"  // IMemoryManager, IDocument
 
 namespace bf
 {
@@ -48,7 +48,7 @@ namespace bf
     m_MaxProbed = -1;
   }
 
-  void AssetMap::insert(IBaseAsset* key)
+  void AssetMap::insert(IDocument* key)
   {
     reserveSpaceForNewElement();
 
@@ -60,7 +60,7 @@ namespace bf
     ++m_NumAssets;
   }
 
-  IBaseAsset* AssetMap::find(StringRange path) const
+  IDocument* AssetMap::find(StringRange path) const
   {
     const auto path_it = m_PathToAssetIndex.find(path);
 
@@ -69,7 +69,7 @@ namespace bf
       return findImpl(
               path_it->value(),
               path,
-              [](const StringRange key, IBaseAsset* asset) {
+              [](const StringRange key, IDocument* asset) {
                 return key == asset->relativePath();
               })
        .item;
@@ -78,12 +78,12 @@ namespace bf
     return nullptr;
   }
 
-  IBaseAsset* AssetMap::find(const bfUUIDNumber& uuid) const
+  IDocument* AssetMap::find(const bfUUIDNumber& uuid) const
   {
     return findImpl(
             hashUUID(uuid),
             uuid,
-            [](const bfUUIDNumber& key, IBaseAsset* asset) {
+            [](const bfUUIDNumber& key, IDocument* asset) {
               return UUIDEqual()(key, asset->uuid());
             })
      .item;
@@ -98,7 +98,7 @@ namespace bf
       return removeImpl(
        path_it->value(),
        path,
-       [](const StringRange key, IBaseAsset* asset) {
+       [](const StringRange key, IDocument* asset) {
          return key == asset->relativePath();
        });
     }
@@ -111,22 +111,22 @@ namespace bf
     return removeImpl(
      hashUUID(uuid),
      uuid,
-     [](const bfUUIDNumber& key, IBaseAsset* asset) {
+     [](const bfUUIDNumber& key, IDocument* asset) {
        return UUIDEqual()(key, asset->uuid());
      });
   }
 
-  bool AssetMap::remove(const IBaseAsset* key)
+  bool AssetMap::remove(const IDocument* key)
   {
     return remove(key->uuid());
   }
 
   void AssetMap::removeAt(HashIndex bucket_slot)
   {
-    const IBaseAsset* const item = m_Assets[bucket_slot].value;
+    const IDocument* const item = m_Assets[bucket_slot].value;
 
     m_PathToAssetIndex.remove(item->relativePath());
-    m_Assets[bucket_slot].value = reinterpret_cast<IBaseAsset*>(&s_TombstoneSentinel);
+    m_Assets[bucket_slot].value = reinterpret_cast<IDocument*>(&s_TombstoneSentinel);
     --m_NumAssets;
   }
 
@@ -200,7 +200,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

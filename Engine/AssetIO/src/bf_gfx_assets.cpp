@@ -13,6 +13,8 @@
 /******************************************************************************/
 #include "bf/asset_io/bf_gfx_assets.hpp"
 
+#include "bf/asset_io/bf_document.hpp"
+#include "bf/asset_io/bf_iasset_importer.hpp"
 #include "bf/asset_io/bf_model_loader.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
@@ -26,123 +28,141 @@ namespace bf
   // TODO(SR): This is copied from "bifrost_standard_renderer.cpp"
   static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_CLAMP_TO_EDGE);
 
-  // TODO(SR): We dont want this.
+  // TODO(SR): We dont want these. \/
   LinearAllocator&  ENGINE_TEMP_MEM(Engine& engine);
   bfGfxDeviceHandle ENGINE_GFX_DEVICE(Engine& engine);
+  // TODO(SR): We dont want these. /\
+
+
+  TextureAsset* TextureAsset::load(IMemoryManager& memory, StringRange path, Engine& engine)
+  {
+    TextureAsset* const         asset             = memory.allocateT<TextureAsset>();
+    auto                        device            = ENGINE_GFX_DEVICE(engine);
+    const bfTextureCreateParams tex_create_params = bfTextureCreateParams_init2D(
+     BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
+     k_bfTextureUnknownSize,
+     k_bfTextureUnknownSize);
+
+    asset->m_TextureHandle = bfGfxDevice_newTexture(device, &tex_create_params);
+
+    if (bfTexture_loadFile(asset->m_TextureHandle, path.begin()))
+    {
+      bfTexture_setSampler(asset->m_TextureHandle, &k_SamplerNearestRepeat);
+    }
+
+    return asset;
+  }
+
+  void TextureAsset::unload(IMemoryManager& memory, TextureAsset* asset, Engine& engine)
+  {
+    if (asset->m_TextureHandle)
+    {
+      auto device = ENGINE_GFX_DEVICE(engine);
+
+      // TODO(SR): This will not scale well.
+      bfGfxDevice_flush(device);
+      bfGfxDevice_release(device, asset->m_TextureHandle);
+
+      memory.deallocateT(asset);
+    }
+  }
 
   TextureAsset::TextureAsset() :
     Base(),
-    m_ParentDevice{nullptr},
     m_TextureHandle{nullptr}
   {
   }
 
-  void TextureAsset::onLoad()
+  AssetStatus TextureDocument::onLoad()
   {
-    if (loadImpl())
-    {
-      markIsLoaded();
-    }
-    else
-    {
-      markFailedToLoad();
-    }
-  }
-
-  void TextureAsset::onUnload()
-  {
-    if (m_TextureHandle)
-    {
-      // TODO(SR): This will not scale well.
-      bfGfxDevice_flush(m_ParentDevice);
-
-      bfGfxDevice_release(m_ParentDevice, m_TextureHandle);
-    }
-  }
-
-  bool TextureAsset::loadImpl()
-  {
-    // TODO(SR): This is bad.
-    m_ParentDevice = ENGINE_GFX_DEVICE(assets().engine());
-
     const String&               full_path         = fullPath();
     const bfTextureCreateParams tex_create_params = bfTextureCreateParams_init2D(
      BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
      k_bfTextureUnknownSize,
      k_bfTextureUnknownSize);
 
-    m_TextureHandle = bfGfxDevice_newTexture(m_ParentDevice, &tex_create_params);
+    auto device = ENGINE_GFX_DEVICE(assets().engine());
 
-    if (bfTexture_loadFile(m_TextureHandle, full_path.c_str()))
+    TextureAsset* const asset = addAsset<TextureAsset>(ResourceID{1u}, relativePath());
+
+    m_TextureAsset = asset;
+
+    asset->m_TextureHandle = bfGfxDevice_newTexture(device, &tex_create_params);
+
+    if (bfTexture_loadFile(asset->m_TextureHandle, full_path.c_str()))
     {
-      bfTexture_setSampler(m_TextureHandle, &k_SamplerNearestRepeat);
+      bfTexture_setSampler(asset->m_TextureHandle, &k_SamplerNearestRepeat);
 
-      return true;
+      return AssetStatus::LOADED;
     }
 
-    return false;
+    return AssetStatus::FAILED;
   }
 
-  MaterialAsset::MaterialAsset() :
-    Base(),
-    m_AlbedoTexture{nullptr},
-    m_NormalTexture{nullptr},
-    m_MetallicTexture{nullptr},
-    m_RoughnessTexture{nullptr},
-    m_AmbientOcclusionTexture{nullptr}
+  void TextureDocument::onUnload()
   {
-    markAsEngineAsset();
+    TextureAsset* const asset = m_TextureAsset;
+
+    if (asset->m_TextureHandle)
+    {
+      auto device = ENGINE_GFX_DEVICE(assets().engine());
+
+      // TODO(SR): This will not scale well.
+      bfGfxDevice_flush(device);
+      bfGfxDevice_release(device, asset->m_TextureHandle);
+    }
+
+    m_TextureAsset = nullptr;
   }
 
-  void MaterialAsset::onLoad()
+  void TextureDocument::onSaveMeta(ISerializer& serializer)
+  {
+  }
+
+  AssetStatus MaterialDocument::onLoad()
   {
     File file_in{fullPath(), file::FILE_MODE_READ};
 
     if (file_in)
     {
-      Engine&              engine     = assets().engine();
-      LinearAllocator&     allocator  = ENGINE_TEMP_MEM(engine);
+      LinearAllocator&     allocator  = ENGINE_TEMP_MEM(assets().engine());
       LinearAllocatorScope mem_scope  = allocator;
       const BufferLen      buffer     = file_in.readEntireFile(allocator);
       json::Value          json_value = json::fromString(buffer.buffer, buffer.length);
       JsonSerializerReader reader     = {assets(), allocator, json_value};
 
-      if (reader.beginDocument(false))
+      if (reader.beginDocument())
       {
-        reflect(reader);
+        m_MaterialAsset = addAsset<MaterialAsset>(ResourceID{1u}, relativePath());
+
+        m_MaterialAsset->reflect(reader);
         reader.endDocument();
 
-        markIsLoaded();
-      }
-      else
-      {
-        markFailedToLoad();
+        return AssetStatus::LOADED;
       }
     }
-    else
+
+    return AssetStatus::FAILED;
+  }
+
+  void MaterialDocument::onUnload()
+  {
+    if (m_MaterialAsset)
     {
-      markFailedToLoad();
+      m_MaterialAsset->clear();
+      m_MaterialAsset = nullptr;
     }
   }
 
-  void MaterialAsset::onUnload()
+  void MaterialDocument::onSaveAsset()
   {
-    m_AlbedoTexture           = nullptr;
-    m_NormalTexture           = nullptr;
-    m_MetallicTexture         = nullptr;
-    m_RoughnessTexture        = nullptr;
-    m_AmbientOcclusionTexture = nullptr;
+    defaultSave([this](ISerializer& serialzier) {
+      m_MaterialAsset->reflect(serialzier);
+    });
   }
 
-  void Anim3DAsset::onLoad()
-  {
-    markIsLoaded();
-  }
-
-  void Anim3DAsset::onUnload() {}
-
-  ModelAsset::ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device) :
-    m_GraphicsDevice{device},
+  ModelAsset::ModelAsset(IMemoryManager& memory) :
+    m_GraphicsDevice{nullptr},
     m_VertexBuffer{nullptr},
     m_IndexBuffer{nullptr},
     m_VertexBoneData{nullptr},
@@ -226,7 +246,19 @@ namespace bf
     });
   }
 
-  void ModelAsset::onLoad()
+  void ModelAsset::unload()
+  {
+    // TODO(SR): This will not scale well.
+    bfGfxDevice_flush(m_GraphicsDevice);
+
+    m_Materials.clear();
+
+    bfGfxDevice_release(m_GraphicsDevice, m_VertexBuffer);
+    bfGfxDevice_release(m_GraphicsDevice, m_IndexBuffer);
+    bfGfxDevice_release(m_GraphicsDevice, m_VertexBoneData);
+  }
+
+  AssetStatus AssimpDocument::onLoad()
   {
     Engine&              engine       = assets().engine();
     LinearAllocatorScope mem_scope0   = ENGINE_TEMP_MEM(engine);
@@ -236,6 +268,12 @@ namespace bf
 
     if (model_result)
     {
+      auto* model = addAsset<ModelAsset>(ResourceID{1u}, relativePath(), assetMemory());
+
+      m_ModelAsset = model;
+
+      model->m_GraphicsDevice = ENGINE_GFX_DEVICE(assets().engine());
+
       Assets& assets                              = this->assets();
       char    abs_texture_path[path::k_MaxLength] = {'\0'};
 
@@ -252,17 +290,17 @@ namespace bf
         }
       };
 
-      m_ObjectSpaceBounds = model_result.object_space_bounds;
+      model->m_ObjectSpaceBounds = model_result.object_space_bounds;
 
       // Load Skeleton
-      loadSkeleton(model_result.skeleton);
+      model->loadSkeleton(model_result.skeleton);
 
       // Load Materials
       forEachWithIndex(*model_result.materials, [&](const AssetPBRMaterial& src_mat, std::size_t index) {
         string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "Material_#%i.material", int(index));
 
-        const StringRange    name     = {name_buffer, name_length};
-        MaterialAsset* const material = static_cast<MaterialAsset*>(findOrCreateSubAsset(name));
+        ResourceID material_id = {k_AssetIDMaterialFlag | std::uint64_t(index)};
+        auto*      material    = addAsset<MaterialAsset>(material_id, {name_buffer, name_length});
 
         assign_texture(material->m_AlbedoTexture, src_mat, PBRTextureType::DIFFUSE);
         assign_texture(material->m_NormalTexture, src_mat, PBRTextureType::NORMAL);
@@ -270,17 +308,15 @@ namespace bf
         assign_texture(material->m_RoughnessTexture, src_mat, PBRTextureType::ROUGHNESS);
         assign_texture(material->m_AmbientOcclusionTexture, src_mat, PBRTextureType::AO);
 
-        m_Materials.push(material);
-        // Keep the materials alive with the model
-        //material->acquire();
+        model->m_Materials.push(material);
       });
 
       // Load Animations
       forEachWithIndex(*model_result.animations, [&](const ModelAnimation& src_animation, std::size_t anim_index) {
-        string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "ANIM_%s#%i.anim", src_animation.name.data, int(anim_index));
+        string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "%s#_%i.anim", src_animation.name.data, int(anim_index));
 
-        const StringRange  name      = {name_buffer, name_length};
-        Anim3DAsset* const animation = static_cast<Anim3DAsset*>(findOrCreateSubAsset(name));
+        ResourceID  animation_id = {k_AssetIDAnimationFlag | std::uint64_t(anim_index)};
+        auto* const animation    = addAsset<Anim3DAsset>(animation_id, {name_buffer, name_length}, assetMemory());
 
         animation->m_Duration       = src_animation.duration;
         animation->m_TicksPerSecond = src_animation.ticks_per_second != 0.0 ? src_animation.ticks_per_second : 25.0;
@@ -338,23 +374,23 @@ namespace bf
       std::for_each(
        model_result.mesh_list->begin(),
        model_result.mesh_list->end(),
-       [this](const Mesh& mesh_proto) {
-         m_Meshes.push(Mesh{mesh_proto.index_offset, mesh_proto.num_indices, mesh_proto.material_idx});
+       [model](const Mesh& mesh_proto) {
+         model->m_Meshes.push(Mesh{mesh_proto.index_offset, mesh_proto.num_indices, mesh_proto.material_idx});
        });
 
       /// Vertex / Index Buffer Marshalling
 
       const uint32_t         num_vertices = uint32_t(model_result.vertices->length);
-      Array<StandardVertex>& vertices     = m_Vertices;
+      Array<StandardVertex>& vertices     = model->m_Vertices;
       Array<VertexBoneData>  bone_vertices{ENGINE_TEMP_MEM(engine)};
 
-      m_Vertices.clear();
-      m_Triangles.clear();
+      model->m_Vertices.clear();
+      model->m_Triangles.clear();
 
       vertices.resize(num_vertices);
       bone_vertices.resize(num_vertices);
-      m_Triangles.resize(model_result.indices->length);
-      std::memcpy(m_Triangles.data(), model_result.indices->data, sizeof(AssetIndexType) * model_result.indices->length);
+      model->m_Triangles.resize(model_result.indices->length);
+      std::memcpy(model->m_Triangles.data(), model_result.indices->data, sizeof(AssetIndexType) * model_result.indices->length);
 
       std::transform(
        model_result.vertices->begin(),
@@ -392,61 +428,67 @@ namespace bf
       buffer_params.allocation.size = sizeof(StandardVertex) * num_vertices;
       buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
-      m_VertexBuffer = bfGfxDevice_newBuffer(m_GraphicsDevice, &buffer_params);
+      model->m_VertexBuffer = bfGfxDevice_newBuffer(model->m_GraphicsDevice, &buffer_params);
 
-      void* const vertex_buffer_ptr = bfBuffer_map(m_VertexBuffer, 0, k_bfBufferWholeSize);
+      void* const vertex_buffer_ptr = bfBuffer_map(model->m_VertexBuffer, 0, k_bfBufferWholeSize);
 
       std::memcpy(vertex_buffer_ptr, vertices.data(), buffer_params.allocation.size);
 
-      bfBuffer_flushRange(m_VertexBuffer, 0, k_bfBufferWholeSize);
-      bfBuffer_unMap(m_VertexBuffer);
+      bfBuffer_flushRange(model->m_VertexBuffer, 0, k_bfBufferWholeSize);
+      bfBuffer_unMap(model->m_VertexBuffer);
 
       ///////
 
       buffer_params.allocation.size = sizeof(AssetIndexType) * model_result.indices->length;
       buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_INDEX_BUFFER;
 
-      m_IndexBuffer = bfGfxDevice_newBuffer(m_GraphicsDevice, &buffer_params);
+      model->m_IndexBuffer = bfGfxDevice_newBuffer(model->m_GraphicsDevice, &buffer_params);
 
-      void* const index_buffer_ptr = bfBuffer_map(m_IndexBuffer, 0, k_bfBufferWholeSize);
+      void* const index_buffer_ptr = bfBuffer_map(model->m_IndexBuffer, 0, k_bfBufferWholeSize);
 
       std::memcpy(index_buffer_ptr, model_result.indices->data, buffer_params.allocation.size);
 
-      bfBuffer_flushRange(m_IndexBuffer, 0, k_bfBufferWholeSize);
-      bfBuffer_unMap(m_IndexBuffer);
+      bfBuffer_flushRange(model->m_IndexBuffer, 0, k_bfBufferWholeSize);
+      bfBuffer_unMap(model->m_IndexBuffer);
 
       ///////
 
       buffer_params.allocation.size = sizeof(VertexBoneData) * num_vertices;
       buffer_params.usage           = BF_BUFFER_USAGE_TRANSFER_DST | BF_BUFFER_USAGE_VERTEX_BUFFER;
 
-      m_VertexBoneData = bfGfxDevice_newBuffer(m_GraphicsDevice, &buffer_params);
+      model->m_VertexBoneData = bfGfxDevice_newBuffer(model->m_GraphicsDevice, &buffer_params);
 
-      void* const bone_buffer_ptr = bfBuffer_map(m_VertexBoneData, 0, k_bfBufferWholeSize);
+      void* const bone_buffer_ptr = bfBuffer_map(model->m_VertexBoneData, 0, k_bfBufferWholeSize);
 
       std::memcpy(bone_buffer_ptr, bone_vertices.data(), buffer_params.allocation.size);
 
-      bfBuffer_flushRange(m_VertexBoneData, 0, k_bfBufferWholeSize);
-      bfBuffer_unMap(m_VertexBoneData);
+      bfBuffer_flushRange(model->m_VertexBoneData, 0, k_bfBufferWholeSize);
+      bfBuffer_unMap(model->m_VertexBoneData);
 
-      markIsLoaded();
+      return AssetStatus::LOADED;
     }
-    else
-    {
-      markFailedToLoad();
-    }
+
+    return AssetStatus::FAILED;
   }
 
-  void ModelAsset::onUnload()
+  void AssimpDocument::onUnload()
   {
-    // TODO(SR): This will not scale well.
-    bfGfxDevice_flush(m_GraphicsDevice);
+    m_ModelAsset->unload();
+  }
 
-    m_Materials.clear();
+  void assetImportTexture(AssetImportCtx& ctx)
+  {
+    ctx.document = ctx.asset_memory->allocateT<TextureDocument>();
+  }
 
-    bfGfxDevice_release(m_GraphicsDevice, m_VertexBuffer);
-    bfGfxDevice_release(m_GraphicsDevice, m_IndexBuffer);
-    bfGfxDevice_release(m_GraphicsDevice, m_VertexBoneData);
+  void assetImportMaterial(AssetImportCtx& ctx)
+  {
+    ctx.document = ctx.asset_memory->allocateT<MaterialDocument>();
+  }
+
+  void assetImportModel(AssetImportCtx& ctx)
+  {
+    ctx.document = ctx.asset_memory->allocateT<AssimpDocument>();
   }
 }  // namespace bf
 

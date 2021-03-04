@@ -11,8 +11,8 @@
 * @copyright Copyright (c) 2020
 */
 /******************************************************************************/
-#ifndef BIFROST_EDITOR_FILESYSTEM_HPP
-#define BIFROST_EDITOR_FILESYSTEM_HPP
+#ifndef BF_EDITOR_FILESYSTEM_HPP
+#define BF_EDITOR_FILESYSTEM_HPP
 
 #include "bf/ListView.hpp"                        // ListView<T>, ListNode<T>
 #include "bf/data_structures/bifrost_string.hpp"  // String
@@ -25,11 +25,11 @@ namespace bf::editor
   {
     String              name;
     String              full_path;
-    StringRange         file_extension;  //!< Backed by FileEntry::full_path.
+    StringRange         file_extension;  //!< Backed by `FileEntry::full_path`.
     ListView<FileEntry> children;
-    ListNode<FileEntry>     next;
-    IBaseAsset*         asset_info;
-    bool                is_file;
+    ListNode<FileEntry> next;
+    IDocument*          document;
+    bool                is_file;  //!< Needed since both the childcount and asset_info being null does not guarantee that this entry is a file.
 
     FileEntry(String&& name, const String& full_path, bool is_file);
 
@@ -63,4 +63,4 @@ namespace bf::editor
   };
 }  // namespace bf::editor
 
-#endif /* BIFROST_EDITOR_FILESYSTEM_HPP */
+#endif /* BF_EDITOR_FILESYSTEM_HPP */

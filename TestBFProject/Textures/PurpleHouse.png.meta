@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "253C6704-0571-49F6-968A-BBE938853E60",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Textures/PurpleHouse.png",
+            "m_FileID" : 1,
+            "m_TypeName" : "Texture"
+        }
     ],
-    "uuid" : "72743B68-771F-40DF-96C8-1D11707B92B9",
-    "name" : "PurpleHouse.png",
-    "version" : 1
+    "Document" : {
+
+    }
 }

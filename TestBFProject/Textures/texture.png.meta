@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "318A27FB-DF94-4977-96A3-7678F55F8504",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Textures/texture.png",
+            "m_FileID" : 1,
+            "m_TypeName" : "Texture"
+        }
     ],
-    "uuid" : "E5023538-2458-481C-81F3-DA122BF8335F",
-    "name" : "texture.png",
-    "version" : 1
+    "Document" : {
+
+    }
 }

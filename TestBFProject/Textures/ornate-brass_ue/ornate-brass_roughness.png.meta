@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "11848AFE-8E80-48C6-947B-EDC526F81ADD",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Textures/ornate-brass_ue/ornate-brass_roughness.png",
+            "m_FileID" : 1,
+            "m_TypeName" : "Texture"
+        }
     ],
-    "uuid" : "58402F3C-5532-4B8F-BA8D-1F64B550DB5E",
-    "name" : "ornate-brass_roughness.png",
-    "version" : 1
+    "Document" : {
+
+    }
 }

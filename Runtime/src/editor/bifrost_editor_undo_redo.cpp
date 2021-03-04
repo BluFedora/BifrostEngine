@@ -283,7 +283,7 @@ namespace bf::editor
     {
       JsonSerializerReader json_reader{m_Assets, allocator(), m_ValueToSwapTo};
 
-      if (json_reader.beginDocument(false))
+      if (json_reader.beginDocument())
       {
         m_Target.reflect(json_reader);
         json_reader.endDocument();
@@ -301,7 +301,7 @@ namespace bf::editor
     JsonSerializerWriter json_writer{allocator()};
     json::Value          current_value = {};
 
-    if (json_writer.beginDocument(false))
+    if (json_writer.beginDocument())
     {
       target.reflect(json_writer);
       json_writer.endDocument();

@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "EAD08CEB-4A4A-4491-A64E-E76445EF2888",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Models/Backpack/ao.jpg",
+            "m_FileID" : 1,
+            "m_TypeName" : "Texture"
+        }
     ],
-    "uuid" : "C434A251-13EB-4AA7-A422-2B6157F47121",
-    "name" : "ao.jpg",
-    "version" : 1
+    "Document" : {
+
+    }
 }

@@ -1,23 +1,26 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "682BB3B8-2A86-4BCC-A5C6-657560C39C9B",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "E5970964-0F93-4660-9667-420DFDD415DA",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/Backpack/backpack.obj",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "10E9A416-5FB6-42E1-82FF-250A4B8A0D29",
-            "name" : "Material_#1.material",
-            "version" : 1
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
+        },
+        {
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "B3D82F39-2CDF-49A0-9973-4894E54F1732",
-    "name" : "backpack.obj",
-    "version" : 1
+    "Document" : {
+
+    }
 }

@@ -1,23 +1,26 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "0DCF1FDB-30FC-4707-904B-294380911C1F",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "6E01FE20-987C-4384-A179-391928BE6C5E",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/cultchar.obj",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "319C01D5-B7AA-4871-800E-712A15ACCF12",
-            "name" : "Material_#1.material",
-            "version" : 1
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
+        },
+        {
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "87990014-1C67-4616-A5E8-033107DBAEF1",
-    "name" : "cultchar.obj",
-    "version" : 1
+    "Document" : {
+
+    }
 }

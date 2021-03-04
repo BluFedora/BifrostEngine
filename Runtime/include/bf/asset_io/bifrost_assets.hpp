@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bifrost_assets.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Asset / Resource manager for this engine.
  *
@@ -11,7 +11,7 @@
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_ASSETS_HPP
@@ -19,6 +19,8 @@
 
 #include "bf/asset_io/bf_asset_map.hpp"          /* AssetMap                    */
 #include "bf/asset_io/bf_base_asset.hpp"         /* AssetMetaInfo, IBaseAsset   */
+#include "bf/asset_io/bf_document.hpp"           /* Document                    */
+#include "bf/asset_io/bf_iasset_importer.hpp"    /* ImportRegistry              */
 #include "bf/bf_non_copy_move.hpp"               /* NonCopyMoveable<T>          */
 #include "bf/meta/bifrost_meta_runtime_impl.hpp" /* BaseClassMetaInfo, TypeInfo */
 
@@ -31,8 +33,6 @@ namespace bf
     class Value;
   }
 
-  class JsonSerializerWriter;
-  class JsonSerializerReader;
   class Engine;
 
   enum class AssetError : std::uint8_t
@@ -63,28 +63,6 @@ namespace bf
     bool renameFile(const StringRange& old_name, const StringRange& new_name);  // ex: renameFile("path/to/my/file.txt", "new_path/to/file2.txt")
   }                                                                             // namespace path
 
-  template<typename AssetTInfo>
-  struct AssetIndexResult
-  {
-    AssetTInfo* info;
-    bool        is_new;
-  };
-
-  using AssetCreationFn = IBaseAsset* (*)(IMemoryManager& asset_memory, Engine& engine);
-
-  template<typename T>
-  IBaseAsset* defaultAssetCreate(IMemoryManager& asset_memory, Engine& engine)
-  {
-    (void)engine;
-
-    return asset_memory.allocateT<T>();
-  }
-
-  // TODO(SR):
-  //   Use of String is pretty heavy, a StringRange would be better since just about all
-  //   file extensions registered are const char* hardcoded in the program.
-  using FileExtenstionRegistry = HashTable<String, AssetCreationFn>;
-
   // Strong Typing of Paths
 
   struct AbsPath
@@ -113,12 +91,6 @@ namespace bf
     DONT_LOAD_ASSET,
   };
 
-  enum class AssetLoadMode
-  {
-    FROM_FILE,
-    IN_MEMORY,
-  };
-
   class Assets final : public NonCopyMoveable<Assets>
   {
     friend class IBaseAsset;
@@ -127,83 +99,66 @@ namespace bf
     inline static const StringRange k_MetaFileExtension = ".meta";
 
    private:
-    Engine&                m_Engine;            //!< The engine this asset system is attached to.
-    IMemoryManager&        m_Memory;            //!< Where to grab memory for the asset info.
-    BifrostString          m_RootPath;          //!< Base Path that all assets are relative to.
-    AssetMap               m_AssetSet;          //!< Owns the memory for the associated 'IBaseAsset*'.
-    FileExtenstionRegistry m_FileExtReg;        //!< Allows installing of handlers for certain file extensions.
-    ListView<IBaseAsset>   m_DirtyAssets;       //!< Assets that have unsaved modifications.
-    std::mutex             m_DirtyAssetsMutex;  //!< Protects concurrent access to `m_DirtyAssets`.
+    Engine&             m_Engine;            //!< The engine this asset system is attached to (TODO(SR): remove since this is mostly used as scratch memory).
+    IMemoryManager&     m_Memory;            //!< Where to grab memory for the asset info.
+    BifrostString       m_RootPath;          //!< Base Path that all assets are relative to.
+    AssetMap            m_AssetSet;          //!< Owns the memory for the associated 'Document*'s.
+    ImportRegistry      m_Importers;         //!< Allows installing of handlers for certain file extensions.
+    ListView<IDocument> m_DirtyAssets;       //!< Assets that have unsaved modifications.
+    std::mutex          m_DirtyAssetsMutex;  //!< Protects concurrent access to `m_DirtyAssets`.
 
    public:
     explicit Assets(Engine& engine, IMemoryManager& memory);
 
-    //
-    // The asset will automatically be freed when the last reference
-    // to this asset is gone.
-    //
-    // Normal assets are stored within this class and are deleted when
-    // a new project is opened, but these type of assets do not do this behavior.
-    //
-    template<typename T>
-    ARC<T> loadUnmanagedAsset(StringRange abs_path, AssetLoadMode load_mode = AssetLoadMode::FROM_FILE)
+    // Register some file extension handler.
+    void registerFileExtensions(std::initializer_list<StringRange> exts, AssetImporterFn create_fn, void* user_data = nullptr);
+
+    IDocument* findDocument(const bfUUIDNumber& uuid);
+    IDocument* findDocument(AbsPath abs_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET);
+    IDocument* findDocument(RelPath rel_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET);
+    IDocument* loadDocument(const StringRange& abs_path);
+
+    template<typename T, typename PathType>
+    T* findAssetOfType(PathType path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET)
     {
-      static_assert(std::is_base_of_v<IBaseAsset, T>, "The T must be an asset type.");
+      IDocument* const document = findDocument(path, load_option);
 
-      IBaseAsset* const base_asset = m_Memory.allocateT<T>();
-
-      if (base_asset)
+      if (document)
       {
-        base_asset->m_Flags |= AssetFlags::IS_FREE_ON_RELEASE;
-
-        if (load_mode == AssetLoadMode::IN_MEMORY)
-        {
-          base_asset->m_Flags |= AssetFlags::IS_IN_MEMORY;
-        }
-
-        base_asset->setup(abs_path, *this);
+        return document->findAnyResourceOfType<T>();
       }
 
-      return ARC<T>{static_cast<T*>(base_asset)};
+      return nullptr;
     }
 
-    void        registerFileExtensions(std::initializer_list<StringRange> exts, AssetCreationFn create_fn);
-    IBaseAsset* findAsset(const bfUUIDNumber& uuid) const;
-    IBaseAsset* findAsset(AbsPath abs_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET);
-    IBaseAsset* findAsset(RelPath rel_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET);
-    void        markDirty(IBaseAsset* asset);
+    IBaseAsset* findAsset(const ResourceReference& ref_id)
+    {
+      IDocument* const document = findDocument(ref_id.doc_id);
+
+      return document ? document->findResource(ref_id.file_id) : nullptr;
+    }
 
     template<typename F>
-    void forEachAssetOfType(const meta::BaseClassMetaInfo* type_info, F&& callback)
+    void forEachAssetOfType(meta::BaseClassMetaInfo* type, F&& callback)
     {
-      m_AssetSet.forEach([type_info, &callback](IBaseAsset* const asset) {
-        if (asset->type() == type_info)
+      m_AssetSet.forEach([type, &callback](IDocument* document) {
+        for (IBaseAsset& asset : document->m_AssetList)
         {
-          callback(asset);
+          if (asset.type() == type)
+          {
+            callback(&asset);
+          }
         }
       });
     }
 
-    template<typename T>
-    T* findAssetOfType(AbsPath abs_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET)
-    {
-      return findAssetOfTypeImpl<T, AbsPath>(abs_path, load_option);
-    }
-
-    template<typename T>
-    T* findAssetOfType(RelPath rel_path, AssetFindOption load_option = AssetFindOption::TRY_LOAD_ASSET)
-    {
-      return findAssetOfTypeImpl<T, RelPath>(rel_path, load_option);
-    }
-
-    AssetMetaInfo* loadMetaInfo(LinearAllocator& temp_allocator, StringRange abs_path_to_meta_file);
+    void markDirty(IBaseAsset* asset);
+    void markDirty(IDocument* asset);
 
     AssetError setRootPath(std::string_view path);  // TODO(SR): Use 'StringRange'.
     void       setRootPath(std::nullptr_t);
     bool       writeJsonToFile(const StringRange& path, const json::Value& value) const;
     void       saveAssets();
-    void       saveAssetInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const;
-    void       saveAssetInfo(Engine& engine, IBaseAsset* asset) const;
     void       clearDirtyList();
 
     // Path Conversions
@@ -217,28 +172,13 @@ namespace bf
     Engine&         engine() const { return m_Engine; }
     IMemoryManager& memory() const { return m_Memory; }
 
-    ~Assets();
-
     IBaseAsset* loadAsset(const StringRange& abs_path);
 
+    ~Assets();
+
    private:
-    template<typename T, typename PathType>
-    T* findAssetOfTypeImpl(PathType path, AssetFindOption load_option)
-    {
-      IBaseAsset* base_asset = findAsset(path, load_option);
-
-      // If the found asset does not match the correct type then return nullptr.
-      if (base_asset && base_asset->type() != meta::typeInfoGet<T>())
-      {
-        base_asset = nullptr;
-      }
-
-      return static_cast<T*>(base_asset);
-    }
-
-    IBaseAsset* createAssetFromPath(StringRange path, const bfUUIDNumber& uuid);
-    IBaseAsset* createAssetFromPath(StringRange path);  // Creates UUID for you.
-    void        saveMetaInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const;
+    AssetImporter findAssetImporter(StringRange path) const;
+    void          saveDocumentMetaInfo(LinearAllocator& temp_alloc, IDocument* document);
   };
 }  // namespace bf
 

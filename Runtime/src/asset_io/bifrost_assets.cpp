@@ -1,6 +1,7 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_assets.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Asset / Resource manager for this engine.
  *
@@ -10,8 +11,9 @@
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
+/******************************************************************************/
 #include "bf/asset_io/bifrost_assets.hpp"
 
 #include "bf/LinearAllocator.hpp"  // LinearAllocator
@@ -39,15 +41,8 @@ namespace bf
     serializer.serialize(*this);
   }
 
-  LinearAllocator& ENGINE_TEMP_MEM(Engine& engine)
-  {
-    return engine.tempMemory();
-  }
-
-  bfGfxDeviceHandle ENGINE_GFX_DEVICE(Engine& engine)
-  {
-    return engine.renderer().device();
-  }
+  LinearAllocator&  ENGINE_TEMP_MEM(Engine& engine) { return engine.tempMemory(); }
+  bfGfxDeviceHandle ENGINE_GFX_DEVICE(Engine& engine) { return engine.renderer().device(); }
 
   namespace files = std::filesystem;
 
@@ -130,7 +125,7 @@ namespace bf
         return nullptr;
       }
 #else
-      DIR* const     file_handle = opendir(null_terminated_path);
+      DIR* const file_handle = opendir(null_terminated_path);
 
       if (!file_handle)
       {
@@ -217,53 +212,135 @@ namespace bf
     m_Memory{memory},
     m_RootPath{nullptr},
     m_AssetSet{memory},
-    m_FileExtReg{},
-    m_DirtyAssets{&IBaseAsset::m_DirtyListNode},
+    m_Importers{},
+    m_DirtyAssets{&IDocument::m_DirtyListNode},
     m_DirtyAssetsMutex{}
   {
   }
 
-  void Assets::registerFileExtensions(std::initializer_list<StringRange> exts, AssetCreationFn create_fn)
+  void Assets::registerFileExtensions(std::initializer_list<StringRange> exts, AssetImporterFn create_fn, void* user_data)
   {
     for (const StringRange& ext : exts)
     {
-      m_FileExtReg.emplace(ext, create_fn);
+      m_Importers.emplace(ext, create_fn, user_data);
     }
   }
 
-  IBaseAsset* Assets::findAsset(const bfUUIDNumber& uuid) const
+  IDocument* Assets::findDocument(const bfUUIDNumber& uuid)
   {
     return m_AssetSet.find(uuid);
   }
 
-  IBaseAsset* Assets::findAsset(AbsPath abs_path, AssetFindOption load_option)
+  IDocument* Assets::findDocument(AbsPath abs_path, AssetFindOption load_option)
   {
     const StringRange rel_path = absPathToRelPath(abs_path.path);
-    IBaseAsset*       result   = m_AssetSet.find(rel_path);
+    IDocument*        result   = m_AssetSet.find(rel_path);
 
     if (!result && load_option == AssetFindOption::TRY_LOAD_ASSET)
     {
-      result = loadAsset(abs_path.path);
+      result = loadDocument(abs_path.path);
     }
 
     return result;
   }
 
-  IBaseAsset* Assets::findAsset(RelPath rel_path, AssetFindOption load_option)
+  IDocument* Assets::findDocument(RelPath rel_path, AssetFindOption load_option)
   {
-    IBaseAsset* result = m_AssetSet.find(rel_path.path);
+    IDocument* result = m_AssetSet.find(rel_path.path);
 
     if (!result && load_option == AssetFindOption::TRY_LOAD_ASSET)
     {
       const String abs_path = relPathToAbsPath(rel_path.path);
 
-      result = loadAsset(abs_path);
+      result = loadDocument(abs_path);
     }
 
     return result;
   }
 
+  IDocument* Assets::loadDocument(const StringRange& abs_path)
+  {
+    assert(!path::startWith(abs_path, path::k_SubAssetsRoot));
+
+    LinearAllocator&     temp_allocator = m_Engine.tempMemory();
+    LinearAllocatorScope scope          = {temp_allocator};
+    const String         meta_path      = absPathToMetaPath(abs_path);
+    AssetImporter        importer       = findAssetImporter(abs_path);
+
+    if (importer.callback)
+    {
+      AssetImportCtx import_ctx;
+      import_ctx.document           = nullptr;
+      import_ctx.asset_full_path    = abs_path;
+      import_ctx.meta_full_path     = meta_path;
+      import_ctx.importer_user_data = importer.user_data;
+      import_ctx.asset_memory       = &m_Memory;
+      import_ctx.engine             = &m_Engine;
+
+      importer.callback(import_ctx);
+
+      IDocument* const doc = import_ctx.document;
+
+      if (doc)
+      {
+        doc->m_AssetManager = this;
+        doc->setPath(abs_path, String_length(m_RootPath));
+
+        bool needs_reimport = false;
+
+        File meta_file_in{meta_path, file::FILE_MODE_READ};
+
+        if (meta_file_in)
+        {
+          const BufferLen      json_data_str = meta_file_in.readEntireFile(temp_allocator);
+          json::Value          json_value    = json::fromString(json_data_str.buffer, json_data_str.length);
+          JsonSerializerReader reader        = {*this, temp_allocator, json_value};
+
+          if (reader.beginDocument())
+          {
+            doc->serializeMetaInfo(reader);
+            reader.endDocument();
+          }
+
+          if (bfUUID_numberIsEmpty(&doc->m_UUID))
+          {
+            doc->m_UUID    = bfUUID_generate().as_number;
+            needs_reimport = true;
+          }
+
+          m_AssetSet.insert(doc);
+        }
+        else  // If we could not find meta file then mark asset as dirty to be saved later.
+        {
+          needs_reimport = true;
+        }
+
+        if (needs_reimport)
+        {
+          markDirty(doc);
+        }
+      }
+      else
+      {
+        bfLogWarn("[Assets::loadDocument] Importer failed to create document for \"%.*s\".", int(abs_path.length()), abs_path.begin());
+      }
+
+      return doc;
+    }
+    else
+    {
+      bfLogWarn("[Assets::loadDocument] Failed to find extension handler for \"%.*s\".", int(abs_path.length()), abs_path.begin());
+    }
+
+    return nullptr;
+  }
+
   void Assets::markDirty(IBaseAsset* asset)
+  {
+    markDirty(&asset->document());
+  }
+
+  void Assets::markDirty(IDocument* asset)
   {
     std::uint16_t flags = asset->m_Flags;
 
@@ -271,36 +348,13 @@ namespace bf
     {
       if (std::atomic_compare_exchange_strong(&asset->m_Flags, &flags, flags | AssetFlags::IS_DIRTY))
       {
+        asset->acquire();
+
         std::lock_guard<std::mutex> lock{m_DirtyAssetsMutex};
 
-        asset->acquire();
         m_DirtyAssets.pushBack(*asset);
       }
     }
-  }
-
-  AssetMetaInfo* Assets::loadMetaInfo(LinearAllocator& temp_allocator, StringRange abs_path_to_meta_file)
-  {
-    AssetMetaInfo* result = nullptr;
-
-    File meta_file_in{abs_path_to_meta_file, file::FILE_MODE_READ};
-
-    if (meta_file_in)
-    {
-      const BufferLen      json_data_str = meta_file_in.readEntireFile(temp_allocator);
-      json::Value          json_value    = json::fromString(json_data_str.buffer, json_data_str.length);
-      JsonSerializerReader reader        = {*this, temp_allocator, json_value};
-
-      if (reader.beginDocument(false))
-      {
-        result = temp_allocator.allocateT<AssetMetaInfo>();
-
-        result->serialize(temp_allocator, reader);
-        reader.endDocument();
-      }
-    }
-
-    return result;
   }
 
   AssetError Assets::setRootPath(std::string_view path)
@@ -359,16 +413,15 @@ namespace bf
     {
       LinearAllocator& temp_alloc = m_Engine.tempMemory();
 
-      m_AssetSet.forEach([this, &temp_alloc](IBaseAsset* asset) {
+      m_AssetSet.forEach([this, &temp_alloc](IDocument* document) {
         LinearAllocatorScope mem_scope = temp_alloc;
 
-        saveMetaInfo(temp_alloc, asset);
+        saveDocumentMetaInfo(temp_alloc, document);
       });
     }
 
     //
-    // This loops through each assets and frees any with a
-    // ref count of zero.
+    // This loops through each assets and frees any with a ref count of zero.
     //
     // The reason for this design is so that assets gets freed in order
     // since assets can reference other assets.
@@ -380,17 +433,13 @@ namespace bf
     //
 
     std::int32_t iteration_count = 0;
-    bool         has_made_progress;
 
+    bool has_made_progress;
     do
     {
       has_made_progress = m_AssetSet.removeIf(
-       [](IBaseAsset* asset) {
-         return asset->refCount() == 0;
-       },
-       [this](IBaseAsset* asset) {
-         m_Memory.deallocateT(asset);
-       });
+       [](IDocument* document) { return document->refCount() == 0; },
+       [this](IDocument* document) { m_Memory.deallocateT(document); });
 
       ++iteration_count;
 
@@ -401,7 +450,7 @@ namespace bf
     {
       bfLogPush("Count not free all assets in %i iterations.", iteration_count);
 
-      m_AssetSet.forEach([this](IBaseAsset* asset) {
+      m_AssetSet.forEach([this](IDocument* asset) {
         const StringRange name      = asset->fullPath();
         const int         ref_count = asset->refCount();
 
@@ -437,52 +486,16 @@ namespace bf
 
   void Assets::saveAssets()
   {
-    LinearAllocator& temp_alloc = m_Engine.tempMemory();
+    LinearAllocator&            temp_alloc = m_Engine.tempMemory();
+    std::lock_guard<std::mutex> lock{m_DirtyAssetsMutex};
 
+    for (auto& document : m_DirtyAssets)
     {
-      std::lock_guard<std::mutex> lock{m_DirtyAssetsMutex};
-
-      for (auto& asset : m_DirtyAssets)
-      {
-        saveAssetInfo(temp_alloc, &asset);
-      }
-
-      clearDirtyList();
-    }
-  }
-
-  void Assets::saveAssetInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const
-  {
-    if (asset->isSubAsset())
-    {
-      return;
+      document.save();
+      saveDocumentMetaInfo(temp_alloc, &document);
     }
 
-    const LinearAllocatorScope asset_mem_scope = {temp_alloc};
-    const String&              full_path       = asset->fullPath();
-
-    // Save Engine Asset
-
-    if (asset->m_Flags & AssetFlags::IS_ENGINE_ASSET)
-    {
-      const LinearAllocatorScope json_writer_scope = {temp_alloc};
-      JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc};
-
-      if (json_writer.beginDocument(false))
-      {
-        asset->saveAssetContent(json_writer);
-        json_writer.endDocument();
-
-        writeJsonToFile(full_path, json_writer.document());
-      }
-    }
-
-    saveMetaInfo(temp_alloc, asset);
-  }
-
-  void Assets::saveAssetInfo(Engine& engine, IBaseAsset* asset) const
-  {
-    saveAssetInfo(engine.tempMemory(), asset);
+    clearDirtyList();
   }
 
   void Assets::clearDirtyList()
@@ -540,6 +553,7 @@ namespace bf
 
   IBaseAsset* Assets::loadAsset(const StringRange& abs_path)
   {
+#if 0
     assert(!path::startWith(abs_path, path::k_SubAssetsRoot));
 
     LinearAllocator&     alloc     = m_Engine.tempMemory();
@@ -579,74 +593,50 @@ namespace bf
     }
 
     return result;
+#endif
+
+    __debugbreak();
+    return nullptr;
   }
 
-  IBaseAsset* Assets::createAssetFromPath(StringRange path, const bfUUIDNumber& uuid)
+  AssetImporter Assets::findAssetImporter(StringRange path) const
   {
     const StringRange file_ext = path::extensionEx(path);
-    IBaseAsset*       result   = nullptr;
 
     if (file_ext.length() > 0)
     {
-      const auto ext_handle = m_FileExtReg.find(file_ext);
+      const auto ext_handle = m_Importers.find(file_ext);
 
-      if (ext_handle != m_FileExtReg.end())
+      if (ext_handle != m_Importers.end())
       {
-        result = ext_handle->value()(m_Memory, m_Engine);
-
-        if (result)
-        {
-          const bool is_sub_asset = path::startWith(path, path::k_SubAssetsRoot);
-
-          result->setup(path, is_sub_asset ? 0 : String_length(m_RootPath), uuid, *this);
-
-          if (result)
-          {
-            m_AssetSet.insert(result);
-          }
-        }
-      }
-      else
-      {
-        bfLogWarn("[Assets::createAssetFromPath] Failed to find extension handler for \"%.*s\".", int(path.length()), path.begin());
+        return ext_handle->value();
       }
     }
-    else
-    {
-      bfLogWarn("[Assets::createAssetFromPath] Empty file extension for \"%.*s\".", int(path.length()), path.begin());
-    }
 
-    return result;
+    return {nullptr, nullptr};
   }
 
-  IBaseAsset* Assets::createAssetFromPath(StringRange path)
-  {
-    const bfUUID uuid = bfUUID_generate();
-
-    return createAssetFromPath(path, uuid.as_number);
-  }
-
-  void Assets::saveMetaInfo(LinearAllocator& temp_alloc, IBaseAsset* asset) const
+  void Assets::saveDocumentMetaInfo(LinearAllocator& temp_alloc, IDocument* document)
   {
     // This is so we do not save meta files for assets that failed to load.
-    if (File::exists(asset->fullPath().cstr()))
+
+    const String& full_path = document->fullPath();
+
+    if (File::exists(full_path.cstr()))
     {
       const LinearAllocatorScope json_writer_scope = {temp_alloc};
       JsonSerializerWriter       json_writer       = JsonSerializerWriter{temp_alloc};
-      AssetMetaInfo* const       meta_info         = asset->generateMetaInfo(temp_alloc);
 
-      if (meta_info)
+      if (json_writer.beginDocument())
       {
-        if (json_writer.beginDocument(false))
-        {
-          const String meta_file_path = absPathToMetaPath(asset->fullPath());
+        document->serializeMetaInfo(json_writer);
+        json_writer.endDocument();
 
-          meta_info->serialize(temp_alloc, json_writer);
-          json_writer.endDocument();
+        const String meta_file_path = absPathToMetaPath(full_path);
 
-          writeJsonToFile(meta_file_path, json_writer.document());
-        }
+        writeJsonToFile(meta_file_path, json_writer.document());
       }
     }
   }
+
 }  // namespace bf

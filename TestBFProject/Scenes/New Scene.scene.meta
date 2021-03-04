@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "778CFCF2-AE18-40B8-939F-13B95E65ED55",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Scenes/New Scene.scene",
+            "m_FileID" : 1,
+            "m_TypeName" : "Scene"
+        }
     ],
-    "uuid" : "6CB7A855-781F-4833-85E7-42A3D58BC1EA",
-    "name" : "New Scene.scene",
-    "version" : 1
+    "Document" : {
+
+    }
 }

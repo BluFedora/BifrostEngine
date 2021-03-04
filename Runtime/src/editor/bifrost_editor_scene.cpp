@@ -644,7 +644,7 @@ namespace bf::editor
         *Mat4x4_get(&transform, 1, 1) = camera_up.y;
         *Mat4x4_get(&transform, 1, 2) = camera_up.z;
 
-        primitive_proto.material  = editor.m_SceneLightMaterial.typedHandle();
+        primitive_proto.material  = editor.m_SceneLightMaterial;
         primitive_proto.size      = {k_LightIconSize, k_LightIconSize};
         primitive_proto.uv_rect   = {0.0f, 0.0f, 1.0f, 1.0};
         primitive_proto.color     = bfColor4u_fromUint32(0xFFFFFFFF);
@@ -685,12 +685,11 @@ namespace bf::editor
             const Vector3f pos_to_cam = vec::normalized(Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position));
             const auto     center_pos = Vector3f(entity->transform().world_position) + pos_to_cam * 0.2f;
 
+            *Mat4x4_get(&transform, 3, 0) = center_pos.x;
+            *Mat4x4_get(&transform, 3, 1) = center_pos.y;
+            *Mat4x4_get(&transform, 3, 2) = center_pos.z;
+
             Mat4x4 inv_world_mat = transform;
-
-            *Mat4x4_get(&inv_world_mat, 3, 0) = center_pos.x;
-            *Mat4x4_get(&inv_world_mat, 3, 1) = center_pos.y;
-            *Mat4x4_get(&inv_world_mat, 3, 2) = center_pos.z;
-
             Mat4x4_inverse(&inv_world_mat, &inv_world_mat);
 
             auto accurate_hit_test = hitTestQuad(ray, center_pos, pos_to_cam, Vector2f{k_LightIconSize}, inv_world_mat);

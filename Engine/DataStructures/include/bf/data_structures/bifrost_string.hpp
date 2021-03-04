@@ -122,7 +122,7 @@ namespace bf
       }
 
       const std::size_t len = length();
-      
+
       return {bgn + std::min(begin_idx, len), bgn + std::min(end_idx, len)};
     }
 

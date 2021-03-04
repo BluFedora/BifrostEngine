@@ -1,63 +1,46 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "83486F23-2652-4472-A930-240FA587B165",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "61DEF88F-E462-49E3-9834-82EEB677C25F",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/wow/boblampclean.md5mesh",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "30A2CB94-FDFA-4846-8A60-3978DFDAE652",
-            "name" : "Material_#1.material",
-            "version" : 1
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "6A111D23-468C-407F-A80C-904424FEF1A9",
-            "name" : "Material_#2.material",
-            "version" : 1
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "A76D59C8-FE40-41BB-B7AC-F22E6F66B023",
-            "name" : "Material_#3.material",
-            "version" : 1
+            "m_Name" : "Material_#2.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "2BA9CF61-B7AB-4222-9D21-8FDD6F398A20",
-            "name" : "Material_#4.material",
-            "version" : 1
+            "m_Name" : "Material_#3.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "6B1DBD7A-5D49-45FD-8ACC-582635BC3463",
-            "name" : "Material_#5.material",
-            "version" : 1
+            "m_Name" : "Material_#4.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "EFADAD68-12DE-42F6-8936-DC2FF64E0E22",
-            "name" : "ANIM_#0.anim",
-            "version" : 1
+            "m_Name" : "Material_#5.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "EBD7CFBB-3A83-410B-8AAA-82C8A1BDE883",
-    "name" : "boblampclean.md5mesh",
-    "version" : 1
+    "Document" : {
+
+    }
 }

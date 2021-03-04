@@ -14,72 +14,19 @@
 #ifndef BF_BASE_ASSET_HPP
 #define BF_BASE_ASSET_HPP
 
-#include "bf/ListView.hpp"                  // ListView<T>
-#include "bf/bf_core.h"                     // bfBit, bfPureInterface
-#include "bf/bf_non_copy_move.hpp"          // NonCopyMoveable<T>
+#include "bf/bf_core.h"                     // bfPureInterface
 #include "bf/core/bifrost_base_object.hpp"  // IBaseObject
-
-#include <atomic>  // atomic_uint16_t
 
 namespace bf
 {
   class Assets;
-  class Engine;
   class ISerializer;
+  class IDocument;
 
-  enum class AssetStatus
+  struct ResourceReference
   {
-    UNLOADED,  //!< (RefCount == 0)                                : Asset is not loaded.
-    FAILED,    //!< (RefCount == 0) && (Flags & FailedToLoad) != 0 : Asset tried to load but could not.
-    LOADING,   //!< (RefCount != 0) && (Flags & IsLoaded) == 0     : Asset loading on background thread.
-    LOADED,    //!< (RefCount != 0) && (Flags & IsLoaded) != 0     : Asset is fully loaded.
-  };
-
-  namespace AssetFlags
-  {
-    enum
-    {
-      DEFAULT            = 0x0,       //!< No flags are set by default.
-      IS_LOADED          = bfBit(0),  //!< Marks that the asset has been successfully loaded.
-      IS_SUBASSET        = bfBit(1),  //!< This asset only lives in memory.
-      FAILED_TO_LOAD     = bfBit(2),  //!< Failed to load asset, this flag is set do that we do not continuously try to load it.
-      IS_DIRTY           = bfBit(3),  //!< This asset wants to be saved.
-      IS_ENGINE_ASSET    = bfBit(4),  //!< If the content saving routines should be called.
-      IS_FREE_ON_RELEASE = bfBit(5),  //!< Asset's memory will not be managed by `Assets` class, so will be freed on release.
-      IS_IN_MEMORY       = bfBit(6),  //!< If the asset should not attempt to load from a file.
-    };
-  }
-
-  enum class AssetMetaReferenceType
-  {
-    INTERNAL_REF,
-    EXTERNAL_REF,
-  };
-
-  struct AssetMetaReference
-  {
-    AssetMetaReferenceType type   = AssetMetaReferenceType::EXTERNAL_REF;
-    bfUUIDNumber           ref_id = {};
-    AssetMetaReference*    next   = nullptr;
-  };
-
-  struct AssetMetaInfo
-  {
-    std::int32_t        version       = 1;
-    BufferLen           name          = {nullptr, 0};
-    bfUUIDNumber        uuid          = {};
-    AssetMetaReference* internal_refs = nullptr;
-    AssetMetaReference* external_refs = nullptr;
-    AssetMetaInfo*      first_child   = nullptr;
-    AssetMetaInfo*      last_child    = nullptr;  // Last child is stored to make appending fast. (We want to append since serialization is an array, we do not want the data reversing on every save).
-    AssetMetaInfo*      next_sibling  = nullptr;
-
-    // Before calling this function it is expected that no resources are currently being owned.
-    // (Eg: Either default constructed or after a call to `freeResources` is fine)
-    void serialize(IMemoryManager& allocator, ISerializer& serializer);
-
-    void addChild(AssetMetaInfo* child);
-    void freeResources(IMemoryManager& allocator);
+    bfUUIDNumber doc_id  = {};  //!< The document to refer to, if empty it is a local/internal reference.
+    ResourceID   file_id = {};  //!< The item within the `doc_id`'s document to get.
   };
 
   // clang-format off
@@ -87,78 +34,30 @@ namespace bf
   // clang-format on
   {
     friend class Assets;
+    friend class IDocument;
 
-    // TODO(SR): Having data members in an interface probably breaks some of my codebase guidelines.
    private:
-    bfUUIDNumber         m_UUID;
-    String               m_FilePathAbs;       //!< The full path to an asset.
-    StringRange          m_FilePathRel;       //!< Indexes into `IBaseAsset::m_FilePathAbs` for the relative path.
-    ListView<IBaseAsset> m_SubAssets;         //!< Assets that only exists in memory spawned from this parent asset.
-    ListNode<IBaseAsset> m_SubAssetListNode;  //!< Used with 'm_SubAssets' to make an intrusive non-owning linked list.
-    IBaseAsset*          m_ParentAsset;       //!< The asset this subasset is associated with (assuming this is a subasset).
-    ListNode<IBaseAsset> m_DirtyListNode;     //!< USed with `Assets` to keep track of which assets are dirty and should be saved.
-    std::atomic_uint16_t m_RefCount;          //!< The number of live references there are to this asset.
-    std::atomic_uint16_t m_Flags;             //!< Various flags about the current state of the asset.
-    Assets*              m_Assets;            //!< Kind of a hack, it is useful to have this back pointer.
+    String               m_Name;                 //!< String name not used for any useful work, just for eye candy.
+    IDocument*           m_Document;             //!< The document that owns this asset, nullptr if the asset is not backed by an actual file.
+    ListNode<IBaseAsset> m_DocResourceListNode;  //!< Used with 'IDocument::m_Assets' to make an intrusive non-owning linked list.
 
    public:
     IBaseAsset();
-    ~IBaseAsset() override;
 
     // Accessors //
 
-    [[nodiscard]] const bfUUIDNumber& uuid() const { return m_UUID; }
-    [[nodiscard]] const String&       fullPath() const { return m_FilePathAbs; }
-    [[nodiscard]] StringRange         relativePath() const { return m_FilePathRel; }
-    [[nodiscard]] StringRange         name() const;
-    [[nodiscard]] StringRange         nameWithExt() const;
-    [[nodiscard]] std::uint16_t       refCount() const { return m_RefCount; }
-    AssetStatus                       status() const;
-    bool                              isSubAsset() const { return (m_Flags & AssetFlags::IS_SUBASSET) != 0; }
-    bool                              hasSubAssets() const { return !m_SubAssets.isEmpty(); }
-    const ListView<IBaseAsset>&       subAssets() const { return m_SubAssets; }
+    [[nodiscard]] IDocument&    document() const { return *m_Document; }
+    [[nodiscard]] bool          hasDocument() const { return m_Document != nullptr; }
+    [[nodiscard]] const String& name() const { return m_Name; }
 
-    // IO and Ref Count //
+    // Ref Count //
 
     void acquire();
-    void reload();
     void release();
-    void saveAssetContent(ISerializer & serializer);
-    void saveAssetMeta(ISerializer & serializer);
 
     // Misc //
 
-    AssetMetaInfo* generateMetaInfo(IMemoryManager & allocator) const;
-
-   private:
-    // This overload is for `Unmanaged` assets.
-    void setup(const String& full_path, Assets& assets);
-    void setup(const String& full_path, std::size_t length_of_root_path, const bfUUIDNumber& uuid, Assets& assets);
-
-    // Interface That Must Be Implemented By Subclasses. //
-
-    virtual void onLoad()   = 0;  // Called when the asset should be loaded. (Will never be called if the asset is already loaded or the asset is a subasset)
-    virtual void onUnload() = 0;  // Called when the asset should be unloaded from memory. (Will never be called if the asset is not loaded or the asset is a subasset)
-
-    // These have default implementations but can be re-implemented by subclasses.
-
-    virtual void onReload();                             // By Default calls "unload" then "load" but allows for subclasses to optimize the "reload" operation.
-    virtual void onSaveAsset(ISerializer & serializer);  // Called when the asset should save to the source asset file, default calls `IBaseObject::reflect`.
-    virtual void onSaveMeta(ISerializer & serializer);   // Called to save some extra information in the meta file, default does nothing.
-
-   protected:
-    // Helpers methods for sub classes //
-
-    Assets& assets() const { return *m_Assets; }
-
-    String createSubAssetPath(StringRange name_with_ext) const;
-
-    IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext);
-    IBaseAsset* findOrCreateSubAsset(StringRange name_with_ext, bfUUIDNumber uuid);
-
-    void markFailedToLoad() { m_Flags |= AssetFlags::FAILED_TO_LOAD; }
-    void markIsLoaded() { m_Flags |= AssetFlags::IS_LOADED; }
-    void markAsEngineAsset() { m_Flags |= AssetFlags::IS_ENGINE_ASSET; }
+    ResourceReference toRef() const;
   };
 
   namespace detail
@@ -196,13 +95,12 @@ namespace bf
   // ARC = Automatic Reference Count
   //
 
-  // clang-format off
-  
   //
   // This interface exists so that you can manipulate an
   // `ARC` handle generically particularly in serialization
   // and editor code.
   //
+  // clang-format off
   class bfPureInterface(IARCHandle)
   // clang-format on
   {
@@ -286,7 +184,7 @@ namespace bf
       return *this;
     }
 
-    operator bool() const noexcept { return isValid(); }
+         operator bool() const noexcept { return isValid(); }
     T&   operator*() const noexcept { return *m_Handle; }
     T*   operator->() const noexcept { return m_Handle; }
     bool operator==(const ARC& rhs) const noexcept { return m_Handle == rhs.m_Handle; }

@@ -1,8 +1,16 @@
 {
-    "sub-assets" : [
-
+    "Header" : {
+        "m_UUID" : "1E836711-32ED-44FD-BE88-0CD3C7E694B2",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_Name" : "Materials/Ornate Brass.material",
+            "m_FileID" : 1,
+            "m_TypeName" : "MaterialAsset"
+        }
     ],
-    "uuid" : "B9E12F98-F66C-489A-A6FB-74DD1CCDABB5",
-    "name" : "Ornate Brass.material",
-    "version" : 1
+    "Document" : {
+
+    }
 }

@@ -246,38 +246,11 @@ namespace bf
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 
-    m_Assets.registerFileExtensions(
-     {".png", ".jpg", ".jpeg", ".ppm", ".pgm", ".bmp", ".tga", ".psd"},
-     [](IMemoryManager& asset_memory, Engine& /* engine */) -> IBaseAsset* {
-       return asset_memory.allocateT<TextureAsset>();
-     });
-
-    m_Assets.registerFileExtensions(
-     {".material"},
-     &defaultAssetCreate<MaterialAsset>);
-
-    m_Assets.registerFileExtensions(
-     {".obj", ".fbx", ".md5mesh"},
-     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
-       return asset_memory.allocateT<ModelAsset>(asset_memory, engine.renderer().device());
-     });
-
-    m_Assets.registerFileExtensions(
-     {".scene"},
-     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
-       return asset_memory.allocateT<SceneAsset>(engine);
-     });
-
-    m_Assets.registerFileExtensions(
-     {".srsm.bytes"},
-     &defaultAssetCreate<SpritesheetAsset>);
-
-    m_Assets.registerFileExtensions(
-     {".anim"},
-     [](IMemoryManager& asset_memory, Engine& engine) -> IBaseAsset* {
-       (void)engine;
-       return asset_memory.allocateT<Anim3DAsset>(asset_memory);
-     });
+    m_Assets.registerFileExtensions({".png", ".jpg", ".jpeg", ".ppm", ".pgm", ".bmp", ".tga", ".psd"}, &assetImportTexture);
+    m_Assets.registerFileExtensions({".material"}, &assetImportMaterial);
+    m_Assets.registerFileExtensions({".obj", ".fbx", ".md5mesh"}, &assetImportModel);
+    m_Assets.registerFileExtensions({".scene"}, &assetImportScene);
+    m_Assets.registerFileExtensions({".srsm.bytes"}, &assetImportSpritesheet);
 
     gc::init(m_MainMemory);
 

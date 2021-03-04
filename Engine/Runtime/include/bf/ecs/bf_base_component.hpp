@@ -93,43 +93,11 @@ namespace bf
     struct HasOnEnable<T, std::void_t<decltype(std::declval<T>().onEnable(std::declval<Engine&>()))>> : std::true_type
     {};
 
-    template<typename T, typename = void>
-    struct HasOnDisable : std::false_type
-    {};
-
-    template<typename T>
-    struct HasOnDisable<T, std::void_t<decltype(std::declval<T>().onDisable(std::declval<Engine&>()))>> : std::true_type
-    {};
-
-    template<typename T, typename = void>
-    struct HasOnDestroy : std::false_type
-    {};
-
-    template<typename T>
-    struct HasOnDestroy<T, std::void_t<decltype(std::declval<T>().onDestroy(std::declval<Engine&>()))>> : std::true_type
-    {};
-
     void privateOnEnable(Engine& engine)
     {
       if constexpr (HasOnEnable<TSelf>::value)
       {
         static_cast<TSelf*>(this)->onEnable(engine);
-      }
-    }
-
-    void privateOnDisable(Engine& engine)
-    {
-      if constexpr (HasOnDisable<TSelf>::value)
-      {
-        static_cast<TSelf*>(this)->onDisable(engine);
-      }
-    }
-
-    void privateOnDestroy(Engine& engine)
-    {
-      if constexpr (HasOnDestroy<TSelf>::value)
-      {
-        static_cast<TSelf*>(this)->onDestroy(engine);
       }
     }
     */

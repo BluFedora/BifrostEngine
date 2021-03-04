@@ -218,11 +218,8 @@ namespace bf
         add_sprite_to_list(renderer);
       }
 
-      if (num_per_frame_sprites)
-      {
-        std::memcpy(sprite_list + sprite_list_size, m_PerFrameSprites->data(), num_per_frame_sprites * sizeof(Renderable2DPrimitive));
-        sprite_list_size += num_per_frame_sprites;
-      }
+      std::memcpy(sprite_list + sprite_list_size, m_PerFrameSprites->data(), num_per_frame_sprites * sizeof(Renderable2DPrimitive));
+      sprite_list_size += num_per_frame_sprites;
 
       if (sprite_list_size)
       {

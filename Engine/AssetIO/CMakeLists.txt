@@ -7,17 +7,21 @@ add_library(
 
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_asset_map.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_base_asset.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_document.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_gfx_assets.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_iserializer.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_model_loader.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_path_manip.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_spritesheet_asset.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_iasset_importer.hpp" 
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_classlist.hpp"
  
   "${PROJECT_SOURCE_DIR}/src/bf_asset_map.cpp"
   "${PROJECT_SOURCE_DIR}/src/bf_model_loader.cpp"
   "${PROJECT_SOURCE_DIR}/src/bf_gfx_assets.cpp"
   "${PROJECT_SOURCE_DIR}/src/bf_base_asset.cpp"
- )
+  "${PROJECT_SOURCE_DIR}/src/bf_document.cpp"
+)
 
 target_include_directories(
   "${PROJECT_NAME}_static"

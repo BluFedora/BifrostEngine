@@ -1,32 +1,30 @@
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 
 #include "bf/anim2D/bf_animation_system.hpp"  // AnimationSystem
-#include "bf/asset_io/bifrost_file.hpp"       // File
-#include "bf/core/bifrost_engine.hpp"         // Engine
+#include "bf/asset_io/bf_document.hpp"
+#include "bf/asset_io/bifrost_file.hpp"  // File
+#include "bf/core/bifrost_engine.hpp"    // Engine
 
 namespace bf
 {
-  // TODO(SR): We dont want this.
-  LinearAllocator& ENGINE_TEMP_MEM(Engine& engine);
-
   SpritesheetAsset::SpritesheetAsset() :
     Base(),
     m_Anim2DSpritesheet{nullptr}
   {
   }
-
+  /*
   void SpritesheetAsset::onLoad()
   {
     Assets&       assets    = this->assets();
     Engine&       engine    = assets.engine();
-    const String& full_path = fullPath();
+    const String& full_path = document().fullPath();
     File          file_in   = {full_path, file::FILE_MODE_READ};
 
     if (file_in)
     {
-      LinearAllocatorScope scope       = {ENGINE_TEMP_MEM(engine)};
-      const TempBuffer     json_buffer = file_in.readAll(ENGINE_TEMP_MEM(engine));
-      const auto           file_name   = nameWithExt();
+      LinearAllocatorScope scope       = {engine.tempMemory()};
+      const TempBuffer     json_buffer = file_in.readAll(engine.tempMemory());
+      const auto           file_name   = document().nameWithExt();
 
       m_Anim2DSpritesheet = bfAnim2D_loadSpritesheet(
        engine.animationSys().anim2DCtx(),
@@ -46,10 +44,13 @@ namespace bf
 
   void SpritesheetAsset::onUnload()
   {
-    Engine& engine = assets().engine();
-
     bfAnim2D_destroySpritesheet(
-     engine.animationSys().anim2DCtx(),
+     assets().engine().animationSys().anim2DCtx(),
      m_Anim2DSpritesheet);
+  }
+  */
+  void assetImportSpritesheet(AssetImportCtx& ctx)
+  {
+
   }
 }  // namespace bf

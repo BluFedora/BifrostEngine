@@ -1,0 +1,115 @@
+{
+  "main": {
+    "id": "a2b0e0b6b3fec91c",
+    "type": "split",
+    "children": [
+      {
+        "id": "b01ae535113ad668",
+        "type": "leaf",
+        "dimension": 50.16797312430011,
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "Engine/AssetIO/README.md",
+            "mode": "source"
+          }
+        },
+        "group": "f5b7b7eb183da0ff"
+      },
+      {
+        "id": "ffe2c0c2f21dc2c2",
+        "type": "leaf",
+        "dimension": 49.83202687569989,
+        "active": true,
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "Engine/AssetIO/README.md",
+            "mode": "preview"
+          }
+        },
+        "group": "f5b7b7eb183da0ff"
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f382aef236bebf6c",
+    "type": "split",
+    "children": [
+      {
+        "id": "442981d290a87833",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f49d08e3c3a5bbcb",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "686abb70a7f57710",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 281.5
+  },
+  "right": {
+    "id": "cdebc9e85d393563",
+    "type": "split",
+    "children": [
+      {
+        "id": "a45ff326aa7b2f82",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "84a33c329e8a5467",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Engine/AssetIO/README.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "backlinkCollapsed": true,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "lastOpenFiles": [
+    "Engine/AssetIO/README.md",
+    "docs/notes/API_Design_Musings.md",
+    "docs/notes/RenderGraph.md",
+    "docs/notes/Random Links.md",
+    "docs/notes/Framebuffer.md",
+    "BifrostScript/README.md",
+    "OrganizedThoughts/ByteWriterAPISketch.md",
+    "OrganizedThoughts/Interpolation.md",
+    "OrganizedThoughts/AnimationRuntime.md",
+    "OrganizedThoughts/Immediate Mode UI Sketch.md"
+  ]
+}

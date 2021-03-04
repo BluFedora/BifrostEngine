@@ -55,10 +55,10 @@ namespace bf::editor
   {
   }
 
-  bool ImGuiSerializer::beginDocument(bool is_array)
+  bool ImGuiSerializer::beginDocument()
   {
     auto& obj    = m_IsOpenStack.emplace();
-    obj.is_array = is_array;
+    obj.is_array = false;
     string_utils::fmtBuffer(obj.name, k_FieldNameBufferSize, nullptr, "__DOCUMENT");
 
     beginChangedCheck();
@@ -355,8 +355,25 @@ namespace bf::editor
     }
 
     const IBaseAsset* const current_asset  = value.handle();
-    const char* const       preview_name   = value.isValid() ? current_asset->relativePath().begin() : "<null>";
     IBaseAsset*             assigned_asset = nullptr;
+
+    const char* preview_name;
+
+    if (value.isValid())
+    {
+      if (current_asset->hasDocument())
+      {
+        preview_name = current_asset->name().c_str();
+      }
+      else
+      {
+        preview_name = "<internal-asset>";
+      }
+    }
+    else
+    {
+      preview_name = "<null>";
+    }
 
     if (ImGui::BeginCombo(m_NameBuffer, preview_name, ImGuiComboFlags_HeightLargest))
     {
@@ -364,7 +381,7 @@ namespace bf::editor
        value.typeInfo(), [current_asset, &assigned_asset](IBaseAsset* asset) {
          const bool is_selected = current_asset == asset;
 
-         if (ImGui::Selectable(asset->relativePath().begin(), is_selected, ImGuiSelectableFlags_None))
+         if (ImGui::Selectable(asset->name().c_str(), is_selected, ImGuiSelectableFlags_None))
          {
            if (!is_selected)
            {
@@ -386,14 +403,16 @@ namespace bf::editor
 
         assert(payload->DataSize == sizeof(bfUUID));
 
-        IBaseAsset* const dragged_asset = m_Assets->findAsset(data->as_number);
+        // IBaseAsset* const dragged_asset = m_Assets->findAsset(data->as_number);
+        //
+        // if (dragged_asset &&
+        //     dragged_asset->type() == current_asset->type() &&
+        //     ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
+        // {
+        //   assigned_asset = dragged_asset;
+        // }
 
-        if (dragged_asset &&
-            dragged_asset->type() == current_asset->type() &&
-            ImGui::AcceptDragDropPayload("Asset.UUID", ImGuiDragDropFlags_None))
-        {
-          assigned_asset = dragged_asset;
-        }
+        __debugbreak();
       }
 
       ImGui::EndDragDropTarget();

@@ -80,11 +80,11 @@ namespace bf
       }
 
       template<typename... Args>
-      void emplace(const TKey& key, Args... args)
+      void emplace(const TKey& key, Args&&... args)
       {
         deleteNode();
         new (&this->m_Key) TKey(key);
-        new (&this->m_Value) TValue(std::forward<decltype(args)...>(args...));
+        new (&this->m_Value) TValue(std::forward<decltype(args)>(args)...);
         this->m_State = NodeState::OCCUPIED;
       }
 
@@ -576,7 +576,7 @@ namespace bf
     {
       node->emplace(
        std::forward<decltype(key)>(key),
-       std::forward<decltype(args)...>(args...));
+       std::forward<decltype(args)>(args)...);
     }
 
     return (node != nullptr);

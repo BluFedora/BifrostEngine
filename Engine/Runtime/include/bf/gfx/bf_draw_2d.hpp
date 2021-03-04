@@ -526,7 +526,7 @@ namespace bf
   {
    private:
     static const UIIndexType k_CommandStreamMemorySize    = bfKilobytes(150);
-    static const UIIndexType k_AuxiliaryMemorySize        = bfKilobytes(200);
+    static const UIIndexType k_AuxiliaryMemorySize        = bfKilobytes(100);
     static const UIIndexType k_TempVertexStreamMemorySize = bfMegabytes(5);
     static const UIIndexType k_TempIndexStreamMemorySize  = bfMegabytes(2);
 

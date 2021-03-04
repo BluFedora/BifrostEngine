@@ -1,23 +1,26 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "B6005F4D-0466-4C0E-96DF-C531AF13DA1A",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "CEC85654-84D1-407E-B3C8-11D1AD7E06E1",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/cube.obj",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "D0E4AB8E-B791-48FA-8C8A-E43EE659636D",
-            "name" : "Material_#1.material",
-            "version" : 1
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
+        },
+        {
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "BFF8DE7F-9005-4C88-9CF6-7C2CDB6E8E6A",
-    "name" : "cube.obj",
-    "version" : 1
+    "Document" : {
+
+    }
 }

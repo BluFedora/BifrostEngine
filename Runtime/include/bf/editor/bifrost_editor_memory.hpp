@@ -20,7 +20,8 @@
 
 namespace bf::editor
 {
-  IMemoryManager& allocator();
+  IMemoryManager&  allocator();
+  LinearAllocator& tempMemory();
 
   template<typename T, typename... Args>
   T* make(Args&&... args)

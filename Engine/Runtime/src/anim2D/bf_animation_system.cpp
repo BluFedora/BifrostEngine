@@ -2,6 +2,7 @@
 
 #include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
+#include "bf/asset_io/bf_document.hpp"
 #include "bf/ecs/bf_entity.hpp"
 
 #include "bf/core/bifrost_engine.hpp"
@@ -16,19 +17,22 @@ namespace bf
     {
       Engine* const           engine      = static_cast<Engine*>(bfAnim2D_userData(ctx));
       SpritesheetAsset* const ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
-      const StringRange       ss_dir      = path::directory(ss_info->fullPath());
+      const StringRange       ss_dir      = path::directory(ss_info->document().fullPath());
       const String            texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
       Assets&                 assets      = engine->assets();
+
+      __debugbreak();
+      #if 0
       TextureAsset* const     texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
 
       // This only needs a to update the texture if it is currently being used.
-      if (texture && texture->refCount() > 0)
+      if (texture && texture->document().refCount() > 0)
       {
         ARC<TextureAsset> keep_texture_alive = texture;
 
         texture->assignNewHandle(
          gfx::createTexturePNG(
-          texture->gfxDevice(),
+          engine->renderer().m_GfxDevice,
           bfTextureCreateParams_init2D(
            BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
            k_bfTextureUnknownSize,
@@ -37,6 +41,7 @@ namespace bf
           change_event.texture.texture_bytes_png,
           change_event.texture.texture_bytes_png_size));
       }
+      #endif
     }
   }
 

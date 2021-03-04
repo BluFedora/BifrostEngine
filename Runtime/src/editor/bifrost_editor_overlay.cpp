@@ -2,6 +2,7 @@
 
 #include "bf/CRTAllocator.hpp"
 #include "bf/FreeListAllocator.hpp"
+#include "bf/asset_io/bf_document.hpp"
 #include "bf/asset_io/bf_path_manip.hpp"  // path::*
 #include "bf/asset_io/bf_spritesheet_asset.hpp"
 #include "bf/asset_io/bifrost_assets.hpp"
@@ -215,11 +216,18 @@ class EditorArray : public bf::Array<T>
 namespace bf::editor
 {
   static char              s_EditorMemoryBacking[bfMegabytes(16)];
+  static char              s_EditorTempMemoryBacking[bfMegabytes(16)];
   static FreeListAllocator s_EditorMemory{s_EditorMemoryBacking, sizeof(s_EditorMemoryBacking)};
+  static LinearAllocator   s_EditorTempMemory{s_EditorTempMemoryBacking, sizeof(s_EditorTempMemoryBacking)};
 
   IMemoryManager& allocator()
   {
     return s_EditorMemory;
+  }
+
+  LinearAllocator& tempMemory()
+  {
+    return s_EditorTempMemory;
   }
 
   bool ActionContext::actionButton(const char* name) const
@@ -815,8 +823,8 @@ namespace bf::editor
 
     auto& assets = engine.assets();
 
-    m_SceneLightTexture  = assets.loadUnmanagedAsset<TextureAsset>("editor/images/Scene_Light.png");
-    m_SceneLightMaterial = assets.loadUnmanagedAsset<MaterialAsset>("Scene Light Mat", AssetLoadMode::IN_MEMORY);
+    m_SceneLightMaterial = make<MaterialAsset>();
+    m_SceneLightTexture  = TextureAsset::load(allocator(), "editor/images/Scene_Light.png", engine);
 
     m_SceneLightMaterial->m_AlbedoTexture = m_SceneLightTexture;
   }
@@ -937,6 +945,8 @@ namespace bf::editor
 
   void EditorOverlay::onUpdate(Engine& engine, float delta_time)
   {
+    tempMemory().clear();
+
     int window_width, window_height;
     bfWindow_getSize(m_MainWindow, &window_width, &window_height);
 
@@ -1218,8 +1228,8 @@ namespace bf::editor
 
   void EditorOverlay::onDestroy(Engine& engine)
   {
-    m_SceneLightTexture  = nullptr;
-    m_SceneLightMaterial = nullptr;
+    deallocateT(m_SceneLightMaterial);
+    TextureAsset::unload(allocator(), m_SceneLightTexture, engine);
 
     imgui::shutdown();
     enqueueDialog(nullptr);
@@ -1294,16 +1304,16 @@ namespace bf::editor
 
     if (project_file)
     {
-      LinearAllocatorScope temp_mem_scope = m_Engine->tempMemory();
-
       if (currentlyOpenProject())
       {
         closeProject();
       }
 
-      const StringRange project_dir      = path::directory(path);
-      const TempBuffer  project_json_str = project_file.readAll(m_Engine->tempMemory());
-      const AssetError  err              = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
+      LinearAllocator&     temp_mem         = tempMemory();
+      LinearAllocatorScope temp_mem_scope   = temp_mem;
+      const StringRange    project_dir      = path::directory(path);
+      const TempBuffer     project_json_str = project_file.readAll(temp_mem);
+      const AssetError     err              = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
 
       if (err == AssetError::NONE)
       {
@@ -1318,8 +1328,8 @@ namespace bf::editor
           const auto& project_name_str = project_name->as<json::String>();
 
           m_OpenProject.reset(make<Project>(String(project_name_str.c_str()), path, project_dir));
-
           assetRefresh();
+
           return true;
         }
       }
@@ -1362,8 +1372,9 @@ namespace bf::editor
 
   struct MetaAssetPath final
   {
-    char*      file_name{nullptr};
-    FileEntry* entry{nullptr};
+    char*       file_name     = {nullptr};
+    std::size_t file_name_len = 0u;
+    FileEntry*  entry         = {nullptr};
   };
 
   static void assetFindAssets(List<MetaAssetPath>& metas, const String& path, const String& current_string, FileSystem& filesystem, FileEntry& parent_entry);
@@ -1374,27 +1385,28 @@ namespace bf::editor
 
     if (path::doesExist(path.cstr()))
     {
-      Assets&              assets = m_Engine->assets();
-      BlockAllocator<8192> allocator{editor::allocator()};
+      LinearAllocator&     temp_mem       = tempMemory();
+      LinearAllocatorScope temp_mem_scope = temp_mem;
+      BlockAllocator<8192> allocator{temp_mem};
       List<MetaAssetPath>  metas_to_check{allocator};
 
       m_FileSystem.clear("Assets", path);
       assetFindAssets(metas_to_check, path, "", m_FileSystem, m_FileSystem.root());
 
+      Assets& assets = m_Engine->assets();
+
       for (const auto& meta : metas_to_check)
       {
-        file::canonicalizePath(meta.file_name, meta.file_name + std::strlen(meta.file_name));
+        const std::size_t path_length = file::canonicalizePath(meta.file_name, meta.file_name + meta.file_name_len);
 
-        IBaseAsset* const asset = assets.findAsset(AbsPath(meta.file_name));
+        IDocument* const document = assets.findDocument(AbsPath(StringRange(meta.file_name, path_length)));
 
-        meta.entry->asset_info = asset;
+        meta.entry->document = document;
 
-        if (!asset)
+        if (!document)
         {
           bfLogWarn("Unknown file type (%s)", meta.file_name);
         }
-
-        string_utils::fmtFree(allocator, meta.file_name);
       }
     }
   }
@@ -1508,7 +1520,7 @@ namespace bf::editor
           {
             auto& m = metas.emplaceBack();
 
-            m.file_name = string_utils::fmtAlloc(metas.memory(), nullptr, "%s/%s", path.cstr(), name.begin());
+            m.file_name = string_utils::fmtAlloc(metas.memory(), &m.file_name_len, "%s/%s", path.cstr(), name.begin());
             m.entry     = &entry;
           }
 
@@ -1533,7 +1545,7 @@ namespace bf::editor
     file_extension{file::extensionOfFile(this->full_path)},
     children{&FileEntry::next},
     next{},
-    asset_info{nullptr},
+    document{nullptr},
     is_file{is_file}
   {
   }
@@ -1565,7 +1577,9 @@ namespace bf::editor
   {
     if (m_Root)
     {
-      static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_Hideable | ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_Hideable;
+      static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_Hideable |
+                                     ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_Resizable |
+                                     ImGuiTableFlags_RowBg | ImGuiTableFlags_Hideable;
 
       if (ImGui::BeginTable("File System", 2, flags))
       {
@@ -1662,24 +1676,27 @@ namespace bf::editor
     {
       ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth /*| ImGuiTreeNodeFlags_DefaultOpen*/;
 
-      if (entry.asset_info && !entry.asset_info->hasSubAssets())
+      const bool has_document        = entry.document != nullptr;
+      const bool has_multiple_assets = has_document && entry.document->numAssets() > 1u;
+
+      if (has_document && !has_multiple_assets)
       {
         tree_node_flags |= ImGuiTreeNodeFlags_Bullet;
       }
 
-      if (!entry.asset_info || !entry.asset_info->hasSubAssets())
+      if (!has_document || !has_multiple_assets)
       {
         tree_node_flags |= ImGuiTreeNodeFlags_Leaf;
       }
 
-      if (entry.asset_info)
+      if (entry.document)
       {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
       }
 
       const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
 
-      if (entry.asset_info)
+      if (entry.document)
       {
         ImGui::PopStyleColor();
       }
@@ -1688,21 +1705,25 @@ namespace bf::editor
       {
         bfUUIDString uuid_str;
 
-        if (entry.asset_info)
+        if (entry.document)
         {
-          bfUUID_numberToString(entry.asset_info->uuid().bytes, uuid_str.data);
+          bfUUID_numberToString(entry.document->uuid().bytes, uuid_str.data);
         }
 
-        ImGui::SetTooltip("Asset(%s)", entry.asset_info ? uuid_str.data : "<null>");
+        ImGui::SetTooltip("Asset(%s)", entry.document ? uuid_str.data : "<null>");
       }
 
-      if (entry.asset_info)
+      if (entry.document)
       {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
           if (entry.file_extension == ".scene")
           {
-            ARC<SceneAsset> opened_scene = static_cast<SceneAsset*>(entry.asset_info);
+            entry.document->acquire();
+
+            ARC<SceneAsset> opened_scene = entry.document->findResourceOfType<SceneAsset>(ResourceID{1u});
+
+            entry.document->release();
 
             editor.engine().openScene(opened_scene);
 #if 0
@@ -1734,13 +1755,13 @@ namespace bf::editor
 
         if (ImGui::IsItemDeactivated() && ImGui::IsItemHovered())
         {
-          editor.select(entry.asset_info);
+          // editor.select(entry.asset_info);
         }
       }
 
       const auto flags = ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers;
 
-      if (entry.asset_info)
+      if (entry.document)
       {
         if (ImGui::BeginDragDropSource(flags))
         {
@@ -1748,12 +1769,12 @@ namespace bf::editor
           {
             bfUUIDString uuid_str;
 
-            bfUUID_numberToString(entry.asset_info->uuid().bytes, uuid_str.data);
+            bfUUID_numberToString(entry.document->uuid().bytes, uuid_str.data);
 
             ImGui::Text("UUID %s", uuid_str.data);
           }
 
-          ImGui::SetDragDropPayload("Asset.UUID", &entry.asset_info->uuid(), sizeof(bfUUID));
+          ImGui::SetDragDropPayload("Asset.UUID", &entry.document->uuid(), sizeof(bfUUIDNumber));
           ImGui::EndDragDropSource();
         }
       }
@@ -1778,8 +1799,9 @@ namespace bf::editor
 
       if (is_open)
       {
-        if (entry.asset_info)
+        if (entry.document)
         {
+          /*
           for (const IBaseAsset& sub_asset : entry.asset_info->subAssets())
           {
             ImGui::TableNextRow();
@@ -1796,6 +1818,7 @@ namespace bf::editor
             ImGui::TableNextCell();
             ImGui::TextUnformatted("SubAsset");
           }
+          */
         }
 
         ImGui::TreePop();
@@ -1942,7 +1965,7 @@ namespace bf::editor
     const auto&       selection      = m_IsLocked ? m_LockedSelection : editor.selection().selectables();
     const std::size_t selection_size = selection.size();
 
-    m_Serializer.beginDocument(false);
+    m_Serializer.beginDocument();
 
     if (selection.isEmpty())
     {

@@ -45,18 +45,10 @@ as others have said it depends on your target. But 92K for a single model is too
 
 
 
-
-
-
 [https://bitbashing.io/comparing-floats.html]
 
-Vector Reflection
 Making A Frustum Matrix
 Camera View Look At
-
-
-
-
 
 
 

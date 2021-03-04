@@ -1,51 +1,65 @@
 /******************************************************************************/
 /*!
- * @file   bf_spritesheet_asset.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @file   bf_iasset_importer.hpp
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Asset for a spritesheet animation.
+ *   
  *
  * @version 0.0.1
- * @date    2020-12-19
+ * @date    2021-03-03
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2021
  */
 /******************************************************************************/
-#ifndef BF_SPRITESHEET_ASSET_HPP
-#define BF_SPRITESHEET_ASSET_HPP
+#ifndef BF_IASSET_IMPORTER_HPP
+#define BF_IASSET_IMPORTER_HPP
 
-#include "bf_base_asset.hpp" // BaseAsset<T>
-#include "bf/Animation2D.h"   // bfSpritesheet
+#include "bf/StringRange.hpp"                         // StringRange
+#include "bf/data_structures/bifrost_hash_table.hpp"  // HashTable<K, V>
 
 namespace bf
 {
-  class SpritesheetAsset : public BaseAsset<SpritesheetAsset>
+  class IDocument;
+  class Engine;
+  class IMemoryManager;
+
+  struct AssetImportCtx
   {
-  private:
-    bfSpritesheet* m_Anim2DSpritesheet;
-
-  public:
-    SpritesheetAsset();
-
-    bfSpritesheet* spritesheet() const { return m_Anim2DSpritesheet; }
+    IDocument*      document; // Out parameter.
+    StringRange     asset_full_path;
+    StringRange     meta_full_path;
+    void*           importer_user_data;
+    IMemoryManager* asset_memory;
+    Engine*         engine;
   };
 
-  //
-  // Importers
-  //
-  struct AssetImportCtx;
+  using AssetImporterFn = void(*)(AssetImportCtx& ctx);
 
-  void assetImportSpritesheet(AssetImportCtx& ctx);
-  
+  struct AssetImporter
+  {
+    AssetImporterFn callback;
+    void*           user_data;
+
+    AssetImporter(AssetImporterFn cb, void* ud) :
+      callback{cb},
+      user_data{ud}
+    {
+    }
+  };
+
+  // TODO(SR):
+  //   Use of String is pretty heavy, a StringRange would be better since just about all
+  //   file extensions registered are `const char*` hardcoded in the program.
+  using ImportRegistry = HashTable<String, AssetImporter>;
 }  // namespace bf
 
-#endif /* BF_SPRITESHEET_ASSET_HPP */
+#endif /* BF_IASSET_IMPORTER_HPP */
 
 /******************************************************************************/
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

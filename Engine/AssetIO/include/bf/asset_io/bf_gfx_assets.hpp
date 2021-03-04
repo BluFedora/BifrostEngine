@@ -16,63 +16,39 @@
 
 #include "bf/bf_gfx_api.h"     /* Graphics Handles */
 #include "bf_base_asset.hpp"   /* BaseAsset        */
+#include "bf_document.hpp"     /* IDocument        */
 #include "bf_model_loader.hpp" /* Mesh             */
 
 namespace bf
 {
-  struct StandardVertex;
   static constexpr std::uint8_t k_InvalidBoneID = static_cast<std::uint8_t>(-1);
+
+  class Engine;
+  struct StandardVertex;
+
+  // Textures
 
   class TextureAsset final : public BaseAsset<TextureAsset>
   {
    public:
-    bfGfxDeviceHandle m_ParentDevice;
-    bfTextureHandle   m_TextureHandle;
+    static TextureAsset* load(IMemoryManager& memory, StringRange path, Engine& engine);
+    static void          unload(IMemoryManager& memory, TextureAsset* asset, Engine& engine);
+
+   public:
+    bfTextureHandle m_TextureHandle;
 
    public:
     explicit TextureAsset();
 
-    bfGfxDeviceHandle gfxDevice() const { return m_ParentDevice; }
-    bfTextureHandle   handle() const { return m_TextureHandle; }
-    std::uint32_t     width() const { return m_TextureHandle ? bfTexture_width(m_TextureHandle) : 0u; }
-    std::uint32_t     height() const { return m_TextureHandle ? bfTexture_height(m_TextureHandle) : 0u; }
+    bfTextureHandle handle() const { return m_TextureHandle; }
+    std::uint32_t   width() const { return m_TextureHandle ? bfTexture_width(m_TextureHandle) : 0u; }
+    std::uint32_t   height() const { return m_TextureHandle ? bfTexture_height(m_TextureHandle) : 0u; }
 
     void assignNewHandle(bfTextureHandle handle)
     {
-      onUnload();
+      // document().onUnload();
       m_TextureHandle = handle;
     }
-
-   private:
-    void onLoad() override;
-    void onUnload() override;
-    bool loadImpl();
-  };
-
-  class MaterialAsset final : public BaseAsset<MaterialAsset>
-  {
-    BF_META_FRIEND;
-    friend class ModelAsset;
-
-   public:
-    ARC<TextureAsset> m_AlbedoTexture;
-    ARC<TextureAsset> m_NormalTexture;
-    ARC<TextureAsset> m_MetallicTexture;
-    ARC<TextureAsset> m_RoughnessTexture;
-    ARC<TextureAsset> m_AmbientOcclusionTexture;
-
-   public:
-    MaterialAsset();
-
-    const ARC<TextureAsset>& albedoTexture() const { return m_AlbedoTexture; }
-    const ARC<TextureAsset>& normalTexture() const { return m_NormalTexture; }
-    const ARC<TextureAsset>& metallicTexture() const { return m_MetallicTexture; }
-    const ARC<TextureAsset>& roughnessTexture() const { return m_RoughnessTexture; }
-    const ARC<TextureAsset>& ambientOcclusionTexture() const { return m_AmbientOcclusionTexture; }
-
-   private:
-    void onLoad() override;
-    void onUnload() override;
   };
 
   BIFROST_META_REGISTER(bf::TextureAsset)
@@ -86,6 +62,43 @@ namespace bf
       )
     BIFROST_META_END()
   }
+
+  class TextureDocument final : public IDocument
+  {
+   public:
+    TextureAsset* m_TextureAsset;
+
+   private:
+    AssetStatus onLoad() override;
+    void        onUnload() override;
+    void        onSaveMeta(ISerializer& serializer) override;
+  };
+
+  // Materials
+
+  class MaterialAsset final : public BaseAsset<MaterialAsset>
+  {
+    BF_META_FRIEND;
+    friend class ModelAsset;
+
+   public:
+    ARC<TextureAsset> m_AlbedoTexture           = nullptr;
+    ARC<TextureAsset> m_NormalTexture           = nullptr;
+    ARC<TextureAsset> m_MetallicTexture         = nullptr;
+    ARC<TextureAsset> m_RoughnessTexture        = nullptr;
+    ARC<TextureAsset> m_AmbientOcclusionTexture = nullptr;
+
+    using Base::Base;
+
+    void clear()
+    {
+      m_AlbedoTexture           = nullptr;
+      m_NormalTexture           = nullptr;
+      m_MetallicTexture         = nullptr;
+      m_RoughnessTexture        = nullptr;
+      m_AmbientOcclusionTexture = nullptr;
+    }
+  };
 
   template<>
   inline const auto& meta::Meta::registerMembers<MaterialAsset>()
@@ -101,6 +114,17 @@ namespace bf
 
     return member_ptrs;
   }
+
+  class MaterialDocument final : public IDocument
+  {
+   public:
+    MaterialAsset* m_MaterialAsset;
+
+   private:
+    AssetStatus onLoad() override;
+    void        onUnload() override;
+    void        onSaveAsset() override;
+  };
 
   using AnimationTimeType = double;
 
@@ -221,7 +245,6 @@ namespace bf
       m_Channels{nullptr},
       m_NameToChannel{}
     {
-      markAsEngineAsset();
     }
 
     void create(std::uint8_t num_bones)
@@ -239,10 +262,6 @@ namespace bf
 
       m_Memory.deallocate(m_Channels, m_NumChannels * sizeof(Channel));
     }
-
-   private:
-    void onLoad() override;
-    void onUnload() override;
   };
 
   // TODO(SR): This should be declared in a better place.
@@ -250,6 +269,8 @@ namespace bf
 
   class ModelAsset : public BaseAsset<ModelAsset>
   {
+    friend class AssimpDocument;
+
    public:
     struct Node  // NOLINT(cppcoreguidelines-pro-type-member-init)
     {
@@ -281,23 +302,44 @@ namespace bf
     Array<StandardVertex> m_Vertices;
 
    public:
-    ModelAsset(IMemoryManager& memory, bfGfxDeviceHandle device);
+    ModelAsset(IMemoryManager& memory);
 
     std::size_t numBones() const { return m_BoneToModel.length(); }
 
    private:
-    void onLoad() override;
     void loadSkeleton(const ModelSkeleton& skeleton);
-    void onUnload() override;
+    void unload();
   };
 
   BIFROST_META_REGISTER(bf::ModelAsset)
   {
     BIFROST_META_BEGIN()
       BIFROST_META_MEMBERS(
-       class_info<ModelAsset>("Model"))
+        class_info<ModelAsset>("Model"))
     BIFROST_META_END()
   }
+
+  class AssimpDocument final : public IDocument
+  {
+    static constexpr std::uint64_t k_AssetIDMaterialFlag  = (std::uint64_t(1) << 63);
+    static constexpr std::uint64_t k_AssetIDAnimationFlag = (std::uint64_t(1) << 62);
+
+   private:
+    ModelAsset* m_ModelAsset = nullptr;
+
+   private:
+    AssetStatus onLoad() override;
+    void        onUnload() override;
+  };
+
+  //
+  // Importers
+  //
+  struct AssetImportCtx;
+
+  void assetImportTexture(AssetImportCtx& ctx);
+  void assetImportMaterial(AssetImportCtx& ctx);
+  void assetImportModel(AssetImportCtx& ctx);
 }  // namespace bf
 
 /*

@@ -1,23 +1,26 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "458C3181-5A93-4384-9E7A-9126F4882B5B",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "F6E7B096-EBDF-4CFF-8156-7CF6B2F2EA78",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/plane.obj",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "6097A185-9064-48FA-8DC6-BB51486BEE25",
-            "name" : "Material_#1.material",
-            "version" : 1
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
+        },
+        {
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "FF782651-E7CC-43EB-B447-FE2B877D07AD",
-    "name" : "plane.obj",
-    "version" : 1
+    "Document" : {
+
+    }
 }

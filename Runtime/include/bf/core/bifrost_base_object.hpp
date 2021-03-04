@@ -11,9 +11,10 @@
  * @copyright Copyright (c) 2019-2020
  */
 /******************************************************************************/
-#ifndef BIFROST_BASE_OBJECT_HPP
-#define BIFROST_BASE_OBJECT_HPP
+#ifndef BF_BASE_OBJECT_HPP
+#define BF_BASE_OBJECT_HPP
 
+#include "bf/ListView.hpp"                  /* ListNode<T>         */
 #include "bf/meta/bifrost_meta_factory.hpp" /* AutoRegisterType<T> */
 
 namespace bf
@@ -21,11 +22,33 @@ namespace bf
   // Forward Declarations
 
   class ISerializer;
+  class IDocument;
+
+  //
+
+  struct ResourceID
+  {
+    std::uint64_t id = {}; //!, 0 is an invalid id.
+
+    bool operator==(const ResourceID& rhs) const
+    {
+      return id == rhs.id;
+    }
+  };
 
   // Use this interface if you want to refer to objects generically.
 
   class bfPureInterface(IBaseObject)
   {
+    friend class IDocument;
+
+    // TODO(SR): Having data members in an interface probably breaks some of my codebase guidelines.
+   private:
+    ResourceID m_FileID;  //!< The local id unique inside of the particular document the object is part of.
+
+   public:
+    ResourceID fileID() const { return m_FileID; }
+
    public:
     virtual meta::BaseClassMetaInfo* type() const = 0;
     virtual void                     reflect(ISerializer & serializer);
@@ -55,4 +78,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_BASE_OBJECT_HPP */
+#endif /* BF_BASE_OBJECT_HPP */

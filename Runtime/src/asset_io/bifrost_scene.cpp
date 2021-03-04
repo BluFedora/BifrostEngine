@@ -14,6 +14,7 @@
 /******************************************************************************/
 #include "bf/asset_io/bifrost_scene.hpp"
 
+#include "bf/asset_io/bf_document.hpp"             /* BaseDocument             */
 #include "bf/asset_io/bifrost_file.hpp"            /* File                 */
 #include "bf/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
 #include "bf/core/bifrost_engine.hpp"              /* Engine               */
@@ -36,8 +37,6 @@ namespace bf
     m_DirtyList{nullptr}
   {
     Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
-
-    markAsEngineAsset();
 
     m_DoDebugDraw = false;
   }
@@ -184,38 +183,46 @@ namespace bf
     }
   }
 
-  void Scene::onLoad()
+  AssetStatus SceneDocument::onLoad()
   {
-    Assets&      assets    = engine().assets();
-    const String full_path = fullPath();
-    File         file_in   = {full_path, file::FILE_MODE_READ};
+    File file_in{fullPath(), file::FILE_MODE_READ};
 
     if (file_in)
     {
-      LinearAllocatorScope scope       = {engine().tempMemory()};
-      const TempBuffer     json_buffer = file_in.readAll(engine().tempMemory());
-      json::Value          json_value  = json::fromString(json_buffer.buffer(), json_buffer.size());
+      auto&                temp_alloc = assets().engine().tempMemory();
+      LinearAllocatorScope mem_scope  = {temp_alloc};
+      const BufferLen      buffer     = file_in.readEntireFile(temp_alloc);
+      json::Value          json_value = json::fromString(buffer.buffer, buffer.length);
+      JsonSerializerReader reader     = {assets(), temp_alloc, json_value};
 
-      if (json_value.isObject())
+      if (reader.beginDocument())
       {
-        JsonSerializerReader json_writer{assets, engine().tempMemory(), json_value};
+        m_SceneAsset = addAsset<SceneAsset>(ResourceID{1u}, relativePath(), assets().engine());
 
-        if (json_writer.beginDocument(false))
-        {
-          reflect(json_writer);
-          json_writer.endDocument();
+        m_SceneAsset->reflect(reader);
+        reader.endDocument();
 
-          markIsLoaded();
-          return;
-        }
+        return AssetStatus::LOADED;
       }
     }
 
-    markFailedToLoad();
+    return AssetStatus::FAILED;
   }
 
-  void Scene::onUnload()
+  void SceneDocument::onUnload()
   {
+    if (m_SceneAsset)
+    {
+      m_SceneAsset->removeAllEntities();
+      m_SceneAsset = nullptr;
+    }
+  }
+
+  void SceneDocument::onSaveAsset()
+  {
+    defaultSave([this](ISerializer& serialzier) {
+      m_SceneAsset->reflect(serialzier);
+    });
   }
 
   static AABB calcBounds(const MeshRenderer& mesh_renderer, const bfTransform& transform)
@@ -289,5 +296,10 @@ namespace bf
   Scene::~Scene()
   {
     removeAllEntities();
+  }
+
+  void assetImportScene(AssetImportCtx& ctx)
+  {
+    ctx.document = ctx.asset_memory->allocateT<SceneDocument>();
   }
 }  // namespace bf

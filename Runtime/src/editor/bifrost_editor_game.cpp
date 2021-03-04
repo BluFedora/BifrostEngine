@@ -138,7 +138,7 @@ namespace bf::editor
     {
       JsonSerializerWriter serializer{engine.tempMemory()};
 
-      if (serializer.beginDocument(false))
+      if (serializer.beginDocument())
       {
         scene->reflect(serializer);
         serializer.endDocument();
@@ -160,7 +160,7 @@ namespace bf::editor
 
       JsonSerializerReader serializer{engine.assets(), engine.tempMemory(), m_SerializedScene};
 
-      if (serializer.beginDocument(false))
+      if (serializer.beginDocument())
       {
         scene->reflect(serializer);
         serializer.endDocument();

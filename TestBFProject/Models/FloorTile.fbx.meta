@@ -1,15 +1,26 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "DD66ECA0-0C25-45C6-8378-D3A1E9D547E8",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "3EDACEF6-F87C-4DC0-B103-6D6BAB91ADD2",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/FloorTile.fbx",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
+        },
+        {
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
+        },
+        {
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "6371520C-7661-4A15-96C9-39F937B3AE32",
-    "name" : "FloorTile.fbx",
-    "version" : 1
+    "Document" : {
+
+    }
 }

@@ -1,15 +1,21 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "E9EBC1A6-C804-416F-8B53-7575A7B90A98",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "89812C73-DC75-4C3B-A4FD-76F362ABBAAC",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/0SpicyDice/Scorpion_AnimRig.fbx",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
+        },
+        {
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "1FB169BE-DC64-456F-AF63-B05E1CDE412E",
-    "name" : "Scorpion_AnimRig.fbx",
-    "version" : 1
+    "Document" : {
+
+    }
 }

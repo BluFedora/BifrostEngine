@@ -911,14 +911,14 @@ namespace bf
   bfDescriptorSetInfo StandardRenderer::makeMaterialInfo(const MaterialAsset& material)
   {
     const auto defaultTexture = [this](const ARC<TextureAsset>& handle, bfTextureHandle default_tex) -> bfTextureHandle {
-      return handle && handle->status() == AssetStatus::LOADED ? handle->handle() : default_tex;
+      return handle /*&& handle->document().status() == AssetStatus::LOADED*/ ? handle->handle() : default_tex;
     };
 
-    bfTextureHandle albedo            = defaultTexture(material.albedoTexture(), m_WhiteTexture);
-    bfTextureHandle normal            = defaultTexture(material.normalTexture(), m_WhiteTexture);
-    bfTextureHandle metallic          = defaultTexture(material.metallicTexture(), m_DefaultMaterialTexture);
-    bfTextureHandle roughness         = defaultTexture(material.roughnessTexture(), m_DefaultMaterialTexture);
-    bfTextureHandle ambient_occlusion = defaultTexture(material.ambientOcclusionTexture(), m_WhiteTexture);
+    bfTextureHandle albedo            = defaultTexture(material.m_AlbedoTexture, m_WhiteTexture);
+    bfTextureHandle normal            = defaultTexture(material.m_NormalTexture, m_WhiteTexture);
+    bfTextureHandle metallic          = defaultTexture(material.m_MetallicTexture, m_DefaultMaterialTexture);
+    bfTextureHandle roughness         = defaultTexture(material.m_RoughnessTexture, m_DefaultMaterialTexture);
+    bfTextureHandle ambient_occlusion = defaultTexture(material.m_AmbientOcclusionTexture, m_WhiteTexture);
 
     bfDescriptorSetInfo desc_set_material = bfDescriptorSetInfo_make();
 

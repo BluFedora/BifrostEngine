@@ -1,23 +1,54 @@
 # Asset System Outline
 
-## Asset Types
 
-```cpp
-enum AssetType // Built-in Asset Types
-{
-  Script,
-  Texture,
-  ShaderModule,
-  ShaderProgram,
-  Material,
-  Animation2D, // OLD-NAME: SpriteSheet
-  Animation3D,
-  Model,
-  Typeface,
-  SoundFx,
-  Music,
-};
+
+## Document Structure
+
+The asset system is built off of a `Document` model to allow for expressing referential relationships between assets.
+
+```mermaid
+classDiagram
+  class DocumentHeader {
+    version:    u32;
+    references: ResourceRef[];
+  }
+  
+  class Document {
+    header: DocumentHeader;
+    resources: Resource[];
+  }
+  
+  class ResourceRefType {
+    <<enumeration>>
+    EXTERNAL_REF
+    INTERNAL_REF
+  }
+  
+  class ResourceRef {
+    type:   ResourceRefType;
+    ref_id: UUID;
+  }
+  
+  class Resource {
+    uuid:    UUID;
+    name:    String;
+    type:    u32;
+    version: u32;
+    data:    ...;
+  }
+  
+  Document       *-- DocumentHeader: Contains a
+  Document       o-- Resource: Has an Array of
+  DocumentHeader *-- ResourceRef: Has Arrays of
+  ResourceRef    *-- ResourceRefType: Has
 ```
+
+A document is a collection of resources 
+
+
+## ISerializer
+
+
 
 ## Asset Status
 
@@ -111,12 +142,11 @@ struct SoundFxAsset : public BaseAsset
 
 ## Asset Interface
 
-- `void         load(BaseAsset* self, Engine& engine)`
-- `void         reload(BaseAsset* self, Engine& engine)`
-- `void         unload(BaseAsset* self, Engine& engine)`
-- `void         saveContent(BaseAsset* self, Engine& engine, ISerializer& serializer)`
-- `void         saveMeta(BaseAsset* self, Engine& engine, ISerializer& serializer)`
-- `IBaseObject* payload(BaseAsset* self)`
+- `void load(BaseAsset* self, Engine& engine)`
+- `void reload(BaseAsset* self, Engine& engine)`
+- `void unload(BaseAsset* self, Engine& engine)`
+- `void saveContent(BaseAsset* self, Engine& engine, ISerializer& serializer)`
+- `void saveMeta(BaseAsset* self, Engine& engine, ISerializer& serializer)`
 
 ## Asset Map
 
@@ -185,7 +215,20 @@ struct AssetMap
 ## File Extension Registration
 
 ```cpp
-for (const char* ext : {".png", ".jpg", ".jpeg", ...}) {
-  assets.registerAssetType<TextureAsset>(ext, &TextureAssetVTable);
-}
+assets.registerFileExtensions(
+  {".png", ".jpg", ".jpeg", ...},
+  &AssetCreationCallback
+);
 ```
+
+## References / 'Prior Art'
+
+- [Godot's Scene Format](https://docs.godotengine.org/en/stable/development/file_formats/tscn.html)
+- [Unity Scene Format](https://docs.unity3d.com/Manual/FormatDescription.html)
+- [Unity Serialization Details](https://www.programmersought.com/article/4566102035/)
+
+## Tools To Consider Using
+
+  - [Jinja](https://jinja.palletsprojects.com/en/2.11.x/) String _template_ library for python.
+  - [ANTLR](https://www.antlr.org/) Parser generator with support for Java, C#, Python, Js, Go, C++, Swift, PHP and DART. 
+  - [Message Pack](https://msgpack.org/index.html)

@@ -84,7 +84,7 @@ namespace bf::editor
 
     void setAssets(Assets* assets) { m_Assets = assets; }
 
-    bool beginDocument(bool is_array) override;
+    bool beginDocument() override;
     bool pushObject(StringRange key) override;
     bool pushArray(StringRange key, std::size_t& size) override;
     void serialize(StringRange key, bool& value) override;

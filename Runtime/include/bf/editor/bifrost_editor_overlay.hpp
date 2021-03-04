@@ -320,26 +320,26 @@ namespace bf::editor
     friend class ARefreshAsset;
 
    public:
-    ui::Dialog*        m_CurrentDialog;
-    bool               m_OpenNewDialog;
-    ActionMap          m_Actions;
-    StringPool         m_MenuNameStringPool;
-    ui::MainMenu       m_MainMenu;
-    Engine*            m_Engine;
-    ProjectPtr         m_OpenProject;
-    float              m_FpsTimer;
-    int                m_CurrentFps;
-    int                m_CurrentMs;
-    FileSystem         m_FileSystem;
-    WindowList         m_OpenWindows;
-    bool               m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
-    bool               m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
-    bool               m_IsControlDown;                // TODO(SR): This should be stored in a shared Engine Input Module.
-    Selection          m_Selection;
-    bfWindow*          m_MainWindow;
-    ARC<TextureAsset>  m_SceneLightTexture;
-    ARC<MaterialAsset> m_SceneLightMaterial;
-    History            m_History;
+    ui::Dialog*    m_CurrentDialog;
+    bool           m_OpenNewDialog;
+    ActionMap      m_Actions;
+    StringPool     m_MenuNameStringPool;
+    ui::MainMenu   m_MainMenu;
+    Engine*        m_Engine;
+    ProjectPtr     m_OpenProject;
+    float          m_FpsTimer;
+    int            m_CurrentFps;
+    int            m_CurrentMs;
+    FileSystem     m_FileSystem;
+    WindowList     m_OpenWindows;
+    bool           m_IsKeyDown[k_KeyCodeMax + 1];  // TODO(SR): This should be stored in a shared Engine Input Module.
+    bool           m_IsShiftDown;                  // TODO(SR): This should be stored in a shared Engine Input Module.
+    bool           m_IsControlDown;                // TODO(SR): This should be stored in a shared Engine Input Module.
+    Selection      m_Selection;
+    bfWindow*      m_MainWindow;
+    TextureAsset*  m_SceneLightTexture;
+    MaterialAsset* m_SceneLightMaterial;
+    History        m_History;
 
    protected:
     void onCreate(Engine& engine) override;

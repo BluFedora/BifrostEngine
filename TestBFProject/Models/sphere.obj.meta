@@ -1,23 +1,26 @@
 {
-    "sub-assets" : [
+    "Header" : {
+        "m_UUID" : "4CF0FF2C-5EAD-4820-9567-8A758F3A1FCD",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "238BAE09-EFF5-4ECD-817A-439C7E957368",
-            "name" : "Material_#0.material",
-            "version" : 1
+            "m_Name" : "Models/sphere.obj",
+            "m_FileID" : 1,
+            "m_TypeName" : "Model"
         },
         {
-            "sub-assets" : [
-
-            ],
-            "uuid" : "DAA7C07C-CD00-438A-B14E-53307F94EDC2",
-            "name" : "Material_#1.material",
-            "version" : 1
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
+        },
+        {
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 9.22337e+18,
+            "m_TypeName" : "MaterialAsset"
         }
     ],
-    "uuid" : "A006B553-B1C5-44CE-BA2C-893D83C543E0",
-    "name" : "sphere.obj",
-    "version" : 1
+    "Document" : {
+
+    }
 }

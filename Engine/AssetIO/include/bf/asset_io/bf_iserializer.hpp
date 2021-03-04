@@ -34,7 +34,7 @@ namespace bf
   class EntityRef;
   class IARCHandle;
 
-  // Main Serializer API
+  // Serializer API
 
   enum class SerializerMode
   {
@@ -75,7 +75,7 @@ namespace bf
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    virtual bool beginDocument(bool is_array = false) = 0;
+    virtual bool beginDocument() = 0;
     virtual bool hasKey(StringRange key);
     virtual bool pushObject(StringRange key)                   = 0;
     virtual bool pushArray(StringRange key, std::size_t& size) = 0;

@@ -106,9 +106,6 @@ namespace bf
     ~Scene() override;
 
    private:
-    void onLoad() override;
-    void onUnload() override;
-
     void updateDirtyListTransforms();
   };
 
@@ -122,6 +119,19 @@ namespace bf
   }
 
   using SceneAsset = Scene;
+
+  class SceneDocument : public IDocument
+  {
+   public:
+    SceneAsset* m_SceneAsset = nullptr;
+
+   private:
+    AssetStatus onLoad() override;
+    void        onUnload() override;
+    void        onSaveAsset() override;
+  };
+
+  void assetImportScene(AssetImportCtx& ctx);
 }  // namespace bf
 
 BIFROST_META_REGISTER(Quaternionf){

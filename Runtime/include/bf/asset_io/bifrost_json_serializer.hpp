@@ -32,7 +32,7 @@ namespace bf
 
     json::Value& document() { return m_Document; }
 
-    bool beginDocument(bool is_array) override;
+    bool beginDocument() override;
     bool pushObject(StringRange key) override;
     bool pushArray(StringRange key, std::size_t& size) override;
     void serialize(StringRange key, bool& value) override;
@@ -85,7 +85,7 @@ namespace bf
    public:
     JsonSerializerReader(Assets& assets, IMemoryManager& memory, json::Value& document);
 
-    bool beginDocument(bool is_array) override;
+    bool beginDocument() override;
     bool hasKey(StringRange key) override;
     bool pushObject(StringRange key) override;
     bool pushArray(StringRange key, std::size_t& size) override;

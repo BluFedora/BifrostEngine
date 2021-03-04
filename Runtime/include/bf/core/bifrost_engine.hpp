@@ -35,7 +35,7 @@ struct EngineCreateParams : public bfGfxContextCreateParams
 
 namespace bf
 {
-  static constexpr int k_MaxNumCamera = 16;
+  static constexpr int k_MaxNumCamera = 8;
 
   class AnimationSystem;
   class ComponentRenderer;
