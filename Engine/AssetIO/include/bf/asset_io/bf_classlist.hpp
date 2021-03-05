@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*!
- * @file   bf_classlist.hpp
+ * @file   bf_class_id.hpp
  * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Needed to allow for creating of objects from serialized data.
@@ -11,48 +11,74 @@
  * @copyright Copyright (c) 2021
  */
 /******************************************************************************/
-#ifndef BF_CLASSLIST_HPP
-#define BF_CLASSLIST_HPP
+#ifndef BF_CLASS_ID_HPP
+#define BF_CLASS_ID_HPP
+
+#include "bf/StringRange.hpp"  // StringRange
 
 #include <cstdint>  // uint32_t
 
 namespace bf
 {
-  //
-  // [0    - 1023]: Core Object Range
-  // [1024 - 2047]: Asset Type Range
-  // [2048 - 3071]: Component Type Range
-  //
-  enum class BaseObjectClassID : std::uint32_t
+  class IBaseObject;
+  class IMemoryManager;
+
+  using BaseObjectCreateFn = IBaseObject* (*)(IMemoryManager& memory);
+
+  struct BaseObjectTypeInfo
   {
-    CORE_OBJECT_RANGE_START = 0u,
-    BASE_OBJECT             = CORE_OBJECT_RANGE_START + 0u,
-    ENTITY                  = CORE_OBJECT_RANGE_START + 1u,
-    BASE_COMPONENT          = CORE_OBJECT_RANGE_START + 2u,
-    BASE_BEHAVIOR           = CORE_OBJECT_RANGE_START + 3u,
-    CORE_OBJECT_RANGE_END,
-
-    ASSET_RANGE_START = 1024u,
-    TEXTURE_ASSET     = ASSET_RANGE_START + 0u,
-    MATERIAL_ASSET    = ASSET_RANGE_START + 1u,
-    ANIMATION3D_ASSET = ASSET_RANGE_START + 2u,
-    SPRITESHEET_ASSET = ASSET_RANGE_START + 3u,
-    MODEL_ASSET       = ASSET_RANGE_START + 4u,
-    SCENE_ASSET       = ASSET_RANGE_START + 4u,
-    ASSET_RANGE_END,
-
-    COMPONENT_RANGE_START = 2048u,
-    MESH_RENDERER         = COMPONENT_RANGE_START + 0u,
-    SKINNED_MESH_RENDERER = COMPONENT_RANGE_START + 1u,
-    SPRITE_RENDERER       = COMPONENT_RANGE_START + 2u,
-    SPRITE_ANIMATOR       = COMPONENT_RANGE_START + 3u,
-    LIGHT                 = COMPONENT_RANGE_START + 4u,
-    PARTICLE_SYSTEM       = COMPONENT_RANGE_START + 5u,
-    COMPONENT_RANGE_END,
+    StringRange        name   = {};
+    BaseObjectCreateFn create = nullptr;
   };
+
+  namespace ClassID
+  {
+    //
+    // [0    - 1023]: Core Object Range
+    // [1024 - 2047]: Asset Type Range
+    // [2048 - 3071]: Component Type Range
+    //
+    enum Type
+    {
+      CORE_OBJECT_RANGE_START = 0u,
+      BASE_OBJECT             = CORE_OBJECT_RANGE_START + 0u,
+      ENTITY                  = CORE_OBJECT_RANGE_START + 1u,
+      BASE_COMPONENT          = CORE_OBJECT_RANGE_START + 2u,
+      BASE_BEHAVIOR           = CORE_OBJECT_RANGE_START + 3u,
+      CORE_OBJECT_RANGE_END,
+      CORE_OBJECT_RANGE_LENGTH = CORE_OBJECT_RANGE_END - CORE_OBJECT_RANGE_START,
+
+      ASSET_RANGE_START = 1024u,
+      TEXTURE_ASSET     = ASSET_RANGE_START + 0u,
+      MATERIAL_ASSET    = ASSET_RANGE_START + 1u,
+      ANIMATION3D_ASSET = ASSET_RANGE_START + 2u,
+      SPRITESHEET_ASSET = ASSET_RANGE_START + 3u,
+      MODEL_ASSET       = ASSET_RANGE_START + 4u,
+      SCENE_ASSET       = ASSET_RANGE_START + 5u,
+      ASSET_RANGE_END,
+      ASSET_RANGE_RANGE_LENGTH = ASSET_RANGE_END - ASSET_RANGE_START,
+
+      COMPONENT_RANGE_START = 2048u,
+      MESH_RENDERER         = COMPONENT_RANGE_START + 0u,
+      SKINNED_MESH_RENDERER = COMPONENT_RANGE_START + 1u,
+      SPRITE_RENDERER       = COMPONENT_RANGE_START + 2u,
+      SPRITE_ANIMATOR       = COMPONENT_RANGE_START + 3u,
+      LIGHT                 = COMPONENT_RANGE_START + 4u,
+      PARTICLE_SYSTEM       = COMPONENT_RANGE_START + 5u,
+      COMPONENT_RANGE_END,
+      COMPONENT_RANGE_LENGTH = COMPONENT_RANGE_END - COMPONENT_RANGE_START,
+    };
+
+    void               Init();
+    bool               IsBaseObject(ClassID::Type type);
+    bool               IsAsset(ClassID::Type type);
+    bool               IsComponent(ClassID::Type type);
+    void               Register(ClassID::Type type, const BaseObjectTypeInfo& info);
+    BaseObjectTypeInfo Retreive(ClassID::Type type);
+  }  // namespace ClassID
 }  // namespace bf
 
-#endif /* BF_CLASSLIST_HPP */
+#endif /* BF_CLASS_ID_HPP */
 
 /******************************************************************************/
 /*

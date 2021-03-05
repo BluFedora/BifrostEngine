@@ -44,6 +44,11 @@ namespace bf
     std::uint32_t   width() const { return m_TextureHandle ? bfTexture_width(m_TextureHandle) : 0u; }
     std::uint32_t   height() const { return m_TextureHandle ? bfTexture_height(m_TextureHandle) : 0u; }
 
+    ClassID::Type classID() const override
+    {
+      return ClassID::TEXTURE_ASSET;
+    }
+
     void assignNewHandle(bfTextureHandle handle)
     {
       // document().onUnload();
@@ -89,6 +94,11 @@ namespace bf
     ARC<TextureAsset> m_AmbientOcclusionTexture = nullptr;
 
     using Base::Base;
+
+    ClassID::Type classID() const override
+    {
+      return ClassID::MATERIAL_ASSET;
+    }
 
     void clear()
     {
@@ -262,6 +272,11 @@ namespace bf
 
       m_Memory.deallocate(m_Channels, m_NumChannels * sizeof(Channel));
     }
+
+    ClassID::Type classID() const override
+    {
+      return ClassID::ANIMATION3D_ASSET;
+    }
   };
 
   // TODO(SR): This should be declared in a better place.
@@ -306,6 +321,11 @@ namespace bf
 
     std::size_t numBones() const { return m_BoneToModel.length(); }
 
+    ClassID::Type classID() const override
+    {
+      return ClassID::MODEL_ASSET;
+    }
+
    private:
     void loadSkeleton(const ModelSkeleton& skeleton);
     void unload();
@@ -321,8 +341,8 @@ namespace bf
 
   class AssimpDocument final : public IDocument
   {
-    static constexpr std::uint64_t k_AssetIDMaterialFlag  = (std::uint64_t(1) << 63);
-    static constexpr std::uint64_t k_AssetIDAnimationFlag = (std::uint64_t(1) << 62);
+    static constexpr std::uint32_t k_AssetIDMaterialFlag  = (std::uint32_t(1) << 31);
+    static constexpr std::uint32_t k_AssetIDAnimationFlag = (std::uint32_t(1) << 30);
 
    private:
     ModelAsset* m_ModelAsset = nullptr;

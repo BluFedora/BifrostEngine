@@ -1,23 +1,23 @@
 {
     "Header" : {
-        "m_UUID" : "458C3181-5A93-4384-9E7A-9126F4882B5B",
+        "m_UUID" : "2CD54D97-2C3F-487F-961C-3FB7801DF9A3",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/plane.obj",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#1.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         }
     ],
     "Document" : {

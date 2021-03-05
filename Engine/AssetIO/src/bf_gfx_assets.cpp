@@ -299,7 +299,7 @@ namespace bf
       forEachWithIndex(*model_result.materials, [&](const AssetPBRMaterial& src_mat, std::size_t index) {
         string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "Material_#%i.material", int(index));
 
-        ResourceID material_id = {k_AssetIDMaterialFlag | std::uint64_t(index)};
+        ResourceID material_id = {k_AssetIDMaterialFlag | std::uint32_t(index)};
         auto*      material    = addAsset<MaterialAsset>(material_id, {name_buffer, name_length});
 
         assign_texture(material->m_AlbedoTexture, src_mat, PBRTextureType::DIFFUSE);
@@ -315,7 +315,7 @@ namespace bf
       forEachWithIndex(*model_result.animations, [&](const ModelAnimation& src_animation, std::size_t anim_index) {
         string_utils::fmtBuffer(name_buffer, sizeof(name_buffer), &name_length, "%s#_%i.anim", src_animation.name.data, int(anim_index));
 
-        ResourceID  animation_id = {k_AssetIDAnimationFlag | std::uint64_t(anim_index)};
+        ResourceID  animation_id = {k_AssetIDAnimationFlag | std::uint32_t(anim_index)};
         auto* const animation    = addAsset<Anim3DAsset>(animation_id, {name_buffer, name_length}, assetMemory());
 
         animation->m_Duration       = src_animation.duration;

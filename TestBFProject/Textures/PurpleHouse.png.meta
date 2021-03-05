@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "253C6704-0571-49F6-968A-BBE938853E60",
+        "m_UUID" : "DCC06409-0E46-451D-B39E-26982A5947E7",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Textures/PurpleHouse.png",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

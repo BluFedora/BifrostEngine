@@ -182,7 +182,7 @@ add_executable(
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
-  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp")
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" "Engine/Runtime/src/core/bf_class_id.cpp")
 
 add_executable(
   StandaloneRuntime
@@ -210,7 +210,7 @@ add_executable(
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
-  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp")
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" "Engine/Runtime/src/core/bf_class_id.cpp")
 
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")

@@ -243,6 +243,7 @@ namespace bf
 
     bfLogger_init(&logger_config);
     bfJob::initialize();
+    ClassID::Init();
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 

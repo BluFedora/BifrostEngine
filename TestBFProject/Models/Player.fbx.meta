@@ -1,18 +1,18 @@
 {
     "Header" : {
-        "m_UUID" : "0200B369-B4EC-4146-918C-3D1A2035AB99",
+        "m_UUID" : "A3EA9EFB-FD47-4E33-84DD-A38954A113F2",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/Player.fbx",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         }
     ],
     "Document" : {

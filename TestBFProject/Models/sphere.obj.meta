@@ -1,23 +1,163 @@
 {
     "Header" : {
-        "m_UUID" : "4CF0FF2C-5EAD-4820-9567-8A758F3A1FCD",
+        "m_UUID" : "238597B2-B528-45E0-8C2E-715F9095549C",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/sphere.obj",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#1.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 3.25469e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
         }
     ],
     "Document" : {

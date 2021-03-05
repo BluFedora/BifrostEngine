@@ -301,19 +301,19 @@ namespace bf
             doc->serializeMetaInfo(reader);
             reader.endDocument();
           }
-
-          if (bfUUID_numberIsEmpty(&doc->m_UUID))
-          {
-            doc->m_UUID    = bfUUID_generate().as_number;
-            needs_reimport = true;
-          }
-
-          m_AssetSet.insert(doc);
         }
         else  // If we could not find meta file then mark asset as dirty to be saved later.
         {
           needs_reimport = true;
         }
+
+        if (bfUUID_numberIsEmpty(&doc->m_UUID))
+        {
+          doc->m_UUID    = bfUUID_generate().as_number;
+          needs_reimport = true;
+        }
+
+        m_AssetSet.insert(doc);
 
         if (needs_reimport)
         {

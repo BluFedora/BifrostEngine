@@ -1,23 +1,23 @@
 {
     "Header" : {
-        "m_UUID" : "0DCF1FDB-30FC-4707-904B-294380911C1F",
+        "m_UUID" : "5FB91C2E-65B7-4243-8A1B-9EB5517B0675",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/cultchar.obj",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#1.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         }
     ],
     "Document" : {

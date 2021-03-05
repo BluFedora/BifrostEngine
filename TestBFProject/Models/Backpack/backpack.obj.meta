@@ -1,23 +1,23 @@
 {
     "Header" : {
-        "m_UUID" : "682BB3B8-2A86-4BCC-A5C6-657560C39C9B",
+        "m_UUID" : "58879D51-1894-4B6D-B0FF-84680910636F",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/Backpack/backpack.obj",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#1.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         }
     ],
     "Document" : {

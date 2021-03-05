@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "9321BD9C-3F1B-4CF4-9D4B-17250D6A56BE",
+        "m_UUID" : "DCB21031-1FA7-4985-88BE-34213447B162",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Textures/ornate-brass_ue/ornate-brass_albedo.png",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

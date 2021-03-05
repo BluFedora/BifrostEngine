@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "EAD08CEB-4A4A-4491-A64E-E76445EF2888",
+        "m_UUID" : "FFE3DCEF-A9AA-4E42-B922-36658EE94C84",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Models/Backpack/ao.jpg",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

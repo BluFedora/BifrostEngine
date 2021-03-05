@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "F2C8D49E-74AD-4135-AB90-B81617DE342E",
+        "m_UUID" : "432AD295-282A-43D6-A885-269958EDFF7E",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1025,
             "m_Name" : "Materials/BlankMat.material",
-            "m_FileID" : 1,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

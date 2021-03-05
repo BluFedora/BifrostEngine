@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "DA8057A6-4498-4A6E-A4AC-67282B5EE772",
+        "m_UUID" : "2D9259B9-E1AB-47F6-BE87-3B4C4B762093",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Textures/ornate-brass_ue/ornate-brass_preview.jpg",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

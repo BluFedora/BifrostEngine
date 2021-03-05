@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "318A27FB-DF94-4977-96A3-7678F55F8504",
+        "m_UUID" : "42B9946A-1917-48D4-87AB-06277C714155",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Textures/texture.png",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

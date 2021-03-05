@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "E4E997FB-9CF4-48D0-AE98-AD31C239345C",
+        "m_UUID" : "5DBAC133-E9D8-47FC-8763-1E03791BC085",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1025,
             "m_Name" : "Materials/PurpleHouse.material",
-            "m_FileID" : 1,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

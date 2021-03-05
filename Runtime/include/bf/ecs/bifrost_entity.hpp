@@ -102,6 +102,8 @@ namespace bf
    public:
     Entity(Scene& scene, StringRange name = "Unnamed");
 
+    ClassID::Type classID() const override { return ClassID::ENTITY; }
+
     // Accessors
 
     [[nodiscard]] Engine&             engine() const;

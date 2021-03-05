@@ -1,18 +1,18 @@
 {
     "Header" : {
-        "m_UUID" : "E9EBC1A6-C804-416F-8B53-7575A7B90A98",
+        "m_UUID" : "D9EA775E-080A-4FEF-A223-7E82DAB308B5",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/0SpicyDice/Scorpion_AnimRig.fbx",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         }
     ],
     "Document" : {

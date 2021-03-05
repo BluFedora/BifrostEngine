@@ -14,20 +14,25 @@
 #ifndef BF_SPRITESHEET_ASSET_HPP
 #define BF_SPRITESHEET_ASSET_HPP
 
-#include "bf_base_asset.hpp" // BaseAsset<T>
 #include "bf/Animation2D.h"   // bfSpritesheet
+#include "bf_base_asset.hpp"  // BaseAsset<T>
 
 namespace bf
 {
   class SpritesheetAsset : public BaseAsset<SpritesheetAsset>
   {
-  private:
+   private:
     bfSpritesheet* m_Anim2DSpritesheet;
 
-  public:
+   public:
     SpritesheetAsset();
 
     bfSpritesheet* spritesheet() const { return m_Anim2DSpritesheet; }
+
+    ClassID::Type classID() const override
+    {
+      return ClassID::SPRITESHEET_ASSET;
+    }
   };
 
   //
@@ -36,7 +41,7 @@ namespace bf
   struct AssetImportCtx;
 
   void assetImportSpritesheet(AssetImportCtx& ctx);
-  
+
 }  // namespace bf
 
 #endif /* BF_SPRITESHEET_ASSET_HPP */

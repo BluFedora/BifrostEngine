@@ -83,6 +83,11 @@ namespace bf
     explicit BaseBehavior(PrivateCtorTag);
 
    public:
+    // Meta
+
+    ClassID::Type classID() const override { return ClassID::BASE_BEHAVIOR; }
+    void          reflect(ISerializer& serializer) override;
+
     bool isActive() const { return isEventFlagSet(IS_ACTIVE); }
 
     // Event Flags API
@@ -95,8 +100,6 @@ namespace bf
     void setOwner(Entity& owner) { m_Owner = &owner; }
 
    public:
-    void reflect(ISerializer& serializer) override;
-
     void setActive(bool is_active);
   };
 

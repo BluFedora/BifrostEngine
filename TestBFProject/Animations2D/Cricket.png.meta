@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "AE5B6410-C2A5-4C68-92C7-A33EBC9425FA",
+        "m_UUID" : "22369A26-2914-4087-9802-FBC036C74EE1",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Animations2D/Cricket.png",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

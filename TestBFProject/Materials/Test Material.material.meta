@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "51DD994B-ACA9-4F85-A5E5-87778EAF70A1",
+        "m_UUID" : "7D2DCF08-9580-489A-A081-89D07B44CC9F",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1025,
             "m_Name" : "Materials/Test Material.material",
-            "m_FileID" : 1,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

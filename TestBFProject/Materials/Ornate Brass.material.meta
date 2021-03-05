@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "1E836711-32ED-44FD-BE88-0CD3C7E694B2",
+        "m_UUID" : "24AA7DE6-1EC9-4379-8D59-03B1DDA173E5",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1025,
             "m_Name" : "Materials/Ornate Brass.material",
-            "m_FileID" : 1,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

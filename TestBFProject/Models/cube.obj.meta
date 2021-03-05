@@ -1,23 +1,23 @@
 {
     "Header" : {
-        "m_UUID" : "B6005F4D-0466-4C0E-96DF-C531AF13DA1A",
+        "m_UUID" : "01C05D27-E809-4CFF-8493-E1CC5957D3A8",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Models/cube.obj",
-            "m_FileID" : 1,
-            "m_TypeName" : "Model"
+            "m_FileID" : 1
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#0.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         },
         {
+            "m_ClassID" : 1028,
             "m_Name" : "Material_#1.material",
-            "m_FileID" : 9.22337e+18,
-            "m_TypeName" : "MaterialAsset"
+            "m_FileID" : 3.25469e+09
         }
     ],
     "Document" : {

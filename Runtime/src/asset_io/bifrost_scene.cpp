@@ -41,6 +41,52 @@ namespace bf
     m_DoDebugDraw = false;
   }
 
+  void Scene::reflect(ISerializer& serializer)
+  {
+    if (serializer.mode() == SerializerMode::LOADING)
+    {
+      // Reset Camera
+      Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
+    }
+
+    // Load Entities
+
+    std::size_t num_entities;
+
+    if (serializer.pushArray("m_Entities", num_entities))
+    {
+      if (serializer.mode() == SerializerMode::LOADING)
+      {
+        while (!m_RootEntities.isEmpty())
+        {
+          m_RootEntities.back().destroy();
+        }
+
+        m_RootEntities.clear();
+
+        for (std::size_t i = 0; i < num_entities; ++i)
+        {
+          addEntity(nullptr);
+        }
+      }
+      // else
+      // {
+      //   num_entities = m_RootEntities.size();
+      // }
+
+      for (Entity& entity : m_RootEntities)
+      {
+        if (serializer.pushObject(entity.name()))
+        {
+          entity.reflect(serializer);
+          serializer.popObject();
+        }
+      }
+
+      serializer.popArray();
+    }
+  }
+
   EntityRef Scene::addEntity(const StringRange& name)
   {
     return m_Engine.createEntity(*this, name);
@@ -118,52 +164,6 @@ namespace bf
          Vector3f(node.bounds.max[0], node.bounds.max[1], node.bounds.max[2]) - Vector3f(node.bounds.min[0], node.bounds.min[1], node.bounds.min[2]),
          color);
       });
-    }
-  }
-
-  void Scene::reflect(ISerializer& serializer)
-  {
-    if (serializer.mode() == SerializerMode::LOADING)
-    {
-      // Reset Camera
-      Camera_init(&m_Camera, nullptr, nullptr, 0.0f, 0.0f);
-    }
-
-    // Load Entities
-
-    std::size_t num_entities;
-
-    if (serializer.pushArray("m_Entities", num_entities))
-    {
-      if (serializer.mode() == SerializerMode::LOADING)
-      {
-        while (!m_RootEntities.isEmpty())
-        {
-          m_RootEntities.back().destroy();
-        }
-
-        m_RootEntities.clear();
-
-        for (std::size_t i = 0; i < num_entities; ++i)
-        {
-          addEntity(nullptr);
-        }
-      }
-      // else
-      // {
-      //   num_entities = m_RootEntities.size();
-      // }
-
-      for (Entity& entity : m_RootEntities)
-      {
-        if (serializer.pushObject(entity.name()))
-        {
-          entity.reflect(serializer);
-          serializer.popObject();
-        }
-      }
-
-      serializer.popArray();
     }
   }
 

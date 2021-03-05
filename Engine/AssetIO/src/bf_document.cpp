@@ -168,37 +168,32 @@ namespace bf
         {
           if (serializer.pushObject(nullptr))
           {
-            String type_name;
-            serializer.serialize("m_TypeName", type_name);
+            std::uint32_t class_id;
+            serializer.serialize("m_ClassID", class_id);
 
-            auto* const type_info = meta::TypeInfoFromName(type_name.c_str());
-
-            if (type_info)
+            if (IsAsset(ClassID::Type(class_id)))
             {
-              auto asset_ = type_info->instantiate(assetMemory());
+              auto type_info = ClassID::Retreive(ClassID::Type(class_id));
 
-              IBaseAsset* obj = asset_.valid() ? (IBaseAsset*)meta::variantToCompatibleT<IBaseObject*>(asset_) : nullptr;
-
-              // TODO(SR): This is a hack, need to think of something better.
-              if (!obj && type_name == "Model")
+              if (type_info.create)
               {
-                obj = assetMemory().allocateT<ModelAsset>(assetMemory());
-              }
+                IBaseAsset* const asset = static_cast<IBaseAsset*>(type_info.create(assetMemory()));
 
-              if (obj)
+                if (asset)
+                {
+                  String     name;
+                  ResourceID id;
+
+                  serializer.serialize("m_Name", name);
+                  serializer.serialize("m_FileID", id.id);
+
+                  addAssetImpl(asset, id, name);
+                }
+              }
+              else
               {
-                String     name;
-                ResourceID id;
-
-                serializer.serialize("m_Name", name);
-                serializer.serialize("m_FileID", id.id);
-
-                addAssetImpl(obj, id, name);
+                std::printf("[IDocument::serializeMetaInfo] No create registered for for '%s'.\n", type_info.name.begin());
               }
-            }
-            else
-            {
-              std::printf("[IDocument::serializeMetaInfo] Failed to find type info for '%s'.\n", type_name.c_str());
             }
 
             serializer.popObject();
@@ -211,12 +206,11 @@ namespace bf
         {
           if (serializer.pushObject(nullptr))
           {
-            const std::string_view type_name_ = asset.type()->name();
-            String                 type_name  = {type_name_.data(), type_name_.length()};
+            std::uint32_t class_id = asset.classID();
 
+            serializer.serialize("m_ClassID", class_id);
             serializer.serialize("m_Name", asset.m_Name);
             serializer.serialize("m_FileID", asset.m_FileID.id);
-            serializer.serialize("m_TypeName", type_name);
 
             serializer.popObject();
           }

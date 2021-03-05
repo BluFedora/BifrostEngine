@@ -262,6 +262,8 @@ struct MetaSystemObjectTest : BaseObject<MetaSystemObjectTest>
 {
   int field = 5;
 
+  ClassID::Type classID() const override { return ClassID::BASE_OBJECT; }
+
   MetaSystemEnumTest TestFunction(int t)
   {
     std::printf("MetaSystemObjectTest::TestFunction(%f)\n", float(t));

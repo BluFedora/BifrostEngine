@@ -1,13 +1,13 @@
 {
     "Header" : {
-        "m_UUID" : "AAB32668-6E77-46A9-965C-232CDD1BAF7D",
+        "m_UUID" : "81530199-F281-4625-B403-2E2F078D2CB5",
         "m_Version" : 1
     },
     "AssetInfos" : [
         {
+            "m_ClassID" : 1024,
             "m_Name" : "Models/Backpack/diffuse.jpg",
-            "m_FileID" : 1,
-            "m_TypeName" : "Texture"
+            "m_FileID" : 1
         }
     ],
     "Document" : {

@@ -9,11 +9,11 @@
             "m_Components" : {
                 "MeshRenderer" : {
                     "m_Material" : {
-                        "docID" : "E4E997FB-9CF4-48D0-AE98-AD31C239345C",
+                        "docID" : "5F9E3B36-CF4C-4FFC-813A-16C04B4DDFC5",
                         "fileID" : 1
                     },
                     "m_Model" : {
-                        "docID" : "DD66ECA0-0C25-45C6-8378-D3A1E9D547E8",
+                        "docID" : "238597B2-B528-45E0-8C2E-715F9095549C",
                         "fileID" : 1
                     },
                     "__Active__" : true

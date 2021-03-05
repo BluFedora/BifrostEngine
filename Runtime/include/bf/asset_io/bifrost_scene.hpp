@@ -59,6 +59,11 @@ namespace bf
    public:
     explicit Scene(Engine& engine);
 
+    // Meta
+
+    ClassID::Type classID() const override { return ClassID::SCENE_ASSET; }
+    void          reflect(ISerializer& serializer) override;
+
     // Accessors
 
     Engine&       engine() const { return m_Engine; }
@@ -93,10 +98,6 @@ namespace bf
     // Behavior
 
     const Array<BaseBehavior*>& behaviors() const { return m_ActiveBehaviors; }
-
-    // Meta
-
-    void reflect(ISerializer& serializer) override;
 
     // Runtime
 
