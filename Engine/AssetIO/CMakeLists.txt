@@ -3,18 +3,18 @@
 project(BF_AssetIO VERSION 0.0.1 DESCRIPTION "")
 
 add_library(
-  "${PROJECT_NAME}_static" STATIC
+  "${PROJECT_NAME}" STATIC
 
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_asset_map.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_base_asset.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_class_id.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_document.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_gfx_assets.hpp"
+  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_iasset_importer.hpp" 
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_iserializer.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_model_loader.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_path_manip.hpp"
   "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_spritesheet_asset.hpp"
-  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_iasset_importer.hpp" 
-  "${PROJECT_SOURCE_DIR}/include/bf/asset_io/bf_classlist.hpp"
  
   "${PROJECT_SOURCE_DIR}/src/bf_asset_map.cpp"
   "${PROJECT_SOURCE_DIR}/src/bf_model_loader.cpp"
@@ -24,7 +24,7 @@ add_library(
 )
 
 target_include_directories(
-  "${PROJECT_NAME}_static"
+  "${PROJECT_NAME}"
 
   PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
@@ -75,7 +75,7 @@ endif()
 # add_subdirectory(lib/assimp)
 
 target_link_libraries(
-  "${PROJECT_NAME}_static"
+  "${PROJECT_NAME}"
   PUBLIC
     BF_Core_static
     BF_Graphics_shared

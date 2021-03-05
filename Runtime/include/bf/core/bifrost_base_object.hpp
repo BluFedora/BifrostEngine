@@ -15,7 +15,7 @@
 #define BF_BASE_OBJECT_HPP
 
 #include "bf/ListView.hpp"                  /* ListNode<T>         */
-#include "bf/asset_io/bf_classlist.hpp"     /* BaseObjectClassID   */
+#include "bf/asset_io/bf_class_id.hpp"      /* ClassID             */
 #include "bf/meta/bifrost_meta_factory.hpp" /* AutoRegisterType<T> */
 
 namespace bf

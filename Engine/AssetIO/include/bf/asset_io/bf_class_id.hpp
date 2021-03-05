@@ -3,7 +3,11 @@
  * @file   bf_class_id.hpp
  * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Needed to allow for creating of objects from serialized data.
+ *   Needed to allow for creating of objects from a serialized unique id.
+ *   All subclasses of IBaseObject should get it's own id added to the
+ *   correct section of the enum.
+ * 
+ *   `ClassID::Init` will need to be edited to account for the new type.
  *
  * @version 0.0.1
  * @date    2021-03-03
@@ -37,6 +41,8 @@ namespace bf
     // [0    - 1023]: Core Object Range
     // [1024 - 2047]: Asset Type Range
     // [2048 - 3071]: Component Type Range
+    // 
+    // When editing this enum rember to change `ClassID::Init` to register the type.
     //
     enum Type
     {

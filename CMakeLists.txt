@@ -245,7 +245,8 @@ target_include_directories(
 target_link_libraries(
   BifrostEngineOLD
   PRIVATE
-    BF_AssetIO_static
+    BF_AssetIO
+
     BF_Core_static
     BF_Platform_shared
     BF_Memory_interface
@@ -289,7 +290,8 @@ target_include_directories(
 target_link_libraries(
   StandaloneRuntime
   PRIVATE
-    BF_AssetIO_static
+    BF_AssetIO
+
     BF_Core_static
     BF_Platform_shared
     BF_Memory_interface

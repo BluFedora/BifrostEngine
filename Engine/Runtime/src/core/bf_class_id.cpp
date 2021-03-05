@@ -3,7 +3,11 @@
  * @file   bf_class_id.cpp
  * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Needed to allow for creating of objects from serialized data.
+ *   Needed to allow for creating of objects from a serialized unique id.
+ *   All subclasses of IBaseObject should get it's own id added to the
+ *   correct section of the enum.
+ * 
+ *   `ClassID::Init` will need to be edited to account for the new type.
  *
  * @version 0.0.1
  * @date    2021-03-03
@@ -11,7 +15,7 @@
  * @copyright Copyright (c) 2021
  */
 /******************************************************************************/
-#include "bf/asset_io/bf_classlist.hpp"
+#include "bf/asset_io/bf_class_id.hpp"
 
 #include "bf/IMemoryManager.hpp"  // IMemoryManager
 
@@ -22,6 +26,7 @@
 
 #include <array>    // array<T>
 #include <cassert>  // assert
+#include <utility>  // pair<F, S>
 
 namespace bf::ClassID
 {
@@ -68,26 +73,38 @@ namespace bf::ClassID
 
   void Init()
   {
-    // Register(BASE_OBJECT, {"BaseObject", &defaultCreate<IBaseObject>});
-    // Register(ENTITY, {"Entity", &defaultCreate<Entity>});
-    // Register(BASE_COMPONENT, {"BaseComponent", &defaultCreate<BaseComponent>});
-    // Register(BASE_BEHAVIOR, {"BaseBehavior", &defaultCreate<BaseBehavior>});
+    static const std::pair<Type, BaseObjectTypeInfo> s_Registry[] =
+     {
+      // Core Object //
 
-    Register(TEXTURE_ASSET, {"TextureAsset", &defaultCreate<TextureAsset>});
-    Register(MATERIAL_ASSET, {"MaterialAsset", &defaultCreate<MaterialAsset>});
-    Register(ANIMATION3D_ASSET, {"Anim3DAsset", &defaultCreateWithAllocatorParam<Anim3DAsset>});
-    Register(SPRITESHEET_ASSET, {"SpritesheetAsset", &defaultCreate<SpritesheetAsset>});
-    Register(MODEL_ASSET, {"ModelAsset", &defaultCreateWithAllocatorParam<ModelAsset>});
-    // Register(SCENE_ASSET, {"SceneAsset", &defaultCreate<SceneAsset>});
+      // {BASE_OBJECT, {"BaseObject", &defaultCreate<IBaseObject>}},
+      // {ENTITY, {"Entity", &defaultCreate<Entity>}},
+      // {BASE_COMPONENT, {"BaseComponent", &defaultCreate<BaseComponent>}},
+      // {BASE_BEHAVIOR, {"BaseBehavior", &defaultCreate<BaseBehavior>}},
 
-    /*
-    Register(MESH_RENDERER, {"Entity", &defaultCreate<Entity>});
-    Register(SKINNED_MESH_RENDERER, {"Entity", &defaultCreate<Entity>});
-    Register(SPRITE_RENDERER, {"Entity", &defaultCreate<Entity>});
-    Register(SPRITE_ANIMATOR, {"Entity", &defaultCreate<Entity>});
-    Register(LIGHT, {"Entity", &defaultCreate<Entity>});
-    Register(PARTICLE_SYSTEM, {"Entity", &defaultCreate<Entity>});
-    */
+      // Asset //
+
+      {TEXTURE_ASSET, {"TextureAsset", &defaultCreate<TextureAsset>}},
+      {MATERIAL_ASSET, {"MaterialAsset", &defaultCreate<MaterialAsset>}},
+      {ANIMATION3D_ASSET, {"Anim3DAsset", &defaultCreateWithAllocatorParam<Anim3DAsset>}},
+      {SPRITESHEET_ASSET, {"SpritesheetAsset", &defaultCreate<SpritesheetAsset>}},
+      {MODEL_ASSET, {"ModelAsset", &defaultCreateWithAllocatorParam<ModelAsset>}},
+      // {SCENE_ASSET, {"SceneAsset", &defaultCreate<SceneAsset>}},
+
+      // Component //
+
+      // {MESH_RENDERER, {"MeshRenderer", &defaultCreate<MeshRenderer>}},
+      // {SKINNED_MESH_RENDERER, {"SkinnedMeshRenderer", &defaultCreate<SkinnedMeshRenderer>}},
+      // {SPRITE_RENDERER, {"SpriteRenderer", &defaultCreate<SpriteRenderer>}},
+      // {SPRITE_ANIMATOR, {"SpriteAnimator", &defaultCreate<SpriteAnimator>}},
+      // {LIGHT, {"Light", &defaultCreate<Light>}},
+      // {PARTICLE_SYSTEM, {"ParticleSystem", &defaultCreate<ParticleSystem>}},
+     };
+
+    for (const auto& reg : s_Registry)
+    {
+      Register(reg.first, reg.second);
+    }
   }
 
   bool IsBaseObject(ClassID::Type type)
