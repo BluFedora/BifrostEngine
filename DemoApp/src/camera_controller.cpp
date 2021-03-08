@@ -65,17 +65,6 @@ void CameraController::reflect(ISerializer& serializer)
 static std::array<char, bfMegabytes(50)> s_GameplayHeapBacking;
 static FreeListAllocator                 s_GameplayHeap{s_GameplayHeapBacking.data(), s_GameplayHeapBacking.size()};
 
-// Adapted From: [https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion]
-Vector3f RotateVectorByQuat(const Quaternionf& quat, const Vector3f& vector)
-{
-  const Vector3f vec_part    = {quat.x, quat.y, quat.z, 0.0f};
-  const float    scalar_part = quat.w;
-
-  return 2.0f * vec::dot(vec_part, vector) * vec_part +
-         (scalar_part * scalar_part - vec::dot(vec_part, vec_part)) * vector +
-         2.0f * scalar_part * vec::cross(vec_part, vector);
-}
-
 static const uint s_Colors[] = {BIFROST_COLOR_CORAL, BIFROST_COLOR_CORNFLOWERBLUE, BIFROST_COLOR_CORNSILK, BIFROST_COLOR_CYAN, BIFROST_COLOR_DEEPPINK};
 
 static const float k_ChainLinkLen = 0.5f;
@@ -107,7 +96,7 @@ class IkDemo final : public Behavior<IkDemo>
       parent_rot = parent_rotation;
       bfQuaternionf_toMatrix(parent_rotation, &cached_world);
 
-      start_pos       = start_pos + RotateVectorByQuat(total_rotation, {length, 0.0f, 0.0f, 0.0f});
+      start_pos       = start_pos + math::rotateVectorByQuat(total_rotation, {length, 0.0f, 0.0f, 0.0f});
       parent_rotation = total_rotation;
 
       points[1] = start_pos;
@@ -202,7 +191,7 @@ class IkDemo final : public Behavior<IkDemo>
           Mat4x4_multVec(&inv_world, &rot_axis, &rot_axis);
         }
 #else /* Quaternion Method */
-        rot_axis = RotateVectorByQuat(bfQuaternionf_conjugate(&j.parent_rot), rot_axis);
+        rot_axis = math::rotateVectorByQuat(bfQuaternionf_conjugate(&j.parent_rot), rot_axis);
 #endif
 
         // Calculate The Angle

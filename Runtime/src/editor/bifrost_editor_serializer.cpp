@@ -243,17 +243,48 @@ namespace bf::editor
 
   void ImGuiSerializer::serialize(StringRange key, Quaternionf& value)
   {
-    Vector3f euler_deg;
+    static constexpr bool k_IsWorldspace = false;
 
-    bfQuaternionf_toEulerDeg(&value, &euler_deg);
+    Vector3f up      = k_YAxis3f;
+    Vector3f right   = k_XAxis3f;
+    Vector3f forward = k_ZAxis3f;
+
+    if (k_IsWorldspace)
+    {
+      up      = math::rotateVectorByQuat(value, up);
+      right   = math::rotateVectorByQuat(value, right);
+      forward = math::rotateVectorByQuat(value, forward);
+    }
+
+    Vector3f new_euler_deg;
+    Vector3f old_euler_deg;
+
+    bfQuaternionf_toEulerDeg(&value, &old_euler_deg);
+    new_euler_deg = old_euler_deg;
 
     beginChangedCheck();
 
-    serialize(key, euler_deg);
+    serialize(key, new_euler_deg);
 
     if (endChangedCheck())
     {
-      value = bfQuaternionf_fromEulerDeg(euler_deg.x, euler_deg.y, euler_deg.z);
+      if (ImGui::TempInputIsActive(ImGui::GetActiveID()))
+      {
+        value = bfQuaternionf_fromEulerDeg(new_euler_deg.x, new_euler_deg.y, new_euler_deg.z);
+      }
+      else
+      {
+        const Vector3f delta_angle_rad = (new_euler_deg - old_euler_deg) * k_DegToRad;
+
+        const Quaternionf rot_q_x = bfQuaternionf_fromAxisAngleRad(&right, delta_angle_rad.x);
+        const Quaternionf rot_q_y = bfQuaternionf_fromAxisAngleRad(&up, delta_angle_rad.y);
+        const Quaternionf rot_q_z = bfQuaternionf_fromAxisAngleRad(&forward, delta_angle_rad.z);
+
+        value = bfQuaternionf_multQ(&value, &rot_q_x);
+        value = bfQuaternionf_multQ(&value, &rot_q_y);
+        value = bfQuaternionf_multQ(&value, &rot_q_z);
+        bfQuaternionf_normalize(&value);
+      }
     }
   }
 

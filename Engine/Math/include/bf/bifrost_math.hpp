@@ -5,8 +5,8 @@
 //   "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
 //      [https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html]
 //
-#ifndef BIFROST_MATH_HPP
-#define BIFROST_MATH_HPP
+#ifndef BF_MATH_HPP
+#define BF_MATH_HPP
 
 #include "bifrost_math.h"
 #include "math/bifrost_rect2.hpp"
@@ -83,6 +83,17 @@ namespace bf::math
     return std::min(std::max(min, value), max);
   }
 
+  // Adapted From: [https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion]
+  inline static Vector3f rotateVectorByQuat(const Quaternionf& quat, const Vector3f& vector)
+  {
+    const Vector3f vec_part    = {quat.x, quat.y, quat.z, 0.0f};
+    const float    scalar_part = quat.w;
+
+    return 2.0f * vec::dot(vec_part, vector) * vec_part +
+           (scalar_part * scalar_part - vec::dot(vec_part, vec_part)) * vector +
+           2.0f * scalar_part * vec::cross(vec_part, vector);
+  }
+
   // Function Aliases from the C-API
 
   inline constexpr const auto& alignf   = &bfMathAlignf;
@@ -90,4 +101,4 @@ namespace bf::math
   inline constexpr const auto& remapf   = &bfMathRemapf;
 }  // namespace bf::math
 
-#endif /* BIFROST_MATH_HPP */
+#endif /* BF_MATH_HPP */
