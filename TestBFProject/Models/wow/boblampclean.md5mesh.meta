@@ -10,36 +10,6 @@
             "m_FileID" : 1
         },
         {
-            "m_ClassID" : 1028,
-            "m_Name" : "Material_#0.material",
-            "m_FileID" : 3.25469e+09
-        },
-        {
-            "m_ClassID" : 1028,
-            "m_Name" : "Material_#1.material",
-            "m_FileID" : 3.25469e+09
-        },
-        {
-            "m_ClassID" : 1028,
-            "m_Name" : "Material_#2.material",
-            "m_FileID" : 3.25469e+09
-        },
-        {
-            "m_ClassID" : 1028,
-            "m_Name" : "Material_#3.material",
-            "m_FileID" : 3.25469e+09
-        },
-        {
-            "m_ClassID" : 1028,
-            "m_Name" : "Material_#4.material",
-            "m_FileID" : 3.25469e+09
-        },
-        {
-            "m_ClassID" : 1028,
-            "m_Name" : "Material_#5.material",
-            "m_FileID" : 3.25469e+09
-        },
-        {
             "m_ClassID" : 1026,
             "m_Name" : "#_0.anim",
             "m_FileID" : 1.37929e+08

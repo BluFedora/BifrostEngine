@@ -10,12 +10,11 @@
           {
             "id": "851f7988cffd470a",
             "type": "leaf",
-            "dimension": 49.120234604105576,
-            "active": true,
+            "dimension": 15.029325513196481,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/ByteWriterAPISketch.md",
+                "file": "OrganizedThoughts/Mathematics.md",
                 "mode": "source"
               }
             },
@@ -24,11 +23,12 @@
           {
             "id": "81f2acfc1b605f7f",
             "type": "leaf",
-            "dimension": 50.879765395894424,
+            "dimension": 84.97067448680352,
+            "active": true,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/ByteWriterAPISketch.md",
+                "file": "OrganizedThoughts/Mathematics.md",
                 "mode": "preview"
               }
             },
@@ -91,7 +91,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/ByteWriterAPISketch.md",
+                "file": "OrganizedThoughts/Mathematics.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -108,6 +108,8 @@
     "collapsed": true
   },
   "lastOpenFiles": [
+    "OrganizedThoughts/Mathematics.md",
+    "OrganizedThoughts/Untitled.md",
     "OrganizedThoughts/ByteWriterAPISketch.md",
     "Framebuffer.md",
     "OrganizedThoughts/AnimationRuntime.md",
@@ -115,8 +117,6 @@
     "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
     "RenderGraph.md",
-    "cover_image.png.md",
-    "OrganizedThoughts/IPC.md",
-    "vulkan_sync.md"
+    "cover_image.png.md"
   ]
 }

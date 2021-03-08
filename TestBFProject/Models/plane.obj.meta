@@ -1,0 +1,26 @@
+{
+    "Header" : {
+        "m_UUID" : "1D7C3B96-74F1-4406-9C78-7444C81A8649",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Models/plane.obj",
+            "m_FileID" : 1
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
+        }
+    ],
+    "Document" : {
+
+    }
+}
