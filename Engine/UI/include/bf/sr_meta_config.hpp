@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   sr_meta_config.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   This is the place where you can provide specializations for the Meta system
  *   such as Array like data types.

@@ -22,6 +22,7 @@ extern "C" {
 
 enum
 {
+  k_bfUUIDNumberSize     = 16,
   k_bfUUIDStringLength   = 36,
   k_bfUUIDStringCapacity = k_bfUUIDStringLength + 1, /*!< The +1 is for nul terminator. */
 };
@@ -30,11 +31,11 @@ typedef struct bfUUIDNumber
 {
   union
   {
-    char     bytes[16];
-    uint8_t  bytes8[16];
-    uint16_t bytes16[8];
-    uint32_t bytes32[4];
-    uint64_t bytes64[2];
+    char     bytes[k_bfUUIDNumberSize / 1];
+    uint8_t  bytes8[k_bfUUIDNumberSize / 1];
+    uint16_t bytes16[k_bfUUIDNumberSize / 2];
+    uint32_t bytes32[k_bfUUIDNumberSize / 4];
+    uint64_t bytes64[k_bfUUIDNumberSize / 8];
   };
 
 } bfUUIDNumber;

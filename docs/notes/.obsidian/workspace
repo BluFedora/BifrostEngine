@@ -4,13 +4,13 @@
     "type": "split",
     "children": [
       {
-        "id": "d7e0c301b009aef2",
+        "id": "eafbb978f1c05e85",
         "type": "split",
         "children": [
           {
             "id": "851f7988cffd470a",
             "type": "leaf",
-            "dimension": 53.00487276664862,
+            "dimension": 49.120234604105576,
             "active": true,
             "state": {
               "type": "markdown",
@@ -24,7 +24,7 @@
           {
             "id": "81f2acfc1b605f7f",
             "type": "leaf",
-            "dimension": 46.99512723335138,
+            "dimension": 50.879765395894424,
             "state": {
               "type": "markdown",
               "state": {
@@ -35,7 +35,7 @@
             "group": "09bf35f1cb7936de"
           }
         ],
-        "direction": "vertical"
+        "direction": "horizontal"
       }
     ],
     "direction": "vertical"
@@ -109,14 +109,14 @@
   },
   "lastOpenFiles": [
     "OrganizedThoughts/ByteWriterAPISketch.md",
-    "OrganizedThoughts/Interpolation.md",
+    "Framebuffer.md",
     "OrganizedThoughts/AnimationRuntime.md",
+    "OrganizedThoughts/Interpolation.md",
     "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
     "RenderGraph.md",
     "cover_image.png.md",
     "OrganizedThoughts/IPC.md",
-    "vulkan_sync.md",
-    "Random Links.md"
+    "vulkan_sync.md"
   ]
 }

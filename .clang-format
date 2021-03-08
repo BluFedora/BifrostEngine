@@ -1,6 +1,6 @@
-
-# Shareef's Fully Custom Style Guide That will Automatically be applied to
-# the code through clang-format.
+#
+# Shareef's Fully Custom Style Guide That will automatically be applied to the code through clang-format.
+#
 
 BasedOnStyle:                                   Mozilla
 AccessModifierOffset:                           -1

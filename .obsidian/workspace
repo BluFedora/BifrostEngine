@@ -4,31 +4,53 @@
     "type": "split",
     "children": [
       {
-        "id": "b01ae535113ad668",
-        "type": "leaf",
-        "dimension": 50.16797312430011,
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "Engine/AssetIO/README.md",
-            "mode": "source"
+        "id": "6317528f766a82dd",
+        "type": "split",
+        "children": [
+          {
+            "id": "b01ae535113ad668",
+            "type": "leaf",
+            "dimension": 61.21700879765396,
+            "active": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/notes/OrganizedThoughts/Cover.md",
+                "mode": "source"
+              }
+            },
+            "group": "f5b7b7eb183da0ff"
+          },
+          {
+            "id": "8912029754bebe64",
+            "type": "split",
+            "dimension": 38.78299120234604,
+            "children": [
+              {
+                "id": "ffe2c0c2f21dc2c2",
+                "type": "leaf",
+                "state": {
+                  "type": "markdown",
+                  "state": {
+                    "file": "docs/notes/OrganizedThoughts/Cover.md",
+                    "mode": "preview"
+                  }
+                },
+                "group": "f5b7b7eb183da0ff"
+              },
+              {
+                "id": "2721c5bf4ea01b54",
+                "type": "leaf",
+                "state": {
+                  "type": "graph",
+                  "state": {}
+                }
+              }
+            ],
+            "direction": "vertical"
           }
-        },
-        "group": "f5b7b7eb183da0ff"
-      },
-      {
-        "id": "ffe2c0c2f21dc2c2",
-        "type": "leaf",
-        "dimension": 49.83202687569989,
-        "active": true,
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "Engine/AssetIO/README.md",
-            "mode": "preview"
-          }
-        },
-        "group": "f5b7b7eb183da0ff"
+        ],
+        "direction": "horizontal"
       }
     ],
     "direction": "vertical"
@@ -68,7 +90,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 281.5
+    "width": 322
   },
   "right": {
     "id": "cdebc9e85d393563",
@@ -84,7 +106,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Engine/AssetIO/README.md",
+                "file": "docs/notes/OrganizedThoughts/Cover.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -101,15 +123,15 @@
     "collapsed": true
   },
   "lastOpenFiles": [
-    "Engine/AssetIO/README.md",
+    "docs/notes/OrganizedThoughts/Cover.md",
+    "docs/notes/OrganizedThoughts/Unique IDs.md",
+    "Engine/README.md",
+    "docs/notes/OrganizedThoughts/Untitled.md",
     "docs/notes/API_Design_Musings.md",
+    "docs/notes/rising_tide_engine_api.md",
     "docs/notes/RenderGraph.md",
     "docs/notes/Random Links.md",
-    "docs/notes/Framebuffer.md",
-    "BifrostScript/README.md",
-    "OrganizedThoughts/ByteWriterAPISketch.md",
-    "OrganizedThoughts/Interpolation.md",
-    "OrganizedThoughts/AnimationRuntime.md",
-    "OrganizedThoughts/Immediate Mode UI Sketch.md"
+    "docs/notes/bifrost_engine_2020.md",
+    "Engine/AssetIO/README.md"
   ]
 }

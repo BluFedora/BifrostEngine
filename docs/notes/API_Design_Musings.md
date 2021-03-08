@@ -1,4 +1,3 @@
-
 EDITOR OPERATIONS
 
 - Edit Entity Property
@@ -33,7 +32,7 @@ Talking from experience in contemporary PC games, the polycount can be quite gen
 A human character can be around 15.000 and 25.000 triangles, only the body, naked.
 And it can go as high as 50.000-60.000 triangles if you include the character's clothing, props, weapons, etc.
 Probably some characters in really high-end AAA games can be much more, but my guess is that they use a lot of programming magic to make it work.
-But, as always the basic idea is just to use as few as posible. In general terms, if you are not really sure, anything between 10.000 and 30.000 triangles should be safe, for PC.
+But, as always the basic idea is just to use as few as possible. In general terms, if you are not really sure, anything between 10.000 and 30.000 triangles should be safe, for PC.
 For mobile, logically it should be much less, but I wouldn't dare to give you numbers.
 
 As for the other question, you can mix quad polygons and triangles, there is no problem with that and every game model has a mix of those. The only important thing is that the topology is good for animation.
@@ -42,8 +41,6 @@ As for the other question, you can mix quad polygons and triangles, there is no 
 "
 as others have said it depends on your target. But 92K for a single model is too much if that model is for a human model. IIRC, overwatch ingame characters has 60K tris, Ellie from Last of us has 15K tris. Some Uncharted models are around 22-25K tris.
 "
-
-
 
 [https://bitbashing.io/comparing-floats.html]
 
@@ -60,6 +57,7 @@ With a callback: OnComplete(DestroyPopup)
 
 Ex:
 
+```
 startButton.onClick(
   [](const MouseEvent& evt)
   {
@@ -70,20 +68,21 @@ startButton.onClick(
     evt.target.removeEventListener(evt.self/currentListener);
   }
 );
+```
 
 To have animations be able to be undone after an interaction (press) we should always be animating towards a goal.
 To "Undo" the goal is the starting value.
 
--------------------------------------------------------------------------------------
--------------------------------- Scripted Particles ---------------------------------
--------------------------------------------------------------------------------------
+---
+
+--- Scripted Particles ---
 
 To boot strap the first version an actual scripting language can be used with binding functions
 with the sole purpose of emitting a simple particle byte-code.
 
--------------------------------------------------------------------------------------
--------------------------------- Transform Hierarchy -------------------------------- 
--------------------------------------------------------------------------------------
+---
+
+--- Transform Hierarchy ---
 
 * This will be an immediate update type of system.
 * Systems that update the transform need to happen before any reads.
@@ -114,9 +113,9 @@ Physics        -> postition: Vec3, scale: Vec3, rotation: Vec3;
 Text Rendering -> obj-world: Matrix4x4;
 Gameplay       -> postition: Vec3, scale: Vec3, rotation: Vec3;
 
--------------------------------------------------------------------------------------
----------------------------------- Prefabs and Meta --------------------------------- 
--------------------------------------------------------------------------------------
+---
+
+--- Prefabs and Meta ---
 
 One major problem with the old prefab system is the inability to be able to override specific properties.
 This is because from the editor's POV it has no context on what is being edited. To give the editor more
@@ -140,7 +139,7 @@ Tide Engine Custom Control List:
 * Audio/name sound table
 * Literally anything that dynamically shows and hides.
 
-** Most of these can probably be solved by having 'type tags' IE more wrapper types with sematic meaning **
+** Most of these can probably be solved by having 'type tags' IE more wrapper types with semantic meaning **
 
 But how do you solve:
   * Custom Buttons
@@ -222,13 +221,11 @@ inspector.pop();
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
                                       RUNTIME META OUTLINE                                         
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+```cpp
 BaseObject:
   Class            : ClassInfo*
   PropertyOverides : HashTable<String, GenericValue>
@@ -277,6 +274,7 @@ EnumElementInfo : BaseMetaInfo
   Value() : size_t
 
 UnionInfo : ClassInfo
+```
 
 ------------------------
 ----- Event System -----
@@ -376,9 +374,7 @@ but then what you have left is an empty husk of a reference.
 // [https://blogs.unity3d.com/2014/05/16/custom-operator-should-we-keep-it/]
 // [https://jacx.net/2015/11/20/dont-use-equals-null-on-unity-objects.html]
 
----------------------------
 -----    Graphics     -----
----------------------------
 
 Overdraw Optimizations:
 - Opaque objects should be front to back sorted.
@@ -416,8 +412,6 @@ Transparency Handling:
     - Gradient Bevel
     - Color Adjust
   - Any blending mode other than the _default_ source-over.
-
-
 
 Editor Idea:
 "Inline Assets" - To make it less intrusive to add sharable properties to field 

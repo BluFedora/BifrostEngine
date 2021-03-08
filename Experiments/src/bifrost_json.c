@@ -329,7 +329,7 @@ void bfJsonWriter_valueString(bfJsonWriter* self, bfJsonString value)
 
 void bfJsonWriter_valueNumber(bfJsonWriter* self, double value)
 {
-  char         number_buffer[22];
+  char         number_buffer[25];
   const size_t number_buffer_length = (size_t)snprintf(number_buffer, sizeof(number_buffer), "%g", value);
 
   bfJsonWriter_write(self, number_buffer, number_buffer_length);
