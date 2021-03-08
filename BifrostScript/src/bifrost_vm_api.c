@@ -560,7 +560,7 @@ void bfVM_stackLoadVariable(BifrostVM* self, size_t dst_idx, size_t inst_or_clas
   else if (obj->type == BIFROST_VM_OBJ_MODULE)
   {
     BifrostObjModule* const module = (BifrostObjModule*)obj;
-    self->stack_top[dst_idx]       = bfVM_stackFindVariable(module, var_name.bgn, bfStringRange_length(&var_name));
+    self->stack_top[dst_idx]       = bfVM_stackFindVariable(module, var_name.str_bgn, bfStringRange_length(&var_name));
   }
   else
   {
@@ -740,7 +740,7 @@ void bfVM_stackSetString(BifrostVM* self, size_t idx, const char* value)
 void bfVM_stackSetStringLen(BifrostVM* self, size_t idx, const char* value, size_t len)
 {
   bfVM_assertStackIndex(self, idx);
-  self->stack_top[idx] = bfVMValue_fromPointer(bfVM_createString(self, (bfStringRange){.bgn = value, .end = value + len}));
+  self->stack_top[idx] = bfVMValue_fromPointer(bfVM_createString(self, (bfStringRange){.str_bgn = value, .str_end = value + len}));
 }
 
 void bfVM_stackSetNumber(BifrostVM* self, size_t idx, bfFloat64 value)
@@ -1743,7 +1743,7 @@ static int bfVM_getSymbolHelper(const void* lhs, const void* rhs)
   const size_t               lhs_len = bfStringRange_length(name);
   const size_t               rhs_len = bfVMString_length(*sym);
 
-  return lhs_len == rhs_len && bfVMString_ccmpn(*sym, name->bgn, lhs_len) == 0;
+  return lhs_len == rhs_len && bfVMString_ccmpn(*sym, name->str_bgn, lhs_len) == 0;
 }
 
 uint32_t bfVM_getSymbol(BifrostVM* self, bfStringRange name)
@@ -1754,7 +1754,7 @@ uint32_t bfVM_getSymbol(BifrostVM* self, bfStringRange name)
   {
     idx                = bfVMArray_size(&self->symbols);
     BifrostString* sym = bfVMArray_emplace(self, &self->symbols);
-    *sym               = bfVMString_newLen(self, name.bgn, bfStringRange_length(&name));
+    *sym               = bfVMString_newLen(self, name.str_bgn, bfStringRange_length(&name));
   }
 
   return (uint32_t)idx;
@@ -1830,7 +1830,7 @@ BifrostObjModule* bfVM_importModule(BifrostVM* self, const char* from, const cha
 
     if (module_fn)
     {
-      const bfStringRange name_range  = {.bgn = name, .end = name + name_len};
+      const bfStringRange name_range  = {.str_bgn = name, .str_end = name + name_len};
       BifrostObjStr*      module_name = bfVM_createString(self, name_range);
 
       bfGCPushRoot(self, &module_name->super);

@@ -115,7 +115,7 @@ namespace bf
 
   IBehavior* Entity::addBehavior(const StringRange& name)
   {
-    const meta::BaseClassMetaInfoPtr info = meta::TypeInfoFromName(std::string_view{name.bgn, name.length()});
+    const meta::BaseClassMetaInfoPtr info = meta::TypeInfoFromName(std::string_view{name.str_bgn, name.length()});
 
     if (info)
     {
@@ -138,7 +138,7 @@ namespace bf
 
   IBehavior* Entity::findBehavior(const StringRange& name) const
   {
-    const meta::BaseClassMetaInfoPtr info = meta::TypeInfoFromName(std::string_view{name.bgn, name.length()});
+    const meta::BaseClassMetaInfoPtr info = meta::TypeInfoFromName(std::string_view{name.str_bgn, name.length()});
 
     if (info)
     {
@@ -166,7 +166,7 @@ namespace bf
 
   bool Entity::removeBehavior(const StringRange& name)
   {
-    const meta::BaseClassMetaInfoPtr info = meta::TypeInfoFromName(std::string_view{name.bgn, name.length()});
+    const meta::BaseClassMetaInfoPtr info = meta::TypeInfoFromName(std::string_view{name.str_bgn, name.length()});
 
     if (info)
     {

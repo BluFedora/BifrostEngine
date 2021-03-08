@@ -44,8 +44,8 @@ void bfLexer_reset(BifrostLexer* self)
 bfStringRange bfLexer_currentLine(BifrostLexer* self)
 {
   return (bfStringRange){
-   .bgn = self->source_bgn + self->line_pos_bgn,
-   .end = self->source_bgn + self->line_pos_end,
+   .str_bgn = self->source_bgn + self->line_pos_bgn,
+   .str_end = self->source_bgn + self->line_pos_end,
   };
 }
 
@@ -230,7 +230,7 @@ bfToken bfLexer_nextToken(BifrostLexer* self)
            current_char,
            (unsigned int)self->current_line_no,
            (int)bfStringRange_length(&line),
-           line.bgn);
+           line.str_bgn);
 
           assert(num_bytes < (int)sizeof(buffer) && "Oops Buffer Overflow");
 

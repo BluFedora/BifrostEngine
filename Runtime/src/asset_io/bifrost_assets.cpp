@@ -107,7 +107,7 @@ namespace bf
       char        null_terminated_path[k_MaxLength] = {'\0'};
       std::size_t null_terminated_path_length       = std::min(path.length(), bfCArraySize(null_terminated_path) - 3);
 
-      std::strncpy(null_terminated_path, path.bgn, null_terminated_path_length);
+      std::strncpy(null_terminated_path, path.str_bgn, null_terminated_path_length);
 
 #if BIFROST_PLATFORM_WINDOWS
       null_terminated_path[null_terminated_path_length++] = '\\';

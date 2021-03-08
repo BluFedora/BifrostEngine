@@ -84,7 +84,7 @@ namespace bf::editor
         if (--pool->m_EntryStorage[entry_idx].ref_count == 0)
         {
           pool->m_Table.remove(pool->m_EntryStorage[entry_idx].data);
-          pool->m_EntryStorage.memory().deallocate(const_cast<char*>(pool->m_EntryStorage[entry_idx].data.bgn), length() + 1);
+          pool->m_EntryStorage.memory().deallocate(const_cast<char*>(pool->m_EntryStorage[entry_idx].data.str_bgn), length() + 1);
           pool->m_EntryStorage[entry_idx].free_list_next = pool->m_EntryStorageFreeList;
           pool->m_EntryStorageFreeList                   = entry_idx;
         }
@@ -1089,7 +1089,7 @@ namespace bf::editor
         for (std::size_t i = 0; i < cmds.size(); ++i)
         {
           StringRange name          = cmds[i]->name();
-          char*       name_nul_term = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "%.*s", int(name.length()), name.bgn);
+          char*       name_nul_term = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "%.*s", int(name.length()), name.str_bgn);
 
           if (ImGui::Selectable(name_nul_term, (i + 1) == stack_top))
           {
@@ -1313,7 +1313,7 @@ namespace bf::editor
       LinearAllocatorScope temp_mem_scope   = temp_mem;
       const StringRange    project_dir      = path::directory(path);
       const TempBuffer     project_json_str = project_file.readAll(temp_mem);
-      const AssetError     err              = m_Engine->assets().setRootPath(std::string_view{project_dir.bgn, project_dir.length()});
+      const AssetError     err              = m_Engine->assets().setRootPath(std::string_view{project_dir.str_bgn, project_dir.length()});
 
       if (err == AssetError::NONE)
       {

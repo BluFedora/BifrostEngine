@@ -83,7 +83,7 @@ namespace bf::path
   {
     const char* end = file_path.end();
 
-    while (end != file_path.bgn)
+    while (end != file_path.str_bgn)
     {
       if (*end == '/')
       {
@@ -93,7 +93,7 @@ namespace bf::path
       --end;
     }
 
-    return {file_path.bgn, end};
+    return {file_path.str_bgn, end};
   }
 
   StringRange extensionEx(StringRange file_path)

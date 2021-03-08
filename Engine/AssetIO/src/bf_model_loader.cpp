@@ -10,10 +10,10 @@ namespace bf
 {
   static char* stringRangeToString(IMemoryManager& memory, bfStringRange str) noexcept
   {
-    const std::size_t str_length         = str.end - str.bgn;
+    const std::size_t str_length         = str.str_end - str.str_bgn;
     char*             nul_terminated_str = static_cast<char*>(memory.allocate(str_length + 1u));
 
-    std::memcpy(nul_terminated_str, str.bgn, str_length);
+    std::memcpy(nul_terminated_str, str.str_bgn, str_length);
     nul_terminated_str[str_length] = '\0';
 
     return nul_terminated_str;
@@ -205,8 +205,8 @@ namespace bf
     AssetModelLoadResult result              = {};
     IMemoryManager&      memory              = *load_settings.memory;
     const bfStringRange  file_path           = load_settings.file_path;
-    const bool           path_needs_clone    = *file_path.end != '\0';
-    const char* const    nul_terminated_path = path_needs_clone ? stringRangeToString(memory, file_path) : file_path.bgn;
+    const bool           path_needs_clone    = *file_path.str_end != '\0';
+    const char* const    nul_terminated_path = path_needs_clone ? stringRangeToString(memory, file_path) : file_path.str_bgn;
 
     Assimp::Importer importer;
 
@@ -567,7 +567,7 @@ namespace bf
   done:
     if (path_needs_clone)
     {
-      memory.deallocate(const_cast<char*>(nul_terminated_path), (file_path.end - file_path.bgn) + 1);
+      memory.deallocate(const_cast<char*>(nul_terminated_path), (file_path.str_end - file_path.str_bgn) + 1);
     }
 
     return result;

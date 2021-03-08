@@ -42,7 +42,7 @@ BifrostObjModule* bfVM_createModule(struct BifrostVM_t* self, bfStringRange name
 {
   BifrostObjModule* module = allocObj(self, sizeof(BifrostObjModule), BIFROST_VM_OBJ_MODULE);
 
-  module->name      = bfVMString_newLen(self, name.bgn, bfStringRange_length(&name));
+  module->name      = bfVMString_newLen(self, name.str_bgn, bfStringRange_length(&name));
   module->variables = bfVMArray_newA(self, module->variables, 32);
   memset(&module->init_fn, 0x0, sizeof(module->init_fn));
   module->init_fn.module = module;
@@ -57,7 +57,7 @@ BifrostObjClass* bfVM_createClass(struct BifrostVM_t* self, BifrostObjModule* mo
 {
   BifrostObjClass* clz = allocObj(self, sizeof(BifrostObjClass), BIFROST_VM_OBJ_CLASS);
 
-  clz->name               = bfVMString_newLen(self, name.bgn, bfStringRange_length(&name));
+  clz->name               = bfVMString_newLen(self, name.str_bgn, bfStringRange_length(&name));
   clz->base_clz           = base_clz;
   clz->module             = module;
   clz->symbols            = bfVMArray_newA(self, clz->symbols, 32);
@@ -129,7 +129,7 @@ BifrostObjStr* bfVM_createString(struct BifrostVM_t* self, bfStringRange value)
 {
   BifrostObjStr* obj = allocObj(self, sizeof(BifrostObjStr), BIFROST_VM_OBJ_STRING);
 
-  obj->value = bfVMString_newLen(self, value.bgn, bfStringRange_length(&value));
+  obj->value = bfVMString_newLen(self, value.str_bgn, bfStringRange_length(&value));
   bfVMString_unescape(obj->value);
   obj->hash = bfVMString_hashN(obj->value, bfVMString_length(obj->value));
 

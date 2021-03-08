@@ -123,7 +123,7 @@ typedef enum
 // This is in this file because of the "size_t".
 static size_t bfStringRange_length(const bfStringRange* self)
 {
-  return self->end - self->bgn;
+  return self->str_end - self->str_bgn;
 }
 
 /*!

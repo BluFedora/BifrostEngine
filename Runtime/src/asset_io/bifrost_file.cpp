@@ -95,7 +95,7 @@ namespace bf
     {
       const char* dot_start = path.end();
 
-      while (dot_start != path.bgn)
+      while (dot_start != path.str_bgn)
       {
         if (*dot_start == '.')
         {

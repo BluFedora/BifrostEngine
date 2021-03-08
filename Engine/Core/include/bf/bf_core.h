@@ -86,8 +86,8 @@ typedef double        bfFloat64;
 */
 typedef struct bfStringRange_t
 {
-  const char* bgn;
-  const char* end;
+  const char* str_bgn;
+  const char* str_end;
 
 } bfStringRange;
 
@@ -104,8 +104,8 @@ constexpr
   };
 #else
   return (bfStringRange){
-   .bgn = bgn,
-   .end = bgn + length,
+   .str_bgn = bgn,
+   .str_end = bgn + length,
   };
 #endif
 }

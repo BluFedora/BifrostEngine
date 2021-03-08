@@ -486,7 +486,7 @@ namespace bf
 
     operator bool() const noexcept
     {
-      return error.bgn == nullptr;
+      return error.str_bgn == nullptr;
     }
 
     // Private API

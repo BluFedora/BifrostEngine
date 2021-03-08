@@ -63,8 +63,7 @@ namespace bf
 
     [[nodiscard]] std::size_t length() const noexcept
     {
-      // bfStringRange_length();
-      return bfStringRange::end - bgn;
+      return str_end - str_bgn;
     }
 
     [[nodiscard]] char operator[](std::size_t i) const
@@ -77,7 +76,7 @@ namespace bf
       const std::size_t lhs_length = length();
       const std::size_t rhs_length = rhs.length();
 
-      return lhs_length == rhs_length && std::strncmp(bgn, rhs.bgn, lhs_length) == 0;
+      return lhs_length == rhs_length && std::strncmp(str_bgn, rhs.str_bgn, lhs_length) == 0;
     }
 
     // Assumes a nul terminated string. If you only want to compare with a piece then use StringRange.
@@ -85,7 +84,7 @@ namespace bf
     {
       const std::size_t lhs_length = length();
 
-      return std::strncmp(bgn, rhs, lhs_length) == 0 && rhs[lhs_length] == '\0';
+      return std::strncmp(str_bgn, rhs, lhs_length) == 0 && rhs[lhs_length] == '\0';
     }
 
     [[nodiscard]] bool operator!=(const StringRange& rhs) const noexcept
@@ -95,12 +94,12 @@ namespace bf
 
     const char* begin() const noexcept
     {
-      return bgn;
+      return str_bgn;
     }
 
     const char* end() const noexcept
     {
-      return bfStringRange::end;
+      return str_end;
     }
 
     auto rbegin() const noexcept
@@ -123,7 +122,7 @@ namespace bf
 
       const std::size_t len = length();
 
-      return {bgn + std::min(begin_idx, len), bgn + std::min(end_idx, len)};
+      return {str_bgn + std::min(begin_idx, len), str_bgn + std::min(end_idx, len)};
     }
 
     std::size_t find(char character, std::size_t pos = 0) const noexcept
@@ -132,7 +131,7 @@ namespace bf
 
       for (std::size_t i = pos; i < len; ++i)
       {
-        if (bgn[i] == character)
+        if (str_bgn[i] == character)
         {
           return i;
         }
@@ -180,7 +179,7 @@ namespace bf
     }
 
     String(const bfStringRange range) :
-      String(range.bgn, range.end)
+      String(range.str_bgn, range.str_end)
     {
     }
 
