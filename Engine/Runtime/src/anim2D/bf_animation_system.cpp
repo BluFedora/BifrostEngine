@@ -11,40 +11,6 @@ namespace bf
 {
   static const bfTextureSamplerProperties k_SamplerNearestRepeat = bfTextureSamplerProperties_init(BF_SFM_NEAREST, BF_SAM_REPEAT);
 
-  static void onSSChange(bfAnim2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event)
-  {
-    if (change_event.type == bfAnim2DChange_Texture)
-    {
-      Engine* const           engine      = static_cast<Engine*>(bfAnim2D_userData(ctx));
-      SpritesheetAsset* const ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
-      const StringRange       ss_dir      = path::directory(ss_info->document().fullPath());
-      const String            texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
-      Assets&                 assets      = engine->assets();
-
-      __debugbreak();
-      #if 0
-      TextureAsset* const     texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
-
-      // This only needs a to update the texture if it is currently being used.
-      if (texture && texture->document().refCount() > 0)
-      {
-        ARC<TextureAsset> keep_texture_alive = texture;
-
-        texture->assignNewHandle(
-         gfx::createTexturePNG(
-          engine->renderer().m_GfxDevice,
-          bfTextureCreateParams_init2D(
-           BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
-           k_bfTextureUnknownSize,
-           k_bfTextureUnknownSize),
-          k_SamplerNearestRepeat,
-          change_event.texture.texture_bytes_png,
-          change_event.texture.texture_bytes_png_size));
-      }
-      #endif
-    }
-  }
-
   void AnimationSystem::onInit(Engine& engine)
   {
     const bfAnim2DCreateParams create_anim_ctx = {nullptr, &engine};
@@ -202,7 +168,41 @@ namespace bf
 
   void AnimationSystem::onFrameUpdate(Engine& engine, float dt)
   {
-    bfAnim2D_networkUpdate(m_Anim2DCtx, &onSSChange);
+    bfAnim2DChangeEvent ss_change_evt;
+
+    if (bfAnim2D_networkClientUpdate(m_Anim2DCtx, &ss_change_evt))
+    {
+      if (ss_change_evt.type == bfAnim2DChange_Texture)
+      {
+        bfSpritesheet*          spritesheet = ss_change_evt.spritesheet;
+        SpritesheetAsset* const ss_info     = static_cast<SpritesheetAsset*>(spritesheet->user_data);
+        const StringRange       ss_dir      = path::directory(ss_info->document().fullPath());
+        const String            texture_dir = path::append(ss_dir, path::nameWithoutExtension(StringRange{spritesheet->name.str, spritesheet->name.str_len})) + ".png";
+        Assets&                 assets      = engine.assets();
+
+        __debugbreak();
+#if 0
+      TextureAsset* const     texture     = assets.findAssetOfType<TextureAsset>(AbsPath(texture_dir));
+
+      // This only needs a to update the texture if it is currently being used.
+      if (texture && texture->document().refCount() > 0)
+      {
+        ARC<TextureAsset> keep_texture_alive = texture;
+
+        texture->assignNewHandle(
+         gfx::createTexturePNG(
+          engine->renderer().m_GfxDevice,
+          bfTextureCreateParams_init2D(
+           BF_IMAGE_FORMAT_R8G8B8A8_UNORM,
+           k_bfTextureUnknownSize,
+           k_bfTextureUnknownSize),
+          k_SamplerNearestRepeat,
+          change_event.texture.texture_bytes_png,
+          change_event.texture.texture_bytes_png_size));
+      }
+#endif
+      }
+    }
 
     const auto scene = engine.currentScene();
 

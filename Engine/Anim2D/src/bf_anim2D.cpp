@@ -100,7 +100,7 @@ struct NetworkingData final
     }
   }
 
-  void readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback);
+  bool readPackets(bfAnim2DCtx* self, bfAnim2DChangeEvent* out_event);
 };
 
 // Helpers Fwd Declarations
@@ -138,6 +138,26 @@ void* bfAnim2D_userData(const bfAnim2DCtx* self)
   return self->params.user_data;
 }
 
+bfBool8 bfAnim2D_networkClientUpdate(bfAnim2DCtx* self, bfAnim2DChangeEvent* out_event)
+{
+  if (out_event)
+  {
+    if (!self->network_module)
+    {
+      bfNet::Startup();
+      self->network_module = new (bfAllocate(self, sizeof(*self->network_module))) NetworkingData(self->allocator);
+    }
+
+    if (self->network_module)
+    {
+      self->network_module->establishConnection();
+      return self->network_module->readPackets(self, out_event);
+    }
+  }
+
+  return false;
+}
+
 bfSpritesheet* bfAnim2D_loadSpritesheet(bfAnim2DCtx* self, bfStringSpan name, const uint8_t* srsm_bytes, size_t num_srsm_bytes)
 {
   bfSpritesheet* sheet = new (bfAllocate(self, sizeof(bfSpritesheet))) bfSpritesheet;
@@ -159,24 +179,6 @@ bfSpritesheet* bfAnim2D_loadSpritesheet(bfAnim2DCtx* self, bfStringSpan name, co
   }
 
   return sheet;
-}
-
-void bfAnim2D_networkUpdate(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback)
-{
-  if (callback)
-  {
-    if (!self->network_module)
-    {
-      bfNet::Startup();
-      self->network_module = new (bfAllocate(self, sizeof(*self->network_module))) NetworkingData(self->allocator);
-    }
-
-    if (self->network_module)
-    {
-      self->network_module->establishConnection();
-      self->network_module->readPackets(self, callback);
-    }
-  }
 }
 
 void bfAnim2D_stepFrame(
@@ -571,11 +573,13 @@ bfAnim2DPacketTextureChanged bfAnim2DPacketTextureChanged_read(const char* bytes
   return self;
 }
 
-void NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback)
+bool NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DChangeEvent* out_event)
 {
+  bool did_receive_event = false;
+
   if (!is_connected)
   {
-    return;
+    return did_receive_event;
   }
 
   const auto old_current_packet_size = current_packet.size();
@@ -587,7 +591,8 @@ void NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn
     current_packet.clear();
     is_connected = false;
     socket.close();
-    return;
+
+    return did_receive_event;
   }
 
   // received_data.received_bytes_size == -1 when waiting on a message
@@ -640,7 +645,8 @@ void NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn
             change_event.type        = bfAnim2DChange_Animation;
             change_event.spritesheet = sheet;
 
-            callback(self, sheet, change_event);
+            *out_event        = change_event;
+            did_receive_event = true;
           }
 
           break;
@@ -658,7 +664,8 @@ void NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn
             change_event.texture.texture_bytes_png      = packet.texture_data;
             change_event.texture.texture_bytes_png_size = packet.texture_data_size;
 
-            callback(self, sheet, change_event);
+            *out_event        = change_event;
+            did_receive_event = true;
           }
 
           break;
@@ -693,4 +700,6 @@ void NetworkingData::readPackets(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn
       }
     }
   }
+
+  return did_receive_event;
 }

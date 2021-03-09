@@ -50,7 +50,6 @@ typedef struct
 } bfAnim2DChangeEvent;
 
 typedef void*(BF_CDECL* bfAnim2DAllocator)(void* ptr, size_t old_size, size_t new_size, void* user_data);
-typedef void(BF_CDECL* bfAnim2DSpritesheetChangedFn)(bfAnim2DCtx* ctx, bfSpritesheet* spritesheet, bfAnim2DChangeEvent change_event); /*!< Called whenever a spritesheet has changed from SRSM.     */
 
 typedef struct
 {
@@ -118,15 +117,15 @@ typedef struct bfAnim2DUpdateInfo
   float               time_left_for_frame;       //!< Input / Output: Time left for the current animation.
   uint16_t            spritesheet_idx;           //!< Input: The spritesheet this sprite is associated with in the 'spritesheets' array.
   bfAnim2DAnimationID animation;                 //!< Input: The animation to be used.
-  uint16_t            current_frame : 14;        //!< Input / Output: The current frame of the animation.
-  uint16_t            is_looping : 1;            //!< Input: Whether or not the sprite's current frame wraps around.
-  uint16_t            has_finished_playing : 1;  //!< Output: True if the sprite reached the last frame of the animation this frame.
+  uint32_t            current_frame : 30;        //!< Input / Output: The current frame of the animation.
+  uint32_t            is_looping : 1;            //!< Input: Whether or not the sprite's current frame wraps around.
+  uint32_t            has_finished_playing : 1;  //!< Output: True if the sprite reached the last frame of the animation this frame.
 
 } bfAnim2DUpdateInfo;
 
 BF_ANIM2D_API bfAnim2DCtx* bfAnim2D_new(const bfAnim2DCreateParams* params);
 BF_ANIM2D_API void*        bfAnim2D_userData(const bfAnim2DCtx* self);
-BF_ANIM2D_API void         bfAnim2D_networkUpdate(bfAnim2DCtx* self, bfAnim2DSpritesheetChangedFn callback);
+BF_ANIM2D_API bfBool8      bfAnim2D_networkClientUpdate(bfAnim2DCtx* self, bfAnim2DChangeEvent* out_event);
 BF_ANIM2D_API void         bfAnim2D_stepFrame(
          bfAnim2DUpdateInfo*   sprites,
          const bfSpritesheet** spritesheets,
