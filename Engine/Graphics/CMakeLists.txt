@@ -40,7 +40,7 @@ set(
 
   # Shared Source
   "${PROJECT_SOURCE_DIR}/src/bf_gfx_common.c"
-)
+ "src/bf_gfx_object.h")
 
 set(
   BF_GRAPHICS_LIBRARIES
@@ -59,16 +59,17 @@ if (BF_OPT_GRAPHICS_VULKAN)
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_conversions.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_hash.hpp"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_logical_device.h"
-    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_material_pool.cpp"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_material_pool.h"
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_material_pool.cpp"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.cpp"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_physical_device.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_renderpass.cpp"
-    "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
-    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.c"
-  )
+    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
+
+    "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
+   "src/vulkan/bf_vulkan_gfx_object.h")
 
   find_package(Vulkan)
 
@@ -121,7 +122,8 @@ endif()
 
 add_library(
   BF_Graphics_static STATIC
-  "${BF_GRAPHICS_SOURCES}")
+  "${BF_GRAPHICS_SOURCES}"
+)
 
 target_compile_definitions(
   BF_Graphics_static
@@ -141,14 +143,15 @@ target_link_libraries(
   BF_Graphics_static
   PUBLIC
     BF_Platform_static
-    BF_Core_static
+    BF_Core
   PRIVATE
     "${BF_GRAPHICS_LIBRARIES}"
 )
 
 add_library(
   BF_Graphics_shared SHARED
-  "${BF_GRAPHICS_SOURCES}")
+  "${BF_GRAPHICS_SOURCES}"
+  )
 
 target_compile_definitions(
   BF_Graphics_shared
@@ -167,7 +170,9 @@ target_link_libraries(
   BF_Graphics_shared
   PUBLIC
     BF_Platform_shared
-    BF_Core_static
+    BF_Core
   PRIVATE
     "${BF_GRAPHICS_LIBRARIES}"
 )
+
+add_library(BF_Graphics ALIAS BF_Graphics_shared)

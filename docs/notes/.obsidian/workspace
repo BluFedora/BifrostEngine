@@ -14,7 +14,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/Mathematics.md",
+                "file": "OrganizedThoughts/Value Semantics.md",
                 "mode": "source"
               }
             },
@@ -28,7 +28,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/Mathematics.md",
+                "file": "OrganizedThoughts/Value Semantics.md",
                 "mode": "preview"
               }
             },
@@ -91,7 +91,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/Mathematics.md",
+                "file": "OrganizedThoughts/Value Semantics.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -108,6 +108,7 @@
     "collapsed": true
   },
   "lastOpenFiles": [
+    "OrganizedThoughts/Value Semantics.md",
     "OrganizedThoughts/Mathematics.md",
     "OrganizedThoughts/Untitled.md",
     "OrganizedThoughts/ByteWriterAPISketch.md",
@@ -116,7 +117,6 @@
     "OrganizedThoughts/Interpolation.md",
     "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
-    "RenderGraph.md",
-    "cover_image.png.md"
+    "RenderGraph.md"
   ]
 }

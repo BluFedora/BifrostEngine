@@ -1,70 +1,64 @@
 /******************************************************************************/
 /*!
- * @file   bf_gfx_handle.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
- * @brief
- *   Opaque Handle declarations.
- *
- * @version 0.0.1
- * @date    2020-03-22
- *
- * @copyright Copyright (c) 2020-2021
- */
+* @file   bf_core_export.h
+* @author Shareef Raheem (https://blufedora.github.io)
+*
+* @brief
+*  Contains the macros for exporting symbols for the shared library.
+*
+* @version 0.0.1-beta
+* @date    2020-06-21
+*
+* @copyright Copyright (c) 2019-2021 Shareef Abdoul-Raheem
+*/
 /******************************************************************************/
-#ifndef BF_GFX_HANDLE_H
-#define BF_GFX_HANDLE_H
-
-#include <stdint.h> /* uint32_t */
+#ifndef BF_CORE_EXPORT_H
+#define BF_CORE_EXPORT_H
 
 #if __cplusplus
 extern "C" {
 #endif
 
-typedef struct bfBaseGfxID
-{
-  uint32_t generation : 14;
-  uint32_t handle : 18;
+#if defined _WIN32 || defined __CYGWIN__
+#ifdef BF_CORE_EXPORT
 
-} bfBaseGfxID;
+#ifdef __GNUC__
+#define BF_CORE_API __attribute__((dllexport))
+#else
+#define BF_CORE_API __declspec(dllexport)
+#endif
 
-#define BF_DECLARE_HANDLE(T)          \
-  struct bf##T;                       \
-  typedef struct bf##T bf##T;         \
-  typedef bf##T*       bf##T##Handle; \
-  typedef struct bf##T##ID            \
-  {                                   \
-    bfBaseGfxID id;                   \
-  } bf##T##ID
+#elif defined(BF_CORE_EXPORT_STATIC)
 
-BF_DECLARE_HANDLE(GfxContext);
-BF_DECLARE_HANDLE(GfxDevice);
-BF_DECLARE_HANDLE(GfxCommandList);
-BF_DECLARE_HANDLE(Buffer);
-BF_DECLARE_HANDLE(VertexLayoutSet);
-BF_DECLARE_HANDLE(DescriptorSet);
-BF_DECLARE_HANDLE(Renderpass);
-BF_DECLARE_HANDLE(ShaderModule);
-BF_DECLARE_HANDLE(ShaderProgram);
-BF_DECLARE_HANDLE(Texture);
-BF_DECLARE_HANDLE(Framebuffer);
-BF_DECLARE_HANDLE(Pipeline);
-BF_DECLARE_HANDLE(WindowSurface);
-typedef void* bfGfxBaseHandle;
+#define BF_CORE_API
 
-#undef BF_DECLARE_HANDLE
+#else
 
-/* clang-format off */
+#ifdef __GNUC__
+#define BF_CORE_API __attribute__((dllimport))
+#else
+#define BF_CORE_API __declspec(dllimport)
+#endif
 
-#define BF_DEFINE_GFX_HANDLE(T) struct bf##T
-#define BF_NULL_GFX_HANDLE      (void*)0
+#endif
 
-/* clang-format on */
+#define BF_CORE_NOAPI
+
+#else
+#if __GNUC__ >= 4
+#define BF_CORE_API   __attribute__((visibility("default")))
+#define BF_CORE_NOAPI __attribute__((visibility("hidden")))
+#else
+#define BF_CORE_API
+#define BF_CORE_NOAPI
+#endif
+#endif
 
 #if __cplusplus
 }
 #endif
 
-#endif /* BF_GFX_HANDLE_H */
+#endif /* BF_CORE_EXPORT_H */
 
 /******************************************************************************/
 /*

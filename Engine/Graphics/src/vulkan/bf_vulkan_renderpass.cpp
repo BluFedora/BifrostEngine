@@ -8,7 +8,7 @@
 
 bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRenderpassCreateParams* params)
 {
-  bfRenderpassHandle renderpass = new bfRenderpass();
+  bfRenderpassHandle renderpass = xxx_Alloc<bfRenderpass>();
 
   bfBaseGfxObject_ctor(&renderpass->super, BF_GFX_OBJECT_RENDERPASS);
 
@@ -67,7 +67,6 @@ bfRenderpassHandle bfGfxDevice_newRenderpass(bfGfxDeviceHandle self, const bfRen
   //      "the resolve attachment reference and depth/stencil resolve mode compatibility requirements"
   //
   // [https://renderdoc.org/vkspec_chunked/chap9.html#renderpass-compatibility]
-
 
 
   const auto bfAttToVkAtt = [](const bfAttachmentRefCache* in) -> VkAttachmentReference {
@@ -163,7 +162,7 @@ template<typename T>
 static void DeleteResource(T* obj)
 {
   memset(obj, 0xCD, sizeof(*obj));
-  delete obj;
+  xxx_Free(obj);
 }
 
 void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
@@ -331,7 +330,8 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
     // NOTE(SR):
     //   asan complains about new / delete pairing with different sizes.
-    //   memset(obj, 0xCD, sizeof(*obj));
-    //   delete obj;
+    
+    // memset(obj, 0xCD, sizeof(*obj));
+    // delete obj;
   }
 }

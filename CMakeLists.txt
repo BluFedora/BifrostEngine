@@ -246,15 +246,15 @@ target_link_libraries(
   BifrostEngineOLD
   PRIVATE
     BF_AssetIO
+    BF_Core
+    BF_Graphics
 
-    BF_Core_static
     BF_Platform_shared
     BF_Memory_interface
     BF_Text_static
     BF_TMPUtils
     BF_DataStructuresCxx
     BF_Math_shared
-    BF_Graphics_shared
     bfAnimation2D_shared
     BifrostScript_shared
     BF_UI_shared
@@ -291,15 +291,15 @@ target_link_libraries(
   StandaloneRuntime
   PRIVATE
     BF_AssetIO
+    BF_Core
+    BF_Graphics
 
-    BF_Core_static
     BF_Platform_shared
     BF_Memory_interface
     BF_Text_static
     BF_TMPUtils
     BF_DataStructuresCxx
     BF_Math_shared
-    BF_Graphics_shared
     bfAnimation2D_shared
     BifrostScript_shared
     BF_UI_shared

@@ -4,7 +4,7 @@
 #include "bf/MemoryUtils.h"
 #include "bf/asset_io/bf_iserializer.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
-#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/bf_dbg_logger.h"
 #include "bf/ecs/bifrost_behavior.hpp"
 #include "bf/ecs/bifrost_entity.hpp"
 

@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bifrost_vm.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   A C++17 OOP wrapper around the scripting virtual machine API with helpers 
  *   for binding callables and classes.
@@ -12,7 +12,7 @@
  * @version 0.0.1
  * @date    2020-01-02
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #ifndef BIFROST_VM_HPP
@@ -44,7 +44,7 @@ namespace bf
 
     //
     // NOTE(SR):
-    //   If you want ot be able to to have you _string_ type be automatically
+    //   If you want ot be able to to have your _string_ type be automatically
     //   converted then specialize this template to inherit from `std::true_type`.
     //   Your string must match this 'Concept':
     //
@@ -115,13 +115,10 @@ namespace bf
       {
         return bfVM_stackReadBool(self, slot);
       }
-      else if constexpr (/*std::is_same_v<T, String> || std::is_same_v<T, StringRange> || std::is_same_v<T, std::string>*/ vm::is_string_type<T>::value)
+      else if constexpr (vm::is_string_type<T>::value)
       {
         std::size_t       str_size;
         const char* const str = bfVM_stackReadString(self, slot, &str_size);
-
-        // NOTE(Shareef): 'String', 'StringRange' and 'std::string' all have an iterator style ctor.
-        // return {str, str + str_size};
 
         return vm::string_convert<T>::ctor(str, str + str_size);
       }
@@ -154,16 +151,6 @@ namespace bf
 
       if constexpr (!std::is_same_v<RawT, RetainStack>)
       {
-#if 0
-        if constexpr (std::is_same_v<RawT, std::string> || std::is_same_v<RawT, String>)
-        {
-          bfVM_stackSetStringLen(self, slot, value.c_str(), value.length());
-        }
-        else if constexpr (std::is_same_v<RawT, StringRange> || std::is_same_v<RawT, bfStringRange>)
-        {
-          bfVM_stackSetStringLen(self, slot, value.bgn, value.end - value.bgn);
-        }
-#endif
         if constexpr (vm::is_string_type<RawT>::value)
         {
           bfVM_stackSetStringLen(self, slot, vm::string_convert<RawT>::c_str(value), vm::string_convert<RawT>::length(value));
@@ -744,3 +731,29 @@ namespace bf
 }  // namespace bf
 
 #endif /* BIFROST_VM_HPP */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

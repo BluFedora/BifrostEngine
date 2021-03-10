@@ -25,7 +25,7 @@
 #include "core/bifrost_engine.hpp"
 #include "core/bifrost_game_state_machine.hpp"
 #include "core/bifrost_igame_state_layer.hpp"
-#include "debug/bifrost_dbg_logger.h"
+#include "bf/bf_dbg_logger.h"
 #include "ecs/bifrost_entity.hpp"
 #include "meta/bifrost_meta_runtime.hpp"
 

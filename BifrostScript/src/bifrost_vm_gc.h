@@ -39,6 +39,7 @@ void*  bfGCDefaultAllocator(void* user_data, void* ptr, size_t old_size, size_t 
 void*  bfGCAllocMemory(struct BifrostVM_t* self, void* ptr, size_t old_size, size_t new_size);
 void   bfGCPushRoot(struct BifrostVM_t* self, struct BifrostObj_t* obj);
 void   bfGCPopRoot(struct BifrostVM_t* self);
+
 #if __cplusplus
 }
 #endif

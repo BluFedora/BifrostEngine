@@ -77,7 +77,8 @@ endif()
 target_link_libraries(
   "${PROJECT_NAME}"
   PUBLIC
-    BF_Core_static
+    BF_Core
+
     BF_Graphics_shared
     BF_Math_shared
     BF_Memory_interface

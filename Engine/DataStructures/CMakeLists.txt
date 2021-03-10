@@ -42,7 +42,8 @@ target_link_libraries(
   BF_DataStructuresCxx 
 
   INTERFACE
-    BF_Core_static
+    BF_Core
+
     BF_DataStructuresC_static
     BF_Memory_interface
 )

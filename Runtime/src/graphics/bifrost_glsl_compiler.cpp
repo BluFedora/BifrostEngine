@@ -13,7 +13,7 @@
 #include "bf/graphics/bifrost_glsl_compiler.hpp"
 
 #include "bf/asset_io/bifrost_file.hpp"
-#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/bf_dbg_logger.h"
 
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>

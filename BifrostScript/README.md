@@ -10,7 +10,6 @@ The syntax is very similar to other imperative programming languages such as Lua
   - C99 + CRT
   - C++17 (Optional helper header for easier binding)
 
-
 ### Example Program
 
 ```swift

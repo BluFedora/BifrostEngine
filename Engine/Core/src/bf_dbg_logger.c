@@ -1,15 +1,15 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_dbg_logger.c
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @file   bf_dbg_logger.c
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
-#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/bf_dbg_logger.h"
 
 #include <assert.h> /* assert */
 #include <string.h> /* memset */
@@ -20,7 +20,7 @@
 #include <stdio.h> /* sprintf, printf */
 #endif
 
-static IBifrostDbgLogger s_ILogger        = {NULL, NULL};
+static bfIDbgLogger s_ILogger        = {NULL, NULL};
 static unsigned          s_IndentLevel    = 0u;
 static bfLoggerLevel     s_LoggerLevel    = BIFROST_LOGGER_LVL_VERBOSE;
 static bfLogColorState   s_ColorState     = {BIFROST_LOGGER_COLOR_WHITE, BIFROST_LOGGER_COLOR_BLACK, 0x0};
@@ -28,7 +28,7 @@ static int               s_HasInitialized = 0;
 
 static void callCallback(bfLoggerLevel level, const char* file, const char* func, int line, const char* format, va_list args);
 
-void bfLogger_init(const IBifrostDbgLogger* logger)
+void bfLogger_init(const bfIDbgLogger* logger)
 {
   assert(!s_HasInitialized && "The logger subsystem was already initialized.");
   assert(logger && logger->callback && "A valid logger must be passed into 'bfLogger_init'");
@@ -151,7 +151,7 @@ static void callCallback(bfLoggerLevel level, const char* file, const char* func
 {
   if (s_ILogger.callback)
   {
-    BifrostDbgLogInfo log_info;
+    bfDbgLogInfo log_info;
     log_info.level        = level;
     log_info.file         = file;
     log_info.func         = func;
@@ -162,3 +162,29 @@ static void callCallback(bfLoggerLevel level, const char* file, const char* func
     s_ILogger.callback(s_ILogger.data, &log_info, args);
   }
 }
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

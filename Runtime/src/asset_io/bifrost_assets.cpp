@@ -21,7 +21,7 @@
 #include "bf/asset_io/bf_path_manip.hpp"
 #include "bf/asset_io/bifrost_file.hpp"             // File
 #include "bf/asset_io/bifrost_json_serializer.hpp"  //
-#include "bf/debug/bifrost_dbg_logger.h"
+#include "bf/bf_dbg_logger.h"
 
 #include <filesystem> /* filesystem::* */
 

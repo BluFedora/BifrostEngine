@@ -1,8 +1,11 @@
 #include "bf/bf_gfx_api.h"
 
+#include "bf_gfx_object.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #undef STB_IMAGE_IMPLEMENTATION
+
 
 #include <assert.h> /* assert         */
 #include <stdlib.h> /* free           */

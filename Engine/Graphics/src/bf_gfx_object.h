@@ -1,76 +1,60 @@
 /******************************************************************************/
 /*!
- * @file   bf_gfx_handle.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @file   bf_gfx_object.h
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Opaque Handle declarations.
+ *   Shared base interface for all graphics objects.
  *
  * @version 0.0.1
- * @date    2020-03-22
+ * @date    2021-03-10
  *
- * @copyright Copyright (c) 2020-2021
+ * @copyright Copyright (c) 2021
  */
 /******************************************************************************/
-#ifndef BF_GFX_HANDLE_H
-#define BF_GFX_HANDLE_H
+#ifndef BF_GFX_OBJECT_H
+#define BF_GFX_OBJECT_H
 
-#include <stdint.h> /* uint32_t */
+#include "bf/bf_gfx_api.h" // bfFrameCount_t
+
+#include <stdint.h> // uint64_t
 
 #if __cplusplus
 extern "C" {
 #endif
-
-typedef struct bfBaseGfxID
+typedef enum bfGfxObjectType
 {
-  uint32_t generation : 14;
-  uint32_t handle : 18;
+  BF_GFX_OBJECT_BUFFER         = 0,
+  BF_GFX_OBJECT_RENDERPASS     = 1,
+  BF_GFX_OBJECT_SHADER_MODULE  = 2,
+  BF_GFX_OBJECT_SHADER_PROGRAM = 3,
+  BF_GFX_OBJECT_DESCRIPTOR_SET = 4,
+  BF_GFX_OBJECT_TEXTURE        = 5,
+  BF_GFX_OBJECT_FRAMEBUFFER    = 6,
+  BF_GFX_OBJECT_PIPELINE       = 7,
 
-} bfBaseGfxID;
+} bfGfxObjectType;  // 3 bits worth of data.
 
-#define BF_DECLARE_HANDLE(T)          \
-  struct bf##T;                       \
-  typedef struct bf##T bf##T;         \
-  typedef bf##T*       bf##T##Handle; \
-  typedef struct bf##T##ID            \
-  {                                   \
-    bfBaseGfxID id;                   \
-  } bf##T##ID
+typedef struct bfBaseGfxObject bfBaseGfxObject;
+struct bfBaseGfxObject
+{
+  bfGfxObjectType  type;
+  bfBaseGfxObject* next;
+  uint64_t         hash_code;
+  bfFrameCount_t   last_frame_used;
+};
 
-BF_DECLARE_HANDLE(GfxContext);
-BF_DECLARE_HANDLE(GfxDevice);
-BF_DECLARE_HANDLE(GfxCommandList);
-BF_DECLARE_HANDLE(Buffer);
-BF_DECLARE_HANDLE(VertexLayoutSet);
-BF_DECLARE_HANDLE(DescriptorSet);
-BF_DECLARE_HANDLE(Renderpass);
-BF_DECLARE_HANDLE(ShaderModule);
-BF_DECLARE_HANDLE(ShaderProgram);
-BF_DECLARE_HANDLE(Texture);
-BF_DECLARE_HANDLE(Framebuffer);
-BF_DECLARE_HANDLE(Pipeline);
-BF_DECLARE_HANDLE(WindowSurface);
-typedef void* bfGfxBaseHandle;
-
-#undef BF_DECLARE_HANDLE
-
-/* clang-format off */
-
-#define BF_DEFINE_GFX_HANDLE(T) struct bf##T
-#define BF_NULL_GFX_HANDLE      (void*)0
-
-/* clang-format on */
-
+void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type);
 #if __cplusplus
 }
 #endif
 
-#endif /* BF_GFX_HANDLE_H */
+#endif /* BF_GFX_OBJECT_H */
 
 /******************************************************************************/
 /*
   MIT License
 
-  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
+  Copyright (c) 2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -8,19 +8,20 @@
 #if __cplusplus
 extern "C" {
 #endif
-typedef struct DescriptorLink_t
+typedef struct DescriptorLink DescriptorLink;
+typedef struct DescriptorLink
 {
-  VkDescriptorPool         handle;
-  uint32_t                 num_textures_left;
-  uint32_t                 num_uniforms_left;
-  uint32_t                 num_descsets_left;
-  uint32_t                 num_active_desc_sets;
-  struct DescriptorLink_t* prev;
-  struct DescriptorLink_t* next;
+  VkDescriptorPool handle;
+  uint32_t         num_textures_left;
+  uint32_t         num_uniforms_left;
+  uint32_t         num_descsets_left;
+  uint32_t         num_active_desc_sets;
+  DescriptorLink*  prev;
+  DescriptorLink*  next;
 
 } DescriptorLink;
 
-typedef struct MaterialPoolCreateParams_t
+typedef struct MaterialPoolCreateParams
 {
   const bfGfxDevice* logical_device;
   uint32_t           num_textures_per_link;
@@ -29,7 +30,7 @@ typedef struct MaterialPoolCreateParams_t
 
 } MaterialPoolCreateParams;
 
-typedef struct MaterialPool_t
+typedef struct MaterialPool
 {
   MaterialPoolCreateParams super;
   DescriptorLink*          head;

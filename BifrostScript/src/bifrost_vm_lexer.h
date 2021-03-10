@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bifrost_vm_lexer.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Tokenizing helpers for strings.
  *
@@ -16,8 +16,8 @@
 
 #include "bf/Core.h" /* bfStringRange */
 
-#include <stdint.h> /* uint32_t */
 #include <stddef.h> /* size_t   */
+#include <stdint.h> /* uint32_t */
 
 #if __cplusplus
 extern "C" {
@@ -26,19 +26,6 @@ typedef uint32_t bfBool32;
 typedef double   bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
-
-#if false
-/*!
- * @brief
- *   A non-owning reference to a string.
-*/
-typedef struct bfStringRange_t
-{
-  const char* bgn;
-  const char* end;
-
-} bfStringRange;
-#endif
 
 /*!
  * @brief
@@ -207,10 +194,10 @@ bfToken       bfLexer_parseString(BifrostLexer* self);
     .type = t, .as = {.str = s }     \
   }
 
-#define BIFROST_TOKEN_MAKE_STR_RANGE(t, s, e)    \
-  (bfToken)                                 \
-  {                                         \
-    .type = t, .as = {.str_range = {s, e} } \
+#define BIFROST_TOKEN_MAKE_STR_RANGE(t, s, e) \
+  (bfToken)                                   \
+  {                                           \
+    .type = t, .as = {.str_range = {s, e} }   \
   }
 
 #define BIFROST_TOKEN_MAKE_NUM(t, v) \
@@ -222,6 +209,10 @@ bfToken       bfLexer_parseString(BifrostLexer* self);
 // TODO(SR): Move To Debug Header
 const char* tokentypeToString(bfTokenType t);
 void        printToken(const bfToken* token);
+
+#include "bifrost/bifrost_vm_export.h"
+
+BF_VM_API void xxx_TestLexer(void);
 #if __cplusplus
 }
 #endif

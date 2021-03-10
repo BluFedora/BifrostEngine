@@ -9,32 +9,7 @@
 extern "C" {
 #endif
 
-BF_DEFINE_GFX_HANDLE(Texture)
-{
-  // General Metadata
-  bfBaseGfxObject      super;
-  bfGfxDeviceHandle    parent;
-  bfTexFeatureFlags    flags;
-  bfBufferPropertyBits memory_properties;
-
-  // CPU Side Data
-  bfTextureType image_type;
-  int32_t       image_width;
-  int32_t       image_height;
-  int32_t       image_depth;
-  uint32_t      image_miplevels;
-
-  // GPU Side Data
-  VkImage          tex_image;
-  VkDeviceMemory   tex_memory;
-  VkImageView      tex_view;
-  VkSampler        tex_sampler;
-  bfGfxImageLayout tex_layout;
-  VkFormat         tex_format;
-  bfGfxSampleFlags tex_samples;
-};
-
-typedef struct VulkanQueueArray_t
+typedef struct VulkanQueueArray
 {
   VkQueueFamilyProperties* queues;
   uint32_t                 size;
@@ -42,7 +17,7 @@ typedef struct VulkanQueueArray_t
 
 } VulkanQueueArray;
 
-typedef struct VulkanSwapchainInfo_t
+typedef struct VulkanSwapchainInfo
 {
   VkSurfaceCapabilitiesKHR capabilities;
   VkSurfaceFormatKHR*      formats;
@@ -52,14 +27,14 @@ typedef struct VulkanSwapchainInfo_t
 
 } VulkanSwapchainInfo;
 
-typedef struct VulkanSwapchainImageList_t
+typedef struct VulkanSwapchainImageList
 {
   bfTexture* images;
   uint32_t   size;
 
 } VulkanSwapchainImageList;
 
-typedef struct VulkanSwapchain_t
+typedef struct VulkanSwapchain
 {
   VkSwapchainKHR           handle;
   VkSurfaceFormatKHR       format;
@@ -72,14 +47,14 @@ typedef struct VulkanSwapchain_t
 
 } VulkanSwapchain;
 
-typedef struct VulkanExtensionList_t
+typedef struct VulkanExtensionList
 {
   VkExtensionProperties* extensions;
   uint32_t               size;
 
 } VulkanExtensionList;
 
-typedef struct VulkanPhysicalDevice_t
+typedef struct VulkanPhysicalDevice
 {
   bfGfxContextHandle               parent;
   VkPhysicalDevice                 handle;

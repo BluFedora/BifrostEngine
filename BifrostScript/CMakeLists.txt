@@ -28,7 +28,7 @@ target_link_libraries(
   BifrostScript
 
   PUBLIC
-    BF_Core_static
+    BF_Core
 )
 
 target_include_directories(
@@ -73,7 +73,7 @@ if(NOT EMSCRIPTEN)
     BifrostScript_shared
     PRIVATE
       BF_DataStructuresC_static
-      BF_Core_static
+      BF_Core
   )
   
   target_compile_definitions(BifrostScript_shared PRIVATE BF_VM_EXPORT)

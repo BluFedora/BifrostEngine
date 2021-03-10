@@ -450,11 +450,6 @@ bfToken bfLexer_parseString(BifrostLexer* self)
   return BIFROST_TOKEN_MAKE_STR_RANGE(CONST_STR, bgn, end);
 }
 
-void bfLexer_dtor(BifrostLexer* self)
-{
-  (void)self; /* Great and Non Allocating. */
-}
-
 const char* tokentypeToString(bfTokenType t)
 {
 #define TT_TO_STR(t) \
@@ -536,4 +531,34 @@ void printToken(const bfToken* token)
   }
 
   printf("\n");
+}
+
+const char xxx_SourceTest[] = bfQuoteStr(
+struct TestStruct : base(SomeTest), init({ HelloSailor = 8*5 }), meta\n
+{\n
+  FieldName: type(float), desc("Hello Good Man");\n
+  \n
+  FieldName: type(int), \n
+             desc("Multi line attribs.");\n
+}\n);
+
+void xxx_TestLexer(void)
+{
+  BifrostLexerParams lexer_params;
+  lexer_params.source = xxx_SourceTest;
+  lexer_params.length = sizeof(xxx_SourceTest);
+  lexer_params.keywords = NULL;
+  lexer_params.num_keywords = 0u;
+  lexer_params.vm           = NULL;
+  lexer_params.do_comments = bfTrue;
+
+  BifrostLexer lexer = bfLexer_make(&lexer_params);
+
+  bfToken token = bfLexer_nextToken(&lexer);
+
+  while (token.type != EOP)
+  {
+    printToken(&token);
+    token = bfLexer_nextToken(&lexer);
+  }
 }

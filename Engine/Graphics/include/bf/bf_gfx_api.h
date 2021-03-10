@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2020-03-22
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #ifndef BF_GFX_API_H
@@ -34,7 +34,7 @@ extern "C" {
 
 /* Forward Declarations */
 struct bfWindow;
-typedef struct bfRenderpassInfo_t bfRenderpassCreateParams;
+typedef struct bfRenderpassInfo bfRenderpassCreateParams;
 
 typedef uint64_t bfBufferSize;
 
@@ -210,7 +210,7 @@ enum
 } /* bfTexFeatureBits */;
 typedef uint16_t bfTexFeatureFlags;
 
-typedef struct
+typedef struct bfTextureCreateParams
 {
   bfTextureType        type;
   bfGfxImageFormat     format;
@@ -230,21 +230,14 @@ BF_GFX_API bfTextureCreateParams bfTextureCreateParams_initCubeMap(uint32_t widt
 BF_GFX_API bfTextureCreateParams bfTextureCreateParams_initColorAttachment(uint32_t width, uint32_t height, bfGfxImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
 BF_GFX_API bfTextureCreateParams bfTextureCreateParams_initDepthAttachment(uint32_t width, uint32_t height, bfGfxImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
 
-typedef struct
-{
-  uint32_t thread_index;
-  int      window_idx;
-
-} bfGfxCommandListCreateParams;
-
-typedef enum
+typedef enum bfStencilFace
 {
   BF_STENCIL_FACE_FRONT,
   BF_STENCIL_FACE_BACK,
 
 } bfStencilFace;
 
-typedef struct
+typedef struct bfGfxFrameInfo
 {
   uint32_t frame_index;
   uint32_t frame_count;
@@ -263,35 +256,9 @@ BF_GFX_API bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHa
 BF_GFX_API void                   bfGfxContext_endFrame(bfGfxContextHandle self);
 BF_GFX_API void                   bfGfxContext_delete(bfGfxContextHandle self);
 
-// TODO(SR): This should not be in this Public API header. Needs to be made internal.
-// \/ BEGIN Internal: \/
-typedef enum
-{
-  BF_GFX_OBJECT_BUFFER         = 0,
-  BF_GFX_OBJECT_RENDERPASS     = 1,
-  BF_GFX_OBJECT_SHADER_MODULE  = 2,
-  BF_GFX_OBJECT_SHADER_PROGRAM = 3,
-  BF_GFX_OBJECT_DESCRIPTOR_SET = 4,
-  BF_GFX_OBJECT_TEXTURE        = 5,
-  BF_GFX_OBJECT_FRAMEBUFFER    = 6,
-  BF_GFX_OBJECT_PIPELINE       = 7,
-
-} bfGfxObjectType;  // 3 bits worth of data.
-
+// TODO(SR): Check if this needs to be in this header.
 #define bfFrameCountMax 0xFFFFFFFF
 typedef uint32_t bfFrameCount_t;
-
-typedef struct bfBaseGfxObject bfBaseGfxObject;
-struct bfBaseGfxObject
-{
-  bfGfxObjectType  type;
-  bfBaseGfxObject* next;
-  uint64_t         hash_code;
-  bfFrameCount_t   last_frame_used;
-};
-
-void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type);
-// ^ END Internal ^
 
 /* Logical Device */
 typedef struct
@@ -341,7 +308,7 @@ BF_GFX_API void                    bfVertexLayout_addVertexLayout(bfVertexLayout
 BF_GFX_API void                    bfVertexLayout_delete(bfVertexLayoutSetHandle self);
 
 /* Renderpass */
-typedef struct
+typedef struct bfAttachmentInfo
 {
   bfTextureHandle  texture;  // [format, layouts[0], sample_count]
   bfGfxImageLayout final_layout;
@@ -349,7 +316,7 @@ typedef struct
 
 } bfAttachmentInfo;
 
-typedef struct
+typedef struct bfSubpassDependency
 {
   uint32_t                subpasses[2];             // [src, dst]
   bfGfxPipelineStageFlags pipeline_stage_flags[2];  // [src, dst]
@@ -360,14 +327,14 @@ typedef struct
 
 typedef uint16_t bfLoadStoreFlags;
 
-typedef struct
+typedef struct bfAttachmentRefCache
 {
   uint32_t         attachment_index;
   bfGfxImageLayout layout;
 
 } bfAttachmentRefCache;
 
-typedef struct
+typedef struct bfSubpassCache
 {
   uint16_t             num_out_attachment_refs;
   uint16_t             num_in_attachment_refs;
@@ -377,7 +344,7 @@ typedef struct
 
 } bfSubpassCache;
 
-typedef struct bfRenderpassInfo_t
+typedef struct bfRenderpassInfo
 {
   uint64_t            hash_code;
   bfLoadStoreFlags    load_ops;
@@ -408,7 +375,7 @@ BF_GFX_API void             bfRenderpassInfo_addDepthOut(bfRenderpassInfo* self,
 BF_GFX_API void             bfRenderpassInfo_addInput(bfRenderpassInfo* self, uint16_t subpass_index, uint32_t attachment);
 BF_GFX_API void             bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDependency* dependencies, uint32_t num_dependencies);
 
-/* Shader Program + Module */
+/* Shader Program / Module */
 BF_GFX_API bfShaderType          bfShaderModule_type(bfShaderModuleHandle self);
 BF_GFX_API bfBool32              bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file);
 BF_GFX_API bfBool32              bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length);
@@ -421,7 +388,7 @@ BF_GFX_API void                  bfShaderProgram_compile(bfShaderProgramHandle s
 BF_GFX_API bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle self, uint32_t index);
 
 /* Descriptor Set */
-typedef enum
+typedef enum bfDescriptorElementInfoType
 {
   BF_DESCRIPTOR_ELEMENT_TEXTURE,
   BF_DESCRIPTOR_ELEMENT_BUFFER,
@@ -431,7 +398,7 @@ typedef enum
 
 } bfDescriptorElementInfoType;
 
-typedef struct
+typedef struct bfDescriptorElementInfo
 {
   bfDescriptorElementInfoType type;
   uint32_t                    binding;
@@ -443,7 +410,7 @@ typedef struct
 
 } bfDescriptorElementInfo;
 
-typedef struct
+typedef struct bfDescriptorSetInfo
 {
   bfDescriptorElementInfo bindings[k_bfGfxDesfcriptorSetMaxLayoutBindings];
   uint32_t                num_bindings;
@@ -475,7 +442,7 @@ BF_GFX_API void             bfTexture_setSampler(bfTextureHandle self, const bfT
 
 /* CommandList */
 
-typedef enum bfPipelineBarrierType_t
+typedef enum bfPipelineBarrierType
 {
   BF_PIPELINE_BARRIER_MEMORY,
   BF_PIPELINE_BARRIER_BUFFER,
@@ -483,7 +450,7 @@ typedef enum bfPipelineBarrierType_t
 
 } bfPipelineBarrierType;
 
-typedef struct
+typedef struct bfPipelineBarrier
 {
   bfPipelineBarrierType type;
   bfGfxAccessFlagsBits  access[2];         /*!< [src, dst]                             */
@@ -519,77 +486,78 @@ BF_GFX_API bfPipelineBarrier bfPipelineBarrier_buffer(bfGfxAccessFlagsBits src_a
 BF_GFX_API bfPipelineBarrier bfPipelineBarrier_image(bfGfxAccessFlagsBits src_access, bfGfxAccessFlagsBits dst_access, bfTextureHandle image, bfGfxImageLayout new_layout);
 
 BF_GFX_API bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self);
-BF_GFX_API void                  bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self);
-BF_GFX_API bfBool32              bfGfxCmdList_begin(bfGfxCommandListHandle self);  // Returns True if no error
-BF_GFX_API void                  bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, bfBool32 reads_same_pixel);
-BF_GFX_API void                  bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel);
-BF_GFX_API void                  bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass);
-BF_GFX_API void                  bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info);
-BF_GFX_API void                  bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue* clear_values);
-BF_GFX_API void                  bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments);
-BF_GFX_API void                  bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);  // 0 => AttachmentWidth, 0 => AttachmentHeight
-BF_GFX_API void                  bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);            // Normalized [0.0f, 1.0f] coords
-BF_GFX_API void                  bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self);
-BF_GFX_API void                  bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self);
-BF_GFX_API void                  bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, bfDrawMode draw_mode);
-BF_GFX_API void                  bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, bfFrontFace front_face);
-BF_GFX_API void                  bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, bfCullFaceFlags cull_face);
-BF_GFX_API void                  bfGfxCmdList_setDepthTesting(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, bfCompareOp op);
-BF_GFX_API void                  bfGfxCmdList_setStencilTesting(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setPrimitiveRestart(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setDepthBias(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setLogicOpEnabled(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op);
-BF_GFX_API void                  bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, bfPolygonFillMode fill_mode);
-BF_GFX_API void                  bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output_attachment_idx, uint8_t color_mask);
-BF_GFX_API void                  bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op);
-BF_GFX_API void                  bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
-BF_GFX_API void                  bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
-BF_GFX_API void                  bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op);
-BF_GFX_API void                  bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
-BF_GFX_API void                  bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
-BF_GFX_API void                  bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op);
-BF_GFX_API void                  bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op);
-BF_GFX_API void                  bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op);
-BF_GFX_API void                  bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, bfStencilFace face, bfCompareOp op);
-BF_GFX_API void                  bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t cmp_mask);
-BF_GFX_API void                  bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t write_mask);
-BF_GFX_API void                  bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, bfStencilFace face, uint8_t ref_mask);
-BF_GFX_API void                  bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states);
-BF_GFX_API void                  bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, float width, float height, const float depth[2]);
-BF_GFX_API void                  bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
-BF_GFX_API void                  bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float constants[4]);
-BF_GFX_API void                  bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value);
-BF_GFX_API void                  bfGfxCmdList_setDepthClampEnabled(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setDepthBoundsTestEnabled(bfGfxCommandListHandle self, bfBool32 value);
-BF_GFX_API void                  bfGfxCmdList_setDepthBounds(bfGfxCommandListHandle self, float min, float max);
-BF_GFX_API void                  bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value);
-BF_GFX_API void                  bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value);
-BF_GFX_API void                  bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value);
-BF_GFX_API void                  bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value);
-BF_GFX_API void                  bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mask);
-BF_GFX_API void                  bfGfxCmdList_bindDrawCallPipeline(bfGfxCommandListHandle self, const bfDrawCallPipeline* pipeline_state);
-BF_GFX_API void                  bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout);
-BF_GFX_API void                  bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
-BF_GFX_API void                  bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, bfGfxIndexType idx_type);
-BF_GFX_API void                  bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
-BF_GFX_API void                  bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
-BF_GFX_API void                  bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info);                 // Call after pipeline is setup.
-BF_GFX_API void                  bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);                                              // Draw Cmds
-BF_GFX_API void                  bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
-BF_GFX_API void                  bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);
-BF_GFX_API void                  bfGfxCmdList_drawIndexedInstanced(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset, uint32_t first_instance, uint32_t num_instances);
-BF_GFX_API void                  bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandListHandle* commands, uint32_t num_commands);  // General
-BF_GFX_API void                  bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self);
-BF_GFX_API void                  bfGfxCmdList_end(bfGfxCommandListHandle self);
-BF_GFX_API void                  bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
-BF_GFX_API void                  bfGfxCmdList_submit(bfGfxCommandListHandle self);
+
+BF_GFX_API void     bfGfxCmdList_setDefaultPipeline(bfGfxCommandListHandle self);
+BF_GFX_API bfBool32 bfGfxCmdList_begin(bfGfxCommandListHandle self);  // Returns True if no error
+BF_GFX_API void     bfGfxCmdList_executionBarrier(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, bfBool32 reads_same_pixel);
+BF_GFX_API void     bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, bfGfxPipelineStageBits src_stage, bfGfxPipelineStageBits dst_stage, const bfPipelineBarrier* barriers, uint32_t num_barriers, bfBool32 reads_same_pixel);
+BF_GFX_API void     bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass);
+BF_GFX_API void     bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info);
+BF_GFX_API void     bfGfxCmdList_setClearValues(bfGfxCommandListHandle self, const bfClearValue* clear_values);
+BF_GFX_API void     bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* attachments);
+BF_GFX_API void     bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);  // 0 => AttachmentWidth, 0 => AttachmentHeight
+BF_GFX_API void     bfGfxCmdList_setRenderAreaRel(bfGfxCommandListHandle self, float x, float y, float width, float height);            // Normalized [0.0f, 1.0f] coords
+BF_GFX_API void     bfGfxCmdList_beginRenderpass(bfGfxCommandListHandle self);
+BF_GFX_API void     bfGfxCmdList_nextSubpass(bfGfxCommandListHandle self);
+BF_GFX_API void     bfGfxCmdList_setDrawMode(bfGfxCommandListHandle self, bfDrawMode draw_mode);
+BF_GFX_API void     bfGfxCmdList_setFrontFace(bfGfxCommandListHandle self, bfFrontFace front_face);
+BF_GFX_API void     bfGfxCmdList_setCullFace(bfGfxCommandListHandle self, bfCullFaceFlags cull_face);
+BF_GFX_API void     bfGfxCmdList_setDepthTesting(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setDepthWrite(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setDepthTestOp(bfGfxCommandListHandle self, bfCompareOp op);
+BF_GFX_API void     bfGfxCmdList_setStencilTesting(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setPrimitiveRestart(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setRasterizerDiscard(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setDepthBias(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setSampleShading(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setAlphaToCoverage(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setAlphaToOne(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setLogicOpEnabled(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setLogicOp(bfGfxCommandListHandle self, bfLogicOp op);
+BF_GFX_API void     bfGfxCmdList_setPolygonFillMode(bfGfxCommandListHandle self, bfPolygonFillMode fill_mode);
+BF_GFX_API void     bfGfxCmdList_setColorWriteMask(bfGfxCommandListHandle self, uint32_t output_attachment_idx, uint8_t color_mask);
+BF_GFX_API void     bfGfxCmdList_setColorBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op);
+BF_GFX_API void     bfGfxCmdList_setBlendSrc(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
+BF_GFX_API void     bfGfxCmdList_setBlendDst(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
+BF_GFX_API void     bfGfxCmdList_setAlphaBlendOp(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendOp op);
+BF_GFX_API void     bfGfxCmdList_setBlendSrcAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
+BF_GFX_API void     bfGfxCmdList_setBlendDstAlpha(bfGfxCommandListHandle self, uint32_t output_attachment_idx, bfBlendFactor factor);
+BF_GFX_API void     bfGfxCmdList_setStencilFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op);
+BF_GFX_API void     bfGfxCmdList_setStencilPassOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op);
+BF_GFX_API void     bfGfxCmdList_setStencilDepthFailOp(bfGfxCommandListHandle self, bfStencilFace face, bfStencilOp op);
+BF_GFX_API void     bfGfxCmdList_setStencilCompareOp(bfGfxCommandListHandle self, bfStencilFace face, bfCompareOp op);
+BF_GFX_API void     bfGfxCmdList_setStencilCompareMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t cmp_mask);
+BF_GFX_API void     bfGfxCmdList_setStencilWriteMask(bfGfxCommandListHandle self, bfStencilFace face, uint8_t write_mask);
+BF_GFX_API void     bfGfxCmdList_setStencilReference(bfGfxCommandListHandle self, bfStencilFace face, uint8_t ref_mask);
+BF_GFX_API void     bfGfxCmdList_setDynamicStates(bfGfxCommandListHandle self, uint16_t dynamic_states);
+BF_GFX_API void     bfGfxCmdList_setViewport(bfGfxCommandListHandle self, float x, float y, float width, float height, const float depth[2]);
+BF_GFX_API void     bfGfxCmdList_setScissorRect(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height);
+BF_GFX_API void     bfGfxCmdList_setBlendConstants(bfGfxCommandListHandle self, const float constants[4]);
+BF_GFX_API void     bfGfxCmdList_setLineWidth(bfGfxCommandListHandle self, float value);
+BF_GFX_API void     bfGfxCmdList_setDepthClampEnabled(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setDepthBoundsTestEnabled(bfGfxCommandListHandle self, bfBool32 value);
+BF_GFX_API void     bfGfxCmdList_setDepthBounds(bfGfxCommandListHandle self, float min, float max);
+BF_GFX_API void     bfGfxCmdList_setDepthBiasConstantFactor(bfGfxCommandListHandle self, float value);
+BF_GFX_API void     bfGfxCmdList_setDepthBiasClamp(bfGfxCommandListHandle self, float value);
+BF_GFX_API void     bfGfxCmdList_setDepthBiasSlopeFactor(bfGfxCommandListHandle self, float value);
+BF_GFX_API void     bfGfxCmdList_setMinSampleShading(bfGfxCommandListHandle self, float value);
+BF_GFX_API void     bfGfxCmdList_setSampleMask(bfGfxCommandListHandle self, uint32_t sample_mask);
+BF_GFX_API void     bfGfxCmdList_bindDrawCallPipeline(bfGfxCommandListHandle self, const bfDrawCallPipeline* pipeline_state);
+BF_GFX_API void     bfGfxCmdList_bindVertexDesc(bfGfxCommandListHandle self, bfVertexLayoutSetHandle vertex_set_layout);
+BF_GFX_API void     bfGfxCmdList_bindVertexBuffers(bfGfxCommandListHandle self, uint32_t first_binding, bfBufferHandle* buffers, uint32_t num_buffers, const uint64_t* offsets);
+BF_GFX_API void     bfGfxCmdList_bindIndexBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, uint64_t offset, bfGfxIndexType idx_type);
+BF_GFX_API void     bfGfxCmdList_bindProgram(bfGfxCommandListHandle self, bfShaderProgramHandle shader);
+BF_GFX_API void     bfGfxCmdList_bindDescriptorSets(bfGfxCommandListHandle self, uint32_t binding, bfDescriptorSetHandle* desc_sets, uint32_t num_desc_sets);  // Call after pipeline is setup.
+BF_GFX_API void     bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_index, const bfDescriptorSetInfo* desc_set_info);                 // Call after pipeline is setup.
+BF_GFX_API void     bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices);                                              // Draw Cmds
+BF_GFX_API void     bfGfxCmdList_drawInstanced(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices, uint32_t first_instance, uint32_t num_instances);
+BF_GFX_API void     bfGfxCmdList_drawIndexed(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset);
+BF_GFX_API void     bfGfxCmdList_drawIndexedInstanced(bfGfxCommandListHandle self, uint32_t num_indices, uint32_t index_offset, int32_t vertex_offset, uint32_t first_instance, uint32_t num_instances);
+BF_GFX_API void     bfGfxCmdList_executeSubCommands(bfGfxCommandListHandle self, bfGfxCommandListHandle* commands, uint32_t num_commands);  // General
+BF_GFX_API void     bfGfxCmdList_endRenderpass(bfGfxCommandListHandle self);
+BF_GFX_API void     bfGfxCmdList_end(bfGfxCommandListHandle self);
+BF_GFX_API void     bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffer, bfBufferSize offset, bfBufferSize size, const void* data);  // Outside Renderpass
+BF_GFX_API void     bfGfxCmdList_submit(bfGfxCommandListHandle self);
 
 #if __cplusplus
 }
@@ -620,7 +588,7 @@ constexpr bfGfxIndexType bfIndexTypeFromT<uint32_t>()
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -4,9 +4,9 @@
 #include "bf/Platform.h"                               // BifrostWindow
 #include "bf/anim2D/bf_animation_system.hpp"           // AnimationSystem
 #include "bf/asset_io/bf_gfx_assets.hpp"               // ***Asset
+#include "bf/bf_dbg_logger.h"                          // bfLog*
 #include "bf/bf_ui.hpp"                                // UI::
 #include "bf/bf_version.h"                             // BF_VERSION_STR
-#include "bf/debug/bifrost_dbg_logger.h"               // bfLog*
 #include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bf/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
 #include "bf/ecs/bifrost_entity.hpp"                   // Entity
@@ -220,9 +220,9 @@ namespace bf
 
   void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
   {
-    IBifrostDbgLogger logger_config{
+    bfIDbgLogger logger_config{
      nullptr,
-     [](void* data, BifrostDbgLogInfo* info, va_list args) {
+     [](void* data, bfDbgLogInfo* info, va_list args) {
        (void)data;
 
        if (info->level != BIFROST_LOGGER_LVL_POP)

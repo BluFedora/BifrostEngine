@@ -42,7 +42,7 @@ extern "C" {
 #endif
 #endif
 
-#define BIFROST_VM_NOAPI
+#define BF_VM_NOAPI
 
 #else
 #if __GNUC__ >= 4

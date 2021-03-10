@@ -6,8 +6,8 @@
 #include <cstddef> /* size_t                */
 #include <cstdint> /* uint64_t              */
 
-struct bfDescriptorSetLayoutInfo_t;
-typedef struct bfDescriptorSetLayoutInfo_t bfDescriptorSetLayoutInfo;
+struct bfDescriptorSetLayoutInfo;
+typedef struct bfDescriptorSetLayoutInfo bfDescriptorSetLayoutInfo;
 
 namespace bf::vk
 {

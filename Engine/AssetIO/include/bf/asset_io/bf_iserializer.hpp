@@ -125,9 +125,9 @@ namespace bf
 
       serialize("__Type__", type);
 
-      if (value.valid())
+      if (m_Mode == SerializerMode::LOADING)
       {
-        if (m_Mode == SerializerMode::LOADING)
+        if (type < std::size(s_DeserializeTable))
         {
           using VariantT     = Variant<Ts...>;
           using DeserializeT = void (*)(ISerializer&, VariantT&);
@@ -137,23 +137,23 @@ namespace bf
            deserializeVariantHelper<VariantT, Ts>...,
           };
 
-          if (type < std::size(s_DeserializeTable))
-          {
-            s_DeserializeTable[type](*this, value);
-          }
-          else
-          {
-            assert(!"Invalid type serialized into this variant.");
-          }
+          s_DeserializeTable[type](*this, value);
         }
         else
         {
+          assert(!"Invalid type serialized into this variant.");
+        }
+      }
+      else
+      {
+        if (value.valid())
+        {
           visit_all(
-           meta::overloaded{
+            meta::overloaded{
             [this](auto& typed_value) {
               serialize("__Value__", typed_value);
             }},
-           value);
+            value);
         }
       }
     }
@@ -187,8 +187,9 @@ namespace bf
     }
 
     template<typename VariantT>
-    static void deserializeVariantHelperVoid(ISerializer& /* self */, VariantT& /* value */)
+    static void deserializeVariantHelperVoid(ISerializer& /* self */, VariantT& value)
     {
+      value.destroy();
     }
   };
 }  // namespace bf

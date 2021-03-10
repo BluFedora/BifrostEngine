@@ -417,8 +417,12 @@ enum class ReturnCode
   err_code = (code);          \
   goto label
 
+extern "C" void xxx_TestLexer(void);
+
 int main(int argc, char* argv[])
 {
+  xxx_TestLexer();
+
   for (const auto& test_fn : s_Test)
   {
     test_fn();

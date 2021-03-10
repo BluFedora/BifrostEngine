@@ -7,7 +7,7 @@
 
 static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, DescriptorLink* next)
 {
-  DescriptorLink* link = (DescriptorLink*)malloc(sizeof(DescriptorLink));
+  DescriptorLink* link = xxx_Alloc<DescriptorLink>();
 
   if (link)
   {
@@ -48,12 +48,12 @@ static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, D
 static void free_link(const bfGfxDevice* device, DescriptorLink* const link)
 {
   vkDestroyDescriptorPool(device->handle, link->handle, NULL);
-  free(link);
+  xxx_Free(link);
 }
 
 BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* const params)
 {
-  BifrostDescriptorPool* const self = (BifrostDescriptorPool*)malloc(sizeof(BifrostDescriptorPool));
+  BifrostDescriptorPool* const self = xxx_Alloc<BifrostDescriptorPool>();
 
   if (self)
   {
@@ -154,5 +154,5 @@ void MaterialPool_delete(BifrostDescriptorPool* const self)
     link = next;
   }
 
-  free(self);
+  xxx_Free(self);
 }

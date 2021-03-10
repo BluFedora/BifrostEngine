@@ -1,16 +1,18 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_dbg_logger.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @file   bf_dbg_logger.h
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
-#ifndef BIFROST_DBG_LOGGER_H
-#define BIFROST_DBG_LOGGER_H
+#ifndef BF_DBG_LOGGER_H
+#define BF_DBG_LOGGER_H
+
+#include "bf_core_export.h" /* BF_CORE_API */
 
 #include <stdarg.h> /* va_list, va_start, va_end */
 
@@ -27,7 +29,7 @@ extern "C" {
 #define bfFormatString(t) t
 #endif
 
-typedef enum
+typedef enum bfLoggerLevel
 {
   BIFROST_LOGGER_LVL_VERBOSE, /*!< Normal logging                                                                                           */
   BIFROST_LOGGER_LVL_WARNING, /*!< When the user does an action that is undesirable but not necessarily bad.                                */
@@ -38,7 +40,7 @@ typedef enum
 
 } bfLoggerLevel;
 
-typedef enum
+typedef enum bfLoggerColor
 {
   /* Available Colors */
   BIFROST_LOGGER_COLOR_BLACK,
@@ -58,7 +60,7 @@ typedef enum
 
 } bfLoggerColor;
 
-typedef struct
+typedef struct bfDbgLogInfo
 {
   bfLoggerLevel level;
   const char*   file;
@@ -67,24 +69,24 @@ typedef struct
   unsigned      indent_level;
   const char*   format;
 
-} BifrostDbgLogInfo;
+} bfDbgLogInfo;
 
-typedef struct
+typedef struct bfIDbgLogger
 {
   void* data;
-  void (*callback)(void* data, BifrostDbgLogInfo* info, va_list args);
+  void (*callback)(void* data, bfDbgLogInfo* info, va_list args);
 
-} IBifrostDbgLogger;
+} bfIDbgLogger;
 
-void bfLogger_init(const IBifrostDbgLogger* logger);
-void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...);
-void bfLogPrint_(bfLoggerLevel level, const char* file, const char* func, int line, bfFormatString(const char*) format, ...);
+BF_CORE_API void bfLogger_init(const bfIDbgLogger* logger);
+BF_CORE_API void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...);
+BF_CORE_API void bfLogPrint_(bfLoggerLevel level, const char* file, const char* func, int line, bfFormatString(const char*) format, ...);
 #if __cplusplus
-void bfLogPop_(const char* file, const char* func, int line, unsigned amount = 1);
+BF_CORE_API void bfLogPop_(const char* file, const char* func, int line, unsigned amount = 1);
 #else
-void bfLogPop_(const char* file, const char* func, int line, unsigned amount);
+BF_CORE_API void bfLogPop_(const char* file, const char* func, int line, unsigned amount);
 #endif
-void bfLogger_deinit(void);
+BF_CORE_API void bfLogger_deinit(void);
 
 /* clang-format off */
 #ifndef bfLogPush
@@ -106,10 +108,36 @@ typedef struct
 } bfLogColorState;
 
 /*! Returns the previous color state. */
-bfLogColorState bfLogSetColor(bfLoggerColor fg_color, bfLoggerColor bg_color, unsigned int flags);
+BF_CORE_API bfLogColorState bfLogSetColor(bfLoggerColor fg_color, bfLoggerColor bg_color, unsigned int flags);
 
 #if __cplusplus
 }
 #endif
 
-#endif /* BIFROST_DBG_LOGGER_H */
+#endif /* BF_DBG_LOGGER_H */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+ * @file   bf_anim2d_api.hpp
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
+ * @brief
+ *   Interface for the SRSA 2D Animation tool's runtime.
+ *
+ * @version 0.0.1
+ * @date    2021-03-09
+ *
+ * @copyright Copyright (c) 2021
+ */
+/******************************************************************************/
 #ifndef BF_ANIM2D_H
 #define BF_ANIM2D_H
 
@@ -17,39 +30,10 @@ extern "C" {
 
 /* clang-format on */
 
-typedef struct bfAnim2DCtx   bfAnim2DCtx;   /*!< Only one of these should need to be created per application, but having more than one is allowed. */
-typedef struct bfSpritesheet bfSpritesheet; /*!< */
-typedef struct bfAnimation   bfAnimation;   /*!< */
+typedef struct bfAnim2DCtx bfAnim2DCtx; /*!< Only one of these should need to be created per application, but having more than one is allowed. */
 
-typedef uint8_t  bfBool8;
 typedef uint32_t bfBool32;
 typedef uint16_t bfAnim2DAnimationID; /*!< Indexes into `bfSpritesheet::animations`. */
-
-typedef enum bfAnim2DChangeEventType
-{
-  bfAnim2DChange_Texture,
-  bfAnim2DChange_Animation,  //!< An animation may have been, added, edited, removed or renamed.
-
-} bfAnim2DChangeEventType;
-
-typedef struct
-{
-  bfAnim2DChangeEventType type;        /*!< The type of change event. */
-  bfSpritesheet*          spritesheet; /*!< The changed spritesheet.  */
-
-  union
-  {
-    struct
-    {
-      const char* texture_bytes_png;
-      uint32_t    texture_bytes_png_size;
-
-    } texture;
-  };
-
-} bfAnim2DChangeEvent;
-
-typedef void*(BF_CDECL* bfAnim2DAllocator)(void* ptr, size_t old_size, size_t new_size, void* user_data);
 
 typedef struct
 {
@@ -81,6 +65,8 @@ typedef struct
 
 } bfStringSpan; /*!< A view into a constant string. */
 
+typedef void*(BF_CDECL* bfAnim2DAllocator)(void* ptr, size_t old_size, size_t new_size, void* user_data);
+
 typedef struct
 {
   bfAnim2DAllocator allocator; /*!< NULL is valid, will just use the CRT's realloc and free. */
@@ -88,14 +74,15 @@ typedef struct
 
 } bfAnim2DCreateParams;
 
-struct bfAnimation /*!<  */
+typedef struct bfAnimation /*!<  */
 {
   bfOwnedString     name;       /*!< */
   bfAnimationFrame* frames;     /*!< */
   uint32_t          num_frames; /*!< */
-};
 
-struct bfSpritesheet /*!< */
+} bfAnimation;
+
+typedef struct bfSpritesheet /*!< */
 {
   bfOwnedString  name;           /*!< */
   bfAnimation*   animations;     /*!< Sorted array of animations.                           */
@@ -106,7 +93,32 @@ struct bfSpritesheet /*!< */
   char           guid[37];       /*!< */
   bfSpritesheet* prev;           /*!< */
   bfSpritesheet* next;           /*!< */
-};
+
+} bfSpritesheet;
+
+typedef enum bfAnim2DChangeEventType
+{
+  bfAnim2DChange_Texture,
+  bfAnim2DChange_Animation,  //!< An animation may have been, added, edited, removed or renamed.
+
+} bfAnim2DChangeEventType;
+
+typedef struct
+{
+  bfAnim2DChangeEventType type;        /*!< The type of change event. */
+  bfSpritesheet*          spritesheet; /*!< The changed spritesheet.  */
+
+  union
+  {
+    struct
+    {
+      const char* texture_bytes_png;
+      uint32_t    texture_bytes_png_size;
+
+    } texture;
+  };
+
+} bfAnim2DChangeEvent;
 
 // Input          - read but untouched by `bfAnim2D_stepFrame`.
 // Output         - are written to and can be left uninitialized.
@@ -118,14 +130,14 @@ typedef struct bfAnim2DUpdateInfo
   uint16_t            spritesheet_idx;           //!< Input: The spritesheet this sprite is associated with in the 'spritesheets' array.
   bfAnim2DAnimationID animation;                 //!< Input: The animation to be used.
   uint32_t            current_frame : 30;        //!< Input / Output: The current frame of the animation.
-  uint32_t            is_looping : 1;            //!< Input: Whether or not the sprite's current frame wraps around.
-  uint32_t            has_finished_playing : 1;  //!< Output: True if the sprite reached the last frame of the animation this frame.
+  bfBool32            is_looping : 1;            //!< Input: Whether or not the sprite's current frame wraps around.
+  bfBool32            has_finished_playing : 1;  //!< Output: True if the sprite reached the last frame of the animation this frame.
 
 } bfAnim2DUpdateInfo;
 
 BF_ANIM2D_API bfAnim2DCtx* bfAnim2D_new(const bfAnim2DCreateParams* params);
 BF_ANIM2D_API void*        bfAnim2D_userData(const bfAnim2DCtx* self);
-BF_ANIM2D_API bfBool8      bfAnim2D_networkClientUpdate(bfAnim2DCtx* self, bfAnim2DChangeEvent* out_event);
+BF_ANIM2D_API bfBool32     bfAnim2D_networkClientUpdate(bfAnim2DCtx* self, bfAnim2DChangeEvent* out_event);
 BF_ANIM2D_API void         bfAnim2D_stepFrame(
          bfAnim2DUpdateInfo*   sprites,
          const bfSpritesheet** spritesheets,
@@ -140,3 +152,29 @@ BF_ANIM2D_API void           bfAnim2D_delete(bfAnim2DCtx* self);
 #endif
 
 #endif /* BF_ANIM2D_H */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

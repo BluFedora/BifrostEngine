@@ -67,8 +67,8 @@ namespace bf
     String               m_FilePathAbs;     //!< The full path to an document in the filesystem.
     StringRange          m_FilePathRel;     //!< Indexes into `IDocument::m_FilePathAbs` for the relative path.
     ListView<IBaseAsset> m_AssetList;       //!< The list of assets this document contains.
-    std::uint32_t        m_AssetListCount;  //!<
-    Assets*              m_AssetManager;    //!<
+    std::uint32_t        m_AssetListCount;  //!< Number of assets stored in this document.
+    Assets*              m_AssetManager;    //!< Backpointer to the owning asset manager.
     ListNode<IDocument>  m_DirtyListNode;   //!< Used with `Assets` to keep track of which assets are dirty and should be saved.
     std::atomic_uint16_t m_Flags;           //!< Various flags about the current state of the document.
     std::atomic_uint16_t m_RefCount;        //!< The number of live references there are to this document.
@@ -96,7 +96,6 @@ namespace bf
     void release();
     void reload();
     void save();
-
     void serializeMetaInfo(ISerializer& serializer);
 
     // Resource Query //
@@ -143,7 +142,7 @@ namespace bf
     virtual void        onReload();                           // By Default calls "onUnload" then "onLoad" but allows for subclasses to optimize the "reload" operation.
 
    protected:
-    // Helpers methods for sub classes //
+    // Helper methods for sub classes //
 
     Assets&         assets() const;
     IMemoryManager& assetMemory() const;

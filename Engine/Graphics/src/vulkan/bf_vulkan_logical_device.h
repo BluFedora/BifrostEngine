@@ -2,10 +2,13 @@
 #define BF_VULKAN_LOGICAL_DEVICE_H
 
 #include "../bf_gfx_object_cache.hpp"
+
 #include "bf_vulkan_hash.hpp"
 #include "bf_vulkan_material_pool.h"
 #include "bf_vulkan_mem_allocator.h"
 #include "bf_vulkan_physical_device.h"
+
+#include "bf_vulkan_gfx_object.h"
 
 BF_DEFINE_GFX_HANDLE(GfxDevice)
 {
@@ -21,126 +24,17 @@ BF_DEFINE_GFX_HANDLE(GfxDevice)
   bfBaseGfxObject*       cached_resources; /* Linked List */
 };
 
-#if __cplusplus
-extern "C" {
-#endif
-BF_DEFINE_GFX_HANDLE(Renderpass)
+template<typename T>
+T* xxx_Alloc()
 {
-  bfBaseGfxObject  super;
-  VkRenderPass     handle;
-  bfRenderpassInfo info;
-};
-
-BF_DEFINE_GFX_HANDLE(Framebuffer)
-{
-  bfBaseGfxObject super;
-  VkFramebuffer   handle;
-};
-
-BF_DEFINE_GFX_HANDLE(Pipeline)
-{
-  bfBaseGfxObject super;
-  VkPipeline      handle;
-};
-
-using VulkanWindow = bfWindowSurface;
-
-BF_DEFINE_GFX_HANDLE(GfxCommandList)
-{
-  bfGfxContextHandle  context;
-  bfGfxDeviceHandle   parent;
-  VkCommandBuffer     handle;
-  VkFence             fence;
-  VulkanWindow*       window;
-  VkRect2D            render_area;
-  bfFramebufferHandle framebuffer;
-  bfPipelineHandle    pipeline;
-  bfPipelineCache     pipeline_state;
-  VkClearValue        clear_colors[k_bfGfxMaxAttachments];
-  uint32_t            attachment_size[2];
-  uint16_t            dynamic_state_dirty;
-  bfBool16            has_command;
-};
-
-BF_DEFINE_GFX_HANDLE(WindowSurface)
-{
-  VkSurfaceKHR           surface;
-  VulkanSwapchainInfo    swapchain_info;
-  VulkanSwapchain        swapchain;
-  VkSemaphore*           is_image_available;
-  VkSemaphore*           is_render_done;
-  uint32_t               image_index;
-  bfBool32               swapchain_needs_deletion;
-  bfBool32               swapchain_needs_creation;
-  bfGfxCommandList       cmd_list_memory[5];
-  bfGfxCommandListHandle current_cmd_list;
-};
-
-BF_DEFINE_GFX_HANDLE(ShaderModule)
-{
-  bfBaseGfxObject   super;
-  bfGfxDeviceHandle parent;
-  bfShaderType      type;
-  VkShaderModule    handle;
-  char              entry_point[k_bfGfxShaderEntryPointNameLength];
-};
-
-typedef struct
-{
-  uint32_t             size;
-  bfShaderModuleHandle elements[BF_SHADER_TYPE_MAX];
-
-} bfShaderModuleList;
-
-typedef struct bfDescriptorSetLayoutInfo_t
-{
-  uint32_t                     num_layout_bindings;
-  VkDescriptorSetLayoutBinding layout_bindings[k_bfGfxDesfcriptorSetMaxLayoutBindings];
-  uint32_t                     num_image_samplers;
-  uint32_t                     num_uniforms;
-
-} bfDescriptorSetLayoutInfo;
-
-BF_DEFINE_GFX_HANDLE(ShaderProgram)
-{
-  bfBaseGfxObject           super;
-  bfGfxDeviceHandle         parent;
-  VkPipelineLayout          layout;
-  uint32_t                  num_desc_set_layouts;
-  VkDescriptorSetLayout     desc_set_layouts[k_bfGfxDescriptorSets];
-  bfDescriptorSetLayoutInfo desc_set_layout_infos[k_bfGfxDescriptorSets];
-  bfShaderModuleList        modules;
-  char                      debug_name[k_bfGfxShaderProgramNameLength];
-};
-
-BF_DEFINE_GFX_HANDLE(DescriptorSet)
-{
-  bfBaseGfxObject        super;
-  bfShaderProgramHandle  shader_program;
-  VkDescriptorSet        handle;
-  uint32_t               set_index;
-  DescriptorLink*        pool_link;
-  VkDescriptorBufferInfo buffer_info[k_bfGfxMaxDescriptorSetWrites];
-  VkDescriptorImageInfo  image_info[k_bfGfxMaxDescriptorSetWrites];
-  VkBufferView           buffer_view_info[k_bfGfxMaxDescriptorSetWrites];
-  VkWriteDescriptorSet   writes[k_bfGfxMaxDescriptorSetWrites];
-  uint16_t               num_buffer_info;
-  uint16_t               num_image_info;
-  uint16_t               num_buffer_view_info;
-  uint16_t               num_writes;
-};
-
-BF_DEFINE_GFX_HANDLE(VertexLayoutSet)
-{
-  VkVertexInputBindingDescription   buffer_bindings[k_bfGfxMaxLayoutBindings];
-  VkVertexInputAttributeDescription attrib_bindings[k_bfGfxMaxLayoutBindings];
-  uint8_t                           num_buffer_bindings;
-  uint8_t                           num_attrib_bindings;
-};
-
-#if __cplusplus
+  return new T();
 }
-#endif
+
+template<typename T>
+void xxx_Free(T* ptr)
+{
+  delete ptr;
+}
 
 inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const bfPipelineCache& b) const
 {
@@ -160,17 +54,18 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
     return false;
   }
 
-  std::uint64_t state_bits[4];
+  std::uint64_t a_state_bits[2];
+  std::uint64_t b_state_bits[2];
 
-  std::memcpy(state_bits + 0, &a.state, sizeof(a.state));
-  std::memcpy(state_bits + 2, &b.state, sizeof(b.state));
+  std::memcpy(a_state_bits, &a.state, sizeof(a.state));
+  std::memcpy(b_state_bits, &b.state, sizeof(b.state));
 
-  state_bits[0] &= bfPipelineCache_state0Mask(&a.state);
-  state_bits[1] &= bfPipelineCache_state1Mask(&a.state);
-  state_bits[2] &= bfPipelineCache_state0Mask(&b.state);
-  state_bits[3] &= bfPipelineCache_state1Mask(&b.state);
+  a_state_bits[0] &= bfPipelineCache_state0Mask(&a.state);
+  a_state_bits[1] &= bfPipelineCache_state1Mask(&a.state);
+  b_state_bits[0] &= bfPipelineCache_state0Mask(&b.state);
+  b_state_bits[1] &= bfPipelineCache_state1Mask(&b.state);
 
-  if (std::memcmp(state_bits + 0, state_bits + 2, sizeof(a.state)) != 0)
+  if (std::memcmp(a_state_bits, b_state_bits, sizeof(a.state)) != 0)
   {
     return false;
   }
@@ -266,13 +161,7 @@ inline bool ComparebfPipelineCache::operator()(const bfPipelineCache& a, const b
 
   for (std::uint32_t i = 0; i < num_attachments; ++i)
   {
-    uint32_t blend_state_bits_a;
-    uint32_t blend_state_bits_b;
-
-    std::memcpy(&blend_state_bits_a, &a.blending[i], sizeof(uint32_t));
-    std::memcpy(&blend_state_bits_b, &b.blending[i], sizeof(uint32_t));
-
-    if (blend_state_bits_a != blend_state_bits_b)
+    if (std::memcmp(&a.blending[i], &b.blending[i], sizeof(bfFramebufferBlending)) != 0)
     {
       return false;
     }

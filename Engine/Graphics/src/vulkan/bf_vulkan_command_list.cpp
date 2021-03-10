@@ -1164,14 +1164,14 @@ void bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffe
   vkCmdUpdateBuffer(self->handle, buffer->handle, offset, size, data);
 }
 
-extern void gfxDestroySwapchain(bfGfxContextHandle self, VulkanWindow& window);
+extern void gfxDestroySwapchain(bfGfxContextHandle self, bfWindowSurface& window);
 
 #include <stdio.h>
 
 void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
   const VkFence       command_fence = self->fence;
-  VulkanWindow&       window        = *self->window;
+  bfWindowSurface&    window        = *self->window;
   const std::uint32_t frame_index   = bfGfxContext_getFrameInfo(self->context).frame_index;
 
   VkSemaphore          wait_semaphores[]   = {window.is_image_available[frame_index]};

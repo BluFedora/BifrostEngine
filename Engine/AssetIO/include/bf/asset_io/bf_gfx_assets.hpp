@@ -41,8 +41,8 @@ namespace bf
     explicit TextureAsset();
 
     bfTextureHandle handle() const { return m_TextureHandle; }
-    std::uint32_t   width() const { return m_TextureHandle ? bfTexture_width(m_TextureHandle) : 0u; }
-    std::uint32_t   height() const { return m_TextureHandle ? bfTexture_height(m_TextureHandle) : 0u; }
+    // std::uint32_t   width() const { return m_TextureHandle ? bfTexture_width(m_TextureHandle) : 0u; }
+    // std::uint32_t   height() const { return m_TextureHandle ? bfTexture_height(m_TextureHandle) : 0u; }
 
     ClassID::Type classID() const override
     {
@@ -61,9 +61,9 @@ namespace bf
     BIFROST_META_BEGIN()
       BIFROST_META_MEMBERS(
        class_info<TextureAsset>("Texture"),       //
-       ctor<>(),                                  //
-       property("width", &TextureAsset::width),   //
-       property("height", &TextureAsset::height)  //
+       ctor<>()//,                                  //
+       //property("width", &TextureAsset::width),   //
+       //property("height", &TextureAsset::height)  //
       )
     BIFROST_META_END()
   }
