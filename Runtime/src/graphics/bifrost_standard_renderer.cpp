@@ -365,7 +365,6 @@ namespace bf
 
   StandardRenderer::StandardRenderer(IMemoryManager& memory) :
     m_GLSLCompiler{memory},
-    m_GfxBackend{nullptr},
     m_GfxDevice{nullptr},
     m_FrameInfo{},
     m_StandardVertexLayout{nullptr},
@@ -394,11 +393,12 @@ namespace bf
 
   void StandardRenderer::init(const bfGfxContextCreateParams& gfx_create_params, bfWindow* main_window)
   {
-    m_GfxBackend               = bfGfxContext_new(&gfx_create_params);
-    m_GfxDevice                = bfGfxContext_device(m_GfxBackend);
-    main_window->renderer_data = bfGfxContext_createWindow(m_GfxBackend, main_window);
+    bfGfxInit(&gfx_create_params);
+
+    m_GfxDevice                = bfGfxGetDevice();
+    main_window->renderer_data = bfGfxContext_createWindow(main_window);
     m_MainWindow               = static_cast<bfWindowSurfaceHandle>(main_window->renderer_data);
-    m_FrameInfo                = bfGfxContext_getFrameInfo(m_GfxBackend);
+    m_FrameInfo                = bfGfxContext_getFrameInfo();
 
     m_StandardVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_StandardVertexLayout, 0, sizeof(StandardVertex));
@@ -442,10 +442,10 @@ namespace bf
 
   bool StandardRenderer::frameBegin()
   {
-    if (bfGfxContext_beginFrame(m_GfxBackend, m_MainWindow))
+    if (bfGfxContext_beginFrame(m_MainWindow))
     {
-      m_MainCmdList = bfGfxContext_requestCommandList(m_GfxBackend, m_MainWindow, 0);
-      m_FrameInfo   = bfGfxContext_getFrameInfo(m_GfxBackend);
+      m_MainCmdList = bfGfxContext_requestCommandList(m_MainWindow, 0);
+      m_FrameInfo   = bfGfxContext_getFrameInfo();
 
       if (m_MainCmdList)
       {
@@ -873,12 +873,12 @@ namespace bf
 
   void StandardRenderer::frameEnd() const
   {
-    bfGfxContext_endFrame(m_GfxBackend);
+    bfGfxContext_endFrame();
   }
 
   void StandardRenderer::deinit()
   {
-    bfGfxContext_destroyWindow(m_GfxBackend, m_MainWindow);
+    bfGfxContext_destroyWindow(m_MainWindow);
 
     for (auto& renderable : m_RenderablePool)
     {
@@ -902,10 +902,9 @@ namespace bf
     bfVertexLayout_delete(m_EmptyVertexLayout);
     bfVertexLayout_delete(m_SkinnedVertexLayout);
     bfVertexLayout_delete(m_StandardVertexLayout);
-    bfGfxContext_delete(m_GfxBackend);
+    bfGfxDestroy();
 
     m_GfxDevice  = nullptr;
-    m_GfxBackend = nullptr;
   }
 
   bfDescriptorSetInfo StandardRenderer::makeMaterialInfo(const MaterialAsset& material)

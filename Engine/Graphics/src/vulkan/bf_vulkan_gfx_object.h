@@ -70,7 +70,6 @@ BF_DEFINE_GFX_HANDLE(Pipeline)
 
 BF_DEFINE_GFX_HANDLE(GfxCommandList)
 {
-  bfGfxContextHandle  context;
   bfGfxDeviceHandle   parent;
   VkCommandBuffer     handle;
   VkFence             fence;

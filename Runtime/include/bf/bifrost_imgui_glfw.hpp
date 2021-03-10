@@ -10,7 +10,7 @@ namespace bf
 
   namespace imgui
   {
-    void startup(bfGfxContextHandle graphics, bfWindow* window);
+    void startup(bfWindow* window);
     void onEvent(bfWindow* target_window, Event& evt);
     void beginFrame(bfTextureHandle surface, float window_width, float window_height, float delta_time);
     void endFrame();

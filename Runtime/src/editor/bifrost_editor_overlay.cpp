@@ -697,7 +697,7 @@ namespace bf::editor
   {
     m_Engine = &engine;
 
-    imgui::startup(engine.renderer().context(), m_MainWindow);
+    imgui::startup(m_MainWindow);
 
     ImGuiStyle&   style  = ImGui::GetStyle();
     ImVec4* const colors = style.Colors;

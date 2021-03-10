@@ -121,7 +121,7 @@ struct FixedArray
   }
 };
 
-BF_DEFINE_GFX_HANDLE(GfxContext)
+struct GfxContext
 {
   const bfGfxContextCreateParams*  params;                // Only valid during initialization
   std::uint32_t                    max_frames_in_flight;  // TODO(Shareef): Make customizable
@@ -141,27 +141,30 @@ BF_DEFINE_GFX_HANDLE(GfxContext)
 namespace
 {
   // Context Setup
-  void        gfxContextSetupApp(bfGfxContextHandle self, const bfGfxContextCreateParams* params);
+  void        gfxContextSetupApp(const bfGfxContextCreateParams* params);
   bfBool32    gfxContextCheckLayers(const char* const needed_layers[], size_t num_layers);
-  bfBool32    gfxContextSetDebugCallback(bfGfxContextHandle self, PFN_vkDebugReportCallbackEXT callback);
-  const char* gfxContextSetupPhysicalDevices(bfGfxContextHandle self);
-  void        gfxContextPrintExtensions();
-  const char* gfxContextSelectPhysicalDevice(bfGfxContextHandle self);
-  const char* gfxContextFindSurfacePresent(bfGfxContextHandle self, bfWindowSurface& window);
-  const char* gfxContextCreateLogicalDevice(bfGfxContextHandle self);
-  const char* gfxContextInitAllocator(bfGfxContextHandle self);
-  const char* gfxContextInitCommandPool(bfGfxContextHandle self, uint16_t thread_index);
-  const char* gfxContextInitSemaphores(bfGfxContextHandle self, bfWindowSurface& window);
-  const char* gfxContextInitSwapchainInfo(bfGfxContextHandle self, bfWindowSurface& window);
-  bool        gfxContextInitSwapchain(bfGfxContextHandle self, bfWindowSurface& window);
-  void        gfxContextInitSwapchainImageList(bfGfxContextHandle self, bfWindowSurface& window);
-  void        gfxContextInitCmdFences(bfGfxContextHandle self, bfWindowSurface& window);
-  void        gfxContextInitCmdBuffers(bfGfxContextHandle self, bfWindowSurface& window);
-  void        gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain);
-  void        gfxContextDestroyCmdFences(bfGfxContextHandle self, const VulkanSwapchain* swapchain);
-  void        gfxContextDestroySwapchainImageList(bfGfxContextHandle self, VulkanSwapchain* swapchain);
-  void        gfxContextDestroySwapchain(bfGfxContextHandle self, VulkanSwapchain* swapchain);
+  bfBool32    gfxContextSetDebugCallback(PFN_vkDebugReportCallbackEXT callback);
+  const char* gfxContextSetupPhysicalDevices();
+  void        gfxContextPrintExtensions(void);
+  const char* gfxContextSelectPhysicalDevice();
+  const char* gfxContextFindSurfacePresent(bfWindowSurface& window);
+  const char* gfxContextCreateLogicalDevice();
+  const char* gfxContextInitAllocator();
+  const char* gfxContextInitCommandPool(uint16_t thread_index);
+  const char* gfxContextInitSemaphores(bfWindowSurface& window);
+  const char* gfxContextInitSwapchainInfo(bfWindowSurface& window);
+  bool        gfxContextInitSwapchain(bfWindowSurface& window);
+  void        gfxContextInitSwapchainImageList(bfWindowSurface& window);
+  void        gfxContextInitCmdFences(bfWindowSurface& window);
+  void        gfxContextInitCmdBuffers(bfWindowSurface& window);
+  void        gfxContextDestroyCmdBuffers(VulkanSwapchain* swapchain);
+  void        gfxContextDestroyCmdFences(const VulkanSwapchain* swapchain);
+  void        gfxContextDestroySwapchainImageList(VulkanSwapchain* swapchain);
+  void        gfxContextDestroySwapchain(VulkanSwapchain* swapchain);
+  bool        gfxRecreateSwapchain(bfWindowSurface& window);
 }  // namespace
+
+void gfxDestroySwapchain(bfWindowSurface& window);
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
  VkDebugReportFlagsEXT      flags,
@@ -196,25 +199,23 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL gfxContextDbgCallback(
 #endif
 
 // Context
+static GfxContext* g_Ctx = nullptr;
 
-static bool gfxRecreateSwapchain(bfGfxContextHandle self, bfWindowSurface& window);
-void        gfxDestroySwapchain(bfGfxContextHandle self, bfWindowSurface& window);
-
-bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
+void bfGfxInit(const bfGfxContextCreateParams* params)
 {
-  const auto self            = xxx_Alloc<bfGfxContext>();
-  self->params               = params;
-  self->max_frames_in_flight = 2;
-  self->frame_count          = 0;
-  self->frame_index          = 0;
+  g_Ctx                       = xxx_Alloc<GfxContext>();
+  g_Ctx->params               = params;
+  g_Ctx->max_frames_in_flight = 2;
+  g_Ctx->frame_count          = 0;
+  g_Ctx->frame_index          = 0;
 
-  gfxContextSetupApp(self, params);
-  if (!gfxContextSetDebugCallback(self, &gfxContextDbgCallback))
+  gfxContextSetupApp(params);
+  if (!gfxContextSetDebugCallback(&gfxContextDbgCallback))
   {
     bfLogError("Failed to set the debug callback.");
   }
   {
-    const auto err = gfxContextSetupPhysicalDevices(self);
+    const auto err = gfxContextSetupPhysicalDevices();
 
     if (err)
     {
@@ -225,33 +226,65 @@ bfGfxContextHandle bfGfxContext_new(const bfGfxContextCreateParams* params)
     gfxContextPrintExtensions();
   }
   {
-    gfxContextSelectPhysicalDevice(self);
-    gfxContextCreateLogicalDevice(self);
-    gfxContextInitAllocator(self);
-    gfxContextInitCommandPool(self, 0);
+    gfxContextSelectPhysicalDevice();
+    gfxContextCreateLogicalDevice();
+    gfxContextInitAllocator();
+    gfxContextInitCommandPool(0);
   }
 
-  self->params = nullptr;
-  return self;
+  g_Ctx->params = nullptr;
 }
 
-bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
+bfGfxDeviceHandle bfGfxGetDevice(void)
 {
-  return self->logical_device;
+  return g_Ctx->logical_device;
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow* bf_window)
+void bfGfxDestroy(void)
+{
+  auto device = bfGfxGetDevice();
+
+  bfBaseGfxObject* curr = device->cached_resources;
+
+  while (curr)
+  {
+    bfBaseGfxObject* next = curr->next;
+    bfGfxDevice_release(g_Ctx->logical_device, curr);
+    curr = next;
+  }
+
+  VkPoolAllocatorDtor(&device->device_memory_allocator);
+
+  MaterialPool_delete(device->descriptor_pool);
+
+#if BIFROST_USE_DEBUG_CALLBACK
+  const PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(g_Ctx->instance, "vkDestroyDebugReportCallbackEXT");
+
+  if (func)
+  {
+    func(g_Ctx->instance, g_Ctx->debug_callback, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  }
+#endif
+
+  vkDestroyCommandPool(device->handle, g_Ctx->command_pools[0], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroyDevice(device->handle, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroyInstance(g_Ctx->instance, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+
+  xxx_Free(g_Ctx);
+}
+
+bfWindowSurfaceHandle bfGfxContext_createWindow(struct bfWindow* bf_window)
 {
   bfWindowSurfaceHandle surface = xxx_Alloc<bfWindowSurface>();
 
-  if (bfWindow_createVulkanSurface(bf_window, self->instance, &surface->surface))
+  if (bfWindow_createVulkanSurface(bf_window, g_Ctx->instance, &surface->surface))
   {
     surface->current_cmd_list = nullptr;
 
-    gfxContextFindSurfacePresent(self, *surface);
-    gfxContextInitSwapchainInfo(self, *surface);
-    gfxContextInitSemaphores(self, *surface);
-    gfxRecreateSwapchain(self, *surface);
+    gfxContextFindSurfacePresent(*surface);
+    gfxContextInitSwapchainInfo(*surface);
+    gfxContextInitSemaphores(*surface);
+    gfxRecreateSwapchain(*surface);
   }
   else
   {
@@ -262,18 +295,18 @@ bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct 
   return surface;
 }
 
-void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
+void bfGfxContext_destroyWindow(bfWindowSurfaceHandle window_handle)
 {
   window_handle->swapchain_needs_creation = bfFalse;
   window_handle->swapchain_needs_deletion = bfTrue;
-  gfxRecreateSwapchain(self, *window_handle);
+  gfxRecreateSwapchain(*window_handle);
 
-  vkDestroySurfaceKHR(self->instance, window_handle->surface, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+  vkDestroySurfaceKHR(g_Ctx->instance, window_handle->surface, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
 
-  for (std::uint32_t i = 0; i < self->max_frames_in_flight; ++i)
+  for (std::uint32_t i = 0; i < g_Ctx->max_frames_in_flight; ++i)
   {
-    vkDestroySemaphore(self->logical_device->handle, window_handle->is_image_available[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-    vkDestroySemaphore(self->logical_device->handle, window_handle->is_render_done[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+    vkDestroySemaphore(g_Ctx->logical_device->handle, window_handle->is_image_available[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
+    vkDestroySemaphore(g_Ctx->logical_device->handle, window_handle->is_render_done[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
   }
 
   freeN(window_handle->is_image_available);  // window_handle->is_render_done shared an allcoation with 'window_handle->is_render_done'.
@@ -281,49 +314,7 @@ void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle w
   delete window_handle;
 }
 
-static bool gfxRecreateSwapchain(bfGfxContextHandle self, bfWindowSurface& window)
-{
-  //assert(window.swapchain_needs_creation);
-
-  if (window.swapchain_needs_deletion)
-  {
-    VulkanSwapchain& old_swapchain = window.swapchain;
-
-    vkWaitForFences(self->logical_device->handle, self->max_frames_in_flight, old_swapchain.in_flight_fences, VK_TRUE, UINT64_MAX);
-
-    gfxContextDestroyCmdBuffers(self, &old_swapchain);
-    gfxContextDestroyCmdFences(self, &old_swapchain);
-    gfxContextDestroySwapchainImageList(self, &old_swapchain);
-    gfxContextDestroySwapchain(self, &old_swapchain);
-
-    window.swapchain_needs_deletion = bfFalse;
-  }
-
-  if (window.swapchain_needs_creation)
-  {
-    if (gfxContextInitSwapchain(self, window))
-    {
-      gfxContextInitSwapchainImageList(self, window);
-      gfxContextInitCmdFences(self, window);
-      gfxContextInitCmdBuffers(self, window);
-
-      return true;
-    }
-  }
-
-  return false;
-}
-
-void gfxDestroySwapchain(bfGfxContextHandle self, bfWindowSurface& window)
-{
-  if (!window.swapchain_needs_creation)
-  {
-    window.swapchain_needs_deletion = bfTrue;
-    window.swapchain_needs_creation = bfTrue;
-  }
-}
-
-bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window)
+bfBool32 bfGfxContext_beginFrame(bfWindowSurfaceHandle window)
 {
   if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
   {
@@ -332,25 +323,25 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
 
   if (window->swapchain_needs_creation)
   {
-    if (!gfxRecreateSwapchain(self, *window))
+    if (!gfxRecreateSwapchain(*window))
     {
       return bfFalse;
     }
   }
 
   {
-    const VkFence command_fence = window->swapchain.in_flight_fences[self->frame_index];
+    const VkFence command_fence = window->swapchain.in_flight_fences[g_Ctx->frame_index];
 
-    if (vkWaitForFences(self->logical_device->handle, 1, &command_fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+    if (vkWaitForFences(g_Ctx->logical_device->handle, 1, &command_fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
     {
       return bfFalse;
     }
   }
 
-  const VkResult err = vkAcquireNextImageKHR(self->logical_device->handle,
+  const VkResult err = vkAcquireNextImageKHR(g_Ctx->logical_device->handle,
                                              window->swapchain.handle,
                                              UINT64_MAX,
-                                             window->is_image_available[self->frame_index],
+                                             window->is_image_available[g_Ctx->frame_index],
                                              VK_NULL_HANDLE,
                                              &window->image_index);
 
@@ -358,10 +349,10 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
   {
     if (err == VK_ERROR_OUT_OF_DATE_KHR)
     {
-      gfxDestroySwapchain(self, *window);
+      gfxDestroySwapchain(*window);
     }
 
-    if (!gfxRecreateSwapchain(self, *window))
+    if (!gfxRecreateSwapchain(*window))
     {
       return bfFalse;
     }
@@ -371,20 +362,20 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
 
   if (window->swapchain.in_flight_images[window->image_index] != VK_NULL_HANDLE)
   {
-    if (vkWaitForFences(self->logical_device->handle, 1, &window->swapchain.in_flight_images[window->image_index], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+    if (vkWaitForFences(g_Ctx->logical_device->handle, 1, &window->swapchain.in_flight_images[window->image_index], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
     {
       return bfFalse;
     }
   }
 
-  window->swapchain.in_flight_images[window->image_index] = window->swapchain.in_flight_fences[self->frame_index];
+  window->swapchain.in_flight_images[window->image_index] = window->swapchain.in_flight_fences[g_Ctx->frame_index];
 
   return bfTrue;
 }
 
-bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self)
+bfGfxFrameInfo bfGfxContext_getFrameInfo()
 {
-  return {self->frame_index, self->frame_count, self->max_frames_in_flight};
+  return {g_Ctx->frame_index, g_Ctx->frame_count, g_Ctx->max_frames_in_flight};
 }
 
 template<typename T, typename TCache>
@@ -393,19 +384,19 @@ static void bfGfxContext_removeFromCache(TCache& cache, bfBaseGfxObject* object)
   cache.remove(object->hash_code, reinterpret_cast<T>(object));
 }
 
-void bfGfxContext_endFrame(bfGfxContextHandle self)
+void bfGfxContext_endFrame()
 {
   // TODO: This whole set of garbage collection should not get called every frame??
 
   bfBaseGfxObject* prev         = nullptr;
-  bfBaseGfxObject* curr         = self->logical_device->cached_resources;
+  bfBaseGfxObject* curr         = g_Ctx->logical_device->cached_resources;
   bfBaseGfxObject* release_list = nullptr;
 
   while (curr)
   {
     bfBaseGfxObject* next = curr->next;
 
-    if ((self->frame_count - curr->last_frame_used & bfFrameCountMax) >= 60)
+    if ((g_Ctx->frame_count - curr->last_frame_used & bfFrameCountMax) >= 60)
     {
       if (prev)
       {
@@ -413,7 +404,7 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
       }
       else
       {
-        self->logical_device->cached_resources = next;
+        g_Ctx->logical_device->cached_resources = next;
       }
 
       curr->next   = release_list;
@@ -441,66 +432,34 @@ void bfGfxContext_endFrame(bfGfxContextHandle self)
       {
         case BF_GFX_OBJECT_RENDERPASS:
         {
-          bfGfxContext_removeFromCache<bfRenderpassHandle>(self->logical_device->cache_renderpass, release_list);
+          bfGfxContext_removeFromCache<bfRenderpassHandle>(g_Ctx->logical_device->cache_renderpass, release_list);
           break;
         }
         case BF_GFX_OBJECT_PIPELINE:
         {
-          bfGfxContext_removeFromCache<bfPipelineHandle>(self->logical_device->cache_pipeline, release_list);
+          bfGfxContext_removeFromCache<bfPipelineHandle>(g_Ctx->logical_device->cache_pipeline, release_list);
           break;
         }
         case BF_GFX_OBJECT_FRAMEBUFFER:
         {
-          bfGfxContext_removeFromCache<bfFramebufferHandle>(self->logical_device->cache_framebuffer, release_list);
+          bfGfxContext_removeFromCache<bfFramebufferHandle>(g_Ctx->logical_device->cache_framebuffer, release_list);
           break;
         }
         case BF_GFX_OBJECT_DESCRIPTOR_SET:
         {
-          bfGfxContext_removeFromCache<bfDescriptorSetHandle>(self->logical_device->cache_descriptor_set, release_list);
+          bfGfxContext_removeFromCache<bfDescriptorSetHandle>(g_Ctx->logical_device->cache_descriptor_set, release_list);
           break;
         }
           bfInvalidDefaultCase();
       }
 
-      bfGfxDevice_release(self->logical_device, release_list);
+      bfGfxDevice_release(g_Ctx->logical_device, release_list);
       release_list = next;
     }
   }
 
-  ++self->frame_count;
-  self->frame_index = self->frame_count % self->max_frames_in_flight;
-}
-
-void bfGfxContext_delete(bfGfxContextHandle self)
-{
-  auto device = self->logical_device;
-
-  bfBaseGfxObject* curr = device->cached_resources;
-
-  while (curr)
-  {
-    bfBaseGfxObject* next = curr->next;
-    bfGfxDevice_release(self->logical_device, curr);
-    curr = next;
-  }
-
-  VkPoolAllocatorDtor(&device->device_memory_allocator);
-
-  MaterialPool_delete(device->descriptor_pool);
-
-#if BIFROST_USE_DEBUG_CALLBACK
-  const PFN_vkDestroyDebugReportCallbackEXT func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(self->instance, "vkDestroyDebugReportCallbackEXT");
-
-  if (func)
-  {
-    func(self->instance, self->debug_callback, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  }
-#endif
-
-  vkDestroyCommandPool(device->handle, self->command_pools[0], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  vkDestroyDevice(device->handle, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  vkDestroyInstance(self->instance, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
-  delete self;
+  ++g_Ctx->frame_count;
+  g_Ctx->frame_index = g_Ctx->frame_count % g_Ctx->max_frames_in_flight;
 }
 
 // Device
@@ -512,7 +471,7 @@ void bfGfxDevice_flush(bfGfxDeviceHandle self)
   (void)result;
 }
 
-bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index)
+bfGfxCommandListHandle bfGfxContext_requestCommandList(bfWindowSurfaceHandle window, uint32_t thread_index)
 {
   assert(thread_index == 0);
   assert(thread_index < bfCArraySize(window->cmd_list_memory));
@@ -524,10 +483,9 @@ bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, 
 
   bfGfxCommandListHandle list = window->cmd_list_memory + thread_index;
 
-  list->context        = self;
-  list->parent         = self->logical_device;
+  list->parent         = g_Ctx->logical_device;
   list->handle         = window->swapchain.command_buffers[window->image_index];
-  list->fence          = window->swapchain.in_flight_fences[self->frame_index];
+  list->fence          = window->swapchain.in_flight_fences[g_Ctx->frame_index];
   list->window         = window;
   list->render_area    = {};
   list->framebuffer    = nullptr;
@@ -561,9 +519,52 @@ bfDeviceLimits bfGfxDevice_limits(bfGfxDeviceHandle self)
   return limits;
 }
 
+// Needed by CmdQueue Submit
+void gfxDestroySwapchain(bfWindowSurface& window)
+{
+  if (!window.swapchain_needs_creation)
+  {
+    window.swapchain_needs_deletion = bfTrue;
+    window.swapchain_needs_creation = bfTrue;
+  }
+}
+
 namespace
 {
-  void gfxContextSetupApp(bfGfxContextHandle self, const bfGfxContextCreateParams* params)
+  bool gfxRecreateSwapchain(bfWindowSurface& window)
+  {
+    //assert(window.swapchain_needs_creation);
+
+    if (window.swapchain_needs_deletion)
+    {
+      VulkanSwapchain& old_swapchain = window.swapchain;
+
+      vkWaitForFences(g_Ctx->logical_device->handle, g_Ctx->max_frames_in_flight, old_swapchain.in_flight_fences, VK_TRUE, UINT64_MAX);
+
+      gfxContextDestroyCmdBuffers(&old_swapchain);
+      gfxContextDestroyCmdFences(&old_swapchain);
+      gfxContextDestroySwapchainImageList(&old_swapchain);
+      gfxContextDestroySwapchain(&old_swapchain);
+
+      window.swapchain_needs_deletion = bfFalse;
+    }
+
+    if (window.swapchain_needs_creation)
+    {
+      if (gfxContextInitSwapchain(window))
+      {
+        gfxContextInitSwapchainImageList(window);
+        gfxContextInitCmdFences(window);
+        gfxContextInitCmdBuffers(window);
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  void gfxContextSetupApp(const bfGfxContextCreateParams* params)
   {
     static const char* const VALIDATION_LAYER_NAMES[] = {"VK_LAYER_KHRONOS_validation"};
     static const char* const INSTANCE_EXT_NAMES[]     = {
@@ -618,7 +619,7 @@ namespace
     init_info.enabledExtensionCount   = static_cast<uint32_t>(bfCArraySize(INSTANCE_EXT_NAMES));
     init_info.ppEnabledExtensionNames = INSTANCE_EXT_NAMES;
 
-    const VkResult err = vkCreateInstance(&init_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->instance);
+    const VkResult err = vkCreateInstance(&init_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &g_Ctx->instance);
 
     if (err)
     {
@@ -675,7 +676,7 @@ namespace
     return ret;
   }
 
-  bfBool32 gfxContextSetDebugCallback(bfGfxContextHandle self, PFN_vkDebugReportCallbackEXT callback)
+  bfBool32 gfxContextSetDebugCallback(PFN_vkDebugReportCallbackEXT callback)
   {
 #if BIFROST_USE_DEBUG_CALLBACK
     VkDebugReportCallbackCreateInfoEXT create_info;
@@ -685,12 +686,11 @@ namespace
     create_info.pfnCallback = callback;
     create_info.pUserData   = nullptr;
 
-    PFN_vkCreateDebugReportCallbackEXT func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-     self->instance, "vkCreateDebugReportCallbackEXT");
+    PFN_vkCreateDebugReportCallbackEXT func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(g_Ctx->instance, "vkCreateDebugReportCallbackEXT");
 
     if (func)
     {
-      return func(self->instance, &create_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->debug_callback) == VK_SUCCESS;
+      return func(g_Ctx->instance, &create_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &g_Ctx->debug_callback) == VK_SUCCESS;
     }
 
     return bfFalse;  //VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -699,10 +699,10 @@ namespace
 #endif
   }
 
-  const char* gfxContextSetupPhysicalDevices(bfGfxContextHandle self)
+  const char* gfxContextSetupPhysicalDevices()
   {
     std::uint32_t num_devices;
-    VkResult      err = vkEnumeratePhysicalDevices(self->instance, &num_devices, nullptr);
+    VkResult      err = vkEnumeratePhysicalDevices(g_Ctx->instance, &num_devices, nullptr);
 
     if (err)
     {
@@ -715,9 +715,9 @@ namespace
     }
 
     FixedArray<VkPhysicalDevice> device_list{num_devices};
-    self->physical_devices.setSize(num_devices);
+    g_Ctx->physical_devices.setSize(num_devices);
 
-    err = vkEnumeratePhysicalDevices(self->instance, &num_devices, &device_list[0]);
+    err = vkEnumeratePhysicalDevices(g_Ctx->instance, &num_devices, &device_list[0]);
 
     if (err)
     {
@@ -726,9 +726,8 @@ namespace
 
     bfLogPush("Physical Device Listing (%u)", (unsigned)num_devices);
     size_t index = 0;
-    for (auto& device : self->physical_devices)
+    for (auto& device : g_Ctx->physical_devices)
     {
-      device.parent = self;
       device.handle = device_list[index];
 
       vkGetPhysicalDeviceMemoryProperties(device.handle, &device.memory_properties);
@@ -894,15 +893,15 @@ namespace
     }
   }
 
-  const char* gfxContextSelectPhysicalDevice(bfGfxContextHandle self)
+  const char* gfxContextSelectPhysicalDevice()
   {
-    if (self->physical_devices.size() == 0)
+    if (g_Ctx->physical_devices.size() == 0)
     {
       return "Found no Physical devices";
     }
 
-    // TODO: Select device based on "device_features", "device_properties", "deviceType" etc
-    self->physical_device = &self->physical_devices[0];
+    // TODO(SR): Select device based on "device_features", "device_properties", "deviceType" etc
+    g_Ctx->physical_device = &g_Ctx->physical_devices[0];
 
     return nullptr;
   }
@@ -912,7 +911,7 @@ namespace
 #endif
 
 #if 0
-  const char* gfxContextInitSurface(bfGfxContextHandle self)
+  const char* gfxContextInitSurface()
   {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     VkWin32SurfaceCreateInfoKHR create_info;
@@ -952,9 +951,9 @@ namespace
 
   uint32_t findQueueBasic(const VulkanPhysicalDevice* device, uint32_t queue_size, VkQueueFlags flags);
 
-  const char* gfxContextFindSurfacePresent(bfGfxContextHandle self, bfWindowSurface& window)
+  const char* gfxContextFindSurfacePresent(bfWindowSurface& window)
   {
-    VulkanPhysicalDevice* device           = self->physical_device;
+    VulkanPhysicalDevice* device           = g_Ctx->physical_device;
     const uint32_t        queue_size       = device->queue_list.size;
     VkBool32*             supports_present = allocN<VkBool32>(queue_size);
 
@@ -1036,7 +1035,7 @@ namespace
     return create_info;
   }
 
-  const char* gfxContextCreateLogicalDevice(bfGfxContextHandle self)
+  const char* gfxContextCreateLogicalDevice()
   {
     static const char* const DEVICE_EXT_NAMES[] =
      {
@@ -1045,7 +1044,7 @@ namespace
 
     static const float queue_priorities[] = {0.0f};
 
-    VulkanPhysicalDevice*   device        = self->physical_device;
+    VulkanPhysicalDevice*   device        = g_Ctx->physical_device;
     const uint32_t          gfx_queue_idx = device->queue_list.family_index[BF_GFX_QUEUE_GRAPHICS];
     uint32_t                num_queues    = 0;
     VkDeviceQueueCreateInfo queue_create_infos[BF_GFX_QUEUE_MAX];
@@ -1079,49 +1078,49 @@ namespace
     device_info.ppEnabledExtensionNames = DEVICE_EXT_NAMES;
     device_info.pEnabledFeatures        = &deviceFeatures;
 
-    self->logical_device         = xxx_Alloc<bfGfxDevice>();
-    self->logical_device->parent = device;
+    g_Ctx->logical_device         = xxx_Alloc<bfGfxDevice>();
+    g_Ctx->logical_device->parent = device;
 
-    const VkResult err = vkCreateDevice(device->handle, &device_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &self->logical_device->handle);
+    const VkResult err = vkCreateDevice(device->handle, &device_info, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &g_Ctx->logical_device->handle);
 
     if (err)
     {
-      delete self->logical_device;
-      self->logical_device = nullptr;
+      delete g_Ctx->logical_device;
+      g_Ctx->logical_device = nullptr;
       return "Failed to create device";
     }
 
     MaterialPoolCreateParams create_material_pool;
-    create_material_pool.logical_device        = self->logical_device;
+    create_material_pool.logical_device        = g_Ctx->logical_device;
     create_material_pool.num_textures_per_link = 32;
     create_material_pool.num_uniforms_per_link = 16;
     create_material_pool.num_descsets_per_link = 8;
 
-    self->logical_device->descriptor_pool  = MaterialPool_new(&create_material_pool);
-    self->logical_device->cached_resources = nullptr;
+    g_Ctx->logical_device->descriptor_pool  = MaterialPool_new(&create_material_pool);
+    g_Ctx->logical_device->cached_resources = nullptr;
 
     for (uint32_t i = 0; i < bfCArraySize(device->queue_list.family_index); ++i)
     {
       // The 0 means grab the first queue of the specified family.
       // the number must be less than "VkDeviceQueueCreateInfo::queueCount"
-      vkGetDeviceQueue(self->logical_device->handle, device->queue_list.family_index[i], 0, &self->logical_device->queues[i]);
+      vkGetDeviceQueue(g_Ctx->logical_device->handle, device->queue_list.family_index[i], 0, &g_Ctx->logical_device->queues[i]);
     }
 
     return nullptr;
   }
 
-  const char* gfxContextInitAllocator(bfGfxContextHandle self)
+  const char* gfxContextInitAllocator()
   {
-    VkPoolAllocatorCtor(&self->logical_device->device_memory_allocator, self->logical_device);
+    VkPoolAllocatorCtor(&g_Ctx->logical_device->device_memory_allocator, g_Ctx->logical_device);
     return nullptr;
   }
 
-  const char* gfxContextInitCommandPool(bfGfxContextHandle self, uint16_t thread_index)
+  const char* gfxContextInitCommandPool(uint16_t thread_index)
   {
     assert(thread_index == 0 && "Current implemetation only supports one thread.");
 
-    const VulkanPhysicalDevice* const phys_device    = self->physical_device;
-    const bfGfxDeviceHandle           logical_device = self->logical_device;
+    const VulkanPhysicalDevice* const phys_device    = g_Ctx->physical_device;
+    const bfGfxDeviceHandle           logical_device = g_Ctx->logical_device;
 
     // This should be per thread.
     VkCommandPoolCreateInfo cmd_pool_info;
@@ -1135,26 +1134,26 @@ namespace
      logical_device->handle,
      &cmd_pool_info,
      BIFROST_VULKAN_CUSTOM_ALLOCATOR,
-     &self->command_pools[thread_index]);
+     &g_Ctx->command_pools[thread_index]);
 
     return error ? "Failed to create command pool" : nullptr;
   }
 
-  const char* gfxContextInitSemaphores(bfGfxContextHandle self, bfWindowSurface& window)
+  const char* gfxContextInitSemaphores(bfWindowSurface& window)
   {
     VkSemaphoreCreateInfo semaphore_create_info;
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphore_create_info.pNext = NULL;
     semaphore_create_info.flags = 0;
 
-    window.is_image_available = allocN<VkSemaphore>(std::size_t(self->max_frames_in_flight) * 2);
-    window.is_render_done     = window.is_image_available + self->max_frames_in_flight;
+    window.is_image_available = allocN<VkSemaphore>(std::size_t(g_Ctx->max_frames_in_flight) * 2);
+    window.is_render_done     = window.is_image_available + g_Ctx->max_frames_in_flight;
 
-    for (std::uint32_t i = 0; i < self->max_frames_in_flight; ++i)
+    for (std::uint32_t i = 0; i < g_Ctx->max_frames_in_flight; ++i)
     {
       {
         const VkResult err = vkCreateSemaphore(
-         self->logical_device->handle,
+         g_Ctx->logical_device->handle,
          &semaphore_create_info,
          BIFROST_VULKAN_CUSTOM_ALLOCATOR,
          window.is_image_available + i);
@@ -1167,7 +1166,7 @@ namespace
 
       {
         const VkResult err = vkCreateSemaphore(
-         self->logical_device->handle,
+         g_Ctx->logical_device->handle,
          &semaphore_create_info,
          BIFROST_VULKAN_CUSTOM_ALLOCATOR,
          window.is_render_done + i);
@@ -1186,9 +1185,9 @@ namespace
   VkPresentModeKHR   gfxFindSurfacePresentMode(const VkPresentModeKHR* const present_modes,
                                                const uint32_t                num_present_modes);
 
-  const char* gfxContextInitSwapchainInfo(bfGfxContextHandle self, bfWindowSurface& window)
+  const char* gfxContextInitSwapchainInfo(bfWindowSurface& window)
   {
-    VulkanPhysicalDevice* const device = self->physical_device;
+    VulkanPhysicalDevice* const device = g_Ctx->physical_device;
     VulkanSwapchainInfo* const  info   = &window.swapchain_info;
 
     // NOTE(Shareef)
@@ -1210,11 +1209,11 @@ namespace
 
   VkExtent2D gfxFindSurfaceExtents(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
-  bool gfxContextInitSwapchain(bfGfxContextHandle self, bfWindowSurface& window)
+  bool gfxContextInitSwapchain(bfWindowSurface& window)
   {
     auto& swapchain_info = window.swapchain_info;
 
-    VulkanPhysicalDevice* const physical_device = self->physical_device;
+    VulkanPhysicalDevice* const physical_device = g_Ctx->physical_device;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device->handle, window.surface, &swapchain_info.capabilities);
 
     const VkPresentModeKHR surface_present_mode = gfxFindSurfacePresentMode(swapchain_info.present_modes, swapchain_info.num_present_modes);
@@ -1302,7 +1301,7 @@ namespace
       swapchain_ci.pQueueFamilyIndices   = queue_family_indices;
     }
 
-    const VkResult err = vkCreateSwapchainKHR(self->logical_device->handle, &swapchain_ci, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &window.swapchain.handle);
+    const VkResult err = vkCreateSwapchainKHR(g_Ctx->logical_device->handle, &swapchain_ci, BIFROST_VULKAN_CUSTOM_ALLOCATOR, &window.swapchain.handle);
 
     window.swapchain.extents        = surface_extents;
     window.swapchain.present_mode   = surface_present_mode;
@@ -1316,9 +1315,9 @@ namespace
     return true;
   }
 
-  void gfxContextInitSwapchainImageList(bfGfxContextHandle self, bfWindowSurface& window)
+  void gfxContextInitSwapchainImageList(bfWindowSurface& window)
   {
-    bfGfxDeviceHandle      logical_device = self->logical_device;
+    bfGfxDeviceHandle      logical_device = g_Ctx->logical_device;
     VulkanSwapchain* const swapchain      = &window.swapchain;
 
     vkGetSwapchainImagesKHR(logical_device->handle, swapchain->handle, &swapchain->img_list.size, NULL);
@@ -1348,11 +1347,11 @@ namespace
     }
   }
 
-  void gfxContextInitCmdFences(bfGfxContextHandle self, bfWindowSurface& window)
+  void gfxContextInitCmdFences(bfWindowSurface& window)
   {
-    bfGfxDeviceHandle logical_device = self->logical_device;
+    bfGfxDeviceHandle logical_device = g_Ctx->logical_device;
 
-    const std::uint32_t num_in_flight_fences = self->max_frames_in_flight;
+    const std::uint32_t num_in_flight_fences = g_Ctx->max_frames_in_flight;
     const std::uint32_t num_in_images_fences = window.swapchain.img_list.size;
     window.swapchain.in_flight_fences        = allocN<VkFence>(num_in_flight_fences + num_in_images_fences);
     window.swapchain.in_flight_images        = window.swapchain.in_flight_fences + num_in_flight_fences;
@@ -1373,14 +1372,14 @@ namespace
     }
   }
 
-  void gfxContextCreateCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers, VkCommandBuffer* result)
+  void gfxContextCreateCommandBuffers(std::uint32_t num_buffers, VkCommandBuffer* result)
   {
-    const bfGfxDeviceHandle device = self->logical_device;
+    const bfGfxDeviceHandle device = g_Ctx->logical_device;
 
     VkCommandBufferAllocateInfo cmd_alloc_info;
     cmd_alloc_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cmd_alloc_info.pNext              = nullptr;
-    cmd_alloc_info.commandPool        = self->command_pools[0];  // TODO: Threaded pool...
+    cmd_alloc_info.commandPool        = g_Ctx->command_pools[0];  // TODO: Threaded pool...
     cmd_alloc_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd_alloc_info.commandBufferCount = num_buffers;
 
@@ -1390,25 +1389,24 @@ namespace
 
   struct TempCommandBuffer final
   {
-    bfGfxContextHandle context;
-    VkCommandBuffer    handle;
+    VkCommandBuffer handle;
   };
 
-  VkCommandBuffer* gfxContextCreateCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers)
+  VkCommandBuffer* gfxContextCreateCommandBuffers(std::uint32_t num_buffers)
   {
     VkCommandBuffer* result = allocN<VkCommandBuffer>(num_buffers);
-    gfxContextCreateCommandBuffers(self, num_buffers, result);
+    gfxContextCreateCommandBuffers(num_buffers, result);
 
     return result;
   }
 
-  void gfxContextDestroyCommandBuffers(bfGfxContextHandle self, std::uint32_t num_buffers, VkCommandBuffer* buffers, bool free_array = true)
+  void gfxContextDestroyCommandBuffers(std::uint32_t num_buffers, VkCommandBuffer* buffers, bool free_array = true)
   {
     if (buffers)
     {
-      const bfGfxDeviceHandle logical_device = self->logical_device;
+      const bfGfxDeviceHandle logical_device = g_Ctx->logical_device;
 
-      vkFreeCommandBuffers(logical_device->handle, self->command_pools[0], num_buffers, buffers);
+      vkFreeCommandBuffers(logical_device->handle, g_Ctx->command_pools[0], num_buffers, buffers);
 
       if (free_array)
       {
@@ -1417,10 +1415,10 @@ namespace
     }
   }
 
-  TempCommandBuffer gfxContextBeginTransientCommandBuffer(bfGfxContextHandle self)
+  TempCommandBuffer gfxContextBeginTransientCommandBuffer()
   {
     VkCommandBuffer result;
-    gfxContextCreateCommandBuffers(self, 1, &result);
+    gfxContextCreateCommandBuffers(1, &result);
 
     VkCommandBufferBeginInfo begin_info;
     begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1430,12 +1428,12 @@ namespace
 
     vkBeginCommandBuffer(result, &begin_info);
 
-    return {self, result};
+    return {result};
   }
 
   void gfxContextEndTransientCommandBuffer(TempCommandBuffer buffer, bfGfxQueueType queue_type = BF_GFX_QUEUE_GRAPHICS, bool wait_for_finish = true)
   {
-    const VkQueue queue = buffer.context->logical_device->queues[queue_type];
+    const VkQueue queue = g_Ctx->logical_device->queues[queue_type];
 
     vkEndCommandBuffer(buffer.handle);
 
@@ -1455,27 +1453,27 @@ namespace
     if (wait_for_finish)
     {
       vkQueueWaitIdle(queue);
-      gfxContextDestroyCommandBuffers(buffer.context, 1, &buffer.handle, false);
+      gfxContextDestroyCommandBuffers(1, &buffer.handle, false);
     }  // else the caller is responsible for freeing
   }
 
-  void gfxContextInitCmdBuffers(bfGfxContextHandle self, bfWindowSurface& window)
+  void gfxContextInitCmdBuffers(bfWindowSurface& window)
   {
-    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(self, window.swapchain.img_list.size);
+    window.swapchain.command_buffers = gfxContextCreateCommandBuffers(window.swapchain.img_list.size);
   }
 
-  void gfxContextDestroyCmdBuffers(bfGfxContextHandle self, VulkanSwapchain* swapchain)
+  void gfxContextDestroyCmdBuffers(VulkanSwapchain* swapchain)
   {
-    gfxContextDestroyCommandBuffers(self, swapchain->img_list.size, swapchain->command_buffers);
+    gfxContextDestroyCommandBuffers(swapchain->img_list.size, swapchain->command_buffers);
     swapchain->command_buffers = nullptr;
   }
 
-  void gfxContextDestroyCmdFences(bfGfxContextHandle self, const VulkanSwapchain* swapchain)
+  void gfxContextDestroyCmdFences(const VulkanSwapchain* swapchain)
   {
-    const bfGfxDeviceHandle logical_device = self->logical_device;
+    const bfGfxDeviceHandle logical_device = g_Ctx->logical_device;
     const VkDevice          device         = logical_device->handle;
 
-    for (uint32_t i = 0; i < self->max_frames_in_flight; ++i)
+    for (uint32_t i = 0; i < g_Ctx->max_frames_in_flight; ++i)
     {
       vkDestroyFence(device, swapchain->in_flight_fences[i], BIFROST_VULKAN_CUSTOM_ALLOCATOR);
     }
@@ -1486,9 +1484,9 @@ namespace
     //const_cast<VulkanSwapchain*>(swapchain)->in_flight_images = nullptr;
   }
 
-  void gfxContextDestroySwapchainImageList(bfGfxContextHandle self, VulkanSwapchain* swapchain)
+  void gfxContextDestroySwapchainImageList(VulkanSwapchain* swapchain)
   {
-    bfGfxDeviceHandle               logical_device = self->logical_device;
+    bfGfxDeviceHandle               logical_device = g_Ctx->logical_device;
     const VkDevice                  device         = logical_device->handle;
     VulkanSwapchainImageList* const image_list     = &swapchain->img_list;
 
@@ -1515,11 +1513,11 @@ namespace
     image_list->images = nullptr;
   }
 
-  void gfxContextDestroySwapchain(bfGfxContextHandle self, VulkanSwapchain* swapchain)
+  void gfxContextDestroySwapchain(VulkanSwapchain* swapchain)
   {
     if (swapchain->handle)
     {
-      bfGfxDeviceHandle logical_device = self->logical_device;
+      bfGfxDeviceHandle logical_device = g_Ctx->logical_device;
 
       vkDestroySwapchainKHR(logical_device->handle, swapchain->handle, BIFROST_VULKAN_CUSTOM_ALLOCATOR);
       swapchain->handle = VK_NULL_HANDLE;
@@ -1749,7 +1747,7 @@ void bfBuffer_copyCPU(bfBufferHandle self, bfBufferSize dst_offset, const void* 
 
 void bfBuffer_copyGPU(bfBufferHandle src, bfBufferSize src_offset, bfBufferHandle dst, bfBufferSize dst_offset, bfBufferSize num_bytes)
 {
-  const auto transient_cmd = gfxContextBeginTransientCommandBuffer(src->alloc_pool->m_LogicalDevice->parent->parent);
+  const auto transient_cmd = gfxContextBeginTransientCommandBuffer();
   {
     VkBufferCopy copy_region;
     copy_region.srcOffset = src_offset + src->alloc_info.offset;
@@ -1782,7 +1780,8 @@ void bfBuffer_unMap(bfBufferHandle self)
 /* Shader Program + Module */
 bfShaderModuleHandle bfGfxDevice_newShaderModule(bfGfxDeviceHandle self_, bfShaderType type)
 {
-  bfShaderModuleHandle self = xxx_Alloc<bfShaderModule>();;
+  bfShaderModuleHandle self = xxx_Alloc<bfShaderModule>();
+  ;
 
   bfBaseGfxObject_ctor(&self->super, BF_GFX_OBJECT_SHADER_MODULE);
 
@@ -2244,7 +2243,7 @@ VkImageAspectFlags bfTexture__aspect(bfTextureHandle self)
 
 static void bfTexture__setLayout(bfTextureHandle self, bfGfxImageLayout layout)
 {
-  const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
+  const auto transient_cmd = gfxContextBeginTransientCommandBuffer();
   setImageLayout(transient_cmd.handle, self->tex_image, bfTexture__aspect(self), bfVkConvertImgLayout(self->tex_layout), bfVkConvertImgLayout(layout), self->image_miplevels);
   gfxContextEndTransientCommandBuffer(transient_cmd);
   self->tex_layout = layout;
@@ -2437,7 +2436,7 @@ bfBool32 bfTexture_loadDataRange(bfTextureHandle self, const void* pixels, size_
 void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3])
 {
   bfTexture__setLayout(self, BF_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-  const auto transient_cmd = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
+  const auto transient_cmd = gfxContextBeginTransientCommandBuffer();
   {
     VkBufferImageCopy region;
 
@@ -2467,7 +2466,7 @@ void bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int
     int32_t mip_width  = self->image_width;
     int32_t mip_height = self->image_height;
 
-    const auto copy_cmds = gfxContextBeginTransientCommandBuffer(self->parent->parent->parent);
+    const auto copy_cmds = gfxContextBeginTransientCommandBuffer();
     {
       VkImageMemoryBarrier barrier            = {};
       barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -2672,9 +2671,9 @@ void bfVertexLayout_delete(bfVertexLayoutSetHandle self)
 
 // Idk what's happeneing with this code
 
-void UpdateResourceFrame(bfGfxContextHandle ctx, bfBaseGfxObject* obj)
+void UpdateResourceFrame(bfBaseGfxObject* obj)
 {
-  obj->last_frame_used = ctx->frame_count;
+  obj->last_frame_used = g_Ctx->frame_count;
 }
 
 // ReSharper restore CppZeroConstantCanBeReplacedWithNullptr

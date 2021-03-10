@@ -80,7 +80,6 @@ namespace bf::imgui
 
   struct UIRenderer final
   {
-    bfGfxContextHandle      ctx;
     bfGfxDeviceHandle       device;
     bfVertexLayoutSetHandle vertex_layout;
     bfShaderModuleHandle    vertex_shader;
@@ -179,7 +178,7 @@ namespace bf::imgui
   static void   ImGui_RendererSetWindowSize(ImGuiViewport* vp, ImVec2 size);
   static void   ImGui_RendererRenderWindow(ImGuiViewport* vp, void* render_arg);
 
-  void startup(bfGfxContextHandle graphics, bfWindow* window)
+  void startup(bfWindow* window)
   {
     ImGui::CreateContext(nullptr);
 
@@ -271,10 +270,9 @@ namespace bf::imgui
     // Renderer Setup
 
     std::memset(&s_RenderData, 0x0, sizeof(s_RenderData));
-    s_RenderData.ctx  = graphics;
-    const auto device = s_RenderData.device = bfGfxContext_device(graphics);
+    const auto device = s_RenderData.device = bfGfxGetDevice();
 
-    s_RenderData.main_viewport_data = new UIRenderData(bfGfxContext_getFrameInfo(s_RenderData.ctx).num_frame_indices);
+    s_RenderData.main_viewport_data = new UIRenderData(bfGfxContext_getFrameInfo().num_frame_indices);
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -500,7 +498,7 @@ namespace bf::imgui
         }
       }
 
-      const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(s_RenderData.ctx, window, 0u);
+      const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(window, 0u);
       const int                    fb_width     = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
       const int                    fb_height    = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
 
@@ -614,7 +612,7 @@ namespace bf::imgui
   void endFrame()
   {
     ImGuiViewport* const main_viewport = ImGui::GetMainViewport();
-    const bfGfxFrameInfo info          = bfGfxContext_getFrameInfo(s_RenderData.ctx);
+    const bfGfxFrameInfo info          = bfGfxContext_getFrameInfo();
 
     ImGui::Render();
     frameDraw(main_viewport, ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->grabFrameData(info.frame_index));
@@ -792,8 +790,8 @@ namespace bf::imgui
   static void ImGui_RendererCreateWindow(ImGuiViewport* vp)
   {
     bfWindow* const             bf_window      = (bfWindow*)vp->PlatformHandle;
-    const bfWindowSurfaceHandle surface        = bfGfxContext_createWindow(s_RenderData.ctx, bf_window);
-    const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo(s_RenderData.ctx);
+    const bfWindowSurfaceHandle surface        = bfGfxContext_createWindow(bf_window);
+    const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo();
     UIRenderData* const         ui_render_data = new UIRenderData(info.num_frame_indices);
 
     vp->RendererUserData  = surface;
@@ -812,7 +810,7 @@ namespace bf::imgui
 
     if (ImGui::GetMainViewport() != vp)
     {
-      bfGfxContext_destroyWindow(s_RenderData.ctx, surface);
+      bfGfxContext_destroyWindow(surface);
     }
 
     vp->PlatformHandleRaw = NULL;
@@ -831,14 +829,14 @@ namespace bf::imgui
     UIRenderData* const         ui_render_data = (UIRenderData*)vp->PlatformHandleRaw;
     const bfWindowSurfaceHandle surface        = (bfWindowSurfaceHandle)vp->RendererUserData;
 
-    if (bfGfxContext_beginFrame(s_RenderData.ctx, surface))
+    if (bfGfxContext_beginFrame(surface))
     {
-      const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(s_RenderData.ctx, surface, 0u);
+      const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(surface, 0u);
 
       if (bfGfxCmdList_begin(command_list))
       {
         const bfTextureHandle surface_tex = bfGfxDevice_requestSurface(surface);
-        const bfGfxFrameInfo  info        = bfGfxContext_getFrameInfo(s_RenderData.ctx);
+        const bfGfxFrameInfo  info        = bfGfxContext_getFrameInfo();
 
         setupDefaultRenderPass(command_list, surface_tex);
         frameDraw(vp, vp->DrawData, surface, ui_render_data->grabFrameData(info.frame_index));

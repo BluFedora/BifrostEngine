@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_gfx_handle.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Opaque Handle declarations.
  *
@@ -36,7 +36,6 @@ typedef struct bfBaseGfxID
     bfBaseGfxID id;                   \
   } bf##T##ID
 
-BF_DECLARE_HANDLE(GfxContext);
 BF_DECLARE_HANDLE(GfxDevice);
 BF_DECLARE_HANDLE(GfxCommandList);
 BF_DECLARE_HANDLE(Buffer);

@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_gfx_types.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Defines basic enumerations used throughout the API.
  * 
  * @version 0.0.1
  * @date    2020-03-22
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #ifndef BF_GFX_TYPES_H
@@ -19,7 +19,7 @@
 #if __cplusplus
 extern "C" {
 #endif
-typedef enum
+typedef enum bfGfxIndexType
 {
   BF_INDEX_TYPE_UINT16,
   BF_INDEX_TYPE_UINT32,
@@ -28,7 +28,7 @@ typedef enum
 
 /* clang-format off */
 
-typedef enum
+typedef enum bfGfxVertexFormatAttribute
 {
   //
   // 32-bit Float Formats
@@ -71,7 +71,7 @@ typedef enum
 // Compatible with Vulkan's VkFormat enum.
 //   [https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkFormat.html]
 //
-typedef enum
+typedef enum bfGfxImageFormat
 {
   BF_IMAGE_FORMAT_UNDEFINED                                  = 0,
   BF_IMAGE_FORMAT_R4G4_UNORM_PACK8                           = 1,
@@ -321,7 +321,7 @@ typedef enum
 //
 // Compatible with Vulkan's VkImageAspectFlagBits enum.
 //
-typedef enum
+typedef enum bfGfxPipelineStageFlags
 {
   BF_PIPELINE_STAGE_TOP_OF_PIPE_BIT                    = 0x00000001,
   BF_PIPELINE_STAGE_DRAW_INDIRECT_BIT                  = 0x00000002,
@@ -349,7 +349,7 @@ typedef uint32_t bfGfxPipelineStageBits;
 //
 // Compatible with Vulkan's VkAccessFlagBits enum.
 //
-typedef enum
+typedef enum bfGfxAccessFlags
 {
   BF_ACCESS_INDIRECT_COMMAND_READ_BIT          = 0x00000001,
   BF_ACCESS_INDEX_READ_BIT                     = 0x00000002,
@@ -376,7 +376,7 @@ typedef uint32_t bfGfxAccessFlagsBits;
 //
 // Compatible with Vulkan's VkSampleCountFlagBits enum.
 //
-typedef enum
+typedef enum bfGfxSampleFlags
 {
   BF_SAMPLE_1  = 0x00000001,
   BF_SAMPLE_2  = 0x00000002,
@@ -388,7 +388,7 @@ typedef enum
 
 } bfGfxSampleFlags;
 
-typedef enum
+typedef enum bfGfxImageLayout
 {
   BF_IMAGE_LAYOUT_UNDEFINED                                  = 0,
   BF_IMAGE_LAYOUT_GENERAL                                    = 1,
@@ -406,7 +406,7 @@ typedef enum
 
 } bfGfxImageLayout;
 
-typedef enum
+typedef enum bfGfxQueueType
 {
   BF_GFX_QUEUE_GRAPHICS,
   BF_GFX_QUEUE_COMPUTE,
@@ -420,4 +420,49 @@ typedef enum
 }
 #endif
 
+#if __cplusplus >= 201703L
+
+template<typename T>
+constexpr bfGfxIndexType bfIndexTypeFromT() = delete; /* undefined */
+
+template<>
+constexpr bfGfxIndexType bfIndexTypeFromT<uint16_t>()
+{
+  return BF_INDEX_TYPE_UINT16;
+}
+
+template<>
+constexpr bfGfxIndexType bfIndexTypeFromT<uint32_t>()
+{
+  return BF_INDEX_TYPE_UINT32;
+}
+
+#endif
+
 #endif /* BF_GFX_TYPES_H */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

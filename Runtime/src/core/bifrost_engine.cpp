@@ -256,7 +256,7 @@ namespace bf
 
     m_Renderer.init(params, main_window);
     m_DebugRenderer.init(m_Renderer);
-    m_Gfx2D = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler(), m_Renderer.context());
+    m_Gfx2D = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler());
 
     VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
@@ -302,7 +302,7 @@ namespace bf
     /////
 
     const auto limits  = bfGfxDevice_limits(m_Renderer.device());
-    m_2DScreenCommands = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler(), m_Renderer.context());
+    m_2DScreenCommands = m_MainMemory.allocateT<CommandBuffer2D>(m_Renderer.glslCompiler());
     m_2DScreenUBO.create(m_Renderer.device(), BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, m_Renderer.frameInfo(), limits.uniform_buffer_offset_alignment);
 
     ///////
@@ -370,12 +370,11 @@ namespace bf
     {
       scene->removeAllEntities();
     }
+    // Must be cleared before the Asset System destruction since it contains handles to scenes.
+    m_SceneStack.clear();
 
     // Entity Garbage Must be collected before 'm_SceneStack' is cleared.
     gc::collect(m_MainMemory);
-
-    // Must be cleared before the Asset System destruction since it contains handles to scenes.
-    m_SceneStack.clear();
 
     m_Assets.clearDirtyList();
     m_Assets.setRootPath(nullptr);

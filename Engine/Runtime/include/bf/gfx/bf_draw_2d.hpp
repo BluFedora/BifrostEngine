@@ -72,7 +72,6 @@ namespace bf
 
   struct Gfx2DRenderData : private NonCopyMoveable<Gfx2DRenderData>
   {
-    bfGfxContextHandle      ctx;
     bfGfxDeviceHandle       device;
     bfVertexLayoutSetHandle vertex_layouts[2];
     bfShaderModuleHandle    vertex_shader;
@@ -85,7 +84,7 @@ namespace bf
     int                     num_frame_datas;
     Gfx2DPerFrameRenderData frame_datas[k_bfGfxMaxFramesDelay];
 
-    explicit Gfx2DRenderData(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
+    explicit Gfx2DRenderData(GLSLCompiler& glsl_compiler);
 
     // Size measured in number of items.
     void reserve(int index, size_t vertex_size, size_t indices_size);
@@ -545,7 +544,7 @@ namespace bf
     ClipRect*        current_clip_rect;  //!< Clip Rects are allocated with `aux_memory`, it is a stack.
 
    public:
-    CommandBuffer2D(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics);
+    CommandBuffer2D(GLSLCompiler& glsl_compiler);
 
     //
     // User API

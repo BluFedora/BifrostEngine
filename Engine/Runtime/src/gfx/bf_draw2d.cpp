@@ -113,9 +113,8 @@ namespace bf
     }
   }
 
-  Gfx2DRenderData::Gfx2DRenderData(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics) :
-    ctx{graphics},
-    device{bfGfxContext_device(graphics)},
+  Gfx2DRenderData::Gfx2DRenderData(GLSLCompiler& glsl_compiler) :
+    device{bfGfxGetDevice()},
     vertex_layouts{nullptr, nullptr},
     vertex_shader{nullptr},
     fragment_shader{nullptr},
@@ -167,7 +166,7 @@ namespace bf
     white_texture = gfx::createTexture(device, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
 
     // Frame Data
-    const auto& frame_info = bfGfxContext_getFrameInfo(ctx);
+    const auto& frame_info = bfGfxContext_getFrameInfo();
 
     num_frame_datas = int(frame_info.num_frame_indices);
 
@@ -347,8 +346,8 @@ namespace bf
     return result;
   }
 
-  CommandBuffer2D::CommandBuffer2D(GLSLCompiler& glsl_compiler, bfGfxContextHandle graphics) :
-    render_data{glsl_compiler, graphics},
+  CommandBuffer2D::CommandBuffer2D(GLSLCompiler& glsl_compiler) :
+    render_data{glsl_compiler},
     aux_memory{},
     command_stream{},
     vertex_stream{},
@@ -801,7 +800,7 @@ namespace bf
     // Upload the Vertex / Index Data To The GPU
     //
 
-    const auto&              frame_info = bfGfxContext_getFrameInfo(render_data.ctx);
+    const auto&              frame_info = bfGfxContext_getFrameInfo();
     Gfx2DPerFrameRenderData& frame_data = render_data.frame_datas[frame_info.frame_index];
 
     render_data.reserve(frame_info.frame_index, counts.num_vertices, counts.num_indices);
@@ -1890,7 +1889,7 @@ namespace bf
 
         font->device = render_data.device;
 
-        const auto&   frame_info    = bfGfxContext_getFrameInfo(render_data.ctx);
+        const auto&   frame_info    = bfGfxContext_getFrameInfo();
         DynamicAtlas& current_atlas = font->gpu_atlas[frame_info.frame_index];
 
         for (DynamicAtlas& atlas : font->gpu_atlas)

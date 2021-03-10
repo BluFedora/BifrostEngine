@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_gfx_api.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Outlines the cross platform C-API for low level graphics.
  *
@@ -161,7 +161,7 @@ BF_GFX_API bfTextureSamplerProperties bfTextureSamplerProperties_init(bfTexSampl
 
 /* Create Params */
 
-typedef struct
+typedef struct bfGfxContextCreateParams
 {
   const char* app_name;
   uint32_t    app_version;
@@ -172,21 +172,21 @@ typedef struct
 #define bfGfxMakeVersion(major, minor, patch) \
   (((major) << 22) | ((minor) << 12) | (patch))
 
-typedef struct
+typedef struct bfAllocationCreateInfo
 {
   bfBufferSize         size;
   bfBufferPropertyBits properties;
 
 } bfAllocationCreateInfo;
 
-typedef struct
+typedef struct bfBufferCreateParams
 {
   bfAllocationCreateInfo allocation;
   bfBufferUsageBits      usage;
 
 } bfBufferCreateParams;
 
-typedef struct
+typedef struct bfShaderProgramCreateParams
 {
   const char* debug_name;
   uint32_t    num_desc_sets;
@@ -246,22 +246,23 @@ typedef struct bfGfxFrameInfo
 } bfGfxFrameInfo;
 
 /* Context */
-BF_GFX_API bfGfxContextHandle     bfGfxContext_new(const bfGfxContextCreateParams* params);
-BF_GFX_API bfGfxDeviceHandle      bfGfxContext_device(bfGfxContextHandle self);
-BF_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow* bf_window);
-BF_GFX_API void                   bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle);
-BF_GFX_API bfBool32               bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window);
-BF_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(bfGfxContextHandle self);
-BF_GFX_API bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index);
-BF_GFX_API void                   bfGfxContext_endFrame(bfGfxContextHandle self);
-BF_GFX_API void                   bfGfxContext_delete(bfGfxContextHandle self);
+BF_GFX_API void              bfGfxInit(const bfGfxContextCreateParams* params);
+BF_GFX_API bfGfxDeviceHandle bfGfxGetDevice(void);
+BF_GFX_API void              bfGfxDestroy(void);
+
+BF_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(struct bfWindow* bf_window);
+BF_GFX_API void                   bfGfxContext_destroyWindow(bfWindowSurfaceHandle window_handle);
+BF_GFX_API bfBool32               bfGfxContext_beginFrame(bfWindowSurfaceHandle window);
+BF_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(void);
+BF_GFX_API bfGfxCommandListHandle bfGfxContext_requestCommandList(bfWindowSurfaceHandle window, uint32_t thread_index);
+BF_GFX_API void                   bfGfxContext_endFrame(void);
 
 // TODO(SR): Check if this needs to be in this header.
 #define bfFrameCountMax 0xFFFFFFFF
 typedef uint32_t bfFrameCount_t;
 
 /* Logical Device */
-typedef struct
+typedef struct bfDeviceLimits
 {
   bfBufferSize uniform_buffer_offset_alignment; /*!< Worst case is 256 (0x100) */
 
@@ -561,25 +562,6 @@ BF_GFX_API void     bfGfxCmdList_submit(bfGfxCommandListHandle self);
 
 #if __cplusplus
 }
-#endif
-
-#if __cplusplus >= 201703L
-
-template<typename T>
-static constexpr bfGfxIndexType bfIndexTypeFromT() = delete; /* undefined */
-
-template<>
-constexpr bfGfxIndexType bfIndexTypeFromT<uint16_t>()
-{
-  return BF_INDEX_TYPE_UINT16;
-}
-
-template<>
-constexpr bfGfxIndexType bfIndexTypeFromT<uint32_t>()
-{
-  return BF_INDEX_TYPE_UINT32;
-}
-
 #endif
 
 #endif /* BF_GFX_API_H */

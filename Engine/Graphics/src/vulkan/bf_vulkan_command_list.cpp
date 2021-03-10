@@ -16,7 +16,7 @@ static void AddCachedResource(bfGfxDeviceHandle device, bfBaseGfxObject* obj, st
   device->cached_resources = obj;
 }
 
-void UpdateResourceFrame(bfGfxContextHandle ctx, bfBaseGfxObject* obj);
+void UpdateResourceFrame(bfBaseGfxObject* obj);
 
 bfWindowSurfaceHandle bfGfxCmdList_window(bfGfxCommandListHandle self)
 {
@@ -133,7 +133,7 @@ void bfGfxCmdList_pipelineBarriers(bfGfxCommandListHandle self, bfGfxPipelineSta
 void bfGfxCmdList_setRenderpass(bfGfxCommandListHandle self, bfRenderpassHandle renderpass)
 {
   self->pipeline_state.renderpass = renderpass;
-  UpdateResourceFrame(self->context, &renderpass->super);
+  UpdateResourceFrame(&renderpass->super);
 }
 
 void bfGfxCmdList_setRenderpassInfo(bfGfxCommandListHandle self, const bfRenderpassInfo* renderpass_info)
@@ -215,7 +215,7 @@ void bfGfxCmdList_setAttachments(bfGfxCommandListHandle self, bfTextureHandle* a
   self->attachment_size[1] = static_cast<uint32_t>(attachments[0]->image_height);
   self->framebuffer        = fb;
 
-  UpdateResourceFrame(self->context, &fb->super);
+  UpdateResourceFrame(&fb->super);
 }
 
 void bfGfxCmdList_setRenderAreaAbs(bfGfxCommandListHandle self, int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -720,7 +720,7 @@ void bfGfxCmdList_bindDescriptorSet(bfGfxCommandListHandle self, uint32_t set_in
   }
 
   bfGfxCmdList_bindDescriptorSets(self, set_index, &desc_set, 1);
-  UpdateResourceFrame(self->context, &desc_set->super);
+  UpdateResourceFrame(&desc_set->super);
 }
 
 static void flushPipeline(bfGfxCommandListHandle self)
@@ -1060,7 +1060,7 @@ static void flushPipeline(bfGfxCommandListHandle self)
 
   self->dynamic_state_dirty = 0x0;
 
-  UpdateResourceFrame(self->context, &pl->super);
+  UpdateResourceFrame(&pl->super);
 }
 
 void bfGfxCmdList_draw(bfGfxCommandListHandle self, uint32_t first_vertex, uint32_t num_vertices)
@@ -1164,7 +1164,7 @@ void bfGfxCmdList_updateBuffer(bfGfxCommandListHandle self, bfBufferHandle buffe
   vkCmdUpdateBuffer(self->handle, buffer->handle, offset, size, data);
 }
 
-extern void gfxDestroySwapchain(bfGfxContextHandle self, bfWindowSurface& window);
+extern void gfxDestroySwapchain(bfWindowSurface& window);
 
 #include <stdio.h>
 
@@ -1172,7 +1172,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
   const VkFence       command_fence = self->fence;
   bfWindowSurface&    window        = *self->window;
-  const std::uint32_t frame_index   = bfGfxContext_getFrameInfo(self->context).frame_index;
+  const std::uint32_t frame_index   = bfGfxContext_getFrameInfo().frame_index;
 
   VkSemaphore          wait_semaphores[]   = {window.is_image_available[frame_index]};
   VkPipelineStageFlags wait_stages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};  // What to wait for, like: DO NOT WRITE TO COLOR UNTIL IMAGE IS AVALIBALLE.
@@ -1209,7 +1209,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 
   if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
   {
-    gfxDestroySwapchain(self->context, window);
+    gfxDestroySwapchain(window);
   }
   else
   {

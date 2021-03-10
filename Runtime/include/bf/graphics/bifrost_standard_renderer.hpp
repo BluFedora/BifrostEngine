@@ -492,7 +492,6 @@ namespace bf
 
    public:
     GLSLCompiler                             m_GLSLCompiler;
-    bfGfxContextHandle                       m_GfxBackend;
     bfGfxDeviceHandle                        m_GfxDevice;
     bfGfxFrameInfo                           m_FrameInfo;
     bfVertexLayoutSetHandle                  m_StandardVertexLayout;
@@ -520,7 +519,6 @@ namespace bf
    public:
     explicit StandardRenderer(IMemoryManager& memory);
 
-    bfGfxContextHandle      context() const { return m_GfxBackend; }
     bfGfxDeviceHandle       device() const { return m_GfxDevice; }
     bfVertexLayoutSetHandle standardVertexLayout() const { return m_StandardVertexLayout; }
     bfGfxCommandListHandle  mainCommandList() const { return m_MainCmdList; }

@@ -56,7 +56,6 @@ typedef struct VulkanExtensionList
 
 typedef struct VulkanPhysicalDevice
 {
-  bfGfxContextHandle               parent;
   VkPhysicalDevice                 handle;
   VkPhysicalDeviceMemoryProperties memory_properties;
   VkPhysicalDeviceProperties       device_properties;
