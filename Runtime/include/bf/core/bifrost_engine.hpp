@@ -3,6 +3,7 @@
 
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
+#include "bf/bf_dbg_logger.h"  // bfLog*
 #include "bf/ecs/bifrost_iecs_system.hpp"
 #include "bf/gfx/bf_render_queue.hpp"
 #include "bf/graphics/bifrost_debug_renderer.hpp"
@@ -173,9 +174,10 @@ namespace bf
     using UpdateLoopTimePoint = UpdateLoopClock::time_point;
 
    private:
-    // Configuration
+    // Configuration / Debug
 
     CommandLineArgs m_CmdlineArgs;
+    bfIDbgLogger    m_ConsoleLogger;
 
     // Memory Allocators
 

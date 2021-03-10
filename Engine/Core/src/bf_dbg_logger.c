@@ -3,6 +3,9 @@
  * @file   bf_dbg_logger.c
  * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
+ *   Basic logging interface for the engine, and for extra fun allows for
+ *   changing the color of the console output (assuming the terminal supports it).
+ * 
  * @version 0.0.1
  * @date    2019-12-22
  *
@@ -20,23 +23,39 @@
 #include <stdio.h> /* sprintf, printf */
 #endif
 
-static bfIDbgLogger s_ILogger        = {NULL, NULL};
-static unsigned          s_IndentLevel    = 0u;
-static bfLoggerLevel     s_LoggerLevel    = BIFROST_LOGGER_LVL_VERBOSE;
-static bfLogColorState   s_ColorState     = {BIFROST_LOGGER_COLOR_WHITE, BIFROST_LOGGER_COLOR_BLACK, 0x0};
-static int               s_HasInitialized = 0;
+static bfIDbgLogger*   s_ILoggerList = NULL;
+static unsigned int    s_IndentLevel = 0u;
+static bfLoggerLevel   s_LoggerLevel = BF_LOGGER_LVL_VERBOSE;
+static bfLogColorState s_ColorState  = {BF_LOGGER_COLOR_WHITE, BF_LOGGER_COLOR_BLACK, 0x0};
 
 static void callCallback(bfLoggerLevel level, const char* file, const char* func, int line, const char* format, va_list args);
 
-void bfLogger_init(const bfIDbgLogger* logger)
+void bfLogAdd(bfIDbgLogger* logger)
 {
-  assert(!s_HasInitialized && "The logger subsystem was already initialized.");
-  assert(logger && logger->callback && "A valid logger must be passed into 'bfLogger_init'");
+  logger->next  = s_ILoggerList;
+  logger->prev  = NULL;
+  s_ILoggerList = logger;
+}
 
-  s_ILogger        = *logger;
-  s_IndentLevel    = 0u;
-  s_LoggerLevel    = BIFROST_LOGGER_LVL_VERBOSE;
-  s_HasInitialized = 1;
+void bfLogRemove(bfIDbgLogger* logger)
+{
+  if (logger->prev)
+  {
+    logger->prev->next = logger->next;
+  }
+  else
+  {
+    s_ILoggerList = logger->next;
+  }
+
+  if (logger->next)
+  {
+    logger->next->prev = logger->prev;
+  }
+  else
+  {
+    // This is where a tail pointer would be handled.
+  }
 }
 
 void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...)
@@ -45,7 +64,7 @@ void bfLogPush_(const char* file, const char* func, int line, bfFormatString(con
 
   va_list args;
   va_start(args, format);
-  callCallback(BIFROST_LOGGER_LVL_PUSH, file, func, line, format, args);
+  callCallback(BF_LOGGER_LVL_PUSH, file, func, line, format, args);
   va_end(args);
   ++s_IndentLevel;
 }
@@ -67,15 +86,9 @@ void bfLogPop_(const char* file, const char* func, int line, unsigned amount)
 
   va_list args;
   memset(&args, 0x0, sizeof(args));
-  callCallback(BIFROST_LOGGER_LVL_POP, file, func, line, "", args);
+  callCallback(BF_LOGGER_LVL_POP, file, func, line, "", args);
 
   s_IndentLevel -= amount;
-}
-
-void bfLogger_deinit(void)
-{
-  assert(s_HasInitialized && "The logger subsystem was never initialized.");
-  s_HasInitialized = 0;
 }
 
 bfLogColorState bfLogSetColor(bfLoggerColor fg_color, bfLoggerColor bg_color, unsigned int flags)
@@ -106,10 +119,10 @@ bfLogColorState bfLogSetColor(bfLoggerColor fg_color, bfLoggerColor bg_color, un
    };
 
   const WORD color = k_FgColorMap[fg_color] | k_BgColorMap[bg_color] |
-                     FOREGROUND_INTENSITY * ((flags & BIFROST_LOGGER_COLOR_FG_BOLD) != 0) |
-                     BACKGROUND_INTENSITY * ((flags & BIFROST_LOGGER_COLOR_BG_BOLD) != 0) |
-                     COMMON_LVB_REVERSE_VIDEO * ((flags & BIFROST_LOGGER_COLOR_INVERT) != 0) |
-                     COMMON_LVB_UNDERSCORE * ((flags & BIFROST_LOGGER_COLOR_UNDERLINE) != 0);
+                     FOREGROUND_INTENSITY * ((flags & BF_LOGGER_COLOR_FG_BOLD) != 0) |
+                     BACKGROUND_INTENSITY * ((flags & BF_LOGGER_COLOR_BG_BOLD) != 0) |
+                     COMMON_LVB_REVERSE_VIDEO * ((flags & BF_LOGGER_COLOR_INVERT) != 0) |
+                     COMMON_LVB_UNDERSCORE * ((flags & BF_LOGGER_COLOR_UNDERLINE) != 0);
 
   const HANDLE h_console = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -125,9 +138,9 @@ bfLogColorState bfLogSetColor(bfLoggerColor fg_color, bfLoggerColor bg_color, un
   /* [http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#256-colors] */
   static const int s_ColorMap[] = {30, 37, 33, 35, 36, 31, 32, 34};
 
-  const int bold_impl      = flags & BIFROST_LOGGER_COLOR_FG_BOLD ? 1 : 21;
-  const int underline_impl = flags & BIFROST_LOGGER_COLOR_UNDERLINE ? 4 : 24;
-  const int invert_impl    = flags & BIFROST_LOGGER_COLOR_INVERT ? 7 : 27;
+  const int bold_impl      = flags & BF_LOGGER_COLOR_FG_BOLD ? 1 : 21;
+  const int underline_impl = flags & BF_LOGGER_COLOR_UNDERLINE ? 4 : 24;
+  const int invert_impl    = flags & BF_LOGGER_COLOR_INVERT ? 7 : 27;
   const int fg_color_impl  = s_ColorMap[fg_color];
   const int bg_color_impl  = s_ColorMap[bg_color] + 10;
 
@@ -149,17 +162,24 @@ bfLogColorState bfLogSetColor(bfLoggerColor fg_color, bfLoggerColor bg_color, un
 
 static void callCallback(bfLoggerLevel level, const char* file, const char* func, int line, const char* format, va_list args)
 {
-  if (s_ILogger.callback)
-  {
-    bfDbgLogInfo log_info;
-    log_info.level        = level;
-    log_info.file         = file;
-    log_info.func         = func;
-    log_info.line         = line;
-    log_info.indent_level = s_IndentLevel;
-    log_info.format       = format;
+  bfDbgLogInfo log_info;
+  log_info.level        = level;
+  log_info.file         = file;
+  log_info.func         = func;
+  log_info.line         = line;
+  log_info.indent_level = s_IndentLevel;
+  log_info.format       = format;
 
-    s_ILogger.callback(s_ILogger.data, &log_info, args);
+  bfIDbgLogger* logger = s_ILoggerList;
+
+  while (logger)
+  {
+    if (logger->callback)
+    {
+      logger->callback(logger, &log_info, args);
+    }
+
+    logger = logger->next;
   }
 }
 

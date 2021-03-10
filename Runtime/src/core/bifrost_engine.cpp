@@ -4,7 +4,6 @@
 #include "bf/Platform.h"                               // BifrostWindow
 #include "bf/anim2D/bf_animation_system.hpp"           // AnimationSystem
 #include "bf/asset_io/bf_gfx_assets.hpp"               // ***Asset
-#include "bf/bf_dbg_logger.h"                          // bfLog*
 #include "bf/bf_ui.hpp"                                // UI::
 #include "bf/bf_version.h"                             // BF_VERSION_STR
 #include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
@@ -71,6 +70,7 @@ namespace bf
   Engine::Engine(char* main_memory, std::size_t main_memory_size, int argc, char* argv[]) :
     NonCopyMoveable<Engine>{},
     m_CmdlineArgs{argc, argv},
+    m_ConsoleLogger{},
 #if USE_CRT_HEAP
     m_MainMemory{},
 #else
@@ -105,6 +105,26 @@ namespace bf
 #if USE_CRT_HEAP
     (void)main_memory;
 #endif
+
+    m_ConsoleLogger.user_data = this;
+    m_ConsoleLogger.callback  = [](bfIDbgLogger* data, bfDbgLogInfo* info, va_list args) {
+      (void)data;
+
+      if (info->level != BF_LOGGER_LVL_POP)
+      {
+        static constexpr unsigned int TAB_SIZE = 4;
+
+#if 0
+         std::printf("%*c%s(%u): \n", TAB_SIZE * info->indent_level, ' ', info->func, info->line);
+         std::printf("%*c", TAB_SIZE * info->indent_level * 2, ' ');
+#else
+        std::printf("%*c", TAB_SIZE * info->indent_level, ' ');
+
+#endif
+        std::vprintf(info->format, args);  // NOLINT(clang-diagnostic-format-nonliteral)
+        std::printf("\n");
+      }
+    };
   }
 
   ARC<SceneAsset> Engine::currentScene() const
@@ -220,28 +240,7 @@ namespace bf
 
   void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
   {
-    bfIDbgLogger logger_config{
-     nullptr,
-     [](void* data, bfDbgLogInfo* info, va_list args) {
-       (void)data;
-
-       if (info->level != BIFROST_LOGGER_LVL_POP)
-       {
-         static constexpr unsigned int TAB_SIZE = 4;
-
-#if 0
-         std::printf("%*c%s(%u): \n", TAB_SIZE * info->indent_level, ' ', info->func, info->line);
-         std::printf("%*c", TAB_SIZE * info->indent_level * 2, ' ');
-#else
-         std::printf("%*c", TAB_SIZE * info->indent_level, ' ');
-
-#endif
-         std::vprintf(info->format, args);  // NOLINT(clang-diagnostic-format-nonliteral)
-         std::printf("\n");
-       }
-     }};
-
-    bfLogger_init(&logger_config);
+    bfLogAdd(&m_ConsoleLogger);
     bfJob::initialize();
     ClassID::Init();
 
@@ -262,11 +261,11 @@ namespace bf
     VMParams vm_params{};
     vm_params.error_fn = &userErrorFn;
     vm_params.print_fn = [](BifrostVM*, const char* message) {
-      bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
+      bfLogSetColor(BF_LOGGER_COLOR_BLACK, BF_LOGGER_COLOR_YELLOW, 0x0);
       bfLogPush("Print From Script");
       bfLogPrint("(BTS) %s", message);
       bfLogPop();
-      bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+      bfLogSetColor(BF_LOGGER_COLOR_CYAN, BF_LOGGER_COLOR_GREEN, BF_LOGGER_COLOR_FG_BOLD);
     };
     vm_params.min_heap_size      = 20;
     vm_params.heap_size          = 150;
@@ -406,7 +405,7 @@ namespace bf
     bfJob::shutdown();
 
     // Shutdown last since there could be errors logged on shutdown if any failures happen.
-    bfLogger_deinit();
+    bfLogRemove(&m_ConsoleLogger);
   }
 
   bool Engine::beginFrame()
@@ -433,9 +432,8 @@ namespace bf
     bfJob::tick();
 
     // NOTE(SR):
-    //   The Debug Renderer must update before submission of debug draw commands
-    //   to allow a duration of 0.0f seconds for debug primitives that we will remove
-    //   _next_ frame.
+    //   The Debug Renderer must update before submission of debug draw commands to allow 
+    //   a duration of 0.0f seconds for debug primitives that we will remove _next_ frame.
     m_DebugRenderer.update(delta_time);
 
     const int framebuffer_width  = int(bfTexture_width(m_Renderer.m_MainSurface));

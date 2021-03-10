@@ -326,9 +326,9 @@ static void TestScriptingStuff()
   TestClass my_obj    = {74, "This message will be in Y"};
   VMParams  vm_params = VMParams{};
   vm_params.print_fn  = [](BifrostVM*, const char* message) {
-    bfLogSetColor(BIFROST_LOGGER_COLOR_BLACK, BIFROST_LOGGER_COLOR_YELLOW, 0x0);
+    bfLogSetColor(BF_LOGGER_COLOR_BLACK, BF_LOGGER_COLOR_YELLOW, 0x0);
     std::printf("(BTS) %s", message);
-    bfLogSetColor(BIFROST_LOGGER_COLOR_CYAN, BIFROST_LOGGER_COLOR_GREEN, BIFROST_LOGGER_COLOR_FG_BOLD);
+    bfLogSetColor(BF_LOGGER_COLOR_CYAN, BF_LOGGER_COLOR_GREEN, BF_LOGGER_COLOR_FG_BOLD);
   };
 
   VM vm = VM{vm_params};
