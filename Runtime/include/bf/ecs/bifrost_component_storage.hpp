@@ -26,8 +26,11 @@
 
 namespace bf
 {
+  template<typename T>
+  using ComponentHandleImpl = DenseMapHandle<T, 12u, 20u>;
+
   template<typename... Args>
-  using DenseMapTuple    = ContainerTuple<DenseMap, Args...>;
+  using DenseMapTuple    = ContainerTuple<DenseMap, ComponentHandleImpl<Args>...>;
   using ComponentStorage = ComponentPack::apply<DenseMapTuple>;
 }  // namespace bf
 

@@ -1317,7 +1317,7 @@ namespace bf::editor
 
       if (err == AssetError::NONE)
       {
-        const json::Value project_json = json::fromString(project_json_str.buffer(), project_json_str.size());
+        const json::Value project_json = json::parse(project_json_str.buffer(), project_json_str.size());
 
         assert(project_json.isObject());
 

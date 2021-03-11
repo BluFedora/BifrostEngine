@@ -300,7 +300,7 @@ namespace bf
       if (serializer.pushObject("m_Components"))
       {
         ComponentStorage::forEachType([&serializer, this](auto t) {
-          using T = bfForEachTemplateT(t);
+          using T = typename bfForEachTemplateT(t)::TObject;
 
           const StringRange name = g_EngineComponentInfo[bfForEachTemplateIndex(t)].name;
 
@@ -433,7 +433,7 @@ namespace bf
   {
     // Components
     ComponentStorage::forEachType([this](auto t) {
-      using T = bfForEachTemplateT(t);
+      using T = typename bfForEachTemplateT(t)::TObject;
       remove<T>();
     });
 
@@ -465,7 +465,7 @@ namespace bf
     if (was_active != is_active)
     {
       ComponentStorage::forEachType([this, was_active, is_active](auto t) {
-        using T = bfForEachTemplateT(t);
+        using T = typename bfForEachTemplateT(t)::TObject;
         // A component is active if both the Entity itself is active and it is active.
         setComponentActiveImpl<T>(was_active, is_active, isComponentActive<T>());
       });

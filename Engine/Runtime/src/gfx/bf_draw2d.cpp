@@ -166,7 +166,7 @@ namespace bf
     white_texture = gfx::createTexture(device, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
 
     // Frame Data
-    const auto& frame_info = bfGfxContext_getFrameInfo();
+    const auto& frame_info = bfGfxGetFrameInfo();
 
     num_frame_datas = int(frame_info.num_frame_indices);
 
@@ -800,7 +800,7 @@ namespace bf
     // Upload the Vertex / Index Data To The GPU
     //
 
-    const auto&              frame_info = bfGfxContext_getFrameInfo();
+    const auto&              frame_info = bfGfxGetFrameInfo();
     Gfx2DPerFrameRenderData& frame_data = render_data.frame_datas[frame_info.frame_index];
 
     render_data.reserve(frame_info.frame_index, counts.num_vertices, counts.num_indices);
@@ -1889,7 +1889,7 @@ namespace bf
 
         font->device = render_data.device;
 
-        const auto&   frame_info    = bfGfxContext_getFrameInfo();
+        const auto&   frame_info    = bfGfxGetFrameInfo();
         DynamicAtlas& current_atlas = font->gpu_atlas[frame_info.frame_index];
 
         for (DynamicAtlas& atlas : font->gpu_atlas)

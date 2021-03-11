@@ -84,15 +84,15 @@ namespace bf
     // Component
 
     template<typename T>
-    DenseMap<T>& components()
+    DenseMap<ComponentHandleImpl<T>>& components()
     {
-      return m_ActiveComponents.get<T>();
+      return m_ActiveComponents.get<ComponentHandleImpl<T>>();
     }
 
     template<typename T>
-    const DenseMap<T>& components() const
+    const DenseMap<ComponentHandleImpl<T>>& components() const
     {
-      return m_ActiveComponents.get<T>();
+      return m_ActiveComponents.get<ComponentHandleImpl<T>>();
     }
 
     // Behavior

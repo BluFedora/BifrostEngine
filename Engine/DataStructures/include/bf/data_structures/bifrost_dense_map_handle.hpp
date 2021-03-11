@@ -1,9 +1,9 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_dense_map_handle.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @file   bf_dense_map_handle.hpp
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
- *   Strictly typed wrapper around an integer handle for use in the DenseMap<T>.
+ *   Strongly typed wrapper around an integer handle for use in the DenseMap<T>.
  *   
  *   Inspired By:
  *     [http://bitsquid.blogspot.com/2011/09/managing-decoupling-part-4-id-lookup.html]
@@ -11,41 +11,76 @@
  * @version 0.0.1
  * @date    2019-12-27
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_DENSE_MAP_HANDLE_HPP
 #define BF_DENSE_MAP_HANDLE_HPP
 
-#include <cstdint> /* uint32_t, uint16_t */
-#include <limits>  /* numeric_limits<T>  */
+#include <cstdint> /* uint8_t, uint16_t, uint32_t, uint16_t */
 
 namespace bf
 {
-  namespace dense_map
+  template<std::size_t k_NumBits>
+  struct SmallestUIntToHoldBitsImpl; /* = undefined */
+
+  // clang-format off
+  template<>
+  struct SmallestUIntToHoldBitsImpl<8> { using type = std::uint8_t; };
+  template<>
+  struct SmallestUIntToHoldBitsImpl<16> { using type = std::uint16_t; };
+  template<>
+  struct SmallestUIntToHoldBitsImpl<32> { using type = std::uint32_t; };
+  template<>
+  struct SmallestUIntToHoldBitsImpl<64> { using type = std::uint64_t; };
+  // clang-format on
+
+  template<std::size_t kValue, std::size_t Size>
+  static constexpr std::size_t smallestSize()
   {
-    using IDType    = std::uint32_t;  //!< The type used for an ID in a DenseMap.
-    using IndexType = std::uint16_t;  //!< The type used for indexing into a DenseMap.
+    return Size;
+  }
 
-    static constexpr IndexType INDEX_MASK              = std::numeric_limits<IndexType>::max();
-    static constexpr IDType    ONE_PLUS_INDEX_TYPE_MAX = (1 << std::numeric_limits<IndexType>::digits);
-
-    static_assert(sizeof(IDType) >= sizeof(IndexType), "IDType must be able to hold ONE_PLUS_INDEX_TYPE_MAX.");
-  }  // namespace dense_map
-
-  template<typename T>
-  struct DenseMapHandle final
+  template<std::size_t kValue, std::size_t Size, std::size_t FirstRestSizes, std::size_t... RestSizes>
+  static constexpr std::size_t smallestSize()
   {
-    dense_map::IDType id_index;  //!< This contains the unique id, the bottom bits contain the index into the m_SparseIndices array.
+    return kValue <= Size ? Size : smallestSize<kValue, FirstRestSizes, RestSizes...>();
+  }
 
-    DenseMapHandle(const dense_map::IDType id = dense_map::INDEX_MASK) :
-      id_index(id)
+  template<std::size_t k_NumBits>
+  using SmallestUIntToHoldBits = std::uint32_t;   // typename SmallestUIntToHoldBitsImpl<smallestSize<k_NumBits, 8, 16, 32, 64>()>::type;
+
+  template<
+   typename TObject_,
+   std::size_t k_NumGenerationBits,  // = 32 - 20,
+   std::size_t k_NumIndexBits        // = 20
+   >
+  union DenseMapHandle
+  {
+    using TObject     = TObject_;
+    using THandleType = SmallestUIntToHoldBits<k_NumGenerationBits + k_NumIndexBits>;
+    using TIndexType  = SmallestUIntToHoldBits<k_NumIndexBits>;
+
+    static constexpr std::size_t NumGenerationBits = k_NumGenerationBits;
+    static constexpr std::size_t NumIndexBits      = k_NumIndexBits;
+    static constexpr THandleType MaxObjects        = (1ull << NumIndexBits);
+    static constexpr TIndexType  InvalidIndex      = MaxObjects - 1u;  // Also acts as mask to get the index.
+
+    struct
+    {
+      THandleType generation : NumGenerationBits;
+      THandleType index : NumIndexBits;
+    };
+    THandleType handle;  //!< This contains the unique id, the bottom bits contain the index into the m_SparseIndices array.
+
+    DenseMapHandle(const THandleType id = InvalidIndex) :
+      handle(id)
     {
     }
 
-    [[nodiscard]] bool operator==(const DenseMapHandle<T>& rhs) const { return id_index == rhs.id_index; }
-    [[nodiscard]] bool operator!=(const DenseMapHandle<T>& rhs) const { return id_index != rhs.id_index; }
-    [[nodiscard]] bool isValid() const { return id_index != dense_map::INDEX_MASK; }
+    [[nodiscard]] bool operator==(const DenseMapHandle& rhs) const { return handle == rhs.handle; }
+    [[nodiscard]] bool operator!=(const DenseMapHandle& rhs) const { return handle != rhs.handle; }
+    [[nodiscard]] bool isValid() const { return handle != InvalidIndex; }
   };
 }  // namespace bf
 
@@ -55,7 +90,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
- * @file   bifrost_dense_map.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @file   bf_dense_map.hpp
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   The DenseMap is used for fast addition and removal of
  *   elements while keeping a cache local array of objects.
@@ -12,7 +12,7 @@
  * @version 0.0.1
  * @date    2019-12-27
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_DENSE_MAP_HPP
@@ -34,19 +34,24 @@ namespace bf
      *
      *    This is a freelist node embedded in an array.
      */
+    template<typename THandle>
     struct Index
     {
-     public:
-      IDType    id;     //!< Used to check if the passed in _unique_ ID is correct.
-      IndexType index;  //!< The actual index of the object in the DenseMap.
-      IndexType next;   //!< The next free index in the m_SparseIndices array.
+      using HandleType = typename THandle::THandleType;
+      using IndexType  = typename THandle::TIndexType;
 
      public:
-      Index(IDType id, IndexType i) :
-        id(id),
-        index(i),
-        next(INDEX_MASK)
+      THandle   handle;  //!< Used to check if the passed in _unique_ ID is correct, [generation, index-into `m_SparseIndices`].
+      IndexType index;   //!< The actual index of the object in the DenseMap.
+      IndexType next;    //!< The next free index in the `m_SparseIndices` array.
+
+     public:
+      Index(HandleType sparse_index, IndexType dense_index) :
+        handle(),
+        index(dense_index),
+        next(THandle::InvalidIndex)
       {
+        handle.index = sparse_index;
       }
     };
   }  // namespace dense_map
@@ -59,17 +64,26 @@ namespace bf
    *   Made for faster (frequent) Insert(s) and Remove(s) relative to Vector
    *   While keeping a dense array with good cache locality.
    */
-  template<typename TObject>
+  template<typename THandle>
   class DenseMap final
   {
    public:
+    using TObject    = typename THandle::TObject;
+    using HandleType = typename THandle::THandleType;
+    using IndexType  = typename THandle::TIndexType;
+
+    using Index = dense_map::Index<THandle>;
+
+    static constexpr std::size_t MaxObjects = THandle::MaxObjects;
+
+   public:
     struct Proxy
     {
-      TObject           data;
-      dense_map::IDType id;
+      TObject data;
+      THandle id;
 
       template<typename... Args>
-      explicit Proxy(dense_map::IDType id, Args&&... args) :
+      explicit Proxy(THandle id, Args&&... args) :
         data(std::forward<decltype(args)>(args)...),
         id(id)
       {
@@ -79,8 +93,8 @@ namespace bf
       const TObject* operator->() const { return &data; }
       TObject&       operator*() { return data; }
       const TObject& operator*() const { return data; }
-      operator TObject&() { return data; }
-      operator const TObject&() const { return data; }
+                     operator TObject&() { return data; }
+                     operator const TObject&() const { return data; }
     };
 
     class iterator
@@ -136,13 +150,13 @@ namespace bf
     };
 
     using ObjectArray    = Array<Proxy>;
-    using IndexArray     = Array<dense_map::Index>;
+    using IndexArray     = Array<Index>;
     using const_iterator = iterator;
 
    private:
-    ObjectArray          m_DenseArray;     //!< The actual dense array of objects
-    IndexArray           m_SparseIndices;  //!< Used to manage the indices of the next free index.
-    dense_map::IndexType m_NextSparse;     //!< Keeps track of the next free index and whether or not to grow, a value of `dense_map::INDEX_MASK` indicates there are no free index slots.
+    ObjectArray m_DenseArray;     //!< The actual dense array of objects
+    IndexArray  m_SparseIndices;  //!< Used to manage the indices of the next free index.
+    IndexType   m_NextSparse;     //!< Keeps track of the next free index and whether or not to grow, a value of `dense_map::INDEX_MASK` indicates there are no free index slots.
 
    public:
     /*!
@@ -155,7 +169,7 @@ namespace bf
     explicit DenseMap(IMemoryManager& memory) :
       m_DenseArray(memory),
       m_SparseIndices(memory),
-      m_NextSparse(dense_map::INDEX_MASK)
+      m_NextSparse(THandle::InvalidIndex)
     {
     }
 
@@ -169,7 +183,7 @@ namespace bf
     */
     void reserve(std::size_t size)
     {
-      assert(size < dense_map::INDEX_MASK && "A size bigger than `dense_map::INDEX_MASK` will not help you.");
+      assert(size < MaxObjects && "A size bigger than `MaxObjects` will not help you.");
 
       m_DenseArray.reserve(size);
       m_SparseIndices.reserve(size);
@@ -189,19 +203,19 @@ namespace bf
      *   The id to the newly created object.
     */
     template<typename... Args>
-    DenseMapHandle<TObject> add(Args&&... args)
+    THandle add(Args&&... args)
     {
-      assert(m_DenseArray.size() < dense_map::INDEX_MASK && "Too many objects created (how did this happen?? The max is 0xFFFF).");
+      assert(m_DenseArray.size() < MaxObjects && "Too many objects created.");
 
-      dense_map::Index& in = getNextIndex();
+      Index& in = getNextIndex();
 
       // Each time an object gets created change the ID to be unique.
-      in.id += dense_map::ONE_PLUS_INDEX_TYPE_MAX;
-      in.index = dense_map::IndexType(m_DenseArray.size());
+      ++in.handle.generation;
+      in.index = IndexType(m_DenseArray.size());
 
-      m_DenseArray.emplace(in.id, std::forward<Args>(args)...);
+      m_DenseArray.emplace(in.handle, std::forward<Args>(args)...);
 
-      return in.id;
+      return in.handle;
     }
 
     /*!
@@ -215,15 +229,20 @@ namespace bf
      *  true  - if the element can be found in this DenseMap
      *  false - if the ID is invalid and should not be used to get / remove an object.
      */
-    bool has(DenseMapHandle<TObject> id) const
+    bool has(THandle id) const
     {
-      const dense_map::IndexType index = id.id_index & dense_map::INDEX_MASK;
+      const IndexType index = id.index;
 
       if (index < m_SparseIndices.size())
       {
-        const dense_map::Index& in = m_SparseIndices[index];
+        const Index& in = m_SparseIndices[index];
 
-        return in.id == id.id_index && in.index != dense_map::INDEX_MASK;
+        if (!(in.handle == id && in.index != THandle::InvalidIndex))
+        {
+          __debugbreak();
+        }
+
+        return in.handle == id && in.index != THandle::InvalidIndex;
       }
 
       return false;
@@ -244,11 +263,11 @@ namespace bf
      * @return
      *  The Object associated with that particular ID.
      */
-    TObject& find(const DenseMapHandle<TObject> id)
+    TObject& find(const THandle id)
     {
       assert(has(id) && "Only valid IDs are allowed to be passed into DenseMap::find.");
 
-      const dense_map::Index& in = m_SparseIndices[id.id_index & dense_map::INDEX_MASK];
+      const Index& in = m_SparseIndices[id.index];
 
       return m_DenseArray[in.index].data;
     }
@@ -262,27 +281,27 @@ namespace bf
      * @param id
      *  The ID of the object to be removed.
      */
-    void remove(DenseMapHandle<TObject> id)
+    void remove(THandle id)
     {
       assert(has(id) && "Only valid IDs are allowed to be passed into DenseMap::remove.");
 
-      const dense_map::IndexType index     = id.id_index & dense_map::INDEX_MASK;
-      dense_map::Index&          in           = m_SparseIndices[index];
-      Proxy&                     obj          = m_DenseArray[in.index];
-      Proxy&                     back_element = m_DenseArray.back();
+      const IndexType index        = id.index;
+      Index&          in           = m_SparseIndices[index];
+      Proxy&          obj          = m_DenseArray[in.index];
+      Proxy&          back_element = m_DenseArray.back();
 
       if (&obj != &back_element)
       {
         obj = std::move(back_element);
 
         // Remap the newly moved back_element's index it's new slot.
-        m_SparseIndices[obj.id & dense_map::INDEX_MASK].index = in.index;
+        m_SparseIndices[obj.id.index].index = in.index;
       }
 
       m_DenseArray.pop();
 
       // The current bucket is now invalid.
-      in.index = dense_map::INDEX_MASK;
+      in.index = THandle::InvalidIndex;
 
       // Add this bucket to the list of free slots.
       in.next      = m_NextSparse;
@@ -297,7 +316,7 @@ namespace bf
     {
       m_DenseArray.clear();
       m_SparseIndices.clear();
-      m_NextSparse = dense_map::INDEX_MASK;
+      m_NextSparse = THandle::InvalidIndex;
     }
 
     // NOTE(Shareef): STL Standard Container Functions
@@ -317,12 +336,10 @@ namespace bf
     // TODO(SR): Maybe there should be a function to shrink memory usage as this will just grow and grow.
 
    private:
-    dense_map::Index& getNextIndex()
+    Index& getNextIndex()
     {
-      using namespace dense_map;
-
       // If we have a free sparse slot available.
-      if (m_NextSparse != INDEX_MASK)
+      if (m_NextSparse != THandle::InvalidIndex)
       {
         Index& current_index = m_SparseIndices[m_NextSparse];
         m_NextSparse         = current_index.next;
@@ -330,7 +347,7 @@ namespace bf
         return current_index;
       }
 
-      return m_SparseIndices.emplace(IDType(m_SparseIndices.length()), INDEX_MASK);
+      return m_SparseIndices.emplace(HandleType(m_SparseIndices.length()), THandle::InvalidIndex);
     }
   };
 }  // namespace bf
@@ -341,7 +358,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -91,7 +91,7 @@ enum
 } /* bfBufferUsageFlags */;
 typedef uint16_t bfBufferUsageBits;
 
-typedef enum
+typedef enum bfShaderType
 {
   BF_SHADER_TYPE_VERTEX                  = 0,
   BF_SHADER_TYPE_TESSELLATION_CONTROL    = 1,
@@ -120,7 +120,7 @@ enum
 } /* bfShaderStageFlags */;
 typedef uint8_t bfShaderStageBits;
 
-typedef enum
+typedef enum bfTextureType
 {
   BF_TEX_TYPE_1D,
   BF_TEX_TYPE_2D,
@@ -128,14 +128,14 @@ typedef enum
 
 } bfTextureType;
 
-typedef enum
+typedef enum bfTexSamplerFilterMode
 {
   BF_SFM_NEAREST,
   BF_SFM_LINEAR,
 
 } bfTexSamplerFilterMode;
 
-typedef enum
+typedef enum bfTexSamplerAddressMode
 {
   BF_SAM_REPEAT,
   BF_SAM_MIRRORED_REPEAT,
@@ -145,7 +145,7 @@ typedef enum
 
 } bfTexSamplerAddressMode;
 
-typedef struct
+typedef struct bfTextureSamplerProperties
 {
   bfTexSamplerFilterMode  min_filter;
   bfTexSamplerFilterMode  mag_filter;
@@ -246,20 +246,15 @@ typedef struct bfGfxFrameInfo
 } bfGfxFrameInfo;
 
 /* Context */
-BF_GFX_API void              bfGfxInit(const bfGfxContextCreateParams* params);
-BF_GFX_API bfGfxDeviceHandle bfGfxGetDevice(void);
-BF_GFX_API void              bfGfxDestroy(void);
-
-BF_GFX_API bfWindowSurfaceHandle  bfGfxContext_createWindow(struct bfWindow* bf_window);
-BF_GFX_API void                   bfGfxContext_destroyWindow(bfWindowSurfaceHandle window_handle);
-BF_GFX_API bfBool32               bfGfxContext_beginFrame(bfWindowSurfaceHandle window);
-BF_GFX_API bfGfxFrameInfo         bfGfxContext_getFrameInfo(void);
-BF_GFX_API bfGfxCommandListHandle bfGfxContext_requestCommandList(bfWindowSurfaceHandle window, uint32_t thread_index);
-BF_GFX_API void                   bfGfxContext_endFrame(void);
-
-// TODO(SR): Check if this needs to be in this header.
-#define bfFrameCountMax 0xFFFFFFFF
-typedef uint32_t bfFrameCount_t;
+BF_GFX_API void                   bfGfxInit(const bfGfxContextCreateParams* params);
+BF_GFX_API bfGfxDeviceHandle      bfGfxGetDevice(void);
+BF_GFX_API bfGfxFrameInfo         bfGfxGetFrameInfo(void);
+BF_GFX_API bfWindowSurfaceHandle  bfGfxCreateWindow(struct bfWindow* bf_window);
+BF_GFX_API bfBool32               bfGfxBeginFrame(bfWindowSurfaceHandle window);
+BF_GFX_API bfGfxCommandListHandle bfGfxRequestCommandList(bfWindowSurfaceHandle window, uint32_t thread_index);
+BF_GFX_API void                   bfGfxEndFrame(void);
+BF_GFX_API void                   bfGfxDestroyWindow(bfWindowSurfaceHandle window_handle);
+BF_GFX_API void                   bfGfxDestroy(void);
 
 /* Logical Device */
 typedef struct bfDeviceLimits

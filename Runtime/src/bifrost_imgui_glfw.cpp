@@ -272,7 +272,7 @@ namespace bf::imgui
     std::memset(&s_RenderData, 0x0, sizeof(s_RenderData));
     const auto device = s_RenderData.device = bfGfxGetDevice();
 
-    s_RenderData.main_viewport_data = new UIRenderData(bfGfxContext_getFrameInfo().num_frame_indices);
+    s_RenderData.main_viewport_data = new UIRenderData(bfGfxGetFrameInfo().num_frame_indices);
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -498,7 +498,7 @@ namespace bf::imgui
         }
       }
 
-      const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(window, 0u);
+      const bfGfxCommandListHandle command_list = bfGfxRequestCommandList(window, 0u);
       const int                    fb_width     = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
       const int                    fb_height    = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
 
@@ -612,7 +612,7 @@ namespace bf::imgui
   void endFrame()
   {
     ImGuiViewport* const main_viewport = ImGui::GetMainViewport();
-    const bfGfxFrameInfo info          = bfGfxContext_getFrameInfo();
+    const bfGfxFrameInfo info          = bfGfxGetFrameInfo();
 
     ImGui::Render();
     frameDraw(main_viewport, ImGui::GetDrawData(), (bfWindowSurfaceHandle)main_viewport->RendererUserData, s_RenderData.main_viewport_data->grabFrameData(info.frame_index));
@@ -790,8 +790,8 @@ namespace bf::imgui
   static void ImGui_RendererCreateWindow(ImGuiViewport* vp)
   {
     bfWindow* const             bf_window      = (bfWindow*)vp->PlatformHandle;
-    const bfWindowSurfaceHandle surface        = bfGfxContext_createWindow(bf_window);
-    const bfGfxFrameInfo        info           = bfGfxContext_getFrameInfo();
+    const bfWindowSurfaceHandle surface        = bfGfxCreateWindow(bf_window);
+    const bfGfxFrameInfo        info           = bfGfxGetFrameInfo();
     UIRenderData* const         ui_render_data = new UIRenderData(info.num_frame_indices);
 
     vp->RendererUserData  = surface;
@@ -810,7 +810,7 @@ namespace bf::imgui
 
     if (ImGui::GetMainViewport() != vp)
     {
-      bfGfxContext_destroyWindow(surface);
+      bfGfxDestroyWindow(surface);
     }
 
     vp->PlatformHandleRaw = NULL;
@@ -829,14 +829,14 @@ namespace bf::imgui
     UIRenderData* const         ui_render_data = (UIRenderData*)vp->PlatformHandleRaw;
     const bfWindowSurfaceHandle surface        = (bfWindowSurfaceHandle)vp->RendererUserData;
 
-    if (bfGfxContext_beginFrame(surface))
+    if (bfGfxBeginFrame(surface))
     {
-      const bfGfxCommandListHandle command_list = bfGfxContext_requestCommandList(surface, 0u);
+      const bfGfxCommandListHandle command_list = bfGfxRequestCommandList(surface, 0u);
 
       if (bfGfxCmdList_begin(command_list))
       {
         const bfTextureHandle surface_tex = bfGfxDevice_requestSurface(surface);
-        const bfGfxFrameInfo  info        = bfGfxContext_getFrameInfo();
+        const bfGfxFrameInfo  info        = bfGfxGetFrameInfo();
 
         setupDefaultRenderPass(command_list, surface_tex);
         frameDraw(vp, vp->DrawData, surface, ui_render_data->grabFrameData(info.frame_index));

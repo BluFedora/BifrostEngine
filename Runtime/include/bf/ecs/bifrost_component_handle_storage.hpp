@@ -18,10 +18,12 @@
 namespace bf
 {
   template<typename T>
+  using ComponentHandleImpl = DenseMapHandle<T, 12u, 20u>;
+
+  template<typename T>
   struct ComponentHandle  // NOLINT(hicpp-member-init)
   {
-    DenseMapHandle<T> handle;
-    // bool              is_active;
+    ComponentHandleImpl<T> handle;
   };
 
   template<typename T>

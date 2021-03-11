@@ -192,7 +192,7 @@ namespace bf
       auto&                temp_alloc = assets().engine().tempMemory();
       LinearAllocatorScope mem_scope  = {temp_alloc};
       const BufferLen      buffer     = file_in.readEntireFile(temp_alloc);
-      json::Value          json_value = json::fromString(buffer.buffer, buffer.length);
+      json::Value          json_value = json::parse(buffer.buffer, buffer.length);
       JsonSerializerReader reader     = {assets(), temp_alloc, json_value};
 
       if (reader.beginDocument())

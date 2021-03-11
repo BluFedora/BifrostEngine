@@ -1,13 +1,15 @@
 /******************************************************************************/
 /*!
-* @file   bifrost_glsl_compiler.cpp
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @file   bf_glsl_compiler.cpp
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
+*   Allows for compiling glsl into SPIR-V at runtime to allow for 
+*   shader hot reloading.
 *
 * @version 0.0.1
 * @date    2020-03-26
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
 #include "bf/graphics/bifrost_glsl_compiler.hpp"
@@ -77,7 +79,7 @@ namespace bf
           {
             match = (*next);
 
-            const auto include_match = match[3];
+            const auto& include_match = match[3];
 
             std::string file_name2 = include_match.str();
 
@@ -98,7 +100,7 @@ namespace bf
 
       m_LoadedFiles.emplace(filename, processed_file);
 #if 0
-      // TODO : THis should not be harded like this.
+      // TODO : This should not be harded like this.
       // Write out the compiled file ;)
       // const StringRange filename_path = file::directoryOfFile(filename);
       const StringRange filename_name = file::fileNameOfPath(filename);

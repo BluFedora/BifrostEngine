@@ -273,7 +273,7 @@ void bfGfxDestroy(void)
   xxx_Free(g_Ctx);
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(struct bfWindow* bf_window)
+bfWindowSurfaceHandle bfGfxCreateWindow(struct bfWindow* bf_window)
 {
   bfWindowSurfaceHandle surface = xxx_Alloc<bfWindowSurface>();
 
@@ -295,7 +295,7 @@ bfWindowSurfaceHandle bfGfxContext_createWindow(struct bfWindow* bf_window)
   return surface;
 }
 
-void bfGfxContext_destroyWindow(bfWindowSurfaceHandle window_handle)
+void bfGfxDestroyWindow(bfWindowSurfaceHandle window_handle)
 {
   window_handle->swapchain_needs_creation = bfFalse;
   window_handle->swapchain_needs_deletion = bfTrue;
@@ -314,7 +314,7 @@ void bfGfxContext_destroyWindow(bfWindowSurfaceHandle window_handle)
   delete window_handle;
 }
 
-bfBool32 bfGfxContext_beginFrame(bfWindowSurfaceHandle window)
+bfBool32 bfGfxBeginFrame(bfWindowSurfaceHandle window)
 {
   if (window->swapchain.extents.width <= 0.0f && window->swapchain.extents.height <= 0.0f)
   {
@@ -373,7 +373,7 @@ bfBool32 bfGfxContext_beginFrame(bfWindowSurfaceHandle window)
   return bfTrue;
 }
 
-bfGfxFrameInfo bfGfxContext_getFrameInfo()
+bfGfxFrameInfo bfGfxGetFrameInfo()
 {
   return {g_Ctx->frame_index, g_Ctx->frame_count, g_Ctx->max_frames_in_flight};
 }
@@ -384,7 +384,7 @@ static void bfGfxContext_removeFromCache(TCache& cache, bfBaseGfxObject* object)
   cache.remove(object->hash_code, reinterpret_cast<T>(object));
 }
 
-void bfGfxContext_endFrame()
+void bfGfxEndFrame()
 {
   // TODO: This whole set of garbage collection should not get called every frame??
 
@@ -471,7 +471,7 @@ void bfGfxDevice_flush(bfGfxDeviceHandle self)
   (void)result;
 }
 
-bfGfxCommandListHandle bfGfxContext_requestCommandList(bfWindowSurfaceHandle window, uint32_t thread_index)
+bfGfxCommandListHandle bfGfxRequestCommandList(bfWindowSurfaceHandle window, uint32_t thread_index)
 {
   assert(thread_index == 0);
   assert(thread_index < bfCArraySize(window->cmd_list_memory));

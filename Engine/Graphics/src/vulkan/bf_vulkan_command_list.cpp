@@ -1172,7 +1172,7 @@ void bfGfxCmdList_submit(bfGfxCommandListHandle self)
 {
   const VkFence       command_fence = self->fence;
   bfWindowSurface&    window        = *self->window;
-  const std::uint32_t frame_index   = bfGfxContext_getFrameInfo().frame_index;
+  const std::uint32_t frame_index   = bfGfxGetFrameInfo().frame_index;
 
   VkSemaphore          wait_semaphores[]   = {window.is_image_available[frame_index]};
   VkPipelineStageFlags wait_stages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};  // What to wait for, like: DO NOT WRITE TO COLOR UNTIL IMAGE IS AVALIBALLE.

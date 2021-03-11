@@ -22,7 +22,7 @@ namespace bf
 {
   class ISerializer;
 
-  using BehaviorEventFlags = std::uint16_t;  // Upgrade to a bigger type once we exceed 16 events.
+  using BehaviorEventFlags = std::uint16_t;  // Upgrade to a bigger type once we exceed 16 event flags.
 
   // clang-format off
 
@@ -55,7 +55,7 @@ namespace bf
     static constexpr BehaviorEventFlags IS_ACTIVE = static_cast<BehaviorEventFlags>(bfBit(12));
 
     static constexpr BehaviorEventFlags ON_NOTHING  = 0x0000;
-    static constexpr BehaviorEventFlags ON_ANYTHING = std::numeric_limits<BehaviorEventFlags>::max();
+    static constexpr BehaviorEventFlags ON_ANYTHING = ~ON_NOTHING;
 
   protected:
     friend class BehaviorSystem;

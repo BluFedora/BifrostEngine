@@ -350,9 +350,9 @@ namespace bf
     }
 
     template<typename T>
-    DenseMap<T>& getComponentList(bool is_active) const
+    DenseMap<ComponentHandleImpl<T>>& getComponentList(bool is_active) const
     {
-      return sceneComponentStorage(is_active).get<T>();
+      return sceneComponentStorage(is_active).get<ComponentHandleImpl<T>>();
     }
 
     template<typename T>

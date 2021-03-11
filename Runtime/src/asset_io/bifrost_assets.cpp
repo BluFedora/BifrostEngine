@@ -293,7 +293,7 @@ namespace bf
         if (meta_file_in)
         {
           const BufferLen      json_data_str = meta_file_in.readEntireFile(temp_allocator);
-          json::Value          json_value    = json::fromString(json_data_str.buffer, json_data_str.length);
+          json::Value          json_value    = json::parse(json_data_str.buffer, json_data_str.length);
           JsonSerializerReader reader        = {*this, temp_allocator, json_value};
 
           if (reader.beginDocument())

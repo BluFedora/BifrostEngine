@@ -626,7 +626,7 @@ bfGfxDeviceHandle bfGfxContext_device(bfGfxContextHandle self)
   return self->logical_device;
 }
 
-bfWindowSurfaceHandle bfGfxContext_createWindow(bfGfxContextHandle self, struct bfWindow* bf_window)
+bfWindowSurfaceHandle bfGfxCreateWindow(bfGfxContextHandle self, struct bfWindow* bf_window)
 {
   (void)self;
 
@@ -654,14 +654,14 @@ void bfGfxWindow_markResized(bfGfxContextHandle self, bfWindowSurfaceHandle wind
   (void)window_handle;
 }
 
-void bfGfxContext_destroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
+void bfGfxDestroyWindow(bfGfxContextHandle self, bfWindowSurfaceHandle window_handle)
 {
   (void)self;
 
   deallocate(window_handle);
 }
 
-bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window)
+bfBool32 bfGfxBeginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle window)
 {
   (void)self;
 
@@ -674,12 +674,12 @@ bfBool32 bfGfxContext_beginFrame(bfGfxContextHandle self, bfWindowSurfaceHandle 
   return true;
 }
 
-bfGfxFrameInfo bfGfxContext_getFrameInfo(bfGfxContextHandle self)
+bfGfxFrameInfo bfGfxGetFrameInfo(bfGfxContextHandle self)
 {
   return {self->frame_index, self->frame_count, self->max_frames_in_flight};
 }
 
-bfGfxCommandListHandle bfGfxContext_requestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index)
+bfGfxCommandListHandle bfGfxRequestCommandList(bfGfxContextHandle self, bfWindowSurfaceHandle window, uint32_t thread_index)
 {
   assert(thread_index == 0u && "Single theaded only.");
 
@@ -714,7 +714,7 @@ static void bfGfxContext_removeFromCache(TCache& cache, bfBaseGfxObject* object)
   cache.remove(object->hash_code, reinterpret_cast<T>(object));
 }
 
-void bfGfxContext_endFrame(bfGfxContextHandle self)
+void bfGfxEndFrame(bfGfxContextHandle self)
 {
   bfBaseGfxObject* prev         = nullptr;
   bfBaseGfxObject* curr         = self->logical_device->cached_resources;

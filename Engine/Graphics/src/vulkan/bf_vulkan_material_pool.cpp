@@ -18,8 +18,7 @@ static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, D
     link->prev                 = nullptr;
     link->next                 = next;
 
-    // Type : Num to Alloc of that Type
-    VkDescriptorPoolSize pool_sizes[2];
+    VkDescriptorPoolSize pool_sizes[2];  // [{Type, Num to Alloc of that Type}]
 
     pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_sizes[0].descriptorCount = pool->num_textures_per_link;
@@ -30,7 +29,7 @@ static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, D
     VkDescriptorPoolCreateInfo pool_create_info;
     pool_create_info.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_create_info.pNext         = NULL;
-    pool_create_info.flags         = 0x0;  //VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT - If I wanted to free individual sets
+    pool_create_info.flags         = 0x0;  // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT - If I wanted to free individual sets
     pool_create_info.maxSets       = pool->num_descsets_per_link;
     pool_create_info.poolSizeCount = uint32_t(bfCArraySize(pool_sizes));
     pool_create_info.pPoolSizes    = pool_sizes;
@@ -51,9 +50,9 @@ static void free_link(const bfGfxDevice* device, DescriptorLink* const link)
   xxx_Free(link);
 }
 
-BifrostDescriptorPool* MaterialPool_new(const MaterialPoolCreateParams* const params)
+MaterialPool* MaterialPool_new(const MaterialPoolCreateParams* const params)
 {
-  BifrostDescriptorPool* const self = xxx_Alloc<BifrostDescriptorPool>();
+  MaterialPool* const self = xxx_Alloc<MaterialPool>();
 
   if (self)
   {
@@ -69,7 +68,7 @@ static inline uint32_t bfMax(uint32_t a, uint32_t b)
   return a < b ? b : a;
 }
 
-void MaterialPool_alloc(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set)
+void MaterialPool_alloc(MaterialPool* const self, bfDescriptorSetHandle desc_set)
 {
   bfShaderProgramHandle      shader = desc_set->shader_program;
   bfDescriptorSetLayoutInfo* info   = shader->desc_set_layout_infos + desc_set->set_index;
@@ -114,7 +113,7 @@ void MaterialPool_alloc(BifrostDescriptorPool* const self, bfDescriptorSetHandle
   --link->num_descsets_left;
 }
 
-void MaterialPool_free(BifrostDescriptorPool* const self, bfDescriptorSetHandle desc_set)
+void MaterialPool_free(MaterialPool* const self, bfDescriptorSetHandle desc_set)
 {
   DescriptorLink* link = desc_set->pool_link;
 
@@ -143,7 +142,7 @@ void MaterialPool_free(BifrostDescriptorPool* const self, bfDescriptorSetHandle 
   }
 }
 
-void MaterialPool_delete(BifrostDescriptorPool* const self)
+void MaterialPool_delete(MaterialPool* const self)
 {
   DescriptorLink* link = self->head;
 

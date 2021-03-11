@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
     {
       try
       {
-        const std::size_t             engine_memory_size = bfMegabytes(300);
+        const std::size_t             engine_memory_size = bfMegabytes(200);
         const std::unique_ptr<char[]> engine_memory      = std::make_unique<char[]>(engine_memory_size);
         std::unique_ptr<Engine>       engine             = std::make_unique<Engine>(engine_memory.get(), engine_memory_size, argc, argv);
         const EngineCreateParams      params             = {{argv[0], 0}, 60};

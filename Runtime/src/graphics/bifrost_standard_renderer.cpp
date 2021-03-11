@@ -396,9 +396,9 @@ namespace bf
     bfGfxInit(&gfx_create_params);
 
     m_GfxDevice                = bfGfxGetDevice();
-    main_window->renderer_data = bfGfxContext_createWindow(main_window);
+    main_window->renderer_data = bfGfxCreateWindow(main_window);
     m_MainWindow               = static_cast<bfWindowSurfaceHandle>(main_window->renderer_data);
-    m_FrameInfo                = bfGfxContext_getFrameInfo();
+    m_FrameInfo                = bfGfxGetFrameInfo();
 
     m_StandardVertexLayout = bfVertexLayout_new();
     bfVertexLayout_addVertexBinding(m_StandardVertexLayout, 0, sizeof(StandardVertex));
@@ -442,10 +442,10 @@ namespace bf
 
   bool StandardRenderer::frameBegin()
   {
-    if (bfGfxContext_beginFrame(m_MainWindow))
+    if (bfGfxBeginFrame(m_MainWindow))
     {
-      m_MainCmdList = bfGfxContext_requestCommandList(m_MainWindow, 0);
-      m_FrameInfo   = bfGfxContext_getFrameInfo();
+      m_MainCmdList = bfGfxRequestCommandList(m_MainWindow, 0);
+      m_FrameInfo   = bfGfxGetFrameInfo();
 
       if (m_MainCmdList)
       {
@@ -873,12 +873,12 @@ namespace bf
 
   void StandardRenderer::frameEnd() const
   {
-    bfGfxContext_endFrame();
+    bfGfxEndFrame();
   }
 
   void StandardRenderer::deinit()
   {
-    bfGfxContext_destroyWindow(m_MainWindow);
+    bfGfxDestroyWindow(m_MainWindow);
 
     for (auto& renderable : m_RenderablePool)
     {

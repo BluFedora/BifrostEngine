@@ -21,6 +21,10 @@
 #if __cplusplus
 extern "C" {
 #endif
+
+#define bfFrameCountMax 0xFFFFFFFF
+typedef uint32_t bfFrameCount_t;
+
 typedef enum bfGfxObjectType
 {
   BF_GFX_OBJECT_BUFFER         = 0,
@@ -38,12 +42,21 @@ typedef struct bfBaseGfxObject bfBaseGfxObject;
 struct bfBaseGfxObject
 {
   bfGfxObjectType  type;
+  bfBaseGfxID      id;
   bfBaseGfxObject* next;
   uint64_t         hash_code;
   bfFrameCount_t   last_frame_used;
 };
 
 void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type);
+
+typedef struct bfBaseGfxObjectStore
+{
+  bfBaseGfxObject** object_map;
+  bfBaseGfxID*      id_map;
+
+} bfBaseGfxObjectStore;
+
 #if __cplusplus
 }
 #endif

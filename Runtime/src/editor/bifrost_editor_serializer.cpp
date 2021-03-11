@@ -732,7 +732,7 @@ namespace bf::editor
     bool has_missing_component = false;
 
     ComponentStorage::forEachType([&has_missing_component, &engine, &entity, &serializer](auto t) {
-      using T = bfForEachTemplateT(t);
+      using T = typename bfForEachTemplateT(t)::TObject;
 
       const StringRange& component_name = g_EngineComponentInfo[t.index].name;
 
@@ -826,7 +826,7 @@ namespace bf::editor
       if (ImGui::BeginCombo("Add Component", "+ Component", ImGuiComboFlags_None))
       {
         ComponentStorage::forEachType([&entity, &engine](auto t) {
-          using T = bfForEachTemplateT(t);
+          using T = typename bfForEachTemplateT(t)::TObject;
 
           const StringRange& component_name = g_EngineComponentInfo[t.index].name;
 

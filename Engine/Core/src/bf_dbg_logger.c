@@ -60,8 +60,6 @@ void bfLogRemove(bfIDbgLogger* logger)
 
 void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...)
 {
-  assert(s_HasInitialized && "The logger subsystem was never initialized.");
-
   va_list args;
   va_start(args, format);
   callCallback(BF_LOGGER_LVL_PUSH, file, func, line, format, args);
@@ -71,8 +69,6 @@ void bfLogPush_(const char* file, const char* func, int line, bfFormatString(con
 
 void bfLogPrint_(bfLoggerLevel level, const char* file, const char* func, int line, bfFormatString(const char*) format, ...)
 {
-  assert(s_HasInitialized && "The logger subsystem was never initialized.");
-
   va_list args;
   va_start(args, format);
   callCallback(level, file, func, line, format, args);
@@ -81,7 +77,6 @@ void bfLogPrint_(bfLoggerLevel level, const char* file, const char* func, int li
 
 void bfLogPop_(const char* file, const char* func, int line, unsigned amount)
 {
-  assert(s_HasInitialized && "The logger subsystem was never initialized.");
   assert(amount <= s_IndentLevel && "There were more pops than pushes performed.");
 
   va_list args;

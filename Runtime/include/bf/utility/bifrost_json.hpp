@@ -1,18 +1,18 @@
 /******************************************************************************/
 /*!
-* @file   bifrost_json.hpp
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @file   bf_json.hpp
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
 *   C++ Wrapper around the C Json API with conversions to/from a C++ Value.
 *
 * @version 0.0.1
 * @date    2020-03-17
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
-#ifndef BIFROST_JSON_HPP
-#define BIFROST_JSON_HPP
+#ifndef BF_JSON_HPP
+#define BF_JSON_HPP
 
 #include "bf/data_structures/bifrost_array.hpp"      /* Array<T>         */
 #include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>  */
@@ -39,7 +39,7 @@ namespace bf::json
     using ArrayInitializer  = std::initializer_list<Value>;
   }  // namespace detail
 
-  Value fromString(char* source, std::size_t source_length);
+  Value parse(char* source, std::size_t source_length);
   void  toString(const Value& json, String& out);
 
   class Value final : public detail::Value_t
@@ -131,7 +131,7 @@ namespace bf::json
 
     // Array API
 
-    Value&      operator[](int index);  // Must be an int as to not conflict with the 'const char* key' overload.
+    Value&      operator[](int index);  // Must be an int (rather than size_t) as to not conflict with the 'const char* key' overload.
     std::size_t size() const;
     void        push(const Value& item);
     Value&      push();
@@ -150,4 +150,30 @@ namespace bf::json
   };
 }  // namespace bf::json
 
-#endif /* BIFROST_JSON_HPP */
+#endif /* BF_JSON_HPP */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

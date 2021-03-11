@@ -10,15 +10,15 @@
 * @version 0.0.1
 * @date    2020-03-14
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
 #ifndef BF_JSON_H
 #define BF_JSON_H
 
 #include <stdbool.h> /* bool, true, false */
-#include <stddef.h>  /* size_t   */
-#include <stdint.h>  /* uint32_t */
+#include <stddef.h>  /* size_t            */
+#include <stdint.h>  /* uint32_t          */
 
 #if __cplusplus
 extern "C" {
@@ -81,8 +81,7 @@ typedef enum
 
 } bfJsonType;
 
-struct bfJsonParserContext_t;
-typedef struct bfJsonParserContext_t bfJsonParserContext;
+typedef struct bfJsonParserContext bfJsonParserContext;
 
 typedef void (*bfJsonFn)(bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
 
@@ -98,11 +97,8 @@ void*        bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
 
 /* Writer API (Object -> String) */
 
-struct bfJsonWriter_t;
-typedef struct bfJsonWriter_t bfJsonWriter;
-
-struct bfJsonStringBlock_t;
-typedef struct bfJsonStringBlock_t bfJsonStringBlock;
+typedef struct bfJsonWriter      bfJsonWriter;
+typedef struct bfJsonStringBlock bfJsonStringBlock;
 
 typedef void* (*bfJsonAllocFn)(size_t size, void* user_data);
 typedef void (*bfJsonFreeFn)(void* ptr, void* user_data);

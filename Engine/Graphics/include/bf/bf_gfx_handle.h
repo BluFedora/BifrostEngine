@@ -20,10 +20,14 @@
 extern "C" {
 #endif
 
-typedef struct bfBaseGfxID
+typedef union bfBaseGfxID
 {
-  uint32_t generation : 14;
-  uint32_t handle : 18;
+  struct
+  {
+    uint32_t generation : 14;
+    uint32_t index : 18;
+  };
+  uint32_t handle;
 
 } bfBaseGfxID;
 

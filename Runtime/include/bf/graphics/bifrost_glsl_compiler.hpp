@@ -1,20 +1,22 @@
 /******************************************************************************/
 /*!
-* @file   bifrost_glsl_compiler.hpp
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @file   bf_glsl_compiler.hpp
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
+*   Allows for compiling glsl into SPIR-V at runtime to allow for 
+*   shader hot reloading.
 *
 * @version 0.0.1
 * @date    2020-03-26
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
-#ifndef BIFROST_GLSL_COMPILER_HPP
-#define BIFROST_GLSL_COMPILER_HPP
+#ifndef BF_GLSL_COMPILER_HPP
+#define BF_GLSL_COMPILER_HPP
 
-#include "bf/bf_gfx_api.h"                                 // BifrostShaderType
-#include "bf/bf_non_copy_move.hpp"                         // bfNonCopyMoveable
+#include "bf/bf_gfx_api.h"                            // bfShaderModuleHandle
+#include "bf/bf_non_copy_move.hpp"                    // bfNonCopyMoveable
 #include "bf/data_structures/bifrost_array.hpp"       // Array<T>
 #include "bf/data_structures/bifrost_hash_table.hpp"  // HashTable<K, V>
 #include "bf/data_structures/bifrost_string.hpp"      // String
@@ -22,13 +24,13 @@
 namespace bf
 {
   //
-  // Only create one of these per process.
+  // Only create one of these per process (This is a requirement of the "glslang" library).
   //
   class GLSLCompiler : private NonCopyMoveable<GLSLCompiler>
   {
    private:
-    HashTable<String, String> m_LoadedFiles;
-    Array<const String*>      m_CurrentlyCompiling;
+    HashTable<String, String> m_LoadedFiles;         //!< <Path, Source>
+    Array<const String*>      m_CurrentlyCompiling;  //!< Used for detecting circular includes.
 
    public:
     explicit GLSLCompiler(IMemoryManager& memory);
@@ -41,4 +43,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_GLSL_COMPILER_HPP */
+#endif /* BF_GLSL_COMPILER_HPP */

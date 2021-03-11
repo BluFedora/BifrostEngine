@@ -33,7 +33,7 @@ enum
   Reader API
 */
 
-typedef enum
+typedef enum bfJsonTokenType
 {
   BF_JSON_L_CURLY   = '{',
   BF_JSON_R_CURLY   = '}',
@@ -50,14 +50,14 @@ typedef enum
 
 } bfJsonTokenType;
 
-typedef struct bfJsonUserStorage_t
+typedef struct bfJsonUserStorage
 {
   char                        storage[k_bfJsonUserStorageSize];
-  struct bfJsonUserStorage_t* parent;
+  struct bfJsonUserStorage* parent;
 
 } bfJsonUserStorage;
 
-typedef struct
+typedef struct bfJsonObject
 {
   bfJsonTokenType type;
   const char*     source_bgn;
@@ -65,7 +65,7 @@ typedef struct
 
 } bfJsonObject;
 
-struct bfJsonParserContext_t
+struct bfJsonParserContext
 {
   char*              source_bgn;
   const char*        source_end;
@@ -194,14 +194,14 @@ void* bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx)
   Writer API
 */
 
-struct bfJsonStringBlock_t
+struct bfJsonStringBlock
 {
   char                        string[k_bfJsonStringBlockSize];
   size_t                      string_length;
-  struct bfJsonStringBlock_t* next;
+  struct bfJsonStringBlock*   next;
 };
 
-typedef struct bfJsonWriter_t
+typedef struct bfJsonWriter
 {
   void*              user_data;
   bfJsonAllocFn      alloc_fn;
