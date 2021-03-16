@@ -1,11 +1,11 @@
 /******************************************************************************/
 /*!
 * @file   bf_json.h
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
 *   Basic Json parser with an Event (SAX) API.
 *   Has some extensions to make wrting json easier.
-*   Just search for '@JsonSpecExtention' in the source file.
+*   Just search for '@JsonSpecExtension' in the source file.
 *
 * @version 0.0.1
 * @date    2020-03-14
@@ -28,72 +28,55 @@ extern "C" {
 
 enum
 {
-  k_bfJsonUserStorageSize = 64,
   k_bfJsonStringBlockSize = 256,
+  k_bfErrorBufferSize     = 128,
 };
 
 /* String View */
 
-typedef struct
+typedef struct bfJsonString
 {
   const char* string;
   size_t      length;
 
 } bfJsonString;
 
-inline bfJsonString bfJsonString_make(const char* null_terminated_string)
-{
-  bfJsonString result;
-
-  result.string = null_terminated_string;
-  result.length = 0;
-
-  while (null_terminated_string[result.length])
-  {
-    ++result.length;
-  }
-
-  return result;
-}
-
 /* Reader API (String -> Object) */
 
-typedef enum
+typedef enum bfJsonEvent
 {
   BF_JSON_EVENT_BEGIN_DOCUMENT,
-  BF_JSON_EVENT_END_DOCUMENT,
   BF_JSON_EVENT_BEGIN_ARRAY,
   BF_JSON_EVENT_END_ARRAY,
   BF_JSON_EVENT_BEGIN_OBJECT,
   BF_JSON_EVENT_END_OBJECT,
-  BF_JSON_EVENT_KEY,
-  BF_JSON_EVENT_VALUE,
+  BF_JSON_EVENT_KEY_VALUE,
+  BF_JSON_EVENT_END_DOCUMENT,
   BF_JSON_EVENT_PARSE_ERROR,
 
 } bfJsonEvent;
 
-typedef enum
+typedef enum bfJsonValueType
 {
   BF_JSON_VALUE_STRING,
   BF_JSON_VALUE_NUMBER,
   BF_JSON_VALUE_BOOLEAN,
   BF_JSON_VALUE_NULL,
 
-} bfJsonType;
+} bfJsonValueType;
+
+typedef void (*bfJsonFn)(struct bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
 
 typedef struct bfJsonParserContext bfJsonParserContext;
 
-typedef void (*bfJsonFn)(bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
-
-void         bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callback, void* user_data);
-const char*  bfJsonParser_errorMessage(const bfJsonParserContext* ctx);
-bfJsonType   bfJsonParser_valueType(const bfJsonParserContext* ctx);
-bool         bfJsonParser_valueIs(const bfJsonParserContext* ctx, bfJsonType type);
-bfJsonString bfJsonParser_asString(const bfJsonParserContext* ctx);
-double       bfJsonParser_asNumber(const bfJsonParserContext* ctx);
-bool         bfJsonParser_asBoolean(const bfJsonParserContext* ctx);
-void*        bfJsonParser_userStorage(const bfJsonParserContext* ctx);
-void*        bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx);
+void            bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callback, void* user_data);
+bfJsonString    bfJsonParser_errorMessage(const bfJsonParserContext* ctx);
+bfJsonString    bfJsonParser_key(const bfJsonParserContext* ctx);
+bfJsonValueType bfJsonParser_valueType(const bfJsonParserContext* ctx);
+bool            bfJsonParser_valueIs(const bfJsonParserContext* ctx, bfJsonValueType type);
+bfJsonString    bfJsonParser_valAsString(const bfJsonParserContext* ctx);
+double          bfJsonParser_valAsNumber(const bfJsonParserContext* ctx);
+bool            bfJsonParser_valAsBoolean(const bfJsonParserContext* ctx);
 
 /* Writer API (Object -> String) */
 
@@ -129,3 +112,29 @@ bfJsonString  bfJsonStringBlock_string(const bfJsonStringBlock* block);
 #endif
 
 #endif /* BF_JSON_H */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

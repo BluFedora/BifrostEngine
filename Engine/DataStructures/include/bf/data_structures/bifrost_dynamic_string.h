@@ -18,8 +18,8 @@
  * @copyright Copyright (c) 2019
  */
 /******************************************************************************/
-#ifndef BIFROST_DYNAMIC_STRING_H
-#define BIFROST_DYNAMIC_STRING_H
+#ifndef BF_DYNAMIC_STRING_H
+#define BF_DYNAMIC_STRING_H
 
 #include <stddef.h> /* size_t             */
 #include <stdint.h> /* uint32_t, uint64_t */
@@ -113,4 +113,4 @@ void String_delete(BifrostString self);
 }
 #endif
 
-#endif /* BIFROST_DYNAMIC_STRING_H */
+#endif /* BF_DYNAMIC_STRING_H */

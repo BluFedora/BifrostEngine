@@ -3,7 +3,7 @@
 namespace bf::editor
 {
   Selection::Selection(IMemoryManager& memory) :
-    m_Selectables{memory},
+    m_Selectables(memory),
     m_OnChangeCallbacks{memory}
   {
   }

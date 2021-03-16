@@ -14,10 +14,10 @@
 #ifndef BF_JSON_HPP
 #define BF_JSON_HPP
 
-#include "bf/data_structures/bifrost_array.hpp"      /* Array<T>         */
-#include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V>  */
-#include "bf/data_structures/bifrost_string.hpp"     /* String           */
-#include "bf/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>   */
+#include "bf/data_structures/bifrost_array.hpp"      /* Array<T>        */
+#include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V> */
+#include "bf/data_structures/bifrost_string.hpp"     /* String          */
+#include "bf/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>  */
 
 #include <initializer_list> /* initializer_list */
 
@@ -34,7 +34,7 @@ namespace bf::json
 
   namespace detail
   {
-    using Value_t           = Variant<Object, Array, String, Number, Boolean>;
+    using BaseValue         = Variant<Object, Array, String, Number, Boolean>;
     using ObjectInitializer = std::initializer_list<Pair>;
     using ArrayInitializer  = std::initializer_list<Value>;
   }  // namespace detail
@@ -42,10 +42,10 @@ namespace bf::json
   Value parse(char* source, std::size_t source_length);
   void  toString(const Value& json, String& out);
 
-  class Value final : public detail::Value_t
+  class Value final : public detail::BaseValue
   {
    public:
-    using Base_t = detail::Value_t;
+    using Base_t = detail::BaseValue;
 
    public:
     // Constructors
@@ -142,11 +142,14 @@ namespace bf::json
     // Special Operations
 
     //
-    // If isObject() then adds add it as a field
-    // If isArray    then it is pushed.
+    // If isObject() then adds {key, value} to the map.
+    // If isArray    then value is pushed.
     // Else this object is assigned to value.
     //
-    void add(StringRange key, const Value& value);
+    // Only Objects use the key parameter.
+    //
+    void   add(StringRange key, const Value& value);
+    Value& add(StringRange key);
   };
 }  // namespace bf::json
 

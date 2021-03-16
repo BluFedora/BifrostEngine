@@ -22,65 +22,76 @@
 namespace bf
 {
   template<std::size_t k_NumBits>
-  struct SmallestUIntToHoldBitsImpl; /* = undefined */
-
-  // clang-format off
-  template<>
-  struct SmallestUIntToHoldBitsImpl<8> { using type = std::uint8_t; };
-  template<>
-  struct SmallestUIntToHoldBitsImpl<16> { using type = std::uint16_t; };
-  template<>
-  struct SmallestUIntToHoldBitsImpl<32> { using type = std::uint32_t; };
-  template<>
-  struct SmallestUIntToHoldBitsImpl<64> { using type = std::uint64_t; };
-  // clang-format on
-
-  template<std::size_t kValue, std::size_t Size>
-  static constexpr std::size_t smallestSize()
+  struct SelectUIntXBits
   {
-    return Size;
-  }
+    //
+    // A similar problem if you wanted to check smallest int to for a given value
+    // (this was not on this just was interesting to read)
+    // [https://stackoverflow.com/questions/7038797/automatically-pick-a-variable-type-big-enough-to-hold-a-specified-number]
+    //
 
-  template<std::size_t kValue, std::size_t Size, std::size_t FirstRestSizes, std::size_t... RestSizes>
-  static constexpr std::size_t smallestSize()
-  {
-    return kValue <= Size ? Size : smallestSize<kValue, FirstRestSizes, RestSizes...>();
-  }
+    template<std::size_t k_NumBits2>
+    struct SmallestUIntToHoldBitsImpl; /* = undefined */
 
-  template<std::size_t k_NumBits>
-  using SmallestUIntToHoldBits = std::uint32_t;   // typename SmallestUIntToHoldBitsImpl<smallestSize<k_NumBits, 8, 16, 32, 64>()>::type;
+    // clang-format off
+    template<>
+    struct SmallestUIntToHoldBitsImpl<8> { using type = std::uint8_t; };
+    template<>
+    struct SmallestUIntToHoldBitsImpl<16> { using type = std::uint16_t; };
+    template<>
+    struct SmallestUIntToHoldBitsImpl<32> { using type = std::uint32_t; };
+    template<>
+    struct SmallestUIntToHoldBitsImpl<64> { using type = std::uint64_t; };
+    // clang-format on
+
+    template<std::size_t kValue, std::size_t Size>
+    static constexpr std::size_t smallestSize()
+    {
+      static_assert(kValue <= Size, "The number of bits will not fit in any integer.");
+      return Size;
+    }
+
+    template<std::size_t kValue, std::size_t Size, std::size_t FirstRestSizes, std::size_t... RestSizes>
+    static constexpr std::size_t smallestSize()
+    {
+      return kValue <= Size ? Size : smallestSize<kValue, FirstRestSizes, RestSizes...>();
+    }
+
+    using type = typename SmallestUIntToHoldBitsImpl<smallestSize<k_NumBits, 8, 16, 32, 64>()>::type;
+  };
 
   template<
    typename TObject_,
-   std::size_t k_NumGenerationBits,  // = 32 - 20,
-   std::size_t k_NumIndexBits        // = 20
-   >
+   std::size_t k_NumGenerationBits,
+   std::size_t k_NumIndexBits>
   union DenseMapHandle
   {
-    using TObject     = TObject_;
-    using THandleType = SmallestUIntToHoldBits<k_NumGenerationBits + k_NumIndexBits>;
-    using TIndexType  = SmallestUIntToHoldBits<k_NumIndexBits>;
-
     static constexpr std::size_t NumGenerationBits = k_NumGenerationBits;
     static constexpr std::size_t NumIndexBits      = k_NumIndexBits;
-    static constexpr THandleType MaxObjects        = (1ull << NumIndexBits);
-    static constexpr TIndexType  InvalidIndex      = MaxObjects - 1u;  // Also acts as mask to get the index.
+
+    using TObject     = TObject_;
+    using THandleType = typename SelectUIntXBits<NumGenerationBits + NumIndexBits>::type;
+    using TIndexType  = typename SelectUIntXBits<NumIndexBits>::type;
+
+    static constexpr THandleType MaxObjects   = (1ull << NumIndexBits);
+    static constexpr TIndexType  InvalidIndex = MaxObjects - 1u;  // Also acts as mask to get the index.
 
     struct
     {
-      THandleType generation : NumGenerationBits;
-      THandleType index : NumIndexBits;
+      THandleType generation : NumGenerationBits; //!< Tries to detect use after free errors.
+      THandleType index : NumIndexBits; //!< Indexes into sparse table.
     };
-    THandleType handle;  //!< This contains the unique id, the bottom bits contain the index into the m_SparseIndices array.
+    THandleType handle;  //!< This contains the unique id, index into the sparse array table.
 
-    DenseMapHandle(const THandleType id = InvalidIndex) :
-      handle(id)
+    DenseMapHandle(const THandleType idx = InvalidIndex) :
+      generation(0),
+      index{idx}
     {
     }
 
     [[nodiscard]] bool operator==(const DenseMapHandle& rhs) const { return handle == rhs.handle; }
     [[nodiscard]] bool operator!=(const DenseMapHandle& rhs) const { return handle != rhs.handle; }
-    [[nodiscard]] bool isValid() const { return handle != InvalidIndex; }
+    [[nodiscard]] bool isValid() const { return index != InvalidIndex; }
   };
 }  // namespace bf
 

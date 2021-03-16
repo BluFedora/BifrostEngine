@@ -13,49 +13,10 @@
 /******************************************************************************/
 #include "bf/utility/bifrost_json.hpp"
 
-#include "bf/CRTAllocator.hpp"       /* CRTAllocator */
-#include "bf/utility/bifrost_json.h" /* Json API     */
+#include "bf/utility/bifrost_json.h" /* Json API */
 
 namespace bf::json
 {
-  static CRTAllocator s_ArrayAllocator = {};  // TODO(SR): Think about this allocation scheme a bit more??
-
-  static Value** readStorage(bfJsonParserContext* ctx)
-  {
-    return static_cast<Value**>(bfJsonParser_userStorage(ctx));
-  }
-
-  static Value* readStorageValue(bfJsonParserContext* ctx)
-  {
-    return *readStorage(ctx);
-  }
-
-  static Value* readParentStorageValue(bfJsonParserContext* ctx)
-  {
-    return *static_cast<Value**>(bfJsonParser_parentUserStorage(ctx));
-  }
-
-  static Value* makeChildItem(Value& parent, const StringRange& key)
-  {
-    if (parent.isObject())
-    {
-      return &parent[key];
-    }
-
-    if (parent.isArray())
-    {
-      parent.push(Value());
-      return &parent.back();
-    }
-
-    return nullptr;
-  }
-
-  static void writeStorage(bfJsonParserContext* ctx, Value* value)
-  {
-    *readStorage(ctx) = value;
-  }
-
   static StringRange fromJsonString(const bfJsonString& value)
   {
     return StringRange(value.string, value.length);
@@ -75,11 +36,19 @@ namespace bf::json
   {
     struct Context final
     {
-      Value       document = {};
-      StringRange last_key = {};
+      Value             document;
+      bf::Array<Value*> value_stack;
+      StringRange       key;
+
+      Context() :
+        document{},
+        value_stack{*g_DefaultAllocator.temporary}
+      {
+      }
     };
 
-    Context ctx{};
+    LinearAllocatorScope mem_scope = *g_DefaultAllocator.temporary;
+    Context              ctx       = {};
 
     bfJsonParser_fromString(
      source, source_length, [](bfJsonParserContext* ctx, bfJsonEvent event, void* user_data) {
@@ -89,72 +58,55 @@ namespace bf::json
        {
          case BF_JSON_EVENT_BEGIN_DOCUMENT:
          {
-           writeStorage(ctx, nullptr);
-           break;
-         }
-         case BF_JSON_EVENT_END_DOCUMENT:
-         {
+           user_context->value_stack.push(&user_context->document);
            break;
          }
          case BF_JSON_EVENT_BEGIN_ARRAY:
          case BF_JSON_EVENT_BEGIN_OBJECT:
          {
-           Value* const parent_value  = readParentStorageValue(ctx);
-           Value* const current_value = parent_value == nullptr ? &user_context->document : makeChildItem(*parent_value, user_context->last_key);
+           const StringRange key           = fromJsonString(bfJsonParser_key(ctx));
+           Value* const      current_value = &user_context->value_stack.back()->add(key);
 
            if (event == BF_JSON_EVENT_BEGIN_ARRAY)
-           {
-             current_value->set<Array>(s_ArrayAllocator);
-           }
+             current_value->set<Array>();
            else
-           {
              current_value->set<Object>();
-           }
 
-           writeStorage(ctx, current_value);
+           user_context->value_stack.push(current_value);
            break;
          }
          case BF_JSON_EVENT_END_ARRAY:
          case BF_JSON_EVENT_END_OBJECT:
+         case BF_JSON_EVENT_END_DOCUMENT:
          {
+           user_context->value_stack.pop();
            break;
          }
-         case BF_JSON_EVENT_KEY:
+         case BF_JSON_EVENT_KEY_VALUE:
          {
-           user_context->last_key = fromJsonString(bfJsonParser_asString(ctx));
-           break;
-         }
-         case BF_JSON_EVENT_VALUE:
-         {
-           Value* current_value = readStorageValue(ctx);
-
-           if (!current_value)
-           {
-             current_value = &user_context->document;
-           }
-
-           Value& value_data = *current_value;
+           const StringRange key        = fromJsonString(bfJsonParser_key(ctx));
+           Value&            value_data = *user_context->value_stack.back();
 
            switch (bfJsonParser_valueType(ctx))
            {
              case BF_JSON_VALUE_STRING:
              {
-               value_data.add(user_context->last_key, String(fromJsonString(bfJsonParser_asString(ctx))));
+               value_data.add(key, String(fromJsonString(bfJsonParser_valAsString(ctx))));
                break;
              }
              case BF_JSON_VALUE_NUMBER:
              {
-               value_data.add(user_context->last_key, bfJsonParser_asNumber(ctx));
+               value_data.add(key, bfJsonParser_valAsNumber(ctx));
                break;
              }
              case BF_JSON_VALUE_BOOLEAN:
              {
-               value_data.add(user_context->last_key, bfJsonParser_asBoolean(ctx) != 0u);
+               value_data.add(key, bfJsonParser_valAsBoolean(ctx) == true);
                break;
              }
              case BF_JSON_VALUE_NULL:
              {
-               value_data.add(user_context->last_key, Value());
+               value_data.add(key, Value());
 
                break;
              }
@@ -165,8 +117,11 @@ namespace bf::json
          }
          case BF_JSON_EVENT_PARSE_ERROR:
          {
+          // TODO(SR): Better error logging.
 #if _MSC_VER
            __debugbreak();
+#else
+           throw "Invalid json";
 #endif
            break;
          }
@@ -269,6 +224,8 @@ namespace bf::json
 
   void toString(const Value& json, String& out)
   {
+    // TODO(SR): This should probably use the global temp allocator.
+
     bfJsonWriter* json_writer = bfJsonWriter_newCRTAlloc();
 
     toStringRec(json_writer, json, 0);
@@ -297,7 +254,7 @@ namespace bf::json
   Value::Value(detail::ArrayInitializer&& values) :
     Base_t()
   {
-    set<Array>(s_ArrayAllocator, std::forward<detail::ArrayInitializer>(values));
+    set<Array>(std::forward<detail::ArrayInitializer>(values));
   }
 
   Value::Value(const char* value) :
@@ -332,7 +289,7 @@ namespace bf::json
 
   Value& Value::operator=(detail::ArrayInitializer&& values)
   {
-    set<Array>(s_ArrayAllocator, std::forward<detail::ArrayInitializer>(values));
+    set<Array>(std::forward<detail::ArrayInitializer>(values));
     return *this;
   }
 
@@ -358,7 +315,7 @@ namespace bf::json
 
   Value& Value::operator[](int index)
   {
-    return cast<Array>(s_ArrayAllocator)[index];
+    return cast<Array>()[index];
   }
 
   std::size_t Value::size() const
@@ -373,27 +330,27 @@ namespace bf::json
 
   void Value::push(const Value& item)
   {
-    cast<Array>(s_ArrayAllocator).push(item);
+    cast<Array>().push(item);
   }
 
   Value& Value::push()
   {
-    return cast<Array>(s_ArrayAllocator).emplace(nullptr);
+    return cast<Array>().emplace(nullptr);
   }
 
   void Value::insert(std::size_t index, const Value& item)
   {
-    cast<Array>(s_ArrayAllocator).insert(index, item);
+    cast<Array>().insert(index, item);
   }
 
   Value& Value::back()
   {
-    return cast<Array>(s_ArrayAllocator).back();
+    return cast<Array>().back();
   }
 
   void Value::pop()
   {
-    cast<Array>(s_ArrayAllocator).pop();
+    cast<Array>().pop();
   }
 
   void Value::add(StringRange key, const Value& value)
@@ -409,6 +366,22 @@ namespace bf::json
     else
     {
       *this = value;
+    }
+  }
+
+  Value& Value::add(StringRange key)
+  {
+    if (isObject())
+    {
+      return (*this)[key];
+    }
+    else if (isArray())
+    {
+      return as<Array>().emplace();
+    }
+    else
+    {
+      return *this;
     }
   }
 }  // namespace bf::json

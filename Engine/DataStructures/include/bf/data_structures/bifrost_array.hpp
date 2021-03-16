@@ -8,14 +8,15 @@
  * @version 0.0.1
  * @date    
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
-#ifndef BIFROST_ARRAY_HPP
-#define BIFROST_ARRAY_HPP
+#ifndef BF_ARRAY_HPP
+#define BF_ARRAY_HPP
 
-#include "bf/IMemoryManager.hpp" /* IMemoryManager       */
-#include "bifrost_array_t.h"     /* bfArray_*            */
+#include "bf/IMemoryManager.hpp"       /* IMemoryManager       */
+#include "bf/memory/bf_allocators.hpp" /* g_DefaultAllocators  */
+#include "bifrost_array_t.h"           /* bfArray_*            */
 
 #include <cassert>  /* assert           */
 #include <iterator> /* reverse_iterator */
@@ -53,13 +54,13 @@ namespace bf
     mutable T* m_Data;
 
    public:
-    explicit Array(IMemoryManager& memory, const std::size_t alignment = alignof(T)) :
-      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignment, &memory))}
+    Array(IMemoryManager& memory = *g_DefaultAllocator.general_heap) :
+      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignof(T), &memory))}
     {
     }
 
-    explicit Array(IMemoryManager& memory, std::initializer_list<T>&& values, const std::size_t alignment = alignof(T)) :
-      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignment, &memory))}
+    Array(std::initializer_list<T>&& values, IMemoryManager& memory = *g_DefaultAllocator.general_heap) :
+      m_Data{static_cast<T*>(bfArray_new_(&allocate, sizeof(T), alignof(T), &memory))}
     {
       reserve(values.size());
 
@@ -413,4 +414,4 @@ namespace bf
   ReverseLoop(T& container) -> ReverseLoop<T>;
 }  // namespace bf
 
-#endif /* BIFROST_ARRAY_HPP */
+#endif /* BF_ARRAY_HPP */

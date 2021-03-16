@@ -1932,7 +1932,7 @@ namespace bf::editor
   }
 
   Inspector::Inspector(IMemoryManager& memory) :
-    m_LockedSelection{memory},
+    m_LockedSelection(memory),
     m_Serializer{memory},
     m_IsLocked{false}
   {

@@ -1,33 +1,24 @@
 /******************************************************************************/
 /*!
 * @file   bf_json.c
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
 *   Basic Json parser with an Event (SAX) API.
 *   Has some extensions to make wrting json easier.
-*   Just search for '@JsonSpecExtention' in the source file.
+*   Just search for '@JsonSpecExtension' in the source file.
 *
 * @version 0.0.1
 * @date    2020-03-14
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
 #include "bf/utility/bifrost_json.h"
 
-#include <ctype.h>  /* isspace, isalpha, isdigit, tolower, isxdigit  */
-#include <setjmp.h> /* jmp_buf, setjmp, longjmp                      */
-#include <stdio.h>  /* snprintf                                      */
-#include <stdlib.h> /* strtol, strtod, malloc                        */
-
-/* 
-  Constants
-*/
-
-enum
-{
-  k_bfErrorBufferSize = 256,
-};
+#include <ctype.h>  /* isspace, isalpha, isdigit, tolower, isxdigit */
+#include <setjmp.h> /* jmp_buf, setjmp, longjmp                     */
+#include <stdio.h>  /* snprintf                                     */
+#include <stdlib.h> /* strtol, strtod, malloc                       */
 
 /*
   Reader API
@@ -50,35 +41,30 @@ typedef enum bfJsonTokenType
 
 } bfJsonTokenType;
 
-typedef struct bfJsonUserStorage
-{
-  char                        storage[k_bfJsonUserStorageSize];
-  struct bfJsonUserStorage* parent;
-
-} bfJsonUserStorage;
-
-typedef struct bfJsonObject
+typedef struct bfJsonToken
 {
   bfJsonTokenType type;
   const char*     source_bgn;
   const char*     source_end;
 
-} bfJsonObject;
+} bfJsonToken;
 
-struct bfJsonParserContext
+typedef struct bfJsonParserContext
 {
-  char*              source_bgn;
-  const char*        source_end;
-  bfJsonObject       current_object;
-  char*              current_location;
-  size_t             line_no;
-  bfJsonFn           callback;
-  void*              user_data;
-  bfJsonUserStorage  document_storage;
-  bfJsonUserStorage* current_user_storage;
-  char               error_message[k_bfErrorBufferSize];
-  jmp_buf            error_handling;
-};
+  char*       source_bgn;
+  const char* source_end;
+  bfJsonToken key_token;
+  bfJsonToken val_token;
+  char*       current_location;
+  size_t      line_no;
+  bfJsonFn    callback;
+  void*       user_data;
+  char        array_idx_number_buffer[26];
+  char        error_message[k_bfErrorBufferSize];
+  size_t      error_message_len;
+  jmp_buf     error_handling;
+
+} bfJsonParserContext;
 
 static bool   bfJsonIsSpace(char character);
 static bool   bfJsonIsSameCharacterI(char a, char b);
@@ -104,17 +90,15 @@ void bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callba
 {
   bfJsonParserContext ctx;
 
-  ctx.source_bgn                = source;
-  ctx.source_end                = source + source_length;
-  ctx.current_location          = source;
-  ctx.line_no                   = 1;
-  ctx.callback                  = callback;
-  ctx.current_object.type       = BF_JSON_EOF;
-  ctx.current_object.source_bgn = NULL;
-  ctx.current_object.source_end = NULL;
-  ctx.user_data                 = user_data;
-  ctx.document_storage.parent   = NULL;
-  ctx.current_user_storage      = &ctx.document_storage;
+  ctx.source_bgn           = source;
+  ctx.source_end           = source + source_length;
+  ctx.current_location     = source;
+  ctx.line_no              = 1;
+  ctx.callback             = callback;
+  ctx.val_token.type       = BF_JSON_EOF;
+  ctx.val_token.source_bgn = NULL;
+  ctx.val_token.source_end = NULL;
+  ctx.user_data            = user_data;
 
   if (setjmp(ctx.error_handling) == 0)
   {
@@ -125,14 +109,29 @@ void bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callba
   }
 }
 
-const char* bfJsonParser_errorMessage(const bfJsonParserContext* ctx)
+bfJsonString bfJsonParser_errorMessage(const bfJsonParserContext* ctx)
 {
-  return ctx->error_message;
+  bfJsonString result;
+
+  result.string = ctx->error_message;
+  result.length = ctx->error_message_len;
+
+  return result;
 }
 
-bfJsonType bfJsonParser_valueType(const bfJsonParserContext* ctx)
+bfJsonString bfJsonParser_key(const bfJsonParserContext* ctx)
 {
-  switch (ctx->current_object.type)
+  bfJsonString result;
+
+  result.string = ctx->key_token.source_bgn;
+  result.length = ctx->key_token.source_end - ctx->key_token.source_bgn;
+
+  return result;
+}
+
+bfJsonValueType bfJsonParser_valueType(const bfJsonParserContext* ctx)
+{
+  switch (ctx->val_token.type)
   {
     case BF_JSON_QUOTE:
       return BF_JSON_VALUE_STRING;
@@ -155,39 +154,29 @@ bfJsonType bfJsonParser_valueType(const bfJsonParserContext* ctx)
   }
 }
 
-bool bfJsonParser_valueIs(const bfJsonParserContext* ctx, bfJsonType type)
+bool bfJsonParser_valueIs(const bfJsonParserContext* ctx, bfJsonValueType type)
 {
   return bfJsonParser_valueType(ctx) == type;
 }
 
-bfJsonString bfJsonParser_asString(const bfJsonParserContext* ctx)
+bfJsonString bfJsonParser_valAsString(const bfJsonParserContext* ctx)
 {
   bfJsonString result;
 
-  result.string = ctx->current_object.source_bgn;
-  result.length = ctx->current_object.source_end - ctx->current_object.source_bgn;
+  result.string = ctx->val_token.source_bgn;
+  result.length = ctx->val_token.source_end - ctx->val_token.source_bgn;
 
   return result;
 }
 
-double bfJsonParser_asNumber(const bfJsonParserContext* ctx)
+double bfJsonParser_valAsNumber(const bfJsonParserContext* ctx)
 {
-  return strtod(ctx->current_object.source_bgn, NULL);
+  return strtod(ctx->val_token.source_bgn, NULL);
 }
 
-bool bfJsonParser_asBoolean(const bfJsonParserContext* ctx)
+bool bfJsonParser_valAsBoolean(const bfJsonParserContext* ctx)
 {
-  return ctx->current_object.type != BF_JSON_FALSE;
-}
-
-void* bfJsonParser_userStorage(const bfJsonParserContext* ctx)
-{
-  return ctx->current_user_storage->storage;
-}
-
-void* bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx)
-{
-  return ctx->current_user_storage->parent->storage;
+  return ctx->val_token.type != BF_JSON_FALSE;
 }
 
 /*
@@ -196,9 +185,9 @@ void* bfJsonParser_parentUserStorage(const bfJsonParserContext* ctx)
 
 struct bfJsonStringBlock
 {
-  char                        string[k_bfJsonStringBlockSize];
-  size_t                      string_length;
-  struct bfJsonStringBlock*   next;
+  char                      string[k_bfJsonStringBlockSize];
+  size_t                    string_length;
+  struct bfJsonStringBlock* next;
 };
 
 typedef struct bfJsonWriter
@@ -329,7 +318,7 @@ void bfJsonWriter_valueString(bfJsonWriter* self, bfJsonString value)
 
 void bfJsonWriter_valueNumber(bfJsonWriter* self, double value)
 {
-  char         number_buffer[25];
+  char         number_buffer[26];
   const size_t number_buffer_length = (size_t)snprintf(number_buffer, sizeof(number_buffer), "%g", value);
 
   bfJsonWriter_write(self, number_buffer, number_buffer_length);
@@ -477,7 +466,7 @@ static bool bfJsonIsSameStringI(const char* a, const char* b, size_t n)
 
 static bool bfJsonIs(bfJsonParserContext* ctx, bfJsonTokenType type)
 {
-  return ctx->current_object.type == type;
+  return ctx->val_token.type == type;
 }
 
 static char bfJsonCurrentChar(const bfJsonParserContext* ctx)
@@ -535,7 +524,7 @@ static bool bfJsonIsNumber(const bfJsonParserContext* ctx)
   const char character = bfJsonCurrentChar(ctx);
 
   /*
-    @JsonSpecExtention
+    @JsonSpecExtension
       Added support for other types of numbers such as
       hexadecimal and a trailing 'f' / 'F'.
 
@@ -580,7 +569,7 @@ static void bfJsonSkipString(bfJsonParserContext* ctx)
 static char bfJsonUnescapeStringHelper(char character, const char** inc)
 {
   /*
-    @JsonSpecExtention
+    @JsonSpecExtension
       Added support for some more escape characters.
   */
 
@@ -649,9 +638,9 @@ static size_t bfJsonUnescapeString(char* str)
 
 static void bfJsonSetToken(bfJsonParserContext* ctx, bfJsonTokenType type, const char* bgn, const char* end)
 {
-  ctx->current_object.type       = type;
-  ctx->current_object.source_bgn = bgn;
-  ctx->current_object.source_end = end;
+  ctx->val_token.type       = type;
+  ctx->val_token.source_bgn = bgn;
+  ctx->val_token.source_end = end;
 }
 
 static void bfJsonNextToken(bfJsonParserContext* ctx)
@@ -667,7 +656,7 @@ static void bfJsonNextToken(bfJsonParserContext* ctx)
       const char* token_end = ctx->current_location;
 
       /*
-        @JsonSpecExtention
+        @JsonSpecExtension
           Added support for "inf", "infinity", and "nan" (case insensitive).
       */
       if (token_end - token_bgn >= 3 && (bfJsonIsSameStringI(token_bgn, "INF", 3) || bfJsonIsSameStringI(token_bgn, "NAN", 3)))
@@ -721,12 +710,12 @@ static bool bfJsonEat(bfJsonParserContext* ctx, bfJsonTokenType type, bool optio
 
   if (!optional)
   {
-    snprintf(ctx->error_message,
-             sizeof(ctx->error_message),
-             "Line(%i): Expected a '%c' but got a '%c'.",
-             (int)ctx->line_no,
-             (char)type,
-             (char)ctx->current_object.type);
+    ctx->error_message_len = snprintf(ctx->error_message,
+                                      sizeof(ctx->error_message),
+                                      "Line(%i): Expected a '%c' but got a '%c'.",
+                                      (int)ctx->line_no,
+                                      (char)type,
+                                      (char)ctx->val_token.type);
     ctx->callback(ctx, BF_JSON_EVENT_PARSE_ERROR, ctx->user_data);
     longjmp(ctx->error_handling, 1);
     /* return bfFalse; */
@@ -737,30 +726,23 @@ static bool bfJsonEat(bfJsonParserContext* ctx, bfJsonTokenType type, bool optio
 
 static void bfJsonInterpret(bfJsonParserContext* ctx)
 {
-  switch (ctx->current_object.type)
+  switch (ctx->val_token.type)
   {
     case BF_JSON_L_CURLY:
     {
-      bfJsonUserStorage user_storage;
-
       bfJsonEat(ctx, BF_JSON_L_CURLY, false);
-
-      user_storage.parent       = ctx->current_user_storage;
-      ctx->current_user_storage = &user_storage;
 
       ctx->callback(ctx, BF_JSON_EVENT_BEGIN_OBJECT, ctx->user_data);
 
       while (!bfJsonIs(ctx, BF_JSON_R_CURLY))
       {
-        // bfJsonString key = bfJsonCurrentString(ctx);
-
-        ctx->callback(ctx, BF_JSON_EVENT_KEY, ctx->user_data);
+        ctx->key_token = ctx->val_token;
         bfJsonEat(ctx, BF_JSON_QUOTE, false);
         bfJsonEat(ctx, BF_JSON_COLON, false);
         bfJsonInterpret(ctx);
 
         /*
-          @JsonSpecExtention
+          @JsonSpecExtension
             Added support for trailing commas (allowed in ES5 though).
             Also commas are optional.
         */
@@ -769,26 +751,28 @@ static void bfJsonInterpret(bfJsonParserContext* ctx)
 
       ctx->callback(ctx, BF_JSON_EVENT_END_OBJECT, ctx->user_data);
       bfJsonEat(ctx, BF_JSON_R_CURLY, false);
-
-      ctx->current_user_storage = ctx->current_user_storage->parent;
       break;
     }
     case BF_JSON_L_SQR_BOI:
     {
-      bfJsonUserStorage user_storage;
-
-      user_storage.parent       = ctx->current_user_storage;
-      ctx->current_user_storage = &user_storage;
-
       bfJsonEat(ctx, BF_JSON_L_SQR_BOI, false);
       ctx->callback(ctx, BF_JSON_EVENT_BEGIN_ARRAY, ctx->user_data);
 
+      size_t num_elements = 0u;
+
       while (!bfJsonIs(ctx, BF_JSON_R_SQR_BOI))
       {
+        const size_t number_buffer_length = (size_t)snprintf(ctx->array_idx_number_buffer, sizeof(ctx->array_idx_number_buffer), "%zu", num_elements);
+
+        ctx->key_token.type       = BF_JSON_NUMBER;
+        ctx->key_token.source_bgn = ctx->array_idx_number_buffer;
+        ctx->key_token.source_end = ctx->key_token.source_bgn + number_buffer_length;
+
         bfJsonInterpret(ctx);
+        ++num_elements;
 
         /*
-          @JsonSpecExtention
+          @JsonSpecExtension
             Added support for trailing commas (allowed in ES5 though).
             Also commas are optional.
         */
@@ -797,8 +781,6 @@ static void bfJsonInterpret(bfJsonParserContext* ctx)
 
       ctx->callback(ctx, BF_JSON_EVENT_END_ARRAY, ctx->user_data);
       bfJsonEat(ctx, BF_JSON_R_SQR_BOI, false);
-
-      ctx->current_user_storage = ctx->current_user_storage->parent;
       break;
     }
     case BF_JSON_QUOTE:
@@ -807,7 +789,7 @@ static void bfJsonInterpret(bfJsonParserContext* ctx)
     case BF_JSON_NULL:
     case BF_JSON_NUMBER:
     {
-      ctx->callback(ctx, BF_JSON_EVENT_VALUE, ctx->user_data);
+      ctx->callback(ctx, BF_JSON_EVENT_KEY_VALUE, ctx->user_data);
       /* [[fallthough]] */
     }
     case BF_JSON_R_CURLY:
@@ -817,8 +799,34 @@ static void bfJsonInterpret(bfJsonParserContext* ctx)
     case BF_JSON_EOF:
     default:
     {
-      bfJsonEat(ctx, ctx->current_object.type, false);
+      bfJsonEat(ctx, ctx->val_token.type, false);
       break;
     }
   }
 }
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

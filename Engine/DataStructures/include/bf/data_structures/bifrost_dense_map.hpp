@@ -46,12 +46,11 @@ namespace bf
       IndexType next;    //!< The next free index in the `m_SparseIndices` array.
 
      public:
-      Index(HandleType sparse_index, IndexType dense_index) :
-        handle(),
-        index(dense_index),
+      Index(HandleType sparse_index) :
+        handle(sparse_index),
+        index(THandle::InvalidIndex),
         next(THandle::InvalidIndex)
       {
-        handle.index = sparse_index;
       }
     };
   }  // namespace dense_map
@@ -59,13 +58,13 @@ namespace bf
   /*!
    * @brief
    *   The DenseMap is used for fast addition and removal of
-   *   elements while keeping a cache local array of objects.
+   *   elements while keeping a dense array of objects for fast traversal
    *
    *   Made for faster (frequent) Insert(s) and Remove(s) relative to Vector
    *   While keeping a dense array with good cache locality.
    */
   template<typename THandle>
-  class DenseMap final
+  class DenseMap
   {
    public:
     using TObject    = typename THandle::TObject;
@@ -176,7 +175,7 @@ namespace bf
     /*!
      * @brief
      *   Reserved memory in the internal arrays so that adding objects will
-     *   not allocate at random times.
+     *   not allocate at unexpected times.
      *
      * @param size
      *   The new size you want ot make sure the arrays are at least.
@@ -229,18 +228,13 @@ namespace bf
      *  true  - if the element can be found in this DenseMap
      *  false - if the ID is invalid and should not be used to get / remove an object.
      */
-    bool has(THandle id) const
+    [[nodiscard]] bool has(THandle id) const
     {
       const IndexType index = id.index;
 
       if (index < m_SparseIndices.size())
       {
         const Index& in = m_SparseIndices[index];
-
-        if (!(in.handle == id && in.index != THandle::InvalidIndex))
-        {
-          __debugbreak();
-        }
 
         return in.handle == id && in.index != THandle::InvalidIndex;
       }
@@ -263,7 +257,7 @@ namespace bf
      * @return
      *  The Object associated with that particular ID.
      */
-    TObject& find(const THandle id)
+    [[nodiscard]] TObject& find(const THandle id)
     {
       assert(has(id) && "Only valid IDs are allowed to be passed into DenseMap::find.");
 
@@ -319,21 +313,22 @@ namespace bf
       m_NextSparse = THandle::InvalidIndex;
     }
 
+    // TODO(SR):
+    //   Maybe there should be a function to shrink memory usage as this will just grow and grow.
+
     // NOTE(Shareef): STL Standard Container Functions
 
-    iterator                  begin() { return iterator(m_DenseArray.data()); }
-    const_iterator            begin() const { return iterator(m_DenseArray.data()); }
-    TObject&                  at(const std::size_t index) { return m_DenseArray.at(index); }
-    const TObject&            at(const std::size_t index) const { return m_DenseArray.at(index); }
-    [[nodiscard]] std::size_t size() const { return m_DenseArray.size(); }
-    TObject&                  operator[](const std::size_t index) { return m_DenseArray[index]; }
-    const TObject&            operator[](const std::size_t index) const { return m_DenseArray[index]; }
-    iterator                  end() { return iterator(m_DenseArray.data() + size()); }
-    const_iterator            end() const { return iterator(m_DenseArray.data() + size()); }
-    Proxy*                    data() { return m_DenseArray.data(); }
-    const Proxy*              data() const { return m_DenseArray.data(); }
-
-    // TODO(SR): Maybe there should be a function to shrink memory usage as this will just grow and grow.
+    [[nodiscard]] iterator       begin() { return iterator(m_DenseArray.data()); }
+    [[nodiscard]] const_iterator begin() const { return iterator(m_DenseArray.data()); }
+    [[nodiscard]] TObject&       at(const std::size_t index) { return m_DenseArray.at(index); }
+    [[nodiscard]] const TObject& at(const std::size_t index) const { return m_DenseArray.at(index); }
+    [[nodiscard]] std::size_t    size() const { return m_DenseArray.size(); }
+    [[nodiscard]] TObject&       operator[](const std::size_t index) { return m_DenseArray[index]; }
+    [[nodiscard]] const TObject& operator[](const std::size_t index) const { return m_DenseArray[index]; }
+    [[nodiscard]] iterator       end() { return iterator(m_DenseArray.data() + size()); }
+    [[nodiscard]] const_iterator end() const { return iterator(m_DenseArray.data() + size()); }
+    [[nodiscard]] Proxy*         data() { return m_DenseArray.data(); }
+    [[nodiscard]] const Proxy*   data() const { return m_DenseArray.data(); }
 
    private:
     Index& getNextIndex()
@@ -347,7 +342,7 @@ namespace bf
         return current_index;
       }
 
-      return m_SparseIndices.emplace(HandleType(m_SparseIndices.length()), THandle::InvalidIndex);
+      return m_SparseIndices.emplace(HandleType(m_SparseIndices.length()));
     }
   };
 }  // namespace bf
