@@ -286,6 +286,7 @@ BF_GFX_API void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle reso
 
 /* Buffer */
 BF_GFX_API bfBufferSize bfBuffer_size(bfBufferHandle self);
+BF_GFX_API bfBufferSize bfBuffer_offset(bfBufferHandle self);
 BF_GFX_API void*        bfBuffer_mappedPtr(bfBufferHandle self);
 BF_GFX_API void*        bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size);
 BF_GFX_API void         bfBuffer_invalidateRanges(bfBufferHandle self, const bfBufferSize* offsets, const bfBufferSize* sizes, uint32_t num_ranges);
@@ -400,9 +401,9 @@ typedef struct bfDescriptorElementInfo
   uint32_t                    binding;
   uint32_t                    array_element_start;
   uint32_t                    num_handles; /* also length of bfDescriptorElementInfo::offsets and bfDescriptorElementInfo::sizes */
-  bfGfxBaseHandle             handles[k_bfGfxDesfcriptorSetMaxLayoutBindings];
-  uint64_t                    offsets[k_bfGfxDesfcriptorSetMaxLayoutBindings];
-  uint64_t                    sizes[k_bfGfxDesfcriptorSetMaxLayoutBindings];
+  bfGfxBaseHandle             handles[2];
+  uint64_t                    offsets[2];
+  uint64_t                    sizes[2];
 
 } bfDescriptorElementInfo;
 
@@ -412,6 +413,8 @@ typedef struct bfDescriptorSetInfo
   uint32_t                num_bindings;
 
 } bfDescriptorSetInfo;
+
+// const int i = sizeof(bfDescriptorElementInfo);
 
 BF_GFX_API bfDescriptorSetInfo bfDescriptorSetInfo_make(void);
 BF_GFX_API void                bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const bfTextureHandle* textures, uint32_t num_textures);

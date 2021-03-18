@@ -17,6 +17,9 @@
 
 namespace bf::json
 {
+  // TODO(SR): This should probably be runtime configuarble but I like my pretty print so...
+  static constexpr bool k_DoPrettyPrint = true;
+
   static StringRange fromJsonString(const bfJsonString& value)
   {
     return StringRange(value.string, value.length);
@@ -24,12 +27,7 @@ namespace bf::json
 
   static bfJsonString toJsonString(const StringRange& value)
   {
-    bfJsonString result;
-
-    result.string = value.begin();
-    result.length = value.length();
-
-    return result;
+    return bfJsonString{value.begin(), value.length()};
   }
 
   Value parse(char* source, std::size_t source_length)
@@ -133,11 +131,9 @@ namespace bf::json
     return ctx.document;
   }
 
-  static bool s_PrettyPrint = true;
-
   static void toStringRecNewline(bfJsonWriter* json_writer)
   {
-    if (s_PrettyPrint)
+    if (k_DoPrettyPrint)
     {
       bfJsonWriter_write(json_writer, "\n", 1);
     }
@@ -145,7 +141,7 @@ namespace bf::json
 
   static void toStringRecIndent(bfJsonWriter* json_writer, int indent_level)
   {
-    if (s_PrettyPrint)
+    if (k_DoPrettyPrint)
     {
       bfJsonWriter_indent(json_writer, indent_level * 4);
     }
@@ -258,27 +254,24 @@ namespace bf::json
   }
 
   Value::Value(const char* value) :
-    Base_t()
+    Base_t(String(value))
   {
     set<String>(value);
   }
 
   Value::Value(int value) :
-    Base_t()
+    Base_t(Number(value))
   {
-    set<Number>(Number(value));
   }
 
   Value::Value(std::uint64_t value) :
-    Base_t()
+    Base_t(Number(value))
   {
-    set<Number>(Number(value));
   }
 
   Value::Value(std::int64_t value) :
-    Base_t()
+    Base_t(Number(value))
   {
-    set<Number>(Number(value));
   }
 
   Value& Value::operator=(detail::ObjectInitializer&& values)
@@ -355,18 +348,7 @@ namespace bf::json
 
   void Value::add(StringRange key, const Value& value)
   {
-    if (isObject())
-    {
-      (*this)[key] = value;
-    }
-    else if (isArray())
-    {
-      push(value);
-    }
-    else
-    {
-      *this = value;
-    }
+    add(key) = value;
   }
 
   Value& Value::add(StringRange key)

@@ -120,12 +120,17 @@ namespace bf
     if (value.isValid())
     {
       IBaseAsset* const asset_handle = value.handle();
-      ResourceReference resource_ref = asset_handle->toRef();
+      
+      // We can only serialize references to assets that are backed by file.
+      if (asset_handle->hasDocument())
+      {
+        ResourceReference resource_ref = asset_handle->toRef();
 
-      pushObject(key);
-      serialize("docID", resource_ref.doc_id);
-      serialize("fileID", resource_ref.file_id.id);
-      popObject();
+        pushObject(key);
+        serialize("docID", resource_ref.doc_id);
+        serialize("fileID", resource_ref.file_id.id);
+        popObject();
+      }
     }
     else
     {

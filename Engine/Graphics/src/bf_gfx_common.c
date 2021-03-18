@@ -224,6 +224,7 @@ bfDescriptorSetInfo bfDescriptorSetInfo_make(void)
 void bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const bfTextureHandle* textures, uint32_t num_textures)
 {
   assert(self->num_bindings < k_bfGfxDesfcriptorSetMaxLayoutBindings);
+  assert(num_textures <= 2);
 
   self->bindings[self->num_bindings].type                = BF_DESCRIPTOR_ELEMENT_TEXTURE;
   self->bindings[self->num_bindings].binding             = binding;
@@ -243,6 +244,7 @@ void bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding,
 void bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers)
 {
   assert(self->num_bindings < k_bfGfxDesfcriptorSetMaxLayoutBindings);
+  assert(num_buffers <= 2);
 
   self->bindings[self->num_bindings].type                = BF_DESCRIPTOR_ELEMENT_BUFFER;
   self->bindings[self->num_bindings].binding             = binding;

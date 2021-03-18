@@ -200,9 +200,9 @@ namespace bf
 
   enum class RenderCommandType
   {
-    Group,
     DrawIndexed,
     DrawArrays,
+    Group,
     SetScissorRect,
   };
 
@@ -228,26 +228,6 @@ namespace bf
   };
 
 #define DECLARE_RENDER_CMD(name) struct RC_##name : public RenderCommandT<RenderCommandType::name>
-
-  // This is just a command type for storing other commands.
-  DECLARE_RENDER_CMD(Group)
-  {
-    BaseRenderCommand* tail = nullptr;
-
-    void push(BaseRenderCommand * cmd)
-    {
-      if (!next)
-      {
-        next = cmd;
-        tail = cmd;
-      }
-      else
-      {
-        tail->next = cmd;
-        tail       = cmd;
-      }
-    }
-  };
 
   DECLARE_RENDER_CMD(DrawArrays)
   {
@@ -275,6 +255,26 @@ namespace bf
     std::uint32_t      num_indices                 = 0u;
     std::uint64_t      index_buffer_binding_offset = 0u;
     bfGfxIndexType     index_type                  = BF_INDEX_TYPE_UINT32;
+  };
+
+  // This is just a helper command type for storing other commands.
+  DECLARE_RENDER_CMD(Group)
+  {
+    BaseRenderCommand* tail = nullptr;
+
+    void push(BaseRenderCommand * cmd)
+    {
+      if (!next)
+      {
+        next = cmd;
+        tail = cmd;
+      }
+      else
+      {
+        tail->next = cmd;
+        tail       = cmd;
+      }
+    }
   };
 
   DECLARE_RENDER_CMD(SetScissorRect)
@@ -305,8 +305,8 @@ namespace bf
 
   struct RenderQueue
   {
-    static constexpr std::size_t k_KeyBufferSize     = bfKilobytes(90);
-    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(4);
+    static constexpr std::size_t k_KeyBufferSize     = bfBytes((sizeof(RenderSortKey) + sizeof(std::uint64_t)) * 4096 * 2);
+    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(14);
 
     RenderQueueType                           type;
     FixedLinearAllocator<k_KeyBufferSize>     key_stream_memory;

@@ -41,7 +41,7 @@ enum /* bfGraphicsConstants */
   k_bfGfxShaderEntryPointNameLength      = 32,
   k_bfGfxShaderProgramNameLength         = 32,
   k_bfGfxMaxLayoutBindings               = 16,
-  k_bfGfxDesfcriptorSetMaxLayoutBindings = 8,
+  k_bfGfxDesfcriptorSetMaxLayoutBindings = 6,
   k_bfGfxMaxBufferBindings               = 16,
   k_bfGfxMaxDescriptorSetWrites          = 32,
   k_bfGfxMaxFrameGPUAhead                = 4,

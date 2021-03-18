@@ -46,8 +46,8 @@ namespace bf
 
     // Accessors //
 
-    [[nodiscard]] IDocument&    document() const { return *m_Document; }
     [[nodiscard]] bool          hasDocument() const { return m_Document != nullptr; }
+    [[nodiscard]] IDocument&    document() const { return *m_Document; }
     [[nodiscard]] const String& name() const { return m_Name; }
 
     // Ref Count //

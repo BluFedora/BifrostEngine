@@ -433,8 +433,8 @@ namespace bf
       }
     }
 
-    m_WhiteTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
-    m_DefaultMaterialTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorHalfWhite4u, sizeof(k_ColorHalfWhite4u)); 
+    m_WhiteTexture           = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
+    m_DefaultMaterialTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorHalfWhite4u, sizeof(k_ColorHalfWhite4u));
 
     m_AutoRelease.push(m_WhiteTexture);
     m_AutoRelease.push(m_DefaultMaterialTexture);
@@ -904,7 +904,7 @@ namespace bf
     bfVertexLayout_delete(m_StandardVertexLayout);
     bfGfxDestroy();
 
-    m_GfxDevice  = nullptr;
+    m_GfxDevice = nullptr;
   }
 
   bfDescriptorSetInfo StandardRenderer::makeMaterialInfo(const MaterialAsset& material)
@@ -970,7 +970,6 @@ namespace bf
     }
 
     bfDescriptorSetInfo desc_set_object = bfDescriptorSetInfo_make();
-
     bfDescriptorSetInfo_addUniform(&desc_set_object, 0, 0, &offset, &size, &renderable->transform_uniform.handle(), 1);
 
     return desc_set_object;

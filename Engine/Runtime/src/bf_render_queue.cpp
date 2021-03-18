@@ -113,7 +113,7 @@ namespace bf
     LinearAllocatorScope mem_scope     = alloc;
     RenderSortKey* const result        = alloc.allocateArrayTrivial<RenderSortKey>(num_keys);
     std::uint64_t* const count_indices = alloc.allocateArrayTrivial<std::uint64_t>(num_keys);
-    std::uint64_t* const count         = alloc.allocateArrayTrivial<std::uint64_t>(k_Max);
+    std::uint64_t count[k_Max]         = {};
 
     // Initialize counts to 0,
     // `result` and `count_indices` do not need initialization since all of there elements gets written to before reads.
@@ -184,11 +184,11 @@ namespace bf
     {
       radix_sort(key_stream_memory, keys_bgn, num_keys);
 
-      /*
+      //*
     assert(std::is_sorted(keys_bgn, keys_bgn + num_keys, [](const RenderSortKey& a, const RenderSortKey& b) {
              return a.key < b.key;
            }) == true);
-    */
+    //*/
     }
 
     for (std::size_t i = 0; i < num_keys; ++i)

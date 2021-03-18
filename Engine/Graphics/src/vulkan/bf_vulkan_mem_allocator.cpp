@@ -90,12 +90,12 @@ void VkPoolAllocatorCtor(PoolAllocator* self, const bfGfxDevice* const logical_d
 // Aligns size to be a multiple of page_size
 static VkDeviceSize align_to(VkDeviceSize size, VkDeviceSize page_size);
 static bfBool32     find_free_check_for_alloc(BlockSpanIndexPair* const loc, MemoryPool* const mem_pool, VkDeviceSize real_size, bfBool32 needs_new_page);
-static size_t       add_block_to_pool(PoolAllocator* self, uint32_t mem_type, VkDeviceSize size);
+static uint32_t     add_block_to_pool(PoolAllocator* self, uint32_t mem_type, VkDeviceSize size);
 static void         update_chunk(MemoryPool* const pool, const BlockSpanIndexPair* indices, VkDeviceSize size);
 
 void VkPoolAllocator_alloc(PoolAllocator* self, const bfAllocationCreateInfo* create_info, const bfBool32 is_globally_mapped, const uint32_t mem_type, Allocation* out)
 {
-  const bfBool32     needs_own_page = create_info->properties != BF_BUFFER_PROP_DEVICE_LOCAL || !is_globally_mapped;
+  const bfBool32     needs_own_page = create_info->properties != BF_BUFFER_PROP_DEVICE_LOCAL && !is_globally_mapped;
   const VkDeviceSize size           = create_info->size;
   const VkDeviceSize real_size      = align_to(size, self->m_PageSize);
   MemoryPool* const  pool           = (MemoryPool*)bfArray_at((void**)&self->m_MemPools, mem_type);
@@ -107,7 +107,7 @@ void VkPoolAllocator_alloc(PoolAllocator* self, const bfAllocationCreateInfo* cr
 
   if (!found)
   {
-    loc.blockIdx = (uint32_t)add_block_to_pool(self, mem_type, real_size);
+    loc.blockIdx = add_block_to_pool(self, mem_type, real_size);
     loc.spanIdx  = 0;
   }
 
@@ -146,7 +146,6 @@ void VkPoolAllocator_free(PoolAllocator* self, const Allocation* allocation)
   const OffsetSize         span      = {allocation->offset, real_size};
   MemoryPool* const        pool      = (MemoryPool*)bfArray_at((void**)&self->m_MemPools, allocation->type);
   DeviceMemoryBlock* const block     = (DeviceMemoryBlock*)bfArray_at((void**)pool, allocation->index);
-  bfBool32                 found     = bfFalse;
 
   block->isPageReserved = bfFalse;
   block->isPageMapped   = allocation->mapped_ptr != NULL;
@@ -161,17 +160,15 @@ void VkPoolAllocator_free(PoolAllocator* self, const Allocation* allocation)
     {
       layout->offset = allocation->offset;
       layout->size += real_size;
-      found = bfTrue;
-      break;
+      return;
     }
   }
 
-  assert(found && "VkPoolAllocator_free was called with an invalid allocation.");
+  // if we got here then we could not merge the allocation span.
 
   bfArray_push((void**)&block->layout, &span);
 
   VkDeviceSize* const mem_alloc_size = (VkDeviceSize*)bfArray_at((void**)&self->m_MemTypeAllocSizes, allocation->type);
-
   (*mem_alloc_size) -= real_size;
 }
 
@@ -231,7 +228,7 @@ static VkDeviceSize align_to(VkDeviceSize size, VkDeviceSize page_size)
   return (size / page_size + 1) * page_size;
 }
 
-static size_t add_block_to_pool(PoolAllocator* self, uint32_t mem_type, VkDeviceSize size)
+static uint32_t add_block_to_pool(PoolAllocator* self, uint32_t mem_type, VkDeviceSize size)
 {
   MemoryPool* const pool = (MemoryPool*)bfArray_at((void**)&self->m_MemPools, mem_type);
 
@@ -269,7 +266,7 @@ static size_t add_block_to_pool(PoolAllocator* self, uint32_t mem_type, VkDevice
 
   ++self->m_NumAllocations;
 
-  return bfArray_size((void**)pool) - 1;
+  return (uint32_t)bfArray_size((void**)pool) - 1;
 }
 
 static void update_chunk(MemoryPool* const pool, const BlockSpanIndexPair* indices, VkDeviceSize size)

@@ -430,11 +430,12 @@ namespace bf::editor
 
       if (payload && payload->IsDataType("Asset.UUID"))
       {
-        const bfUUID* data = static_cast<const bfUUID*>(payload->Data);
+        const bfUUIDNumber* data = static_cast<const bfUUIDNumber*>(payload->Data);
 
-        assert(payload->DataSize == sizeof(bfUUID));
+        assert(payload->DataSize == sizeof(bfUUIDNumber));
 
-        // IBaseAsset* const dragged_asset = m_Assets->findAsset(data->as_number);
+        // IBaseAsset* const dragged_asset = m_Assets->findAsset(data);
+        
         //
         // if (dragged_asset &&
         //     dragged_asset->type() == current_asset->type() &&

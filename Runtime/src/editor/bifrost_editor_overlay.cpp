@@ -1726,9 +1726,9 @@ namespace bf::editor
             entry.document->release();
 
             editor.engine().openScene(opened_scene);
-#if 0
+#if 1
             auto& assets = editor.engine().assets();
-            const auto  material   = assets.loadUnmanagedAsset<MaterialAsset>("Tile Material", AssetLoadMode::IN_MEMORY);
+            const auto  material   = new MaterialAsset(); // TODO(SR): This is a leak.
             auto* const cube_model = assets.findAssetOfType<ModelAsset>(RelPath("Models/cube.obj"));
 
             for (int y = 0; y < 64; ++y)
@@ -1744,7 +1744,7 @@ namespace bf::editor
                 auto& tile_transform = tile->transform();
 
                 tile_transform.local_position = {float(x), 0.0f, float(y)};
-                tile_transform.local_scale    = Vector3f(0.5f);
+                tile_transform.local_scale    = Vector3f(0.2f);
 
                 bfTransform_flushChanges(&tile->transform());
               }

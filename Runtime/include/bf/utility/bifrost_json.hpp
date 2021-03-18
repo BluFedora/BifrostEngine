@@ -48,7 +48,8 @@ namespace bf::json
     using Base_t = detail::BaseValue;
 
    public:
-    // Constructors
+    // Constructors //
+
     Value() = default;
 
     template<typename T>
@@ -59,7 +60,7 @@ namespace bf::json
 
     template<std::size_t N>
     Value(const char (&data_in)[N]) noexcept :
-      Base_t(String(data_in))
+      Base_t(String(data_in, N - 1))
     {
     }
 
@@ -70,12 +71,12 @@ namespace bf::json
     Value(std::uint64_t value);
     Value(std::int64_t value);
 
-    // Assignment
+    // Assignment //
 
     Value& operator=(detail::ObjectInitializer&& values);
     Value& operator=(detail::ArrayInitializer&& values);
 
-    // Meta API
+    // Meta API //
 
     using Base_t::as;
     using Base_t::is;
@@ -86,7 +87,7 @@ namespace bf::json
     bool isNumber() const { return Base_t::is<double>(); }
     bool isBoolean() const { return Base_t::is<bool>(); }
 
-    // Cast API
+    // Cast API //
 
     template<typename T>
     const T& asOr(const T& default_value) const
@@ -110,7 +111,7 @@ namespace bf::json
       return Base_t::as<T>();
     }
 
-    // Object API
+    // Object API //
 
     Value& operator[](const StringRange& key);
     Value& operator[](const char* key);
@@ -129,7 +130,7 @@ namespace bf::json
       return default_value;
     }
 
-    // Array API
+    // Array API //
 
     Value&      operator[](int index);  // Must be an int (rather than size_t) as to not conflict with the 'const char* key' overload.
     std::size_t size() const;

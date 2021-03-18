@@ -252,6 +252,8 @@ void bfGfxDestroy(void)
     bfGfxDevice_release(g_Ctx->logical_device, curr);
     curr = next;
   }
+  
+  bfLogPrint("Number of Vulkan Memory Allocs = %u", device->device_memory_allocator.m_NumAllocations);
 
   VkPoolAllocatorDtor(&device->device_memory_allocator);
 
@@ -1696,6 +1698,11 @@ bfBufferSize bfBuffer_size(bfBufferHandle self)
   return self->real_size;
 }
 
+bfBufferSize bfBuffer_offset(bfBufferHandle self)
+{
+  return self->alloc_info.offset;
+}
+
 void* bfBuffer_mappedPtr(bfBufferHandle self)
 {
   return self->alloc_info.mapped_ptr;
@@ -1703,7 +1710,11 @@ void* bfBuffer_mappedPtr(bfBufferHandle self)
 
 void* bfBuffer_map(bfBufferHandle self, bfBufferSize offset, bfBufferSize size)
 {
-  if (!(self->usage & BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER))
+  if ((self->usage & BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER) != 0)
+  {
+    return (char*)self->alloc_info.mapped_ptr + offset;
+  }
+  else
   {
     assert(self->alloc_info.mapped_ptr == NULL && "Buffer_map attempt to map an already mapped buffer.");
 

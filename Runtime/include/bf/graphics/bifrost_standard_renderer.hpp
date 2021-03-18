@@ -279,7 +279,7 @@ namespace bf
     {
       const auto limits = bfGfxDevice_limits(device);
 
-      transform_uniform.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER, info, limits.uniform_buffer_offset_alignment);
+      transform_uniform.create(device, BF_BUFFER_USAGE_UNIFORM_BUFFER | BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER, info, limits.uniform_buffer_offset_alignment);
     }
 
     void destroy(bfGfxDeviceHandle device) const
