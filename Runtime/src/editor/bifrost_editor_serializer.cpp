@@ -187,7 +187,7 @@ namespace bf::editor
     double value_d = double(value);
 
     setNameBuffer(key);
-    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+    ImGui::DragScalar(m_NameBuffer, ImGuiDataType_Double, &value_d, s_DragSpeed, nullptr, nullptr, "%.3f", ImGuiSliderFlags_None);
     value = value_d;
     updateTopChangedStackItem();
   }
@@ -195,7 +195,7 @@ namespace bf::editor
   void ImGuiSerializer::serialize(StringRange key, Vec2f& value)
   {
     setNameBuffer(key);
-    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+    ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 2, s_DragSpeed, nullptr, nullptr, "%.3f", ImGuiSliderFlags_None);
     updateTopChangedStackItem();
   }
 
@@ -218,7 +218,7 @@ namespace bf::editor
     }
     else
     {
-      ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed, nullptr, nullptr, "%.3f", 1.0f);
+      ImGui::DragScalarN(m_NameBuffer, ImGuiDataType_Float, &value.x, 3, s_DragSpeed, nullptr, nullptr, "%.3f", ImGuiSliderFlags_None);
       updateTopChangedStackItem();
     }
 

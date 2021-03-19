@@ -1007,8 +1007,8 @@ namespace bf::editor
       ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
       ImGuiViewport*   viewport     = ImGui::GetMainViewport();
 
-      ImGui::SetNextWindowPos(viewport->GetWorkPos());
-      ImGui::SetNextWindowSize(viewport->GetWorkSize());
+      ImGui::SetNextWindowPos(viewport->WorkPos);
+      ImGui::SetNextWindowSize(viewport->WorkSize);
       ImGui::SetNextWindowViewport(viewport->ID);
 
       ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -1578,14 +1578,14 @@ namespace bf::editor
     if (m_Root)
     {
       static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_Hideable |
-                                     ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_Resizable |
+                                     ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable |
                                      ImGuiTableFlags_RowBg | ImGuiTableFlags_Hideable;
 
       if (ImGui::BeginTable("File System", 2, flags))
       {
         ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableAutoHeaders();
+        ImGui::TableHeadersRow();
 
         uiShowImpl(editor, root());
         ImGui::EndTable();
@@ -1694,6 +1694,7 @@ namespace bf::editor
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
       }
 
+      ImGui::TableNextColumn();
       const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
 
       if (entry.document)
@@ -1794,7 +1795,7 @@ namespace bf::editor
         ImGui::EndPopup();
       }
 
-      ImGui::TableNextCell();
+      ImGui::TableNextColumn();
       ImGui::TextUnformatted("Asset");
 
       if (is_open)
@@ -1836,6 +1837,7 @@ namespace bf::editor
         tree_node_flags |= ImGuiTreeNodeFlags_DefaultOpen;
       }
 
+      ImGui::TableNextColumn();
       const bool is_open = ImGui::TreeNodeEx(entry.name.cstr(), tree_node_flags);
 
       if (ImGui::BeginDragDropSource(drag_source_flags))
@@ -1906,7 +1908,7 @@ namespace bf::editor
         ImGui::EndPopup();
       }
 
-      ImGui::TableNextCell();
+      ImGui::TableNextColumn();
       ImGui::TextUnformatted("Folder");
 
       if (is_open)

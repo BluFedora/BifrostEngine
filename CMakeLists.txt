@@ -87,16 +87,20 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4099")
 endif()
 
+add_library(
+  DearImGUI STATIC
 
+  "lib/include/imgui/imgui.cpp"
+  "lib/include/imgui/imgui_demo.cpp"
+  "lib/include/imgui/imgui_draw.cpp"
+  "lib/include/imgui/imgui_tables.cpp"
+  "lib/include/imgui/imgui_widgets.cpp"
+)
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Libs
-  "lib/include/imgui/imgui.cpp"
-  "lib/include/imgui/imgui_widgets.cpp"
-  "lib/include/imgui/imgui_draw.cpp"
-  "lib/include/imgui/imgui_demo.cpp"
   "lib/include/nativefiledialog/nfd_common.c"
 
   # Experiments
@@ -261,6 +265,8 @@ target_link_libraries(
     BF_RuntimeGraphics
 
     BF_Job_static
+
+    DearImGUI
 )
 
 set_target_properties(
@@ -306,6 +312,8 @@ target_link_libraries(
     BF_RuntimeGraphics
 
     BF_Job_static
+
+    DearImGUI
 
    "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/LowLevel_static_64.lib"
    "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/physx/win64/LowLevelAABB_static_64.lib"
