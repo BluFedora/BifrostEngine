@@ -379,7 +379,6 @@ namespace bf::imgui
           io.MousePos.x += float(window_x);
           io.MousePos.y += float(window_y);
         }
-
         break;
       }
       case BIFROST_EVT_ON_MOUSE_UP:
@@ -700,12 +699,10 @@ namespace bf::imgui
      "__Untitled__",
      int(vp->Size.x),
      int(vp->Size.y),
-     convertVpFlag(vp, ImGuiViewportFlags_NoDecoration, k_bfWindowFlagIsDecorated) |
+     ((vp->Flags & ImGuiViewportFlags_NoDecoration) ? 0x0 : k_bfWindowFlagIsDecorated) /* This cannot use convertVpFlag since it is reverse. */ |
       convertVpFlag(vp, ImGuiViewportFlags_TopMost, k_bfWindowFlagIsFloating));
 
-    window->event_fn = [](bfWindow* window, bfEvent* event) {
-      onEvent(window, *event);
-    };
+    window->event_fn = [](bfWindow* window, bfEvent* event) { onEvent(window, *event); };
 
     window->frame_fn = [](bfWindow* window) {
       ImGuiViewport* vp = ImGui::FindViewportByPlatformHandle(window->user_data);
