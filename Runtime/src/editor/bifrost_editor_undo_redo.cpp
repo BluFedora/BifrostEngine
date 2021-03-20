@@ -9,10 +9,9 @@
 * @version 0.0.1
 * @date    2020-05-26
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
-
 #include "bf/editor/bifrost_editor_undo_redo.hpp"
 
 namespace bf::editor
@@ -159,10 +158,10 @@ namespace bf::editor
 
   bool MemoryUndoRedo::commitEdits()
   {
+    bool has_changed_item = false;
+
     if (!m_CurrentEditsStack.isEmpty())
     {
-      bool has_changed_item = false;
-
       for (MemoryUndoItem* item : ReverseLoop(m_CurrentEditsStack.items))
       {
         if (item->hasDataChanged())
@@ -184,11 +183,9 @@ namespace bf::editor
       }
 
       m_CurrentEditsStack.clearNoFree();
-
-      return has_changed_item;
     }
 
-    return false;
+    return has_changed_item;
   }
 
   void MemoryUndoRedo::clear()
@@ -364,7 +361,7 @@ namespace bf::editor
         return &edit;
       }
     }
-    
+
     return &m_CurrentPotentialEdits.emplaceBack(*this, assets, reflectable_object);
   }
 }  // namespace bf::editor

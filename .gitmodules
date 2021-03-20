@@ -7,3 +7,7 @@
 [submodule "Engine/Platform"]
 	path = Engine/Platform
 	url = https://github.com/BluFedora/BF-Platform
+[submodule "ThirdParty/imgui"]
+	path = ThirdParty/imgui
+	url = https://github.com/BluFedora/imgui
+	branch = sr-imgui

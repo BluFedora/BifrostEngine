@@ -1,0 +1,2 @@
+# Adding Submodule To Repo
+git submodule add <remote_url> <destination_folder>

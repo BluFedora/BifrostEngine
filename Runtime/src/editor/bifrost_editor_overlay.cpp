@@ -1059,6 +1059,31 @@ namespace bf::editor
       ImGui::End();
     }
 
+    if (ImGui::Begin("Property Grid Test"))
+    {
+      if (ImGui::BeginTable("Table Name", 2, ImGuiTableFlags_None, ImVec2(0.0f, 0.0f), 0.0f))
+      {
+        ImGui::TableSetupColumn("Key");
+        ImGui::TableSetupColumn("Value");
+        ImGui::TableHeadersRow();
+
+        ImGui::TableNextColumn();
+        ImGui::Text("Label Text");
+        ImGui::TableNextColumn();
+        ImGui::LabelText("##Label Text", "\"%s\"", "HELLOOOO");
+
+        
+        ImGui::TableNextColumn();
+        ImGui::Text("Position");
+        ImGui::TableNextColumn();
+        static float pos[] = {0.0f, 1.0f, 2.0f};
+        ImGui::DragFloat3("##Position", pos);
+
+        ImGui::EndTable();
+      }
+    }
+    ImGui::End();
+
     if (m_OpenProject)
     {
       const auto current_scene = engine.currentScene();

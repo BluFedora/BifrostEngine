@@ -87,16 +87,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4099")
 endif()
 
-add_library(
-  DearImGUI STATIC
-
-  "lib/include/imgui/imgui.cpp"
-  "lib/include/imgui/imgui_demo.cpp"
-  "lib/include/imgui/imgui_draw.cpp"
-  "lib/include/imgui/imgui_tables.cpp"
-  "lib/include/imgui/imgui_widgets.cpp"
-)
-
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
@@ -221,8 +211,6 @@ add_executable(
 #   target_compile_options(BifrostEngineOLD PRIVATE "/ZI")
 #   target_link_options(BifrostEngineOLD PRIVATE "/SAFESEH:NO")
 # endif()
-
-# Bifrost Engine Submodules
 
 set_target_properties(
   BifrostEngineOLD
@@ -510,3 +498,5 @@ target_link_libraries(
     BF_TMPUtils
     BF_DataStructuresC_static
 )
+
+add_subdirectory(ThirdParty)

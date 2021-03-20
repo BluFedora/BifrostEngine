@@ -9,7 +9,7 @@
 * @version 0.0.1
 * @date    2020-05-26
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
 #ifndef BF_EDITOR_UNDO_REDO_HPP
@@ -49,7 +49,7 @@ namespace bf::editor
   // Basic Undo Redo Stack Implementation.
   // Owns the memory of the `IUndoRedoCommand`s
   //
-  class UndoRedoStack final
+  class UndoRedoStack
   {
    private:
     Array<IUndoRedoCommandPtr> m_UndoRedoStack;  //!< Stack of commands with layout: [Undo Stack |^m_StackTop^| Redo Stack].
@@ -66,14 +66,14 @@ namespace bf::editor
 
     const Array<IUndoRedoCommandPtr>& commands() const { return m_UndoRedoStack; }
     std::uint32_t                     stackTop() const { return m_StackTop; }
-    bool                              canUndo() const { return m_StackTop != 0; }
+    bool                              canUndo() const { return m_StackTop != 0u; }
     bool                              canRedo() const { return m_StackTop != m_UndoRedoStack.size(); }
 
-    // The Main Logic
+    // Main Logic
 
     void doCommand(IUndoRedoCommandPtr&& cmd)
     {
-      clearRedo();
+      m_UndoRedoStack.resize(m_StackTop); // Clears Redo Stack
       m_UndoRedoStack.emplace(std::move(cmd))->exec();
       ++m_StackTop;
     }
@@ -81,23 +81,13 @@ namespace bf::editor
     void undo()
     {
       assert(canUndo() && "`canUndo` must be checked before calling this function.");
-
-      IUndoRedoCommandPtr& current_action = m_UndoRedoStack[--m_StackTop];
-      current_action->undo();
+      m_UndoRedoStack[--m_StackTop]->undo();
     }
 
     void redo()
     {
       assert(canRedo() && "`canRedo` must be checked before calling this function.");
-
-      IUndoRedoCommandPtr& current_action = m_UndoRedoStack[m_StackTop++];
-      current_action->redo();
-    }
-
-   private:
-    void clearRedo()
-    {
-      m_UndoRedoStack.resize(m_StackTop);
+      m_UndoRedoStack[m_StackTop++]->redo();
     }
   };
 
@@ -165,7 +155,7 @@ namespace bf::editor
 
   //
   // Stack Layout: [X******X***X*****X****]
-  // Where X = Commit Sentinel
+  // Where X = Commit Sentinel (`MemoryUndoItem::makeSentinel`)
   //       * = UndoItem with saved data.
   //
   struct UndoItemStack
@@ -269,10 +259,7 @@ namespace bf::editor
 
     // Returns true the first time 'History::makePotentialSerializeEdit' is called
     // with a unique `IBaseObject& target` in between commits.
-    bool wasJustCreated() const
-    {
-      return m_WasJustCreated;
-    }
+    bool wasJustCreated() const { return m_WasJustCreated; }
 
     // After a call to `commit` or `cancel` this object is now invalid.
 

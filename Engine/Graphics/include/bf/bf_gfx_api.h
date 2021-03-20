@@ -245,7 +245,10 @@ typedef struct bfGfxFrameInfo
 
 } bfGfxFrameInfo;
 
-/* Context */
+/* 
+  Context
+    The graphics context is global so only one needs to be created per process.
+*/
 BF_GFX_API void                   bfGfxInit(const bfGfxContextCreateParams* params);
 BF_GFX_API bfGfxDeviceHandle      bfGfxGetDevice(void);
 BF_GFX_API bfGfxFrameInfo         bfGfxGetFrameInfo(void);

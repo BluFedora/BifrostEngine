@@ -424,40 +424,37 @@ void bfGfxEndFrame()
     curr = next;
   }
 
-  if (release_list)
+  while (release_list)
   {
-    while (release_list)
+    bfBaseGfxObject* next = release_list->next;
+
+    switch (release_list->type)
     {
-      bfBaseGfxObject* next = release_list->next;
-
-      switch (release_list->type)
+      case BF_GFX_OBJECT_RENDERPASS:
       {
-        case BF_GFX_OBJECT_RENDERPASS:
-        {
-          bfGfxContext_removeFromCache<bfRenderpassHandle>(g_Ctx->logical_device->cache_renderpass, release_list);
-          break;
-        }
-        case BF_GFX_OBJECT_PIPELINE:
-        {
-          bfGfxContext_removeFromCache<bfPipelineHandle>(g_Ctx->logical_device->cache_pipeline, release_list);
-          break;
-        }
-        case BF_GFX_OBJECT_FRAMEBUFFER:
-        {
-          bfGfxContext_removeFromCache<bfFramebufferHandle>(g_Ctx->logical_device->cache_framebuffer, release_list);
-          break;
-        }
-        case BF_GFX_OBJECT_DESCRIPTOR_SET:
-        {
-          bfGfxContext_removeFromCache<bfDescriptorSetHandle>(g_Ctx->logical_device->cache_descriptor_set, release_list);
-          break;
-        }
-          bfInvalidDefaultCase();
+        bfGfxContext_removeFromCache<bfRenderpassHandle>(g_Ctx->logical_device->cache_renderpass, release_list);
+        break;
       }
-
-      bfGfxDevice_release(g_Ctx->logical_device, release_list);
-      release_list = next;
+      case BF_GFX_OBJECT_PIPELINE:
+      {
+        bfGfxContext_removeFromCache<bfPipelineHandle>(g_Ctx->logical_device->cache_pipeline, release_list);
+        break;
+      }
+      case BF_GFX_OBJECT_FRAMEBUFFER:
+      {
+        bfGfxContext_removeFromCache<bfFramebufferHandle>(g_Ctx->logical_device->cache_framebuffer, release_list);
+        break;
+      }
+      case BF_GFX_OBJECT_DESCRIPTOR_SET:
+      {
+        bfGfxContext_removeFromCache<bfDescriptorSetHandle>(g_Ctx->logical_device->cache_descriptor_set, release_list);
+        break;
+      }
+        bfInvalidDefaultCase();
     }
+
+    bfGfxDevice_release(g_Ctx->logical_device, release_list);
+    release_list = next;
   }
 
   ++g_Ctx->frame_count;
