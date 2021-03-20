@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-typedef struct
+typedef struct bfVkStageBufferFrame
 {
   VkBuffer        buffer_handle;
   VkCommandBuffer cmd_buffer;
@@ -36,7 +36,7 @@ typedef struct
 
 } bfVkStageBufferFrame;
 
-typedef struct
+typedef struct bfVkStagingManager
 {
   size_t               max_buffer_size;
   bfByte*              mapped_ptr;
@@ -50,7 +50,7 @@ typedef struct
 
 } bfVkStagingManager;
 
-typedef struct
+typedef struct bfVkStagingResult
 {
   bfByte*         mapped_ptr;
   VkCommandBuffer cmd_buffer;

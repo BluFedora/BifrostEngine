@@ -306,7 +306,7 @@ namespace bf
   struct RenderQueue
   {
     static constexpr std::size_t k_KeyBufferSize     = bfBytes((sizeof(RenderSortKey) + sizeof(std::uint64_t)) * 4096 * 2);
-    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(14);
+    static constexpr std::size_t k_CommandBufferSize = bfMegabytes(5);
 
     RenderQueueType                           type;
     FixedLinearAllocator<k_KeyBufferSize>     key_stream_memory;

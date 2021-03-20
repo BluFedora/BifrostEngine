@@ -22,15 +22,12 @@ target_link_libraries(
   INTERFACE
     BF_AssetIO_static
     BF_Core_static
-    # BF_Platform_shared
     BF_Text_static
     BF_Memory_interface
-
     BF_DataStructuresCxx
     BifrostScript_shared
     BF_Math_shared
     bfAnimation2D_shared
-    # BifrostGraphics_shared
 )
 
 if (WIN32)

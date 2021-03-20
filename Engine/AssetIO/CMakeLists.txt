@@ -78,8 +78,8 @@ target_link_libraries(
   "${PROJECT_NAME}"
   PUBLIC
     BF_Core
+    BF_Graphics
 
-    BF_Graphics_shared
     BF_Math_shared
     BF_Memory_interface
     BF_TMPUtils

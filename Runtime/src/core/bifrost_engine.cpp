@@ -314,12 +314,14 @@ namespace bf
 
     m_Input.onEvent(evt);
 
-    // Loops backwards through the state machine stopping when the even gets accepted.
-    const auto rend_state_machine_it = m_StateMachine.rend();
-
-    for (auto it = m_StateMachine.rbegin(); !evt.isAccepted() && it != rend_state_machine_it; ++it)
+    for (IGameStateLayer& layer : ReverseLoop(m_StateMachine))
     {
-      it->onEvent(*this, evt);
+      layer.onEvent(*this, evt);
+
+      if (evt.isAccepted())
+      {
+        break;
+      }
     }
   }
 

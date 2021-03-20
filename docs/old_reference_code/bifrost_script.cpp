@@ -1,10 +1,9 @@
 #if 0
-
-#include "bf/core/bifrost_base_object.hpp"      /* BaseObject            */
-#include "bifrost/bifrost_vm.hpp"               /* VMView, bfValueHandle */
-#include "bf/asset_io/bifrost_file.hpp" /* File   */
-#include "bf/core/bifrost_engine.hpp"   /* Engine */
-#include "bifrost/bifrost_vm.hpp"       /* VMView */
+#include "bf/asset_io/bifrost_file.hpp"    /* File                  */
+#include "bf/core/bifrost_base_object.hpp" /* BaseObject            */
+#include "bf/core/bifrost_engine.hpp"      /* Engine                */
+#include "bifrost/bifrost_vm.hpp"          /* VMView, bfValueHandle */
+#include "bifrost/bifrost_vm.hpp"          /* VMView                */
 #endif
 
 namespace bf
@@ -45,9 +44,6 @@ namespace bf
     return false;
   }
 
-  void AssetScriptInfo::onAssetUnload(Engine& engine)
-  {
-    engine.scripting().stackDestroyHandle(payloadT()->m_ModuleHandle);
-  }
+  void AssetScriptInfo::onAssetUnload(Engine& engine) { engine.scripting().stackDestroyHandle(payloadT()->m_ModuleHandle); }
 #endif
 }  // namespace bf

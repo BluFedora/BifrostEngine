@@ -956,7 +956,7 @@ namespace bf::editor
      float(window_height),
      delta_time);
 
-    // ImGui::ShowDemoWindow();
+    ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
 
@@ -1061,7 +1061,7 @@ namespace bf::editor
 
     if (ImGui::Begin("Property Grid Test"))
     {
-      if (ImGui::BeginTable("Table Name", 2, ImGuiTableFlags_None, ImVec2(0.0f, 0.0f), 0.0f))
+      if (ImGui::BeginTable("Table Name", 2, ImGuiTableFlags_Resizable, ImVec2(0.0f, 0.0f), 0.0f))
       {
         ImGui::TableSetupColumn("Key");
         ImGui::TableSetupColumn("Value");
@@ -1077,7 +1077,9 @@ namespace bf::editor
         ImGui::Text("Position");
         ImGui::TableNextColumn();
         static float pos[] = {0.0f, 1.0f, 2.0f};
+        ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::DragFloat3("##Position", pos);
+        // ImGui::DragFloat("##value", &pos[0], 0.01f);
 
         ImGui::EndTable();
       }

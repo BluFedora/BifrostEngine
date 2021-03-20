@@ -6,8 +6,6 @@
 
 #include "bf/bf_gfx_api.h"
 
-#include "../bf_gfx_object.h"
-
 #include <vulkan/vulkan.h>
 
 #if __cplusplus

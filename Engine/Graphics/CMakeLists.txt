@@ -40,7 +40,7 @@ set(
 
   # Shared Source
   "${PROJECT_SOURCE_DIR}/src/bf_gfx_common.c"
- "src/bf_gfx_object.h")
+ )
 
 set(
   BF_GRAPHICS_LIBRARIES
@@ -69,7 +69,8 @@ if (BF_OPT_GRAPHICS_VULKAN)
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
 
     "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
-   "src/vulkan/bf_vulkan_gfx_object.h")
+    "src/vulkan/bf_vulkan_gfx_object.h"
+ )
 
   find_package(Vulkan)
 
@@ -120,54 +121,54 @@ else()
   message(SEND_ERROR "Either 'BF_OPT_GRAPHICS_VULKAN' or 'BF_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
 endif()
 
+# add_library(
+#   BF_Graphics_static STATIC
+#   "${BF_GRAPHICS_SOURCES}"
+# )
+# 
+# target_compile_definitions(
+#   BF_Graphics_static
+#   PRIVATE
+#     "${BF_GRAPHICS_DEFINES}"
+#   PUBLIC
+#     BF_GFX_EXPORT_STATIC
+# )
+# 
+# target_include_directories(
+#   BF_Graphics_static 
+#   PUBLIC 
+#     "${BF_GRAPHICS_INCLUDE_DIRS}"
+# )
+# 
+# target_link_libraries(
+#   BF_Graphics_static
+#   PUBLIC
+#     BF_Platform_static
+#     BF_Core
+#   PRIVATE
+#     "${BF_GRAPHICS_LIBRARIES}"
+# )
+
 add_library(
-  BF_Graphics_static STATIC
+  BF_Graphics SHARED
   "${BF_GRAPHICS_SOURCES}"
-)
+   "include/bf/bf_gfx_resource.h")
 
 target_compile_definitions(
-  BF_Graphics_static
-  PRIVATE
-    "${BF_GRAPHICS_DEFINES}"
-  PUBLIC
-    BF_GFX_EXPORT_STATIC
-)
-
-target_include_directories(
-  BF_Graphics_static 
-  PUBLIC 
-    "${BF_GRAPHICS_INCLUDE_DIRS}"
-)
-
-target_link_libraries(
-  BF_Graphics_static
-  PUBLIC
-    BF_Platform_static
-    BF_Core
-  PRIVATE
-    "${BF_GRAPHICS_LIBRARIES}"
-)
-
-add_library(
-  BF_Graphics_shared SHARED
-  "${BF_GRAPHICS_SOURCES}"
-  )
-
-target_compile_definitions(
-  BF_Graphics_shared
+  BF_Graphics
   PRIVATE
     "${BF_GRAPHICS_DEFINES}"
     BF_GFX_EXPORT
 )
 
 target_include_directories(
-  BF_Graphics_shared 
+  BF_Graphics
   PUBLIC 
     "${BF_GRAPHICS_INCLUDE_DIRS}"
 )
 
 target_link_libraries(
-  BF_Graphics_shared
+  BF_Graphics
   PUBLIC
     BF_Platform_shared
     BF_Core
@@ -175,4 +176,10 @@ target_link_libraries(
     "${BF_GRAPHICS_LIBRARIES}"
 )
 
-add_library(BF_Graphics ALIAS BF_Graphics_shared)
+if (BF_OPT_GRAPHICS_VULKAN)
+  target_compile_definitions(BF_Graphics PUBLIC BF_GFX_VULKAN=1)
+elseif (BF_OPT_GRAPHICS_OPENGL)
+  target_compile_definitions(BF_Graphics PUBLIC BF_GFX_OPENGL=1)
+else()
+  message(SEND_ERROR "Either 'BF_OPT_GRAPHICS_VULKAN' or 'BF_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
+endif()

@@ -16,73 +16,11 @@
 
 #include "bf/bf_gfx_handle.h"
 
-#include "../bf_gfx_object.h"
-
 #include <vulkan/vulkan.h>
 
 #if __cplusplus
 extern "C" {
 #endif
-
-BF_DEFINE_GFX_HANDLE(Texture)
-{
-  // General Metadata
-  bfBaseGfxObject      super;
-  bfGfxDeviceHandle    parent;
-  bfTexFeatureFlags    flags;
-  bfBufferPropertyBits memory_properties;
-
-  // CPU Side Data
-  bfTextureType image_type;
-  int32_t       image_width;
-  int32_t       image_height;
-  int32_t       image_depth;
-  uint32_t      image_miplevels;
-
-  // GPU Side Data
-  VkImage          tex_image;
-  VkDeviceMemory   tex_memory;
-  VkImageView      tex_view;
-  VkSampler        tex_sampler;
-  bfGfxImageLayout tex_layout;
-  VkFormat         tex_format;
-  bfGfxSampleFlags tex_samples;
-};
-
-BF_DEFINE_GFX_HANDLE(Renderpass)
-{
-  bfBaseGfxObject  super;
-  VkRenderPass     handle;
-  bfRenderpassInfo info;
-};
-
-BF_DEFINE_GFX_HANDLE(Framebuffer)
-{
-  bfBaseGfxObject super;
-  VkFramebuffer   handle;
-};
-
-BF_DEFINE_GFX_HANDLE(Pipeline)
-{
-  bfBaseGfxObject super;
-  VkPipeline      handle;
-};
-
-BF_DEFINE_GFX_HANDLE(GfxCommandList)
-{
-  bfGfxDeviceHandle   parent;
-  VkCommandBuffer     handle;
-  VkFence             fence;
-  bfWindowSurface*    window;
-  VkRect2D            render_area;
-  bfFramebufferHandle framebuffer;
-  bfPipelineHandle    pipeline;
-  bfPipelineCache     pipeline_state;
-  VkClearValue        clear_colors[k_bfGfxMaxAttachments];
-  uint32_t            attachment_size[2];
-  uint16_t            dynamic_state_dirty;
-  bfBool16            has_command;
-};
 
 BF_DEFINE_GFX_HANDLE(WindowSurface)
 {
@@ -96,15 +34,6 @@ BF_DEFINE_GFX_HANDLE(WindowSurface)
   bfBool32               swapchain_needs_creation;
   bfGfxCommandList       cmd_list_memory[5];
   bfGfxCommandListHandle current_cmd_list;
-};
-
-BF_DEFINE_GFX_HANDLE(ShaderModule)
-{
-  bfBaseGfxObject   super;
-  bfGfxDeviceHandle parent;
-  bfShaderType      type;
-  VkShaderModule    handle;
-  char              entry_point[k_bfGfxShaderEntryPointNameLength];
 };
 
 typedef struct bfDescriptorSetLayoutInfo

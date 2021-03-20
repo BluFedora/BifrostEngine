@@ -33,7 +33,7 @@ set(
 set(
   BF_UI_LIBRARIES
   
-  BF_Graphics_shared
+  BF_Graphics
   BF_Math_shared
   BF_Memory_interface
   BF_Platform_shared

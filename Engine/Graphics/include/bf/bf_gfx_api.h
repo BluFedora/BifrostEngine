@@ -19,6 +19,7 @@
 #include "bf_gfx_handle.h"         /*                 */
 #include "bf_gfx_limits.h"         /*                 */
 #include "bf_gfx_pipeline_state.h" /*                 */
+#include "bf_gfx_resource.h"       /*                 */
 #include "bf_gfx_types.h"          /*                 */
 
 #include <stdint.h> /* uint32_t */
@@ -37,113 +38,6 @@ struct bfWindow;
 typedef struct bfRenderpassInfo bfRenderpassCreateParams;
 
 typedef uint64_t bfBufferSize;
-
-/* Buffer */
-enum
-{
-  /// Best for Device Access to the Memory.
-  BF_BUFFER_PROP_DEVICE_LOCAL = bfBit(0),
-
-  /// Can be mapped on the host.
-  BF_BUFFER_PROP_HOST_MAPPABLE = bfBit(1),
-
-  /// You don't need 'vkFlushMappedMemoryRanges' and 'vkInvalidateMappedMemoryRanges' anymore.
-  BF_BUFFER_PROP_HOST_CACHE_MANAGED = bfBit(2),
-
-  /// Always host coherent, cached on the host for increased host access speed.
-  BF_BUFFER_PROP_HOST_CACHED = bfBit(3),
-
-  /// Implementation defined lazy allocation of the buffer.
-  /// use: vkGetDeviceMemoryCommitment
-  ///   Mutually Exclusive To: BPF_HOST_MAPPABLE
-  BF_BUFFER_PROP_DEVICE_LAZY_ALLOC = bfBit(4),
-
-  /// Only device accessible and allows protected queue operations.
-  ///   Mutually Exclusive To: BPF_HOST_MAPPABLE, BPF_HOST_CACHE_MANAGED, BPF_HOST_CACHED.
-  BF_BUFFER_PROP_PROTECTED = bfBit(5),
-
-} /* bfBufferPropertyFlags */;
-typedef uint16_t bfBufferPropertyBits;
-
-enum
-{
-  BF_BUFFER_USAGE_TRANSFER_SRC         = bfBit(0), /*!< Can be used to transfer data out of.             */
-  BF_BUFFER_USAGE_TRANSFER_DST         = bfBit(1), /*!< Can be used to transfer data into.               */
-  BF_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER = bfBit(2), /*!< Can be used to TODO                              */
-  BF_BUFFER_USAGE_STORAGE_TEXEL_BUFFER = bfBit(3), /*!< Can be used to TODO                              */
-  BF_BUFFER_USAGE_UNIFORM_BUFFER       = bfBit(4), /*!< Can be used to store Uniform data.               */
-  BF_BUFFER_USAGE_STORAGE_BUFFER       = bfBit(5), /*!< Can be used to store SSBO data                   */
-  BF_BUFFER_USAGE_INDEX_BUFFER         = bfBit(6), /*!< Can be used to store Index data.                 */
-  BF_BUFFER_USAGE_VERTEX_BUFFER        = bfBit(7), /*!< Can be used to store Vertex data.                */
-  BF_BUFFER_USAGE_INDIRECT_BUFFER      = bfBit(8), /*!< Can be used to store Indirect Draw Command data. */
-
-  /*
-     NOTE(SR):
-       Allows for mapped allocations to be shared by keeping it
-       persistently mapped until all refs to the shared buffer are freed.
-       This functionality is managed by 'PoolAllocator' in `vulkan/bf_vulkan_mem_allocator.h`
-
-     Requirements :
-       'BF_BUFFER_PROP_HOST_MAPPABLE'
-  */
-  BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER = bfBit(9) /*!< Can be used for data that is streamed to the gpu */
-
-} /* bfBufferUsageFlags */;
-typedef uint16_t bfBufferUsageBits;
-
-typedef enum bfShaderType
-{
-  BF_SHADER_TYPE_VERTEX                  = 0,
-  BF_SHADER_TYPE_TESSELLATION_CONTROL    = 1,
-  BF_SHADER_TYPE_TESSELLATION_EVALUATION = 2,
-  BF_SHADER_TYPE_GEOMETRY                = 3,
-  BF_SHADER_TYPE_FRAGMENT                = 4,
-  BF_SHADER_TYPE_COMPUTE                 = 5,
-  BF_SHADER_TYPE_MAX                     = 6,
-
-} bfShaderType;
-
-enum
-{
-  BF_SHADER_STAGE_VERTEX                  = bfBit(0),
-  BF_SHADER_STAGE_TESSELLATION_CONTROL    = bfBit(1),
-  BF_SHADER_STAGE_TESSELLATION_EVALUATION = bfBit(2),
-  BF_SHADER_STAGE_GEOMETRY                = bfBit(3),
-  BF_SHADER_STAGE_FRAGMENT                = bfBit(4),
-  BF_SHADER_STAGE_COMPUTE                 = bfBit(5),
-  BF_SHADER_STAGE_GRAPHICS                = BF_SHADER_STAGE_VERTEX |
-                             BF_SHADER_STAGE_TESSELLATION_CONTROL |
-                             BF_SHADER_STAGE_TESSELLATION_EVALUATION |
-                             BF_SHADER_STAGE_GEOMETRY |
-                             BF_SHADER_STAGE_FRAGMENT,
-
-} /* bfShaderStageFlags */;
-typedef uint8_t bfShaderStageBits;
-
-typedef enum bfTextureType
-{
-  BF_TEX_TYPE_1D,
-  BF_TEX_TYPE_2D,
-  BF_TEX_TYPE_3D,
-
-} bfTextureType;
-
-typedef enum bfTexSamplerFilterMode
-{
-  BF_SFM_NEAREST,
-  BF_SFM_LINEAR,
-
-} bfTexSamplerFilterMode;
-
-typedef enum bfTexSamplerAddressMode
-{
-  BF_SAM_REPEAT,
-  BF_SAM_MIRRORED_REPEAT,
-  BF_SAM_CLAMP_TO_EDGE,
-  BF_SAM_CLAMP_TO_BORDER,
-  BF_SAM_MIRROR_CLAMP_TO_EDGE,
-
-} bfTexSamplerAddressMode;
 
 typedef struct bfTextureSamplerProperties
 {
@@ -192,23 +86,6 @@ typedef struct bfShaderProgramCreateParams
   uint32_t    num_desc_sets;
 
 } bfShaderProgramCreateParams;
-
-enum
-{
-  BF_TEX_IS_TRANSFER_SRC       = bfBit(0),
-  BF_TEX_IS_TRANSFER_DST       = bfBit(1),
-  BF_TEX_IS_SAMPLED            = bfBit(2),
-  BF_TEX_IS_STORAGE            = bfBit(3),
-  BF_TEX_IS_COLOR_ATTACHMENT   = bfBit(4),
-  BF_TEX_IS_DEPTH_ATTACHMENT   = bfBit(5),
-  BF_TEX_IS_STENCIL_ATTACHMENT = bfBit(6),
-  BF_TEX_IS_TRANSIENT          = bfBit(7),
-  BF_TEX_IS_INPUT_ATTACHMENT   = bfBit(8),
-  BF_TEX_IS_MULTI_QUEUE        = bfBit(9),
-  BF_TEX_IS_LINEAR             = bfBit(10),
-
-} /* bfTexFeatureBits */;
-typedef uint16_t bfTexFeatureFlags;
 
 typedef struct bfTextureCreateParams
 {
@@ -288,6 +165,7 @@ BF_GFX_API bfDeviceLimits        bfGfxDevice_limits(bfGfxDeviceHandle self);
 BF_GFX_API void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
 
 /* Buffer */
+
 BF_GFX_API bfBufferSize bfBuffer_size(bfBufferHandle self);
 BF_GFX_API bfBufferSize bfBuffer_offset(bfBufferHandle self);
 BF_GFX_API void*        bfBuffer_mappedPtr(bfBufferHandle self);
@@ -301,6 +179,7 @@ BF_GFX_API void         bfBuffer_flushRange(bfBufferHandle self, bfBufferSize of
 BF_GFX_API void         bfBuffer_unMap(bfBufferHandle self);
 
 /* Vertex Binding */
+
 BF_GFX_API bfVertexLayoutSetHandle bfVertexLayout_new(void);
 BF_GFX_API void                    bfVertexLayout_addVertexBinding(bfVertexLayoutSetHandle self, uint32_t binding, uint32_t sizeof_vertex);
 BF_GFX_API void                    bfVertexLayout_addInstanceBinding(bfVertexLayoutSetHandle self, uint32_t binding, uint32_t stride);
@@ -308,59 +187,6 @@ BF_GFX_API void                    bfVertexLayout_addVertexLayout(bfVertexLayout
 BF_GFX_API void                    bfVertexLayout_delete(bfVertexLayoutSetHandle self);
 
 /* Renderpass */
-typedef struct bfAttachmentInfo
-{
-  bfTextureHandle  texture;  // [format, layouts[0], sample_count]
-  bfGfxImageLayout final_layout;
-  bfBool32         may_alias;
-
-} bfAttachmentInfo;
-
-typedef struct bfSubpassDependency
-{
-  uint32_t                subpasses[2];             // [src, dst]
-  bfGfxPipelineStageFlags pipeline_stage_flags[2];  // [src, dst]
-  bfGfxAccessFlags        access_flags[2];          // [src, dst]
-  bfBool32                reads_same_pixel;         // should be true in most cases (exception being bluring)
-
-} bfSubpassDependency;
-
-typedef uint16_t bfLoadStoreFlags;
-
-typedef struct bfAttachmentRefCache
-{
-  uint32_t         attachment_index;
-  bfGfxImageLayout layout;
-
-} bfAttachmentRefCache;
-
-typedef struct bfSubpassCache
-{
-  uint16_t             num_out_attachment_refs;
-  uint16_t             num_in_attachment_refs;
-  bfAttachmentRefCache out_attachment_refs[k_bfGfxMaxAttachments];
-  bfAttachmentRefCache in_attachment_refs[k_bfGfxMaxAttachments];
-  bfAttachmentRefCache depth_attachment;
-
-} bfSubpassCache;
-
-typedef struct bfRenderpassInfo
-{
-  uint64_t            hash_code;
-  bfLoadStoreFlags    load_ops;
-  bfLoadStoreFlags    stencil_load_ops;
-  bfLoadStoreFlags    clear_ops;
-  bfLoadStoreFlags    stencil_clear_ops;
-  bfLoadStoreFlags    store_ops;
-  bfLoadStoreFlags    stencil_store_ops;
-  uint16_t            num_subpasses;
-  uint16_t            num_attachments;
-  uint16_t            num_dependencies;
-  bfSubpassCache      subpasses[k_bfGfxMaxSubpasses];
-  bfAttachmentInfo    attachments[k_bfGfxMaxAttachments];
-  bfSubpassDependency dependencies[k_bfGfxMaxRenderpassDependencies];
-
-} bfRenderpassInfo;
 
 BF_GFX_API bfRenderpassInfo bfRenderpassInfo_init(uint16_t num_subpasses);
 BF_GFX_API void             bfRenderpassInfo_setLoadOps(bfRenderpassInfo* self, bfLoadStoreFlags attachment_mask);
@@ -376,6 +202,7 @@ BF_GFX_API void             bfRenderpassInfo_addInput(bfRenderpassInfo* self, ui
 BF_GFX_API void             bfRenderpassInfo_addDependencies(bfRenderpassInfo* self, const bfSubpassDependency* dependencies, uint32_t num_dependencies);
 
 /* Shader Program / Module */
+
 BF_GFX_API bfShaderType          bfShaderModule_type(bfShaderModuleHandle self);
 BF_GFX_API bfBool32              bfShaderModule_loadFile(bfShaderModuleHandle self, const char* file);
 BF_GFX_API bfBool32              bfShaderModule_loadData(bfShaderModuleHandle self, const char* source, size_t source_length);
@@ -387,49 +214,20 @@ BF_GFX_API void                  bfShaderProgram_addImageSampler(bfShaderProgram
 BF_GFX_API void                  bfShaderProgram_compile(bfShaderProgramHandle self);
 BF_GFX_API bfDescriptorSetHandle bfShaderProgram_createDescriptorSet(bfShaderProgramHandle self, uint32_t index);
 
-/* Descriptor Set */
-typedef enum bfDescriptorElementInfoType
-{
-  BF_DESCRIPTOR_ELEMENT_TEXTURE,
-  BF_DESCRIPTOR_ELEMENT_BUFFER,
-  BF_DESCRIPTOR_ELEMENT_DYNAMIC_BUFFER,
-  BF_DESCRIPTOR_ELEMENT_BUFFER_VIEW,
-  BF_DESCRIPTOR_ELEMENT_INPUT_ATTACHMENT,
-
-} bfDescriptorElementInfoType;
-
-typedef struct bfDescriptorElementInfo
-{
-  bfDescriptorElementInfoType type;
-  uint32_t                    binding;
-  uint32_t                    array_element_start;
-  uint32_t                    num_handles; /* also length of bfDescriptorElementInfo::offsets and bfDescriptorElementInfo::sizes */
-  bfGfxBaseHandle             handles[2];
-  uint64_t                    offsets[2];
-  uint64_t                    sizes[2];
-
-} bfDescriptorElementInfo;
-
-typedef struct bfDescriptorSetInfo
-{
-  bfDescriptorElementInfo bindings[k_bfGfxDesfcriptorSetMaxLayoutBindings];
-  uint32_t                num_bindings;
-
-} bfDescriptorSetInfo;
-
-// const int i = sizeof(bfDescriptorElementInfo);
-
-BF_GFX_API bfDescriptorSetInfo bfDescriptorSetInfo_make(void);
-BF_GFX_API void                bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const bfTextureHandle* textures, uint32_t num_textures);
-BF_GFX_API void                bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
-
-/* The Descriptor Set API is for 'Immutable' Bindings otherwise use the bfDescriptorSetInfo API */
+/* Descriptor Set
+     The Descriptor Set API is for 'Immutable' Bindings otherwise use the bfDescriptorSetInfo API 
+*/
 
 BF_GFX_API void bfDescriptorSet_setCombinedSamplerTextures(bfDescriptorSetHandle self, uint32_t binding, uint32_t array_element_start, bfTextureHandle* textures, uint32_t num_textures);
 BF_GFX_API void bfDescriptorSet_setUniformBuffers(bfDescriptorSetHandle self, uint32_t binding, const bfBufferSize* offsets, const bfBufferSize* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
 BF_GFX_API void bfDescriptorSet_flushWrites(bfDescriptorSetHandle self);
 
+BF_GFX_API bfDescriptorSetInfo bfDescriptorSetInfo_make(void);
+BF_GFX_API void                bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const bfTextureHandle* textures, uint32_t num_textures);
+BF_GFX_API void                bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding, uint32_t array_element_start, const uint64_t* offsets, const uint64_t* sizes, bfBufferHandle* buffers, uint32_t num_buffers);
+
 /* Texture */
+
 BF_GFX_API uint32_t         bfTexture_width(bfTextureHandle self);
 BF_GFX_API uint32_t         bfTexture_height(bfTextureHandle self);
 BF_GFX_API uint32_t         bfTexture_depth(bfTextureHandle self);
@@ -442,7 +240,7 @@ BF_GFX_API bfBool32         bfTexture_loadDataRange(bfTextureHandle self, const 
 BF_GFX_API void             bfTexture_loadBuffer(bfTextureHandle self, bfBufferHandle buffer, const int32_t offset[3], const uint32_t sizes[3]);
 BF_GFX_API void             bfTexture_setSampler(bfTextureHandle self, const bfTextureSamplerProperties* sampler_properties);
 
-/* CommandList */
+/* Command List */
 
 typedef enum bfPipelineBarrierType
 {

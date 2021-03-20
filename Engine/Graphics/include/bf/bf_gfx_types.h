@@ -67,6 +67,52 @@ typedef enum bfGfxVertexFormatAttribute
 
 /* clang-format on */
 
+/*
+  Texture / Image
+*/
+
+enum
+{
+  BF_TEX_IS_TRANSFER_SRC       = bfBit(0),
+  BF_TEX_IS_TRANSFER_DST       = bfBit(1),
+  BF_TEX_IS_SAMPLED            = bfBit(2),
+  BF_TEX_IS_STORAGE            = bfBit(3),
+  BF_TEX_IS_COLOR_ATTACHMENT   = bfBit(4),
+  BF_TEX_IS_DEPTH_ATTACHMENT   = bfBit(5),
+  BF_TEX_IS_STENCIL_ATTACHMENT = bfBit(6),
+  BF_TEX_IS_TRANSIENT          = bfBit(7),
+  BF_TEX_IS_INPUT_ATTACHMENT   = bfBit(8),
+  BF_TEX_IS_MULTI_QUEUE        = bfBit(9),
+  BF_TEX_IS_LINEAR             = bfBit(10),
+
+} /* bfTexFeatureBits */;
+typedef uint16_t bfTexFeatureFlags;
+
+typedef enum bfTextureType
+{
+  BF_TEX_TYPE_1D,
+  BF_TEX_TYPE_2D,
+  BF_TEX_TYPE_3D,
+
+} bfTextureType;
+
+typedef enum bfTexSamplerFilterMode
+{
+  BF_SFM_NEAREST,
+  BF_SFM_LINEAR,
+
+} bfTexSamplerFilterMode;
+
+typedef enum bfTexSamplerAddressMode
+{
+  BF_SAM_REPEAT,
+  BF_SAM_MIRRORED_REPEAT,
+  BF_SAM_CLAMP_TO_EDGE,
+  BF_SAM_CLAMP_TO_BORDER,
+  BF_SAM_MIRROR_CLAMP_TO_EDGE,
+
+} bfTexSamplerAddressMode;
+
 //
 // Compatible with Vulkan's VkFormat enum.
 //   [https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkFormat.html]
@@ -345,7 +391,6 @@ typedef enum bfGfxPipelineStageFlags
 
 typedef uint32_t bfGfxPipelineStageBits;
 
-
 //
 // Compatible with Vulkan's VkAccessFlagBits enum.
 //
@@ -416,6 +461,96 @@ typedef enum bfGfxQueueType
   BF_GFX_QUEUE_IGNORE = ~0U,
 
 } bfGfxQueueType;
+
+/* Shader Program / Module */
+
+typedef enum bfShaderType
+{
+  BF_SHADER_TYPE_VERTEX                  = 0,
+  BF_SHADER_TYPE_TESSELLATION_CONTROL    = 1,
+  BF_SHADER_TYPE_TESSELLATION_EVALUATION = 2,
+  BF_SHADER_TYPE_GEOMETRY                = 3,
+  BF_SHADER_TYPE_FRAGMENT                = 4,
+  BF_SHADER_TYPE_COMPUTE                 = 5,
+  BF_SHADER_TYPE_MAX                     = 6,
+
+} bfShaderType;
+
+enum
+{
+  BF_SHADER_STAGE_VERTEX                  = bfBit(0),
+  BF_SHADER_STAGE_TESSELLATION_CONTROL    = bfBit(1),
+  BF_SHADER_STAGE_TESSELLATION_EVALUATION = bfBit(2),
+  BF_SHADER_STAGE_GEOMETRY                = bfBit(3),
+  BF_SHADER_STAGE_FRAGMENT                = bfBit(4),
+  BF_SHADER_STAGE_COMPUTE                 = bfBit(5),
+  BF_SHADER_STAGE_GRAPHICS                = BF_SHADER_STAGE_VERTEX |
+                             BF_SHADER_STAGE_TESSELLATION_CONTROL |
+                             BF_SHADER_STAGE_TESSELLATION_EVALUATION |
+                             BF_SHADER_STAGE_GEOMETRY |
+                             BF_SHADER_STAGE_FRAGMENT,
+
+} /* bfShaderStageFlags */;
+typedef uint8_t bfShaderStageBits;
+
+/* Buffer */
+
+enum
+{
+  /// Best for Device Access to the Memory.
+  BF_BUFFER_PROP_DEVICE_LOCAL = bfBit(0),
+
+  /// Can be mapped on the host.
+  BF_BUFFER_PROP_HOST_MAPPABLE = bfBit(1),
+
+  /// You don't need 'vkFlushMappedMemoryRanges' and 'vkInvalidateMappedMemoryRanges' anymore.
+  BF_BUFFER_PROP_HOST_CACHE_MANAGED = bfBit(2),
+
+  /// Always host coherent, cached on the host for increased host access speed.
+  BF_BUFFER_PROP_HOST_CACHED = bfBit(3),
+
+  /// Implementation defined lazy allocation of the buffer.
+  /// use: vkGetDeviceMemoryCommitment
+  ///   Mutually Exclusive To: BPF_HOST_MAPPABLE
+  BF_BUFFER_PROP_DEVICE_LAZY_ALLOC = bfBit(4),
+
+  /// Only device accessible and allows protected queue operations.
+  ///   Mutually Exclusive To: BPF_HOST_MAPPABLE, BPF_HOST_CACHE_MANAGED, BPF_HOST_CACHED.
+  BF_BUFFER_PROP_PROTECTED = bfBit(5),
+
+} /* bfBufferPropertyFlags */;
+typedef uint16_t bfBufferPropertyBits;
+
+enum
+{
+  BF_BUFFER_USAGE_TRANSFER_SRC         = bfBit(0), /*!< Can be used to transfer data out of.             */
+  BF_BUFFER_USAGE_TRANSFER_DST         = bfBit(1), /*!< Can be used to transfer data into.               */
+  BF_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER = bfBit(2), /*!< Can be used to TODO                              */
+  BF_BUFFER_USAGE_STORAGE_TEXEL_BUFFER = bfBit(3), /*!< Can be used to TODO                              */
+  BF_BUFFER_USAGE_UNIFORM_BUFFER       = bfBit(4), /*!< Can be used to store Uniform data.               */
+  BF_BUFFER_USAGE_STORAGE_BUFFER       = bfBit(5), /*!< Can be used to store SSBO data                   */
+  BF_BUFFER_USAGE_INDEX_BUFFER         = bfBit(6), /*!< Can be used to store Index data.                 */
+  BF_BUFFER_USAGE_VERTEX_BUFFER        = bfBit(7), /*!< Can be used to store Vertex data.                */
+  BF_BUFFER_USAGE_INDIRECT_BUFFER      = bfBit(8), /*!< Can be used to store Indirect Draw Command data. */
+
+  /*
+     NOTE(SR):
+       Allows for mapped allocations to be shared by keeping it
+       persistently mapped until all refs to the shared buffer are freed.
+       This functionality is managed by 'PoolAllocator' in `vulkan/bf_vulkan_mem_allocator.h`
+
+     Requirements :
+       'BF_BUFFER_PROP_HOST_MAPPABLE'
+  */
+  BF_BUFFER_USAGE_PERSISTENTLY_MAPPED_BUFFER = bfBit(9) /*!< Can be used for data that is streamed to the gpu */
+
+} /* bfBufferUsageFlags */;
+typedef uint16_t bfBufferUsageBits;
+
+/* Renderpass */
+
+typedef uint16_t bfLoadStoreFlags;
+
 #if __cplusplus
 }
 #endif

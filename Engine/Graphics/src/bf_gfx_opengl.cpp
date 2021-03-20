@@ -344,7 +344,7 @@ BF_DEFINE_GFX_HANDLE(GfxContext)
 {
   const bfGfxContextCreateParams* params;                // Only valid during initialization
   std::uint32_t                   max_frames_in_flight;  // TODO(Shareef): Make customizable at runtime
-  bfGfxDeviceHandle               logical_device;        // The APU
+  bfGfxDeviceHandle               logical_device;        // 
   bfFrameCount_t                  frame_count;           // Total Number of Frames that have been Rendered
   bfFrameCount_t                  frame_index;           // frame_count % max_frames_in_flight
 };
@@ -358,65 +358,11 @@ BF_DEFINE_GFX_HANDLE(GfxDevice)
   bfBaseGfxObject*       cached_resources; /* Linked List */
 };
 
-BF_DEFINE_GFX_HANDLE(Texture)
-{
-  bfBaseGfxObject   super;
-  bfGfxDeviceHandle parent;
-  bfTexFeatureFlags flags;
-
-  // CPU Side Data
-  bfTextureType image_type;
-  int32_t       image_width;
-  int32_t       image_height;
-  int32_t       image_depth;
-  uint32_t      image_miplevels;
-
-  // GPU Side Data
-  GLuint                     tex_image; /* For Depth Textures this is an RBO */
-  bfTextureSamplerProperties tex_sampler;
-  bfGfxSampleFlags           tex_samples;
-};
-
-BF_DEFINE_GFX_HANDLE(Renderpass)
-{
-  bfBaseGfxObject  super;
-  bfRenderpassInfo info;
-};
-
-BF_DEFINE_GFX_HANDLE(Framebuffer)
-{
-  bfBaseGfxObject super;
-  GLuint          handle;
-  bfTextureHandle attachments[k_bfGfxMaxAttachments];
-};
-
-BF_DEFINE_GFX_HANDLE(Pipeline)
-{
-  bfBaseGfxObject super;
-};
-
 BF_DEFINE_GFX_HANDLE(WindowSurface)
 {
   struct bfWindow*       window;
   bfGfxCommandListHandle current_cmd_list;
   bfTexture              surface_dummy;
-};
-
-BF_DEFINE_GFX_HANDLE(GfxCommandList)
-{
-  bfGfxContextHandle    context;
-  bfGfxDeviceHandle     parent;
-  bfWindowSurfaceHandle window;
-  bfScissorRect         render_area;
-  bfFramebufferHandle   framebuffer;
-  bfPipelineHandle      pipeline;
-  bfPipelineCache       pipeline_state;
-  bfClearValue          clear_colors[k_bfGfxMaxAttachments];
-  bfBool32              has_command;
-  uint16_t              dynamic_state_dirty;
-
-  bfGfxIndexType index_type;
-  uint64_t       index_offset;
 };
 
 BF_DEFINE_GFX_HANDLE(Buffer)
@@ -438,7 +384,7 @@ BF_DEFINE_GFX_HANDLE(ShaderModule)
   char              entry_point[k_bfGfxShaderEntryPointNameLength];
 };
 
-struct DescSetInfo final
+struct DescSetInfo
 {
   int num_textures;
   int texture_offset;

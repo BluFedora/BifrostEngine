@@ -20,25 +20,10 @@
 extern "C" {
 #endif
 
-typedef union bfBaseGfxID
-{
-  struct
-  {
-    uint32_t generation : 14;
-    uint32_t index : 18;
-  };
-  uint32_t handle;
-
-} bfBaseGfxID;
-
-#define BF_DECLARE_HANDLE(T)          \
-  struct bf##T;                       \
-  typedef struct bf##T bf##T;         \
-  typedef bf##T*       bf##T##Handle; \
-  typedef struct bf##T##ID            \
-  {                                   \
-    bfBaseGfxID id;                   \
-  } bf##T##ID
+#define BF_DECLARE_HANDLE(T)  \
+  struct bf##T;               \
+  typedef struct bf##T bf##T; \
+  typedef bf##T*       bf##T##Handle;
 
 BF_DECLARE_HANDLE(GfxDevice);
 BF_DECLARE_HANDLE(GfxCommandList);
