@@ -7,7 +7,7 @@
 
 static DescriptorLink* create_link(const MaterialPoolCreateParams* const pool, DescriptorLink* next)
 {
-  DescriptorLink* link = xxx_Alloc<DescriptorLink>();
+  DescriptorLink* link = xxx_Alloc_<DescriptorLink>();
 
   if (link)
   {
@@ -52,7 +52,7 @@ static void free_link(const bfGfxDevice* device, DescriptorLink* const link)
 
 MaterialPool* MaterialPool_new(const MaterialPoolCreateParams* const params)
 {
-  MaterialPool* const self = xxx_Alloc<MaterialPool>();
+  MaterialPool* const self = xxx_Alloc_<MaterialPool>();
 
   if (self)
   {

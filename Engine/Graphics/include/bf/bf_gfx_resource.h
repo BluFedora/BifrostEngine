@@ -15,6 +15,7 @@
 #define BF_GFX_RESOURCE_H
 
 #include "bf_gfx_handle.h"
+#include "bf_gfx_limits.h"
 #include "bf_gfx_types.h"
 
 #include <stdint.h> /* uint64_t, uint32_t */
@@ -52,14 +53,78 @@ typedef enum bfGfxObjectType
 typedef struct bfBaseGfxObject bfBaseGfxObject;
 struct bfBaseGfxObject
 {
-  bfGfxObjectType  type: 3;
-  uint32_t         id : 29;
-  bfBaseGfxObject* next;
-  uint64_t         hash_code;
-  bfFrameCount_t   last_frame_used;
+  /* bfGfxObjectType */ uint32_t type : 3;
+  uint32_t                       id : 29;
+  bfFrameCount_t                 last_frame_used;
+  bfBaseGfxObject*               next;
+  uint64_t                       hash_code;
 };
 
-void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type);
+typedef struct bGfxObjectManager
+{
+  bfBaseGfxObject* gc[k_bfGfxMaxFrameGPUAhead];
+  uint32_t         next_id;
+
+} bGfxObjectManager;
+
+static inline void bGfxObjectManager_init(bGfxObjectManager* self)
+{
+  for (int i = 0u; i < k_bfGfxMaxFrameGPUAhead; ++i)
+  {
+    self->gc[i] = NULL;
+  }
+
+  self->next_id = 0u;
+}
+
+
+static inline void bGfxObjectManager_add(bGfxObjectManager* self, bfBaseGfxObject* obj, bfFrameCount_t current_frame, bfFrameCount_t max_frames_ahead)
+{
+  const bfFrameCount_t idx = current_frame % max_frames_ahead;
+
+  obj->next     = self->gc[idx];
+  self->gc[idx] = obj;
+
+  obj->last_frame_used = current_frame;
+}
+
+void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type, bGfxObjectManager* manager);
+
+/* Buffer */
+
+typedef uint64_t bfBufferSize;
+
+#if BF_GFX_VULKAN
+typedef struct Allocation
+{
+  VkDeviceMemory handle;
+  uint32_t       type;
+  uint32_t       index;
+  bfBufferSize   size;  // This is the aligned size.
+  bfBufferSize   offset;
+  void*          mapped_ptr;
+
+} Allocation;
+
+typedef struct PoolAllocator PoolAllocator;
+#endif
+
+BF_DEFINE_GFX_HANDLE(Buffer)
+{
+  bfBaseGfxObject super;
+  bfBufferSize    real_size;
+
+#if BF_GFX_VULKAN
+  PoolAllocator*    alloc_pool;
+  VkBuffer          handle;
+  Allocation        alloc_info;  // This has the aligned size.
+  bfBufferUsageBits usage;
+#elif BF_GFX_OPENGL
+  GLuint                     tex_image; /* For Depth Textures this is an RBO */
+  bfTextureSamplerProperties tex_sampler;
+  bfGfxSampleFlags           tex_samples;
+#endif
+};
 
 /* Texture */
 
@@ -88,9 +153,10 @@ BF_DEFINE_GFX_HANDLE(Texture)
   VkFormat             tex_format;
   bfGfxSampleFlags     tex_samples;
 #elif BF_GFX_OPENGL
-  GLuint                     tex_image; /* For Depth Textures this is an RBO */
-  bfTextureSamplerProperties tex_sampler;
-  bfGfxSampleFlags           tex_samples;
+  GLuint handle;
+  GLenum target;
+  GLenum usage;
+  void*  mapped_ptr;
 #endif
 };
 
@@ -222,6 +288,76 @@ BF_DEFINE_GFX_HANDLE(ShaderModule)
   VkShaderModule handle;
 #elif BF_GFX_OPENGL
   GLuint handle;
+#endif
+};
+
+#if BF_GFX_VULKAN
+typedef struct bfDescriptorSetLayoutInfo
+{
+  uint32_t                     num_layout_bindings;
+  VkDescriptorSetLayoutBinding layout_bindings[k_bfGfxDesfcriptorSetMaxLayoutBindings];
+  uint32_t                     num_image_samplers;
+  uint32_t                     num_uniforms;
+
+} bfDescriptorSetLayoutInfo;
+
+typedef struct bfShaderModuleList
+{
+  uint32_t             size;
+  bfShaderModuleHandle elements[BF_SHADER_TYPE_MAX];
+
+} bfShaderModuleList;
+#elif BF_GFX_OPENGL
+struct DescSetInfo
+{
+  int num_textures;
+  int texture_offset;
+};
+#endif
+
+BF_DEFINE_GFX_HANDLE(ShaderProgram)
+{
+  bfBaseGfxObject   super;
+  bfGfxDeviceHandle parent;
+  char              debug_name[k_bfGfxShaderProgramNameLength];
+
+#if BF_GFX_VULKAN
+  VkPipelineLayout          layout;
+  uint32_t                  num_desc_set_layouts;
+  VkDescriptorSetLayout     desc_set_layouts[k_bfGfxDescriptorSets];
+  bfDescriptorSetLayoutInfo desc_set_layout_infos[k_bfGfxDescriptorSets];
+  bfShaderModuleList        modules;
+#elif BF_GFX_OPENGL
+  GLuint handle;
+  DescSetInfo set_info[k_bfGfxDescriptorSets];
+  uint32_t num_sets;
+  // StdUnorderedMap<uint32_t, GLint> binding_to_uniform_loc;
+#endif
+};
+
+BF_DEFINE_GFX_HANDLE(DescriptorSet)
+{
+  bfBaseGfxObject       super;
+  bfShaderProgramHandle shader_program;
+
+#if BF_GFX_VULKAN
+  VkDescriptorSet        handle;
+  uint32_t               set_index;
+  struct DescriptorLink* pool_link;
+  VkDescriptorBufferInfo buffer_info[k_bfGfxMaxDescriptorSetWrites];
+  VkDescriptorImageInfo  image_info[k_bfGfxMaxDescriptorSetWrites];
+  VkBufferView           buffer_view_info[k_bfGfxMaxDescriptorSetWrites];
+  VkWriteDescriptorSet   writes[k_bfGfxMaxDescriptorSetWrites];
+  uint16_t               num_buffer_info;
+  uint16_t               num_image_info;
+  uint16_t               num_buffer_view_info;
+  uint16_t               num_writes;
+#elif BF_GFX_OPENGL
+  uint32_t set_index;
+  // StdVector<std::pair<GLuint, bfTextureHandle>>                               textures;        /* <Uniform, Texture>              */
+  // StdVector<std::tuple<uint32_t, bfBufferSize, bfBufferSize, bfBufferHandle>> ubos;            /* <Binding, Offset, Size, Buffer> */
+  // StdVector<std::pair<GLuint, bfTextureHandle>>                               textures_writes; /* <Uniform, Texture>              */
+  // StdVector<std::tuple<uint32_t, bfBufferSize, bfBufferSize, bfBufferHandle>> ubos_writes;     /* <Binding, Offset, Size, Buffer> */
 #endif
 };
 

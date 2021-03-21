@@ -25,10 +25,21 @@ BF_DEFINE_GFX_HANDLE(GfxDevice)
 };
 
 template<typename T>
-T* xxx_Alloc()
+T* xxx_Alloc_()
 {
   return new T();
 }
+
+template<typename T>
+T* xxx_AllocGfxObject(bfGfxObjectType type, bGfxObjectManager* obj_man)
+{
+  T* result = new T();
+
+  bfBaseGfxObject_ctor(&result->super, type, obj_man);
+
+  return result;
+}
+
 
 template<typename T>
 void xxx_Free(T* ptr)

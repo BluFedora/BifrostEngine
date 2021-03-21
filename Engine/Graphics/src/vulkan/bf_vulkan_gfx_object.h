@@ -36,51 +36,6 @@ BF_DEFINE_GFX_HANDLE(WindowSurface)
   bfGfxCommandListHandle current_cmd_list;
 };
 
-typedef struct bfDescriptorSetLayoutInfo
-{
-  uint32_t                     num_layout_bindings;
-  VkDescriptorSetLayoutBinding layout_bindings[k_bfGfxDesfcriptorSetMaxLayoutBindings];
-  uint32_t                     num_image_samplers;
-  uint32_t                     num_uniforms;
-
-} bfDescriptorSetLayoutInfo;
-
-typedef struct bfShaderModuleList
-{
-  uint32_t             size;
-  bfShaderModuleHandle elements[BF_SHADER_TYPE_MAX];
-
-} bfShaderModuleList;
-
-BF_DEFINE_GFX_HANDLE(ShaderProgram)
-{
-  bfBaseGfxObject           super;
-  bfGfxDeviceHandle         parent;
-  VkPipelineLayout          layout;
-  uint32_t                  num_desc_set_layouts;
-  VkDescriptorSetLayout     desc_set_layouts[k_bfGfxDescriptorSets];
-  bfDescriptorSetLayoutInfo desc_set_layout_infos[k_bfGfxDescriptorSets];
-  bfShaderModuleList        modules;
-  char                      debug_name[k_bfGfxShaderProgramNameLength];
-};
-
-BF_DEFINE_GFX_HANDLE(DescriptorSet)
-{
-  bfBaseGfxObject        super;
-  bfShaderProgramHandle  shader_program;
-  VkDescriptorSet        handle;
-  uint32_t               set_index;
-  DescriptorLink*        pool_link;
-  VkDescriptorBufferInfo buffer_info[k_bfGfxMaxDescriptorSetWrites];
-  VkDescriptorImageInfo  image_info[k_bfGfxMaxDescriptorSetWrites];
-  VkBufferView           buffer_view_info[k_bfGfxMaxDescriptorSetWrites];
-  VkWriteDescriptorSet   writes[k_bfGfxMaxDescriptorSetWrites];
-  uint16_t               num_buffer_info;
-  uint16_t               num_image_info;
-  uint16_t               num_buffer_view_info;
-  uint16_t               num_writes;
-};
-
 BF_DEFINE_GFX_HANDLE(VertexLayoutSet)
 {
   VkVertexInputBindingDescription   buffer_bindings[k_bfGfxMaxLayoutBindings];

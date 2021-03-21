@@ -12,12 +12,13 @@
 static void setupSampler(bfTextureCreateParams* self, uint32_t width, uint32_t height, bfGfxImageFormat format, uint32_t num_layers);
 static void setupAttachment(bfTextureCreateParams* self, uint32_t width, uint32_t height, bfGfxImageFormat format, bfBool32 can_be_input, bfBool32 is_transient);
 
-void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type)
+void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type, bGfxObjectManager* manager)
 {
   self->type            = type;
+  self->id              = manager->next_id++;
+  self->last_frame_used = -1;
   self->next            = NULL;
   self->hash_code       = 0x0;
-  self->last_frame_used = -1;
 }
 
 bfTextureSamplerProperties bfTextureSamplerProperties_init(bfTexSamplerFilterMode filter, bfTexSamplerAddressMode uv_addressing)
@@ -332,9 +333,9 @@ bfPipelineBarrier bfPipelineBarrier_buffer(bfGfxAccessFlagsBits src_access, bfGf
 {
   bfPipelineBarrier result = bfPipelineBarrier_makeBase(BF_PIPELINE_BARRIER_BUFFER, src_access, dst_access);
 
-  result.info.buffer.handle = buffer;
-  result.info.buffer.offset = offset;
-  result.info.buffer.size   = size;
+  result.buffer.handle = buffer;
+  result.buffer.offset = offset;
+  result.buffer.size   = size;
 
   // ReSharper disable once CppSomeObjectMembersMightNotBeInitialized
   return result;
@@ -344,13 +345,13 @@ bfPipelineBarrier bfPipelineBarrier_image(bfGfxAccessFlagsBits src_access, bfGfx
 {
   bfPipelineBarrier result = bfPipelineBarrier_makeBase(BF_PIPELINE_BARRIER_IMAGE, src_access, dst_access);
 
-  result.info.image.handle               = image;
-  result.info.image.layout_transition[0] = bfTexture_layout(image);
-  result.info.image.layout_transition[1] = new_layout;
-  result.info.image.base_mip_level       = 0;
-  result.info.image.level_count          = bfTexture_numMipLevels(image);
-  result.info.image.base_array_layer     = 0;
-  result.info.image.layer_count          = bfTexture_depth(image);
+  result.image.handle               = image;
+  result.image.layout_transition[0] = bfTexture_layout(image);
+  result.image.layout_transition[1] = new_layout;
+  result.image.base_mip_level       = 0;
+  result.image.level_count          = bfTexture_numMipLevels(image);
+  result.image.base_array_layer     = 0;
+  result.image.layer_count          = bfTexture_depth(image);
 
   return result;
 }

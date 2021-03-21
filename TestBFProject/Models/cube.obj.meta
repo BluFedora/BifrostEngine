@@ -198,6 +198,16 @@
             "m_ClassID" : 1025,
             "m_Name" : "Material_#1.material",
             "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2.14748e+09
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2.14748e+09
         }
     ],
     "Document" : {

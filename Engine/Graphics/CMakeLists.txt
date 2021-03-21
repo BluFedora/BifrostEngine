@@ -54,7 +54,7 @@ if (BF_OPT_GRAPHICS_VULKAN)
   set(
     BF_GRAPHICS_SOURCES
     "${BF_GRAPHICS_SOURCES}"
-    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_command_list.cpp"
+    
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_conversions.c"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_conversions.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_hash.hpp"
@@ -64,7 +64,7 @@ if (BF_OPT_GRAPHICS_VULKAN)
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.cpp"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_physical_device.h"
-    "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_renderpass.cpp"
+    
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.c"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
 

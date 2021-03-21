@@ -37,8 +37,6 @@ extern "C" {
 struct bfWindow;
 typedef struct bfRenderpassInfo bfRenderpassCreateParams;
 
-typedef uint64_t bfBufferSize;
-
 typedef struct bfTextureSamplerProperties
 {
   bfTexSamplerFilterMode  min_filter;
@@ -276,8 +274,7 @@ typedef struct bfPipelineBarrier
       uint32_t         layer_count;
 
     } image;
-
-  } info;
+  };
 
 } bfPipelineBarrier;
 

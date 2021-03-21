@@ -336,9 +336,7 @@ struct StdUniquePtrDeleter final
 template<typename T>
 using StdUniquePtr = std::unique_ptr<T, StdUniquePtrDeleter<T>>;
 
-//
 // Handle Definitions
-//
 
 BF_DEFINE_GFX_HANDLE(GfxContext)
 {
@@ -365,92 +363,18 @@ BF_DEFINE_GFX_HANDLE(WindowSurface)
   bfTexture              surface_dummy;
 };
 
-BF_DEFINE_GFX_HANDLE(Buffer)
-{
-  bfBaseGfxObject super;
-  GLuint          handle;
-  GLenum          target;
-  GLenum          usage;
-  void*           mapped_ptr;
-  bfBufferSize    real_size;
-};
-
-BF_DEFINE_GFX_HANDLE(ShaderModule)
-{
-  bfBaseGfxObject   super;
-  bfGfxDeviceHandle parent;
-  bfShaderType      type;
-  GLuint            handle;
-  char              entry_point[k_bfGfxShaderEntryPointNameLength];
-};
-
-struct DescSetInfo
-{
-  int num_textures;
-  int texture_offset;
-};
-
-BF_DEFINE_GFX_HANDLE(ShaderProgram)
-{
-  bfBaseGfxObject                  super;
-  bfGfxDeviceHandle                parent;
-  GLuint                           handle;
-  char                             debug_name[k_bfGfxShaderProgramNameLength];
-  StdUnorderedMap<uint32_t, GLint> binding_to_uniform_loc;
-  DescSetInfo*                     set_info;
-  int                              num_sets;
-
-  bfShaderProgram_t(const int num_sets) :
-    super{},
-    parent{},
-    handle{},
-    debug_name{},
-    binding_to_uniform_loc{s_GraphicsMemory},
-    set_info{s_GraphicsMemory.allocateArray<DescSetInfo>(num_sets)},
-    num_sets{num_sets}
-  {
-  }
-
-  ~bfShaderProgram_t()
-  {
-    s_GraphicsMemory.deallocateArray(set_info);
-  }
-};
-
-BF_DEFINE_GFX_HANDLE(DescriptorSet)
-{
-  bfBaseGfxObject                                                             super;
-  bfShaderProgramHandle                                                       shader_program;
-  uint32_t                                                                    set_index;
-  StdVector<std::pair<GLuint, bfTextureHandle>>                               textures;        /* <Uniform, Texture>              */
-  StdVector<std::tuple<uint32_t, bfBufferSize, bfBufferSize, bfBufferHandle>> ubos;            /* <Binding, Offset, Size, Buffer> */
-  StdVector<std::pair<GLuint, bfTextureHandle>>                               textures_writes; /* <Uniform, Texture>              */
-  StdVector<std::tuple<uint32_t, bfBufferSize, bfBufferSize, bfBufferHandle>> ubos_writes;     /* <Binding, Offset, Size, Buffer> */
-
-  bfDescriptorSet_t() :
-    super{},
-    shader_program{},
-    set_index{},
-    textures{s_GraphicsMemory},
-    ubos{s_GraphicsMemory},
-    textures_writes{s_GraphicsMemory},
-    ubos_writes{s_GraphicsMemory}
-  {
-  }
-};
-
 struct VertexLayoutSetDetail final
 {
-  int    num_components;
+  int    num_components: 31;
+  bool   is_normalized: 1;
   GLenum component_type;
   void*  offset;
-  bool   is_normalized;
 
   VertexLayoutSetDetail(int num_components, GLenum type, void* offset, bool is_normalized) :
     num_components{num_components},
+    is_normalized{is_normalized},
     component_type{type},
-    offset{offset},
-    is_normalized{is_normalized}
+    offset{offset}
   {
   }
 };
