@@ -16,6 +16,7 @@
 #include "bf/utility/bifrost_json.h"
 
 #include <ctype.h>  /* isspace, isalpha, isdigit, tolower, isxdigit */
+#include <float.h>  /* DBL_DECIMAL_DIG                              */
 #include <setjmp.h> /* jmp_buf, setjmp, longjmp                     */
 #include <stdio.h>  /* snprintf                                     */
 #include <stdlib.h> /* strtol, strtod, malloc                       */
@@ -319,7 +320,7 @@ void bfJsonWriter_valueString(bfJsonWriter* self, bfJsonString value)
 void bfJsonWriter_valueNumber(bfJsonWriter* self, double value)
 {
   char         number_buffer[26];
-  const size_t number_buffer_length = (size_t)snprintf(number_buffer, sizeof(number_buffer), "%g", value);
+  const size_t number_buffer_length = (size_t)snprintf(number_buffer, sizeof(number_buffer), "%.*g", DBL_DECIMAL_DIG, value);
 
   bfJsonWriter_write(self, number_buffer, number_buffer_length);
 }
