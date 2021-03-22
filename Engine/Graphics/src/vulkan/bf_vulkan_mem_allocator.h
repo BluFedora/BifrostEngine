@@ -11,6 +11,7 @@
 #if __cplusplus
 extern "C" {
 #endif
+
 typedef struct OffsetSize
 {
   uint64_t offset;
@@ -41,8 +42,6 @@ typedef struct PoolAllocator
 
 } PoolAllocator;
 
-
-
 void     VkPoolAllocatorCtor(PoolAllocator* self, const bfGfxDevice* const logical_device);
 void     VkPoolAllocator_alloc(PoolAllocator*                self,
                                const bfAllocationCreateInfo* create_info,
@@ -53,6 +52,7 @@ void     VkPoolAllocator_free(PoolAllocator* self, const Allocation* allocation)
 uint64_t VkPoolAllocator_allocationSize(const PoolAllocator* const self, const uint32_t mem_type);
 uint32_t VkPoolAllocator_numAllocations(const PoolAllocator* const self);
 void     VkPoolAllocatorDtor(PoolAllocator* self);
+
 #if __cplusplus
 }
 #endif

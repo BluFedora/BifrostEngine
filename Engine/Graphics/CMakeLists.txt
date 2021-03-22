@@ -69,7 +69,7 @@ if (BF_OPT_GRAPHICS_VULKAN)
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
 
     "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
-    "src/vulkan/bf_vulkan_gfx_object.h"
+    
  )
 
   find_package(Vulkan)

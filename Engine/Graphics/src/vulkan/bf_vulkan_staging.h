@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_vulkan_staging.h
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Reuses a set of staging buffers for a more efficient allocation scheme
  *   and easier uploading of host data.
@@ -9,7 +9,7 @@
  * @version 0.0.1
  * @date    2020-12-29
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #ifndef BF_VULKAN_STAGING_HPP
@@ -87,7 +87,7 @@ void              bfVkStagingManager_shutdown(bfVkStagingManager* self);
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -9,7 +9,7 @@
  * @version 0.0.1
  * @date    2020-12-29
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #include "bf_vulkan_staging.h"
@@ -88,7 +88,7 @@ static void CreateStagingManager(bfVkStagingManager* self, VkQueue gfx_queue, ui
      preferred_flags,
      &memory_alloc_info.memoryTypeIndex);
 
-    // If we could not get out preferred_flags.
+    // If we could not get our preferred_flags.
     if (!found_memory_type)
     {
       found_memory_type = memory_type_from_properties(
@@ -310,7 +310,7 @@ static void Destroy(bfVkStagingManager* self)
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

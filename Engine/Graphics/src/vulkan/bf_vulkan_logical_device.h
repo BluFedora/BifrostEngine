@@ -8,7 +8,27 @@
 #include "bf_vulkan_mem_allocator.h"
 #include "bf_vulkan_physical_device.h"
 
-#include "bf_vulkan_gfx_object.h"
+BF_DEFINE_GFX_HANDLE(WindowSurface)
+{
+  VkSurfaceKHR           surface;
+  VulkanSwapchainInfo    swapchain_info;
+  VulkanSwapchain        swapchain;
+  VkSemaphore*           is_image_available;
+  VkSemaphore*           is_render_done;
+  uint32_t               image_index;
+  bfBool32               swapchain_needs_deletion;
+  bfBool32               swapchain_needs_creation;
+  bfGfxCommandList       cmd_list_memory[5];
+  bfGfxCommandListHandle current_cmd_list;
+};
+
+BF_DEFINE_GFX_HANDLE(VertexLayoutSet)
+{
+  VkVertexInputBindingDescription   buffer_bindings[k_bfGfxMaxLayoutBindings];
+  VkVertexInputAttributeDescription attrib_bindings[k_bfGfxMaxLayoutBindings];
+  uint8_t                           num_buffer_bindings;
+  uint8_t                           num_attrib_bindings;
+};
 
 BF_DEFINE_GFX_HANDLE(GfxDevice)
 {
