@@ -5,7 +5,7 @@
  * @version 0.0.1
  * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 #ifndef BF_TRANSFORM_H
 #define BF_TRANSFORM_H
@@ -21,25 +21,22 @@ extern "C" {
 
 // [http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/]
 // [https://keithmaggio.wordpress.com/2011/02/15/math-magician-lerp-slerp-and-nlerp/]
-typedef struct Quaternionf_t
+typedef union bfQuaternionf
 {
-  union
+  struct
   {
-    struct
-    {
-      float x;
-      float y;
-      float z;
-      float w;
-    };
+    float x;
+    float y;
+    float z;
+    float w;
+  };
 
-    struct
-    {
-      float i;
-      float j;
-      float k;
-      float r;
-    };
+  struct
+  {
+    float i;
+    float j;
+    float k;
+    float r;
   };
 
 } Quaternionf;
@@ -77,7 +74,7 @@ enum
   k_TransformQueueStackMax = 128,
 };
 
-typedef enum
+typedef enum bfTransformFlags
 {
   BF_TRANSFORM_ORIGIN_DIRTY     = (1 << 0),
   BF_TRANSFORM_POSITION_DIRTY   = (1 << 1),
@@ -136,7 +133,7 @@ struct bfTransform
   bfTransform* next_sibling; /*!< The next sibling of this transform.                                 */
   bfTransform* prev_sibling; /*!< The previous sibling of this transform.                             */
 
-  /* Misc */
+  /* Dirty Flagging */
   bfTransform** dirty_list;      /*!< Head of the dirty list.                                          */
   bfTransform*  dirty_list_next; /*!< Next item in the embedded dirty linked list.                     */
   uint32_t      flags;           /*!< bfTransformFlags, flags for various feature and dirty states.    */

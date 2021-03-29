@@ -1,140 +1,3 @@
-System Languages I want To use (/ use more)
-
-- Rust
-- Go
-- Zig
-- Odin
-- Swift
-- Java?? / Kotlin
-- C#
-
-
-Scripting
-
-- Python
-
-Tech I'd Like TO Use:
-
-- WPF
-- Maybe do some more fun stuff with js + Electron
-- Emscripten
-- wxWidgets
-- Flutter
-- SFML 
-
-
-
-Data Structure Notes:
-
-There are really only 2 data structures:
-    1. Graphs
-        a. Tree (Specialized case of Graph)
-            i. Linked List (Specialized case of Tree)
-    2. Arrays (Just a group of items)
-All other data structures are variations on these two concepts.
-
-TODO:
-	Search for 'CUSTOM_ALLOC' for any hacks in the Vulkan Gfx Backend.
-
-> Multiviewport / Viewport Array requires Geometry shader. So it's practically useless.
-
-Platforms (Game Wise) that C/C++ Can Target:
-
-Languages Per Platform;
-
-Normal Platforms:
-  0 = [  Javascript  ] Web     : C / C++ -> SDL2 + Emscripten.
-  1 = [Java / Kotlin ] Android : C / C++ -> SDL2 + JNI using C linkage.
-  2 = [ Swift / ObjC ] iOS     : C / C++ -> SDL2 + (Swift using C linkage || ObjC++ (ObjC is basically C with garbage added on top))
-  3 = [ C + C++ / C# ] Windows : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
-  4 = [C + C++ / ObjC] macOS   : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
-  5 = [   C + C++    ] Linux   : C / C++ -> (SDL2 + C/++) || (GLFW + C/++)
-
-Consoles:
-  Switch   : Vulkan, OpenGL 4.5, OpenGL ES
-  3DS      : OpenGL ES Subset
-  PS4      : GNM (low Level) / GNMX (High Level) (Custom)
-  XBox One : DirectX12
-
-Graphics APIs:
-  ///////////////////////////////////////////////////////////////
-  // 0 - WebGL1     / WebGL2           /           /           //
-  // 1 - OpenGL ES  / Vulkan           /           /           //
-  // 2 - OpenGL ES  / Metal (MoltenVK) /           /           //
-  // 4 - OpenGL 4.6 / Vulkan           / DirectX11 / DirectX12 //
-  // 5 - OpenGL 4.1 / Metal (MoltenVK) /           /           //
-  // 6 - OpenGL 4.6 / Vulkan           /           /           //
-  ///////////////////////////////////////////////////////////////
-
-// Another Web C++ Compiler: https://www.leaningtech.com/cheerp/
-
-[https://github.com/KhronosGroup/OpenGL-Registry]
-[https://blog.codef00.com/2014/12/06/portable-bitfields-using-c11]
-[https://www.guerrilla-games.com/read/creating-a-tools-pipeline-for-horizon-zero-dawn]
-[https://devblogs.nvidia.com/vulkan-dos-donts/]
-[https://stackoverflow.com/questions/15275023/clang-force-loop-unroll-for-specific-loop]
-
-MSVC Define:
-https://docs.microsoft.com/en-us/cpp/standard-library/iterator-debug-level?view=vs-2019
-_ITERATOR_DEBUG_LEVEL=0 if you want to have decent debug vector performance.
-
-// Better Swap and pop
-https://ourmachinery.com/post/data-structures-part-1-bulk-data/
-std::swap(a[i], a[a.size() - 1]);
-a.pop_back();
-
-g++ = gcc -xc++ -lstdc++ -shared-libgcc
-
-Compiler Option
--x <langauge>
-
-gcc will compile: *.c/*.cpp files as C and C++ respectively.
-g++ will compile: *.c/*.cpp files but they will all be treated as C++ files.
-Also if you use g++ to link the object files it automatically links in the std C++ libraries (gcc does not do this).
-gcc compiling C files has fewer predefined macros.
-gcc compiling *.cpp and g++ compiling *.c/*.cpp files has a few extra macros.
-#define __GXX_WEAK__ 1
-#define __cplusplus 1
-#define __DEPRECATED 1
-#define __GNUG__ 4
-#define __EXCEPTIONS 1
-#define __private_extern__ extern
-
-Random:
-  A variant with a unique_ptr and a raw pointer to the type is a good way of having both owned and non owned resources for the same class.
-  This is a bit better than storing a raw pointer with a boolean from a cognitive load perspective.
-
-  Rigidbody should be sharing a position from the Entity it is attached to. (Easy to do since Entity memory is stable, just store a pointer to the position.)
-
-//MSVC: You can use the /permissive- compiler option to specify standards-conforming compiler behavior. This option disables permissive behaviors, and sets the /Zc compiler options for strict conformance.
-
-// TODO(SR):
-//   This is a feature list that will be tackled
-//   on a need-be basis for development of an indie engine / game.
-//   [4273 lines of vm + ds]
-//   * Error handling in scripts.
-//   * Error throwing in native functions.
-//   * Do while loop.
-//   * Standard Lib
-//   * Unary Not
-//   * Unary Minus
-//   * +=, -=, *=, /=
-//   * Modulo
-//   * ++x
-//   * x++
-//   * Switch Statements (Maybe add some pattern matching?)
-//   * Preprocessor for some extra fun.
-//   * Integer Div
-//   * Bin / Oct / Hex Numbers
-//   * Unicode chars?
-//   * foreach (with user defined iterators)
-//   * Ternary branch
-//   * For more efficient execution all string functions must be a lib rather than on the object itself.
-//   * To handle infinite loops introduce a max instrcution count.
-
-// TODO(SR): Bifrost DS
-//   * Array needs a 'shrink to fit' function to make it use less memory.
-
 // Tide Engine Notes:
 //   Singletons / Globals:
 //     -> Debug Logging
@@ -151,7 +14,6 @@ Random:
 //  Bad Ideas That happened because of Time:
 //    * The Engine has GLFW in it.
 //    * The Engine relies on the editor.
-/*
 Critique Per Subsystem:
   -> AI:
     * Great except it used new / delete.
@@ -191,7 +53,15 @@ Critique Per Subsystem:
     * Terrible for a multi-doc setup. (Practically only 3-5 Areas max used for Project Gemini)
     * Should the Camera be per area? (Yes for multi-doc setup?)
       -> Need to decide on sematics for the 'editor' Camera.
+    * Useless Path Member. Maybe to use it effectively the editor should wrap Area in a doc?
     * Assets somewhat own areas but it was kinda cumbersome.
+  -> ASSET_IO (Assets + AssetHandle)
+    * Works out well enough. Ref counting is a very easy paradigm.
+    * The main issue comes with the inability to stream content
+      since each component / entity / behavior keeps the asset alive thus loaded in memory.
+  -> ASSET_IO (File / FileSystem)
+    * File was fine.
+    * FileSystem should have an engine abstraction.
   -> ASSET_IO (Json)
     * Good format very flexible and most bugs have been fixed.
     * Pretty Inconsistent API / Naming.
@@ -219,6 +89,11 @@ Critique Per Subsystem:
     * Gamestate system was much to fickle and awkward.
     * The Engine maybe did too much?
     * Gamestate's need the engine in the event handle.
+  -> DATA_STRUCTURES (All)
+    * Very good and nice to use.
+  -> DEBUG (Drawer)
+    * Replace the global state with a system on the engine.
+    * This was overall small, minimal and good.
   -> DEBUG (Logger)
     * Pretty good, maybe have the logger not go to screen by default.
     * The editor should have had a console.
@@ -261,6 +136,8 @@ Critique Per Subsystem:
     * Leaks memory with the FBO.
     * Better 3D culling??
     * More native postprocessing.
+  -> MEMORY (All)
+    * Great, just needs a more consistent API cuz it's super easy to use wrong.
   -> PHYSICS (RigidBody)
     * Inconsistent API between namespace and object.
   -> PHYSICS (Collider)
@@ -270,7 +147,13 @@ Critique Per Subsystem:
   -> SCRIPTING (Lua)
     * Error handling needed to be better. Also compile times.
     * Hope Bifrost Script can be the only scripting solution we need.
+  -> THREADING (All)
+    * Good lib.
   -> TIDE (Config / Init)
     * This stuff should maybe be loaded from a config file.
     * Window Initilization should be out of the engine.
 */
+
+/* GOOD:
+ *  Engine Run very liked feature by designers.
+ */

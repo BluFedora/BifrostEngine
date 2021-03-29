@@ -25,7 +25,7 @@
 
 Quaternionf bfQuaternionf_init(float x, float y, float z, float w)
 {
-  const Quaternionf result = {{{x, y, z, w}}};
+  const Quaternionf result = {{x, y, z, w}};
 
   return result;
 }

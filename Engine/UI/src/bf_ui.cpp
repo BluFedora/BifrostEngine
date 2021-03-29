@@ -1187,7 +1187,7 @@ namespace bf::UI
 
   void Render(CommandBuffer2D& gfx2D, float screen_width, float screen_height)
   {
-#if 0
+#if 1
     // Test Code
 
     static WindowState s_WinStates[2] = {};
@@ -1249,10 +1249,12 @@ namespace bf::UI
       EndWindow();
     }
     //*/
-    assert(g_UI.current_widget == nullptr && "Missing a PopWidget to a corresponding PushWidget.");
 
     // Test End
 #endif
+
+    assert(g_UI.current_widget == nullptr && "Missing a PopWidget to a corresponding PushWidget.");
+    
     std::stable_sort(
      g_UI.root_widgets.begin(),
      g_UI.root_widgets.end(),

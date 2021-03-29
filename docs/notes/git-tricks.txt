@@ -1,2 +1,7 @@
 # Adding Submodule To Repo
 git submodule add <remote_url> <destination_folder>
+
+# Refreshing Gitignore Cache
+git rm -r --cached .
+git add .
+git commit -m ".gitignore fix"

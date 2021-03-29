@@ -950,7 +950,7 @@ namespace bf
           largest_bmp.y = std::max(largest_bmp.y, info.bmp_box[1].y);
         }
 
-        // Sort from greatest to least height
+        // Sort height from greatest to least
 
         std::sort(std::begin(sorted_glyphs), std::end(sorted_glyphs), [](GlyphInfo* a, GlyphInfo* b) {
           return a->bmp_box[1].y > b->bmp_box[1].y;

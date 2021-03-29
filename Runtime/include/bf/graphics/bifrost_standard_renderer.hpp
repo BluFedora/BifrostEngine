@@ -42,7 +42,7 @@ namespace bf
   static constexpr int         k_GfxSSAOKernelSize               = 128; /* Matches the constant defined in "assets/shaders/standard/ssao.frag.glsl"                                    */
   static constexpr int         k_GfxSSAONoiseTextureDim          = 4;   /* Matches the constant defined in "assets/shaders/standard/ssao_blur.frag.glsl"                               */
   static constexpr int         k_GfxMaxPunctualLightsOnScreen    = 512; /* (Technically x2 this value) Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls" */
-  static constexpr int         k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.gls"                             */
+  static constexpr int         k_GfxMaxDirectionalLightsOnScreen = 16;  /* Matches the constant defined in "assets/shaders/standard/pbr_lighting.frag.glsl"                            */
   static constexpr int         k_GfxSSAONoiseTextureNumElements  = k_GfxSSAONoiseTextureDim * k_GfxSSAONoiseTextureDim;
   static constexpr int         k_GfxMaxLightsOnScreen            = k_GfxMaxPunctualLightsOnScreen + k_GfxMaxDirectionalLightsOnScreen;
   static constexpr std::size_t k_GfxMaxVertexBones               = 4;

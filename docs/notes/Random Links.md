@@ -59,5 +59,4 @@ Stuff I want to Do:
 - Physics Engine Use Polish
 - LLVM based language
 
-
 https://www.haroldserrano.com/blog/books-i-used-to-develop-a-game-engine

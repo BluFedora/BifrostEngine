@@ -450,7 +450,6 @@ int main(int argc, char* argv[])
         main_window->frame_fn  = [](bfWindow* window) { static_cast<Engine*>(window->user_data)->tick(); };
 
         engine->init(params, main_window);
-        // engine->stateMachine().push<MainDemoLayer>();
         engine->stateMachine().addOverlay<editor::EditorOverlay>(main_window);
         bfPlatformDoMainLoop(main_window);
         engine->deinit();
