@@ -158,5 +158,3 @@ int main(int argc, char* argsv[])
 
   return 0;
 }
-
-// Volper: '425 749 8243' he prefers texting...

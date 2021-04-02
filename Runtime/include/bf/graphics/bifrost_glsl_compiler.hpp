@@ -3,8 +3,8 @@
 * @file   bf_glsl_compiler.hpp
 * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
-*   Allows for compiling glsl into SPIR-V at runtime to allow for 
-*   shader hot reloading.
+*   Allows for compiling glsl into SPIR-V at runtime to allow for shader hot 
+*   reloading.
 *
 * @version 0.0.1
 * @date    2020-03-26

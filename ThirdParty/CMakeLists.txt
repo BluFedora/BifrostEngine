@@ -1,3 +1,5 @@
+# Dear ImGUI
+
 add_library(
   DearImGUI STATIC
 
@@ -16,4 +18,27 @@ target_include_directories(
   DearImGUI
   PUBLIC
     "${CMAKE_CURRENT_LIST_DIR}"
+)
+
+# SPIRV-Cross
+
+add_subdirectory("SPIRV-Cross")
+
+# SPIRV-Reflect
+
+add_library(
+  spirv-reflect STATIC
+
+  "SPIRV-Reflect/spirv_reflect.h"
+  "SPIRV-Reflect/spirv_reflect.c"
+)
+
+target_include_directories(
+  spirv-reflect
+
+  PRIVATE
+    "SPIRV-Reflect/include"
+
+  PUBLIC
+    "SPIRV-Reflect"
 )

@@ -6,17 +6,13 @@
 ###  CMakeList.txt : Top-level CMake project file, for global configuration  ###
 ################################################################################
 
-  # NOTE(Shareef): This sets the minimum version of CMake that must be used
 cmake_minimum_required(VERSION 3.8)
 
-project(BluFedoraEngine VERSION 1.0)
+project(BluFedoraEngine VERSION 1.0.0)
 
-  # NOTE(Shareef): Engine Version
 set(BF_ENGINE_VERSION_MAJOR 1)
 set(BF_ENGINE_VERSION_MINOR 3)
 set(BF_ENGINE_VERSION_PATCH 0)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
   # This will generate a header file with the version info.
   # The file will be made in the build directory hence why the build
@@ -25,6 +21,8 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/docs/bf_version.h.in"
   "${PROJECT_BINARY_DIR}/bf/bf_version.h"
 )
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # NOTE(Shareef): Print out some CMake Info.
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
@@ -93,9 +91,6 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   # Libs
   "lib/include/nativefiledialog/nfd_common.c"
 
-  # Experiments
-  "Experiments/src/*.c"
-
   # Bifrost Asset Module
   "Runtime/src/asset_io/*.cpp"
 
@@ -128,10 +123,11 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "Runtime/src/meta/bifrost_meta_runtime.cpp"
 
   # Bifrost Utility Module
+  "Runtime/include/utility/bifrost_uuid.h"
+
   "Runtime/src/utility/bifrost_hash.cpp"
   "Runtime/src/utility/bifrost_json.cpp"
-
-  "Runtime/include/utility/bifrost_uuid.h"
+  "Runtime/src/utility/bifrost_json.c"
   "Runtime/src/utility/bifrost_uuid.c"
 
   # Physics
@@ -166,17 +162,20 @@ add_executable(
   "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code
- "DemoApp/src/camera_controller.cpp"
+ "Examples/IK/camera_controller.cpp"
 
  "Runtime/src/graphics/bifrost_component_renderer.cpp"
 
- 
  "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
  "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
-  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" "Engine/Runtime/src/core/bf_class_id.cpp")
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" 
+  "Engine/Runtime/src/bf_render_queue.cpp" 
+  "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
+  "Engine/Runtime/src/core/bf_class_id.cpp"
+  )
 
 add_executable(
   StandaloneRuntime
@@ -195,7 +194,7 @@ add_executable(
   "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code
- "DemoApp/src/camera_controller.cpp"
+ "Examples/IK/camera_controller.cpp"
 
  "Runtime/src/graphics/bifrost_component_renderer.cpp"
 
@@ -226,7 +225,6 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/Experiments/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
     ${PROJECT_BINARY_DIR} # For the cmake version file
@@ -271,7 +269,6 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/Experiments/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
     ${PROJECT_BINARY_DIR} # For the cmake version file
@@ -468,19 +465,13 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
 
-add_subdirectory(Engine)
-add_subdirectory(Experiments)
-add_subdirectory(BifrostScript)
-
-add_subdirectory(BuildTimeAnalyzerGUI)
-
 add_library(
   BF_JsonCpp
   STATIC
   
   "Runtime/include/bf/utility/bifrost_json.hpp"
   "Runtime/src/utility/bifrost_json.cpp"
-  "Experiments/src/bifrost_json.c"
+  "Runtime/src/utility/bifrost_json.c"
 )
 
 target_include_directories(
@@ -499,4 +490,7 @@ target_link_libraries(
     BF_DataStructuresC_static
 )
 
+add_subdirectory(BifrostScript)
+add_subdirectory(Engine)
+add_subdirectory(Examples)
 add_subdirectory(ThirdParty)
