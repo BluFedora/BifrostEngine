@@ -28,7 +28,7 @@ target_include_directories(
 
   PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/../../Runtime/include" # Fuck dude
+    "${PROJECT_SOURCE_DIR}/../../Engine/Runtime/include" # TODO(SR): This is a hack so should be removed.
 
   PRIVATE
     "${PROJECT_SOURCE_DIR}/lib/include"

@@ -92,47 +92,46 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
   "lib/include/nativefiledialog/nfd_common.c"
 
   # Bifrost Asset Module
-  "Runtime/src/asset_io/*.cpp"
+  "Engine/Runtime/src/asset_io/*.cpp"
 
   # Bifrost Core Module
-  "Runtime/src/core/bifrost_game_state_machine.cpp"
-  "Runtime/src/core/bifrost_igame_state_layer.cpp"
+  "Engine/Runtime/src/core/bifrost_game_state_machine.cpp"
+  "Engine/Runtime/src/core/bifrost_igame_state_layer.cpp"
 
   # Bifrost Debug Module
-  "Runtime/src/debug/bifrost_dbg_logger.c"
+  "Engine/Runtime/src/debug/bifrost_dbg_logger.c"
 
   # Bifrost ECS Module
-  "Runtime/src/ecs/bifrost_entity.cpp"
+  "Engine/Runtime/src/ecs/bifrost_entity.cpp"
   "Engine/Runtime/src/ecs/bf_base_component.cpp"
-  "Runtime/src/ecs/bifrost_iecs_system.cpp"
+  "Engine/Runtime/src/ecs/bifrost_iecs_system.cpp"
 
   # Bifrost Editor Module
   "include/bifrost/editor/*.hpp"
-  "Runtime/src/editor/bifrost_editor_build.cpp"
-  "Runtime/src/bifrost_imgui_glfw.cpp"
+  "Engine/Runtime/src/editor/bifrost_editor_build.cpp"
+  "Engine/Runtime/src/bifrost_imgui_glfw.cpp"
 
   # Bifrost Graphics Module
-  "Runtime/src/graphics/bifrost_standard_renderer.cpp"
-  "Runtime/src/graphics/bifrost_glsl_compiler.cpp"
-  "${PROJECT_SOURCE_DIR}/Engine/Runtime/gfx/src/bf_draw_2d.cpp"
+  "Engine/Runtime/src/graphics/bifrost_standard_renderer.cpp"
+  "Engine/Runtime/src/graphics/bifrost_glsl_compiler.cpp"
+  "Engine/Runtime/gfx/src/bf_draw_2d.cpp"
 
   # Bifrost Math Module
   "Engine/Math/src/bifrost_rect2.cpp"
 
   # Bifrost Meta Module
-  "Runtime/src/meta/bifrost_meta_runtime.cpp"
+  "Engine/Runtime/src/meta/bifrost_meta_runtime.cpp"
 
   # Bifrost Utility Module
-  "Runtime/include/utility/bifrost_uuid.h"
+  "Engine/Runtime/include/utility/bifrost_uuid.h"
 
-  "Runtime/src/utility/bifrost_hash.cpp"
-  "Runtime/src/utility/bifrost_json.cpp"
-  "Runtime/src/utility/bifrost_json.c"
-  "Runtime/src/utility/bifrost_uuid.c"
+  "Engine/Runtime/src/utility/bifrost_hash.cpp"
+  "Engine/Runtime/src/utility/bifrost_json.cpp"
+  "Engine/Runtime/src/utility/bifrost_json.c"
+  "Engine/Runtime/src/utility/bifrost_uuid.c"
 
   # Physics
-  "Runtime/src/bifrost/physics/bifrost_particle.cpp"
-
+  "Engine/Runtime/src/bifrost/physics/bifrost_particle.cpp"
  )
 
 if (WIN32)
@@ -150,27 +149,27 @@ add_executable(
   ${BIFROST_ENGINE_SOURCE_FILES}
   
   "main.cpp"
-  "Runtime/src/graphics/bifrost_debug_renderer.cpp"
-  "Runtime/src/core/bifrost_engine.cpp"
+  "Engine/Runtime/src/graphics/bifrost_debug_renderer.cpp"
+  "Engine/Runtime/src/core/bifrost_engine.cpp"
   
-  "Runtime/src/ecs/bifrost_behavior.cpp"
-  "Runtime/src/ecs/bifrost_behavior_system.cpp"
-  "Runtime/src/ecs/bifrost_entity_ref.cpp"
+  "Engine/Runtime/src/ecs/bifrost_behavior.cpp"
+  "Engine/Runtime/src/ecs/bifrost_behavior_system.cpp"
+  "Engine/Runtime/src/ecs/bifrost_entity_ref.cpp"
 
   # Runtime
 
-  "${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
+  "Engine/Editor/lib/include/ImGuizmo/ImGuizmo.cpp"
 
   # 'Game' Code
  "Examples/IK/camera_controller.cpp"
 
- "Runtime/src/graphics/bifrost_component_renderer.cpp"
+ "Engine/Runtime/src/graphics/bifrost_component_renderer.cpp"
 
- "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
+ "Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
  "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
   
- "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
- "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
+  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
+  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
   "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" 
   "Engine/Runtime/src/bf_render_queue.cpp" 
   "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
@@ -183,11 +182,11 @@ add_executable(
 
   ${BIFROST_ENGINE_SOURCE_FILES}
   
-  "Runtime/src/graphics/bifrost_debug_renderer.cpp"
-  "Runtime/src/core/bifrost_engine.cpp"
-  "Runtime/src/ecs/bifrost_behavior.cpp"
-  "Runtime/src/ecs/bifrost_behavior_system.cpp"
-  "Runtime/src/ecs/bifrost_entity_ref.cpp"
+  "Engine/Runtime/src/graphics/bifrost_debug_renderer.cpp"
+  "Engine/Runtime/src/core/bifrost_engine.cpp"
+  "Engine/Runtime/src/ecs/bifrost_behavior.cpp"
+  "Engine/Runtime/src/ecs/bifrost_behavior_system.cpp"
+  "Engine/Runtime/src/ecs/bifrost_entity_ref.cpp"
 
   # Runtime
 
@@ -196,14 +195,17 @@ add_executable(
   # 'Game' Code
  "Examples/IK/camera_controller.cpp"
 
- "Runtime/src/graphics/bifrost_component_renderer.cpp"
+ "Engine/Runtime/src/graphics/bifrost_component_renderer.cpp"
 
- "${PROJECT_SOURCE_DIR}/Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
+ "Engine/Runtime/src/anim2D/bf_animation_system.cpp" 
  "Engine/Runtime/src/asset_io/bf_spritesheet_asset.cpp" 
   
  "Engine/AssetIO/include/bf/asset_io/bf_path_manip.hpp" 
  "Engine/Runtime/src/asset_io/bf_path_manip.cpp"
-  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" "Engine/Runtime/src/bf_render_queue.cpp" "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" "Engine/Runtime/src/core/bf_class_id.cpp")
+  "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" 
+  "Engine/Runtime/src/bf_render_queue.cpp" 
+  "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
+  "Engine/Runtime/src/core/bf_class_id.cpp")
 
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
@@ -222,14 +224,12 @@ target_include_directories(
   BifrostEngineOLD
   PRIVATE
     ${PROJECT_SOURCE_DIR}/lib/include
-    ${PROJECT_SOURCE_DIR}/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
     ${PROJECT_BINARY_DIR} # For the cmake version file
     ${PROJECT_SOURCE_DIR}/Engine/Graphics2D/include 
-    ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
 )
 
 target_link_libraries(
@@ -469,9 +469,9 @@ add_library(
   BF_JsonCpp
   STATIC
   
-  "Runtime/include/bf/utility/bifrost_json.hpp"
-  "Runtime/src/utility/bifrost_json.cpp"
-  "Runtime/src/utility/bifrost_json.c"
+  "Engine/Runtime/include/bf/utility/bifrost_json.hpp"
+  "Engine/Runtime/src/utility/bifrost_json.cpp"
+  "Engine/Runtime/src/utility/bifrost_json.c"
 )
 
 target_include_directories(
