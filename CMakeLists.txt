@@ -174,7 +174,7 @@ add_executable(
   "Engine/Runtime/src/bf_render_queue.cpp" 
   "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
   "Engine/Runtime/src/core/bf_class_id.cpp"
-  )
+   "main_tests.cpp")
 
 add_executable(
   StandaloneRuntime
@@ -205,7 +205,7 @@ add_executable(
   "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" 
   "Engine/Runtime/src/bf_render_queue.cpp" 
   "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
-  "Engine/Runtime/src/core/bf_class_id.cpp")
+  "Engine/Runtime/src/core/bf_class_id.cpp" "main_tests.cpp")
 
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")

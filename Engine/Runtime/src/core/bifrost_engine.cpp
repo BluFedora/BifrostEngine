@@ -246,6 +246,11 @@ namespace bf
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
 
+    bfLogPush("Memory");
+    bfLogPrint("Engine      : %zu mb", sizeof(*this) / (1024 * 1024));
+    bfLogPrint("Main Memory : %zu mb", m_MainMemory.size() / (1024 * 1024));
+    bfLogPop();
+
     m_Assets.registerFileExtensions({".png", ".jpg", ".jpeg", ".ppm", ".pgm", ".bmp", ".tga", ".psd"}, &assetImportTexture);
     m_Assets.registerFileExtensions({".material"}, &assetImportMaterial);
     m_Assets.registerFileExtensions({".obj", ".fbx", ".md5mesh"}, &assetImportModel);

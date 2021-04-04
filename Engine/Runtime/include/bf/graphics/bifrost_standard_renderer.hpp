@@ -1,5 +1,5 @@
 /*!
- * @file   bifrost_standard_renderer.hpp
+ * @file   bf_standard_renderer.hpp
  * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
  * @brief
  *   This is the reference renderer that all more specific
@@ -14,7 +14,7 @@
  * @version 0.0.1
  * @date    2020-03-22
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 #ifndef BF_STANDARD_RENDERER_HPP
 #define BF_STANDARD_RENDERER_HPP
@@ -28,7 +28,6 @@
 
 namespace bf
 {
-  struct RenderView;
   //
   // Constants
   //
@@ -52,6 +51,7 @@ namespace bf
   // Forward Declarations
   //
 
+  struct RenderView;
   class Light;
   class MaterialAsset;
   class Engine;

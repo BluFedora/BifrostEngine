@@ -184,11 +184,11 @@ namespace bf
     {
       radix_sort(key_stream_memory, keys_bgn, num_keys);
 
-      //*
-    assert(std::is_sorted(keys_bgn, keys_bgn + num_keys, [](const RenderSortKey& a, const RenderSortKey& b) {
-             return a.key < b.key;
-           }) == true);
-    //*/
+      /*
+       assert(std::is_sorted(keys_bgn, keys_bgn + num_keys, [](const RenderSortKey& a, const RenderSortKey& b) {
+                return a.key < b.key;
+              }) == true);
+      //*/
     }
 
     for (std::size_t i = 0; i < num_keys; ++i)
