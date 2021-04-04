@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_net.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Cross platform layer over the berkeley api on Win32 and Posix.
  *

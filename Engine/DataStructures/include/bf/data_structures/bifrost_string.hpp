@@ -468,7 +468,7 @@ namespace bf
     std::size_t size;
   };
 
-  struct BufferLen
+  struct BufferRange
   {
     char*       buffer;
     std::size_t length;
@@ -637,7 +637,7 @@ namespace bf::string_utils
 
   // Caller is responsible for freeing memory.
   // The returned length is one less than the actual buffer size.
-  BufferLen clone(IMemoryManager& allocator, StringRange str);
+  BufferRange clone(IMemoryManager& allocator, StringRange str);
 }  // namespace bf::string_utils
 
 #endif /* BF_STRING_HPP */

@@ -95,18 +95,18 @@ namespace bf
   }  // namespace detail
 
   template<TextEncoding encoding>
-  using CodeUnit        = typename detail::CodeUnitImpl<encoding>::type;  //!< The type of a code unit for a certain encoding.
-  using CodePoint       = std::uint32_t;                                  //!< A type large enough holding a single unicode codepoint.
-  using ImageSizeCoords = std::uint16_t;                                  //!< The data type used for all font atlas operations.
+  using CodeUnit       = typename detail::CodeUnitImpl<encoding>::type;  //!< The type of a code unit for a certain encoding.
+  using CodePoint      = std::uint32_t;                                  //!< A type large enough holding a single unicode codepoint.
+  using ImageSizeCoord = std::uint16_t;                                  //!< The data type used for all font atlas operations.
 
   /*!
    * @brief
    *   Hold a pair of `ImageSizeCoords` for convienence.
    */
-  struct ImageSizeCoords2 final
+  struct ImageSizeCoords2
   {
-    ImageSizeCoords x;  //!< x axis offset or extent.
-    ImageSizeCoords y;  //!< y axis offset or extent.
+    ImageSizeCoord x;  //!< x axis offset or extent.
+    ImageSizeCoord y;  //!< y axis offset or extent.
 
     /*!
      * @brief
@@ -123,7 +123,7 @@ namespace bf
      */
     friend ImageSizeCoords2 operator+(const ImageSizeCoords2& lhs, const ImageSizeCoords2& rhs)
     {
-      return ImageSizeCoords2{ImageSizeCoords(lhs.x + rhs.x), ImageSizeCoords(lhs.y + rhs.y)};
+      return ImageSizeCoords2{ImageSizeCoord(lhs.x + rhs.x), ImageSizeCoord(lhs.y + rhs.y)};
     }
 
     /*!
@@ -150,7 +150,7 @@ namespace bf
    * @brief
    *   Chuck of data needed for drawing a particular glyph.
    */
-  struct GlyphInfo final
+  struct GlyphInfo
   {
     ImageSizeCoords2 bmp_box[2];   //!< Bitmap Source Rect {x, y, width, height} (Does not include padding).
     float            uvs[4];       //!< {min.x, min.y, max.x, max.y}.
@@ -166,20 +166,20 @@ namespace bf
    *   To get a particular pixel (x, y):
    *     const PixelMap::Pixel* pixel = x + pixmap->width * y;
    */
-  struct PixelMap final
+  struct PixelMap
   {
     /*!
      * @brief
      *   A single pixel in this grid.
      */
-    struct Pixel final
+    struct Pixel
     {
       std::uint8_t rgba[4];  //!< {R, G, B, A} data with each component in the 0 - 255 range.
     };
 
-    ImageSizeCoords width;      //!< The width of the image.
-    ImageSizeCoords height;     //!< The height of the image.
-    Pixel           pixels[1];  //!< Variable length array of length: `width * height`
+    ImageSizeCoord width;      //!< The width of the image.
+    ImageSizeCoord height;     //!< The height of the image.
+    Pixel          pixels[1];  //!< Variable length array of length: `width * height`
 
     /*!
      * @brief 
@@ -205,7 +205,7 @@ namespace bf
    *   Result from a utfXXXCodepoint decoding function.
    */
   template<TextEncoding encoding>
-  struct TextEncodingResult final
+  struct TextEncodingResult
   {
     CodePoint                 codepoint;  //!< The codepoint calculated by the function.
     const CodeUnit<encoding>* endpos;     //!< The new location of the passed in code unit after reading a single codepoint.

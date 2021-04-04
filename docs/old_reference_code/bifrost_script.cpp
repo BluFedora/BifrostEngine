@@ -27,7 +27,7 @@ namespace bf
 
       LinearAllocatorScope scope{tmp_allocator};
 
-      const TempBuffer     buffer = file.readAll(engine.tempMemoryNoFree());
+      const ScopedBuffer     buffer = file.readAll(engine.tempMemoryNoFree());
       const BifrostVMError err    = vm.execInModule(
        nullptr,  // TODO(SR): Maybe I will want to set the module name at some point.
        buffer.buffer(),

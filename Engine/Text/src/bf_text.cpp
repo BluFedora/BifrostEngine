@@ -46,23 +46,23 @@ static void  STBTT_freeImpl(void* ptr, void* user_data);
 #undef STBTT_STATIC
 
 #include <algorithm>  // sort
-#include <cstdio>     // File IO
-#include <tuple>      // tie
-#include <utility>    // pair
-#include <vector>     // vector<T>
+#include <cstdio>  // File IO
+#include <tuple>  // tie
+#include <utility>  // pair
+#include <vector>  // vector<T>
 
 namespace bf
 {
   // Constants
 
-  static constexpr int             k_NumPlanes           = 17;          //!< The number of planes defined in the Unicode standard.
-  static constexpr std::uint32_t   k_NumCharsPerPlane    = 0xFFFF + 1;  //!< The max number of characters contained in a single Unicode plane.
-  static constexpr std::uint32_t   k_NumGlyphSetPerPlane = 0xFF + 1;    //!< The number of sets each plane is separated into.
-  static constexpr std::uint32_t   k_NumCharsPerGlyphSet = 0xFF + 1;
-  static constexpr ImageSizeCoords k_InitialImageSize    = 512;
-  static constexpr ImageSizeCoords k_ImageGrowAmount     = 512;
-  static constexpr float           k_PtToPixels          = -1.3281472327365f;  //!< Negative since that is how em is signified in this library.
-  static constexpr float           k_ScaleFactorToPixels = 0.75292857248934f;  //!< This is the conversion from pixels -> pt.
+  static constexpr int            k_NumPlanes           = 17;          //!< The number of planes defined in the Unicode standard.
+  static constexpr std::uint32_t  k_NumCharsPerPlane    = 0xFFFF + 1;  //!< The max number of characters contained in a single Unicode plane.
+  static constexpr std::uint32_t  k_NumGlyphSetPerPlane = 0xFF + 1;    //!< The number of sets each plane is separated into.
+  static constexpr std::uint32_t  k_NumCharsPerGlyphSet = 0xFF + 1;
+  static constexpr ImageSizeCoord k_InitialImageSize    = 512;
+  static constexpr ImageSizeCoord k_ImageGrowAmount     = 512;
+  static constexpr float          k_PtToPixels          = -1.3281472327365f;  //!< Negative since that is how em is signified in this library.
+  static constexpr float          k_ScaleFactorToPixels = 0.75292857248934f;  //!< This is the conversion from pixels -> pt.
 
   // Helper Structs
 
@@ -75,25 +75,25 @@ namespace bf
 
       Rectangle() = default;
 
-      Rectangle(ImageSizeCoords x, ImageSizeCoords y, ImageSizeCoords w, ImageSizeCoords h) :
+      Rectangle(ImageSizeCoord x, ImageSizeCoord y, ImageSizeCoord w, ImageSizeCoord h) :
         min{x, y},
-        max{ImageSizeCoords(x + w), ImageSizeCoords(y + h)}
+        max{ImageSizeCoord(x + w), ImageSizeCoord(y + h)}
       {
       }
 
-      ImageSizeCoords left() const { return min.x; }
-      ImageSizeCoords right() const { return max.x; }
-      ImageSizeCoords top() const { return min.y; }
-      ImageSizeCoords bottom() const { return max.y; }
-      int             width() const { return right() - left(); }
-      int             height() const { return bottom() - top(); }
-      int             area() const { return width() * height(); }
+      ImageSizeCoord left() const { return min.x; }
+      ImageSizeCoord right() const { return max.x; }
+      ImageSizeCoord top() const { return min.y; }
+      ImageSizeCoord bottom() const { return max.y; }
+      int            width() const { return right() - left(); }
+      int            height() const { return bottom() - top(); }
+      int            area() const { return width() * height(); }
 
 #if 0
-      void            setLeft(ImageSizeCoords value) { min.x = value; }
-      void            setRight(ImageSizeCoords value) { max.x = value; }
-      void            setTop(ImageSizeCoords value) { min.y = value; }
-      void            setBottom(ImageSizeCoords value) { max.y = value; }
+      void            setLeft(ImageSizeCoord value) { min.x = value; }
+      void            setRight(ImageSizeCoord value) { max.x = value; }
+      void            setTop(ImageSizeCoord value) { min.y = value; }
+      void            setBottom(ImageSizeCoord value) { max.y = value; }
 #endif
     };
 #if 0
@@ -108,7 +108,7 @@ namespace bf
       int has_pixels[2];
 
      public:
-      RectanglePacker(IMemoryManager& memory, ImageSizeCoords width, ImageSizeCoords height) :
+      RectanglePacker(IMemoryManager& memory, ImageSizeCoord width, ImageSizeCoord height) :
         m_Freelist{memory},
         m_OldSize{width, height}
       {
@@ -118,10 +118,10 @@ namespace bf
         has_pixels[1] = height;
       }
 
-      ImageSizeCoords width() const { return m_OldSize.x; }
-      ImageSizeCoords height() const { return m_OldSize.y; }
+      ImageSizeCoord width() const { return m_OldSize.x; }
+      ImageSizeCoord height() const { return m_OldSize.y; }
 
-      void grow(ImageSizeCoords x_amt, ImageSizeCoords y_amt)
+      void grow(ImageSizeCoord x_amt, ImageSizeCoord y_amt)
       {
         // NOTE(SR):
         //   Since this adds the y first this will give the x growth a greater height.
@@ -186,34 +186,34 @@ namespace bf
               {
                 split0 =
                  {
-                  ImageSizeCoords(candidate.left() + size_needed.x),
-                  ImageSizeCoords(candidate.top()),
-                  ImageSizeCoords(candidate.width() - size_needed.x),
-                  ImageSizeCoords(candidate.height()),
+                  ImageSizeCoord(candidate.left() + size_needed.x),
+                  ImageSizeCoord(candidate.top()),
+                  ImageSizeCoord(candidate.width() - size_needed.x),
+                  ImageSizeCoord(candidate.height()),
                  };
                 split1 =
                  {
-                  ImageSizeCoords(candidate.left()),
-                  ImageSizeCoords(candidate.top() + size_needed.y),
-                  ImageSizeCoords(size_needed.x),
-                  ImageSizeCoords(candidate.height() - size_needed.y),
+                  ImageSizeCoord(candidate.left()),
+                  ImageSizeCoord(candidate.top() + size_needed.y),
+                  ImageSizeCoord(size_needed.x),
+                  ImageSizeCoord(candidate.height() - size_needed.y),
                  };
               }
               else
               {
                 split0 =
                  {
-                  ImageSizeCoords(candidate.left() + size_needed.x),
-                  ImageSizeCoords(candidate.top()),
-                  ImageSizeCoords(candidate.width() - size_needed.x),
-                  ImageSizeCoords(size_needed.y),
+                  ImageSizeCoord(candidate.left() + size_needed.x),
+                  ImageSizeCoord(candidate.top()),
+                  ImageSizeCoord(candidate.width() - size_needed.x),
+                  ImageSizeCoord(size_needed.y),
                  };
                 split1 =
                  {
-                  ImageSizeCoords(candidate.left()),
-                  ImageSizeCoords(candidate.top() + size_needed.y),
-                  ImageSizeCoords(candidate.width()),
-                  ImageSizeCoords(candidate.height() - size_needed.y),
+                  ImageSizeCoord(candidate.left()),
+                  ImageSizeCoord(candidate.top() + size_needed.y),
+                  ImageSizeCoord(candidate.width()),
+                  ImageSizeCoord(candidate.height() - size_needed.y),
                  };
               }
 
@@ -293,7 +293,7 @@ namespace bf
         const ImageSizeCoords2 region_offset;
         const ImageSizeCoords2 total_area;
         ImageSizeCoords2       current_row_size;
-        ImageSizeCoords        current_y;
+        ImageSizeCoord         current_y;
 
         PackRegion(ImageSizeCoords2 offset, ImageSizeCoords2 size) :
           region_offset{offset},
@@ -343,15 +343,15 @@ namespace bf
       ImageSizeCoords2                                  m_OldSize;
 
      public:
-      RectanglePacker(IMemoryManager& memory, ImageSizeCoords width, ImageSizeCoords height) :
+      RectanglePacker(IMemoryManager& memory, ImageSizeCoord width, ImageSizeCoord height) :
         m_PackerRegions{memory},
         m_OldSize{width, height}
       {
         m_PackerRegions.emplace_back(ImageSizeCoords2{0, 0}, m_OldSize);
       }
 
-      ImageSizeCoords width() const { return m_OldSize.x; }
-      ImageSizeCoords height() const { return m_OldSize.y; }
+      ImageSizeCoord width() const { return m_OldSize.x; }
+      ImageSizeCoord height() const { return m_OldSize.y; }
 
       ImageSizeCoords2 insert(const ImageSizeCoords2& size_needed)
       {
@@ -459,7 +459,7 @@ namespace bf
     void                            destroyTextPlane(TextPlane* plane, IMemoryManager& memory);
     GlyphSet*                       makeGlyphSet(Font& font, std::uint32_t set_index);
     void                            destroyGlyphSet(GlyphSet* set, IMemoryManager& memory);
-    PixelMap*                       makePixelMap(IMemoryManager& memory, ImageSizeCoords width, ImageSizeCoords height);
+    PixelMap*                       makePixelMap(IMemoryManager& memory, ImageSizeCoord width, ImageSizeCoord height);
     void                            destroyPixelMap(IMemoryManager& memory, PixelMap* pix_map);
   }  // namespace
 
@@ -942,8 +942,8 @@ namespace bf
 
           info.offset[0]    = float(x0);
           info.offset[1]    = float(y0);
-          info.bmp_box[1].x = ImageSizeCoords(x1 - x0);
-          info.bmp_box[1].y = ImageSizeCoords(y1 - y0);
+          info.bmp_box[1].x = ImageSizeCoord(x1 - x0);
+          info.bmp_box[1].y = ImageSizeCoord(y1 - y0);
           info.advance_x    = float(raw_advance) * scale;
 
           largest_bmp.x = std::max(largest_bmp.x, info.bmp_box[1].x);
@@ -1018,12 +1018,12 @@ namespace bf
            k_SubpixelShiftY,
            info.glyph_index);
 
-          for (ImageSizeCoords y = 0; y < bmp_height; ++y)
+          for (ImageSizeCoord y = 0; y < bmp_height; ++y)
           {
             const auto y_src_offset = std::size_t(y) * bmp_width;
             const auto y_dst_offset = (std::size_t(info.bmp_box[0].y) + y + k_HalfPadding) * font.atlas->width;
 
-            for (ImageSizeCoords x = 0; x < bmp_width; ++x)
+            for (ImageSizeCoord x = 0; x < bmp_width; ++x)
             {
               const unsigned char*   src_alpha = aux_bmp_buffer + std::size_t(x) + y_src_offset;
               PixelMap::Pixel* const dst_pixel = pixels + (std::size_t(info.bmp_box[0].x) + x + k_HalfPadding) + y_dst_offset;
@@ -1048,7 +1048,7 @@ namespace bf
       memory.deallocateT(set);
     }
 
-    PixelMap* makePixelMap(IMemoryManager& memory, ImageSizeCoords width, ImageSizeCoords height)
+    PixelMap* makePixelMap(IMemoryManager& memory, ImageSizeCoord width, ImageSizeCoord height)
     {
       const std::size_t num_pixels  = std::size_t(width) * height;
       const std::size_t pixels_size = num_pixels * sizeof(PixelMap::Pixel);

@@ -23,7 +23,7 @@ namespace bf
     if (file_in)
     {
       LinearAllocatorScope scope       = {engine.tempMemory()};
-      const TempBuffer     json_buffer = file_in.readAll(engine.tempMemory());
+      const ScopedBuffer     json_buffer = file_in.readAll(engine.tempMemory());
       const auto           file_name   = document().nameWithExt();
 
       m_Anim2DSpritesheet = bfAnim2D_loadSpritesheet(

@@ -121,11 +121,11 @@ namespace bf
     char* readAll(IMemoryManager& allocator, std::size_t& out_size);
 
     // Same as the above overload except destructors handle freeing.
-    [[nodiscard]] TempBuffer readAll(IMemoryManager& allocator);
+    [[nodiscard]] ScopedBuffer readAll(IMemoryManager& allocator);
 
     // the returned buffer will be nul terminated but out_size includes that in the size.
     // Remember to free the buffer.
-    BufferLen readEntireFile(IMemoryManager& allocator);
+    BufferRange readEntireFile(IMemoryManager& allocator);
 
     template<typename T>
     File& operator<<(const T& data)

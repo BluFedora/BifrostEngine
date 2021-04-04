@@ -1339,7 +1339,7 @@ namespace bf::editor
       LinearAllocator&     temp_mem         = tempMemory();
       LinearAllocatorScope temp_mem_scope   = temp_mem;
       const StringRange    project_dir      = path::directory(path);
-      const TempBuffer     project_json_str = project_file.readAll(temp_mem);
+      const ScopedBuffer     project_json_str = project_file.readAll(temp_mem);
       const AssetError     err              = m_Engine->assets().setRootPath(std::string_view{project_dir.str_bgn, project_dir.length()});
 
       if (err == AssetError::NONE)
@@ -1626,7 +1626,7 @@ namespace bf::editor
     }
   }
 
-  static StringRange bufferToStr(const TempBuffer& buffer)
+  static StringRange bufferToStr(const ScopedBuffer& buffer)
   {
     return {buffer.buffer(), buffer.size()};
   }
@@ -1644,7 +1644,7 @@ namespace bf::editor
       const StringRange    old_rel_path         = path::relative(root().full_path, entry.full_path);
       std::size_t          old_meta_name_length = 0;
       const char*          old_meta_name        = assets.metaFileName(tmp_no_free, old_rel_path, old_meta_name_length);
-      const TempBuffer     old_meta_path        = assets.metaFullPath(tmp_no_free, old_meta_name);
+      const ScopedBuffer     old_meta_path        = assets.metaFullPath(tmp_no_free, old_meta_name);
       const StringRange    path_root_dir        = path::directory(bufferToStr(old_meta_path));
       std::size_t          new_path_length      = 0;
       char* const          new_path             = string_utils::fmtAlloc(

@@ -414,7 +414,7 @@ namespace bf
     return buffer;
   }
 
-  TempBuffer File::readAll(IMemoryManager& allocator)
+  ScopedBuffer File::readAll(IMemoryManager& allocator)
   {
     std::size_t buffer_size;
     char*       buffer = readAll(allocator, buffer_size);
@@ -422,9 +422,9 @@ namespace bf
     return {allocator, buffer, buffer_size};
   }
 
-  BufferLen File::readEntireFile(IMemoryManager& allocator)
+  BufferRange File::readEntireFile(IMemoryManager& allocator)
   {
-    BufferLen result;
+    BufferRange result;
 
     result.buffer = readAll(allocator, result.length);
 

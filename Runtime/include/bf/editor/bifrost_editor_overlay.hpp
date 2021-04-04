@@ -126,8 +126,8 @@ namespace bf::editor
    private:
     StringPoolEntry* grabNewEntry(const StringRange& string)
     {
-      const BufferLen  cloned_data = string_utils::clone(m_EntryStorage.memory(), string);
-      StringPoolEntry* result;
+      const BufferRange cloned_data = string_utils::clone(m_EntryStorage.memory(), string);
+      StringPoolEntry*  result;
 
       if (m_EntryStorageFreeList != k_StringNPos)
       {

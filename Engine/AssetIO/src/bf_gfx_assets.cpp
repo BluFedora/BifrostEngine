@@ -127,7 +127,7 @@ namespace bf
     {
       LinearAllocator&     allocator  = ENGINE_TEMP_MEM(assets().engine());
       LinearAllocatorScope mem_scope  = allocator;
-      const BufferLen      buffer     = file_in.readEntireFile(allocator);
+      const BufferRange      buffer     = file_in.readEntireFile(allocator);
       json::Value          json_value = json::parse(buffer.buffer, buffer.length);
       JsonSerializerReader reader     = {assets(), allocator, json_value};
 

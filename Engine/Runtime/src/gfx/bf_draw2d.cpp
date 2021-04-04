@@ -501,7 +501,7 @@ namespace bf
 
     Render2DText* result = allocCommand<Render2DText>(brush);
 
-    const BufferLen cloned_string = string_utils::clone(aux_memory, utf8_text);
+    const BufferRange cloned_string = string_utils::clone(aux_memory, utf8_text);
     UIIndexType     num_codepoints;
 
     result->utf8_text      = cloned_string.toStringRange();

@@ -221,7 +221,7 @@ namespace bf
     WidgetLayout   layout               = {};
     char*          name                 = nullptr;
     std::size_t    name_len             = 0u;
-    BufferLen      name_                = {};
+    BufferRange    name_                = {};
     ParamList      params               = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     Size           desired_size         = {};
     Vector2f       position_from_parent = {5.0f, 5.0f};

@@ -34,7 +34,7 @@ target_link_libraries(
   bfAnimation2D_shared
   PRIVATE
     BF_DataStructuresCxx
-    BF_Networking_static
+    BF_Networking
 )
 
 set_property(

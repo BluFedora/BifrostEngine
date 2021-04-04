@@ -15,7 +15,7 @@
 #ifndef BF_POLY_HPP
 #define BF_POLY_HPP
 
-#include "../../../TMPUtils/include/bf/bf_meta_function_traits.hpp"
+#include "bf_meta_function_traits.hpp"
 
 #include <cstddef>     /* max_align_t */
 #include <tuple>       /* tuple stuff */

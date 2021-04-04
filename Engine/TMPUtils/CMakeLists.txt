@@ -22,6 +22,18 @@ target_sources(
     "${PROJECT_SOURCE_DIR}/include/bf/bf_meta_function_traits.hpp"
     "${PROJECT_SOURCE_DIR}/include/bf/bf_meta_utils.hpp"
     "${PROJECT_SOURCE_DIR}/include/bf/bf_non_copy_move.hpp"
+    "${PROJECT_SOURCE_DIR}/include/bf/bf_poly.hpp"
 
     "${PROJECT_SOURCE_DIR}/src/bf_hash.cpp"
+)
+
+# Tests
+add_executable(
+  "${PROJECT_NAME}_poly"
+  "${PROJECT_SOURCE_DIR}/tests/poly_main.cpp"
+)
+target_link_libraries(
+  "${PROJECT_NAME}_poly"
+  PRIVATE
+    BF_TMPUtils
 )
