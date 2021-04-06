@@ -1,5 +1,3 @@
-// This is an import for the standard math lib
-// asking for the 'math_print' function.
 import "std:memory"                     for gc as CollectGarbage;
 import "std:functional"                 for Closure as C, Closure = C2, Closure;
 

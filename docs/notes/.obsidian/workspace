@@ -10,11 +10,12 @@
           {
             "id": "851f7988cffd470a",
             "type": "leaf",
-            "dimension": 15.029325513196481,
+            "dimension": 70.89442815249268,
+            "active": true,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/Value Semantics.md",
+                "file": "OrganizedThoughts/AnimationRuntime.md",
                 "mode": "source"
               }
             },
@@ -23,12 +24,11 @@
           {
             "id": "81f2acfc1b605f7f",
             "type": "leaf",
-            "dimension": 84.97067448680352,
-            "active": true,
+            "dimension": 29.105571847507335,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/Value Semantics.md",
+                "file": "OrganizedThoughts/AnimationRuntime.md",
                 "mode": "preview"
               }
             },
@@ -91,7 +91,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/Value Semantics.md",
+                "file": "OrganizedThoughts/AnimationRuntime.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -108,12 +108,12 @@
     "collapsed": true
   },
   "lastOpenFiles": [
+    "OrganizedThoughts/AnimationRuntime.md",
     "OrganizedThoughts/Value Semantics.md",
     "OrganizedThoughts/Mathematics.md",
     "OrganizedThoughts/Untitled.md",
     "OrganizedThoughts/ByteWriterAPISketch.md",
     "Framebuffer.md",
-    "OrganizedThoughts/AnimationRuntime.md",
     "OrganizedThoughts/Interpolation.md",
     "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
