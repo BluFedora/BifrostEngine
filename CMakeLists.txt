@@ -89,7 +89,7 @@ endif()
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
 
   # Libs
-  "lib/include/nativefiledialog/nfd_common.c"
+  "Engine/Runtime/lib/include/nativefiledialog/nfd_common.c"
 
   # Bifrost Asset Module
   "Engine/Runtime/src/asset_io/*.cpp"
@@ -135,9 +135,9 @@ file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
  )
 
 if (WIN32)
-  set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "lib/include/nativefiledialog/nfd_win.cpp")
+  set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "Engine/Runtime/lib/include/nativefiledialog/nfd_win.cpp")
 elseif (APPLE)
-  set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "lib/include/nativefiledialog/nfd_cocoa.m")
+  set(BIFROST_ENGINE_SOURCE_FILES ${BIFROST_ENGINE_SOURCE_FILES} "Engine/Runtime/lib/include/nativefiledialog/nfd_cocoa.m")
 endif()
 
 # NOTE(Shareef): Add the libraries we are linking against to the target.
@@ -223,9 +223,8 @@ set_target_properties(
 target_include_directories(
   BifrostEngineOLD
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/lib/include
     ${PROJECT_SOURCE_DIR}/Engine/Editor/lib/include
-    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/include
     ${PROJECT_SOURCE_DIR}/Engine/Runtime/include
     ${PROJECT_SOURCE_DIR}/Engine/Platform/lib/include
     ${PROJECT_BINARY_DIR} # For the cmake version file
@@ -351,9 +350,9 @@ if (WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
 
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win64")
+    set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/win64")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/win32")
+    set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/win32")
     # set(BIFROST_ENGINE_FMOD_LIB "${BIFROST_ENGINE_LIB_DIR}/fmod_vc.lib")
   endif()
   set(BIFROST_ENGINE_LUA_LIB "${BIFROST_ENGINE_LIB_DIR}/lua53.lib")
@@ -362,8 +361,8 @@ if (WIN32)
 elseif (APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK")
 
-  set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/lib/macOS")
-  set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/lib/macOS/libglfw.3.dylib")
+  set(BIFROST_ENGINE_LIB_DIR  "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/macOS")
+  set(BIFROST_ENGINE_GLFW_LIB "${PROJECT_SOURCE_DIR}/Engine/Runtime/lib/macOS/libglfw.3.dylib")
 endif()
 
 add_library(BF_RuntimeGraphics INTERFACE)

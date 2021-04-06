@@ -393,7 +393,7 @@ if (update_fn)
   vm.stackDestroyHandle(update_fn);
 }
 
-static constexpr TestCaseFn s_Test[] =
+static constexpr TestCaseFn s_Tests[] =
  {
   // &Test2DTransform,
   // &TestQuaternions,
@@ -408,7 +408,7 @@ void XXX_RunRandomTests()
 {
   xxx_TestLexer();
 
-  for (const auto& test_fn : s_Test)
+  for (const auto& test_fn : s_Tests)
   {
     test_fn();
   }
