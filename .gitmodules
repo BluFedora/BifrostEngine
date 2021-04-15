@@ -17,6 +17,6 @@
 [submodule "ThirdParty/SPIRV-Reflect"]
 	path = ThirdParty/SPIRV-Reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect
-[submodule ".\\ThirdParty\\glslang"]
-	path = .\\ThirdParty\\glslang
+[submodule "ThirdParty/glslang"]
+	path = ThirdParty/glslang
 	url = https://github.com/KhronosGroup/glslang
