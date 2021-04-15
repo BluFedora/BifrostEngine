@@ -352,18 +352,6 @@ target_link_libraries(
     SPIRV
 )
 
-if (WIN32)
-  # target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
-elseif (APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
-  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libglslang.a")
-  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libHLSL.a")
-  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOGLCompiler.a")
-  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libSPIRV.a")
-  target_link_libraries(BF_RuntimeGraphics PRIVATE "${BIFROST_ENGINE_LIB_DIR}/libOSDependent.a")
-endif()
-
-
 # if(OpenCL_FOUND)
 #   include_directories(${OPENCL_INCLUDE_DIR})
 #   target_link_libraries(BifrostEngineOLD PRIVATE OpenCL::OpenCL)
@@ -397,22 +385,12 @@ else()
 endif()
 
   # NOTE(Shareef): Automatically copy the needed dlls to the output directory
-
 if (WIN32)
   # configure_file("${BIFROST_ENGINE_LIB_DIR}/glfw3.dll"                "${EXECUTABLE_OUTPUT_PATH}glfw3.dll"                COPYONLY)
-  # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostScript_shared.dll" "${EXECUTABLE_OUTPUT_PATH}BifrostScript_shared.dll" COPYONLY)
-  # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostMath_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostMath_shared.dll"   COPYONLY)
-  # configure_file("${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"   "${EXECUTABLE_OUTPUT_PATH}BifrostPlatform_shared.dll"   COPYONLY)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64 bits
-  # configure_file("${GAME200_PROJECT_LIB_DIR_WIN64}/fmodL64.dll" "${EXECUTABLE_OUTPUT_PATH}fmodL64.dll" COPYONLY)
-  # configure_file("${GAME200_PROJECT_LIB_DIR_WIN64}/fmod64.dll"  "${EXECUTABLE_OUTPUT_PATH}fmod64.dll"  COPYONLY)
-  # configure_file("${GAME200_PROJECT_LIB_DIR_WIN64}/glfw3.dll"   "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bits
-  # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/fmodL.dll" "${EXECUTABLE_OUTPUT_PATH}fmodL.dll" COPYONLY)
-  # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/fmod.dll"  "${EXECUTABLE_OUTPUT_PATH}fmod.dll"  COPYONLY)
-  # configure_file("${GAME200_PROJECT_LIB_DIR_WIN32}/glfw3.dll" "${EXECUTABLE_OUTPUT_PATH}glfw3.dll" COPYONLY)
 endif()
 
 if (false)
@@ -421,6 +399,8 @@ add_custom_command(TARGET BifrostEngineOLD POST_BUILD
         "${BIFROST_ENGINE_LIB_DIR}/BifrostPlatform_shared.dll"
         $<TARGET_FILE_DIR:BifrostEngine>)
 endif()
+
+
 
 add_library(
   BF_JsonCpp

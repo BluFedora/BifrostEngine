@@ -117,6 +117,16 @@ elseif (BF_OPT_GRAPHICS_OPENGL)
     "${BF_GRAPHICS_LIBRARIES}"
     BF_Memory_interface
   )
+
+  if (WIN32)
+    set(
+      BF_GRAPHICS_LIBRARIES
+      "${BF_GRAPHICS_LIBRARIES}"
+      "opengl32.lib"
+    )
+  elseif (APPLE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
+  endif()
 else()
   message(SEND_ERROR "Either 'BF_OPT_GRAPHICS_VULKAN' or 'BF_OPT_GRAPHICS_OPENGL' must be set as no other graphics backend is supported.")
 endif()
