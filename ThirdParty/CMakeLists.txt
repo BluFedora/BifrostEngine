@@ -1,4 +1,9 @@
-# Dear ImGUI
+## Glslang 
+
+# 
+add_subdirectory(glslang)
+
+## Dear ImGUI
 
 add_library(
   DearImGUI STATIC
@@ -20,11 +25,13 @@ target_include_directories(
     "${CMAKE_CURRENT_LIST_DIR}"
 )
 
-# SPIRV-Cross
+## SPIRV-Cross
 
+# Target name is 'spirv-cross-core'
+set(SPIRV_CROSS_STATIC YES)
 add_subdirectory("SPIRV-Cross")
 
-# SPIRV-Reflect
+## SPIRV-Reflect
 
 add_library(
   spirv-reflect STATIC

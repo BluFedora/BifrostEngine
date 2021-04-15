@@ -14,6 +14,8 @@ set(BF_ENGINE_VERSION_MAJOR 1)
 set(BF_ENGINE_VERSION_MINOR 3)
 set(BF_ENGINE_VERSION_PATCH 0)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
   # This will generate a header file with the version info.
   # The file will be made in the build directory hence why the build
   # dir needs to be added to the includes.
@@ -21,9 +23,6 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/docs/bf_version.h.in"
   "${PROJECT_BINARY_DIR}/bf/bf_version.h"
 )
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 # NOTE(Shareef): Print out some CMake Info.
 message(STATUS "Generated headers located at ${PROJECT_BINARY_DIR}")
 
@@ -87,51 +86,25 @@ endif()
 
   # NOTE(Shareef): Automatically generate a list of ALL source (C/++) files based of off what is in the folders.
 file(GLOB_RECURSE BIFROST_ENGINE_SOURCE_FILES
-
-  # Libs
   "Engine/Runtime/lib/include/nativefiledialog/nfd_common.c"
-
-  # Bifrost Asset Module
   "Engine/Runtime/src/asset_io/*.cpp"
-
-  # Bifrost Core Module
   "Engine/Runtime/src/core/bifrost_game_state_machine.cpp"
   "Engine/Runtime/src/core/bifrost_igame_state_layer.cpp"
-
-  # Bifrost Debug Module
   "Engine/Runtime/src/debug/bifrost_dbg_logger.c"
-
-  # Bifrost ECS Module
   "Engine/Runtime/src/ecs/bifrost_entity.cpp"
   "Engine/Runtime/src/ecs/bf_base_component.cpp"
   "Engine/Runtime/src/ecs/bifrost_iecs_system.cpp"
-
-  # Bifrost Editor Module
-  "include/bifrost/editor/*.hpp"
-  "Engine/Runtime/src/editor/bifrost_editor_build.cpp"
   "Engine/Runtime/src/bifrost_imgui_glfw.cpp"
-
-  # Bifrost Graphics Module
   "Engine/Runtime/src/graphics/bifrost_standard_renderer.cpp"
   "Engine/Runtime/src/graphics/bifrost_glsl_compiler.cpp"
   "Engine/Runtime/gfx/src/bf_draw_2d.cpp"
-
-  # Bifrost Math Module
   "Engine/Math/src/bifrost_rect2.cpp"
-
-  # Bifrost Meta Module
   "Engine/Runtime/src/meta/bifrost_meta_runtime.cpp"
-
-  # Bifrost Utility Module
   "Engine/Runtime/include/utility/bifrost_uuid.h"
-
   "Engine/Runtime/src/utility/bifrost_hash.cpp"
   "Engine/Runtime/src/utility/bifrost_json.cpp"
   "Engine/Runtime/src/utility/bifrost_json.c"
   "Engine/Runtime/src/utility/bifrost_uuid.c"
-
-  # Physics
-  "Engine/Runtime/src/bifrost/physics/bifrost_particle.cpp"
  )
 
 if (WIN32)
@@ -174,7 +147,9 @@ add_executable(
   "Engine/Runtime/src/bf_render_queue.cpp" 
   "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
   "Engine/Runtime/src/core/bf_class_id.cpp"
-   "main_tests.cpp")
+   "main_tests.cpp"
+  "Engine/Runtime/src/editor/bifrost_editor_build.cpp"
+)
 
 add_executable(
   StandaloneRuntime
@@ -205,7 +180,8 @@ add_executable(
   "Engine/Runtime/include/bf/gfx/bf_render_queue.hpp" 
   "Engine/Runtime/src/bf_render_queue.cpp" 
   "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
-  "Engine/Runtime/src/core/bf_class_id.cpp" "main_tests.cpp")
+  "Engine/Runtime/src/core/bf_class_id.cpp"
+)
 
 
 # if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
@@ -367,34 +343,16 @@ endif()
 
 add_library(BF_RuntimeGraphics INTERFACE)
 
+target_link_libraries(
+  BF_RuntimeGraphics
+  INTERFACE
+    MachineIndependent
+    OGLCompiler
+    glslang
+    SPIRV
+)
+
 if (WIN32)
-  if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    target_link_libraries(
-      BF_RuntimeGraphics
-      INTERFACE 
-        "${BIFROST_ENGINE_LIB_DIR}/glslangd.lib"
-        "${BIFROST_ENGINE_LIB_DIR}/HLSLd.lib"
-        "${BIFROST_ENGINE_LIB_DIR}/OGLCompilerd.lib"
-        "${BIFROST_ENGINE_LIB_DIR}/OSDependentd.lib"
-        "${BIFROST_ENGINE_LIB_DIR}/SPIRVd.lib"
-        # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib"
-        # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib"
-        # "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib"
-    )
-  else()
-    target_link_libraries(
-        BF_RuntimeGraphics
-        INTERFACE 
-          "${BIFROST_ENGINE_LIB_DIR}/glslang.lib"
-          "${BIFROST_ENGINE_LIB_DIR}/HLSL.lib"
-          "${BIFROST_ENGINE_LIB_DIR}/OGLCompiler.lib"
-          "${BIFROST_ENGINE_LIB_DIR}/OSDependent.lib"
-          "${BIFROST_ENGINE_LIB_DIR}/SPIRV.lib"
-          # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools.lib"
-          # "${BIFROST_ENGINE_LIB_DIR}/SPIRV-Tools-opt.lib"
-          # "${BIFROST_ENGINE_LIB_DIR}/SPVRemapperd.lib"
-    )
-  endif()
   # target_link_libraries(BifrostEngine PRIVATE "opengl32.lib")
 elseif (APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit")
