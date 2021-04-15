@@ -14,10 +14,10 @@
 #ifndef BF_COMPONENT_RENDERER_HPP
 #define BF_COMPONENT_RENDERER_HPP
 
-#include "bf/asset_io/bf_gfx_assets.hpp"
+#include "bf/asset_io/bf_gfx_assets.hpp"  /* */
 #include "bf/ecs/bifrost_iecs_system.hpp" /* IECSSystem                            */
-#include "bf/gfx/bf_render_queue.hpp"
-#include "bifrost_standard_renderer.hpp" /* TransientVertexBuffer, StandardVertex */
+#include "bf/gfx/bf_render_queue.hpp"     /* */
+#include "bifrost_standard_renderer.hpp"  /* TransientVertexBuffer, StandardVertex */
 
 #define k_UseIndexBufferForSprites 1
 
@@ -46,7 +46,7 @@ namespace bf
   static constexpr std::size_t k_MaxIndicesInSpriteBatch  = (k_MaxVerticesInSpriteBatch / k_NumVerticesPerSprite) * k_NumIndicesPerSprite;
 
   using SpriteIndexType                             = std::uint16_t;
-  static constexpr bfGfxIndexType k_SpriteIndexType = sizeof(SpriteIndexType) == 2 ? BF_INDEX_TYPE_UINT16 : BF_INDEX_TYPE_UINT32;
+  static constexpr bfGfxIndexType k_SpriteIndexType = bfIndexTypeFromT<SpriteIndexType>();
 
   static_assert(k_MaxVerticesInSpriteBatch % k_NumVerticesPerSprite == 0, "The number of vertices in a batch is most optimal as a multiple of 4.");
   static_assert(k_MaxVerticesInSpriteBatch < std::numeric_limits<SpriteIndexType>::max(), "The index type needs top be upgraded if we cannot refer to all vertices in a single GfxLinkedBuffer::Link.");
@@ -76,6 +76,8 @@ namespace bf
     // Immediate Mode Sprite Submission
 
     void pushSprite(const Renderable2DPrimitive& sprite) const;
+
+    //
 
     static void pushModel(
      RenderView&               camera,

@@ -251,7 +251,7 @@ namespace bf
           }
           case RenderCommandType::Group:
           {
-            const RC_Group* volatile const group_cmd = static_cast<RC_Group*>(current_cmd);
+            const RC_Group* const group_cmd = static_cast<RC_Group*>(current_cmd);
             (void)group_cmd; /* Pass Through */
             break;
           }

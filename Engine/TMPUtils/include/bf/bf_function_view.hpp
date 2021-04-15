@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_function_view.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Non-owning callable wrapper with the most basic of type erasure.
  *
@@ -11,7 +11,7 @@
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_FUNCTION_VIEW_HPP
@@ -178,17 +178,6 @@ namespace bf
       return static_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
     }
 
-    /*
-      // Removed since it made the API very dangerous being able to accept lambdas
-      // since this class is non owning.
-      
-    template<typename F>
-    static decltype(auto) lambda_function_wrapper(InstancePtr instance, Args... args)
-    {
-      return (*static_cast<F*>(instance))(std::forward<Args>(args)...);
-    }
-    //*/
-
     template<FunctionPtr callback>
     static decltype(auto) c_function_wrapper(InstancePtr instance, Args... args)
     {
@@ -216,7 +205,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

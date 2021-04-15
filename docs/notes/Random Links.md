@@ -43,6 +43,8 @@ https://martindevans.me/game-development/2015/02/27/Drawing-Stuff-On-Other-Stuff
 
 https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl01.html#id1
 
+https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc2019/presentations/Koray_Hagen_TheFutureOf.pdf
+
 Stuff I want to Do:
 
 - Bezier Curves

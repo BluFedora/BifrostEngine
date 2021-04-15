@@ -59,6 +59,13 @@ int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
     std::printf("InputVar[%i] = \"%s\"(%s)\n", int(i), input_variable->name, input_variable->semantic);
   }
 
+  for (uint32_t i = 0u; i < module.entry_point_count; ++i)
+  {
+    SpvReflectEntryPoint& entry_point = module.entry_points[i];
+
+    std::printf("EntryPoint(%i) = \"%s\"\n", int(i), entry_point.name);
+  }
+
   // Output variables, descriptor bindings, descriptor sets, and push constants
   // can be enumerated and extracted using a similar mechanism.
 
@@ -68,21 +75,77 @@ int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
   return 0;
 }
 
+#include "spirv_glsl.hpp"
+#include "spirv_hlsl.hpp"
+#include "spirv_msl.hpp"
+#include "spirv_cpp.hpp"
+
+#include <iostream>
+
 int main() 
 {
   std::printf("Shader Reflection Demo\n");
 
-  auto shader = loadFileIntoMemory("assets/shaders/standard/compiled/gbuffer.frag.spv");
+  auto shader = loadFileIntoMemory("assets/imgui.vert.spv");
 
   SpirvReflectExample(shader.first, shader.second);
+  
+  spirv_cross::CompilerGLSL glsl((const uint32_t*)shader.first, shader.second / sizeof(uint32_t));
+  spirv_cross::CompilerHLSL hlsl((const uint32_t*)shader.first, shader.second / sizeof(uint32_t));
+  spirv_cross::CompilerCPP  cpp((const uint32_t*)shader.first, shader.second / sizeof(uint32_t));
+  spirv_cross::CompilerMSL  msl((const uint32_t*)shader.first, shader.second / sizeof(uint32_t));
+
+  // The SPIR-V is now parsed, and we can perform reflection on it.
+  spirv_cross::ShaderResources resources = glsl.get_shader_resources();
+
+  // Get all sampled images in the shader.
+  for (auto& resource : resources.sampled_images)
+  {
+    unsigned set     = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+    unsigned binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
+    //printf("Image %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+
+    // Modify the decoration to prepare it for GLSL.
+    glsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+
+    // Some arbitrary remapping if we want.
+    glsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+  }
+
+  // Set some options.
+  spirv_cross::CompilerGLSL::Options options;
+  options.version = 310;
+  options.es      = true;
+  glsl.set_common_options(options);
+
+  
+  std::cout << "GLSL(ES):\n\n" << glsl.compile() << "\n";
+
+  options.version = 330;
+  options.es      = false;
+  glsl.set_common_options(options);
+
+  std::cout << "GLSL(GL):\n\n" << glsl.compile() << "\n";
+
+  options.version          = 450;
+  options.vulkan_semantics = true;
+  glsl.set_common_options(options);
+
+  std::cout << "GLSL(VK):\n\n" << glsl.compile() << "\n";
+  std::cout << "    HLSL:\n\n" << hlsl.compile() << "\n";
+  std::cout << "     CPP:\n\n" << cpp.compile() << "\n";
+  std::cout << "     MSL:\n\n" << msl.compile() << "\n";
+
+  std::free(shader.first);
 
   std::printf("\n");
 
   shader = loadFileIntoMemory("assets/shaders/standard/compiled/gbuffer.vert.spv");
+  
   SpirvReflectExample(shader.first, shader.second);
-
-
   std::free(shader.first);
+
+
 
   return 0;
 }

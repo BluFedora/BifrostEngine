@@ -1,6 +1,21 @@
 # Adding Submodule To Repo
 git submodule add <remote_url> <destination_folder>
 
+# Updating Submodules
+git submodule update
+git pull --recurse-submodules
+git submodule update --remote --recursive
+
+# Cloning a repo with Submodules
+git clone --recursive
+
+git submodule update --remote --merge
+
+# How To Remove Submodule
+git submodule deinit -f SUB_MODULE_NAME
+git rm --cached SUB_MODULE_PATH
+
+
 # Refreshing Gitignore Cache
 git rm -r --cached .
 git add .

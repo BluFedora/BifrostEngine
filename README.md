@@ -11,6 +11,19 @@ The main project is written in C++17 but the various Engine Submodules may be on
 Most of the Engine is separated into separate libraries that must be compiled and linked to be used.
 The base Module that you should start with [Platform](https://github.com/BluFedora/BF-Platform) for basic windowing and other low level platform specifics.
 
+## Project Layout
+
+- **assets**:        Assets needed by the engine's runtime.
+- **BifrostScript**:
+- **cloc**:
+- **docs**:
+- **Engine**:        The source code for the main engine.
+- **Examples**:      Small Demo Programs using the engine.
+- **SourceAssets**:  Contains the source asset files for some textures used by the engine / editor.
+- **TestBFProject**: Test project containing scenes that can be opened by the editor.
+- **ThirdParty**:    Contains the source code for thirdy party libraries used by the engine.
+- **VsProject**:     Contains some bat files showing how to create a visual studio project.
+
 ## Build System
 
 - CMake v3.12

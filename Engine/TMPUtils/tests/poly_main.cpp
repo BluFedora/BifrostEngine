@@ -102,7 +102,6 @@ template<typename R, typename... Args>
 class Function<R(Args...)>
 {
  private:
- private:
   Poly<IFunction<R, Args...>> m_Poly;
 
  public:

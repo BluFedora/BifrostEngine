@@ -29,7 +29,8 @@ struct StringID
 ## String Hashing
 
 Using CRC-32 (or FNV-1a) as the hash algorithm for a unique id for strings works out pretty well. 
-For handling collision just DONT and have the debug build check that there are no collisions or 
-you can actually handle it by doing a real string compare after the hash compare passes.
+For handling collisions you can either:
+  - Just dont't handle it and then have the debug build check that there are no collisions or
+  - You can actually handle it by doing a real string compare after the hash compare passes.
 
 [CRC-32 Info](https://www.gamedev.net/reference/articles/article1941.asp)

@@ -241,7 +241,7 @@ namespace bf
   void Engine::init(const EngineCreateParams& params, bfWindow* main_window)
   {
     bfLogAdd(&m_ConsoleLogger);
-    bfJob::initialize();
+    bf::job::initialize();
     ClassID::Init();
 
     bfLogPush("Engine(v%s) Init of App: '%s'", BF_VERSION_STR, params.app_name);
@@ -408,7 +408,7 @@ namespace bf
     // This happens after most systems because they could be holding 'bfValueHandle's that needs to be released.
     m_Scripting.destroy();
 
-    bfJob::shutdown();
+    bf::job::shutdown();
 
     // Shutdown last since there could be errors logged on shutdown if any failures happen.
     bfLogRemove(&m_ConsoleLogger);
@@ -435,7 +435,7 @@ namespace bf
 
   void Engine::update(float delta_time)
   {
-    bfJob::tick();
+    bf::job::tick();
 
     // NOTE(SR):
     //   The Debug Renderer must update before submission of debug draw commands to allow 

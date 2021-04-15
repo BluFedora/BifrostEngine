@@ -158,7 +158,7 @@ namespace bf
 
     uint32_t getWorkerCount() const override
     {
-      return std::uint32_t(bfJob::numWorkers());
+      return std::uint32_t(bf::job::numWorkers());
     }
   };
 

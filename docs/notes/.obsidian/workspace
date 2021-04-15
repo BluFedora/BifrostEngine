@@ -10,12 +10,12 @@
           {
             "id": "851f7988cffd470a",
             "type": "leaf",
-            "dimension": 70.89442815249268,
+            "dimension": 47.43401759530792,
             "active": true,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/AnimationRuntime.md",
+                "file": "API_Design_Musings.md",
                 "mode": "source"
               }
             },
@@ -24,11 +24,11 @@
           {
             "id": "81f2acfc1b605f7f",
             "type": "leaf",
-            "dimension": 29.105571847507335,
+            "dimension": 52.56598240469208,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OrganizedThoughts/AnimationRuntime.md",
+                "file": "API_Design_Musings.md",
                 "mode": "preview"
               }
             },
@@ -91,7 +91,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/AnimationRuntime.md",
+                "file": "API_Design_Musings.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -108,15 +108,15 @@
     "collapsed": true
   },
   "lastOpenFiles": [
-    "OrganizedThoughts/AnimationRuntime.md",
+    "API_Design_Musings.md",
     "OrganizedThoughts/Value Semantics.md",
-    "OrganizedThoughts/Mathematics.md",
-    "OrganizedThoughts/Untitled.md",
-    "OrganizedThoughts/ByteWriterAPISketch.md",
-    "Framebuffer.md",
-    "OrganizedThoughts/Interpolation.md",
-    "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/Unity.md",
-    "RenderGraph.md"
+    "OrganizedThoughts/Unique IDs.md",
+    "OrganizedThoughts/Tweening.md",
+    "OrganizedThoughts/Strings.md",
+    "OrganizedThoughts/Mathematics.md",
+    "OrganizedThoughts/IPC.md",
+    "OrganizedThoughts/GoodAPI.md",
+    "OrganizedThoughts/HumanInterfaceGuidelines.md"
   ]
 }

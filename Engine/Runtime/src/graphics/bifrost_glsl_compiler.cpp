@@ -377,7 +377,6 @@ namespace bf
     glslang::TProgram         program;
     std::vector<unsigned int> spir_v;
     spv::SpvBuildLogger       logger;
-    glslang::SpvOptions       spvOptions;
 
     shader.setStrings(&source_raw, 1);
     shader.setEnvInput(glslang::EShSourceGlsl, shader_type, glslang::EShClientVulkan, 100);
@@ -424,6 +423,10 @@ namespace bf
       throw "Shader Link Error";
     }
 
+    glslang::SpvOptions spvOptions;
+    spvOptions.disableOptimizer = false;
+    spvOptions.optimizeSize     = true;
+
     GlslangToSpv(*program.getIntermediate(shader_type), spir_v, &logger, &spvOptions);
 
     Array<std::uint32_t> result{m_CurrentlyCompiling.memory()};
@@ -444,7 +447,23 @@ namespace bf
 #if BF_PLATFORM_USE_VULKAN
     Array<std::uint32_t> spirv_code = toSPIRV(source, type);
 #else
-    const String&          spirv_code              = source;
+    const String& spirv_code = source;
+#endif
+
+#if 0
+    // TODO : This should not be harded like this.
+    // Write out the compiled file ;)
+    // const StringRange filename_path = file::directoryOfFile(filename);
+    const StringRange filename_name = file::fileNameOfPath(filename);
+
+    File file_out{"../assets/shaders/standard/compiled/" + filename_name + ".spv", file::FILE_MODE_WRITE | file::FILE_MODE_BINARY};
+
+    if (file_out)
+    {
+      file_out.writeBytes((const char*)spirv_code.data(), spirv_code.size() * sizeof(spirv_code[0]));
+
+      file_out.close();
+    }
 #endif
 
     if (!bfShaderModule_loadData(module, (const char*)spirv_code.data(), spirv_code.size() * sizeof(spirv_code[0])))
