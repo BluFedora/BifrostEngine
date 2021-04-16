@@ -95,6 +95,7 @@ namespace bfNet
     FN_IO_CTL_SOCKET,
     FN_IO_CTL = FN_IO_CTL_SOCKET,
     FN_SHUTDOWN,
+    FN_WSA_IOCTL,
   };
 
   namespace SendToFlags
@@ -168,7 +169,12 @@ namespace bfNet
     ReceiveResult  receiveDataFrom(char* data, int data_size, ReceiveFromFlags::type flags = ReceiveFromFlags::NONE) const;
     Error          shutdown(SocketShutdownAction action) const;
     void           close();
+
+    // Special function for making IPC over a localhost TCP connection faster.
+    Error win32EnableTCPLoopbackFastPath();
   };
+
+  // Main API
 
   bool              Startup(NetworkContext* optional_output_ctx = nullptr);
   Socket            createSocket(NetworkFamily family, SocketType type, int protocol = 0);
@@ -182,6 +188,8 @@ namespace bfNet
   bool              isErrorAlreadyConnected(int error_code);
   const char*       errorToString(Error err);
   bool              Shutdown();
+
+  // Request Helper Classes
 
   struct RequestURL final
   {

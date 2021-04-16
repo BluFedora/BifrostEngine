@@ -4,9 +4,9 @@
 Featured Wanted for Nice Editor UX:
 
   - Tooltips for the fields.
-  - Disable certain elements when
+  - Disable certain elements at will
   - Being able to separeate content into headers.
-  - Seprate content weith extra spaces / separators.
+  - Seperate content with extra spaces / separators.
 
 ```cpp
 struct DropdownInfo

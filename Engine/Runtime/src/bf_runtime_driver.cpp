@@ -324,7 +324,7 @@ if (!mCooking)
       m_MainScene->addActor(*trigger_floor_actor);
     }
 
-    void addActor()
+    void addActor(int type, const Vector3f& pos)
     {
       using namespace physx;
 
@@ -336,7 +336,7 @@ if (!mCooking)
 
       PxShape* shape;
 
-      if (rand() & 1)
+      if (type == 0)
       {
         shape = m_PhysX->createShape(
          // PxSphereGeometry(1.0f),
@@ -357,6 +357,8 @@ if (!mCooking)
       }
 
       actor->attachShape(*shape);
+
+      actor->setGlobalPose(physx::PxTransform(PxVec3{pos.x, pos.y, pos.z}));
 
       actor->setLinearVelocity({0.2f, 0.0f, 0.0f}, true);
 
@@ -636,13 +638,20 @@ struct RuntimeGameState final : public IGameStateLayer
       }
     }
 
-    static WindowState s_PhysicsWindowState = {true, {5, 5}, {200.0f, 100.0f}};
+    static WindowState s_PhysicsWindowState = {true, {5, 5}, {250.0f, 200.0f}};
 
-    if (UI::BeginWindow("Physics Test", s_PhysicsWindowState))
+    if (UI::BeginWindow("Physics Sandbox", s_PhysicsWindowState))
     {
-      if (UI::Button("Add Cube"))
+      const auto actor_placement = Vector3f{m_MainCamera->cpu_camera.position} + Vector3f{m_MainCamera->cpu_camera.forward} * 5.0f;
+
+      if (UI::Button("Add Box"))
       {
-        m_PhysicTest.addActor();
+        m_PhysicTest.addActor(0, actor_placement);
+      }
+
+      if (UI::Button("Add Circle"))
+      {
+        m_PhysicTest.addActor(1, actor_placement);
       }
 
       UI::EndWindow();
@@ -662,18 +671,14 @@ struct RuntimeGameState final : public IGameStateLayer
 
   void onRenderBackbuffer(Engine& engine, float alpha) override
   {
-    const float framebuffer_width  = float(bfTexture_width(engine.renderer().m_MainSurface));
-    const float framebuffer_height = float(bfTexture_height(engine.renderer().m_MainSurface));
+    const float        framebuffer_width  = float(bfTexture_width(engine.renderer().m_MainSurface));
+    const float        framebuffer_height = float(bfTexture_height(engine.renderer().m_MainSurface));
+    auto&              gfx                = engine.gfx2DScreen();
+    const Brush* const screen_brush       = gfx.makeBrush(m_MainCamera->gpu_camera.composite_buffer);
 
     engine.resizeCamera(m_MainCamera, int(framebuffer_width), int(framebuffer_height));
 
-    auto& gfx = engine.gfx2DScreen();
-
-    const Brush* const green_brush  = gfx.makeBrush(0xFF00FFFF);
-    const Brush* const screen_brush = gfx.makeBrush(m_MainCamera->gpu_camera.composite_buffer);
-
-    gfx.fillRect(screen_brush, AxisQuad::make(Rect2f{0.0f, 0.0f, framebuffer_width, framebuffer_height}));
-    gfx.fillRect(green_brush, AxisQuad::make(Rect2f{float(engine.input().mousePos().x), float(engine.input().mousePos().y), 5.0f, 5.0f}));
+    gfx.fillRect(screen_brush, AxisQuad::make({0.0f, 0.0f, framebuffer_width, framebuffer_height}));
   }
 
   void onDestroy(Engine& engine) override
@@ -682,7 +687,7 @@ struct RuntimeGameState final : public IGameStateLayer
     m_PhysicTest.shutdown();
   }
 
-  const char* name() override { return "RuntimeGameState"; }
+  const char* name() override { return "Physics Sandbox"; }
 
   const float k_InvalidMousePos = -1.0f;
   Vector2f    m_OldMousePos     = {k_InvalidMousePos, k_InvalidMousePos};
@@ -755,7 +760,7 @@ int main(int argc, char* argv[])
 
   if (bfPlatformInit({argc, argv, nullptr, nullptr}))
   {
-    bfWindow* const main_window = bfPlatformCreateWindow("Runtime Standalone Test", 1280, 720, k_bfWindowFlagsDefault & ~k_bfWindowFlagIsMaximizedOnShow);
+    bfWindow* const main_window = bfPlatformCreateWindow("Runtime Standalone Test", 1800, 1000, k_bfWindowFlagsDefault & ~k_bfWindowFlagIsMaximizedOnShow);
 
     if (main_window)
     {

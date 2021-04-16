@@ -269,7 +269,6 @@ namespace bf
     void PushColumn();
     void PushRow();
     void PushFixedSize(SizeUnit width, SizeUnit height);
-    void PushPadding(float value);
     void PopWidget();
 
     // System API

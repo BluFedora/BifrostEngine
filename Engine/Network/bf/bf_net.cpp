@@ -15,6 +15,8 @@
 
 #if defined(_WIN32)
 
+#include <Mstcpip.h>  // SIO_LOOPBACK_FAST_PATH
+
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
 // Link against 'ws2_32' from the command line.
 #elif defined(_MSC_VER)
@@ -145,6 +147,40 @@ namespace bfNet
 #endif
 
     handle = k_InvalidSocketHandle;
+  }
+
+  Error bfNet::Socket::win32EnableTCPLoopbackFastPath()
+  {
+#if defined(_WIN32)
+    // [https://docs.microsoft.com/en-us/archive/blogs/wincat/fast-tcp-loopback-performance-and-low-latency-with-windows-server-2012-tcp-loopback-fast-path]
+
+    int   option_value = 1;
+    DWORD num_bytes    = 0;
+
+    const int status =
+     WSAIoctl(
+      handle,
+      SIO_LOOPBACK_FAST_PATH,
+      &option_value,
+      sizeof(option_value),
+      NULL,
+      0,
+      &num_bytes,
+      0,
+      0);
+
+    if (SOCKET_ERROR == status)
+    {
+      const DWORD last_error = ::GetLastError();
+
+      if (last_error != WSAEOPNOTSUPP)
+      {
+        return Error{int(last_error), APIFunction::FN_WSA_IOCTL};
+      }
+    }
+#endif
+
+    return Error{0, APIFunction::FN_WSA_IOCTL};
   }
 
   bool Startup(NetworkContext* optional_output_ctx)
@@ -446,7 +482,6 @@ namespace bfNet
 #endif
   }
 }  // namespace bfNet
-
 
 /******************************************************************************/
 /*

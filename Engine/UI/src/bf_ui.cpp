@@ -641,11 +641,15 @@ namespace bf::UI
     PopWidget();
   }
 
+  static Rect2f WidgetRect(const Widget* self)
+  {
+    return {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+  }
+
   static void DefaultRender(Widget* self, CommandBuffer2D& gfx2D)
   {
-    Brush*             font_brush      = gfx2D.makeBrush(TEST_FONT);
-    const Brush* const window_bg_brush = gfx2D.makeBrush(0xFFE6E6E6);
-    const Rect2f       window_bg_rect  = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
+    Brush*       font_brush     = gfx2D.makeBrush(TEST_FONT);
+    const Rect2f window_bg_rect = WidgetRect(self);
 
     Brush* beige_brush = gfx2D.makeBrush(BIFROST_COLOR_BEIGE);
     Rect2f main_rect   = {self->position_from_parent.x, self->position_from_parent.y, self->realized_size.x, self->realized_size.y};
@@ -664,6 +668,7 @@ namespace bf::UI
       brown_brush->linear_gradient_data.uv_remap.x_axis   = {rot_right.x, rot_right.y};
       brown_brush->linear_gradient_data.uv_remap.y_axis   = {rot_up.x, rot_up.y};
 
+      /*
       if (IsFocusedWindow(self))
       {
         gfx2D.blurredRect(
@@ -672,9 +677,14 @@ namespace bf::UI
          4.0f,
          4.0f);
       }
+      //*/
 
       if (self->flags & Widget::DrawBackground)
       {
+        Brush* const window_bg_outline  = gfx2D.makeBrush(0xFF2E2529);
+        Brush* const window_bg          = gfx2D.makeBrush(0xFF54464C);
+        const float  window_border_size = 2.0f;
+
 #if 0
         gfx2D.fillRoundedRect(
          burlywood_brush,
@@ -685,22 +695,19 @@ namespace bf::UI
          brown_brush,
          AxisQuad::make(main_rect.expandedFromCenter(-1.0f)),
          5.0f);
-#else
-        gfx2D.fillRoundedRect(window_bg_brush, AxisQuad::make(main_rect), 3.0f);
-
-        // gfx2D.fillRect(
-        //  brown_brush,
-        //  AxisQuad::make(main_rect.expandedFromCenter(-1.0f)));
 #endif
+
+        gfx2D.fillRect(window_bg_outline, AxisQuad::make(main_rect));
+        gfx2D.fillRect(window_bg, AxisQuad::make(main_rect.expandedFromCenter(-window_border_size)));
       }
     }
 
     if (self->flags & Widget::DrawName)
     {
-      auto text_cmd = gfx2D.text(font_brush, self->position_from_parent + Vector2f{1.0f, 16.0f}, {self->name, self->name_len});
+      auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len});
 
       text_cmd->position.x = self->position_from_parent.x + (main_rect.width() - text_cmd->bounds_size.x) * 0.5f;
-      text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y;
+      text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y + 4.0f;
     }
 
     if (self->flags & Widget::NeedsScrollY)
@@ -718,10 +725,6 @@ namespace bf::UI
     {
       gfx2D.pushClipRect({vec::convert<int>(main_rect.min()), vec::convert<int>(main_rect.max())});
     }
-
-    //    Brush* red_brush = gfx2D.makeBrush(0xAA0000FF);
-
-    //gfx2D.fillRect(red_brush, AxisQuad::make({self->position_from_parent.x, self->position_from_parent.y, self->children_size.x, self->children_size.y}));
 
     self->ForEachChild([&gfx2D](Widget* const child) {
       WidgetDoRender(child, gfx2D);
@@ -753,6 +756,8 @@ namespace bf::UI
       widget->name_len    = name_buffer_len;
       widget->render      = &DefaultRender;
       widget->hash        = id;
+
+      widget->flags |= Widget::IsExpanded;
 
       g_UI.widgets.insert(id, widget);
     }
@@ -933,8 +938,8 @@ namespace bf::UI
     Widget* const window = CreateWidget(title, LayoutType::Fixed);
 
     window->flags |= Widget::BlocksInput | Widget::IsWindow | Widget::DrawBackground | Widget::Clickable;
-
-    window->desired_size = state.size;
+    window->desired_size                       = state.size;
+    WidgetParam(window, WidgetParams::Padding) = 2.0f;
 
     g_UI.root_widgets.push(window);
 
@@ -980,11 +985,29 @@ namespace bf::UI
       }
     }
 
-    Widget* const titlebar = CreateWidget("__WindowTitlebar__", LayoutType::Row);
+    Widget* const titlebar = CreateWidget("__WindowTitleBar__", LayoutType::Row);
 
     titlebar->desired_size.width  = {SizeUnitType::Flex, 1.0f};
-    titlebar->desired_size.height = {SizeUnitType::Absolute, 25.0f};
+    titlebar->desired_size.height = {SizeUnitType::Absolute, 30.0f};
     titlebar->flags |= Widget::Clickable | Widget::DrawBackground;
+
+    titlebar->render = [](Widget* const titlebar, CommandBuffer2D& gfx2D) {
+      const auto rect = WidgetRect(titlebar).expandedFromCenter(-2.0f);
+
+      gfx2D.fillRect(
+       gfx2D.makeBrush(0xFFE6E6E6),
+       AxisQuad::make(rect));
+
+      //Brush* const        font_brush = gfx2D.makeBrush(TEST_FONT);
+      //Render2DText* const text_cmd   = gfx2D.text(font_brush, titlebar->position_from_parent + Vector2f{1.0f, 16.0f}, {titlebar->name, titlebar->name_len});
+
+      //text_cmd->position.x = titlebar->position_from_parent.x + (rect.width() - text_cmd->bounds_size.x) * 0.5f;
+      //text_cmd->position.y = titlebar->position_from_parent.y + text_cmd->bounds_size.y;
+
+      titlebar->ForEachChild([&gfx2D](Widget* const child) {
+        WidgetDoRender(child, gfx2D);
+      });
+    };
 
     if (state.can_be_dragged)
     {
@@ -1015,9 +1038,17 @@ namespace bf::UI
        window->flags & Widget::IsExpanded ? "C" : "O",
        {titlebar->desired_size.height, titlebar->desired_size.height});
 
-      x_button->flags |= Widget::DrawBackground;
-
       AddWidget(x_button);
+
+      x_button->render = [](Widget* const x_button, CommandBuffer2D& gfx2D) {
+        const auto rect = WidgetRect(x_button).expandedFromCenter(-2.0f);
+
+        gfx2D.fillRect(
+         gfx2D.makeBrush(0xFF4C4CF2),
+         AxisQuad::make(rect));
+
+        DefaultRender(x_button, gfx2D);
+      };
 
       const auto x_button_behavior = WidgetBehavior(x_button);
 
@@ -1128,18 +1159,6 @@ namespace bf::UI
     PushWidget(widget);
   }
 
-  void PushPadding(float value)
-  {
-    Widget* const widget = CreateWidget("__PADDING__", LayoutType::Padding);
-
-    widget->desired_size.width  = {SizeUnitType::Flex, 1.0f};
-    widget->desired_size.height = {SizeUnitType::Flex, 1.0f};
-
-    WidgetParam(widget, WidgetParams::Padding) = value;
-
-    PushWidget(widget);
-  }
-
   void PopWidget()
   {
     PopID();
@@ -1193,10 +1212,12 @@ namespace bf::UI
     static WindowState s_WinStates[2] = {};
 
     s_WinStates[0].can_be_dragged = true;
-    //s_WinStates[0].position.x     = 5;
-    //s_WinStates[0].position.y     = 5;
-    s_WinStates[0].size.height = {SizeUnitType::Absolute, screen_height - 100.0f};
 
+    s_WinStates[1].position.x  = int(screen_width - s_WinStates[1].size.width.value - 5);
+    s_WinStates[1].position.y  = 5;
+    s_WinStates[1].size.height = {SizeUnitType::Absolute, screen_height - 10.0f};
+
+    /*
     if (BeginWindow("Buttons Galore", s_WinStates[0]))
     {
       char button_label_buffer[128];
@@ -1213,19 +1234,20 @@ namespace bf::UI
 
       EndWindow();
     }
-
+    //*/
+    
     //*
     if (BeginWindow("Test Window", s_WinStates[1]))
     {
       g_UI.current_widget->flags |= Widget::DrawBackground;
 
       PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
-      PushPadding(20.0f);
+
       if (Button("Hello"))
       {
         std::printf("\nHello was pressed.\n");
       }
-      PopWidget();
+
       PopWidget();
 
       PushColumn();
@@ -1237,12 +1259,10 @@ namespace bf::UI
       PushFixedSize({SizeUnitType::Flex, 1.0f}, {SizeUnitType::Flex, 1.0f});
       PopWidget();
 
-      PushPadding(5.0f);
       if (Button("Button 3"))
       {
         std::printf("\nButton3 was pressed.\n");
       }
-      PopWidget();
 
       PopWidget();
 
@@ -1254,7 +1274,7 @@ namespace bf::UI
 #endif
 
     assert(g_UI.current_widget == nullptr && "Missing a PopWidget to a corresponding PushWidget.");
-    
+
     std::stable_sort(
      g_UI.root_widgets.begin(),
      g_UI.root_widgets.end(),
@@ -1284,7 +1304,7 @@ namespace bf::UI
     }
     g_UI.next_hover_root = nullptr;
 
-    // Reset Some State
+    // Reset State
 
     g_UI.root_widgets_old.clear();
     std::swap(g_UI.root_widgets, g_UI.root_widgets_old);
