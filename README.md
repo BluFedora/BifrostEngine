@@ -17,12 +17,12 @@ The base Module that you should start with [Platform](https://github.com/BluFedo
 - **BifrostScript**:
 - **cloc**:
 - **docs**:
-- **Engine**:        The source code for the main engine.
-- **Examples**:      Small Demo Programs using the engine.
-- **SourceAssets**:  Contains the source asset files for some textures used by the engine / editor.
-- **TestBFProject**: Test project containing scenes that can be opened by the editor.
-- **ThirdParty**:    Contains the source code for thirdy party libraries used by the engine.
-- **VsProject**:     Contains some bat files showing how to create a visual studio project.
+- [**Engine**](Engine/README.md): The source code for the main engine.
+- **Examples**:                   Small Demo Programs using the engine.
+- **SourceAssets**:               Contains the source asset files for some textures used by the engine / editor.
+- **TestBFProject**:              Test project containing scenes that can be opened by the editor.
+- **ThirdParty**:                 Contains the source code for thirdy party libraries used by the engine.
+- **VsProject**:                  Contains some bat files showing how to create a visual studio project.
 
 ## Build System
 

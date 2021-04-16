@@ -12,7 +12,7 @@ This layer consists of libraries which only rely on code within it's own source 
 - Dispatch
 - Math
 - [Memory][Memory]
-- Network  (should use: [Memory][Memory])
+- Network
 - [Platform][Platform]
 - Script (optinally uses: TMPUtils)
 - TMPUtils
@@ -21,8 +21,8 @@ This layer consists of libraries which only rely on code within it's own source 
 
 - Anim2D          (Networking, Data Structures)
 - Data Structures (Core, [Memory][Memory])
-  - Some of the Data Structures are standalong an can be copied as is.
-- [Job][Job]      (internally [Memory][Memory])
+  - Some of the Data Structures are standalone an can be copied as is.
+- [Job][Job]      ([Memory][Memory])
 - Text            ([Memory][Memory])
 - Graphics        (Core, Data Structures, [Memory][Memory], [Platform][Platform], TMPUtils)
 

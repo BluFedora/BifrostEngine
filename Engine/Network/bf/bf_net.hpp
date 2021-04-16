@@ -343,7 +343,7 @@ namespace bfNet
       newLine();
     }
 
-    /*[[nodiscard]] */ const std::string& request() const
+    const std::string& request() const
     {
       return m_Request;
     }
