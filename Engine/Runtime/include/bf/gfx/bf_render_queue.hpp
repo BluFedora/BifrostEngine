@@ -294,26 +294,26 @@ namespace bf
   // *material here means texture bindings change through descriptor set.
   //
 
-  enum class RenderQueueType
-  {
-    NO_BLENDING,
-    ALPHA_BLENDING,
-    SCREEN_OVERLAY,
-  };
-
   struct RenderView;
 
   struct RenderQueue
   {
-    static constexpr std::size_t k_KeyBufferSize     = bfBytes((sizeof(RenderSortKey) + sizeof(std::uint64_t)) * 4096 * 2);
+    static constexpr std::size_t k_MaxDrawCalls      = 4096;
+    static constexpr std::size_t k_KeyBufferSize     = bfBytes((sizeof(RenderSortKey) * 2 + sizeof(std::uint64_t)) * k_MaxDrawCalls);
     static constexpr std::size_t k_CommandBufferSize = bfMegabytes(5);
 
-    RenderQueueType                           type;
+    enum
+    {
+      SORT_COMMANDS  = bfBit(0),  //!< Sorting can be disabled, useful for 2D graphics.
+      SORT_DEPTH_FTB = bfBit(1),  //!< Front to back works well for opaque objects.
+    };
+
     FixedLinearAllocator<k_KeyBufferSize>     key_stream_memory;
     FixedLinearAllocator<k_CommandBufferSize> command_stream_memory;
     std::size_t                               num_keys;
+    std::uint8_t                              feature_flags;
 
-    RenderQueue(RenderQueueType type);
+    RenderQueue(std::uint8_t features = 0x0);
 
     // Render Queue Owner API //
 

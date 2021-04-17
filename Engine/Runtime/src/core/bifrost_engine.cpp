@@ -86,7 +86,7 @@ namespace bf
     m_DebugRenderer{m_MainMemory},
     m_Gfx2D{nullptr},
     m_2DScreenCommands{nullptr},
-    m_2DScreenRenderQueue{RenderQueueType::SCREEN_OVERLAY},
+    m_2DScreenRenderQueue{},
     m_2DScreenUBO{},
     m_CameraMemory{},
     m_CameraList{nullptr},

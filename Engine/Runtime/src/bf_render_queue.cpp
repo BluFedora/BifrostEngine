@@ -17,6 +17,8 @@ namespace bf
 
   std::uint64_t material_to_bits(const DescSetBind& material_state)
   {
+    return 0x0;
+
     std::uint64_t result;
 
     if (material_state.mode == DescSetBind::IMMEDIATE)
@@ -74,11 +76,11 @@ namespace bf
     }
   }
 
-  RenderQueue::RenderQueue(RenderQueueType type) :
-    type{type},
+  RenderQueue::RenderQueue(std::uint8_t features) :
     key_stream_memory{},
     command_stream_memory{},
-    num_keys{0}
+    num_keys{0},
+    feature_flags{features}
   {
   }
 
@@ -113,7 +115,7 @@ namespace bf
     LinearAllocatorScope mem_scope     = alloc;
     RenderSortKey* const result        = alloc.allocateArrayTrivial<RenderSortKey>(num_keys);
     std::uint64_t* const count_indices = alloc.allocateArrayTrivial<std::uint64_t>(num_keys);
-    std::uint64_t count[k_Max]         = {};
+    std::uint64_t        count[k_Max]  = {};
 
     // Initialize counts to 0,
     // `result` and `count_indices` do not need initialization since all of there elements gets written to before reads.
@@ -175,12 +177,11 @@ namespace bf
       return;
     }
 
-    const bool            is_overlay   = type == RenderQueueType::SCREEN_OVERLAY;
     bfShaderProgramHandle last_program = nullptr;
     RenderSortKey* const  keys_bgn     = firstKey();
 
     // The overlay is assumed to be correctly submitted back to front
-    if (!is_overlay)
+    if (feature_flags & SORT_COMMANDS)
     {
       radix_sort(key_stream_memory, keys_bgn, num_keys);
 
@@ -270,56 +271,51 @@ namespace bf
     }
   }
 
-  std::uint64_t makeKey(RenderQueueType type, const DescSetBind& material_state, const bfDrawCallPipeline& pipeline, float depth)
+  std::uint64_t makeKey(bool do_front_to_back, const DescSetBind& material_state, const bfDrawCallPipeline& pipeline, float depth)
   {
     using namespace Bits;
 
-    switch (type)
+    if (do_front_to_back)
     {
-      case RenderQueueType::NO_BLENDING:
-      {
-        const std::uint64_t material_bits   = material_to_bits(material_state);
-        const std::uint64_t vertex_fmt_bits = hash::reducePointer<std::uint16_t>(pipeline.vertex_layout);
-        const std::uint64_t shader_bits     = hash::reducePointer<std::uint16_t>(pipeline.program);
-        const std::uint64_t depth_bits      = depth_to_bits(-depth, OpaqueDepthBits::k_NumBits);
+      const std::uint64_t material_bits   = material_to_bits(material_state) & max_value<std::uint64_t, OpaqueMaterialBits::k_NumBits>();
+      const std::uint64_t vertex_fmt_bits = hash::reducePointer<std::uint16_t>(pipeline.vertex_layout);
+      const std::uint64_t shader_bits     = hash::reducePointer<std::uint16_t>(pipeline.program);
+      const std::uint64_t depth_bits      = depth_to_bits(-depth, OpaqueDepthBits::k_NumBits);
 
-        return set(
+      return set(
+       set(
+        set(
          set(
-          set(
-           set(
-            std::uint64_t(0x0),
-            material_bits & max_value<std::uint64_t, OpaqueMaterialBits::k_NumBits>(),
-            OpaqueMaterialBits{}),
-           vertex_fmt_bits,
-           OpaqueVertexFmtBits{}),
-          shader_bits,
-          OpaqueShaderBits{}),
-         depth_bits,
-         OpaqueDepthBits{});
-      }
-      case RenderQueueType::ALPHA_BLENDING:
-      case RenderQueueType::SCREEN_OVERLAY:
-      {
-        const std::uint64_t material_bits   = material_to_bits(material_state);
-        const std::uint64_t vertex_fmt_bits = hash::reducePointer<std::uint16_t>(pipeline.vertex_layout);
-        const std::uint64_t shader_bits     = hash::reducePointer<std::uint16_t>(pipeline.program);
-        const std::uint64_t depth_bits      = depth_to_bits(depth, AlphaBlendDepthBits::k_NumBits);
+          std::uint64_t(0x0),
+          material_bits,
+          OpaqueMaterialBits{}),
+         vertex_fmt_bits,
+         OpaqueVertexFmtBits{}),
+        shader_bits,
+        OpaqueShaderBits{}),
+       depth_bits,
+       OpaqueDepthBits{});
+    }
+    else
+    {
+      const std::uint64_t material_bits   = material_to_bits(material_state) & max_value<std::uint64_t, AlphaBlendMaterialBits::k_NumBits>();
+      const std::uint64_t vertex_fmt_bits = hash::reducePointer<std::uint16_t>(pipeline.vertex_layout);
+      const std::uint64_t shader_bits     = hash::reducePointer<std::uint16_t>(pipeline.program);
+      const std::uint64_t depth_bits      = depth_to_bits(depth, AlphaBlendDepthBits::k_NumBits);
 
-        return set(
+      return set(
+       set(
+        set(
          set(
-          set(
-           set(
-            std::uint64_t(0x0),
-            material_bits & max_value<std::uint64_t, AlphaBlendMaterialBits::k_NumBits>(),
-            AlphaBlendMaterialBits{}),
-           vertex_fmt_bits,
-           AlphaBlendVertexFmtBits{}),
-          shader_bits,
-          AlphaBlendShaderBits{}),
-         depth_bits,
-         AlphaBlendDepthBits{});
-      }
-        bfInvalidDefaultCase();
+          std::uint64_t(0x0),
+          material_bits,
+          AlphaBlendMaterialBits{}),
+         vertex_fmt_bits,
+         AlphaBlendVertexFmtBits{}),
+        shader_bits,
+        AlphaBlendShaderBits{}),
+       depth_bits,
+       AlphaBlendDepthBits{});
     }
   }
 
@@ -378,12 +374,12 @@ namespace bf
 
   std::uint64_t RenderQueue::makeKeyFor(RC_DrawIndexed* command, float distance_to_camera) const
   {
-    return makeKey(type, command->material_binding, command->pipeline, distance_to_camera);
+    return makeKey(feature_flags & SORT_DEPTH_FTB, command->material_binding, command->pipeline, distance_to_camera);
   }
 
   std::uint64_t RenderQueue::makeKeyFor(RC_DrawArrays* command, float distance_to_camera) const
   {
-    return makeKey(type, command->material_binding, command->pipeline, distance_to_camera);
+    return makeKey(feature_flags & SORT_DEPTH_FTB, command->material_binding, command->pipeline, distance_to_camera);
   }
 
   void RenderQueue::submit(RC_DrawArrays* command, float distance_to_camera)

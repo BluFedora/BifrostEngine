@@ -1754,7 +1754,7 @@ namespace bf::editor
             entry.document->release();
 
             editor.engine().openScene(opened_scene);
-#if 1
+#if 0
             auto& assets = editor.engine().assets();
             const auto  material   = new MaterialAsset(); // TODO(SR): This is a leak.
             auto* const cube_model = assets.findAssetOfType<ModelAsset>(RelPath("Models/cube.obj"));

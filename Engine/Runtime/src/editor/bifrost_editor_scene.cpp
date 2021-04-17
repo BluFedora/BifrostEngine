@@ -113,6 +113,14 @@ namespace bf::editor
 
       m_IsSceneViewHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
 
+      if (m_IsSceneViewHovered)
+      {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+        {
+          ImGui::SetWindowFocus();
+        }
+      }
+
       m_SceneViewViewport.setLeft(int(position_min.x - viewport->Pos.x));
       m_SceneViewViewport.setTop(int(position_min.y - viewport->Pos.y));
       m_SceneViewViewport.setRight(int(position_max.x - viewport->Pos.x));
@@ -183,11 +191,9 @@ namespace bf::editor
       mid_screen.y = std::round(mid_screen.y);
 
       ImGui::SetCursorPos(mid_screen);
-
       editor.buttonAction({&editor}, "File.New.Project", s_StrNewProject);
 
       ImGui::SetCursorPosX(mid_screen.x);
-
       editor.buttonAction({&editor}, "File.Open.Project", s_StrOpenProject);
     }
 
