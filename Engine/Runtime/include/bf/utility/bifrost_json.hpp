@@ -14,10 +14,10 @@
 #ifndef BF_JSON_HPP
 #define BF_JSON_HPP
 
+#include "bf/data_structures/bf_variant.hpp"         /* Variant<Ts...>  */
 #include "bf/data_structures/bifrost_array.hpp"      /* Array<T>        */
 #include "bf/data_structures/bifrost_hash_table.hpp" /* HashTable<K, V> */
 #include "bf/data_structures/bifrost_string.hpp"     /* String          */
-#include "bf/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>  */
 
 #include <initializer_list> /* initializer_list */
 

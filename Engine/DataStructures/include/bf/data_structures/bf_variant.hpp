@@ -1,23 +1,50 @@
 /******************************************************************************/
+/*!
+* @file   bf_variant.hpp
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
+* @brief
+*   C++ safe tagged union type that will correctly call constructors and
+*   destructors of the held type and the API will check to make sure you
+*   don't access the incorrect type.
+*
+* @version 0.0.1
+* @date    2017-01-00
+*
+* @copyright Copyright (c) 2018-2021
+*/
 /******************************************************************************/
-#ifndef BIFROST_VARIANT_HPP
-#define BIFROST_VARIANT_HPP
+#ifndef BF_VARIANT_HPP
+#define BF_VARIANT_HPP
 
-#ifndef BIFROST_VARIANT_USE_STATIC_HELPERS
-#define BIFROST_VARIANT_USE_STATIC_HELPERS 1
+//
+// NOTE(SR):
+//   This should be profiled per application / compiler
+//   This turns on an implementation of `Variant` in which the
+//   polymorphic behavior is from static function pointer tables
+//   rather than templated recursion search for matching type id.
+//
+//   Depending on how well the compiler can optimize each approach
+//   and the number of types in the `Variant` the performance
+//   profile changes.
+//
+#ifndef BF_VARIANT_USE_TABLE_BASED_HELPERS
+#define BF_VARIANT_USE_TABLE_BASED_HELPERS 1
 #endif
 
-#ifndef BIFROST_VARIANT_USE_EXCEPTIONS
-#define BIFROST_VARIANT_USE_EXCEPTIONS (__cpp_exceptions == 199711)
+#ifndef BF_VARIANT_USE_EXCEPTIONS
+#define BF_VARIANT_USE_EXCEPTIONS (__cpp_exceptions == 199711)
 #endif
 
+#include "bifrost_container_tuple.hpp" /* get_index_of_element_from_tuple_by_type_impl */
 
-#include "bifrost_container_tuple.hpp"
+#include <type_traits> /* aligned_storage */
 
-#include <type_traits> /* aligned_storage                           */
-
-#if BIFROST_VARIANT_USE_EXCEPTIONS
-#include <typeinfo> /* bad_cast                                     */
+#if BF_VARIANT_USE_EXCEPTIONS
+#include <typeinfo> /* bad_cast */
+#define BF_VARIANT_CONDITIONAL_NO_EXCEPT
+#else
+#include <cassert>
+#define BF_VARIANT_CONDITIONAL_NO_EXCEPT noexcept
 #endif
 
 namespace bf
@@ -40,7 +67,7 @@ namespace bf
     };
   }  // namespace detail
 
-#if !BIFROST_VARIANT_USE_STATIC_HELPERS
+#if !BF_VARIANT_USE_TABLE_BASED_HELPERS
   template<std::size_t N, typename... Ts>
   struct variant_helper;
 
@@ -142,7 +169,7 @@ namespace bf
 
     using self_t = Variant<Ts...>;
     using data_t = typename std::aligned_storage<data_size, data_align>::type;
-#if BIFROST_VARIANT_USE_STATIC_HELPERS
+#if BF_VARIANT_USE_TABLE_BASED_HELPERS
     using deleter_t = void (*)(void*);
     using mover_t   = void (*)(void*, void*);
     using copier_t  = void (*)(const void*, void*);
@@ -228,7 +255,6 @@ namespace bf
       m_TypeID(rhs.m_TypeID)
     {
       move(&rhs.m_Data);
-      // rhs.m_TypeID = invalid_type();
     }
 
     template<typename T>
@@ -301,6 +327,7 @@ namespace bf
     operator T&() noexcept
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
+
       return this->get<T>();
     }
 
@@ -308,69 +335,53 @@ namespace bf
     operator const T&() const noexcept
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
+
       return this->get<T>();
     }
 
     template<typename T>
-    T& as()
-#if !BIFROST_VARIANT_USE_EXCEPTIONS
-     noexcept
-#endif
+    T& as() BF_VARIANT_CONDITIONAL_NO_EXCEPT
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
+
       return this->get<T>();
     }
 
     template<typename T>
-    [[nodiscard]] const T& as() const
-#if !BIFROST_VARIANT_USE_EXCEPTIONS
-     noexcept
-#endif
+    [[nodiscard]] const T& as() const BF_VARIANT_CONDITIONAL_NO_EXCEPT
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
+
       return this->get<T>();
     }
 
     template<typename T>
-    T& get()
-#if !BIFROST_VARIANT_USE_EXCEPTIONS
-     noexcept
-#endif
+    T& get() BF_VARIANT_CONDITIONAL_NO_EXCEPT
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
-
-#if BIFROST_VARIANT_USE_EXCEPTIONS
-      if (!this->is<T>())
-        throw std::bad_cast();
-#endif
+      checkType<T>();
 
       return *reinterpret_cast<T*>(&m_Data);
     }
 
     template<typename T>
-    const T& get() const
-#if !BIFROST_VARIANT_USE_EXCEPTIONS
-     noexcept
-#endif
+    const T& get() const BF_VARIANT_CONDITIONAL_NO_EXCEPT
     {
       static_assert(canContainT<T>(), "Type T is not able to be used in this variant");
 
-#if BIFROST_VARIANT_USE_EXCEPTIONS
-      if (!this->is<T>())
-        throw std::bad_cast();
-#endif
+      checkType<T>();
 
       return *reinterpret_cast<const T*>(&m_Data);
     }
 
     void destroy()
     {
-#if BIFROST_VARIANT_USE_STATIC_HELPERS
+#if BF_VARIANT_USE_TABLE_BASED_HELPERS
       static constexpr deleter_t s_DeleteTable[] = {delete_void, delete_t<Ts>...};
       s_DeleteTable[type()](&m_Data);
       m_TypeID = type_of<void>();
 #else
-      helper_t::destroy(type_id, &data);
+      helper_t::destroy(type(), &m_Data);
 #endif
     }
 
@@ -380,23 +391,36 @@ namespace bf
     }
 
    private:
+    template<typename T>
+    void checkType() const BF_VARIANT_CONDITIONAL_NO_EXCEPT
+    {
+      if (!this->is<T>())
+      {
+#if BF_VARIANT_USE_EXCEPTIONS
+        throw std::bad_cast();
+#else
+        assert(!"Bad cast");
+#endif
+      }
+    }
+
     void move(void* old_data)
     {
-#if BIFROST_VARIANT_USE_STATIC_HELPERS
+#if BF_VARIANT_USE_TABLE_BASED_HELPERS
       static constexpr mover_t s_MoveTable[] = {move_void, move_t<Ts>...};
       s_MoveTable[type()](old_data, &m_Data);
 #else
-      helper_t::move(type(), old_data, &data));
+      helper_t::move(type(), old_data, &m_Data);
 #endif
     }
 
     void copy(const void* old_data)
     {
-#if BIFROST_VARIANT_USE_STATIC_HELPERS
+#if BF_VARIANT_USE_TABLE_BASED_HELPERS
       static constexpr copier_t s_CopyTable[] = {copy_void, copy_t<Ts>...};
       s_CopyTable[type()](old_data, &m_Data);
 #else
-      helper_t::copy(type(), old_data, &data);
+      helper_t::copy(type(), old_data, &m_Data);
 #endif
     }
   };
@@ -469,6 +493,32 @@ namespace bf
 
     return detail::visit_helper<FVisitor, Variant<Ts...>, Ts...>(std::forward<FVisitor>(visitor), variant);
   }
-}  // namespace bifrost
+}  // namespace bf
 
-#endif /* BIFROST_VARIANT_HPP */
+#endif /* BF_VARIANT_HPP */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2018-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

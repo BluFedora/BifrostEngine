@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bf/PoolAllocator.hpp"
-#include "bf/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
+#include "bf/data_structures/bf_variant.hpp"  // Variant<Ts...>
 #include "bifrost_standard_renderer.hpp"
 
 namespace bf

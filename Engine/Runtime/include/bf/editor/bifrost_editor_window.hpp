@@ -1,6 +1,6 @@
 /*!
  * @file   bifrost_editor_window.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   This is the base interface for all windows the editor has.
  *   If you want to extend the editor this is the place to start with.
@@ -13,9 +13,9 @@
 #ifndef BIFROST_EDITOR_WINDOW_HPP
 #define BIFROST_EDITOR_WINDOW_HPP
 
-#include "bf/PlatformFwd.h"                        // bfEvent
-#include "bf/bf_non_copy_move.hpp"                 // bfNonCopyMoveable<T>
-#include "bf/data_structures/bifrost_variant.hpp"  // Variant<Ts...>
+#include "bf/PlatformFwd.h"                   // bfEvent
+#include "bf/bf_non_copy_move.hpp"            // bfNonCopyMoveable<T>
+#include "bf/data_structures/bf_variant.hpp"  // Variant<Ts...>
 
 #include <imgui/imgui.h> /* ImGuiID */
 

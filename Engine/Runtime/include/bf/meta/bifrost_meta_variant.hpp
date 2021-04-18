@@ -13,13 +13,13 @@
 #ifndef BIFROST_META_VARIANT_HPP
 #define BIFROST_META_VARIANT_HPP
 
-#include "bf/bf_meta_function_traits.hpp"            /* ParameterPack<Ts...>                        */
-#include "bf/bf_meta_utils.hpp"                      /* overloaded                                  */
-#include "bf/bifrost_math.hpp"                       /* bfColor4f, bfColor4u                        */
-#include "bf/data_structures/bifrost_string.hpp"     /* String                                      */
-#include "bf/data_structures/bifrost_variant.hpp"    /* Variant<Ts...>                              */
-#include "bf/ecs/bifrost_entity_ref.hpp"             /* EntityRef                                   */
-#include "bf/utility/bifrost_uuid.h"                 /* bfUUID                                      */
+#include "bf/bf_meta_function_traits.hpp"        /* ParameterPack<Ts...>                        */
+#include "bf/bf_meta_utils.hpp"                  /* overloaded                                  */
+#include "bf/bifrost_math.hpp"                   /* bfColor4f, bfColor4u                        */
+#include "bf/data_structures/bf_variant.hpp"     /* Variant<Ts...>                              */
+#include "bf/data_structures/bifrost_string.hpp" /* String                                      */
+#include "bf/ecs/bifrost_entity_ref.hpp"         /* EntityRef                                   */
+#include "bf/utility/bifrost_uuid.h"             /* bfUUID                                      */
 
 #include <cstddef> /* byte                                                                     */
 #include <cstdint> /* uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t */
@@ -28,7 +28,7 @@ namespace bf
 {
   class IBaseObject;
   class IARCHandle;
-}
+}  // namespace bf
 
 namespace bf::meta
 {
