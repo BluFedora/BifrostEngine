@@ -45,27 +45,37 @@ namespace bf
 
     struct DrawLine final
     {
-      Vector3f  a;
-      Vector3f  b;
-      bfColor4u color;
+      Vector3f a;
+      Vector3f b;
     };
 
     struct DrawAABB final
     {
-      Vector3f  center;
-      Vector3f  extents;
-      bfColor4u color;
+      Vector3f center;
+      Vector3f extents;
+    };
+
+    struct DrawSphere
+    {
+      Vector3f      center;
+      float         radius;
+      std::uint32_t num_latitude;
+      std::uint32_t num_longitude;
     };
 
     struct DrawCommand final  // NOLINT(hicpp-member-init)
     {
-      float                       duration;
-      Variant<DrawLine, DrawAABB> data;
+      using CommandData = Variant<DrawLine, DrawAABB, DrawSphere>;
+
+      float       duration;
+      bfColor4u   color;
+      CommandData data;
 
       template<typename T>
-      void init(float in_duration, T&& in_data)
+      void init(float in_duration, bfColor4u in_color, T&& in_data)
       {
         duration = in_duration;
+        color    = in_color;
         data.set<T>(std::forward<T>(in_data));
       }
     };
@@ -96,6 +106,7 @@ namespace bf
 
     void addLine(const Vector3f& a, const Vector3f& b, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
     void addAABB(const Vector3f& center, const Vector3f& size, const bfColor4u& color, float duration = 0.0f, bool is_overlay = false);
+    void addSphere(const Vector3f& center, float radius, const bfColor4u& color, std::uint32_t num_latitude, std::uint32_t num_longitude, float duration = 0.0f, bool is_overlay = false);
 
     void draw(RenderView& camera, const bfGfxFrameInfo& frame_info);
 

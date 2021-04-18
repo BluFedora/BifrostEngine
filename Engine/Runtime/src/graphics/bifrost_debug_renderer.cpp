@@ -51,12 +51,17 @@ namespace bf
 
   void DebugRenderer::addLine(const Vector3f& a, const Vector3f& b, const bfColor4u& color, float duration, bool is_overlay)
   {
-    grabCommandList(is_overlay).emplaceBack().init(duration, DrawLine{a, b, color});
+    grabCommandList(is_overlay).emplaceBack().init(duration, color, DrawLine{a, b});
   }
 
   void DebugRenderer::addAABB(const Vector3f& center, const Vector3f& size, const bfColor4u& color, float duration, bool is_overlay)
   {
-    grabCommandList(is_overlay).emplaceBack().init(duration, DrawAABB{center, size, color});
+    grabCommandList(is_overlay).emplaceBack().init(duration, color, DrawAABB{center, size});
+  }
+
+  void DebugRenderer::addSphere(const Vector3f& center, float radius, const bfColor4u& color, std::uint32_t num_latitude, std::uint32_t num_longitude, float duration, bool is_overlay)
+  {
+    grabCommandList(is_overlay).emplaceBack().init(duration, color, DrawSphere{center, radius, num_latitude, num_longitude});
   }
 
   void DebugRenderer::draw(RenderView& camera, const bfGfxFrameInfo& frame_info)
@@ -84,10 +89,10 @@ namespace bf
         {
           visit_all(
            meta::overloaded{
-            [this, &frame_info, &line_buffer](const DrawLine& data) {
-              addVertices(line_buffer, data.a, data.b, data.color, frame_info);
+            [this, &frame_info, &line_buffer, &command](const DrawLine& data) {
+              addVertices(line_buffer, data.a, data.b, command.color, frame_info);
             },
-            [this, &frame_info, &line_buffer](const DrawAABB& data) {
+            [this, &frame_info, &line_buffer, &command](const DrawAABB& data) {
               const Vector3f half_extents = data.extents * 0.5f;
               const Vector3f min_point    = data.center - half_extents;
               const Vector3f max_point    = data.center + half_extents;
@@ -107,22 +112,67 @@ namespace bf
               // TODO(Shareef): Use an index buffer.
 
               // Top 'Face'
-              addVertices(line_buffer, points[1], points[0], data.color, frame_info);
-              addVertices(line_buffer, points[1], points[6], data.color, frame_info);
-              addVertices(line_buffer, points[3], points[6], data.color, frame_info);
-              addVertices(line_buffer, points[3], points[0], data.color, frame_info);
+              addVertices(line_buffer, points[1], points[0], command.color, frame_info);
+              addVertices(line_buffer, points[1], points[6], command.color, frame_info);
+              addVertices(line_buffer, points[3], points[6], command.color, frame_info);
+              addVertices(line_buffer, points[3], points[0], command.color, frame_info);
 
               // Bottom 'Face'
-              addVertices(line_buffer, points[4], points[7], data.color, frame_info);
-              addVertices(line_buffer, points[4], points[5], data.color, frame_info);
-              addVertices(line_buffer, points[2], points[5], data.color, frame_info);
-              addVertices(line_buffer, points[2], points[7], data.color, frame_info);
+              addVertices(line_buffer, points[4], points[7], command.color, frame_info);
+              addVertices(line_buffer, points[4], points[5], command.color, frame_info);
+              addVertices(line_buffer, points[2], points[5], command.color, frame_info);
+              addVertices(line_buffer, points[2], points[7], command.color, frame_info);
 
               // Sides
-              addVertices(line_buffer, points[0], points[2], data.color, frame_info);
-              addVertices(line_buffer, points[1], points[7], data.color, frame_info);
-              addVertices(line_buffer, points[3], points[5], data.color, frame_info);
-              addVertices(line_buffer, points[6], points[4], data.color, frame_info);
+              addVertices(line_buffer, points[0], points[2], command.color, frame_info);
+              addVertices(line_buffer, points[1], points[7], command.color, frame_info);
+              addVertices(line_buffer, points[3], points[5], command.color, frame_info);
+              addVertices(line_buffer, points[6], points[4], command.color, frame_info);
+            },
+            [this, &frame_info, &line_buffer, &command](const DrawSphere& data) {
+              const float theta_scale = k_PI / float(data.num_latitude);
+              const float phi_scale   = k_TwoPI / float(data.num_longitude);
+
+              for (std::uint32_t theta = 0; theta < data.num_latitude; ++theta)
+              {
+                const float theta0 = float(theta + 0) * theta_scale;
+                const float theta1 = float(theta + 1) * theta_scale;
+
+                for (std::uint32_t phi = 0; phi < data.num_longitude; ++phi)
+                {
+                  const float phi0 = float(phi + 0) * phi_scale;
+                  const float phi1 = float(phi + 1) * phi_scale;
+
+                  //
+                  // v0 -- v1
+                  // |      |
+                  // v2 -- v3
+                  //
+
+                  const Vector3f v0 = data.center + math::sphericalToCartesian(data.radius, theta0, phi0);
+                  const Vector3f v1 = data.center + math::sphericalToCartesian(data.radius, theta0, phi1);
+                  const Vector3f v2 = data.center + math::sphericalToCartesian(data.radius, theta1, phi0);
+                  const Vector3f v3 = data.center + math::sphericalToCartesian(data.radius, theta1, phi1);
+
+                  if (theta == 0)
+                  {
+                    addVertices(line_buffer, v0, v3, command.color, frame_info);
+                    addVertices(line_buffer, v0, v2, command.color, frame_info);
+                  }
+                  else if ((theta + 1) == data.num_latitude)
+                  {
+                    addVertices(line_buffer, v3, v2, command.color, frame_info);
+                    addVertices(line_buffer, v3, v1, command.color, frame_info);
+                  }
+                  else
+                  {
+                    addVertices(line_buffer, v0, v1, command.color, frame_info);
+                    addVertices(line_buffer, v0, v2, command.color, frame_info);
+                    addVertices(line_buffer, v1, v3, command.color, frame_info);
+                    addVertices(line_buffer, v2, v3, command.color, frame_info);
+                  }
+                }
+              }
             },
            },
            command.data);

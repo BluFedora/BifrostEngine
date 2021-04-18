@@ -41,7 +41,7 @@ typedef struct bfJsonString
 
 } bfJsonString;
 
-/* Reader API (String -> Object) */
+/* Reader API (String -> Object Event Stream) */
 
 typedef enum bfJsonEvent
 {
@@ -65,9 +65,8 @@ typedef enum bfJsonValueType
 
 } bfJsonValueType;
 
-typedef void (*bfJsonFn)(struct bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
-
 typedef struct bfJsonParserContext bfJsonParserContext;
+typedef void (*bfJsonFn)(bfJsonParserContext* ctx, bfJsonEvent event, void* user_data);
 
 void            bfJsonParser_fromString(char* source, size_t source_length, bfJsonFn callback, void* user_data);
 bfJsonString    bfJsonParser_errorMessage(const bfJsonParserContext* ctx);

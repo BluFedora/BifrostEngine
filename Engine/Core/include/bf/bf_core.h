@@ -40,6 +40,8 @@
  */
 #define bfPureInterface(T) __declspec(novtable) T
 
+#define bfDebugBreak() __debugbreak()
+
 #else
 
 // TODO(SR):
@@ -49,6 +51,9 @@
     break
 
 #define bfPureInterface(T) T
+
+#define bfDebugBreak() assert(!"TODO(SR): Do real debug break for other compilers.")
+
 #endif
 
 #if __cplusplus

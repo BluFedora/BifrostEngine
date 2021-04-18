@@ -18,72 +18,11 @@
 
 using namespace bf;
 
-static Vector3f SphericalToCartesian(float radius, float theta, float phi)
-{
-  const float cos_theta = std::cos(theta);
-  const float sin_theta = std::sin(theta);
-  const float cos_phi   = std::cos(phi);
-  const float sin_phi   = std::sin(phi);
-
-  const float x = radius * cos_theta * sin_phi;
-  const float y = radius * sin_theta * sin_phi;
-  const float z = radius * cos_phi;
-
-  return Vector3f(x, y, z);
-}
-
 static std::int32_t RoundUpToNearest(float value, std::int32_t grid_size)
 {
   const float grid_size_f = float(grid_size);
 
   return std::int32_t((value + (grid_size_f - 1.0f)) / grid_size_f) * grid_size;
-}
-
-static void DrawSphere(DebugRenderer& dbg_draw, const Vector3f& center, float radius, bfColor4u color, std::uint32_t num_latitude, std::uint32_t num_longitude)
-{
-  const float theta_scale = k_PI / float(num_latitude);
-  const float phi_scale   = k_TwoPI / float(num_longitude);
-
-  for (std::uint32_t theta = 0; theta < num_latitude; ++theta)
-  {
-    const float theta0 = float(theta + 0) * theta_scale;
-    const float theta1 = float(theta + 1) * theta_scale;
-
-    for (std::uint32_t phi = 0; phi < num_longitude; ++phi)
-    {
-      const float phi0 = float(phi + 0) * phi_scale;
-      const float phi1 = float(phi + 1) * phi_scale;
-
-      //
-      // v0 -- v1
-      // |      |
-      // v2 -- v3
-      //
-
-      const Vector3f v0 = center + SphericalToCartesian(radius, theta0, phi0);
-      const Vector3f v1 = center + SphericalToCartesian(radius, theta0, phi1);
-      const Vector3f v2 = center + SphericalToCartesian(radius, theta1, phi0);
-      const Vector3f v3 = center + SphericalToCartesian(radius, theta1, phi1);
-
-      if (theta == 0)
-      {
-        dbg_draw.addLine(v0, v3, color);
-        dbg_draw.addLine(v0, v2, color);
-      }
-      else if ((theta + 1) == num_latitude)
-      {
-        dbg_draw.addLine(v3, v2, color);
-        dbg_draw.addLine(v3, v1, color);
-      }
-      else
-      {
-        dbg_draw.addLine(v0, v1, color);
-        dbg_draw.addLine(v0, v2, color);
-        dbg_draw.addLine(v1, v3, color);
-        dbg_draw.addLine(v2, v3, color);
-      }
-    }
-  }
 }
 
 /// PhysX Learning
@@ -435,7 +374,7 @@ if (!mCooking)
 
               const Vector3f center = {global_pose.p.x, global_pose.p.y, global_pose.p.z};
 
-              DrawSphere(dbg_draw, center, sphere.radius, line_clr, 20, 20);
+              dbg_draw.addSphere(center, sphere.radius, line_clr, 20, 20);
               break;
             }
             case physx::PxGeometryType::ePLANE:
@@ -756,6 +695,17 @@ enum class ReturnCode : int
 
 int main(int argc, char* argv[])
 {
+  // [https://www.deadalnix.me/2017/01/08/variable-size-integer-encoding/]
+  //  7 bits: 0XXXXXXX
+  // 14 bits: 10XXXXXX XXXXXXXX
+  // 21 bits: 110XXXXX XXXXXXXX XXXXXXXX
+  // 28 bits: 1110XXXX XXXXXXXX XXXXXXXX XXXXXXXX
+  // 35 bits: 11110XXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+  // 42 bits: 111110XX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+  // 49 bits: 1111110X XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+  // 56 bits: 11111110 XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+  // 64 bits: 11111111 XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+
   ReturnCode err_code = ReturnCode::SUCCESS;
 
   if (bfPlatformInit({argc, argv, nullptr, nullptr}))

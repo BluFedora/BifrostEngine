@@ -94,6 +94,20 @@ namespace bf::math
            2.0f * scalar_part * vec::cross(vec_part, vector);
   }
 
+  inline static Vector3f sphericalToCartesian(float radius, float theta, float phi)
+  {
+    const float cos_theta = std::cos(theta);
+    const float sin_theta = std::sin(theta);
+    const float cos_phi   = std::cos(phi);
+    const float sin_phi   = std::sin(phi);
+
+    const float x = radius * cos_theta * sin_phi;
+    const float y = radius * sin_theta * sin_phi;
+    const float z = radius * cos_phi;
+
+    return Vector3f(x, y, z);
+  }
+
   // Function Aliases from the C-API
 
   inline constexpr const auto& alignf   = &bfMathAlignf;

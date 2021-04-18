@@ -326,11 +326,13 @@ namespace bf
    private:
     IMemoryManager& m_Memory;
     ListView<Node>  m_InternalList;
+    std::size_t     m_Size;
 
    public:
     explicit List(IMemoryManager& memory) :
       m_Memory{memory},
-      m_InternalList{&Node::list}
+      m_InternalList{&Node::list},
+      m_Size{0u}
     {
     }
 
@@ -342,6 +344,7 @@ namespace bf
     const T&           back() const { return *m_InternalList.back().cast(); }
     [[nodiscard]] bool isEmpty() const { return m_InternalList.isEmpty(); }
     IMemoryManager&    memory() const { return m_Memory; }
+    std::size_t        size() const { return m_Size; }
 
     template<typename... Args>
     T& emplaceBack(Args&&... args)
@@ -367,6 +370,7 @@ namespace bf
       T* const    node_data = new (&node->data_storage) T(std::forward<Args>(args)...);
 
       m_InternalList.insert(pos.m_Current, *node);
+      ++m_Size;
 
       return *node_data;
     }
@@ -379,6 +383,7 @@ namespace bf
 
       node->cast()->~T();
       m_Memory.deallocateT(node);
+      --m_Size;
 
       return it;
     }
