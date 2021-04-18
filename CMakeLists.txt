@@ -153,7 +153,7 @@ add_executable(
 
 add_executable(
   StandaloneRuntime
-  "Engine/Runtime/src/bf_runtime_driver.cpp"
+  "Examples/PhysicsSandbox/bf_runtime_driver.cpp"
 
   ${BIFROST_ENGINE_SOURCE_FILES}
   

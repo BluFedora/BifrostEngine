@@ -277,8 +277,6 @@ namespace bf
     camera_uniform_buffer.flushCurrent(frame_info);
 
     {
-      const float k_ScaleFactorDPI = 1.0f;  // TODO(SR): Need to grab this value based on what window is being drawn onto.
-
       CameraOverlayUniformData* const cam_screen_data = camera_screen_uniform_buffer.currentElement(frame_info);
 
       static constexpr decltype(&Mat4x4_orthoVk) orthos_fns[] = {&Mat4x4_orthoVk, &Mat4x4_ortho};
@@ -289,8 +287,8 @@ namespace bf
       orthos_fns[bfPlatformGetGfxAPI() == BIFROST_PLATFORM_GFX_OPENGL](
        &cam_screen_data->u_CameraProjection,
        0.0f,
-       framebuffer_width / k_ScaleFactorDPI,
-       framebuffer_height / k_ScaleFactorDPI,
+       framebuffer_width,
+       framebuffer_height,
        0.0f,
        0.0f,
        1.0f);

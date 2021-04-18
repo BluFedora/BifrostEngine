@@ -620,8 +620,8 @@ namespace bf
       if (!bvh_node::isNull(freelist))
       {
         const BVHNodeOffset idx      = freelist;
-        const BVHNodeOffset idx_next = nodes[idx].next;
         BVHNode&            node     = nodes[idx];
+        const BVHNodeOffset idx_next = node.next;
 
         resetNode(node, user_data, bounds);
 
