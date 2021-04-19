@@ -4221,13 +4221,11 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
   if (resource)
   {
-    bfBaseGfxObject* const obj = static_cast<bfBaseGfxObject*>(resource);
-
-    switch (obj->type)
+    switch (resource->type)
     {
       case BF_GFX_OBJECT_BUFFER:
       {
-        bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(obj);
+        bfBufferHandle buffer = reinterpret_cast<bfBufferHandle>(resource);
 
         vkDestroyBuffer(self->handle, buffer->handle, CUSTOM_ALLOC);
         VkPoolAllocator_free(buffer->alloc_pool, &buffer->alloc_info);
@@ -4237,7 +4235,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_RENDERPASS:
       {
-        bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(obj);
+        bfRenderpassHandle renderpass = reinterpret_cast<bfRenderpassHandle>(resource);
 
         vkDestroyRenderPass(self->handle, renderpass->handle, CUSTOM_ALLOC);
 
@@ -4246,7 +4244,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_SHADER_MODULE:
       {
-        bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(obj);
+        bfShaderModuleHandle shader_module = reinterpret_cast<bfShaderModuleHandle>(resource);
 
         if (shader_module->handle != VK_NULL_HANDLE)
         {
@@ -4258,7 +4256,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_SHADER_PROGRAM:
       {
-        bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(obj);
+        bfShaderProgramHandle shader_program = reinterpret_cast<bfShaderProgramHandle>(resource);
 
         for (uint32_t i = 0; i < shader_program->num_desc_set_layouts; ++i)
         {
@@ -4280,7 +4278,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_DESCRIPTOR_SET:
       {
-        bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(obj);
+        bfDescriptorSetHandle desc_set = reinterpret_cast<bfDescriptorSetHandle>(resource);
 
         MaterialPool_free(self->descriptor_pool, desc_set);
 
@@ -4289,7 +4287,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_TEXTURE:
       {
-        bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(obj);
+        bfTextureHandle texture = reinterpret_cast<bfTextureHandle>(resource);
 
         bfTexture_setSampler(texture, nullptr);
 
@@ -4313,7 +4311,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_FRAMEBUFFER:
       {
-        bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(obj);
+        bfFramebufferHandle framebuffer = reinterpret_cast<bfFramebufferHandle>(resource);
 
         vkDestroyFramebuffer(self->handle, framebuffer->handle, CUSTOM_ALLOC);
 
@@ -4322,7 +4320,7 @@ void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
       }
       case BF_GFX_OBJECT_PIPELINE:
       {
-        bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(obj);
+        bfPipelineHandle pipeline = reinterpret_cast<bfPipelineHandle>(resource);
 
         vkDestroyPipeline(self->handle, pipeline->handle, CUSTOM_ALLOC);
 
