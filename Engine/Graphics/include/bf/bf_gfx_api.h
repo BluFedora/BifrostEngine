@@ -160,7 +160,9 @@ BF_GFX_API bfDeviceLimits        bfGfxDevice_limits(bfGfxDeviceHandle self);
  * @param resource
  *   The resource that you want to free.
 */
-BF_GFX_API void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
+BF_GFX_API void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource);
+
+#define bfGfxDevice_release(self, resource) bfGfxDevice_release_((self), bfHandleBase((resource)))
 
 /* Buffer */
 

@@ -37,7 +37,7 @@ BF_DECLARE_HANDLE(Texture);
 BF_DECLARE_HANDLE(Framebuffer);
 BF_DECLARE_HANDLE(Pipeline);
 BF_DECLARE_HANDLE(WindowSurface);
-typedef void* bfGfxBaseHandle;
+typedef struct bfBaseGfxObject* bfGfxBaseHandle;
 
 #undef BF_DECLARE_HANDLE
 

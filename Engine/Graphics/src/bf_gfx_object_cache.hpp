@@ -52,7 +52,7 @@ struct ComparebfDescriptorSetInfo
 
       for (uint32_t j = 0; j < binding_a->num_handles; ++j)
       {
-        if (binding_a->handles[j] != binding_b->handles[j])
+        if (binding_a->handles[j]->id != binding_b->handles[j]->id)
         {
           return false;
         }
@@ -90,7 +90,14 @@ struct ComparebfFramebufferState
       return false;
     }
 
-    return std::equal(a.attachments, a.attachments + a.num_attachments, b.attachments);
+    return std::equal(
+     a.attachments,
+     a.attachments + a.num_attachments,
+     b.attachments,
+     b.attachments + b.num_attachments,
+     [](bfTextureHandle a, bfTextureHandle b) {
+       return a->super.id == b->super.id;
+     });
   }
 };
 
@@ -166,7 +173,7 @@ namespace bf
 
     inline std::uint64_t hash(std::uint64_t self, const bfAttachmentInfo* attachment_info)
     {
-      self = hash::addPointer(self, attachment_info->texture);
+      self = hash::addU32(self, attachment_info->texture->super.id);
       self = hash::addU32(self, attachment_info->final_layout);
       self = hash::addU32(self, attachment_info->may_alias);
 

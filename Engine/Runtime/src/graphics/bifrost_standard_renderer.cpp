@@ -434,8 +434,8 @@ namespace bf
     m_WhiteTexture           = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorWhite4u, sizeof(k_ColorWhite4u));
     m_DefaultMaterialTexture = gfx::createTexture(m_GfxDevice, bfTextureCreateParams_init2D(BF_IMAGE_FORMAT_R8G8B8A8_UNORM, 1, 1), k_SamplerNearestClampToEdge, &k_ColorHalfWhite4u, sizeof(k_ColorHalfWhite4u));
 
-    m_AutoRelease.push(m_WhiteTexture);
-    m_AutoRelease.push(m_DefaultMaterialTexture);
+    m_AutoRelease.push(bfHandleBase(m_WhiteTexture));
+    m_AutoRelease.push(bfHandleBase(m_DefaultMaterialTexture));
   }
 
   bool StandardRenderer::frameBegin()
@@ -886,7 +886,7 @@ namespace bf
 
     for (auto resource : m_AutoRelease)
     {
-      bfGfxDevice_release(m_GfxDevice, resource);
+      bfGfxDevice_release_(m_GfxDevice, resource);
     }
     m_AutoRelease.clear();
 
@@ -1111,26 +1111,26 @@ namespace bf
     bfShaderProgram_compile(m_LightShaders[LightShaders::POINT]);
     bfShaderProgram_compile(m_LightShaders[LightShaders::SPOT]);
 
-    m_AutoRelease.push(gbuffer_skinned_vert_module);
-    m_AutoRelease.push(gbuffer_vert_module);
-    m_AutoRelease.push(gbuffer_frag_module);
-    m_AutoRelease.push(gbuffer_selection_frag_module);
-    m_AutoRelease.push(fullscreen_vert_module);
-    m_AutoRelease.push(ssao_frag_module);
-    m_AutoRelease.push(ssao_blur_frag_module);
-    m_AutoRelease.push(ambient_light_frag_module);
-    m_AutoRelease.push(dir_light_frag_module);
-    m_AutoRelease.push(point_light_frag_module);
-    m_AutoRelease.push(spot_light_frag_module);
-    m_AutoRelease.push(m_GBufferShader);
-    m_AutoRelease.push(m_GBufferSelectionShader);
-    m_AutoRelease.push(m_GBufferSkinnedShader);
-    m_AutoRelease.push(m_SSAOBufferShader);
-    m_AutoRelease.push(m_SSAOBlurShader);
-    m_AutoRelease.push(m_AmbientLighting);
-    m_AutoRelease.push(m_LightShaders[LightShaders::DIR]);
-    m_AutoRelease.push(m_LightShaders[LightShaders::POINT]);
-    m_AutoRelease.push(m_LightShaders[LightShaders::SPOT]);
+    m_AutoRelease.push(bfHandleBase(gbuffer_skinned_vert_module));
+    m_AutoRelease.push(bfHandleBase(gbuffer_vert_module));
+    m_AutoRelease.push(bfHandleBase(gbuffer_frag_module));
+    m_AutoRelease.push(bfHandleBase(gbuffer_selection_frag_module));
+    m_AutoRelease.push(bfHandleBase(fullscreen_vert_module));
+    m_AutoRelease.push(bfHandleBase(ssao_frag_module));
+    m_AutoRelease.push(bfHandleBase(ssao_blur_frag_module));
+    m_AutoRelease.push(bfHandleBase(ambient_light_frag_module));
+    m_AutoRelease.push(bfHandleBase(dir_light_frag_module));
+    m_AutoRelease.push(bfHandleBase(point_light_frag_module));
+    m_AutoRelease.push(bfHandleBase(spot_light_frag_module));
+    m_AutoRelease.push(bfHandleBase(m_GBufferShader));
+    m_AutoRelease.push(bfHandleBase(m_GBufferSelectionShader));
+    m_AutoRelease.push(bfHandleBase(m_GBufferSkinnedShader));
+    m_AutoRelease.push(bfHandleBase(m_SSAOBufferShader));
+    m_AutoRelease.push(bfHandleBase(m_SSAOBlurShader));
+    m_AutoRelease.push(bfHandleBase(m_AmbientLighting));
+    m_AutoRelease.push(bfHandleBase(m_LightShaders[LightShaders::DIR]));
+    m_AutoRelease.push(bfHandleBase(m_LightShaders[LightShaders::POINT]));
+    m_AutoRelease.push(bfHandleBase(m_LightShaders[LightShaders::SPOT]));
   }
 
   namespace gfx

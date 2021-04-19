@@ -77,7 +77,6 @@ static inline void bGfxObjectManager_init(bGfxObjectManager* self)
   self->next_id = 0u;
 }
 
-
 static inline void bGfxObjectManager_add(bGfxObjectManager* self, bfBaseGfxObject* obj, bfFrameCount_t current_frame, bfFrameCount_t max_frames_ahead)
 {
   const bfFrameCount_t idx = current_frame % max_frames_ahead;
@@ -89,6 +88,8 @@ static inline void bGfxObjectManager_add(bGfxObjectManager* self, bfBaseGfxObjec
 }
 
 void bfBaseGfxObject_ctor(bfBaseGfxObject* self, bfGfxObjectType type, bGfxObjectManager* manager);
+
+#define bfHandleBase(o) &(o)->super
 
 /* Buffer */
 
@@ -328,9 +329,9 @@ BF_DEFINE_GFX_HANDLE(ShaderProgram)
   bfDescriptorSetLayoutInfo desc_set_layout_infos[k_bfGfxDescriptorSets];
   bfShaderModuleList        modules;
 #elif BF_GFX_OPENGL
-  GLuint handle;
+  GLuint      handle;
+  uint32_t    num_sets;
   DescSetInfo set_info[k_bfGfxDescriptorSets];
-  uint32_t num_sets;
   // StdUnorderedMap<uint32_t, GLint> binding_to_uniform_loc;
 #endif
 };

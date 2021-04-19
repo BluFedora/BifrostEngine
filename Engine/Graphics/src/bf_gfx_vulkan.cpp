@@ -252,7 +252,7 @@ void bfGfxDestroy(void)
   while (curr)
   {
     bfBaseGfxObject* next = curr->next;
-    bfGfxDevice_release(g_Ctx->logical_device, curr);
+    bfGfxDevice_release_(g_Ctx->logical_device, curr);
     curr = next;
   }
 
@@ -456,7 +456,7 @@ void bfGfxEndFrame()
         bfInvalidDefaultCase();
     }
 
-    bfGfxDevice_release(g_Ctx->logical_device, release_list);
+    bfGfxDevice_release_(g_Ctx->logical_device, release_list);
     release_list = next;
   }
 
@@ -3969,7 +3969,7 @@ namespace bf::vk
 
     for (std::size_t i = 0; i < num_attachments; ++i)
     {
-      self = hash::addPointer(self, attachments[i]);
+      self = hash::addU32(self, attachments[i]->super.id);
     }
 
     return self;
@@ -3990,7 +3990,7 @@ namespace bf::vk
 
       for (uint32_t j = 0; j < binding->num_handles; ++j)
       {
-        self = hash::addPointer(self, binding->handles[i]);
+        self = hash::addU32(self, binding->handles[j]->id);
 
         if (binding->type == BF_DESCRIPTOR_ELEMENT_BUFFER)
         {
@@ -4217,7 +4217,7 @@ static void DeleteResource(T* obj)
   xxx_Free(obj);
 }
 
-void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
+void bfGfxDevice_release_(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 {
   if (resource)
   {
@@ -4231,23 +4231,6 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
 
         vkDestroyBuffer(self->handle, buffer->handle, CUSTOM_ALLOC);
         VkPoolAllocator_free(buffer->alloc_pool, &buffer->alloc_info);
-
-        self->cache_descriptor_set.forEach([buffer](bfDescriptorSetHandle desc_set, bfDescriptorSetInfo& config_data) {
-          (void)desc_set;
-
-          for (uint32_t i = 0; i < config_data.num_bindings; ++i)
-          {
-            bfDescriptorElementInfo* const binding_a = &config_data.bindings[i];
-
-            for (uint32_t j = 0; j < binding_a->num_handles; ++j)
-            {
-              if (binding_a->handles[j] == buffer)
-              {
-                binding_a->handles[j] = nullptr;
-              }
-            }
-          }
-        });
 
         DeleteResource(buffer);
         break;
@@ -4324,33 +4307,6 @@ void bfGfxDevice_release(bfGfxDeviceHandle self, bfGfxBaseHandle resource)
         {
           vkDestroyImage(self->handle, texture->tex_image, CUSTOM_ALLOC);
         }
-
-        self->cache_descriptor_set.forEach([texture](bfDescriptorSetHandle desc_set, bfDescriptorSetInfo& config_data) {
-          (void)desc_set;
-
-          for (uint32_t i = 0; i < config_data.num_bindings; ++i)
-          {
-            bfDescriptorElementInfo* const binding_a = &config_data.bindings[i];
-
-            for (uint32_t j = 0; j < binding_a->num_handles; ++j)
-            {
-              if (binding_a->handles[j] == texture)
-              {
-                binding_a->handles[j] = nullptr;
-              }
-            }
-          }
-        });
-
-        self->cache_framebuffer.forEach([texture](bfFramebufferHandle fb, bfFramebufferState& config_data) {
-          for (uint32_t i = 0; i < config_data.num_attachments; ++i)
-          {
-            if (config_data.attachments[i] == texture)
-            {
-              config_data.attachments[i] = nullptr;
-            }
-          }
-        });
 
         DeleteResource(texture);
         break;

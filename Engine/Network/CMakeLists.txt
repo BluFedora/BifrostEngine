@@ -1,6 +1,6 @@
 ﻿################################################################################
 #                                                                              #
-#                              BF MEMORY PROJECT                               #
+#                             BF NETWORK PROJECT                               #
 #                                                                              #
 ################################################################################
 ###  CMakeList.txt : Layer over the berkeley api on Win32 and Posix.         ###
@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.8)
 project(BF_Networking
   VERSION     0.0.1 
   DESCRIPTION "Cross platform layer over the berkeley api on Win32 and Posix." 
-  LANGUAGES   C CXX
+  LANGUAGES   CXX
 )
 
 add_library(

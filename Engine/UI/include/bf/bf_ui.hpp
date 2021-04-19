@@ -19,11 +19,11 @@
 
 namespace bf
 {
-  //
-  // Forward Declarations
-  //
+  // Forward Declarations //
 
   struct Widget;
+
+  // //
 
   template<typename T>
   struct Hierarchy
@@ -223,6 +223,7 @@ namespace bf
     std::size_t    name_len             = 0u;
     BufferRange    name_                = {};
     ParamList      params               = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    WidgetPadding  padding              = {};
     Size           desired_size         = {};
     Vector2f       position_from_parent = {5.0f, 5.0f};
     Vector2f       realized_size        = {0.0f, 0.0f};
@@ -241,7 +242,7 @@ namespace bf
   };
 
   constexpr int k_WidgetSize = sizeof(Widget);
-  static_assert(k_WidgetSize <= 216, "This is just for keeping track of the size TODO(SR): Delete me!");
+  static_assert(k_WidgetSize <= 248, "This is just for keeping track of the size TODO(SR): Delete me!");
 
   struct WindowState
   {

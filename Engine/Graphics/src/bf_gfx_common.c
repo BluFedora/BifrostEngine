@@ -232,7 +232,7 @@ void bfDescriptorSetInfo_addTexture(bfDescriptorSetInfo* self, uint32_t binding,
 
   for (uint32_t i = 0; i < num_textures; ++i)
   {
-    self->bindings[self->num_bindings].handles[i] = textures[i];
+    self->bindings[self->num_bindings].handles[i] = &textures[i]->super;
     self->bindings[self->num_bindings].offsets[i] = 0;
     self->bindings[self->num_bindings].sizes[i]   = 0;
   }
@@ -252,7 +252,7 @@ void bfDescriptorSetInfo_addUniform(bfDescriptorSetInfo* self, uint32_t binding,
 
   for (uint32_t i = 0; i < num_buffers; ++i)
   {
-    self->bindings[self->num_bindings].handles[i] = buffers[i];
+    self->bindings[self->num_bindings].handles[i] = &buffers[i]->super;
     self->bindings[self->num_bindings].offsets[i] = offsets[i];
     self->bindings[self->num_bindings].sizes[i]   = sizes[i];
   }
