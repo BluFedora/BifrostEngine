@@ -252,6 +252,10 @@ namespace bf
 
   namespace UI
   {
+    // Hacks
+
+    bf::PainterFont* xxx_Font();
+
     // State Manipulation
 
     UIElementID PushID(UIElementID local_id);

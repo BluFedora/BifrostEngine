@@ -540,8 +540,10 @@ using namespace bf;
 
 struct RuntimeGameState final : public IGameStateLayer
 {
-  bf::RenderView* m_MainCamera = nullptr;
-  Physics         m_PhysicTest = {};
+  bf::RenderView* m_MainCamera        = nullptr;
+  Physics         m_PhysicTest        = {};
+  float           m_DeltaTime         = 0.0f;
+  float           m_TimeSinceDTUpdate = 0.0f;
 
   void onCreate(Engine& engine) override
   {
@@ -551,6 +553,15 @@ struct RuntimeGameState final : public IGameStateLayer
 
   void onUpdate(Engine& engine, float delta_time) override
   {
+    if (m_TimeSinceDTUpdate <= 0.0f) {
+      m_DeltaTime = delta_time;
+      m_TimeSinceDTUpdate = 1.0f;
+    }
+    else
+    {
+      m_TimeSinceDTUpdate -= delta_time;
+    }
+
     m_PhysicTest.draw(engine.debugDraw());
 
     const auto camera_move_speed = 2.2f * delta_time;
@@ -618,6 +629,12 @@ struct RuntimeGameState final : public IGameStateLayer
     engine.resizeCamera(m_MainCamera, int(framebuffer_width), int(framebuffer_height));
 
     gfx.fillRect(screen_brush, AxisQuad::make({0.0f, 0.0f, framebuffer_width, framebuffer_height}));
+
+    char fps_string[64];
+
+    string_utils::fmtBuffer(fps_string, sizeof(fps_string), nullptr, "FPS: %i", int(1.0f / m_DeltaTime));
+
+    gfx.text(gfx.makeBrush(UI::xxx_Font(), {1.0f, 1.0f, 1.0f, 1.0f}), {10.0f, framebuffer_height - 10.0f}, fps_string);
   }
 
   void onDestroy(Engine& engine) override

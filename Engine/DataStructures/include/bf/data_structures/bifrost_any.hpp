@@ -21,7 +21,7 @@
 #include <cstring>   /* memcpy                                                                   */
 #include <utility>   /* exchange                                                                 */
 
-namespace bifrost
+namespace bf
 {
   class Any;
 
@@ -424,6 +424,6 @@ namespace bifrost
       return reinterpret_cast<void**>(&m_Object);
     }
   };
-}  // namespace bifrost
+}  // namespace bf
 
 #endif /* BF_ANY_HPP */

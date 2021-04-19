@@ -134,6 +134,7 @@ namespace bf::UI
   static UIContext g_UI = {};
 }
 
+// THIS IS A MEM LEAK AND A HACK
 bf::PainterFont* TEST_FONT = new bf::PainterFont(bf::UI::g_UI.widget_freelist, "assets/fonts/Montserrat/Montserrat-Medium.ttf", -20.0f);
 
 namespace bf::UI
@@ -900,6 +901,11 @@ namespace bf::UI
     return result;
   }
 
+  bf::PainterFont* xxx_Font()
+  {
+    return TEST_FONT;
+  }
+
   UIElementID PushID(UIElementID local_id)
   {
     const auto current_hash = CalcID(local_id);
@@ -1235,7 +1241,7 @@ namespace bf::UI
       EndWindow();
     }
     //*/
-    
+
     //*
     if (BeginWindow("Test Window", s_WinStates[1]))
     {
