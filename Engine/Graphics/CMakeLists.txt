@@ -64,12 +64,10 @@ if (BF_OPT_GRAPHICS_VULKAN)
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.cpp"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_mem_allocator.h"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_physical_device.h"
-    
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.c"
     "${PROJECT_SOURCE_DIR}/src/vulkan/bf_vulkan_staging.h"
 
     "${PROJECT_SOURCE_DIR}/src/bf_gfx_vulkan.cpp"
-    
  )
 
   find_package(Vulkan)
