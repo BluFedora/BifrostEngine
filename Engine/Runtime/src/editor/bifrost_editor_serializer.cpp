@@ -18,8 +18,8 @@
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/bifrost_math.h"
 #include "bf/core/bifrost_engine.hpp"
+#include "bf/ecs/bf_entity.hpp"
 #include "bf/ecs/bifrost_behavior.hpp"
-#include "bf/ecs/bifrost_entity.hpp"
 #include "bf/math/bifrost_vec2.h"
 #include "bf/math/bifrost_vec3.h"
 
@@ -435,7 +435,7 @@ namespace bf::editor
         assert(payload->DataSize == sizeof(bfUUIDNumber));
 
         // IBaseAsset* const dragged_asset = m_Assets->findAsset(data);
-        
+
         //
         // if (dragged_asset &&
         //     dragged_asset->type() == current_asset->type() &&

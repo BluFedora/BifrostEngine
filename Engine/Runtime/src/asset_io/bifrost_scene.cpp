@@ -18,8 +18,8 @@
 #include "bf/asset_io/bifrost_file.hpp"            /* File                 */
 #include "bf/asset_io/bifrost_json_serializer.hpp" /* JsonSerializerReader */
 #include "bf/core/bifrost_engine.hpp"              /* Engine               */
+#include "bf/ecs/bf_entity.hpp"                    /* Entity               */
 #include "bf/ecs/bifrost_collision_system.hpp"     /* DebugRenderer        */
-#include "bf/ecs/bifrost_entity.hpp"               /* Entity               */
 #include "bf/utility/bifrost_json.hpp"             /* json::Value          */
 
 namespace bf
@@ -191,7 +191,7 @@ namespace bf
     {
       auto&                temp_alloc = assets().engine().tempMemory();
       LinearAllocatorScope mem_scope  = {temp_alloc};
-      const BufferRange      buffer     = file_in.readEntireFile(temp_alloc);
+      const BufferRange    buffer     = file_in.readEntireFile(temp_alloc);
       json::Value          json_value = json::parse(buffer.buffer, buffer.length);
       JsonSerializerReader reader     = {assets(), temp_alloc, json_value};
 

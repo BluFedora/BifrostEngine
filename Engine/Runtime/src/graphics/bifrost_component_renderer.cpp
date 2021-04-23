@@ -14,7 +14,7 @@
 
 #include "bf/anim2D/bf_animation_system.hpp"
 #include "bf/core/bifrost_engine.hpp"
-#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bf_entity.hpp"
 #include "bf/ecs/bifrost_renderer_component.hpp"  // MeshRenderer
 
 int g_NumDrawnObjects;

@@ -15,7 +15,7 @@
 #include "bf/asset_io/bf_base_asset.hpp"
 #include "bf/asset_io/bf_document.hpp"     // BaseDocument
 #include "bf/asset_io/bifrost_assets.hpp"  // Assets
-#include "bf/ecs/bifrost_entity.hpp"       // Entity
+#include "bf/ecs/bf_entity.hpp"       // Entity
 
 namespace bf
 {

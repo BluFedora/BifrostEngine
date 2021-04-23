@@ -12,7 +12,7 @@
 * @copyright Copyright (c) 2019-2020
 */
 /******************************************************************************/
-#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bf_entity.hpp"
 
 #include "bf/Engine.hpp"
 #include "bf/asset_io/bf_iserializer.hpp"

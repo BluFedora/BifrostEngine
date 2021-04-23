@@ -15,7 +15,7 @@
 #include "bf/ecs/bf_base_component.hpp"
 
 #include "bf/asset_io/bifrost_scene.hpp" /* Scene  */
-#include "bf/ecs/bifrost_entity.hpp"     /* Entity */
+#include "bf/ecs/bf_entity.hpp"          /* Entity */
 
 namespace bf
 {

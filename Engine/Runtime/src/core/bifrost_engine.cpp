@@ -6,9 +6,9 @@
 #include "bf/asset_io/bf_gfx_assets.hpp"               // ***Asset
 #include "bf/bf_ui.hpp"                                // UI::
 #include "bf/bf_version.h"                             // BF_VERSION_STR
+#include "bf/ecs/bf_entity.hpp"                        // Entity
 #include "bf/ecs/bifrost_behavior.hpp"                 // BaseBehavior
 #include "bf/ecs/bifrost_behavior_system.hpp"          // BehaviorSystem
-#include "bf/ecs/bifrost_entity.hpp"                   // Entity
 #include "bf/graphics/bifrost_component_renderer.hpp"  // ComponentRenderer
 
 using namespace std::chrono_literals;
@@ -438,7 +438,7 @@ namespace bf
     bf::job::tick();
 
     // NOTE(SR):
-    //   The Debug Renderer must update before submission of debug draw commands to allow 
+    //   The Debug Renderer must update before submission of debug draw commands to allow
     //   a duration of 0.0f seconds for debug primitives that we will remove _next_ frame.
     m_DebugRenderer.update(delta_time);
 

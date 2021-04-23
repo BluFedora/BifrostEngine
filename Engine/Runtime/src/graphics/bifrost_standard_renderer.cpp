@@ -12,7 +12,7 @@
 // #include "bf/MemoryUtils.h"               // bfAlignUpSize
 #include "bf/Platform.h"                  // BifrostWindow
 #include "bf/asset_io/bf_gfx_assets.hpp"  // TextureAsset
-#include "bf/ecs/bifrost_entity.hpp"      // Entity
+#include "bf/ecs/bf_entity.hpp"           // Entity
 #include "bf/ecs/bifrost_light.hpp"       // LightType
 
 #include <chrono> /* system_clock              */

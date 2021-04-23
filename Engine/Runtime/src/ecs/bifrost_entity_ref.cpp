@@ -13,7 +13,7 @@
 /******************************************************************************/
 #include "bf/ecs/bifrost_entity_ref.hpp"
 
-#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bf_entity.hpp"
 #include "bf/utility/bifrost_uuid.hpp"
 
 namespace bf

@@ -6,7 +6,7 @@
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/bf_dbg_logger.h"
 #include "bf/ecs/bifrost_behavior.hpp"
-#include "bf/ecs/bifrost_entity.hpp"
+#include "bf/ecs/bf_entity.hpp"
 
 using namespace bf;
 
