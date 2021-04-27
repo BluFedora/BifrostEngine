@@ -553,8 +553,9 @@ struct RuntimeGameState final : public IGameStateLayer
 
   void onUpdate(Engine& engine, float delta_time) override
   {
-    if (m_TimeSinceDTUpdate <= 0.0f) {
-      m_DeltaTime = delta_time;
+    if (m_TimeSinceDTUpdate <= 0.0f)
+    {
+      m_DeltaTime         = delta_time;
       m_TimeSinceDTUpdate = 1.0f;
     }
     else
@@ -590,10 +591,10 @@ struct RuntimeGameState final : public IGameStateLayer
 
     static WindowState s_PhysicsWindowState = {true, {5, 5}, {250.0f, 200.0f}};
 
+    const auto actor_placement = Vector3f{m_MainCamera->cpu_camera.position} + Vector3f{m_MainCamera->cpu_camera.forward} * 5.0f;
+
     if (UI::BeginWindow("Physics Sandbox", s_PhysicsWindowState))
     {
-      const auto actor_placement = Vector3f{m_MainCamera->cpu_camera.position} + Vector3f{m_MainCamera->cpu_camera.forward} * 5.0f;
-
       if (UI::Button("Add Box"))
       {
         m_PhysicTest.addActor(0, actor_placement);
@@ -606,6 +607,8 @@ struct RuntimeGameState final : public IGameStateLayer
 
       UI::EndWindow();
     }
+
+    engine.debugDraw().addSphere(actor_placement, 0.1f, {255, 255, 255, 255}, 5, 8);
   }
 
   void onFixedUpdate(Engine& engine, float delta_time) override

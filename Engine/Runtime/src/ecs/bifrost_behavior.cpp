@@ -14,6 +14,8 @@
 #include "bf/asset_io/bifrost_scene.hpp"  // Scene
 #include "bf/ecs/bf_entity.hpp"           // Entity
 
+#include "bf/core/bifrost_engine.hpp"
+
 namespace bf
 {
   BaseBehavior::BaseBehavior(PrivateCtorTag) :
@@ -40,7 +42,7 @@ namespace bf
       if (is_active)
       {
         behavior_list.push(this);
-        onEnable();
+        onEnable(engine().behaviorEvt());
       }
       else
       {
@@ -48,15 +50,17 @@ namespace bf
 
         behavior_list.swapAndPopAt(idx);
 
-        onDisable();
+        onDisable(engine().behaviorEvt());
       }
     }
   }
 }  // namespace bf
 
-void game::ExampleBehavior::onEnable()
+void game::ExampleBehavior::onEnable(bf::BehaviorEvents& events)
 {
   setEventFlags(ON_UPDATE);
+
+  events.onUpdate(bf::BehaviorOnUpdate::make<ExampleBehavior, &ExampleBehavior::onUpdate2>(this));
 }
 
 void game::ExampleBehavior::onUpdate(float dt)
@@ -68,4 +72,9 @@ void game::ExampleBehavior::onUpdate(float dt)
   bfTransform_setScale(&transform, &scale);
 
   time += dt;
+}
+
+void game::ExampleBehavior::onUpdate2(bf::UpdateTime dt)
+{
+  onUpdate(dt.dt);
 }

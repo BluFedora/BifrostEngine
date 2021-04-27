@@ -14,12 +14,11 @@ namespace bf
       // TODO(SR): Add editor mode update.
       if (engine.state() != EngineState::EDITOR_PLAYING)
       {
-        for (BaseBehavior* const behavior : scene->behaviors())
+        const UpdateTime time{dt, engine.fixedDt()};
+
+        for (BehaviorOnUpdate& update : engine.behaviorEvt().m_OnUpdate)
         {
-          if (behavior->isEventFlagSet(IBehavior::ON_UPDATE))
-          {
-            behavior->onUpdate(dt);
-          }
+          update(time);
         }
       }
     }

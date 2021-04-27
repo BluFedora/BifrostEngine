@@ -96,6 +96,7 @@ namespace bf
     m_AnimationSystem{nullptr},
     m_ComponentRenderer{nullptr},
     m_BehaviorSystem{nullptr},
+    m_BehaviorEvents{m_MainMemory},
     m_TimeStep{},
     m_TimeStepLag{0ns},
     m_CurrentTime{},

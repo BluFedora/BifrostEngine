@@ -121,7 +121,7 @@ add_executable(
   BifrostEngineOLD
   ${BIFROST_ENGINE_SOURCE_FILES}
   
-  "main.cpp"
+  "Examples/SceneEditor/main.cpp"
   "Engine/Runtime/src/graphics/bifrost_debug_renderer.cpp"
   "Engine/Runtime/src/core/bifrost_engine.cpp"
   
@@ -147,7 +147,7 @@ add_executable(
   "Engine/Runtime/src/bf_render_queue.cpp" 
   "Engine/Runtime/include/bf/ecs/bf_entity_storage.hpp" 
   "Engine/Runtime/src/core/bf_class_id.cpp"
-   "main_tests.cpp"
+   "Examples/SceneEditor/main_tests.cpp"
   "Engine/Runtime/src/editor/bifrost_editor_build.cpp"
 )
 

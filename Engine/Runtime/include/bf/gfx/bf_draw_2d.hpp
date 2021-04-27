@@ -495,6 +495,7 @@ namespace bf
     // User Parameters
 
     Vector2f position;
+    float    scale;
   };
 
 #undef DECLARE_COMMAND
@@ -566,7 +567,7 @@ namespace bf
     Render2DBlurredRect*     blurredRect(const Brush* brush, Rect2f rect, float shadow_sigma, float border_radius);
     Render2DFillArc*         fillArc(const Brush* brush, Vector2f position, float radius, float start_angle = 0.0f, float arc_angle = k_Tau);
     Render2DPolyline*        polyline(const Brush* brush, const Vector2f* points, UIIndexType num_points, float thickness, PolylineJoinStyle join_style, PolylineEndStyle end_style, bool is_overlap_allowed = false);
-    Render2DText*            text(const Brush* brush, Vector2f position, StringRange utf8_text);
+    Render2DText*            text(const Brush* brush, Vector2f position, StringRange utf8_text, float scale = 1.0f);
 
     // State Management //
 

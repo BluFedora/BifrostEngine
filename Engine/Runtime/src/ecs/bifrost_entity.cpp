@@ -389,7 +389,7 @@ namespace bf
     {
       if (behavior->isActive())
       {
-        behavior->onEnable();
+        behavior->onEnable(engine().behaviorEvt());
       }
     }
 

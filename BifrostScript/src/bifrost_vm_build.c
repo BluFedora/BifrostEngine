@@ -1,6 +1,6 @@
 /*!
  * @file   bifrost_vm_build.c
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief   
  *   This is the 'unity build' file that gets compiled for this library.
  *   TODO(SR): I need to fix the ability to compile a non unity build.

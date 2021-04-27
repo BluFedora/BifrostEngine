@@ -1,13 +1,13 @@
 /******************************************************************************/
 /*!
 * @file   bifrost_iecs_system.hpp
-* @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+* @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
 * @brief
 *
 * @version 0.0.1
 * @date    2020-XX-XX
 *
-* @copyright Copyright (c) 2020
+* @copyright Copyright (c) 2020-2021
 */
 /******************************************************************************/
 #ifndef BF_IECS_SYSTEM_HPP
@@ -15,6 +15,12 @@
 
 namespace bf
 {
+  struct UpdateTime
+  {
+    float dt;
+    float fixed_dt;
+  };
+
   struct RenderView;
   class Engine;
 

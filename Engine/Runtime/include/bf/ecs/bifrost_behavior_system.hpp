@@ -1,25 +1,57 @@
+/******************************************************************************/
 /*!
  * @file   bifrost_behavior_system.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *
  * @version 0.0.1
  * @date    2020-06-14
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
-#ifndef BIFROST_BEHAVIOR_SYSTEM_HPP
-#define BIFROST_BEHAVIOR_SYSTEM_HPP
+/******************************************************************************/
+#ifndef BF_BEHAVIOR_SYSTEM_HPP
+#define BF_BEHAVIOR_SYSTEM_HPP
 
 #include "bifrost_iecs_system.hpp"
 
+#include "bf/DenseMap.hpp"          // DenseMap
+#include "bf/bf_function_view.hpp"  // FunctionView
+
 namespace bf
 {
+  using BehaviorOnUpdate   = FunctionView<void(UpdateTime)>;
+  using BehaviorOnUpdateID = DenseMapHandle<BehaviorOnUpdate, 8, 24>;
+
+  class BehaviorEvents
+  {
+    friend class BehaviorSystem;
+
+   private:
+    DenseMap<BehaviorOnUpdateID> m_OnUpdate;
+
+   public:
+    BehaviorEvents(IMemoryManager& memory) :
+      m_OnUpdate{memory}
+    {
+    }
+
+    BehaviorOnUpdateID onUpdate(BehaviorOnUpdate update_fn)
+    {
+      return m_OnUpdate.add(update_fn);
+    }
+
+    void remove(BehaviorOnUpdateID id)
+    {
+      m_OnUpdate.remove(id);
+    }
+  };
+
   class BehaviorSystem final : public IECSSystem
   {
-  public:
+   public:
     void onFrameUpdate(Engine& engine, float dt) override;
   };
-}  // namespace bifrost
+}  // namespace bf
 
-#endif /* BIFROST_BEHAVIOR_SYSTEM_HPP */
+#endif /* BF_BEHAVIOR_SYSTEM_HPP */

@@ -4,38 +4,30 @@
     "type": "split",
     "children": [
       {
-        "id": "eafbb978f1c05e85",
-        "type": "split",
-        "children": [
-          {
-            "id": "851f7988cffd470a",
-            "type": "leaf",
-            "dimension": 47.43401759530792,
-            "active": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "API_Design_Musings.md",
-                "mode": "source"
-              }
-            },
-            "group": "09bf35f1cb7936de"
-          },
-          {
-            "id": "81f2acfc1b605f7f",
-            "type": "leaf",
-            "dimension": 52.56598240469208,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "API_Design_Musings.md",
-                "mode": "preview"
-              }
-            },
-            "group": "09bf35f1cb7936de"
+        "id": "851f7988cffd470a",
+        "type": "leaf",
+        "dimension": 46.875,
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "OrganizedThoughts/Immediate Mode UI Sketch.md",
+            "mode": "source"
           }
-        ],
-        "direction": "horizontal"
+        },
+        "group": "09bf35f1cb7936de"
+      },
+      {
+        "id": "81f2acfc1b605f7f",
+        "type": "leaf",
+        "dimension": 53.125,
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "OrganizedThoughts/Immediate Mode UI Sketch.md",
+            "mode": "preview"
+          }
+        },
+        "group": "09bf35f1cb7936de"
       }
     ],
     "direction": "vertical"
@@ -91,10 +83,12 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "API_Design_Musings.md",
+                "file": "OrganizedThoughts/Immediate Mode UI Sketch.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
                 "backlinkCollapsed": true,
                 "unlinkedCollapsed": true
               }
@@ -107,16 +101,17 @@
     "width": 300,
     "collapsed": true
   },
+  "active": "851f7988cffd470a",
   "lastOpenFiles": [
+    "OrganizedThoughts/Immediate Mode UI Sketch.md",
+    "OrganizedThoughts/IPC.md",
+    "OrganizedThoughts/Interpolation.md",
+    "OrganizedThoughts/Cover.md",
+    "OrganizedThoughts/C_Cpp.md",
+    "OrganizedThoughts/ByteWriterAPISketch.md",
     "API_Design_Musings.md",
     "OrganizedThoughts/Value Semantics.md",
     "OrganizedThoughts/Unity.md",
-    "OrganizedThoughts/Unique IDs.md",
-    "OrganizedThoughts/Tweening.md",
-    "OrganizedThoughts/Strings.md",
-    "OrganizedThoughts/Mathematics.md",
-    "OrganizedThoughts/IPC.md",
-    "OrganizedThoughts/GoodAPI.md",
-    "OrganizedThoughts/HumanInterfaceGuidelines.md"
+    "OrganizedThoughts/Unique IDs.md"
   ]
 }

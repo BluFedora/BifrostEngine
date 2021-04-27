@@ -125,6 +125,10 @@ namespace bf
     const Widget* hot_widget      = nullptr;
     const Widget* active_widget   = nullptr;
     Vector2f      drag_offset     = {0.0f, 0.0f};  // MousePos - WidgetPos
+
+    //
+
+    float display_scale = 1.0f;
   };
 
 }  // namespace bf
@@ -197,7 +201,7 @@ namespace bf::UI
     // clang-format off
     switch (su.type)
     {
-      case SizeUnitType::Absolute: return su.value;
+      case SizeUnitType::Absolute: return su.value * g_UI.display_scale;
       case SizeUnitType::Relative: return parent_size * su.value;
       case SizeUnitType::Flex:     return flex_size;
       bfInvalidDefaultCase();
@@ -705,7 +709,7 @@ namespace bf::UI
 
     if (self->flags & Widget::DrawName)
     {
-      auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len});
+      auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len}, g_UI.display_scale);
 
       text_cmd->position.x = self->position_from_parent.x + (main_rect.width() - text_cmd->bounds_size.x) * 0.5f;
       text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y + 4.0f;
@@ -1127,7 +1131,7 @@ namespace bf::UI
       gfx2D.fillRect(button_brush, AxisQuad::make(rect));
       gfx2D.fillRect(button_inner_brush, AxisQuad::make(rect.expandedFromCenter(-2.0f)));
 
-      auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len});
+      auto text_cmd = gfx2D.text(font_brush, {}, {self->name, self->name_len}, g_UI.display_scale);
 
       text_cmd->position.x = self->position_from_parent.x + (rect.width() - text_cmd->bounds_size.x) * 0.5f;
       text_cmd->position.y = self->position_from_parent.y + text_cmd->bounds_size.y + (rect.height() - text_cmd->bounds_size.y) * 0.5f;
@@ -1203,6 +1207,7 @@ namespace bf::UI
   void BeginFrame()
   {
     g_UI.hovered_widgets = WidgetsUnderPoint(g_UI.mouse_pos);
+    g_UI.display_scale   = bfPlatformGetDPIScale();
   }
 
   void Update(float delta_time)
@@ -1219,9 +1224,9 @@ namespace bf::UI
 
     s_WinStates[0].can_be_dragged = true;
 
-    s_WinStates[1].position.x  = int(screen_width - s_WinStates[1].size.width.value - 5);
-    s_WinStates[1].position.y  = 5;
-    s_WinStates[1].size.height = {SizeUnitType::Absolute, screen_height - 10.0f};
+    s_WinStates[1].position.x  = int(screen_width - s_WinStates[1].size.width.value * g_UI.display_scale - 5 * g_UI.display_scale);
+    s_WinStates[1].position.y  = int(5 * g_UI.display_scale);
+    s_WinStates[1].size.height = {SizeUnitType::Absolute, screen_height - 10.0f * g_UI.display_scale};
 
     /*
     if (BeginWindow("Buttons Galore", s_WinStates[0]))

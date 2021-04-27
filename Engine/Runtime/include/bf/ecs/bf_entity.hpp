@@ -18,9 +18,9 @@
 #include "bf/ListView.hpp"                       // ListView
 #include "bf/core/bifrost_base_object.hpp"       // BaseObject
 #include "bf/math/bifrost_transform.h"           // bfTransform
+#include "bf_component_storage.hpp"              // ComponentStorage
 #include "bifrost_collision_system.hpp"          // BVHNodeOffset
 #include "bifrost_component_handle_storage.hpp"  // ComponentHandleStorage, ComponentActiveStorage
-#include "bifrost_component_storage.hpp"         // ComponentStorage
 
 #include <atomic>  // std::atomic_uint32_t
 

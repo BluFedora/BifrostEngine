@@ -495,19 +495,20 @@ namespace bf
     return result;
   }
 
-  Render2DText* CommandBuffer2D::text(const Brush* brush, Vector2f position, StringRange utf8_text)
+  Render2DText* CommandBuffer2D::text(const Brush* brush, Vector2f position, StringRange utf8_text, float scale)
   {
     assert(brush->type == Brush::Font && "Text must be drawn with a Font brush.");
 
     Render2DText* result = allocCommand<Render2DText>(brush);
 
     const BufferRange cloned_string = string_utils::clone(aux_memory, utf8_text);
-    UIIndexType     num_codepoints;
+    UIIndexType       num_codepoints;
 
     result->utf8_text      = cloned_string.toStringRange();
-    result->bounds_size    = calculateTextSize(utf8_text, brush->font_data.font, &num_codepoints);
+    result->bounds_size    = calculateTextSize(utf8_text, brush->font_data.font, &num_codepoints) * scale;
     result->num_codepoints = num_codepoints;
     result->position       = position;
+    result->scale          = scale;
 
     ++num_commands;
     return result;
@@ -989,7 +990,10 @@ namespace bf
 
         const auto     baseline_info = fontBaselineInfo(typed_command->brush->font_data.font->font);
         const Vector2f min_bounds    = {typed_command->position.x, typed_command->position.y - typed_command->bounds_size.y};
-        const Vector2f max_bounds    = {min_bounds.x + typed_command->bounds_size.x, typed_command->position.y - baseline_info.descent_px};
+        const Vector2f max_bounds    = {
+         min_bounds.x + typed_command->bounds_size.x * typed_command->scale,
+         typed_command->position.y - baseline_info.descent_px * typed_command->scale,
+        };
 
         return {min_bounds, max_bounds};
       }
@@ -1821,22 +1825,19 @@ namespace bf
 
         assert(typed_command->brush->type == Brush::Font);
 
-        // NOTE(SR):
-        //  `x` and `y` are rounded because to have good text
-        //  rendering we must be aligned to a pixel boundary.
-
         const Vector2f& pos            = typed_command->position;
         const char*     utf8_text      = typed_command->utf8_text.begin();
         const char*     utf8_text_end  = typed_command->utf8_text.end();
-        float           x              = std::round(pos.x);
-        float           y              = std::round(pos.y);
+        float           x              = pos.x;
+        float           y              = pos.y;
         PainterFont*    font           = typed_command->brush->font_data.font;
         const bfColor4u color          = bfColor4u_fromColor4f(typed_command->brush->font_data.tint);
         const float     newline_height = fontNewlineHeight(font->font);
 
         if (utf8_text != utf8_text_end)
         {
-          TextEncodingResult<TextEncoding::UTF8> res = utf8Codepoint(utf8_text);
+          TextEncodingResult<TextEncoding::UTF8> res   = utf8Codepoint(utf8_text);
+          const float                            scale = typed_command->scale;
 
           while (utf8_text < utf8_text_end)
           {
@@ -1857,16 +1858,22 @@ namespace bf
               continue;
             }
 
+            // NOTE(SR):
+            //  `x` and `y` are rounded because to have good text
+            //  rendering we must be aligned to a pixel boundary.
+
             const CodePoint   codepoint = res.codepoint;
             const GlyphInfo&  glyph     = fontGetGlyphInfo(font->font, codepoint);
             const VertexWrite v         = writer.getVerts(4);
-            const Vector2f    size_x    = {float(glyph.bmp_box[1].x), 0.0f};
-            const Vector2f    size_y    = {0.0f, float(glyph.bmp_box[1].y)};
+            const Vector2f    size_x    = {float(glyph.bmp_box[1].x) * scale, 0.0f};
+            const Vector2f    size_y    = {0.0f, float(glyph.bmp_box[1].y) * scale};
             const Vector2f    size_xy   = {size_x.x, size_y.y};
-            const Vector2f    p0        = Vector2f{x, y} + Vector2f{glyph.offset[0], glyph.offset[1]};
-            const Vector2f    p1        = p0 + size_x;
-            const Vector2f    p2        = p0 + size_xy;
-            const Vector2f    p3        = p0 + size_y;
+            Vector2f          p0        = Vector2f{x, y} + Vector2f{glyph.offset[0], glyph.offset[1]} * scale;
+            p0.x                        = std::round(p0.x);
+            p0.y                        = std::round(p0.y);
+            const Vector2f p1           = p0 + size_x;
+            const Vector2f p2           = p0 + size_xy;
+            const Vector2f p3           = p0 + size_y;
 
             v.v[0] = {p0, {glyph.uvs[0], glyph.uvs[1]}, color};
             v.v[1] = {p1, {glyph.uvs[2], glyph.uvs[1]}, color};
@@ -1877,12 +1884,12 @@ namespace bf
             writer.pushTriIndex(v.id + 0, v.id + 2, v.id + 1);
 
             utf8_text = res.endpos;
-            x += glyph.advance_x;
+            x += glyph.advance_x * scale;
 
             if (utf8_text < utf8_text_end)  // Not at the end
             {
               res = utf8Codepoint(utf8_text);
-              x += fontAdditionalAdvance(font->font, codepoint, res.codepoint);
+              x += fontAdditionalAdvance(font->font, codepoint, res.codepoint) * scale;
             }
           }
         }

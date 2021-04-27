@@ -42,7 +42,7 @@ namespace bf
     friend class StandardRenderer;
 
    private:
-    struct LightGPUDataCache final
+    struct LightGPUDataCache
     {
       float inv_light_radius_pow2;  //!< (1.0 / radius)^2
       float spot_scale;             //!< 1.0 / max(cos(inner_angle) - cos(outer_angle), k_Epsilon)

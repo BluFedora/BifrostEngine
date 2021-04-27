@@ -18,8 +18,8 @@
 #include "bf/bifrost_math.h"                             /* Vec3f, Mat4x4     */
 #include "bf/core/bifrost_base_object.hpp"               /* BaseObject<T>     */
 #include "bf/data_structures/bifrost_intrusive_list.hpp" /* ListView<T>       */
+#include "bf/ecs/bf_component_storage.hpp"               /* ComponentStorage  */
 #include "bf/ecs/bifrost_collision_system.hpp"           /* BVH               */
-#include "bf/ecs/bifrost_component_storage.hpp"          /* ComponentStorage  */
 
 namespace bf
 {

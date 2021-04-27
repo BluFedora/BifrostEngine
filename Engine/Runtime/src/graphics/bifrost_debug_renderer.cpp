@@ -297,7 +297,7 @@ namespace bf
 
   void DebugRenderer::addVertices(Array<BufferLink*>& buffer, const Vector3f& a, const Vector3f& b, const bfColor4u& color, const bfGfxFrameInfo& frame_info)
   {
-    static constexpr float k_Thickness = 0.08f;  // ToDO(SR): This width should be customizable.
+    static constexpr float k_Thickness = 0.05f;  // ToDO(SR): This width should be customizable.
 
     const VertexDebugLine vertices[] =
      {

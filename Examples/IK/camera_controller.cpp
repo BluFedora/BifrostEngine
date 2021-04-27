@@ -16,15 +16,16 @@ class CameraController final : public Behavior<CameraController>
   EntityRef m_Player = nullptr;
 
  public:
-  void onEnable() override;
+  void onEnable(bf::BehaviorEvents& events) override;
   void onUpdate(float dt) override;
-  void onDisable() override;
+  void onUpdate2(UpdateTime dt);
+  void onDisable(bf::BehaviorEvents& events) override;
   void reflect(ISerializer& serializer) override;
 };
 
 bfRegisterBehavior(CameraController);
 
-void CameraController::onEnable()
+void CameraController::onEnable(bf::BehaviorEvents& events)
 {
   // If the player was not assigned through the editor.
   if (!m_Player)
@@ -40,6 +41,8 @@ void CameraController::onEnable()
   {
     bfLogWarn("Failed to find the player.");
   }
+
+  events.onUpdate(BehaviorOnUpdate::make<CameraController, &CameraController::onUpdate2>(this));
 }
 
 void CameraController::onUpdate(float dt)
@@ -52,7 +55,12 @@ void CameraController::onUpdate(float dt)
   bfCamera_setPosition(&camera, &player_pos);
 }
 
-void CameraController::onDisable()
+void CameraController::onUpdate2(UpdateTime dt)
+{
+  onUpdate(dt.dt);
+}
+
+void CameraController::onDisable(bf::BehaviorEvents& events)
 {
 }
 
@@ -110,7 +118,7 @@ class IkDemo final : public Behavior<IkDemo>
   float          m_DistToTarget;
 
  public:
-  void onEnable() override
+  void onEnable(bf::BehaviorEvents& events) override
   {
     for (int i = 0; i < 3; ++i)
     {
@@ -216,7 +224,7 @@ class IkDemo final : public Behavior<IkDemo>
     }
   }
 
-  void onDisable() override
+  void onDisable(bf::BehaviorEvents& events) override
   {
     m_Joints.clear();
   }

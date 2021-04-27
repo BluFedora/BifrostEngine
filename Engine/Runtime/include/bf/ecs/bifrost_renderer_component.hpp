@@ -17,6 +17,7 @@
 #include "bf/asset_io/bf_gfx_assets.hpp"
 #include "bf/asset_io/bf_spritesheet_asset.hpp"  // bfSpritesheet, bfAnim2DSpriteHandle
 #include "bf/ecs/bf_base_component.hpp"          /* BaseComponent       */
+#include "bf/ecs/bifrost_collision_system.hpp"   // BVHNodeOffset
 
 namespace bf
 {

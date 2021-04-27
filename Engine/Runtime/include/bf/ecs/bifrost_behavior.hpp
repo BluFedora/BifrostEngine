@@ -8,7 +8,7 @@
  * @version 0.0.1
  * @date    2020-06-13
  *
- * @copyright Copyright (c) 2020
+ * @copyright Copyright (c) 2020-2021
  */
 /******************************************************************************/
 #ifndef BF_BEHAVIOR_HPP
@@ -18,9 +18,12 @@
 #include "bf/core/bifrost_base_object.hpp"  // BaseObject<T>
 #include "bf/ecs/bf_base_component.hpp"     // BaseComponent, Entity
 
+#include "bf/ecs/bifrost_iecs_system.hpp"
+
 namespace bf
 {
   class ISerializer;
+  class BehaviorEvents;
 
   using BehaviorEventFlags = std::uint16_t;  // Upgrade to a bigger type once we exceed 16 event flags.
 
@@ -61,9 +64,9 @@ namespace bf
     friend class BehaviorSystem;
 
    public:
-    virtual void onEnable()         {}
+    virtual void onEnable(BehaviorEvents& events)         {}
     virtual void onUpdate(float dt) { (void)dt; }
-    virtual void onDisable()        {}
+    virtual void onDisable(BehaviorEvents& events)        {}
 
     ~IBehavior() override = default;
   };
@@ -155,8 +158,9 @@ namespace game
    public:
     // Required to be default constructable for serialization purposes.
     ExampleBehavior() = default;
-    void onEnable() override;
+    void onEnable(bf::BehaviorEvents& events) override;
     void onUpdate(float dt) override;
+    void onUpdate2(bf::UpdateTime dt);
   };
 }  // namespace game
 

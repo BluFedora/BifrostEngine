@@ -4,6 +4,7 @@
 #include "bf/asset_io/bifrost_assets.hpp"
 #include "bf/asset_io/bifrost_scene.hpp"
 #include "bf/bf_dbg_logger.h"  // bfLog*
+#include "bf/ecs/bifrost_behavior_system.hpp"
 #include "bf/ecs/bifrost_iecs_system.hpp"
 #include "bf/gfx/bf_render_queue.hpp"
 #include "bf/graphics/bifrost_debug_renderer.hpp"
@@ -211,6 +212,7 @@ namespace bf
     AnimationSystem*   m_AnimationSystem;
     ComponentRenderer* m_ComponentRenderer;
     BehaviorSystem*    m_BehaviorSystem;
+    BehaviorEvents     m_BehaviorEvents;
 
     // Update Loop
 
@@ -241,9 +243,14 @@ namespace bf
     AnimationSystem&   animationSys() const { return *m_AnimationSystem; }
     ComponentRenderer& rendererSys() const { return *m_ComponentRenderer; }
     BehaviorSystem&    behaviorSys() const { return *m_BehaviorSystem; }
+    BehaviorEvents&    behaviorEvt() { return m_BehaviorEvents; }
     ARC<SceneAsset>    currentScene() const;
     EngineState        state() const { return m_State; }
     void               setState(EngineState value) { m_State = value; }
+
+    // Read-Only Accessors
+
+    float fixedDt() const { return float(std::chrono::duration_cast<std::chrono::milliseconds>(m_TimeStep).count()) / 1000.0f; }
 
     // Low Level Camera API
 
