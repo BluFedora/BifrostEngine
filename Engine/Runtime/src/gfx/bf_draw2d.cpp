@@ -1859,7 +1859,7 @@ namespace bf
             }
 
             // NOTE(SR):
-            //  `x` and `y` are rounded because to have good text
+            //  p0's `x` and `y` are rounded because to have good text
             //  rendering we must be aligned to a pixel boundary.
 
             const CodePoint   codepoint = res.codepoint;
