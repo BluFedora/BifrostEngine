@@ -17,8 +17,7 @@ class CameraController final : public Behavior<CameraController>
 
  public:
   void onEnable(bf::BehaviorEvents& events) override;
-  void onUpdate(float dt) override;
-  void onUpdate2(UpdateTime dt);
+  void onUpdate(UpdateTime dt) override;
   void onDisable(bf::BehaviorEvents& events) override;
   void reflect(ISerializer& serializer) override;
 };
@@ -32,20 +31,18 @@ void CameraController::onEnable(bf::BehaviorEvents& events)
   {
     m_Player = scene().findEntity("Rhino");
   }
-
+   
   if (m_Player)
   {
-    setEventFlags(ON_UPDATE);
+    events.onUpdate(this);
   }
   else
   {
     bfLogWarn("Failed to find the player.");
   }
-
-  events.onUpdate(BehaviorOnUpdate::make<CameraController, &CameraController::onUpdate2>(this));
 }
 
-void CameraController::onUpdate(float dt)
+void CameraController::onUpdate(UpdateTime dt)
 {
   auto&    camera     = scene().camera();
   Vector3f player_pos = m_Player->transform().world_position;
@@ -53,11 +50,6 @@ void CameraController::onUpdate(float dt)
   player_pos -= Vector3f{0.0f, 0.0f, 3.0f};
 
   bfCamera_setPosition(&camera, &player_pos);
-}
-
-void CameraController::onUpdate2(UpdateTime dt)
-{
-  onUpdate(dt.dt);
 }
 
 void CameraController::onDisable(bf::BehaviorEvents& events)
@@ -131,10 +123,10 @@ class IkDemo final : public Behavior<IkDemo>
     // m_Joints.push(IKJoint{bfQuaternionf_identity(), 2.0f});
     // m_Joints.push(IKJoint{bfQuaternionf_identity(), 1.0f});
 
-    setEventFlags(ON_UPDATE);
+    events.onUpdate(this);
   }
 
-  void onUpdate(float dt) override
+  void onUpdate(UpdateTime dt) override
   {
     // TODO(SR): All uses of this function goes through all bones. Not good, they need to use the 'start_index' parameter.
     const auto recalculate_joint_positions = [this](int start_index = 0) {

@@ -23,6 +23,8 @@ namespace bf
   using BehaviorOnUpdate   = FunctionView<void(UpdateTime)>;
   using BehaviorOnUpdateID = DenseMapHandle<BehaviorOnUpdate, 8, 24>;
 
+  class BaseBehavior;
+
   class BehaviorEvents
   {
     friend class BehaviorSystem;
@@ -36,10 +38,7 @@ namespace bf
     {
     }
 
-    BehaviorOnUpdateID onUpdate(BehaviorOnUpdate update_fn)
-    {
-      return m_OnUpdate.add(update_fn);
-    }
+    void onUpdate(BaseBehavior* behavior);
 
     void remove(BehaviorOnUpdateID id)
     {

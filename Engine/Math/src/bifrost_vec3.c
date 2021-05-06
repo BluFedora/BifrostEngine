@@ -158,7 +158,7 @@ void Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix)
 
 #define MUL_AND_SHIFT(c, s) ((uint)((c)*255.0f) << (s))
 
-Color Vec3f_toColor(Vec3f self)
+uint Vec3f_toColor(Vec3f self)
 {
   return MUL_AND_SHIFT(self.x, 0) |
          MUL_AND_SHIFT(self.y, 8) |
@@ -168,47 +168,47 @@ Color Vec3f_toColor(Vec3f self)
 
 #undef MUL_AND_SHIFT
 
-uchar Color_r(Color self)
+uchar Color_r(uint self)
 {
   return (uchar)(((0xFFu << 0) & self) >> 0);
 }
 
-uchar Color_g(Color self)
+uchar Color_g(uint self)
 {
   return (uchar)(((0xFFu << 8) & self) >> 8);
 }
 
-uchar Color_b(Color self)
+uchar Color_b(uint self)
 {
   return (uchar)(((0xFFu << 16) & self) >> 16);
 }
 
-uchar Color_a(Color self)
+uchar Color_a(uint self)
 {
   return (uchar)(((0xFFu << 24) & self) >> 24);
 }
 
-void Color_setRGBA(Color* self, uchar r, uchar g, uchar b, uchar a)
+void Color_setRGBA(uint* self, uchar r, uchar g, uchar b, uchar a)
 {
   (*self) = (r << 0) | (g << 8) | (b << 16) | (a << 24);
 }
 
-void Color_setR(Color* self, uint r)
+void Color_setR(uint* self, uint r)
 {
   (*self) = ((*self) & ~(0xFFu << 0)) | (r << 0);
 }
 
-void Color_setG(Color* self, uint g)
+void Color_setG(uint* self, uint g)
 {
   (*self) = ((*self) & ~(0xFFu << 8)) | (g << 8);
 }
 
-void Color_setB(Color* self, uint b)
+void Color_setB(uint* self, uint b)
 {
   (*self) = ((*self) & ~(0xFFu << 16)) | (b << 16);
 }
 
-void Color_setA(Color* self, uint a)
+void Color_setA(uint* self, uint a)
 {
   (*self) = ((*self) & ~(0xFFu << 24)) | (a << 24);
 }

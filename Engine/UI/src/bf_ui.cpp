@@ -666,8 +666,8 @@ namespace bf::UI
                                            bfColor4f_fromColor4u(bfColor4u_fromUint32(BIFROST_COLOR_BROWN)));
 
       bfQuaternionf gradient_rot = bfQuaternionf_fromEulerDeg(0.0f, 0.0f, 20.0f);
-      Vec3f         rot_right    = bfQuaternionf_right(&gradient_rot);
-      Vec3f         rot_up       = bfQuaternionf_up(&gradient_rot);
+      Vec4f         rot_right    = bfQuaternionf_right(&gradient_rot);
+      Vec4f         rot_up       = bfQuaternionf_up(&gradient_rot);
 
       brown_brush->linear_gradient_data.uv_remap.position = {0.0f, 1.0f};
       brown_brush->linear_gradient_data.uv_remap.x_axis   = {rot_right.x, rot_right.y};

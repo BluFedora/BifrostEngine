@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_non_copy_move.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Helper Mix-in classes for disabling stupid C++isms.
  *
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_NON_COPY_MOVE_HPP
@@ -22,10 +22,11 @@ namespace bf
    public:
     NonCopyable(const NonCopyable&) = delete;
     explicit NonCopyable(const T&)  = delete;
+
     NonCopyable& operator=(const NonCopyable&) = delete;
     T&           operator=(const T&) = delete;
 
-    //protected:
+    // protected:
     NonCopyable()  = default;
     ~NonCopyable() = default;
   };
@@ -36,10 +37,11 @@ namespace bf
    public:
     NonMoveable(NonMoveable&&) = delete;
     explicit NonMoveable(T&&)  = delete;
+
     NonMoveable& operator=(NonMoveable&&) = delete;
     T&           operator=(T&&) = delete;
 
-    //protected:
+    // protected:
     NonMoveable()  = default;
     ~NonMoveable() = default;
   };
@@ -58,7 +60,7 @@ namespace bf
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

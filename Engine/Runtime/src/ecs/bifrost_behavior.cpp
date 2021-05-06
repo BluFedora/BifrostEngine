@@ -22,7 +22,7 @@ namespace bf
     IBehavior(),
     BaseComponent(),
     NonCopyMoveable<BaseBehavior>{},
-    m_EventFlags{ON_NOTHING}
+    m_OnUpdateID{}
   {
   }
 
@@ -33,9 +33,9 @@ namespace bf
 
   void BaseBehavior::setActive(bool is_active)
   {
-    if (isEventFlagSet(IS_ACTIVE) != is_active)
+    // if (isEventFlagSet(IS_ACTIVE) != is_active)
     {
-      m_EventFlags ^= IS_ACTIVE;
+      // m_EventFlags ^= IS_ACTIVE;
 
       auto& behavior_list = owner().scene().m_ActiveBehaviors;
 
@@ -58,12 +58,10 @@ namespace bf
 
 void game::ExampleBehavior::onEnable(bf::BehaviorEvents& events)
 {
-  setEventFlags(ON_UPDATE);
-
-  events.onUpdate(bf::BehaviorOnUpdate::make<ExampleBehavior, &ExampleBehavior::onUpdate2>(this));
+  events.onUpdate(this);
 }
 
-void game::ExampleBehavior::onUpdate(float dt)
+void game::ExampleBehavior::onUpdate(bf::UpdateTime dt)
 {
   auto& transform = owner().transform();
 
@@ -71,10 +69,10 @@ void game::ExampleBehavior::onUpdate(float dt)
 
   bfTransform_setScale(&transform, &scale);
 
-  time += dt;
+  time += dt.dt;
 }
 
 void game::ExampleBehavior::onUpdate2(bf::UpdateTime dt)
 {
-  onUpdate(dt.dt);
+  onUpdate(dt);
 }

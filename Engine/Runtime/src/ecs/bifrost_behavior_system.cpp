@@ -5,11 +5,17 @@
 
 namespace bf
 {
+  void BehaviorEvents::onUpdate(BaseBehavior* behavior)
+  {
+    if (!behavior->m_OnUpdateID.isValid())
+    {
+      behavior->m_OnUpdateID = m_OnUpdate.add(BehaviorOnUpdate::make<IBehavior, &IBehavior::onUpdate>(behavior));
+    }
+  }
+
   void BehaviorSystem::onFrameUpdate(Engine& engine, float dt)
   {
-    const auto scene = engine.currentScene();
-
-    if (scene)
+    if (const auto scene = engine.currentScene(); scene)
     {
       // TODO(SR): Add editor mode update.
       if (engine.state() != EngineState::EDITOR_PLAYING)

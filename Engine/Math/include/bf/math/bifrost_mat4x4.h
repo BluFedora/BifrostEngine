@@ -1,7 +1,7 @@
 #ifndef mat4x4_h
 #define mat4x4_h
 
-#include "bifrost_math_export.h" /* BIFROST_MATH_API */
+#include "bifrost_math_export.h" /* BF_MATH_API */
 
 #include "bifrost_vec3.h"
 
@@ -35,7 +35,7 @@ extern "C" {
 #define Mat4x4_at(self, x, y) ((self)->data[(y) + ((x) << 2)])
 #endif
 
-typedef struct /*ALIGN_STRUCT(16)*/ Mat4x4_t
+typedef struct /*ALIGN_STRUCT(16)*/ Mat4x4
 {
   float data[16];
 

@@ -19,6 +19,7 @@
 #include "bf/ecs/bf_base_component.hpp"     // BaseComponent, Entity
 
 #include "bf/ecs/bifrost_iecs_system.hpp"
+#include "bf/ecs/bifrost_behavior_system.hpp"
 
 namespace bf
 {
@@ -65,7 +66,7 @@ namespace bf
 
    public:
     virtual void onEnable(BehaviorEvents& events)         {}
-    virtual void onUpdate(float dt) { (void)dt; }
+    virtual void onUpdate(UpdateTime dt) { (void)dt; }
     virtual void onDisable(BehaviorEvents& events)        {}
 
     ~IBehavior() override = default;
@@ -78,9 +79,10 @@ namespace bf
   // clang-format on
   {
     friend class Entity;
+    friend class BehaviorEvents;
 
    protected:
-    BehaviorEventFlags m_EventFlags;
+    BehaviorOnUpdateID m_OnUpdateID;
 
    protected:
     explicit BaseBehavior(PrivateCtorTag);
@@ -90,14 +92,6 @@ namespace bf
 
     ClassID::Type classID() const override { return ClassID::BASE_BEHAVIOR; }
     void          reflect(ISerializer& serializer) override;
-
-    bool isActive() const { return isEventFlagSet(IS_ACTIVE); }
-
-    // Event Flags API
-    BehaviorEventFlags eventFlags() const { return m_EventFlags; }
-    bool               isEventFlagSet(BehaviorEventFlags flags) const { return (m_EventFlags & flags) == flags; }
-    void               setEventFlags(BehaviorEventFlags flags) { m_EventFlags |= flags; }
-    void               clearEventFlags(BehaviorEventFlags flags) { m_EventFlags &= ~flags; }
 
    private:
     void setOwner(Entity& owner) { m_Owner = &owner; }
@@ -159,7 +153,7 @@ namespace game
     // Required to be default constructable for serialization purposes.
     ExampleBehavior() = default;
     void onEnable(bf::BehaviorEvents& events) override;
-    void onUpdate(float dt) override;
+    void onUpdate(bf::UpdateTime dt) override;
     void onUpdate2(bf::UpdateTime dt);
   };
 }  // namespace game

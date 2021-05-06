@@ -342,7 +342,6 @@ namespace bf
       void  alloc(const void*, std::size_t size) {} /* NO-OP */
       void  free() {}                               /* NO-OP */
     };
-
   }  // namespace poly
 
   template<typename TInterfaceDecl, typename StoragePolicy = poly::HeapStorage>

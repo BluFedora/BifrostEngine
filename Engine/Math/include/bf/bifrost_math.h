@@ -8,12 +8,14 @@
 #include "math/bifrost_vec2.h"
 #include "math/bifrost_vec3.h"
 
+#include "bf/bf_core.h"
+
 #include <stdint.h> /* uint8_t */
 
 #if __cplusplus
 extern "C" {
 #endif
-typedef struct bfColor4f_t
+typedef struct bfColor4f
 {
   float r;
   float g;
@@ -22,7 +24,7 @@ typedef struct bfColor4f_t
 
 } bfColor4f;
 
-typedef struct bfColor4u_t
+typedef struct bfColor4u
 {
   uint8_t r;
   uint8_t g;

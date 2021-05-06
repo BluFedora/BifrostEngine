@@ -13,11 +13,11 @@ project(BF_Math VERSION 1.0.0)
 set(
   BF_MATH_SOURCE_FILES
   
-  "src/bifrost_camera.c"
-  "src/bifrost_mat4x4.c"
-  "src/bifrost_transform.c"
-  "src/bifrost_vec2.c"
-  "src/bifrost_vec3.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_camera.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_mat4x4.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_transform.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_vec2.c"
+  "${PROJECT_SOURCE_DIR}/src/bifrost_vec3.c"
 )
 
 add_library(
@@ -68,6 +68,3 @@ if(NOT EMSCRIPTEN)
   set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
   set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR})
 endif()
-
-add_library(BF_Math_static ALIAS BF_Math_static)
-add_library(BF_Math_shared ALIAS BF_Math_shared)

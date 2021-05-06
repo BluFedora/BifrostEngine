@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_meta_utils.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   Utilities for compile time template meta programming operations.
  *
  * @version 0.0.1
  * @date    2019-12-28
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_META_UTILS_HPP
@@ -145,7 +145,7 @@ namespace bf::meta
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2020-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

@@ -103,6 +103,17 @@ static constexpr T bfBit(T bit_idx)
  */
 #define bfQuoteStr(...) #__VA_ARGS__
 
+// This is used to clearly mark flexible-sized arrays that appear at the end of
+// some dynamically-allocated structs, known as the "struct hack".
+#if __STDC_VERSION__ >= 199901L
+// In C99, a flexible array member is just "[]".
+#define bfStructHack
+#else
+// Elsewhere, use a zero-sized array. It's technically undefined behavior,
+// but works reliably in most known compilers.
+#define bfStructHack 0
+#endif
+
 #if __cplusplus
 extern "C" {
 #endif
@@ -114,6 +125,8 @@ typedef float         bfFloat32;
 typedef double        bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
+
+/**** Core('Vocabulary') Types ****/
 
 /*!
  * @brief
@@ -158,16 +171,39 @@ constexpr
   return bfMakeStringRangeLen(str, end - str);
 }
 
-// This is used to clearly mark flexible-sized arrays that appear at the end of
-// some dynamically-allocated structs, known as the "struct hack".
-#if __STDC_VERSION__ >= 199901L
-// In C99, a flexible array member is just "[]".
-#define bfStructHack
-#else
-// Elsewhere, use a zero-sized array. It's technically undefined behavior,
-// but works reliably in most known compilers.
-#define bfStructHack 0
-#endif
+
+/* Colors
+*/
+
+typedef struct bf_color4f
+{
+  float r, g, b, a;
+
+} bf_color4f;
+
+typedef struct bf_color4u
+{
+  uint8_t r, g, b, a;
+
+} bf_color4u;
+
+typedef uint32_t bf_color32h; /*!< 0xAABBGGRR format. */
+
+/* Math Types
+*/
+
+typedef struct bf_vec3f
+{
+  float x, y, z;
+
+} bf_vec3f;
+
+typedef struct bf_vec4f
+{
+  float x, y, z, w;
+
+} bf_vec4f;
+
 #if __cplusplus
 }
 #endif

@@ -387,7 +387,7 @@ namespace bf
   {
     for (BaseBehavior* behavior : m_Behaviors)
     {
-      if (behavior->isActive())
+      // if (behavior->isActive())
       {
         behavior->onEnable(engine().behaviorEvt());
       }

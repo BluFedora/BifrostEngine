@@ -54,13 +54,12 @@ extern "C" {
 #define VECTOR_NEON 0
 #endif
 
-typedef unsigned int  Color;
 typedef unsigned int  uint;
 typedef unsigned char uchar;
 
-typedef struct Mat4x4_t Mat4x4;
+typedef struct Mat4x4 Mat4x4;
 
-typedef struct /*ALIGN_STRUCT(16)*/ Vec3f_t
+typedef struct /*ALIGN_STRUCT(16)*/ Vec3f
 {
   float x, y, z, w;
 
@@ -81,7 +80,7 @@ BF_MATH_API void  Vec3f_normalize(Vec3f* self);
 BF_MATH_API float Vec3f_dot(const Vec3f* self, const Vec3f* other);
 BF_MATH_API void  Vec3f_cross(const Vec3f* self, const Vec3f* other, Vec3f* output);
 BF_MATH_API void  Vec3f_mulMat(Vec3f* self, const Mat4x4* matrix);
-BF_MATH_API Color Vec3f_toColor(Vec3f self);
+BF_MATH_API uint  Vec3f_toColor(Vec3f self);
 
 // New API
 
@@ -329,15 +328,15 @@ static uint BIFROST_COLOR_WHITESMOKE           = 0xFFF5F5F5;
 static uint BIFROST_COLOR_YELLOW               = 0xFF00FFFF;
 static uint BIFROST_COLOR_YELLOWGREEN          = 0xFF32CD9A;
 
-BF_MATH_API uchar Color_r(Color self);
-BF_MATH_API uchar Color_g(Color self);
-BF_MATH_API uchar Color_b(Color self);
-BF_MATH_API uchar Color_a(Color self);
-BF_MATH_API void  Color_setRGBA(Color* self, uchar r, uchar g, uchar b, uchar a);
-BF_MATH_API void  Color_setR(Color* self, uint r);
-BF_MATH_API void  Color_setG(Color* self, uint g);
-BF_MATH_API void  Color_setB(Color* self, uint b);
-BF_MATH_API void  Color_setA(Color* self, uint a);
+BF_MATH_API uchar Color_r(uint self);
+BF_MATH_API uchar Color_g(uint self);
+BF_MATH_API uchar Color_b(uint self);
+BF_MATH_API uchar Color_a(uint self);
+BF_MATH_API void  Color_setRGBA(uint* self, uchar r, uchar g, uchar b, uchar a);
+BF_MATH_API void  Color_setR(uint* self, uint r);
+BF_MATH_API void  Color_setG(uint* self, uint g);
+BF_MATH_API void  Color_setB(uint* self, uint b);
+BF_MATH_API void  Color_setA(uint* self, uint a);
 
 #if __cplusplus
 }

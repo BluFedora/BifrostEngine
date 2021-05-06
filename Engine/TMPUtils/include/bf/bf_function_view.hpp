@@ -5,10 +5,13 @@
  * @brief
  *   Non-owning callable wrapper with the most basic of type erasure.
  *
- *   A limitation is that to bind a member function pointer it must be
- *   known at compile time.
+ *   Limitations:
+ *     - Cannot store stateful functor objects such as (stateful) lambdas.
+ *     - Member function pointers must be known at compile time (as template argument).
  *
- * @version 0.0.1
+ *   In return for the limitations you get faster execution speed.
+ *
+ * @version 1.0.3
  * @date    2019-12-28
  *
  * @copyright Copyright (c) 2019-2021
@@ -21,6 +24,13 @@
 
 namespace bf
 {
+  //
+  // Thin alternative to std::optional that does not
+  // cleanup itself automatically so you must call
+  // destroy to end the lifetime of the stored object.
+  //
+  // You must only call destroy if `FunctionView::safeCall` returns `true`.
+  //
   template<typename T>
   struct OptionalResult
   {
@@ -39,7 +49,7 @@ namespace bf
   class FunctionView; /* undefined */
 
   template<typename R, typename... Args>
-  class FunctionView<R(Args...)> final
+  class FunctionView<R(Args...)>
   {
    private:
     using InstancePtr = void*;
@@ -105,28 +115,28 @@ namespace bf
     void bind(FunctionPtr fn_ptr)
     {
       m_Callback.first  = reinterpret_cast<void*>(fn_ptr);
-      m_Callback.second = &FunctionView::c_ptr_function_wrapper;
+      m_Callback.second = &FunctionView::wrapperFn;
     }
 
     template<FunctionPtr callback>
     void bind()
     {
       m_Callback.first  = nullptr;
-      m_Callback.second = &FunctionView::template c_function_wrapper<callback>;
+      m_Callback.second = &FunctionView::template wrapperFnPtr<callback>;
     }
 
     template<typename Clz, R (Clz::*callback)(Args...)>
     void bind(Clz* obj)
     {
       m_Callback.first  = obj;
-      m_Callback.second = &FunctionView::template member_function_wrapper<Clz, callback>;
+      m_Callback.second = &FunctionView::template wrapperMemberFn<Clz, callback>;
     }
 
     template<typename Clz, R (Clz::*callback)(Args...) const>
     void bind(Clz* obj)
     {
       m_Callback.first  = obj;
-      m_Callback.second = &FunctionView::template const_member_function_wrapper<Clz, callback>;
+      m_Callback.second = &FunctionView::template wrapperConstMemberFn<Clz, callback>;
     }
 
     void unBind()
@@ -173,26 +183,26 @@ namespace bf
     }
 
    private:
-    static decltype(auto) c_ptr_function_wrapper(InstancePtr instance, Args... args)
+    static decltype(auto) wrapperFnPtr(InstancePtr instance, Args... args)
     {
       return static_cast<FunctionPtr>(instance)(std::forward<Args>(args)...);
     }
 
     template<FunctionPtr callback>
-    static decltype(auto) c_function_wrapper(InstancePtr instance, Args... args)
+    static decltype(auto) wrapperFn(InstancePtr instance, Args... args)
     {
       (void)instance;
       return callback(std::forward<Args>(args)...);
     }
 
     template<typename Clz, MemberFunctionPtr<Clz> callback>
-    static decltype(auto) member_function_wrapper(InstancePtr instance, Args... args)
+    static decltype(auto) wrapperMemberFn(InstancePtr instance, Args... args)
     {
       return (static_cast<Clz*>(instance)->*callback)(std::forward<Args>(args)...);
     }
 
     template<typename Clz, ConstMemberFunctionPtr<Clz> callback>
-    static decltype(auto) const_member_function_wrapper(InstancePtr instance, Args... args)
+    static decltype(auto) wrapperConstMemberFn(InstancePtr instance, Args... args)
     {
       return (static_cast<const Clz*>(instance)->*callback)(std::forward<Args>(args)...);
     }
