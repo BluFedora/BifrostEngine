@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "E3E29B24-0042-4CD0-BD92-36DCE990AFB9",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/sponza_arch_ddn.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

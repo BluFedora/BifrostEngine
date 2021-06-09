@@ -3,20 +3,23 @@
 
 #include "bifrost_editor_window.hpp"  // EditorWindow
 
+#include <ImGuizmo/ImGuizmo.h> // ImGuizmo::OPERATION
+
 namespace bf::editor
 {
   class SceneView final : public EditorWindow<SceneView>
   {
    private:
-    Rect2i         m_SceneViewViewport;  // Global Window Coordinates
-    bool           m_IsSceneViewHovered;
-    RenderView*    m_Camera;
-    Vector2f       m_OldMousePos;
-    Vector2f       m_MousePos;
-    bool           m_IsDraggingMouse;
-    float          m_MouseLookSpeed;
-    EditorOverlay* m_Editor;
-    ImVec2         m_OldWindowPadding;
+    Rect2i              m_SceneViewViewport;  // Global Window Coordinates
+    bool                m_IsSceneViewHovered;
+    RenderView*         m_Camera;
+    Vector2f            m_OldMousePos;
+    Vector2f            m_MousePos;
+    bool                m_IsDraggingMouse;
+    float               m_MouseLookSpeed;
+    EditorOverlay*      m_Editor;
+    ImVec2              m_OldWindowPadding;
+    ImGuizmo::OPERATION m_GizmoOp;
 
    public:
     explicit SceneView();

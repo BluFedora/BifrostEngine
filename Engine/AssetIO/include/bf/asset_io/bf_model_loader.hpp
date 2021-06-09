@@ -3,7 +3,7 @@
 
 #include "bf/IMemoryManager.hpp"  // IMemoryManager
 #include "bf/Math.hpp"            // Math Structs
-#include "bf/StringRange.h"       // bfStringRange
+#include "bf/bf_core.h"           // bfStringRange
 
 #include <array>    // array
 #include <cstdint>  // uint32_t

@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "4926FCFD-303D-4DB7-8815-97E90EB9AEF9",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/sponza_fabric_ddn.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

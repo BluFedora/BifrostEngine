@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "8AF581FC-5BBC-4D19-A532-D83A2A5CAF0A",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/sponza_thorn_ddn.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

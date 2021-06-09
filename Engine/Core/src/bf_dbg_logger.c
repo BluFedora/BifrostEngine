@@ -28,8 +28,6 @@ static unsigned int    s_IndentLevel = 0u;
 static bfLoggerLevel   s_LoggerLevel = BF_LOGGER_LVL_VERBOSE;
 static bfLogColorState s_ColorState  = {BF_LOGGER_COLOR_WHITE, BF_LOGGER_COLOR_BLACK, 0x0};
 
-static void callCallback(bfLoggerLevel level, const char* file, const char* func, int line, const char* format, va_list args);
-
 void bfLogAdd(bfIDbgLogger* logger)
 {
   logger->next  = s_ILoggerList;
@@ -57,6 +55,8 @@ void bfLogRemove(bfIDbgLogger* logger)
     // This is where a tail pointer would be handled.
   }
 }
+
+static void callCallback(bfLoggerLevel level, const char* file, const char* func, int line, const char* format, va_list args);
 
 void bfLogPush_(const char* file, const char* func, int line, bfFormatString(const char*) format, ...)
 {

@@ -126,7 +126,7 @@ typedef double        bfFloat64;
 #define bfTrue 1
 #define bfFalse 0
 
-/**** Core('Vocabulary') Types ****/
+/**** Core API Types ****/
 
 /*!
  * @brief
@@ -138,6 +138,8 @@ typedef struct bfStringRange
   const char* str_end;
 
 } bfStringRange;
+
+typedef bfStringRange bf_string_range;
 
 #if __cplusplus
 constexpr
@@ -171,38 +173,47 @@ constexpr
   return bfMakeStringRangeLen(str, end - str);
 }
 
+/* Colors */
 
-/* Colors
-*/
-
-typedef struct bf_color4f
+typedef struct color4f
 {
   float r, g, b, a;
 
-} bf_color4f;
+} color4f;
 
-typedef struct bf_color4u
+typedef struct color4u
 {
   uint8_t r, g, b, a;
 
-} bf_color4u;
+} color4u;
 
-typedef uint32_t bf_color32h; /*!< 0xAABBGGRR format. */
+typedef uint32_t color32h; /*!< 0xAABBGGRR format. */
 
-/* Math Types
-*/
+/* Math Types */
 
-typedef struct bf_vec3f
+typedef struct vec2f
+{
+  float x, y;
+
+} vec2f;
+
+typedef struct vec3f
 {
   float x, y, z;
 
-} bf_vec3f;
+} vec3f;
 
-typedef struct bf_vec4f
+typedef struct vec4f
 {
   float x, y, z, w;
 
-} bf_vec4f;
+} vec4f;
+
+typedef struct rect2f
+{
+  vec2f min, max;
+
+} rect2f;
 
 #if __cplusplus
 }

@@ -6,11 +6,10 @@
       {
         "id": "851f7988cffd470a",
         "type": "leaf",
-        "dimension": 46.875,
         "state": {
           "type": "markdown",
           "state": {
-            "file": "OrganizedThoughts/Immediate Mode UI Sketch.md",
+            "file": "OrganizedThoughts/IPC.md",
             "mode": "source"
           }
         },
@@ -19,11 +18,10 @@
       {
         "id": "81f2acfc1b605f7f",
         "type": "leaf",
-        "dimension": 53.125,
         "state": {
           "type": "markdown",
           "state": {
-            "file": "OrganizedThoughts/Immediate Mode UI Sketch.md",
+            "file": "OrganizedThoughts/IPC.md",
             "mode": "preview"
           }
         },
@@ -67,7 +65,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 356.5
+    "width": 300
   },
   "right": {
     "id": "cdebc9e85d393563",
@@ -83,7 +81,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "OrganizedThoughts/Immediate Mode UI Sketch.md",
+                "file": "OrganizedThoughts/IPC.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,15 +101,15 @@
   },
   "active": "851f7988cffd470a",
   "lastOpenFiles": [
-    "OrganizedThoughts/Immediate Mode UI Sketch.md",
     "OrganizedThoughts/IPC.md",
     "OrganizedThoughts/Interpolation.md",
-    "OrganizedThoughts/Cover.md",
+    "OrganizedThoughts/GoodAPI.md",
     "OrganizedThoughts/C_Cpp.md",
-    "OrganizedThoughts/ByteWriterAPISketch.md",
-    "API_Design_Musings.md",
-    "OrganizedThoughts/Value Semantics.md",
-    "OrganizedThoughts/Unity.md",
-    "OrganizedThoughts/Unique IDs.md"
+    "OrganizedThoughts/Tech Stack.md",
+    "OrganizedThoughts/Immediate Mode UI Sketch.md",
+    "OrganizedThoughts/HumanInterfaceGuidelines.md",
+    "OrganizedThoughts/ErrorHandling.md",
+    "OrganizedThoughts/Dynamically Linked Libraries.md",
+    "OrganizedThoughts/Cover.md"
   ]
 }

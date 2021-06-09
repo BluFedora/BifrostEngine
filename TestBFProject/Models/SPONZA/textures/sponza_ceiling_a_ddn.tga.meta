@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "4826EC94-5F5A-451C-8E42-A6D1626A3EDE",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/sponza_ceiling_a_ddn.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

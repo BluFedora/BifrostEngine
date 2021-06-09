@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "3AA6B453-6054-41E7-825E-F7833435A88B",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/lion_ddn.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

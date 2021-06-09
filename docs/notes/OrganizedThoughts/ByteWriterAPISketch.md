@@ -68,7 +68,7 @@ struct ByteWriter : IByteWriter
         {
           if (!(bytes == nullptr && num_bytes == 0u)) // Not End of Stream
           {
-            const uint8_t* const typed_buffer = static_cast<const uint8_t*>(buffer);
+            const uint8_t* const typed_buffer = static_cast<const uint8_t*>(bytes);
             
             buffer->insert(buffer->end(), typed_buffer, typed_buffer + num_bytes);
           }
@@ -134,15 +134,18 @@ static Result set_failure_state(ByteReader* self, Result err)
 
 static ByteReader from_memory(const uint8_t* buffer, size_t buffer_size)
 {
-  self->buffer_start = buffer;
-  self->cursor       = buffer;
-  self->buffer_end   = buffer + buffer_size;
-  self->last_result  = Result::Success;
+  ByteReader self;
 
-  self->refill = [](ByteReader* self) -> Result
-  {
+  self.buffer_start = buffer;
+  self.cursor       = buffer;
+  self.buffer_end   = buffer + buffer_size;
+  self.last_result  = IOResult::Success;
+
+  self.refill = [](ByteReader* self) -> IOResult {
     // A memory stream cannot be refilled.
-    return set_failure_state(self, Result::EndOfStream);
+    return set_failure_state(self, IOResult::EndOfStream);
   };
+
+  return self;
 }
 ```

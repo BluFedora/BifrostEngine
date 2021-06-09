@@ -5,7 +5,7 @@
 As a way to handle out of memory errors if you cannot recover but still want to
 be able to at least log a message you can allocate an _emergency buffer_ and free
 that buffer when the error happens. Otherwise any operation you do such as 
-logging out to thw console will crash since clearly you have ran out of memory 
+logging out to the console will crash since clearly you have ran out of memory 
 for you process.
 
 ```cpp

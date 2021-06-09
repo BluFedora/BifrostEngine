@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "0D803C3B-06B3-42CA-AE61-DC962C6C85F4",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/vase_dif.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

@@ -14,7 +14,7 @@
 #ifndef BF_STRING_HPP
 #define BF_STRING_HPP
 
-#include "bf/StringRange.h"         /* bfStringRange      */
+#include "bf/bf_core.h"         /* bfStringRange      */
 #include "bifrost_dynamic_string.h" /* ConstBifrostString */
 
 #include <cstdarg>   /* va_list        */

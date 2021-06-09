@@ -956,7 +956,7 @@ namespace bf::editor
      float(window_height),
      delta_time);
 
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 
     const ActionContext action_ctx{this};
 
@@ -978,37 +978,40 @@ namespace bf::editor
       }
 
       {
-        LinearAllocatorScope mem_scope{engine.tempMemory()};
+        LinearAllocatorScope mem_scope{tempMemory()};
+
+        char* buffer;
+
         if (s_ShowFPS)
         {
-          char* buffer = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "| %ifps | Memory (bytes) (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
-
-          if (ImGui::Selectable(buffer, &s_ShowFPS, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(buffer).x, 0.0f)))
-          {
-          }
+          buffer = string_utils::fmtAlloc(tempMemory(), nullptr, "| %ifps | Memory (bytes) (%i / %i) |", m_CurrentFps, s_EditorMemory.usedMemory(), s_EditorMemory.size());
         }
         else
         {
-          char* buffer = string_utils::fmtAlloc(engine.tempMemory(), nullptr, "| %ims | Memory (%i / %i) |", m_CurrentMs, s_EditorMemory.usedMemory(), s_EditorMemory.size());
+          buffer = string_utils::fmtAlloc(tempMemory(), nullptr, "| %ims | Memory (%i / %i) |", m_CurrentMs, s_EditorMemory.usedMemory(), s_EditorMemory.size());
+        }
 
-          if (ImGui::Selectable(buffer, &s_ShowFPS, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(buffer).x, 0.0f)))
-          {
-          }
+        if (ImGui::Selectable(buffer, &s_ShowFPS, ImGuiSelectableFlags_None, ImVec2(ImGui::CalcTextSize(buffer).x, 0.0f)))
+        {
         }
       }
 
       m_MainMenu.endItem();
     }
 
+    float          toolbar_height = 32.0f;
+    float          toolbar_pad    = 4.0f;
+    float          menubar_height;
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+
     // Dock Space
     {
       static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
 
       ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
-      ImGuiViewport*   viewport     = ImGui::GetMainViewport();
 
-      ImGui::SetNextWindowPos(viewport->WorkPos);
-      ImGui::SetNextWindowSize(viewport->WorkSize);
+      ImGui::SetNextWindowPos(viewport->WorkPos + ImVec2(0.0f, toolbar_height));
+      ImGui::SetNextWindowSize(viewport->WorkSize - ImVec2(0.0f, toolbar_height));
       ImGui::SetNextWindowViewport(viewport->ID);
 
       ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -1056,11 +1059,64 @@ namespace bf::editor
 
       ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
+      menubar_height = ImGui::GetCurrentWindow()->MenuBarHeight();
+
+      ImGui::End();
+    }
+
+    // Toolbar
+    {
+      ImGui::SetNextWindowPos(viewport->WorkPos + ImVec2(0.0f, menubar_height));
+      ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, toolbar_height));
+      ImGui::SetNextWindowViewport(viewport->ID);
+
+      const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking |
+                                            ImGuiWindowFlags_NoTitleBar |
+                                            // ImGuiWindowFlags_NoResize |
+                                            ImGuiWindowFlags_NoMove |
+                                            ImGuiWindowFlags_NoCollapse;  // ImGuiWindowFlags_HorizontalScrollbar;
+
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(toolbar_pad, toolbar_pad));
+      ImGui::Begin("__Toolbar__", nullptr, window_flags);
+      ImGui::PopStyleVar(3);
+      #if 1
+      for (int i = 0; i < 20; ++i)
+      {
+        ImGui::PushID(i);
+        ImGui::Button("Toolbar Button", ImVec2(0.0f, toolbar_height - toolbar_pad * 2.0f));
+        ImGui::SameLine();
+        ImGui::PopID();
+      }
+      #endif
+
       ImGui::End();
     }
 
     if (ImGui::Begin("Property Grid Test"))
     {
+      if (ImGui::BeginTabBar("TabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_FittingPolicyScroll))
+      {
+        for (int i = 0; i < 20; ++i)
+        {
+          ImGui::PushID(i);
+
+          if (ImGui::BeginTabItem(string_utils::fmtAlloc(tempMemory(), nullptr, "Tab Item %i", i), nullptr, ImGuiTabItemFlags_UnsavedDocument))
+          {
+            //char* name = string_utils::fmtAlloc(tempMemory(), nullptr, "Toolbar Item %i", i);
+
+            //ImGui::Button(name, ImVec2(0.0f, toolbar_height - toolbar_pad * 2.0f));
+
+            ImGui::EndTabItem();
+          }
+
+          ImGui::PopID();
+        }
+
+        ImGui::EndTabBar();
+      }
+
       if (ImGui::BeginTable("Table Name", 2, ImGuiTableFlags_Resizable, ImVec2(0.0f, 0.0f), 0.0f))
       {
         ImGui::TableSetupColumn("Key");
@@ -1072,7 +1128,6 @@ namespace bf::editor
         ImGui::TableNextColumn();
         ImGui::LabelText("##Label Text", "\"%s\"", "HELLOOOO");
 
-        
         ImGui::TableNextColumn();
         ImGui::Text("Position");
         ImGui::TableNextColumn();
@@ -1339,7 +1394,7 @@ namespace bf::editor
       LinearAllocator&     temp_mem         = tempMemory();
       LinearAllocatorScope temp_mem_scope   = temp_mem;
       const StringRange    project_dir      = path::directory(path);
-      const ScopedBuffer     project_json_str = project_file.readAll(temp_mem);
+      const ScopedBuffer   project_json_str = project_file.readAll(temp_mem);
       const AssetError     err              = m_Engine->assets().setRootPath(std::string_view{project_dir.str_bgn, project_dir.length()});
 
       if (err == AssetError::NONE)

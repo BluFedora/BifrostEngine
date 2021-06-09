@@ -70,8 +70,8 @@ namespace bf
       {
 #if BIFROST_PLATFORM_WINDOWS
         __debugbreak();
-        assert(false);
 #endif
+        assert(false);
       }
     }
   };
@@ -81,23 +81,19 @@ namespace bf
    public:
     void submitTask(physx::PxBaseTask& task) override
     {
-      job::Task* const bf_task = job::taskMake(
-       [](job::Task* task) {
-         physx::PxBaseTask* const physics_task = job::taskDataAs<physx::PxBaseTask*>(task);
-
-         physics_task->run();
-         physics_task->release();
-       },
-       nullptr);
-
-      job::taskEmplaceData<physx::PxBaseTask*>(bf_task, &task);
-
-      job::taskSubmit(bf_task, job::QueueType::HIGH);
+      job::taskSubmit(
+       job::taskMake(
+        [physics_task = &task](job::Task* task) {
+          physics_task->run();
+          physics_task->release();
+        },
+        nullptr),
+       job::QueueType::HIGH);
     }
 
-    uint32_t getWorkerCount() const override
+    std::uint32_t getWorkerCount() const override
     {
-      return std::uint32_t(bf::job::numWorkers());
+      return std::uint32_t(job::numWorkers());
     }
   };
 

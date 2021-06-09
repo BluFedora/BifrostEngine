@@ -1,4 +1,4 @@
-# SR Handling Timing For Gameplay
+# Handling Timing For Gameplay
 
 ## Action Lists
 

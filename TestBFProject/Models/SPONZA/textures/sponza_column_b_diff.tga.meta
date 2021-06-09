@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "9E25C36D-F4B0-49B9-9DF7-DC34850BE736",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/sponza_column_b_diff.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

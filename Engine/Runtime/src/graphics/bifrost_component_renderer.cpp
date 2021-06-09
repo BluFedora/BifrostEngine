@@ -306,7 +306,6 @@ namespace bf
           // Index Buffer: { 0, 3, 2, 0, 1, 3 }
           //
 
-          // TODO(SR): This can probably be micro-optimized to do less redundant math ops.
           const Vector3f positions[] =
            {
             origin - half_x_axis - half_y_axis,

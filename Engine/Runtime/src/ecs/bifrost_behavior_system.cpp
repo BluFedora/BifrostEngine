@@ -7,7 +7,7 @@ namespace bf
 {
   void BehaviorEvents::onUpdate(BaseBehavior* behavior)
   {
-    if (!behavior->m_OnUpdateID.isValid())
+    if (!(behavior->m_OnUpdateID.isValid() && m_OnUpdate.has(behavior->m_OnUpdateID)))
     {
       behavior->m_OnUpdateID = m_OnUpdate.add(BehaviorOnUpdate::make<IBehavior, &IBehavior::onUpdate>(behavior));
     }
@@ -15,17 +15,14 @@ namespace bf
 
   void BehaviorSystem::onFrameUpdate(Engine& engine, float dt)
   {
-    if (const auto scene = engine.currentScene(); scene)
+    // TODO(SR): Add editor mode update.
+    if (engine.state() != EngineState::EDITOR_PLAYING)
     {
-      // TODO(SR): Add editor mode update.
-      if (engine.state() != EngineState::EDITOR_PLAYING)
-      {
-        const UpdateTime time{dt, engine.fixedDt()};
+      const UpdateTime time{dt, engine.fixedDt()};
 
-        for (BehaviorOnUpdate& update : engine.behaviorEvt().m_OnUpdate)
-        {
-          update(time);
-        }
+      for (BehaviorOnUpdate& update : engine.behaviorEvt().m_OnUpdate)
+      {
+        update(time);
       }
     }
   }

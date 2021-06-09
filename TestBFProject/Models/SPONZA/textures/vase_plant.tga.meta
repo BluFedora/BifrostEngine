@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "0751F17B-451B-40F1-9B89-5A009771D658",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/vase_plant.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

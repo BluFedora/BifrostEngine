@@ -14,7 +14,7 @@
 #ifndef BIFROST_VM_LEXER_H
 #define BIFROST_VM_LEXER_H
 
-#include "bf/Core.h" /* bfStringRange */
+#include "bf/bf_core.h" /* bfStringRange */
 
 #include <stddef.h> /* size_t   */
 #include <stdint.h> /* uint32_t */

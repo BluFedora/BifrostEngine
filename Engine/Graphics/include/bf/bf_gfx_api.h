@@ -14,7 +14,7 @@
 #ifndef BF_GFX_API_H
 #define BF_GFX_API_H
 
-#include "bf/Core.h"               /* bfBool32, bfBit */
+#include "bf/bf_core.h"            /* bfBool32, bfBit */
 #include "bf_gfx_export.h"         /* BF_GFX_API      */
 #include "bf_gfx_handle.h"         /*                 */
 #include "bf_gfx_limits.h"         /*                 */

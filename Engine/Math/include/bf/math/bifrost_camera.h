@@ -18,7 +18,7 @@ extern "C" {
 // Equation of a Plane: Ax + By + Cz = D => Ax + By + Cz - D = 0
 //
 
-typedef struct
+typedef struct bfPlane
 {
   float nx, ny, nz;  //!< Plane normal
   float d;           //!< Distance from the origin.
@@ -76,7 +76,7 @@ enum
   k_bfPlaneIdx_Max,
 };
 
-typedef enum
+typedef enum bfFrustumTestResult
 {
   BF_FRUSTUM_TEST_OUTSIDE      = 0,  //!< This is a false-y value to allow for this to be treated as a boolean.
   BF_FRUSTUM_TEST_INTERSECTING = 1,  //!< Partially inside of one of the planes
@@ -84,7 +84,7 @@ typedef enum
 
 } bfFrustumTestResult;
 
-typedef struct
+typedef struct bfFrustum
 {
   bfPlane planes[k_bfPlaneIdx_Max];
 
@@ -97,7 +97,7 @@ BF_MATH_API bfFrustumTestResult bfFrustum_isAABBInside(const bfFrustum* self, Ve
 
 /* Camera API */
 
-typedef enum
+typedef enum CameraMode
 {
   BIFROST_CAMERA_MODE_ORTHOGRAPHIC,
   BIFROST_CAMERA_MODE_FRUSTRUM,
@@ -106,14 +106,15 @@ typedef enum
 
 } CameraMode;
 
-typedef struct
+// TODO(SR): Remove Me!
+typedef struct Rectf
 {
   float min[2];
   float max[2];
 
 } Rectf;
 
-typedef struct
+typedef struct CameraModeParams
 {
   CameraMode mode;
 
@@ -155,7 +156,7 @@ typedef struct
 
 } CameraModeParams;
 
-typedef struct BifrostCamera_t
+typedef struct BifrostCamera
 {
   bfFrustum        frustum;
   unsigned int     width;   // In pixels
@@ -213,7 +214,7 @@ BF_MATH_API Vec3f bfCamera_worldToScreenSpace(const bfCamera* cam, Vec3f pos);
 
 typedef int bfRay3DBool; /*!< Typedef for clarity in what the int is being used for. */
 
-typedef struct
+typedef struct bfRay3D
 {
   Vec3f origin;              /*!< Required                                                      */
   Vec3f direction;           /*!< Required                                                      */
@@ -222,7 +223,7 @@ typedef struct
 
 } bfRay3D;
 
-typedef struct
+typedef struct bfRaycastAABBResult
 {
   bfRay3DBool did_hit;  /*!< Check this to see if the ray hit anything.     */
   float       min_time; /*!< Set To An Undefined Value if did_hit is false. */
@@ -230,7 +231,7 @@ typedef struct
 
 } bfRaycastAABBResult;
 
-typedef struct
+typedef struct bfRaycastTriangleResult
 {
   bfRay3DBool did_hit; /*!< Check this to see if the ray hit anything.                                           */
   float       time;    /*!< `t` along the segment that makes hit. Set To An Undefined Value if did_hit is false. */
@@ -238,7 +239,7 @@ typedef struct
 
 } bfRaycastTriangleResult;
 
-typedef struct
+typedef struct bfRaycastPlaneResult
 {
   bfRay3DBool did_hit; /*!< Check this to see if the ray hit anything.                                                              */
   float       time;    /*!< `t` along the segment that makes hit. Set to how far behind plane if did_hit is false (negative value). */
@@ -262,3 +263,29 @@ BF_MATH_API bfRaycastPlaneResult    bfSegment3D_intersectsPlane(Vec3f p, Vec3f q
 #endif
 
 #endif /* BF_CAMERA_H */
+
+/******************************************************************************/
+/*
+  MIT License
+
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+/******************************************************************************/

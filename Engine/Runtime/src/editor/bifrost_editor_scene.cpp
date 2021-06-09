@@ -6,18 +6,16 @@
 #include "bf/graphics/bifrost_component_renderer.hpp"
 #include "bf/text/bf_text.hpp"
 
-#include <ImGuizmo/ImGuizmo.h>
-
 #include <list>
 
 extern bf::PainterFont* TEST_FONT;
 
 namespace bf::editor
 {
-  static const float        k_SceneViewPadding = 1.0f;
-  static const float        k_LightIconSize    = 0.5f;
-  static const float        k_InvalidMousePos  = -1.0f;
-  const ImGuizmo::OPERATION gizmo_op           = ImGuizmo::TRANSLATE;
+  static const float k_SceneViewPadding      = 1.0f;
+  static const float k_LightIconSize         = 0.5f;
+  static const float k_InvalidMousePos       = -1.0f;
+  static const float k_LightOffsetFromEntity = 0.2f; //!< Being right on top of the light is kinda jank so move it towards the camera a tad bit.
 
   SceneView::SceneView() :
     m_SceneViewViewport{},
@@ -28,7 +26,8 @@ namespace bf::editor
     m_IsDraggingMouse{false},
     m_MouseLookSpeed{0.01f},
     m_Editor{nullptr},
-    m_OldWindowPadding{}
+    m_OldWindowPadding{},
+    m_GizmoOp{ImGuizmo::TRANSLATE}
   {
   }
 
@@ -96,6 +95,26 @@ namespace bf::editor
           ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Gizmos"))
+        {
+          const std::pair<bf_string_range, ImGuizmo::OPERATION> gizmo_ops[] =
+           {
+            {bfMakeStringRangeC("TRANSLATE"), ImGuizmo::TRANSLATE},
+            {bfMakeStringRangeC("ROTATE"), ImGuizmo::ROTATE},
+            {bfMakeStringRangeC("SCALE"), ImGuizmo::SCALE},
+           };
+
+          for (const auto& g : gizmo_ops)
+          {
+            if (ImGui::MenuItem(g.first.str_bgn, nullptr, m_GizmoOp == g.second, true))
+            {
+              m_GizmoOp = g.second;
+            }
+          }
+
+          ImGui::EndMenu();
+        }
+
         ImGui::EndMenuBar();
       }
 
@@ -113,7 +132,7 @@ namespace bf::editor
 
       m_IsSceneViewHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
 
-      if (m_IsSceneViewHovered)
+      if (m_IsSceneViewHovered && !ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
       {
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
         {
@@ -216,7 +235,7 @@ namespace bf::editor
         auto&  entity_transform = entity->transform();
         Mat4x4 entity_mat       = entity_transform.world_transform;
 
-        ImGuizmo::Manipulate(cam.view_cache.data, projection_ogl.data, gizmo_op, ImGuizmo::WORLD, entity_mat.data, delta_mat.data, nullptr);
+        ImGuizmo::Manipulate(cam.view_cache.data, projection_ogl.data, m_GizmoOp, m_GizmoOp == ImGuizmo::SCALE ? ImGuizmo::LOCAL : ImGuizmo::WORLD, entity_mat.data, delta_mat.data, nullptr);
       });
 
       const bool is_using_gizmo = ImGuizmo::IsUsing();
@@ -249,10 +268,12 @@ namespace bf::editor
         Vec3f translation = {};
         Vec3f rotation    = {};
         Vec3f scale       = {};
+        Vec3f dummy;
 
-        ImGuizmo::DecomposeMatrixToComponents(entity_mat.data, &translation.x, &rotation.x, &scale.x);
+        ImGuizmo::DecomposeMatrixToComponents(entity_mat.data, &translation.x, &rotation.x, &dummy.x);
+        ImGuizmo::DecomposeMatrixToComponents(delta_mat.data, &dummy.x, &dummy.x, &scale.x);
 
-        switch (gizmo_op)
+        switch (m_GizmoOp)
         {
           case ImGuizmo::TRANSLATE:
           {
@@ -261,11 +282,14 @@ namespace bf::editor
             break;
           }
           case ImGuizmo::ROTATE:
-            entity_transform.local_rotation = bfQuaternionf_fromEulerDeg(-rotation.y, -rotation.z, rotation.x);
+            entity_transform.local_rotation = bfQuaternionf_fromEulerDeg(rotation.x, rotation.y, rotation.z);
             break;
           case ImGuizmo::SCALE:
+
+            bfLogPrint("OldScale(%f, %f, %f)", entity_transform.local_scale.x, entity_transform.local_scale.y, entity_transform.local_scale.z);
             scale.w                      = 0.0f;
             entity_transform.local_scale = scale;
+            bfLogPrint("NewScale(%f, %f, %f)", scale.x, scale.y, scale.z);
             break;
           case ImGuizmo::BOUNDS:
             break;
@@ -320,7 +344,7 @@ namespace bf::editor
   //
   // normal must be normalized.
   //
-  static HitTestResult hitTestQuad(const bfRay3D& ray, const Vector3f center_position, const Vector3f normal, const Vector2f size, const Mat4x4& inv_world_transform)
+  static HitTestResult hitTestQuad(const bfRay3D& ray, const Vector3f center_position, const Vector3f normal, const Vector2f size, const Mat4x4& world_transform, DebugRenderer* dbg = nullptr)
   {
     const float                signed_dist_from_origin = bfPlane_dot(bfPlane_make(normal, 0.0f), center_position);
     const bfRaycastPlaneResult sprite_ray_cast         = bfRay3D_intersectsPlane(&ray, bfPlane_make(normal, signed_dist_from_origin));
@@ -328,21 +352,30 @@ namespace bf::editor
 
     if (sprite_ray_cast.did_hit)
     {
-      const Vector3f hit_point         = Vector3f(ray.origin) + Vector3f(ray.direction) * sprite_ray_cast.time;
-      const Vector2f half_local_x_axis = Vector2f{size.x, 0.0f} * 0.5f;
-      const Vector2f half_local_y_axis = Vector2f{0.0f, size.y} * 0.5f;
-      Vector3f       local_hit_point_v3;
+      const Vector3f hit_point    = Vector3f(ray.origin) + Vector3f(ray.direction) * sprite_ray_cast.time;
+      Vector3f       local_x_axis = Vector3f{size.x, 0.0f, 0.0f, 0.0f};
+      Vector3f       local_y_axis = Vector3f{0.0f, size.y, 0.0f, 0.0f};
 
-      Mat4x4_multVec(&inv_world_transform, &hit_point, &local_hit_point_v3);
+      Mat4x4_multVec(&world_transform, &local_x_axis, &local_x_axis);
+      Mat4x4_multVec(&world_transform, &local_y_axis, &local_y_axis);
 
-      const Vector2f local_hit_point = {local_hit_point_v3.x, local_hit_point_v3.y};
-      const float    inv_lerp_x      = vec::inverseLerp(-half_local_x_axis, half_local_x_axis, local_hit_point);
-      const float    inv_lerp_y      = vec::inverseLerp(-half_local_y_axis, half_local_y_axis, local_hit_point);
+      // https://computergraphics.stackexchange.com/questions/8418/get-intersection-ray-with-square
 
-      if (math::isInbetween(0.0f, inv_lerp_x, 1.0f) && math::isInbetween(0.0f, inv_lerp_y, 1.0f))
+      const Vector3f p0    = center_position - (local_x_axis + local_y_axis) * 0.5f;
+      const Vector3f v     = hit_point - p0;
+      const float    proj1 = vec::dot(v, local_x_axis) / size.x;
+      const float    proj2 = vec::dot(v, local_y_axis) / size.y;
+
+      result.did_hit = math::isInbetween(0.0f, proj1, size.x) && math::isInbetween(0.0f, proj2, size.y);
+      result.t       = sprite_ray_cast.time;
+
+      if (dbg)
       {
-        result.did_hit = true;
-        result.t       = sprite_ray_cast.time;
+        dbg->addSphere(hit_point, 0.013f, bfColor4u{255, 0, 0, 255}, 10, 10);
+        dbg->addSphere(p0, 0.02f, bfColor4u{255, 0, 0, 255}, 10, 10);
+        dbg->addSphere(p0 + local_x_axis, 0.02f, bfColor4u{255, 255, 0, 255}, 10, 10);
+        dbg->addSphere(p0 + local_y_axis, 0.02f, bfColor4u{255, 255, 255, 255}, 10, 10);
+        dbg->addSphere(p0 + local_x_axis + local_y_axis, 0.02f, bfColor4u{255, 0, 255, 255}, 10, 10);
       }
     }
 
@@ -356,7 +389,7 @@ namespace bf::editor
      transform.world_position,
      bfQuaternionf_forward(&transform.world_rotation),
      sprite.m_Size,
-     transform.inv_world_transform);
+     transform.world_transform);
   }
 
   static HitTestResult hitTestEntity(const bfRay3D& ray, Entity* entity)
@@ -475,12 +508,26 @@ namespace bf::editor
                   return ray_cast_result.did_hit;
                 });
 
+                const Vector3f camera_right = m_Camera->cpu_camera._right;
+                const Vector3f camera_up    = m_Camera->cpu_camera.up;
+                const Vector3f camera_fwd   = m_Camera->cpu_camera.forward;
+
+                Mat4x4 transform;
+                Mat4x4_identity(&transform);
+
+                *Mat4x4_get(&transform, 0, 0) = camera_right.x;
+                *Mat4x4_get(&transform, 0, 1) = camera_right.y;
+                *Mat4x4_get(&transform, 0, 2) = camera_right.z;
+
+                *Mat4x4_get(&transform, 1, 0) = camera_up.x;
+                *Mat4x4_get(&transform, 1, 1) = camera_up.y;
+                *Mat4x4_get(&transform, 1, 2) = camera_up.z;
+
                 for (const Light& light : scene->components<Light>())
                 {
-                  Entity* const  entity            = &light.owner();
-                  const Vector3f pos_to_cam        = vec::normalized(Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position));
-                  const auto     center_pos        = Vector3f(entity->transform().world_position) + pos_to_cam * 0.2f;
-                  auto           accurate_hit_test = hitTestQuad(ray, center_pos, pos_to_cam, Vector2f{k_LightIconSize}, entity->transform().inv_world_transform);
+                  Entity* const entity            = &light.owner();
+                  const auto    center_pos        = Vector3f(entity->transform().world_position) + -camera_fwd * k_LightOffsetFromEntity;
+                  auto          accurate_hit_test = hitTestQuad(ray, center_pos, -camera_fwd, Vector2f{k_LightIconSize}, transform);
 
                   if (accurate_hit_test.did_hit)
                   {
@@ -638,6 +685,7 @@ namespace bf::editor
 
         const Vector3f camera_right = m_Camera->cpu_camera._right;
         const Vector3f camera_up    = m_Camera->cpu_camera.up;
+        const Vector3f camera_fwd   = m_Camera->cpu_camera.forward;
 
         Mat4x4 transform;
         Mat4x4_identity(&transform);
@@ -658,11 +706,10 @@ namespace bf::editor
 
         for (const Light& light : lights)
         {
-          const auto&    light_transform = light.owner().transform();
-          const Vector3f pos_to_cam      = Vector3f(m_Camera->cpu_camera.position) - Vector3f(light_transform.world_position);
+          const auto& light_transform = light.owner().transform();
 
-          // Being right on top of the light is kinda jank so move it towards the cam a tad bit.
-          primitive_proto.origin = Vector3f(light_transform.world_position) + vec::normalized(pos_to_cam) * 0.2f;
+          
+          primitive_proto.origin = Vector3f(light_transform.world_position) + -camera_fwd * k_LightOffsetFromEntity;
 
           renderer.pushSprite(primitive_proto);
         }
@@ -681,30 +728,20 @@ namespace bf::editor
 
           local_mouse.y = m_SceneViewViewport.height() - local_mouse.y;
 
-          const bfRay3D ray = bfRay3D_make(
-           m_Camera->cpu_camera.position,
-           Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
+          const bfRay3D ray = bfRay3D_make(m_Camera->cpu_camera.position,
+                                           Camera_castRay(&m_Camera->cpu_camera, local_mouse, m_SceneViewViewport.size()));
 
           for (const Light& light : scene->components<Light>())
           {
-            Entity* const  entity     = &light.owner();
-            const Vector3f pos_to_cam = vec::normalized(Vector3f(m_Camera->cpu_camera.position) - Vector3f(entity->transform().world_position));
-            const auto     center_pos = Vector3f(entity->transform().world_position) + pos_to_cam * 0.2f;
-
-            *Mat4x4_get(&transform, 3, 0) = center_pos.x;
-            *Mat4x4_get(&transform, 3, 1) = center_pos.y;
-            *Mat4x4_get(&transform, 3, 2) = center_pos.z;
-
-            Mat4x4 inv_world_mat = transform;
-            Mat4x4_inverse(&inv_world_mat, &inv_world_mat);
-
-            auto accurate_hit_test = hitTestQuad(ray, center_pos, pos_to_cam, Vector2f{k_LightIconSize}, inv_world_mat);
+            Entity* const       entity            = &light.owner();
+            const Vector3f      center_pos        = Vector3f(entity->transform().world_position) + -camera_fwd * k_LightOffsetFromEntity;
+            const HitTestResult accurate_hit_test = hitTestQuad(ray, center_pos, -camera_fwd, Vector2f{k_LightIconSize}, transform, &engine.debugDraw());
 
             if (accurate_hit_test.did_hit)
             {
               engine.debugDraw().addAABB(
-               Vector3f(m_Camera->cpu_camera.position) + accurate_hit_test.t * Vector3f(ray.direction),
-               Vector3f{0.2f},
+               Vector3f(m_Camera->cpu_camera.position) + Vector3f(ray.direction) * accurate_hit_test.t,
+               Vector3f{0.1f},
                bfColor4u_fromUint32(0xFFFFFFFF));
             }
           }

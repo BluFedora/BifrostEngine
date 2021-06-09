@@ -1,6 +1,6 @@
 /*!
  * @file   bifrost_game_state_machine.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *  Manages the GameStateLayer class for stackable game states.
  *

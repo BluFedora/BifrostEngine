@@ -74,13 +74,15 @@ typedef struct bfDbgLogInfo
 
 } bfDbgLogInfo;
 
+typedef void (*bfIDbgLoggerFn)(struct bfIDbgLogger* logger, bfDbgLogInfo* info, va_list args);
+
 typedef struct bfIDbgLogger bfIDbgLogger;
 struct bfIDbgLogger
 {
-  void (*callback)(struct bfIDbgLogger* logger, bfDbgLogInfo* info, va_list args);
-  void*         user_data;
-  bfIDbgLogger* prev;
-  bfIDbgLogger* next;
+  bfIDbgLoggerFn callback;
+  void*          user_data;
+  bfIDbgLogger*  prev;
+  bfIDbgLogger*  next;
 };
 
 BF_CORE_API void bfLogAdd(bfIDbgLogger* logger);

@@ -1,0 +1,16 @@
+{
+    "Header" : {
+        "m_UUID" : "25024EDC-B1E9-4B70-956C-D8B05D1E8089",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1024,
+            "m_Name" : "Models/SPONZA/textures/sponza_curtain_ddn.tga",
+            "m_FileID" : 1
+        }
+    ],
+    "Document" : {
+
+    }
+}

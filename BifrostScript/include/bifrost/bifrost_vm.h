@@ -21,7 +21,7 @@
 #ifndef BIFROST_VM_API_H
 #define BIFROST_VM_API_H
 
-#include "bf/Core.h"           /* bfStringRange, int32_t, size_t */
+#include "bf/bf_core.h"        /* bfStringRange, int32_t, size_t */
 #include "bifrost_hash_map.h"  /* BifrostHashMap                 */
 #include "bifrost_vm_export.h" /* BIFROST_VM_API                 */
 

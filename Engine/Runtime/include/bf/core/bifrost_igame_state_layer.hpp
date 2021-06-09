@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bifrost_igame_state_layer.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   A single gamestate, used with the 'GameStateMachine' to
  *   handle stack-able game states.

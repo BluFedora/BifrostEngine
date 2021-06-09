@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_base_object.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *  All reflectable / serializable engine objects inherit from this class.
  *
@@ -29,7 +29,7 @@ namespace bf
 
   struct ResourceID
   {
-    std::uint32_t id = {};  //!, 0 is an invalid id.
+    std::uint32_t id = {};  //!< 0 is an invalid id.
 
     bool operator==(const ResourceID& rhs) const
     {

@@ -73,11 +73,6 @@ float Vec2f_cross(const Vec2f* lhs, const Vec2f* rhs)
   return (lhs->x * rhs->y) - (lhs->y * rhs->x);
 }
 
-Vec2f vec2f(const float x, const float y)
-{
-  return (Vec2f) { x, y };
-}
-
 Vec2f vec2f_sub(const Vec2f* const self, const Vec2f* const other)
 {
   return (Vec2f) { self->x - other->x, self->y - other->y };

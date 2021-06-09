@@ -5,14 +5,14 @@
 #if __cplusplus
 extern "C" {
 #endif
-typedef struct Vec2f_t
+typedef struct Vec2f
 {
   float x;
   float y;
 
 } Vec2f;
 
-typedef struct Vec2i_t
+typedef struct Vec2i
 {
   int x;
   int y;
@@ -33,7 +33,6 @@ BF_MATH_API float Vec2f_len(const Vec2f* v1);
 BF_MATH_API float Vec2f_cross(const Vec2f* lhs, const Vec2f* rhs);
 
 // 'static' functions
-BF_MATH_API Vec2f vec2f(const float x, const float y);
 BF_MATH_API Vec2f vec2f_sub(const Vec2f* const self, const Vec2f* const other);
 BF_MATH_API Vec2f vec2f_add(const Vec2f* const self, const Vec2f* const other);
 #if __cplusplus

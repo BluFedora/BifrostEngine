@@ -1,0 +1,146 @@
+{
+    "Header" : {
+        "m_UUID" : "6BD7E3EB-C18B-4FC1-AE9A-50ADCB1D347D",
+        "m_Version" : 1
+    },
+    "AssetInfos" : [
+        {
+            "m_ClassID" : 1028,
+            "m_Name" : "Models/SPONZA/sponza.obj",
+            "m_FileID" : 1
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#0.material",
+            "m_FileID" : 2147483648
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#1.material",
+            "m_FileID" : 2147483649
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#2.material",
+            "m_FileID" : 2147483650
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#3.material",
+            "m_FileID" : 2147483651
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#4.material",
+            "m_FileID" : 2147483652
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#5.material",
+            "m_FileID" : 2147483653
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#6.material",
+            "m_FileID" : 2147483654
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#7.material",
+            "m_FileID" : 2147483655
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#8.material",
+            "m_FileID" : 2147483656
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#9.material",
+            "m_FileID" : 2147483657
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#10.material",
+            "m_FileID" : 2147483658
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#11.material",
+            "m_FileID" : 2147483659
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#12.material",
+            "m_FileID" : 2147483660
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#13.material",
+            "m_FileID" : 2147483661
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#14.material",
+            "m_FileID" : 2147483662
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#15.material",
+            "m_FileID" : 2147483663
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#16.material",
+            "m_FileID" : 2147483664
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#17.material",
+            "m_FileID" : 2147483665
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#18.material",
+            "m_FileID" : 2147483666
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#19.material",
+            "m_FileID" : 2147483667
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#20.material",
+            "m_FileID" : 2147483668
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#21.material",
+            "m_FileID" : 2147483669
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#22.material",
+            "m_FileID" : 2147483670
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#23.material",
+            "m_FileID" : 2147483671
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#24.material",
+            "m_FileID" : 2147483672
+        },
+        {
+            "m_ClassID" : 1025,
+            "m_Name" : "Material_#25.material",
+            "m_FileID" : 2147483673
+        }
+    ],
+    "Document" : {
+
+    }
+}
