@@ -43,7 +43,7 @@ target_link_libraries(
 
   INTERFACE
     BF_Core
-
+    BF_TMPUtils
     BF_DataStructuresC_static
     BF_Memory_interface
 )

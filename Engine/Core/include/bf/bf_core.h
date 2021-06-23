@@ -5,7 +5,7 @@
 * @brief
 *  Helper base functionality that is generally useful throughout the codebase.
 *
-* @version 0.0.1-beta
+* @version 0.0.1
 * @date    2020-06-21
 *
 * @copyright Copyright (c) 2019-2021 Shareef Abdoul-Raheem
@@ -110,7 +110,7 @@ static constexpr T bfBit(T bit_idx)
 #define bfStructHack
 #else
 // Elsewhere, use a zero-sized array. It's technically undefined behavior,
-// but works reliably in most known compilers.
+// but works reliably on most known compilers.
 #define bfStructHack 0
 #endif
 
@@ -140,6 +140,13 @@ typedef struct bfStringRange
 } bfStringRange;
 
 typedef bfStringRange bf_string_range;
+typedef bfStringRange string_range;
+
+inline size_t StringRange_length(bfStringRange self)
+{
+  return self.str_end - self.str_bgn;
+}
+
 
 #if __cplusplus
 constexpr
@@ -173,7 +180,7 @@ constexpr
   return bfMakeStringRangeLen(str, end - str);
 }
 
-/* Colors */
+/* Color Types */
 
 typedef struct color4f
 {
@@ -187,9 +194,34 @@ typedef struct color4u
 
 } color4u;
 
-typedef uint32_t color32h; /*!< 0xAABBGGRR format. */
+typedef uint32_t color32h; /*!< Could be in either 0xAABBGGRR or 0xAARRGGBB format. */
+
+/* Parameters ordered from lowest to highest byte. */
+inline color32h color32h_make(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+  return ((color32h)r << 0) |
+         ((color32h)g << 8) |
+         ((color32h)b << 16) |
+         ((color32h)a << 24);
+}
+
+inline color32h color32h_makeBGRA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+  return color32h_make(b, g, r, a);
+}
+
+inline color32h color32h_makeARGB(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+  return color32h_make(a, r, g, b);
+}
 
 /* Math Types */
+
+typedef struct vec2i
+{
+  int x, y;
+
+} vec2i;
 
 typedef struct vec2f
 {
@@ -208,6 +240,12 @@ typedef struct vec4f
   float x, y, z, w;
 
 } vec4f;
+
+typedef struct rect2i
+{
+  vec2i min, max;
+
+} rect2i;
 
 typedef struct rect2f
 {

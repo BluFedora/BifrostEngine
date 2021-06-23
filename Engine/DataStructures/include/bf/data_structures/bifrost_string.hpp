@@ -1,20 +1,20 @@
 /******************************************************************************/
 /*!
  * @file   bifrost_string.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   C++ Utilities for manipulating strings.
  *
  * @version 0.0.1
- * @date 2019-12-22
+ * @date    2019-12-22
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_STRING_HPP
 #define BF_STRING_HPP
 
-#include "bf/bf_core.h"         /* bfStringRange      */
+#include "bf/bf_core.h"             /* string_range      */
 #include "bifrost_dynamic_string.h" /* ConstBifrostString */
 
 #include <cstdarg>   /* va_list        */
@@ -29,25 +29,25 @@ namespace bf
 
   class IMemoryManager;
 
-  struct StringRange : public bfStringRange
+  struct StringRange : public string_range
   {
-    constexpr StringRange(const bfStringRange& rhs) noexcept :
-      bfStringRange{rhs}
+    constexpr StringRange(const string_range& rhs) noexcept :
+      string_range{rhs}
     {
     }
 
     constexpr StringRange(const char* bgn_in, const char* end_in) noexcept :
-      bfStringRange{bgn_in, end_in}
+      string_range{bgn_in, end_in}
     {
     }
 
     constexpr StringRange(const char* bgn_in, std::size_t length) noexcept :
-      bfStringRange{bgn_in, bgn_in + length}
+      string_range{bgn_in, bgn_in + length}
     {
     }
 
     constexpr StringRange(const char* cstring) noexcept :
-      bfStringRange{bfMakeStringRangeC(cstring)}
+      string_range{bfMakeStringRangeC(cstring)}
     {
     }
 
@@ -63,7 +63,7 @@ namespace bf
 
     [[nodiscard]] std::size_t length() const noexcept
     {
-      return str_end - str_bgn;
+      return StringRange_length(*this);
     }
 
     [[nodiscard]] char operator[](std::size_t i) const
@@ -110,6 +110,11 @@ namespace bf
     auto rend() const noexcept
     {
       return std::make_reverse_iterator(begin());
+    }
+
+    const char* data() const noexcept
+    {
+      return str_bgn;
     }
 
     StringRange slice(std::size_t begin_idx, std::size_t end_idx) const
@@ -562,6 +567,7 @@ namespace bf::string_utils
 
   //
   // The callback is passed in a 'StringRange' for each tokenized element.
+  // The callback should return a boolean using 'true' to indicate continue processing.
   // The StringRange does not include the delimiter character.
   // You can assume the StringRange is preceded by the delimiter (except for the first call).
   //
@@ -581,7 +587,10 @@ namespace bf::string_utils
         break;
       }
 
-      callback(StringRange{bgn, slash_pos - last_pos});
+      if (callback(StringRange{ bgn, slash_pos - last_pos }) == false)
+      {
+        break;
+      }
 
       last_pos = slash_pos + 1;  // NOTE(Shareef): The + 1 accounts for the delimiting character.
     }

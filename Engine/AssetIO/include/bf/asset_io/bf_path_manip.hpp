@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
  * @file   bf_path_manip.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   String manipulation functions with a focus on file paths.
  *
  * @version 0.0.1
  * @date    2020-12-19
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_PATH_MANIP_HPP
@@ -37,7 +37,7 @@ namespace bf::path
   //
   //   "assets://"         - Refers to the root project folder.
   //   "internal://<uuid>" - Refers to an asset with <uuid> for sub asset access.
-  //   otherwise           - It is assumed you are using a path native to the OS, support it not guaranteed by the engine.
+  //   otherwise           - It is assumed you are using a path native to the OS, support is not guaranteed by the engine.
   //
 
   static constexpr std::size_t k_MaxLength     = 512;  //!< The maximum allowed length for a single path.
@@ -108,7 +108,7 @@ namespace bf::path
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

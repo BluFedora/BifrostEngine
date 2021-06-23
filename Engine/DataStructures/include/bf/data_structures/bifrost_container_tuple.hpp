@@ -1,5 +1,5 @@
-#ifndef BIFROST_CONTAINER_TUPLE_HPP
-#define BIFROST_CONTAINER_TUPLE_HPP
+#ifndef BF_CONTAINER_TUPLE_HPP
+#define BF_CONTAINER_TUPLE_HPP
 
 #include "bf/bf_meta_utils.hpp" /* for_each_template */
 
@@ -57,7 +57,7 @@ namespace bf
    */
   template<template<typename...> class TContainer, typename... Args>
   class ContainerTuple  // : private detail::unique_types<Args...>
-  {                     // TODO(SR): MSVC seems not to be able to apply EBO this this??? event with `__declspec(empty_bases)`
+  {                     // TODO(SR): MSVC seems not to be able to apply EBO with this??? even with `__declspec(empty_bases)`
 
    public:
     template<typename F>
@@ -145,4 +145,4 @@ namespace bf
   };
 }  // namespace bf
 
-#endif /* BIFROST_CONTAINER_TUPLE_HPP */
+#endif /* BF_CONTAINER_TUPLE_HPP */

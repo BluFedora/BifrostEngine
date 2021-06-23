@@ -18,7 +18,7 @@ add_library(
 
   # Sources
     "${PROJECT_SOURCE_DIR}/src/bf_dbg_logger.c"
-)
+ "include/bf/bf_api_types.h")
 
 target_compile_definitions(
   "${PROJECT_NAME}"

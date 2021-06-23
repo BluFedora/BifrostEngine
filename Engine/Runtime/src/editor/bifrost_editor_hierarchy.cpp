@@ -356,6 +356,7 @@ namespace bf::editor
     {
       tokenize(name, ' ', [this, &is_found](StringRange element) {
         is_found = is_found || stringMatchPercent(element, m_SearchQuery) >= 0.65f;
+        return !is_found;
       });
     }
 

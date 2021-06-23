@@ -1,19 +1,17 @@
 /******************************************************************************/
 /*!
  * @file   bf_path_manip.cpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *   String manipulation functions with a focus on file paths.
  *
  * @version 0.0.1
  * @date    2020-12-19
  *
- * @copyright Copyright (c) 2019-2020
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #include "bf/asset_io/bf_path_manip.hpp"
-
-#include "bf/asset_io/bf_file.hpp"  // File, file::directoryOfFile
 
 #include <cassert>  // assert
 
@@ -151,7 +149,7 @@ namespace bf::path
 /*
   MIT License
 
-  Copyright (c) 2020 Shareef Abdoul-Raheem
+  Copyright (c) 2019-2021 Shareef Abdoul-Raheem
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

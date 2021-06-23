@@ -39,13 +39,6 @@ namespace bf::hash
     }
   }  // namespace
 
-  //
-  //
-  // NOTE(SR):
-  //   Using Godbolt I have found that the compiler
-  //   optimized the mod out of the `reducePointer` functions. (Dec 27th, 2020)
-  //
-
   // NOTE(SR):
   //   Good resource on getting these numbers:
   //     [https://primes.utm.edu/lists/2small/0bit.html]
@@ -57,6 +50,13 @@ namespace bf::hash
     static constexpr std::uint64_t k_64Bit = 18446744073709551557ull;  // (1 << 64) - 59;
 
   }  // namespace LargestPrimeLessThanPo2
+
+  
+  //
+  // NOTE(SR):
+  //   Using Godbolt I have found that the compiler
+  //   optimized the mod out of the `reducePointer` functions. (Dec 27th, 2020)
+  //
 
   template<>
   std::uint8_t reducePointer<std::uint8_t>(const void* ptr)

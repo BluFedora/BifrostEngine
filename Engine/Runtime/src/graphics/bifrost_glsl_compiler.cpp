@@ -33,8 +33,6 @@ namespace bf
     m_CurrentlyCompiling{memory}
   {
     glslang::InitializeProcess();
-
-    // glslang::OutputSpvHex(SpirV, "Output.cpp, "varName"); // Generates an array with the spv code with variable name being varName ;), Might Be useful later.
   }
 
   GLSLCompiler::~GLSLCompiler()
@@ -99,21 +97,6 @@ namespace bf
       m_CurrentlyCompiling.pop();
 
       m_LoadedFiles.emplace(filename, processed_file);
-#if 0
-      // TODO : This should not be harded like this.
-      // Write out the compiled file ;)
-      // const StringRange filename_path = file::directoryOfFile(filename);
-      const StringRange filename_name = file::fileNameOfPath(filename);
-
-      File file_out{"../assets/shaders/standard/processed/" + filename_name, file::FILE_MODE_WRITE};
-
-      if (file_out)
-      {
-        file_out.write(processed_file);
-
-        file_out.close();
-      }
-#endif
     }
     else
     {
@@ -448,22 +431,6 @@ namespace bf
     Array<std::uint32_t> spirv_code = toSPIRV(source, type);
 #else
     const String& spirv_code = source;
-#endif
-
-#if 0
-    // TODO : This should not be harded like this.
-    // Write out the compiled file ;)
-    // const StringRange filename_path = file::directoryOfFile(filename);
-    const StringRange filename_name = file::fileNameOfPath(filename);
-
-    File file_out{"../assets/shaders/standard/compiled/" + filename_name + ".spv", file::FILE_MODE_WRITE | file::FILE_MODE_BINARY};
-
-    if (file_out)
-    {
-      file_out.writeBytes((const char*)spirv_code.data(), spirv_code.size() * sizeof(spirv_code[0]));
-
-      file_out.close();
-    }
 #endif
 
     if (!bfShaderModule_loadData(module, (const char*)spirv_code.data(), spirv_code.size() * sizeof(spirv_code[0])))

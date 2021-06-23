@@ -143,14 +143,9 @@ namespace bf
         return *reinterpret_cast<const TKey*>(&m_Key);
       }
 
-      [[nodiscard]] TValue& value()
+      [[nodiscard]] TValue& value() const
       {
-        return *reinterpret_cast<TValue*>(&m_Value);
-      }
-
-      [[nodiscard]] const TValue& value() const
-      {
-        return *reinterpret_cast<const TValue*>(&m_Value);
+        return *const_cast<TValue*>(reinterpret_cast<const TValue*>(&m_Value));
       }
     };
   }  // namespace detail
@@ -237,7 +232,7 @@ namespace bf
     void set(const TKey& key, const TValue& value);
 
     template<typename... Args>
-    bool emplace(const TKey& key, Args&&... args);
+    iterator emplace(const TKey& key, Args&&... args);
 
     TValue* at(const TKey& key) const;
     TValue* get(const TKey& key) const;
@@ -568,7 +563,7 @@ namespace bf
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>
   template<typename... Args>
-  bool HashTable<TKey, TValue, initial_size, Hasher, TEqual>::emplace(const TKey& key, Args&&... args)
+  HashTable<TKey, TValue, initial_size, Hasher, TEqual>::iterator HashTable<TKey, TValue, initial_size, Hasher, TEqual>::emplace(const TKey& key, Args&&... args)
   {
     HashT* node = this->getFreeNode(key);
 
@@ -579,7 +574,7 @@ namespace bf
        std::forward<decltype(args)>(args)...);
     }
 
-    return (node != nullptr);
+    return node ? iterator(node, m_Table + m_Capacity) : end();
   }
 
   template<typename TKey, typename TValue, std::size_t initial_size, typename Hasher, typename TEqual>

@@ -14,7 +14,7 @@ This layer consists of libraries which only rely on code within it's own source 
 - [Memory][Memory]
 - Network
 - [Platform][Platform]
-- Script (optinally uses: TMPUtils)
+- Script (optionally uses: TMPUtils)
 - TMPUtils
 
 ## Layer 1

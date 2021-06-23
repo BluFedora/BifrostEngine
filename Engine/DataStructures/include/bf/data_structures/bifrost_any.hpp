@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*!
  * @file   bf_any.hpp
- * @author Shareef Abdoul-Raheem (http://blufedora.github.io/)
+ * @author Shareef Abdoul-Raheem (https://blufedora.github.io/)
  * @brief
  *    This class can hold any C++ type with a small buffer optimization
  *    for built-in small types.
@@ -10,7 +10,7 @@
  * @version 0.0.1
  * @date    2019-12-27
  *
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2019-2021
  */
 /******************************************************************************/
 #ifndef BF_ANY_HPP

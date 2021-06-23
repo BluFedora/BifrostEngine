@@ -115,6 +115,7 @@ namespace bf::string_utils
     tokenize(string, delimiter, [&result, &allocator](const StringRange& token) {
       allocator.allocateT<StringLink>(token, result.head, result.tail);
       ++result.size;
+      return true;
     });
 
     return result;

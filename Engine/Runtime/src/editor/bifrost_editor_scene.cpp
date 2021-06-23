@@ -12,10 +12,10 @@ extern bf::PainterFont* TEST_FONT;
 
 namespace bf::editor
 {
-  static const float k_SceneViewPadding      = 1.0f;
-  static const float k_LightIconSize         = 0.5f;
-  static const float k_InvalidMousePos       = -1.0f;
-  static const float k_LightOffsetFromEntity = 0.2f; //!< Being right on top of the light is kinda jank so move it towards the camera a tad bit.
+  static constexpr float k_SceneViewPadding      = 1.0f;
+  static constexpr float k_LightIconSize         = 0.5f;
+  static constexpr float k_InvalidMousePos       = -1.0f;
+  static constexpr float k_LightOffsetFromEntity = 0.2f; //!< Being right on top of the light is kinda jank so move it towards the camera a tad bit.
 
   SceneView::SceneView() :
     m_SceneViewViewport{},
